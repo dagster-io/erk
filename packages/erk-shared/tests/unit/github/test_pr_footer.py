@@ -8,7 +8,7 @@ from erk_shared.github.pr_footer import build_pr_body_footer, build_remote_execu
 
 def test_build_pr_body_footer_without_issue_number() -> None:
     """Test footer generation without issue number."""
-    result = build_pr_body_footer(pr_number=1895)
+    result = build_pr_body_footer(pr_number=1895, issue_number=None, plans_repo=None)
 
     assert "---" in result
     assert "erk pr checkout 1895 && erk pr sync --dangerous" in result
@@ -17,7 +17,7 @@ def test_build_pr_body_footer_without_issue_number() -> None:
 
 def test_build_pr_body_footer_with_issue_number() -> None:
     """Test footer includes Closes #N when issue_number is provided."""
-    result = build_pr_body_footer(pr_number=1895, issue_number=123)
+    result = build_pr_body_footer(pr_number=1895, issue_number=123, plans_repo=None)
 
     assert "---" in result
     assert "Closes #123" in result
@@ -26,7 +26,7 @@ def test_build_pr_body_footer_with_issue_number() -> None:
 
 def test_build_pr_body_footer_issue_number_before_checkout() -> None:
     """Test that Closes #N appears before the checkout command."""
-    result = build_pr_body_footer(pr_number=456, issue_number=789)
+    result = build_pr_body_footer(pr_number=456, issue_number=789, plans_repo=None)
 
     closes_pos = result.find("Closes #789")
     checkout_pos = result.find("erk pr checkout 456")
@@ -38,10 +38,18 @@ def test_build_pr_body_footer_issue_number_before_checkout() -> None:
 
 def test_build_pr_body_footer_includes_sync_command() -> None:
     """Test that footer includes '&& erk pr sync --dangerous' in checkout command."""
-    result = build_pr_body_footer(pr_number=100)
+    result = build_pr_body_footer(pr_number=100, issue_number=None, plans_repo=None)
 
     assert "&& erk pr sync --dangerous" in result
     assert "erk pr checkout 100 && erk pr sync --dangerous" in result
+
+
+def test_build_pr_body_footer_cross_repo_issue() -> None:
+    """Test footer uses owner/repo#N format for cross-repo plans."""
+    result = build_pr_body_footer(pr_number=100, issue_number=123, plans_repo="owner/plans-repo")
+
+    assert "Closes owner/plans-repo#123" in result
+    assert "Closes #123" not in result
 
 
 # ============================================================================

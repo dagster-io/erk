@@ -36,6 +36,7 @@ from dataclasses import asdict, dataclass
 
 import click
 
+from erk.cli.config import load_config
 from erk_shared.context.helpers import require_git, require_github, require_repo_root
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
@@ -58,18 +59,23 @@ class UpdateError:
     message: str
 
 
-def _build_pr_body(commit_message: str, pr_number: int, issue_number: int) -> str:
+def _build_pr_body(
+    commit_message: str, pr_number: int, issue_number: int, plans_repo: str | None
+) -> str:
     """Build the PR body with summary and footer.
 
     Args:
         commit_message: Full commit message to use as summary
         pr_number: PR number for checkout instructions
         issue_number: Issue number to close on merge
+        plans_repo: Target repo in "owner/repo" format for cross-repo plans
 
     Returns:
         Formatted PR body markdown
     """
-    footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
+    footer = build_pr_body_footer(
+        pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
+    )
     return f"""## Summary
 
 {commit_message}
@@ -120,8 +126,12 @@ def update_pr_summary(
 
     pr_number = pr_result.number
 
+    # Load config to get plans_repo
+    config = load_config(repo_root)
+    plans_repo = config.plans_repo
+
     # Build and update PR body
-    pr_body = _build_pr_body(commit_message, pr_number, issue_number)
+    pr_body = _build_pr_body(commit_message, pr_number, issue_number, plans_repo)
 
     try:
         github.update_pr_body(repo_root, pr_number, pr_body)

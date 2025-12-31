@@ -17,13 +17,16 @@ def build_remote_execution_note(workflow_run_id: str, workflow_run_url: str) -> 
 def build_pr_body_footer(
     pr_number: int,
     *,
-    issue_number: int | None = None,
+    issue_number: int | None,
+    plans_repo: str | None,
 ) -> str:
     """Build standardized footer section for PR body.
 
     Args:
         pr_number: PR number for checkout command
         issue_number: Optional issue number to close on merge
+        plans_repo: Target repo in "owner/repo" format for cross-repo,
+            or None for same-repo
 
     Returns:
         Markdown footer string ready to append to PR body
@@ -32,7 +35,12 @@ def build_pr_body_footer(
     parts.append("\n---\n")
 
     if issue_number is not None:
-        parts.append(f"\nCloses #{issue_number}\n")
+        # Format issue reference for same-repo or cross-repo
+        if plans_repo is None:
+            issue_ref = f"#{issue_number}"
+        else:
+            issue_ref = f"{plans_repo}#{issue_number}"
+        parts.append(f"\nCloses {issue_ref}\n")
 
     parts.append(
         f"\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"

@@ -23,9 +23,38 @@ class RealGitHubIssues(GitHubIssues):
     Maintains an internal label cache to avoid redundant API calls.
     """
 
-    def __init__(self) -> None:
-        """Initialize RealGitHubIssues."""
+    def __init__(self, target_repo: str | None) -> None:
+        """Initialize RealGitHubIssues.
+
+        Args:
+            target_repo: Target repository in "owner/repo" format.
+                If set, all gh commands will use -R flag to target this repo.
+                If None, gh CLI uses cwd-based repo detection (default behavior).
+        """
+        self._target_repo = target_repo
         self._label_cache: RealLabelCache | None = None
+
+    @property
+    def target_repo(self) -> str | None:
+        """Read-only access to target repository for test assertions."""
+        return self._target_repo
+
+    def _build_gh_command(self, base_cmd: list[str]) -> list[str]:
+        """Build gh command with optional -R flag for target repo.
+
+        If target_repo is set, inserts -R owner/repo after 'gh' in the command.
+        The -R flag must come immediately after 'gh' for most gh subcommands.
+
+        Args:
+            base_cmd: Base command starting with 'gh'
+
+        Returns:
+            Command with -R flag inserted if target_repo is set
+        """
+        if self._target_repo is None:
+            return base_cmd
+        # Insert -R owner/repo after 'gh' but before subcommand
+        return [base_cmd[0], "-R", self._target_repo, *base_cmd[1:]]
 
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]
@@ -35,10 +64,11 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, etc.).
         """
-        cmd = ["gh", "issue", "create", "--title", title, "--body", body]
+        base_cmd = ["gh", "issue", "create", "--title", title, "--body", body]
         for label in labels:
-            cmd.extend(["--label", label])
+            base_cmd.extend(["--label", label])
 
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
         # gh issue create returns a URL like: https://github.com/owner/repo/issues/123
         url = stdout.strip()
@@ -58,11 +88,12 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/{number}",
         ]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
 
@@ -91,7 +122,7 @@ class RealGitHubIssues(GitHubIssues):
         on failures (not installed, not authenticated, issue not found).
         """
         # Use REST API to get back the comment ID
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
@@ -102,6 +133,7 @@ class RealGitHubIssues(GitHubIssues):
             "--jq",
             ".id",
         ]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
         return int(stdout.strip())
 
@@ -111,7 +143,8 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        cmd = ["gh", "issue", "edit", str(number), "--body", body]
+        base_cmd = ["gh", "issue", "edit", str(number), "--body", body]
+        cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
     def list_issues(
@@ -146,7 +179,8 @@ class RealGitHubIssues(GitHubIssues):
         if params:
             endpoint += "?" + "&".join(params)
 
-        cmd = ["gh", "api", endpoint]
+        base_cmd = ["gh", "api", endpoint]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
 
@@ -177,13 +211,14 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
             "--jq",
             "[.[].body]",  # JSON array format preserves multi-line bodies
         ]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
 
         if not stdout.strip():
@@ -199,13 +234,14 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, comment not found).
         """
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}",
             "--jq",
             ".body",
         ]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
         return stdout
 
@@ -218,13 +254,14 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/{number}/comments",
             "--jq",
             "[.[] | {body, url: .html_url, id, author: .user.login}]",
         ]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
 
         if not stdout.strip():
@@ -260,7 +297,7 @@ class RealGitHubIssues(GitHubIssues):
             return
 
         # Check if label exists via API
-        check_cmd = [
+        base_check_cmd = [
             "gh",
             "label",
             "list",
@@ -269,6 +306,7 @@ class RealGitHubIssues(GitHubIssues):
             "--jq",
             f'.[] | select(.name == "{label}") | .name',
         ]
+        check_cmd = self._build_gh_command(base_check_cmd)
         stdout = execute_gh_command(check_cmd, repo_root)
 
         if stdout.strip():
@@ -277,7 +315,7 @@ class RealGitHubIssues(GitHubIssues):
             return
 
         # Create label
-        create_cmd = [
+        base_create_cmd = [
             "gh",
             "label",
             "create",
@@ -287,6 +325,7 @@ class RealGitHubIssues(GitHubIssues):
             "--color",
             color,
         ]
+        create_cmd = self._build_gh_command(base_create_cmd)
         execute_gh_command(create_cmd, repo_root)
 
         # Cache newly created label
@@ -299,7 +338,8 @@ class RealGitHubIssues(GitHubIssues):
         on failures (not installed, not authenticated, issue not found).
         The gh CLI --add-label operation is idempotent.
         """
-        cmd = ["gh", "issue", "edit", str(issue_number), "--add-label", label]
+        base_cmd = ["gh", "issue", "edit", str(issue_number), "--add-label", label]
+        cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
     def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
@@ -309,7 +349,8 @@ class RealGitHubIssues(GitHubIssues):
         on failures (not installed, not authenticated, issue not found).
         If the label doesn't exist on the issue, gh CLI handles gracefully.
         """
-        cmd = ["gh", "issue", "edit", str(issue_number), "--remove-label", label]
+        base_cmd = ["gh", "issue", "edit", str(issue_number), "--remove-label", label]
+        cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
     def close_issue(self, repo_root: Path, number: int) -> None:
@@ -318,7 +359,8 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        cmd = ["gh", "issue", "close", str(number)]
+        base_cmd = ["gh", "issue", "close", str(number)]
+        cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
     def get_current_username(self) -> str | None:
@@ -346,7 +388,7 @@ class RealGitHubIssues(GitHubIssues):
 
         Uses the timeline endpoint to find cross-referenced PRs.
         """
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/{issue_number}/timeline",
@@ -355,6 +397,7 @@ class RealGitHubIssues(GitHubIssues):
             "| select(.source.issue.pull_request) "
             "| .source.issue | {number, state, is_draft: .draft}]",
         ]
+        cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
 
         if not stdout.strip():
@@ -384,7 +427,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, comment not found).
         """
-        cmd = [
+        base_cmd = [
             "gh",
             "api",
             f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}/reactions",
@@ -393,4 +436,5 @@ class RealGitHubIssues(GitHubIssues):
             "-f",
             f"content={reaction}",
         ]
+        cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)

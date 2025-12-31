@@ -55,20 +55,26 @@ def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
     return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
 
 
-def has_issue_closing_reference(body: str, issue_number: int) -> bool:
+def has_issue_closing_reference(body: str, issue_number: int, plans_repo: str | None) -> bool:
     """Check if PR body contains a closing reference for a specific issue.
 
-    Checks for patterns like "Closes #123" (case-insensitive) that GitHub
-    recognizes as issue closing keywords.
+    Checks for patterns like "Closes #123" (same-repo) or "Closes owner/repo#123"
+    (cross-repo) that GitHub recognizes as issue closing keywords.
 
     Args:
         body: The PR body text to check
         issue_number: The issue number to validate against
+        plans_repo: Target repo in "owner/repo" format, or None for same repo
 
     Returns:
-        True if the body contains 'Closes #<issue_number>'
+        True if the body contains the expected closing reference
     """
-    return bool(re.search(rf"Closes\s+#{issue_number}\b", body, re.IGNORECASE))
+    if plans_repo is None:
+        # Same-repo: "Closes #123"
+        return bool(re.search(rf"Closes\s+#{issue_number}\b", body, re.IGNORECASE))
+    # Cross-repo: "Closes owner/repo#123"
+    escaped_repo = re.escape(plans_repo)
+    return bool(re.search(rf"Closes\s+{escaped_repo}#{issue_number}\b", body, re.IGNORECASE))
 
 
 def _make_divergence_error(branch_name: str, ahead: int, behind: int) -> CoreSubmitError:
@@ -103,6 +109,7 @@ def execute_core_submit(
     pr_body: str,
     *,
     force: bool,
+    plans_repo: str | None,
 ) -> Generator[ProgressEvent | CompletionEvent[CoreSubmitResult | CoreSubmitError]]:
     """Execute core PR submission: git push + gh pr create.
 
@@ -117,6 +124,8 @@ def execute_core_submit(
         pr_title: Title for the PR (first line of commit message)
         pr_body: Body for the PR (remaining commit message lines)
         force: If True, force push (use when branch has diverged from remote)
+        plans_repo: Target repo in "owner/repo" format for cross-repo plans,
+            or None for same-repo
 
     Yields:
         ProgressEvent for status updates
@@ -242,6 +251,7 @@ def execute_core_submit(
         footer = build_pr_body_footer(
             pr_number=0,  # Will be updated after creation
             issue_number=issue_number,
+            plans_repo=plans_repo,
         )
         full_body = pr_body + footer
 
@@ -265,6 +275,7 @@ def execute_core_submit(
         updated_footer = build_pr_body_footer(
             pr_number=pr_number,
             issue_number=issue_number,
+            plans_repo=plans_repo,
         )
         updated_body = pr_body + updated_footer
         ctx.github.update_pr_body(repo_root, pr_number, updated_body)
@@ -291,6 +302,7 @@ def execute_core_submit(
         footer = build_pr_body_footer(
             pr_number=pr_number,
             issue_number=issue_number,
+            plans_repo=plans_repo,
         )
         # Get current body and update if needed
         current_body = ctx.github.get_pr_body(repo_root, pr_number)

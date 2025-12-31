@@ -27,7 +27,9 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import (
+    get_repo_identifier,
     require_cwd,
+    require_local_config,
     require_repo_root,
     require_session_store,
 )
@@ -112,11 +114,20 @@ def plan_save_to_issue(
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
 
+    # Determine source_repo for cross-repo plans
+    # When plans_repo is configured, plans are stored in a separate repo
+    # and source_repo records where implementation will happen
+    source_repo: str | None = None
+    config = require_local_config(ctx)
+    if config.plans_repo is not None:
+        source_repo = get_repo_identifier(ctx)
+
     # Use consolidated create_plan_issue for the entire workflow
     result = create_plan_issue(
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan,
+        source_repo=source_repo,
     )
 
     if not result.success:

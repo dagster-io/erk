@@ -65,8 +65,9 @@ def create_plan_issue(
     title_suffix: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    source_repo: str | None = None,
 ) -> CreatePlanIssueResult:
-    """Create Schema v2 plan issue with proper structure.
+    """Create Schema v2/v3 plan issue with proper structure.
 
     Handles the complete workflow:
     1. Get GitHub username (fail if not authenticated)
@@ -85,6 +86,7 @@ def create_plan_issue(
         title_suffix: Suffix for issue title (default: "[erk-plan]" or "[erk-extraction]")
         source_plan_issues: For extraction plans, list of source issue numbers
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -147,6 +149,7 @@ def create_plan_issue(
         plan_type=plan_type,
         source_plan_issues=source_plan_issues if source_plan_issues else [],
         extraction_session_ids=extraction_session_ids if extraction_session_ids else [],
+        source_repo=source_repo,
     )
 
     # Create issue

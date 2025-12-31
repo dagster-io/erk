@@ -84,6 +84,7 @@ def test_create_with_plan_file() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -129,6 +130,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -326,6 +328,7 @@ def test_create_runs_post_create_commands() -> None:
             env={},
             post_create_commands=["echo hello > test.txt"],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -359,6 +362,7 @@ def test_create_sets_env_variables() -> None:
             env={"MY_VAR": "my_value"},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -404,6 +408,7 @@ def test_create_uses_graphite_when_enabled() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -445,6 +450,7 @@ def test_create_blocks_when_staged_changes_present_with_graphite_enabled() -> No
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -745,6 +751,7 @@ def test_create_with_keep_plan_file_flag() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -823,6 +830,7 @@ def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         # Set up worktree stack: main -> feature-1 -> feature-2
@@ -1162,6 +1170,7 @@ def test_create_with_json_and_plan_file() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         # Create a plan file - name will be derived from filename
@@ -1308,6 +1317,7 @@ def test_create_with_stay_and_plan_file() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -1490,6 +1500,7 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(

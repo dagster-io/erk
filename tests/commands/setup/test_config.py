@@ -57,6 +57,7 @@ def test_config_list_displays_repo_config() -> None:
             env={"FOO": "bar"},
             post_create_commands=["echo hello"],
             post_create_shell="/bin/bash",
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -215,6 +216,7 @@ def test_config_get_env_key() -> None:
             env={"MY_VAR": "my_value"},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -250,6 +252,7 @@ def test_config_get_post_create_shell() -> None:
             env={},
             post_create_commands=[],
             post_create_shell="/bin/zsh",
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -285,6 +288,7 @@ def test_config_get_post_create_commands() -> None:
             env={},
             post_create_commands=["echo hello", "echo world"],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -321,6 +325,7 @@ def test_config_get_env_key_not_found() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -436,6 +441,7 @@ def test_config_get_post_create_shell_not_found() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -471,6 +477,7 @@ def test_config_get_post_create_invalid_subkey() -> None:
             env={},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(

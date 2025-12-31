@@ -106,6 +106,7 @@ class TestMergeConfigs:
             env={"VAR1": "repo_val1", "VAR2": "repo_val2"},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
         project_config = ProjectConfig(
             name=None,
@@ -128,6 +129,7 @@ class TestMergeConfigs:
             env={},
             post_create_commands=["repo_cmd1", "repo_cmd2"],
             post_create_shell=None,
+            plans_repo=None,
         )
         project_config = ProjectConfig(
             name=None,
@@ -151,6 +153,7 @@ class TestMergeConfigs:
             env={},
             post_create_commands=[],
             post_create_shell="bash",
+            plans_repo=None,
         )
         project_config = ProjectConfig(
             name=None,
@@ -169,6 +172,7 @@ class TestMergeConfigs:
             env={},
             post_create_commands=[],
             post_create_shell="bash",
+            plans_repo=None,
         )
         project_config = ProjectConfig(
             name=None,
@@ -183,7 +187,9 @@ class TestMergeConfigs:
 
     def test_merges_empty_configs(self) -> None:
         """Handles merging empty configs."""
-        repo_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        repo_config = LoadedConfig(
+            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
+        )
         project_config = ProjectConfig(
             name=None, env={}, post_create_commands=[], post_create_shell=None
         )
@@ -272,3 +278,58 @@ class TestLoadConfig:
 
         assert result.post_create_commands == ["cmd1", "cmd2"]
         assert result.post_create_shell == "bash"
+
+    def test_loads_plans_repo(self, tmp_path: Path) -> None:
+        """Loads plans.repo from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[plans]\nrepo = "owner/plans-repo"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.plans_repo == "owner/plans-repo"
+
+    def test_plans_repo_defaults_to_none(self, tmp_path: Path) -> None:
+        """plans_repo defaults to None when [plans] section absent."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[env]\nFOO = "bar"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.plans_repo is None
+
+    def test_loads_full_config_with_plans_repo(self, tmp_path: Path) -> None:
+        """Loads full config including plans.repo."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            """
+[env]
+FOO = "bar"
+
+[post_create]
+shell = "bash"
+commands = ["cmd1"]
+
+[plans]
+repo = "owner/plans-repo"
+""",
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"FOO": "bar"}
+        assert result.post_create_shell == "bash"
+        assert result.post_create_commands == ["cmd1"]
+        assert result.plans_repo == "owner/plans-repo"

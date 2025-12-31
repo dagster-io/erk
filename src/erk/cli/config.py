@@ -56,7 +56,19 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     shell = post.get("shell")
     if shell is not None:
         shell = str(shell)
-    return LoadedConfig(env=env, post_create_commands=commands, post_create_shell=shell)
+
+    # Parse [plans] section
+    plans = data.get("plans", {})
+    plans_repo = plans.get("repo")
+    if plans_repo is not None:
+        plans_repo = str(plans_repo)
+
+    return LoadedConfig(
+        env=env,
+        post_create_commands=commands,
+        post_create_shell=shell,
+        plans_repo=plans_repo,
+    )
 
 
 def detect_legacy_config_locations(
@@ -131,7 +143,7 @@ def load_config(repo_root: Path) -> LoadedConfig:
         return _parse_config_file(config_path)
 
     # No config found
-    return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+    return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None, plans_repo=None)
 
 
 def load_project_config(project_root: Path) -> ProjectConfig:
@@ -199,4 +211,5 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         env=merged_env,
         post_create_commands=merged_commands,
         post_create_shell=merged_shell,
+        plans_repo=repo_config.plans_repo,
     )

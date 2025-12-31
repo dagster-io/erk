@@ -211,8 +211,11 @@ def _run_core_submit(
 ) -> CoreSubmitResult | CoreSubmitError:
     """Run core submit phase (git push + gh pr create)."""
     result: CoreSubmitResult | CoreSubmitError | None = None
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-    for event in execute_core_submit(ctx, cwd, pr_title="WIP", pr_body="", force=force):
+    for event in execute_core_submit(
+        ctx, cwd, pr_title="WIP", pr_body="", force=force, plans_repo=plans_repo
+    ):
         if isinstance(event, ProgressEvent):
             if debug:
                 _render_progress(event)
@@ -289,13 +292,16 @@ def _run_finalize(
     """Run finalize phase and return result."""
     result: FinalizeResult | PostAnalysisError | None = None
 
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
     for event in execute_finalize(
         ctx,
         cwd,
         pr_number=pr_number,
         pr_title=title,
         pr_body=body,
+        pr_body_file=None,
         diff_file=diff_file,
+        plans_repo=plans_repo,
     ):
         if isinstance(event, ProgressEvent):
             if debug:

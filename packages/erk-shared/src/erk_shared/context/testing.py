@@ -132,7 +132,9 @@ def context_for_test(
         repo=repo,
         repo_info=None,
         global_config=None,
-        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
+        local_config=LoadedConfig(
+            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
+        ),
         dry_run=False,
         debug=debug,
     )

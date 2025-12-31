@@ -133,7 +133,9 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         prompt_executor=FakePromptExecutor(),
         cwd=cwd,
         global_config=None,
-        local_config=LoadedConfig(env={}, post_create_commands=[], post_create_shell=None),
+        local_config=LoadedConfig(
+            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
+        ),
         repo=NoRepoSentinel(),
         repo_info=None,
         dry_run=dry_run,
@@ -289,7 +291,9 @@ def context_for_test(
         config_store = FakeConfigStore(config=global_config)
 
     if local_config is None:
-        local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        local_config = LoadedConfig(
+            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
+        )
 
     if repo is None:
         repo = NoRepoSentinel()
@@ -480,21 +484,25 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             # No origin remote configured - repo_info stays None
             pass
 
-    # 7. Create GitHub-related classes (need repo_info)
-    github: GitHub = RealGitHub(time, repo_info)
-    issues: GitHubIssues = RealGitHubIssues()
-    plan_store: PlanStore = GitHubPlanStore(issues, time)
-    plan_list_service: PlanListService = RealPlanListService(github, issues)
-
-    # 8. Load local config (or defaults if no repo)
+    # 7. Load local config (or defaults if no repo)
+    # Loaded early so plans_repo can be used for GitHubIssues
     if isinstance(repo, NoRepoSentinel):
-        local_config = LoadedConfig(env={}, post_create_commands=[], post_create_shell=None)
+        local_config = LoadedConfig(
+            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
+        )
     else:
         # Ensure metadata directories exist (needed for worktrees)
         ensure_erk_metadata_dir(repo)
         # Load config from primary location (.erk/config.toml)
         # Legacy locations are detected by 'erk doctor' only
         local_config = load_config(repo.root)
+
+    # 8. Create GitHub-related classes (need repo_info, local_config)
+    github: GitHub = RealGitHub(time, repo_info)
+    # Use plans_repo for cross-repo plan issue management if configured
+    issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo)
+    plan_store: PlanStore = GitHubPlanStore(issues)
+    plan_list_service: PlanListService = RealPlanListService(github, issues)
 
     # 9. Choose feedback implementation based on mode
     feedback: UserFeedback

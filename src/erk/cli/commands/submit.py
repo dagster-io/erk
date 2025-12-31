@@ -44,6 +44,21 @@ from erk_shared.worker_impl_folder import create_worker_impl_folder
 logger = logging.getLogger(__name__)
 
 
+def _format_issue_ref(issue_number: int, plans_repo: str | None) -> str:
+    """Format issue reference for PR body.
+
+    Args:
+        issue_number: The issue number
+        plans_repo: Target repo in "owner/repo" format, or None for same repo
+
+    Returns:
+        "#N" for same-repo, "owner/repo#N" for cross-repo
+    """
+    if plans_repo is None:
+        return f"#{issue_number}"
+    return f"{plans_repo}#{issue_number}"
+
+
 @contextmanager
 def branch_rollback(ctx: "ErkContext", repo_root: Path, original_branch: str) -> Iterator[None]:
     """Context manager that restores original branch on exception.
@@ -345,17 +360,20 @@ def _create_branch_and_pr(
     user_output(click.style("✓", fg="green") + " Branch pushed to remote")
 
     # Create draft PR
-    # IMPORTANT: "Closes #N" MUST be in the initial body passed to create_pr(),
-    # NOT added via update. GitHub's willCloseTarget API field is set at PR
-    # creation time and is NOT updated when the body is edited afterward.
+    # IMPORTANT: "Closes owner/repo#N" (cross-repo) or "Closes #N" (same-repo)
+    # MUST be in the initial body passed to create_pr(), NOT added via update.
+    # GitHub's willCloseTarget API field is set at PR creation time and is NOT
+    # updated when the body is edited afterward.
     user_output("Creating draft PR...")
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+    issue_ref = _format_issue_ref(issue_number, plans_repo)
     pr_body = (
         f"**Author:** @{submitted_by}\n"
-        f"**Plan:** #{issue_number}\n\n"
+        f"**Plan:** {issue_ref}\n\n"
         f"**Status:** Queued for implementation\n\n"
         f"This PR will be marked ready for review after implementation completes.\n\n"
         f"---\n\n"
-        f"Closes #{issue_number}"
+        f"Closes {issue_ref}"
     )
     pr_title = _strip_plan_markers(issue.title)
     pr_number = ctx.github.create_pr(
@@ -369,7 +387,9 @@ def _create_branch_and_pr(
     user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
     # Update PR body with checkout command footer
-    footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
+    footer = build_pr_body_footer(
+        pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
+    )
     ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
     # Add extraction skip label if this is an extraction plan
@@ -452,16 +472,19 @@ def _submit_single_issue(
             user_output(click.style("✓", fg="green") + " Placeholder commit pushed")
 
             # Now create the PR
-            # IMPORTANT: "Closes #N" MUST be in the initial body passed to create_pr(),
-            # NOT added via update. GitHub's willCloseTarget API field is set at PR
-            # creation time and is NOT updated when the body is edited afterward.
+            # IMPORTANT: "Closes owner/repo#N" (cross-repo) or "Closes #N" (same-repo)
+            # MUST be in the initial body passed to create_pr(), NOT added via update.
+            # GitHub's willCloseTarget API field is set at PR creation time and is NOT
+            # updated when the body is edited afterward.
+            plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+            issue_ref = _format_issue_ref(issue_number, plans_repo)
             pr_body = (
                 f"**Author:** @{submitted_by}\n"
-                f"**Plan:** #{issue_number}\n\n"
+                f"**Plan:** {issue_ref}\n\n"
                 f"**Status:** Queued for implementation\n\n"
                 f"This PR will be marked ready for review after implementation completes.\n\n"
                 f"---\n\n"
-                f"Closes #{issue_number}"
+                f"Closes {issue_ref}"
             )
             pr_title = _strip_plan_markers(issue.title)
             pr_number = ctx.github.create_pr(
@@ -475,7 +498,9 @@ def _submit_single_issue(
             user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
             # Update PR body with checkout command footer
-            footer = build_pr_body_footer(pr_number=pr_number, issue_number=issue_number)
+            footer = build_pr_body_footer(
+                pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
+            )
             ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
             # Add extraction skip label if this is an extraction plan

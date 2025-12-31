@@ -30,7 +30,7 @@ def test_create_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.create_issue(
             Path("/repo"),
             title="Test Issue",
@@ -74,7 +74,7 @@ def test_create_issue_multiple_labels(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.create_issue(
             Path("/repo"),
             title="Title",
@@ -104,7 +104,7 @@ def test_create_issue_no_labels(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.create_issue(Path("/repo"), title="Title", body="Body", labels=[])
 
         cmd = created_commands[0]
@@ -119,7 +119,7 @@ def test_create_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh command failed: not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="not authenticated"):
             issues.create_issue(Path("/repo"), "Title", "Body", ["label"])
@@ -152,7 +152,7 @@ def test_get_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_issue(Path("/repo"), 42)
 
         assert result.number == 42
@@ -189,7 +189,7 @@ def test_get_issue_command_structure(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.get_issue(Path("/repo"), 123)
 
         cmd = created_commands[0]
@@ -206,7 +206,7 @@ def test_get_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.get_issue(Path("/repo"), 999)
@@ -236,7 +236,7 @@ def test_get_issue_null_body(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_issue(Path("/repo"), 42)
 
         assert result.body == ""  # null converted to empty string
@@ -257,7 +257,7 @@ def test_add_comment_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         comment_id = issues.add_comment(Path("/repo"), 42, "This is my comment body")
 
         # Verify return value
@@ -290,7 +290,7 @@ def test_add_comment_multiline_body(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         multiline_body = """First line of comment
 
 Second line after blank line
@@ -311,7 +311,7 @@ def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.add_comment(Path("/repo"), 999, "Comment body")
@@ -331,7 +331,7 @@ def test_get_comment_by_id_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         body = issues.get_comment_by_id(Path("/repo"), 12345678)
 
         assert body == "This is the comment body"
@@ -388,7 +388,7 @@ def test_list_issues_all(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.list_issues(Path("/repo"))
 
         assert len(result) == 2
@@ -413,7 +413,7 @@ def test_list_issues_with_state_filter(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.list_issues(Path("/repo"), state="open")
 
         cmd = created_commands[0]
@@ -439,7 +439,7 @@ def test_list_issues_with_labels_filter(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.list_issues(Path("/repo"), labels=["plan", "erk"])
 
         cmd = created_commands[0]
@@ -465,7 +465,7 @@ def test_list_issues_with_both_filters(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.list_issues(Path("/repo"), labels=["bug"], state="closed")
 
         cmd = created_commands[0]
@@ -491,7 +491,7 @@ def test_list_issues_rest_api_endpoint(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.list_issues(Path("/repo"))
 
         cmd = created_commands[0]
@@ -510,7 +510,7 @@ def test_list_issues_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="not authenticated"):
             issues.list_issues(Path("/repo"))
@@ -528,7 +528,7 @@ def test_list_issues_empty_response(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.list_issues(Path("/repo"))
 
         assert result == []
@@ -561,7 +561,7 @@ def test_list_issues_null_body(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.list_issues(Path("/repo"))
 
         assert len(result) == 1
@@ -599,7 +599,7 @@ def test_list_issues_parses_all_fields(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.list_issues(Path("/repo"))
 
         assert len(result) == 1
@@ -626,7 +626,7 @@ def test_list_issues_with_limit(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.list_issues(Path("/repo"), limit=10)
 
         cmd = created_commands[0]
@@ -652,7 +652,7 @@ def test_get_current_username_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_current_username()
 
         assert result == "octocat"
@@ -670,7 +670,7 @@ def test_get_current_username_not_authenticated(monkeypatch: MonkeyPatch) -> Non
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_current_username()
 
         assert result is None
@@ -688,7 +688,7 @@ def test_get_current_username_strips_whitespace(monkeypatch: MonkeyPatch) -> Non
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_current_username()
 
         assert result == "username-with-spaces"
@@ -713,7 +713,7 @@ def test_update_issue_body_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.update_issue_body(Path("/repo"), 42, "Updated body content")
 
         # Verify command structure
@@ -740,7 +740,7 @@ def test_update_issue_body_multiline(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         multiline_body = """# Heading
 
 Paragraph with **bold** text.
@@ -760,7 +760,7 @@ def test_update_issue_body_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.update_issue_body(Path("/repo"), 999, "New body")
@@ -785,7 +785,7 @@ def test_get_issue_comments_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         assert result == ["First comment", "Second comment", "Third comment"]
@@ -803,7 +803,7 @@ def test_get_issue_comments_empty(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         assert result == []
@@ -816,7 +816,7 @@ def test_get_issue_comments_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.get_issue_comments(Path("/repo"), 999)
@@ -851,7 +851,7 @@ def test_get_issue_comments_multiline_bodies_preserved(monkeypatch: MonkeyPatch)
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         # Should be 3 comments, NOT 8 (which would happen with split("\n"))
@@ -890,7 +890,7 @@ More details across multiple lines.
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         # Should be exactly ONE comment with all content intact
@@ -915,7 +915,7 @@ def test_get_issue_comments_command_uses_json_array_output(monkeypatch: MonkeyPa
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.get_issue_comments(Path("/repo"), 42)
 
         # Verify command structure
@@ -960,7 +960,7 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.ensure_label_exists(
             Path("/repo"),
             label="erk-plan",
@@ -998,7 +998,7 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.ensure_label_exists(
             Path("/repo"),
             label="erk-plan",
@@ -1018,7 +1018,7 @@ def test_ensure_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="not authenticated"):
             issues.ensure_label_exists(Path("/repo"), "label", "desc", "color")
@@ -1043,7 +1043,7 @@ def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.ensure_label_on_issue(Path("/repo"), 42, "erk-plan")
 
         cmd = created_commands[0]
@@ -1062,7 +1062,7 @@ def test_ensure_label_on_issue_command_failure(monkeypatch: MonkeyPatch) -> None
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.ensure_label_on_issue(Path("/repo"), 999, "label")
@@ -1087,7 +1087,7 @@ def test_remove_label_from_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.remove_label_from_issue(Path("/repo"), 42, "bug")
 
         cmd = created_commands[0]
@@ -1106,7 +1106,7 @@ def test_remove_label_from_issue_command_failure(monkeypatch: MonkeyPatch) -> No
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.remove_label_from_issue(Path("/repo"), 999, "label")
@@ -1131,7 +1131,7 @@ def test_close_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.close_issue(Path("/repo"), 42)
 
         cmd = created_commands[0]
@@ -1148,7 +1148,7 @@ def test_close_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.close_issue(Path("/repo"), 999)
@@ -1178,7 +1178,7 @@ def test_get_prs_referencing_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_prs_referencing_issue(Path("/repo"), 42)
 
         assert len(result) == 2
@@ -1202,7 +1202,7 @@ def test_get_prs_referencing_issue_empty(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_prs_referencing_issue(Path("/repo"), 42)
 
         assert result == []
@@ -1220,7 +1220,7 @@ def test_get_prs_referencing_issue_empty_array(monkeypatch: MonkeyPatch) -> None
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_prs_referencing_issue(Path("/repo"), 42)
 
         assert result == []
@@ -1240,7 +1240,7 @@ def test_get_prs_referencing_issue_command_structure(monkeypatch: MonkeyPatch) -
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         issues.get_prs_referencing_issue(Path("/repo"), 123)
 
         cmd = created_commands[0]
@@ -1271,7 +1271,7 @@ def test_get_prs_referencing_issue_handles_null_draft(monkeypatch: MonkeyPatch) 
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
         result = issues.get_prs_referencing_issue(Path("/repo"), 42)
 
         # Both should default to False when is_draft is null/missing
@@ -1287,7 +1287,113 @@ def test_get_prs_referencing_issue_command_failure(monkeypatch: MonkeyPatch) -> 
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues()
+        issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.get_prs_referencing_issue(Path("/repo"), 999)
+
+
+# =============================================================================
+# Cross-repo target_repo tests
+# =============================================================================
+
+
+def test_target_repo_property_returns_configured_value() -> None:
+    """Test target_repo property returns the configured value."""
+    issues = RealGitHubIssues(target_repo="owner/plans-repo")
+    assert issues.target_repo == "owner/plans-repo"
+
+    issues_none = RealGitHubIssues(target_repo=None)
+    assert issues_none.target_repo is None
+
+
+def test_create_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) -> None:
+    """Test create_issue includes -R flag when target_repo is set."""
+    created_commands: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        created_commands.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="https://github.com/owner/plans-repo/issues/42\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        issues = RealGitHubIssues(target_repo="owner/plans-repo")
+        issues.create_issue(
+            Path("/repo"),
+            title="Test Issue",
+            body="Test body",
+            labels=["plan"],
+        )
+
+        cmd = created_commands[0]
+        # Verify -R flag is inserted after 'gh'
+        assert cmd[0] == "gh"
+        assert cmd[1] == "-R"
+        assert cmd[2] == "owner/plans-repo"
+        assert cmd[3] == "issue"
+        assert cmd[4] == "create"
+
+
+def test_get_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) -> None:
+    """Test get_issue includes -R flag when target_repo is set."""
+    created_commands: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        created_commands.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=json.dumps(
+                {
+                    "number": 42,
+                    "title": "Test",
+                    "body": "Body",
+                    "state": "open",
+                    "html_url": "https://github.com/owner/plans-repo/issues/42",
+                    "labels": [],
+                    "assignees": [],
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "updated_at": "2024-01-01T00:00:00Z",
+                    "user": {"login": "testuser"},
+                }
+            ),
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        issues = RealGitHubIssues(target_repo="owner/plans-repo")
+        issues.get_issue(Path("/repo"), 42)
+
+        cmd = created_commands[0]
+        assert cmd[0] == "gh"
+        assert cmd[1] == "-R"
+        assert cmd[2] == "owner/plans-repo"
+        assert cmd[3] == "api"
+
+
+def test_list_issues_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) -> None:
+    """Test list_issues includes -R flag when target_repo is set."""
+    created_commands: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        created_commands.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="[]",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        issues = RealGitHubIssues(target_repo="owner/plans-repo")
+        issues.list_issues(Path("/repo"), labels=["erk-plan"])
+
+        cmd = created_commands[0]
+        assert cmd[0] == "gh"
+        assert cmd[1] == "-R"
+        assert cmd[2] == "owner/plans-repo"
+        assert cmd[3] == "api"

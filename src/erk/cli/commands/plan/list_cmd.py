@@ -32,6 +32,7 @@ from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
     extract_plan_header_local_impl_event,
     extract_plan_header_remote_impl_at,
+    extract_plan_header_source_repo,
     extract_plan_header_worktree_name,
 )
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo
@@ -349,10 +350,17 @@ def _build_plans_table(
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
+    # Check if any plan has source_repo (for cross-repo plans column)
+    has_cross_repo_plans = any(
+        plan.body and extract_plan_header_source_repo(plan.body) for plan in plans
+    )
+
     # Create Rich table with columns
     table = Table(show_header=True, header_style="bold")
     table.add_column("plan", style="cyan", no_wrap=True)
     table.add_column("title", no_wrap=True)
+    if has_cross_repo_plans:
+        table.add_column("impl-repo", no_wrap=True)
     table.add_column("pr", no_wrap=True)
     table.add_column("chks", no_wrap=True)
     table.add_column("lcl-wt", no_wrap=True)
@@ -395,6 +403,7 @@ def _build_plans_table(
             exists_locally = True
 
         # Extract from issue body - worktree may or may not exist locally
+        source_repo: str | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted:
@@ -405,6 +414,8 @@ def _build_plans_table(
             last_local_impl_at = extract_plan_header_local_impl_at(plan.body)
             last_local_impl_event = extract_plan_header_local_impl_event(plan.body)
             last_remote_impl_at = extract_plan_header_remote_impl_at(plan.body)
+            # Extract source_repo for cross-repo plans
+            source_repo = extract_plan_header_source_repo(plan.body)
 
         # Format the worktree cells
         worktree_name_cell = format_worktree_name_cell(worktree_name, exists_locally)
@@ -458,12 +469,20 @@ def _build_plans_table(
         row: list[str] = [
             issue_id,
             title,
-            pr_cell,
-            checks_cell,
-            worktree_name_cell,
-            activity_cell,
-            local_run_cell,
         ]
+        if has_cross_repo_plans:
+            # Show just repo name (owner/repo -> repo) for brevity
+            impl_repo_cell = source_repo.split("/")[-1] if source_repo else "-"
+            row.append(impl_repo_cell)
+        row.extend(
+            [
+                pr_cell,
+                checks_cell,
+                worktree_name_cell,
+                activity_cell,
+                local_run_cell,
+            ]
+        )
         if runs:
             row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)

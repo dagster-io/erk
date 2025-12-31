@@ -30,6 +30,7 @@ class FakeGitHubIssues(GitHubIssues):
         pr_references: dict[int, list[PRReference]] | None = None,
         add_reaction_error: str | None = None,
         get_comments_error: str | None = None,
+        target_repo: str | None = None,
     ) -> None:
         """Create FakeGitHubIssues with pre-configured state.
 
@@ -47,6 +48,9 @@ class FakeGitHubIssues(GitHubIssues):
                 with this message
             get_comments_error: If set, get_issue_comments_with_urls raises
                 RuntimeError with this message
+            target_repo: Target repository in "owner/repo" format for cross-repo
+                operations. If set, indicates this GitHubIssues instance operates
+                on a different repo (e.g., plans repo).
         """
         self._issues = issues or {}
         self._next_issue_number = next_issue_number
@@ -57,6 +61,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._pr_references = pr_references or {}
         self._add_reaction_error = add_reaction_error
         self._get_comments_error = get_comments_error
+        self._target_repo = target_repo
         self._created_issues: list[tuple[str, str, list[str]]] = []
         self._added_comments: list[tuple[int, str, int]] = []  # (issue_number, body, comment_id)
         self._created_labels: list[tuple[str, str, str]] = []
@@ -120,6 +125,11 @@ class FakeGitHubIssues(GitHubIssues):
         Returns list of (issue_number, body) tuples.
         """
         return self._updated_bodies
+
+    @property
+    def target_repo(self) -> str | None:
+        """Read-only access to target repository for test assertions."""
+        return self._target_repo
 
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]

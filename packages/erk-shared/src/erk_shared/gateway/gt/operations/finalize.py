@@ -54,9 +54,10 @@ def execute_finalize(
     cwd: Path,
     pr_number: int,
     pr_title: str,
-    pr_body: str | None = None,
-    pr_body_file: Path | None = None,
-    diff_file: str | None = None,
+    pr_body: str | None,
+    pr_body_file: Path | None,
+    diff_file: str | None,
+    plans_repo: str | None,
 ) -> Generator[ProgressEvent | CompletionEvent[FinalizeResult | PostAnalysisError]]:
     """Execute finalize phase: update PR metadata and clean up.
 
@@ -104,6 +105,7 @@ def execute_finalize(
     metadata_section = build_pr_body_footer(
         pr_number=pr_number,
         issue_number=issue_number,
+        plans_repo=plans_repo,
     )
     # pr_body is guaranteed non-None here (either passed in or read from file, validated above)
     assert pr_body is not None

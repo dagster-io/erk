@@ -64,6 +64,7 @@ def test_build_pr_body_has_summary_section() -> None:
         commit_message="Implement feature X\n\nDetails about the implementation.",
         pr_number=123,
         issue_number=456,
+        plans_repo=None,
     )
 
     assert "## Summary" in body
@@ -77,6 +78,7 @@ def test_build_pr_body_has_closes_reference() -> None:
         commit_message="Fix bug",
         pr_number=123,
         issue_number=789,
+        plans_repo=None,
     )
 
     assert "Closes #789" in body
@@ -88,6 +90,7 @@ def test_build_pr_body_has_checkout_instructions() -> None:
         commit_message="Add feature",
         pr_number=42,
         issue_number=10,
+        plans_repo=None,
     )
 
     assert "erk pr checkout 42" in body
