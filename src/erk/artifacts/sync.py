@@ -93,12 +93,58 @@ def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:
     return count
 
 
+def _sync_skills(source_skills_dir: Path, target_skills_dir: Path) -> int:
+    """Sync bundled skills to project. Only syncs BUNDLED_SKILLS."""
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
+    from erk.artifacts.artifact_health import BUNDLED_SKILLS
+
+    if not source_skills_dir.exists():
+        return 0
+
+    copied = 0
+    for skill_name in BUNDLED_SKILLS:
+        source = source_skills_dir / skill_name
+        if source.exists():
+            target = target_skills_dir / skill_name
+            copied += _copy_directory_contents(source, target)
+    return copied
+
+
+def _sync_agents(source_agents_dir: Path, target_agents_dir: Path) -> int:
+    """Sync bundled agents to project. Only syncs BUNDLED_AGENTS."""
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
+    from erk.artifacts.artifact_health import BUNDLED_AGENTS
+
+    if not source_agents_dir.exists():
+        return 0
+
+    copied = 0
+    for agent_name in BUNDLED_AGENTS:
+        source = source_agents_dir / agent_name
+        if source.exists():
+            target = target_agents_dir / agent_name
+            copied += _copy_directory_contents(source, target)
+    return copied
+
+
+def _sync_commands(source_commands_dir: Path, target_commands_dir: Path) -> int:
+    """Sync bundled commands to project. Only syncs erk namespace."""
+    if not source_commands_dir.exists():
+        return 0
+
+    source = source_commands_dir / "erk"
+    if source.exists():
+        target = target_commands_dir / "erk"
+        return _copy_directory_contents(source, target)
+    return 0
+
+
 def _sync_workflows(bundled_github_dir: Path, target_workflows_dir: Path) -> int:
     """Sync erk-managed workflows to project's .github/workflows/ directory.
 
     Only syncs files listed in BUNDLED_WORKFLOWS registry.
     """
-    # Inline import: orphans.py imports get_bundled_*_dir from this module
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import BUNDLED_WORKFLOWS
 
     source_workflows_dir = bundled_github_dir / "workflows"
@@ -143,11 +189,10 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
 
     total_copied = 0
 
-    # Sync artifact folders (commands, skills, agents)
-    for subdir in ["commands", "skills", "agents"]:
-        source = bundled_claude_dir / subdir
-        target = target_claude_dir / subdir
-        total_copied += _copy_directory_contents(source, target)
+    # Sync filtered artifact folders (only bundled items, not all dev artifacts)
+    total_copied += _sync_skills(bundled_claude_dir / "skills", target_claude_dir / "skills")
+    total_copied += _sync_agents(bundled_claude_dir / "agents", target_claude_dir / "agents")
+    total_copied += _sync_commands(bundled_claude_dir / "commands", target_claude_dir / "commands")
 
     # Sync workflows from .github/
     bundled_github_dir = get_bundled_github_dir()
