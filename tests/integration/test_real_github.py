@@ -89,7 +89,7 @@ def test_get_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_update_pr_base_branch_success(monkeypatch: MonkeyPatch) -> None:
-    """Test updating PR base branch successfully."""
+    """Test updating PR base branch successfully via REST API."""
     called_with = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -105,9 +105,13 @@ def test_update_pr_base_branch_success(monkeypatch: MonkeyPatch) -> None:
         ops = RealGitHub(FakeTime())
         ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
 
-        # Verify command was called correctly
+        # Verify REST API command format
         assert len(called_with) == 1
-        assert called_with[0] == ["gh", "pr", "edit", "123", "--base", "new-base"]
+        cmd = called_with[0]
+        assert cmd[0:4] == ["gh", "api", "--method", "PATCH"]
+        assert "repos/{owner}/{repo}/pulls/123" in cmd[4]
+        assert "-f" in cmd
+        assert "base=new-base" in cmd
 
 
 def test_update_pr_base_branch_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -148,13 +152,16 @@ def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_merge_pr_with_squash() -> None:
-    """Test merge_pr calls gh pr merge with squash strategy."""
+    """Test merge_pr uses REST API with squash merge method."""
     repo_root = Path("/repo")
     pr_number = 123
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify correct command is called
-        assert cmd == ["gh", "pr", "merge", "123", "--squash"]
+        # Verify REST API command format
+        assert cmd[0:4] == ["gh", "api", "--method", "PUT"]
+        assert "repos/{owner}/{repo}/pulls/123/merge" in cmd[4]
+        assert "-f" in cmd
+        assert "merge_method=squash" in cmd
         assert kwargs["cwd"] == repo_root
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
@@ -164,7 +171,7 @@ def test_merge_pr_with_squash() -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="✓ Merged pull request #123\n",
+            stdout='{"merged": true}\n',
             stderr="",
         )
 
@@ -180,19 +187,21 @@ def test_merge_pr_with_squash() -> None:
 
 
 def test_merge_pr_without_squash() -> None:
-    """Test merge_pr can be called without squash strategy."""
+    """Test merge_pr uses REST API without squash merge method."""
     repo_root = Path("/repo")
     pr_number = 456
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify squash flag is NOT included when squash=False
-        assert cmd == ["gh", "pr", "merge", "456"]
-        assert "--squash" not in cmd
+        # Verify REST API command format
+        assert cmd[0:4] == ["gh", "api", "--method", "PUT"]
+        assert "repos/{owner}/{repo}/pulls/456/merge" in cmd[4]
+        # Verify squash merge_method is NOT included when squash=False
+        assert "merge_method=squash" not in cmd
 
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="✓ Merged pull request #456\n",
+            stdout='{"merged": true}\n',
             stderr="",
         )
 
@@ -234,34 +243,28 @@ def test_merge_pr_returns_error_string_on_failure() -> None:
 
 
 def test_create_pr_success() -> None:
-    """Test successful PR creation."""
+    """Test successful PR creation via REST API."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify correct command is called
-        assert cmd == [
-            "gh",
-            "pr",
-            "create",
-            "--head",
-            "feat-test",
-            "--title",
-            "Test PR",
-            "--body",
-            "Test body",
-            "--base",
-            "main",
-        ]
+        # Verify REST API command format
+        assert cmd[0:4] == ["gh", "api", "--method", "POST"]
+        assert "repos/{owner}/{repo}/pulls" in cmd[4]
+        assert "-f" in cmd
+        assert "head=feat-test" in cmd
+        assert "title=Test PR" in cmd
+        assert "body=Test body" in cmd
+        assert "base=main" in cmd
         assert kwargs["cwd"] == repo_root
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
         assert kwargs["check"] is True
 
-        # Return mock PR URL
+        # Return mock PR JSON response
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="https://github.com/owner/repo/pull/123\n",
+            stdout='{"number": 123, "html_url": "https://github.com/owner/repo/pull/123"}\n',
             stderr="",
         )
 
@@ -284,28 +287,25 @@ def test_create_pr_success() -> None:
 
 
 def test_create_pr_without_base() -> None:
-    """Test PR creation without specifying base branch."""
+    """Test PR creation without specifying base branch via REST API."""
     repo_root = Path("/repo")
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify --base flag is NOT included when base=None
-        assert cmd == [
-            "gh",
-            "pr",
-            "create",
-            "--head",
-            "feat-test",
-            "--title",
-            "Test PR",
-            "--body",
-            "Test body",
-        ]
-        assert "--base" not in cmd
+        # Verify REST API command format
+        assert cmd[0:4] == ["gh", "api", "--method", "POST"]
+        assert "repos/{owner}/{repo}/pulls" in cmd[4]
+        assert "head=feat-test" in cmd
+        assert "title=Test PR" in cmd
+        assert "body=Test body" in cmd
+        # Verify base is NOT included when base=None
+        cmd_str = " ".join(cmd)
+        assert "base=" not in cmd_str
 
+        # Return mock PR JSON response
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="https://github.com/owner/repo/pull/456\n",
+            stdout='{"number": 456, "html_url": "https://github.com/owner/repo/pull/456"}\n',
             stderr="",
         )
 
