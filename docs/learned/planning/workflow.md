@@ -56,10 +56,10 @@ Create a plan using Claude's ExitPlanMode tool. This stores the plan in session 
 
 ### 2. Save Plan to GitHub Issue
 
-After exiting Plan Mode, use `/erk:save-plan` to save the plan as a GitHub issue:
+After exiting Plan Mode, use `/erk:plan-save` to save the plan as a GitHub issue:
 
 ```bash
-/erk:save-plan
+/erk:plan-save
 ```
 
 This command saves the plan from the current session as a GitHub issue with the `erk-plan` label. The issue becomes the source of truth.
@@ -91,7 +91,7 @@ The agent reads `.impl/plan.md`, executes each phase, and updates `.impl/progres
 
 ## Plan Save Workflow
 
-When a user saves their plan to GitHub (via `/erk:save-plan`), the workflow should end cleanly without additional prompts.
+When a user saves their plan to GitHub (via `/erk:plan-save`), the workflow should end cleanly without additional prompts.
 
 ### Flow Diagram
 
@@ -109,7 +109,7 @@ When a user saves their plan to GitHub (via `/erk:save-plan`), the workflow shou
          │
          ▼
 ┌─────────────────┐
-│ /erk:save-plan  │
+│ /erk:plan-save  │
 │ - Create issue  │
 │ - Create marker │
 │ - Show success  │
@@ -273,7 +273,7 @@ gh run watch
 
 ### Plan Creation
 
-- `/erk:save-plan` - Save the current session's plan to GitHub as an issue
+- `/erk:plan-save` - Save the current session's plan to GitHub as an issue
 
 ### Implementation (Issue-Based)
 

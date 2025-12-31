@@ -287,7 +287,7 @@ Plan enrichment is integrated into the Plan Mode workflow. When creating a plan:
 1. Enter Plan Mode for your task (Claude will do this automatically for complex tasks)
 2. Answer clarifying questions during planning to add context
 3. Exit Plan Mode when the plan is complete
-4. Run `/erk:save-plan` to save the enriched plan to a GitHub issue
+4. Run `/erk:plan-save` to save the enriched plan to a GitHub issue
 5. Implement: `erk implement <issue-number>`
 
 **Workflow:**
@@ -297,7 +297,7 @@ Plan enrichment is integrated into the Plan Mode workflow. When creating a plan:
 1. Enter Plan Mode (automatic for complex tasks)
 2. Answer clarifying questions during planning
 3. Exit Plan Mode
-4. Run: /erk:save-plan
+4. Run: /erk:plan-save
 5. Implement: erk implement <issue-number>
 ```
 
@@ -335,7 +335,7 @@ Plan enrichment is integrated into the Plan Mode workflow. When creating a plan:
 - **Complex Reasoning**: Rejected synchronous confirmation
 - **Known Pitfalls**: Zero-amount events, storage anti-patterns
 
-**Approach:** Use Plan Mode and thoroughly answer clarifying questions, then `/erk:save-plan`
+**Approach:** Use Plan Mode and thoroughly answer clarifying questions, then `/erk:plan-save`
 
 **Value:** Implementing agent knows WHY async is required, what NOT to do, and edge cases to handle.
 
@@ -439,7 +439,7 @@ Plans describe WHAT to do, not HOW to code it.
 
 - After enrichment, review the Context & Understanding sections
 - Manually add missing discoveries using GitHub issue editing
-- Re-enter Plan Mode with explicit guidance about what to add, then `/erk:save-plan`
+- Re-enter Plan Mode with explicit guidance about what to add, then `/erk:plan-save`
 
 ---
 

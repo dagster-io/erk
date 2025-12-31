@@ -70,7 +70,7 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 Plans can be created through two paths: interactive (via Claude) or CLI (direct).
 
-### Interactive Path: Plan Mode + `/erk:save-plan`
+### Interactive Path: Plan Mode + `/erk:plan-save`
 
 The interactive path uses Claude's plan mode for guided plan creation:
 
@@ -79,7 +79,7 @@ The interactive path uses Claude's plan mode for guided plan creation:
 # 2. Create plan interactively
 # 3. Exit Plan Mode
 # 4. Save to GitHub:
-/erk:save-plan
+/erk:plan-save
 ```
 
 This workflow:
@@ -87,7 +87,7 @@ This workflow:
 1. Claude enters Plan Mode for the task
 2. Plan creation with context extraction
 3. Plan saved to `~/.claude/plans/*.md` on Exit Plan Mode
-4. `/erk:save-plan` creates GitHub Issue with `erk-plan` label
+4. `/erk:plan-save` creates GitHub Issue with `erk-plan` label
 
 ### CLI Path: `erk plan create --file <path>`
 

@@ -49,7 +49,7 @@ def _create_plan_saved_signal(session_id: str, repo_root: Path) -> None:
     signal_dir = get_scratch_dir(session_id, repo_root=repo_root)
     signal_file = signal_dir / "exit-plan-mode-hook.plan-saved.signal"
     signal_file.write_text(
-        "Created by: exit-plan-mode-hook (via /erk:save-plan)\n"
+        "Created by: exit-plan-mode-hook (via /erk:plan-save)\n"
         "Trigger: Plan was successfully saved to GitHub\n"
         "Effect: Next ExitPlanMode call will be BLOCKED (remain in plan mode, session complete)\n"
         "Lifecycle: Deleted after being read by next hook invocation\n",

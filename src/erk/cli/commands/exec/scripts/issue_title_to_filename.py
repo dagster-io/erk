@@ -3,7 +3,7 @@
 Usage:
     erk exec issue-title-to-filename "Plan Title"
 
-Single source of truth for filename transformation for /erk:save-plan.
+Single source of truth for filename transformation for /erk:plan-save.
 
 Output:
     Filename on stdout (e.g., "my-feature-plan.md")

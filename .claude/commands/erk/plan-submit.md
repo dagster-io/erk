@@ -18,7 +18,7 @@ Find the most recent GitHub issue created in this conversation and submit it for
 
 Search the conversation from bottom to top for these patterns (in priority order):
 
-1. **save-plan/save-raw-plan output**: Look for `**Issue:** https://github.com/.../issues/<number>`
+1. **plan-save/save-raw-plan output**: Look for `**Issue:** https://github.com/.../issues/<number>`
 2. **Issue URL**: `https://github.com/<owner>/<repo>/issues/<number>`
 
 Extract the issue number from the most recent match.
@@ -35,5 +35,5 @@ Display the command output to the user. The `erk plan submit` command handles al
 
 ## Error Cases
 
-- **No issue found in conversation**: Report "No GitHub issue found in conversation. Run /erk:save-plan first to create an issue."
+- **No issue found in conversation**: Report "No GitHub issue found in conversation. Run /erk:plan-save first to create an issue."
 - **erk plan submit fails**: Display the error output from the command (erk plan submit validates the issue)

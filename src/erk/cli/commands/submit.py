@@ -235,7 +235,7 @@ def _validate_issue_for_submit(
             click.style("Error: ", fg="red")
             + f"Issue #{issue_number} does not have {ERK_PLAN_LABEL} label\n\n"
             "Cannot submit non-plan issues for automated implementation.\n"
-            "To create a plan, use Plan Mode then /erk:save-plan"
+            "To create a plan, use Plan Mode then /erk:plan-save"
         )
         raise SystemExit(1)
 

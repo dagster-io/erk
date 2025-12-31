@@ -160,7 +160,7 @@ class TestBuildBlockingMessage:
         assert "(Recommended)" in message
         assert "Implement now" in message
         assert "edits code in the current worktree" in message
-        assert "/erk:save-plan" in message
+        assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "exit-plan-mode-hook.implement-now.signal" in message
 

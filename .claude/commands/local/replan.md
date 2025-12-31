@@ -145,7 +145,7 @@ The new plan should include:
 After the user approves the plan in Plan Mode:
 
 1. Exit Plan Mode
-2. Run `/erk:save-plan` to create the new GitHub issue
+2. Run `/erk:plan-save` to create the new GitHub issue
 3. Close the original issue with a comment linking to the new one:
 
 ```bash

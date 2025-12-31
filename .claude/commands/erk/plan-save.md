@@ -2,7 +2,7 @@
 description: Save the current session's plan to GitHub as an issue
 ---
 
-# /erk:save-plan
+# /erk:plan-save
 
 Save the current session's plan to GitHub as an issue with session context.
 

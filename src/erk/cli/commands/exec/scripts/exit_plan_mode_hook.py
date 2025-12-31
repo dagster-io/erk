@@ -26,7 +26,7 @@ Signal Files:
         Lifecycle: Deleted after being read by next hook invocation
 
     exit-plan-mode-hook.plan-saved.signal
-        Created by: /erk:save-plan command
+        Created by: /erk:plan-save command
         Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
         Lifecycle: Deleted after being read by next hook invocation
 
@@ -128,8 +128,8 @@ def build_blocking_message(
         [
             "",
             "If user chooses 'Save the plan':",
-            "  1. Run /erk:save-plan",
-            "  2. STOP - Do NOT call ExitPlanMode. The save-plan command handles everything.",
+            "  1. Run /erk:plan-save",
+            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
             "If user chooses 'Implement now':",
