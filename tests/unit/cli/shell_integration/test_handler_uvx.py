@@ -92,3 +92,18 @@ def test_handler_no_warning_for_help_flags() -> None:
 
     # Should return passthrough=True for help
     assert result.passthrough is True
+
+
+def test_handler_no_warning_for_commands_not_requiring_shell_integration(capsys) -> None:
+    """No warning for shell integration commands that don't require it to work."""
+    # "implement" is in SHELL_INTEGRATION_COMMANDS but not in REQUIRES_SHELL_INTEGRATION
+    with patch("erk.cli.shell_integration.handler.is_running_via_uvx", return_value=True):
+        with patch("erk.cli.shell_integration.handler.subprocess.run") as mock_run:
+            mock_run.return_value.returncode = 0
+            mock_run.return_value.stdout = ""
+
+            _invoke_hidden_command("implement", ())
+
+    captured = capsys.readouterr()
+    # Should NOT contain the uvx warning since implement works without shell integration
+    assert "uvx" not in captured.err.lower()
