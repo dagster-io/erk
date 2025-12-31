@@ -6,6 +6,7 @@ specifically for managing permissions in the repo's .claude/settings.json.
 
 import json
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 # The permission pattern that allows Claude to run erk commands without prompting
@@ -14,6 +15,11 @@ ERK_PERMISSION = "Bash(erk:*)"
 # Hook commands for erk integration
 ERK_USER_PROMPT_HOOK_COMMAND = "uv run scripts/erk-user-prompt-hook.py"
 ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+
+
+@dataclass(frozen=True)
+class NoBackupCreated:
+    """Sentinel indicating no backup was created (file didn't exist)."""
 
 
 def get_repo_claude_settings_path(repo_root: Path) -> Path:
@@ -176,20 +182,38 @@ def read_claude_settings(settings_path: Path) -> dict | None:
     return json.loads(content)
 
 
-def write_claude_settings(settings_path: Path, settings: dict) -> None:
+def write_claude_settings(
+    settings_path: Path, settings: dict
+) -> Path | NoBackupCreated:
     """Write Claude settings to disk.
+
+    Creates a backup of the existing file before writing (if it exists).
 
     Args:
         settings_path: Path to settings.json file
         settings: Settings dict to write
 
+    Returns:
+        Path to backup file if created, NoBackupCreated sentinel otherwise.
+
     Raises:
         PermissionError: If unable to write to file
         OSError: If unable to write to file
     """
+    # Create backup of existing file (if it exists)
+    backup_result: Path | NoBackupCreated
+    if settings_path.exists():
+        backup_path = settings_path.with_suffix(".json.bak")
+        backup_path.write_bytes(settings_path.read_bytes())
+        backup_result = backup_path
+    else:
+        backup_result = NoBackupCreated()
+
     # Ensure parent directory exists
     settings_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Write with pretty formatting to match Claude's style
     content = json.dumps(settings, indent=2)
     settings_path.write_text(content, encoding="utf-8")
+
+    return backup_result

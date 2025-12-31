@@ -7,11 +7,12 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
+    NoBackupCreated,
     add_erk_hooks,
     add_erk_permission,
     get_repo_claude_settings_path,
-    has_erk_permission,
     has_exit_plan_hook,
+    has_erk_permission,
     has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
@@ -233,8 +234,17 @@ def offer_claude_permission_setup(repo_root: Path) -> None:
         user_output("Skipped. No changes made to settings.json")
         return
 
-    write_claude_settings(settings_path, new_settings)
+    backup_result = write_claude_settings(settings_path, new_settings)
     user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
+
+    # If backup was created, inform user and offer to delete
+    if not isinstance(backup_result, NoBackupCreated):
+        user_output(f"\n📁 Backup created: {backup_result}")
+        user_output(f"   To restore: cp {backup_result} {settings_path}")
+
+        if click.confirm("Delete backup?", default=True):
+            backup_result.unlink()
+            user_output(click.style("✓", fg="green") + " Backup deleted")
 
 
 def offer_claude_hook_setup(repo_root: Path) -> None:

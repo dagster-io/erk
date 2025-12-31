@@ -15,6 +15,7 @@ from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_PERMISSION,
     ERK_USER_PROMPT_HOOK_COMMAND,
+    NoBackupCreated,
     add_erk_hooks,
     add_erk_permission,
     get_repo_claude_settings_path,
@@ -663,3 +664,72 @@ def test_add_erk_hooks_preserves_other_settings() -> None:
     assert result["permissions"]["allow"] == ["Bash(git:*)"]
     assert result["statusLine"]["type"] == "command"
     assert result["alwaysThinkingEnabled"] is True
+
+
+# --- Tests for backup file creation ---
+
+
+def test_write_claude_settings_creates_backup(tmp_path: Path) -> None:
+    """Test that write_claude_settings creates backup of existing file."""
+    settings_path = get_repo_claude_settings_path(tmp_path)
+
+    # Create initial settings
+    initial_settings = {"permissions": {"allow": ["Bash(git:*)"]}}
+    write_claude_settings(settings_path, initial_settings)
+
+    # Write new settings (should create backup)
+    new_settings = {"permissions": {"allow": ["Bash(erk:*)"]}}
+    write_claude_settings(settings_path, new_settings)
+
+    # Verify backup exists and contains original content
+    backup_path = settings_path.with_suffix(".json.bak")
+    assert backup_path.exists()
+    backup_content = json.loads(backup_path.read_text(encoding="utf-8"))
+    assert backup_content == initial_settings
+
+    # Verify new settings were written
+    current_content = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert current_content == new_settings
+
+
+def test_write_claude_settings_no_backup_for_new_file(tmp_path: Path) -> None:
+    """Test that write_claude_settings doesn't create backup for new file."""
+    settings_path = get_repo_claude_settings_path(tmp_path)
+
+    # Write to non-existent file
+    settings = {"permissions": {"allow": ["Bash(erk:*)"]}}
+    write_claude_settings(settings_path, settings)
+
+    # Verify no backup was created
+    backup_path = settings_path.with_suffix(".json.bak")
+    assert not backup_path.exists()
+
+
+def test_write_claude_settings_returns_backup_path(tmp_path: Path) -> None:
+    """Test that write_claude_settings returns the backup path when backup is created."""
+    settings_path = get_repo_claude_settings_path(tmp_path)
+
+    # Create initial settings
+    initial_settings = {"permissions": {"allow": ["Bash(git:*)"]}}
+    write_claude_settings(settings_path, initial_settings)
+
+    # Write new settings - should return backup path
+    new_settings = {"permissions": {"allow": ["Bash(erk:*)"]}}
+    result = write_claude_settings(settings_path, new_settings)
+
+    # Verify return value is the backup path
+    assert isinstance(result, Path)
+    assert result == settings_path.with_suffix(".json.bak")
+    assert result.exists()
+
+
+def test_write_claude_settings_returns_no_backup_sentinel(tmp_path: Path) -> None:
+    """Test that write_claude_settings returns NoBackupCreated for new file."""
+    settings_path = get_repo_claude_settings_path(tmp_path)
+
+    # Write to non-existent file - should return sentinel
+    settings = {"permissions": {"allow": ["Bash(erk:*)"]}}
+    result = write_claude_settings(settings_path, settings)
+
+    # Verify return value is the sentinel
+    assert isinstance(result, NoBackupCreated)
