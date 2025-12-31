@@ -63,7 +63,7 @@ packages = ["src/erk"]
 ".claude/skills/learned-docs" = "erk/data/claude/skills/learned-docs"
 ".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
 # Agents: devrun only
-".claude/agents/devrun" = "erk/data/claude/agents/devrun"
+".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 
 [tool.ruff]
 target-version = "py311"
