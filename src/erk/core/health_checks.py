@@ -744,8 +744,7 @@ def check_hook_health(repo_root: Path) -> CheckResult:
 # Bundled artifacts that erk syncs to projects
 BUNDLED_SKILLS = frozenset({
     "dignified-python",
-    "fake-driven-testing",
-    "agent-docs",
+    "learned-docs",
     "erk-diff-analysis",
 })
 BUNDLED_AGENTS = frozenset({"devrun"})
