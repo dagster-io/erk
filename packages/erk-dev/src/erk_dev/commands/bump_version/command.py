@@ -224,7 +224,6 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
         "pyproject.toml",
         "packages/erk-dev/pyproject.toml",
         "packages/erk-shared/pyproject.toml",
-        "packages/erk-kits/pyproject.toml",
     ]:
         path = repo_root / rel_path
         if path.exists():

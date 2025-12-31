@@ -1,4 +1,4 @@
-# Release Runbook
+# Releasing
 
 How to publish a new erk release.
 
@@ -6,6 +6,7 @@ How to publish a new erk release.
 
 - All PRs for the release merged to master
 - CI passing on master
+- On the master branch (or ready to create a release branch from it)
 
 ## Ongoing: Keep Changelog Current
 
@@ -19,7 +20,15 @@ This syncs the Unreleased section with commits since the last update, adding ent
 
 ## Release Steps
 
-### 1. Finalize Changelog and Version
+### 1. Create a Release Branch
+
+```bash
+git checkout -b release-X.Y.Z
+```
+
+Release work happens on a dedicated branch, not directly on master.
+
+### 2. Finalize Changelog and Version
 
 ```bash
 /local:changelog-release
@@ -32,23 +41,41 @@ This command:
 - Moves Unreleased content to a versioned section
 - Strips commit hashes from entries
 - Bumps version in pyproject.toml
-- Creates git tag `vX.Y.Z`
 
-### 2. Create Release PR
+### 3. Squash, Commit, and Tag
+
+Squash all release prep commits into a single release commit:
 
 ```bash
-erk pr submit "Release vX.Y.Z"
+uv sync
+git add -A
+git tag -d vX.Y.Z 2>/dev/null  # Delete premature tag if exists
+git reset --soft master
+git commit -m "Release X.Y.Z"
+erk-dev release-tag
 ```
 
-This creates a PR with the version bump and changelog updates. Merge it to master once CI passes.
+This ensures a clean single commit for the release with the tag pointing to it.
 
-### 3. Publish to PyPI
+### 4. Publish to PyPI
 
 ```bash
 make publish
 ```
 
 This builds and publishes all packages to PyPI in dependency order.
+
+### 5. Merge to Master
+
+After confirming the publish succeeded:
+
+```bash
+git checkout master
+git merge release-X.Y.Z
+git push origin master --tags
+```
+
+Only merge to master after verifying the release works correctly.
 
 ## Version Numbering
 

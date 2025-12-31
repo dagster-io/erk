@@ -20,7 +20,7 @@ Finalizes the Unreleased section and creates a new versioned release.
 2. Determines the next version number
 3. Moves Unreleased content to a new versioned section
 4. Removes commit hashes from entries
-5. Creates a git tag for the release
+5. Bumps version in pyproject.toml
 
 ---
 
@@ -101,20 +101,10 @@ Steps:
 Use the CLI to bump the version:
 
 ```bash
-erk-dev bump-version --version {new_version}
+erk-dev bump-version {new_version}
 ```
 
-### Phase 6: Create Git Tag
-
-After the changes are made, create the version tag:
-
-```bash
-erk-dev release-tag
-```
-
-This creates an annotated tag `v{new_version}`.
-
-### Phase 7: Summary and Next Steps
+### Phase 6: Summary and Next Steps
 
 Report what was done and what's next:
 
@@ -122,12 +112,16 @@ Report what was done and what's next:
 Release {version} prepared:
 - CHANGELOG.md updated with version {version}
 - pyproject.toml bumped to {version}
-- Tag v{version} created
 
 Next steps:
 1. Review the changes: git diff
-2. Commit: git commit -am "Release {version}"
-3. Push with tag: git push && git push --tags
+2. Squash, commit, and tag:
+   uv sync && git add -A
+   git reset --soft master
+   git commit -m "Release {version}"
+   erk-dev release-tag
+3. Publish: make publish
+4. Merge to master after confirming publish works
 ```
 
 ### Output Format
