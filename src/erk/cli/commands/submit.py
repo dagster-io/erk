@@ -81,22 +81,22 @@ def is_issue_extraction_plan(issue_body: str) -> bool:
 
 
 def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
-    """Load workflow config from .erk/workflows/<workflow_name>.toml.
+    """Load workflow config from .erk/config.toml [workflows.<name>] section.
 
     Args:
         repo_root: Repository root path
         workflow_name: Workflow filename (with or without .yml/.yaml extension).
-            May include path components (e.g., "erk/dispatch-erk-queue.yml"),
-            but only the basename is used for config lookup.
+            Only the basename is used for config lookup.
 
     Returns:
         Dict of string key-value pairs for workflow inputs.
-        Returns empty dict if config file doesn't exist.
+        Returns empty dict if config file or section doesn't exist.
+
+    Example:
+        For workflow_name="erk-impl.yml", reads from:
+        .erk/config.toml -> [workflows.erk-impl] section
     """
-    # Extract basename and strip .yml/.yaml extension
-    basename = Path(workflow_name).name
-    config_name = basename.removesuffix(".yml").removesuffix(".yaml")
-    config_path = repo_root / ".erk" / "workflows" / f"{config_name}.toml"
+    config_path = repo_root / ".erk" / "config.toml"
 
     if not config_path.exists():
         return {}
@@ -104,8 +104,16 @@ def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
     with open(config_path, "rb") as f:
         data = tomllib.load(f)
 
+    # Extract basename and strip .yml/.yaml extension
+    basename = Path(workflow_name).name
+    config_name = basename.removesuffix(".yml").removesuffix(".yaml")
+
+    # Get [workflows.<name>] section
+    workflows_section = data.get("workflows", {})
+    workflow_config = workflows_section.get(config_name, {})
+
     # Convert all values to strings (workflow inputs are always strings)
-    return {k: str(v) for k, v in data.items()}
+    return {k: str(v) for k, v in workflow_config.items()}
 
 
 @dataclass(frozen=True)

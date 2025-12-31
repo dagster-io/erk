@@ -1361,23 +1361,19 @@ def test_load_workflow_config_valid_toml(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create workflow config file
-    config_dir = repo_root / ".erk" / "workflows"
+    # Create workflow config in .erk/config.toml
+    config_dir = repo_root / ".erk"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "dispatch-erk-queue.toml"
+    config_file = config_dir / "config.toml"
     config_file.write_text(
-        'kit_names = "erk,gt,devrun"\n'
-        'model_name = "claude-sonnet-4-5"\n'
-        'package_install_script = ""\n',
+        '[workflows.dispatch-erk-queue]\nmodel_name = "claude-sonnet-4-5"\n',
         encoding="utf-8",
     )
 
     result = load_workflow_config(repo_root, "erk/dispatch-erk-queue.yml")
 
     assert result == {
-        "kit_names": "erk,gt,devrun",
         "model_name": "claude-sonnet-4-5",
-        "package_install_script": "",
     }
 
 
@@ -1386,12 +1382,12 @@ def test_load_workflow_config_converts_values_to_strings(tmp_path: Path) -> None
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create workflow config file with non-string values
-    config_dir = repo_root / ".erk" / "workflows"
+    # Create workflow config in .erk/config.toml with non-string values
+    config_dir = repo_root / ".erk"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "my-workflow.toml"
+    config_file = config_dir / "config.toml"
     config_file.write_text(
-        'timeout = 300\nenabled = true\nname = "test"\n',
+        '[workflows.my-workflow]\ntimeout = 300\nenabled = true\nname = "test"\n',
         encoding="utf-8",
     )
 
@@ -1410,10 +1406,10 @@ def test_load_workflow_config_strips_yml_extension(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    config_dir = repo_root / ".erk" / "workflows"
+    config_dir = repo_root / ".erk"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "my-workflow.toml"
-    config_file.write_text('key = "value"\n', encoding="utf-8")
+    config_file = config_dir / "config.toml"
+    config_file.write_text('[workflows.my-workflow]\nkey = "value"\n', encoding="utf-8")
 
     # Pass with .yml extension
     result = load_workflow_config(repo_root, "my-workflow.yml")
@@ -1426,10 +1422,10 @@ def test_load_workflow_config_strips_yaml_extension(tmp_path: Path) -> None:
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    config_dir = repo_root / ".erk" / "workflows"
+    config_dir = repo_root / ".erk"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "my-workflow.toml"
-    config_file.write_text('key = "value"\n', encoding="utf-8")
+    config_file = config_dir / "config.toml"
+    config_file.write_text('[workflows.my-workflow]\nkey = "value"\n', encoding="utf-8")
 
     # Pass with .yaml extension
     result = load_workflow_config(repo_root, "my-workflow.yaml")
@@ -1437,17 +1433,57 @@ def test_load_workflow_config_strips_yaml_extension(tmp_path: Path) -> None:
     assert result == {"key": "value"}
 
 
+def test_load_workflow_config_missing_workflows_section(tmp_path: Path) -> None:
+    """Test load_workflow_config returns empty dict when workflows section missing."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    config_dir = repo_root / ".erk"
+    config_dir.mkdir(parents=True)
+
+    # Create config.toml with other sections but no [workflows]
+    config_file = config_dir / "config.toml"
+    config_file.write_text(
+        '[env]\nSOME_VAR = "value"\n\n[post_create]\nshell = "bash"\n',
+        encoding="utf-8",
+    )
+
+    result = load_workflow_config(repo_root, "erk-impl.yml")
+
+    assert result == {}
+
+
+def test_load_workflow_config_missing_specific_workflow(tmp_path: Path) -> None:
+    """Test load_workflow_config returns empty dict when specific workflow section missing."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    config_dir = repo_root / ".erk"
+    config_dir.mkdir(parents=True)
+
+    # Create config.toml with [workflows] but not [workflows.erk-impl]
+    config_file = config_dir / "config.toml"
+    config_file.write_text(
+        '[workflows.other-workflow]\nsome_key = "some_value"\n',
+        encoding="utf-8",
+    )
+
+    result = load_workflow_config(repo_root, "erk-impl.yml")
+
+    assert result == {}
+
+
 def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     """Test submit includes workflow config inputs when triggering workflow."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
-    # Create workflow config file
-    config_dir = repo_root / ".erk" / "workflows"
+    # Create workflow config in .erk/config.toml
+    config_dir = repo_root / ".erk"
     config_dir.mkdir(parents=True)
-    config_file = config_dir / "erk-impl.toml"
+    config_file = config_dir / "config.toml"
     config_file.write_text(
-        'kit_names = "erk,gt,devrun"\nmodel_name = "claude-sonnet-4-5"\n',
+        '[workflows.erk-impl]\nmodel_name = "claude-sonnet-4-5"\n',
         encoding="utf-8",
     )
 
@@ -1500,8 +1536,7 @@ def test_submit_uses_workflow_config(tmp_path: Path) -> None:
     # Required inputs
     assert inputs["issue_number"] == "123"
     assert inputs["submitted_by"] == "test-user"
-    # Config-based inputs from .erk/workflows/erk-impl.toml
-    assert inputs["kit_names"] == "erk,gt,devrun"
+    # Config-based input from .erk/config.toml
     assert inputs["model_name"] == "claude-sonnet-4-5"
 
 
