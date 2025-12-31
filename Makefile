@@ -124,7 +124,7 @@ clean:
 build: clean
 	uv build --package erk -o dist
 
-# Reinstall erk and dot-agent tools in editable mode
+# Reinstall erk tools in editable mode
 reinstall-erk-tools:
 	uv tool install --force -e .
 

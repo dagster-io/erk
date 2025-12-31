@@ -43,7 +43,7 @@ class TestDetectLegacyConfigLocations:
         assert "repo root" in result[0].description
 
     def test_detects_dot_agent_toml(self, tmp_path: Path) -> None:
-        """Detects dot-agent.toml at repo root as legacy kit config."""
+        """Detects dot-agent.toml at repo root as legacy config."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         (repo_root / "dot-agent.toml").write_text("[kits]", encoding="utf-8")
@@ -52,7 +52,7 @@ class TestDetectLegacyConfigLocations:
 
         assert len(result) == 1
         assert result[0].path == repo_root / "dot-agent.toml"
-        assert "legacy kit config" in result[0].description
+        assert "legacy config" in result[0].description
 
     def test_detects_metadata_dir_config(self, tmp_path: Path) -> None:
         """Detects config.toml in metadata directory."""
