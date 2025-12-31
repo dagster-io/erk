@@ -16,7 +16,7 @@ import click
 
 from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.github.metadata import (
-    create_plan_issue_block,
+    create_plan_block,
     render_erk_issue_event,
 )
 from erk_shared.naming import sanitize_worktree_name
@@ -40,7 +40,7 @@ def post_plan_comment(
     worktree_name = sanitize_worktree_name(plan_title)
 
     # Create metadata block
-    block = create_plan_issue_block(
+    block = create_plan_block(
         issue_number=issue_number,
         worktree_name=worktree_name,
         timestamp=timestamp,
