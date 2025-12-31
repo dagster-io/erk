@@ -463,10 +463,6 @@ def create_plan_block(
     )
 
 
-# Backward compatibility alias
-create_plan_issue_block = create_plan_block
-
-
 def extract_raw_metadata_blocks(text: str) -> list[RawMetadataBlock]:
     """
     Extract raw metadata blocks using HTML comment markers (Phase 1).
