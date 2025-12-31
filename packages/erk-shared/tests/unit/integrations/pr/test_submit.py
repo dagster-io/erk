@@ -31,7 +31,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         # Find the completion event
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -51,7 +51,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -71,7 +71,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -92,7 +92,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         # Find progress events
         progress_events = [e for e in events if isinstance(e, ProgressEvent)]
@@ -167,7 +167,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "New Title", "New Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "New Title", "New Body", force=False, plans_repo=None))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -194,7 +194,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         # Should have committed WIP changes
         assert len(git._commits) == 1
@@ -228,7 +228,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         result = completion[0].result
@@ -252,7 +252,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         progress_events = [e for e in events if isinstance(e, ProgressEvent)]
         # Should have multiple progress events for each step
@@ -285,7 +285,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -311,7 +311,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+        events = list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
         assert len(completion) == 1
@@ -334,4 +334,4 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         with pytest.raises(RuntimeError, match="Network connection failed"):
-            list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False))
+            list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))

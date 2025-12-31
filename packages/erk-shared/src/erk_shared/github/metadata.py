@@ -1103,12 +1103,17 @@ def extract_metadata_value(
 
 
 # =============================================================================
-# Plan Header Schema and Functions (Schema Version 2)
+# Plan Header Schema and Functions (Schema Version 2/3)
 # =============================================================================
 # These support the new plan issue structure where:
 # - Issue body contains only compact metadata (for fast querying)
 # - First comment contains the plan content
 # - last_dispatched_run_id is stored in issue body
+#
+# Schema Version 3 adds:
+# - source_repo: For cross-repo plans, the repo where this plan will be
+#   implemented (e.g., "owner/impl-repo"). When set, the plan issue lives in
+#   a different repo (the plans repo) than where code changes will be made.
 
 
 @dataclass(frozen=True)
@@ -1116,7 +1121,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
     """Schema for plan-header blocks.
 
     Fields:
-        schema_version: Internal version identifier
+        schema_version: Internal version identifier ("2" or "3")
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Set when worktree is created (nullable)
@@ -1131,6 +1136,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         plan_type: Type discriminator - "standard" or "extraction"
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_repo: For cross-repo plans, the repo where implementation happens (v3)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -1154,6 +1160,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "plan_type",
             "source_plan_issues",
             "extraction_session_ids",
+            "source_repo",
         }
 
         # Check required fields exist
@@ -1161,9 +1168,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
         if missing:
             raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
 
-        # Validate schema_version
-        if data["schema_version"] != "2":
-            raise ValueError(f"Invalid schema_version '{data['schema_version']}'. Must be '2'")
+        # Validate schema_version (accept "2" or "3" for backward compatibility)
+        valid_schema_versions = {"2", "3"}
+        if data["schema_version"] not in valid_schema_versions:
+            raise ValueError(
+                f"Invalid schema_version '{data['schema_version']}'. "
+                f"Must be one of: {', '.join(sorted(valid_schema_versions))}"
+            )
 
         # Validate required string fields
         for field in ["created_at", "created_by"]:
@@ -1266,6 +1277,16 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 if len(item) == 0:
                     raise ValueError("extraction_session_ids must not contain empty strings")
 
+        # Validate source_repo field (schema v3) - must be "owner/repo" format if present
+        if "source_repo" in data and data["source_repo"] is not None:
+            if not isinstance(data["source_repo"], str):
+                raise ValueError("source_repo must be a string or null")
+            if len(data["source_repo"]) == 0:
+                raise ValueError("source_repo must not be empty when provided")
+            # Validate owner/repo format
+            if "/" not in data["source_repo"]:
+                raise ValueError("source_repo must be in 'owner/repo' format")
+
         # Validate extraction mixin: when plan_type is "extraction", mixin fields should be present
         plan_type = data.get("plan_type")
         if plan_type == "extraction":
@@ -1303,6 +1324,7 @@ def create_plan_header_block(
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    source_repo: str | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1322,13 +1344,18 @@ def create_plan_header_block(
         plan_type: Optional type discriminator ("standard" or "extraction")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_repo: For cross-repo plans, the repo where implementation happens
 
     Returns:
         MetadataBlock with plan-header schema
     """
     schema = PlanHeaderSchema()
+
+    # Use schema version 3 when source_repo is provided, otherwise 2 for backward compat
+    schema_version = "3" if source_repo is not None else "2"
+
     data: dict[str, Any] = {
-        "schema_version": "2",
+        "schema_version": schema_version,
         "created_at": created_at,
         "created_by": created_by,
         "plan_comment_id": plan_comment_id,
@@ -1355,6 +1382,10 @@ def create_plan_header_block(
     if extraction_session_ids is not None:
         data["extraction_session_ids"] = extraction_session_ids
 
+    # Include source_repo for cross-repo plans (schema v3)
+    if source_repo is not None:
+        data["source_repo"] = source_repo
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1379,8 +1410,9 @@ def format_plan_header_body(
     plan_type: str | None = None,
     source_plan_issues: list[int] | None = None,
     extraction_session_ids: list[str] | None = None,
+    source_repo: str | None = None,
 ) -> str:
-    """Format issue body with only metadata (schema version 2).
+    """Format issue body with only metadata (schema version 2/3).
 
     Creates an issue body containing just the plan-header metadata block.
     This is designed for fast querying - plan content goes in the first comment.
@@ -1401,6 +1433,7 @@ def format_plan_header_body(
         plan_type: Optional type discriminator ("standard" or "extraction")
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
+        source_repo: For cross-repo plans, the repo where implementation happens
 
     Returns:
         Issue body string with metadata block only
@@ -1421,6 +1454,7 @@ def format_plan_header_body(
         plan_type=plan_type,
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
+        source_repo=source_repo,
     )
 
     return render_metadata_block(block)
@@ -1877,6 +1911,22 @@ def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get("last_remote_impl_at")
+
+
+def extract_plan_header_source_repo(issue_body: str) -> str | None:
+    """Extract source_repo from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        source_repo in "owner/repo" format if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("source_repo")
 
 
 # =============================================================================

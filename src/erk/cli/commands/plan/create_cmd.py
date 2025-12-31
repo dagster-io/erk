@@ -73,6 +73,14 @@ def create_plan(
     # Convert extra labels tuple to list
     extra_labels = list(label) if label else None
 
+    # Determine source_repo for cross-repo plans
+    # When plans_repo is configured, plans are stored in a separate repo
+    # and source_repo records where implementation will happen
+    source_repo: str | None = None
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+    if plans_repo is not None and repo.github is not None:
+        source_repo = f"{repo.github.owner}/{repo.github.repo}"
+
     # Use consolidated create_plan_issue for the entire workflow
     result = create_plan_issue(
         github_issues=ctx.issues,
@@ -80,6 +88,7 @@ def create_plan(
         plan_content=content,
         title=title,
         extra_labels=extra_labels,
+        source_repo=source_repo,
     )
 
     if not result.success:

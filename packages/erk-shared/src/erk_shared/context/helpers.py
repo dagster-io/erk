@@ -16,7 +16,7 @@ from pathlib import Path
 
 import click
 
-from erk_shared.context.types import NoRepoSentinel
+from erk_shared.context.types import LoadedConfig, NoRepoSentinel
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -294,3 +294,68 @@ def require_prompt_executor(ctx: click.Context) -> PromptExecutor:
         raise SystemExit(1)
 
     return ctx.obj.prompt_executor
+
+
+def require_local_config(ctx: click.Context) -> LoadedConfig:
+    """Get local config from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        LoadedConfig instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     config = require_local_config(ctx)
+        ...     plans_repo = config.plans_repo
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.local_config
+
+
+def get_repo_identifier(ctx: click.Context) -> str | None:
+    """Get the GitHub repo identifier (owner/repo) from context.
+
+    Convenience method that returns the repo identity in "owner/repo" format,
+    or None if not in a GitHub-connected repository.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        Repo identifier as "owner/repo" string, or None if not available
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     repo_id = get_repo_identifier(ctx)
+        ...     if repo_id:
+        ...         print(f"Working in {repo_id}")
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    repo = ctx.obj.repo
+    if isinstance(repo, NoRepoSentinel):
+        return None
+
+    if repo.github is None:
+        return None
+
+    return f"{repo.github.owner}/{repo.github.repo}"

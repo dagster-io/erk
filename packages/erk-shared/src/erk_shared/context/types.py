@@ -103,3 +103,4 @@ class LoadedConfig:
     env: dict[str, str]
     post_create_commands: list[str]
     post_create_shell: str | None
+    plans_repo: str | None

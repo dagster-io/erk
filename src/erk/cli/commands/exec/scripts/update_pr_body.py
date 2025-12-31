@@ -44,6 +44,7 @@ from typing import Literal
 
 import click
 
+from erk.cli.config import load_config
 from erk_shared.context.helpers import (
     require_git,
     require_github,
@@ -107,6 +108,7 @@ def _build_pr_body(
     issue_number: int,
     run_id: str | None,
     run_url: str | None,
+    plans_repo: str | None,
 ) -> str:
     """Build the full PR body with summary, optional workflow link, and footer.
 
@@ -116,6 +118,7 @@ def _build_pr_body(
         issue_number: Issue number to close on merge
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
+        plans_repo: Target repo in "owner/repo" format for cross-repo plans
 
     Returns:
         Formatted PR body markdown
@@ -127,7 +130,11 @@ def _build_pr_body(
         parts.append(build_remote_execution_note(run_id, run_url))
 
     # Add footer with checkout instructions
-    parts.append(build_pr_body_footer(pr_number=pr_number, issue_number=issue_number))
+    parts.append(
+        build_pr_body_footer(
+            pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
+        )
+    )
 
     return "\n".join(parts)
 
@@ -140,6 +147,7 @@ def _update_pr_body_impl(
     issue_number: int,
     run_id: str | None,
     run_url: str | None,
+    plans_repo: str | None,
 ) -> UpdateSuccess | UpdateError:
     """Implementation of PR body update.
 
@@ -151,6 +159,7 @@ def _update_pr_body_impl(
         issue_number: Issue number to close on merge
         run_id: Optional workflow run ID
         run_url: Optional workflow run URL
+        plans_repo: Target repo in "owner/repo" format for cross-repo plans
 
     Returns:
         UpdateSuccess on success, UpdateError on failure
@@ -210,7 +219,9 @@ def _update_pr_body_impl(
         )
 
     # Build full PR body
-    pr_body = _build_pr_body(result.output, pr_number, issue_number, run_id, run_url)
+    pr_body = _build_pr_body(
+        result.output, pr_number, issue_number, run_id, run_url, plans_repo
+    )
 
     # Update PR body
     try:
@@ -247,7 +258,13 @@ def update_pr_body(
     executor = require_prompt_executor(ctx)
     repo_root = require_repo_root(ctx)
 
-    result = _update_pr_body_impl(git, github, executor, repo_root, issue_number, run_id, run_url)
+    # Load config to get plans_repo
+    config = load_config(repo_root)
+    plans_repo = config.plans_repo
+
+    result = _update_pr_body_impl(
+        git, github, executor, repo_root, issue_number, run_id, run_url, plans_repo
+    )
 
     # Output JSON result
     click.echo(json.dumps(asdict(result), indent=2))

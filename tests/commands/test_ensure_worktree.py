@@ -270,6 +270,7 @@ def test_ensure_worktree_creates_env_file_from_config() -> None:
             env={"MY_VAR": "test_value_{name}"},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -322,6 +323,7 @@ def test_ensure_worktree_skips_env_when_no_template() -> None:
             env={},  # Empty env dict
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -371,6 +373,7 @@ def test_ensure_worktree_runs_post_create_commands() -> None:
             env={},
             post_create_commands=["echo 'Hello World'", "touch test.txt"],
             post_create_shell="bash",
+            plans_repo=None,
         )
 
         repo = RepoContext(

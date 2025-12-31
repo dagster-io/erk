@@ -92,7 +92,7 @@ Or step-by-step:
     )
 
     # Post comment
-    github = RealGitHubIssues()
+    github = RealGitHubIssues(target_repo=None)
     repo_root = Path.cwd()
     github.add_comment(repo_root, issue_number, comment_body)
 
