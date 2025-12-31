@@ -4,6 +4,7 @@ from pathlib import Path
 
 import click
 
+from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -459,6 +460,15 @@ def init_cmd(
     content = render_config_template(presets_dir, effective_preset)
     cfg_path.write_text(content, encoding="utf-8")
     user_output(f"Wrote {cfg_path}")
+
+    # Sync artifacts (skills, commands, agents, workflows)
+    sync_result = sync_artifacts(repo_context.root, force=False)
+    if sync_result.success:
+        user_output(click.style("✓ ", fg="green") + sync_result.message)
+    else:
+        # Non-fatal: warn but continue init
+        user_output(click.style("⚠ ", fg="yellow") + f"Artifact sync failed: {sync_result.message}")
+        user_output("  Run 'erk artifact sync' to retry")
 
     # Skip interactive prompts if requested
     interactive = not no_interactive
