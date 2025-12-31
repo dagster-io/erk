@@ -358,7 +358,9 @@ def test_read_raises_on_invalid_json(tmp_path: Path) -> None:
 
 def test_hook_command_constants() -> None:
     """Test that hook command constants have expected values."""
-    assert ERK_USER_PROMPT_HOOK_COMMAND == "uv run scripts/erk-user-prompt-hook.py"
+    assert ERK_USER_PROMPT_HOOK_COMMAND == (
+        "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
+    )
     assert ERK_EXIT_PLAN_HOOK_COMMAND == (
         "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
     )

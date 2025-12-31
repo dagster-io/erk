@@ -13,7 +13,7 @@ from pathlib import Path
 ERK_PERMISSION = "Bash(erk:*)"
 
 # Hook commands for erk integration
-ERK_USER_PROMPT_HOOK_COMMAND = "uv run scripts/erk-user-prompt-hook.py"
+ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
 ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
 
 

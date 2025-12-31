@@ -1292,7 +1292,9 @@ def test_init_hooks_flag_skips_when_already_configured() -> None:
                         "hooks": [
                             {
                                 "type": "command",
-                                "command": "uv run scripts/erk-user-prompt-hook.py",
+                                "command": (
+                                    "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
+                                ),
                             }
                         ],
                     }
