@@ -77,7 +77,7 @@ For a Python project using a Makefile for CI, create `.erk/post-implement.md`:
 
 Run CI validation after plan implementation using `make ci`.
 
-@.claude/docs/ci-iteration.md
+Load the `ci-iteration` skill for the iterative fix workflow.
 ```
 
 The `@` reference includes your CI iteration documentation, keeping the CI process in one place.

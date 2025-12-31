@@ -2,4 +2,4 @@
 
 Run CI validation after plan implementation using `make fast-ci`.
 
-@.claude/docs/ci-iteration.md
+Load the `ci-iteration` skill for the iterative fix workflow.

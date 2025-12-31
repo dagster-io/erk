@@ -29,7 +29,7 @@ The `make py-fast-ci` target runs these checks in order:
 
 ## Iteration Process
 
-@.claude/docs/ci-iteration.md
+Load the `ci-iteration` skill for the iterative fix workflow.
 
 ## Begin Now
 

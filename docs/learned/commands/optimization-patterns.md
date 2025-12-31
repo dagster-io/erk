@@ -42,11 +42,11 @@ For each phase, follow the guide above.
 
 ### Valid Locations
 
-| Location        | Example                         | Notes                 |
-| --------------- | ------------------------------- | --------------------- |
-| `.claude/docs/` | `@.claude/docs/ci-iteration.md` | Project-specific      |
-| Kit docs        | `@docs/erk/execution-guide.md`  | Relative to kit root  |
-| Relative path   | `@../shared/common.md`          | From command location |
+| Location          | Example                                 | Notes                  |
+| ----------------- | --------------------------------------- | ---------------------- |
+| `.claude/skills/` | `@.claude/skills/ci-iteration/SKILL.md` | Project-specific skill |
+| Kit docs          | `@docs/erk/execution-guide.md`          | Relative to kit root   |
+| Relative path     | `@../shared/common.md`                  | From command location  |
 
 ### Real Example: /fast-ci
 
@@ -61,14 +61,14 @@ description: Run fast CI checks iteratively
 
 Run fast CI checks iteratively (unit tests + pyright).
 
-@.claude/docs/ci-iteration.md
+@.claude/skills/ci-iteration/SKILL.md
 
 ## Implementation
 
 Delegate to devrun agent with: "Run pytest tests/ && pyright"
 ```
 
-**Referenced doc** (`.claude/docs/ci-iteration.md`):
+**Referenced skill** (`ci-iteration` skill):
 
 - Contains detailed iteration workflow (~246 lines)
 - Loaded once per session
