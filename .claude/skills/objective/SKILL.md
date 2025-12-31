@@ -21,16 +21,6 @@ capture lessons learned along the way.
 - Medium: Refactor spanning several plans
 - Large: Long-running strategic direction emitting many plans
 
-## When to Use
-
-Invoke this skill when users:
-
-- Want to create a multi-plan tracking issue
-- Need to coordinate work spanning 2+ PRs
-- Ask about logging progress or lessons across related work
-- Want to understand objectives vs erk-plans
-- Need to spawn erk-plans from an objective's roadmap
-
 ## Objective vs Erk-Plan
 
 | Aspect   | Erk-Plan                         | Objective                           |
@@ -104,55 +94,20 @@ EOF
 
 ### Logging an Action
 
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
 ```bash
 gh issue comment <issue-number> --body "$(cat <<'EOF'
 ## Action: [Brief title]
-
-**Date:** YYYY-MM-DD
-**PR:** #123
-**Phase/Step:** 1.2
-
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Step:** 1A.2
 ### What Was Done
-- [Concrete actions taken]
-
 ### Lessons Learned
-- [Insights for future work]
-
 ### Roadmap Updates
-- Step 1.2: pending → done
 EOF
 )"
 ```
 
-### Updating an Objective
-
-After completing work or hitting a milestone, always do **both** steps:
-
-```bash
-# 1. Post action comment (captures the moment)
-gh issue comment <issue-number> --body "$(cat <<'EOF'
-## Action: [Brief title]
-
-**Date:** YYYY-MM-DD
-**PR:** #123
-**Phase/Step:** 1.2
-
-### What Was Done
-- [Concrete actions]
-
-### Lessons Learned
-- [Insights for future work]
-
-### Roadmap Updates
-- Step 1.2: pending → done
-EOF
-)"
-
-# 2. Update issue body (reflects new state)
-gh issue view <issue-number> --web
-```
-
-Then edit the roadmap table statuses, "Current Focus", and any new design decisions.
+After posting, update the issue body (roadmap statuses, "Current Focus").
 
 ### Spawning an Erk-Plan
 
@@ -174,9 +129,7 @@ erk plan create --title "Implement [step description]" --body "Part of Objective
 
 ### references/
 
-- `format.md` - Complete issue body and comment templates with examples
-- `workflow.md` - Procedures for creating objectives, spawning plans, resuming work
-- `updating.md` - Two-step update workflow (comment + body edit)
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
 - `closing.md` - Closing triggers and procedures
-
-Load references when users need complete templates or detailed workflow guidance.

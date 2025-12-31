@@ -2,6 +2,14 @@
 
 Detailed procedures for creating objectives, spawning plans, and resuming work.
 
+## Contents
+
+- [Creating a New Objective](#creating-a-new-objective)
+- [Spawning Erk-Plans](#spawning-erk-plans)
+- [Resuming Work on an Objective](#resuming-work-on-an-objective)
+- [Structuring for Steelthread Development](#structuring-for-steelthread-development)
+- [Best Practices](#best-practices)
+
 For updating and closing objectives, see:
 
 - [updating.md](updating.md) - Two-step update workflow

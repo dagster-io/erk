@@ -2,6 +2,16 @@
 
 Complete templates and examples for objective issues.
 
+## Contents
+
+- [Issue Body Template](#issue-body-template)
+- [Action Comment Template](#action-comment-template)
+  - [When to Update](#when-to-update)
+  - [What to Update in Issue Body](#what-to-update-in-issue-body)
+- [Example: Steelthread-Structured Objective](#example-steelthread-structured-objective)
+- [Common Patterns](#common-patterns)
+- [Update Examples](#update-examples)
+
 ## Issue Body Template
 
 The issue body represents the **current state** of the objective. Update it as progress is made.
@@ -99,6 +109,31 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 - **Lessons are mandatory** - Even small insights matter
 - **Be concrete** - "Fixed auth flow" not "Made improvements"
 - **Link PRs** - Always reference the PR if applicable
+
+### When to Update
+
+Update after:
+
+- Completing one or more roadmap steps
+- Merging a related PR
+- Hitting a blocker that changes the plan
+- Discovering new work that needs adding to the roadmap
+- Changing direction or design decisions
+
+Do NOT update for:
+
+- Minor progress within a step
+- Work-in-progress status
+- Questions (use PR comments instead)
+
+### What to Update in Issue Body
+
+After posting an action comment, update these sections in the issue body:
+
+- **Roadmap tables** - Change step statuses, add PR links
+- **Current Focus** - Update "Next action" to reflect new state
+- **Design Decisions** - Add any new decisions that emerged
+- **Key Technical Details** - Add reference material discovered
 
 ## Example: Steelthread-Structured Objective
 
@@ -225,6 +260,14 @@ branch state, not just commits.
 ```
 
 ## Common Patterns
+
+### Completing a Phase
+
+When all steps in a phase are done:
+
+1. Mark phase header with ✅ (e.g., "### Phase 1: Git Gateway ✅")
+2. Update "Current Focus" to point to next phase
+3. Consider adding a summary note under the phase
 
 ### Blocking Dependencies
 
