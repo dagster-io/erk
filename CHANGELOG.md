@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of bc6a308b0
+As of b6a2bb40b
 
 ### Major Changes
 
@@ -16,12 +16,23 @@ As of bc6a308b0
 - Migrate to static `erk exec` architecture, eliminating dynamic kit script loading (d82789f66)
 - Merge git kit into erk artifacts with unified `/erk:git-pr-push` command namespace (e224d4279)
 - Merge gt kit into erk artifacts, consolidating Graphite stack management (38de6381e)
+- Delete kit infrastructure entirely, relocating utilities to erk core packages (745a278b5)
+- Add unified artifact distribution system with discovery, sync, and staleness detection (e1d672e1b)
+- Relocate all erk documentation from `.erk/docs/agent` to `docs/learned/` (c090e42d3)
 
 ### Added
 
 - Add "Edit the plan" option to exit plan mode hook (d0ddc2889)
 - Add `-f`/`--force` flag to `erk pr submit` for diverged branches (a8b46b01f)
 - Add `show_hidden_commands` config option to control visibility of deprecated commands (91032b07d)
+- Add hook initialization support to `erk init` command with `--hooks` flag (871bffe52)
+- Add backup file creation when modifying settings.json (79c555d92)
+- Add legacy pattern detection health checks for early dogfooders (d12366166)
+- Add tool version checking to warn when installed erk is outdated (fa5b66ae4)
+- Add automatic `--pull/--no-pull` option to `erk pr land` command (bce4d4bb4)
+- Always show last commit time in branch list by default (6083f3d94)
+- Add `reply-to-discussion-comment` exec command for formatted PR comment replies (74c66c420)
+- Implement LLM-based step extraction for plan implementation folders (55aeb3bda)
 
 ### Changed
 
@@ -33,6 +44,15 @@ As of bc6a308b0
 - Convert devrun from kit to single agent file (8ad2729fc)
 - Remove dignified-python kit - consolidated into vanilla skill (d3f19bc5d)
 - Consolidate dignified-python skill into single version-aware implementation (a058a259f)
+- Rename `gt-graphite` skill to `gt` with simplified directory structure (b6a2bb40b)
+- Streamline devrun agent to use Sonnet model with minimal documentation (80d22f5d6)
+- Standardize erk hook ID to `user-prompt-hook` via `erk exec` command (a3c876561)
+- Rename health check names to kebab-case format (216e2a352)
+- Scrub all kit references from repository (c444de13c)
+- Remove support for standalone docs in `.claude/docs/` directory; use skills instead (753032a9a)
+- Make PR parsing stricter by requiring github.com URLs (31a35a253)
+- Eliminate kit.yaml manifest files, use frontmatter-based artifact discovery (8ab826ceb)
+- Remove `erk kit` CLI commands and simplify artifact management (365c0032f)
 
 ### Fixed
 
@@ -40,6 +60,11 @@ As of bc6a308b0
 - Fix: Validate GitHub PR base branch matches local trunk before landing (3897eb658)
 - Fix AskUserQuestion option formatting in exit plan mode hook (ff62f6ac0)
 - Fix hook subdirectory bug by using shared scratch directory utilities (7da1528fc)
+- Fix shell completion context creation in resilient parsing mode (b95821151)
+- Re-implement branch divergence check for PR submission with pre-flight validation (eca895cf3)
+- Fix LLM step extraction robustness by upgrading to Sonnet model (7c6d8eaca)
+- Fix LLM empty output handling in step extraction with diagnostic logging (94875b0ba)
+- Add issue title to plan save output (edfe76804)
 
 ### Removed
 

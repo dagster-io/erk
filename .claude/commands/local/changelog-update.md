@@ -100,14 +100,76 @@ git show --stat --format="%s%n%n%b" <commit_hash> | head -40
 
 #### Filter Out (do not include)
 
+**Always filter:**
+
 - **Release housekeeping** - version bumps ("Bump version to X"), CHANGELOG finalization, lock file updates for releases
-- CI/CD-only changes (unless they affect users)
+- CI/CD-only changes (.github/workflows/)
 - Documentation-only changes (docs/, .md files in .erk/)
-- Test-only changes
+- Test-only changes (tests/)
+- Internal code conventions (frozen dataclasses, parameter defaults)
+- Local-only commands (`.claude/commands/local/`)
+- Gateway method additions (abc.py + real.py + fake.py pattern)
+- Build tooling (Makefile, pyproject.toml deps)
 - Merge commits with no substantive changes
 - Internal-only refactors that don't affect user-facing behavior
 - Infrastructure/architecture changes invisible to users
 - Vague commit messages like "update", "WIP", "wip"
+
+**Likely internal (verify before including):**
+
+- "Refactor", "Relocate", "Consolidate" - check if user-visible
+- Skill/agent documentation updates - usually internal
+- "Harden", "Strengthen" - usually internal enforcement
+
+#### Internal-Only Patterns (always filter)
+
+**By path:**
+
+- Changes only in `tests/` → internal
+- Changes only in `scripts/` (unless CLI-facing) → internal
+- Changes only to `**/fake*.py` → internal
+- Changes only to `Makefile` → internal
+- Changes only to `.github/workflows/` → internal
+
+**By content:**
+
+- Gateway ABC method additions (`abc.py`, `real.py`, `fake.py`, `dry_run.py`, `printing.py`) → internal
+- Code convention migrations (frozen dataclasses, default params) → internal
+- Import reorganization → internal
+- Hook/skill/command in `.claude/commands/local/` → internal (local-only)
+
+**By commit message:**
+
+- "Refactor X to Y" with no user-visible change → internal
+- "Consolidate", "Relocate", "Migrate" internal modules → internal
+- "Eliminate default parameter values" → internal
+- "Migrate dataclasses to frozen=True" → internal
+
+#### Roll-Up Detection
+
+When multiple commits are part of a larger initiative, group them under a single Major Change entry:
+
+**Detection patterns:**
+
+- Multiple commits mentioning same keyword (e.g., "kit", "artifact", "hook")
+- Commits with sequential PR numbers on same topic
+- Commits that reference same GitHub issue/objective
+
+**Roll-up examples:**
+
+- 5+ commits about "kit" removal → "Eliminate kit infrastructure entirely"
+- 3+ commits about "artifact sync" → "Add unified artifact distribution system"
+- Multiple "objective skill" commits → single entry or filter entirely
+
+**Presentation:**
+
+When roll-up detected, present as:
+
+```
+**Detected Roll-Up:** {n} commits appear related to "{topic}"
+Suggest consolidating into single Major Change: "{proposed description}"
+Commits: {list of hashes}
+```
 
 ### Phase 4: Present Proposal for Review
 
