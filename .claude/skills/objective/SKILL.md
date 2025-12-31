@@ -49,6 +49,9 @@ Invoke this skill when users:
 3. **Lessons as first-class** - Every action comment includes lessons learned
 4. **Clear roadmap** - Status visible at a glance in the body
 5. **Body stays current** - Update body when roadmap status changes
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per sub-phase** - Sub-phases (1A, 1B, 1C) are sized for coherent single PRs
+8. **Always shippable** - System remains functional after each merged PR
 
 ## Quick Reference
 
@@ -70,11 +73,27 @@ gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(c
 
 ## Roadmap
 
-### Phase 1: [Name]
+### Phase 1A: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1.1 | ... | pending | |
+| 1A.1 | [Minimal infrastructure] | pending | |
+| 1A.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 1B: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1B.1 | [Extend to remaining commands] | pending | |
+| 1B.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
 
 ## Current Focus
 

@@ -28,8 +28,10 @@ Do NOT create an objective for:
 
 1. **Define the goal** - What does success look like?
 2. **Identify phases** - Logical groupings of related work
-3. **Break into steps** - Specific tasks within each phase
-4. **Lock design decisions** - Choices that guide implementation
+3. **Structure for steelthread** - Split phases into sub-phases (XA, XB, XC)
+4. **Break into steps** - Specific tasks within each sub-phase
+5. **Add test statements** - Each sub-phase needs "Test: [acceptance criteria]"
+6. **Lock design decisions** - Choices that guide implementation
 
 ```bash
 gh issue create \
@@ -50,11 +52,27 @@ gh issue create \
 
 ## Roadmap
 
-### Phase 1: [Name]
+### Phase 1A: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
 
 | Step | Description | Status | PR |
 |------|-------------|--------|-----|
-| 1.1 | [Task] | pending | |
+| 1A.1 | [Minimal infrastructure] | pending | |
+| 1A.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 1B: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Step | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1B.1 | [Extend to remaining commands] | pending | |
+| 1B.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
 
 ## Current Focus
 
@@ -66,8 +84,8 @@ EOF
 ### Naming Conventions
 
 - Title: `Objective: [Verb] [What]` (e.g., "Objective: Unify Gateway Testing")
-- Phases: `Phase N: [Noun Phrase]` (e.g., "Phase 1: Git Gateway")
-- Steps: `N.M` numbering (e.g., 1.1, 1.2, 2.1)
+- Sub-phases: `Phase NA: [Noun] [Type] (1 PR)` (e.g., "Phase 1A: Git Gateway Steelthread (1 PR)")
+- Steps: `NA.M` numbering (e.g., 1A.1, 1A.2, 1B.1)
 
 ## Spawning Erk-Plans
 
@@ -146,6 +164,47 @@ gh issue view <issue-number> --comments
 3. **Work on the step**
 4. **Post action comment** when done (see [updating.md](updating.md))
 5. **Update body** with new status
+
+## Structuring for Steelthread Development
+
+### The Steelthread Pattern
+
+Each major phase should be split into sub-phases:
+
+1. **XA: Steelthread** - Minimal vertical slice (1 PR)
+   - Just enough infrastructure to prove concept
+   - Wire into ONE command/feature as proof
+   - Includes acceptance test
+
+2. **XB: Complete** - Fill out functionality (1 PR)
+   - Extend to remaining commands
+   - Full test coverage
+   - Handle edge cases
+
+3. **XC: Integration** (if needed) - Wire into rest of system (1 PR)
+   - Backward compatibility
+   - Migration from old approach
+
+### Signs Your Phase Needs Splitting
+
+Split a phase if:
+
+- It has high technical risk (unproven patterns, new integrations, complex logic)
+- Steps mix infrastructure + wiring + commands
+- You can't describe a single acceptance test
+- Multiple independent concerns are bundled
+
+### Naming Convention
+
+- `Phase 1A` not `Phase 1.1` (sub-phases, not sub-steps)
+- Include "(1 PR)" to signal expected scope
+- Name should describe the slice: "Steelthread", "Complete", "Integration"
+
+### Each Sub-Phase Must Have
+
+1. **Test statement** - "Test: [what proves this works]"
+2. **Coherent scope** - All steps relate to same concern
+3. **Shippable state** - System works after merge
 
 ## Best Practices
 

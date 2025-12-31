@@ -24,19 +24,27 @@ Locked decisions that guide all related work:
 
 ## Roadmap
 
-### Phase 1: [Name]
+### Phase 1A: [Name] Steelthread (1 PR)
 
-| Step | Description     | Status  | PR  |
-| ---- | --------------- | ------- | --- |
-| 1.1  | [Specific task] | pending |     |
-| 1.2  | [Specific task] | pending |     |
+Minimal vertical slice proving the concept works.
 
-### Phase 2: [Name]
+| Step | Description              | Status  | PR  |
+| ---- | ------------------------ | ------- | --- |
+| 1A.1 | [Minimal infrastructure] | pending |     |
+| 1A.2 | [Wire into one command]  | pending |     |
 
-| Step | Description     | Status  | PR  |
-| ---- | --------------- | ------- | --- |
-| 2.1  | [Specific task] | pending |     |
-| 2.2  | [Specific task] | pending |     |
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 1B: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Step | Description                    | Status  | PR  |
+| ---- | ------------------------------ | ------- | --- |
+| 1B.1 | [Extend to remaining commands] | pending |     |
+| 1B.2 | [Full test coverage]           | pending |     |
+
+**Test:** [Full acceptance criteria]
 
 ## Key Technical Details
 
@@ -92,7 +100,7 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 - **Be concrete** - "Fixed auth flow" not "Made improvements"
 - **Link PRs** - Always reference the PR if applicable
 
-## Example: Real Objective
+## Example: Steelthread-Structured Objective
 
 ### Issue Body
 
@@ -114,30 +122,46 @@ All gateway ABCs have:
 1. **Fakes over mocks**: Use stateful fake implementations, not mock objects
 2. **Dry-run via DI**: Inject dry-run wrappers instead of boolean flags
 3. **Test in isolation**: Gateway tests don't hit real services
+4. **Steelthread-first**: Each gateway starts with minimal fake, then expands
 
 ## Roadmap
 
-### Phase 1: Git Gateway
+### Phase 1A: Git Gateway Steelthread (1 PR)
 
-| Step | Description                       | Status      | PR   |
-| ---- | --------------------------------- | ----------- | ---- |
-| 1.1  | Create FakeGit with stateful repo | done        | #301 |
-| 1.2  | Add DryRunGit wrapper             | done        | #305 |
-| 1.3  | Document patterns in AGENTS.md    | in-progress |      |
+| Step | Description                                         | Status | PR   |
+| ---- | --------------------------------------------------- | ------ | ---- |
+| 1A.1 | Create FakeGit with just `commit()` and `get_log()` | done   | #301 |
+| 1A.2 | Wire into one test as proof of concept              | done   | #301 |
 
-### Phase 2: GitHub Gateway
+**Test:** One gateway test runs with FakeGit instead of mocking.
 
-| Step | Description                     | Status  | PR  |
-| ---- | ------------------------------- | ------- | --- |
-| 2.1  | Create FakeGitHub with PR state | pending |     |
-| 2.2  | Add DryRunGitHub wrapper        | pending |     |
+### Phase 1B: Complete Git Gateway (1 PR)
 
-### Phase 3: Graphite Gateway
+| Step | Description                                            | Status | PR   |
+| ---- | ------------------------------------------------------ | ------ | ---- |
+| 1B.1 | Add remaining FakeGit methods (branch, checkout, etc.) | done   | #305 |
+| 1B.2 | Add DryRunGit wrapper                                  | done   | #305 |
+| 1B.3 | Migrate all Git tests to use FakeGit                   | done   | #305 |
 
-| Step | Description                | Status  | PR  |
-| ---- | -------------------------- | ------- | --- |
-| 3.1  | Create FakeGraphite        | pending |     |
-| 3.2  | Add DryRunGraphite wrapper | pending |     |
+**Test:** All git gateway tests use FakeGit, no subprocess mocking.
+
+### Phase 2A: GitHub Gateway Steelthread (1 PR)
+
+| Step | Description                               | Status  | PR  |
+| ---- | ----------------------------------------- | ------- | --- |
+| 2A.1 | Create FakeGitHub with just `create_pr()` | pending |     |
+| 2A.2 | Wire into PR submission test              | pending |     |
+
+**Test:** PR creation test uses FakeGitHub.
+
+### Phase 2B: Complete GitHub Gateway (1 PR)
+
+| Step | Description                      | Status  | PR  |
+| ---- | -------------------------------- | ------- | --- |
+| 2B.1 | Add remaining FakeGitHub methods | pending |     |
+| 2B.2 | Add DryRunGitHub wrapper         | pending |     |
+
+**Test:** All GitHub gateway tests use FakeGitHub.
 
 ## Key Technical Details
 
@@ -147,47 +171,47 @@ branch state, not just commits.
 
 ## Current Focus
 
-**Next action:** Complete AGENTS.md documentation for gateway testing patterns
+**Next action:** Create FakeGitHub with minimal `create_pr()` method
 ```
 
 ### Action Comments
 
 ```markdown
-## Action: Created FakeGit with stateful repository
+## Action: Git Gateway Steelthread Complete
 
 **Date:** 2025-01-15
 **PR:** #301
-**Phase/Step:** 1.1
+**Phase/Step:** 1A
 
 ### What Was Done
 
-- Implemented FakeGit class with in-memory state
-- Added commit, branch, checkout operations
-- Created test fixtures for common scenarios
+- Created minimal FakeGit with just commit() and get_log()
+- Wired into one test as proof of concept
+- Validated the fake pattern works
 
 ### Lessons Learned
 
 - Fakes need to track branch state, not just commits
-- Reset method essential for test isolation
-- Consider adding assertion helpers (e.g., `assert_committed(msg)`)
+- Starting minimal reveals what's actually needed
+- One working test proves the pattern before investing more
 
 ### Roadmap Updates
 
-- Step 1.1: pending → done
+- Phase 1A: all steps → done
 ```
 
 ```markdown
-## Action: Added DryRunGit wrapper
+## Action: Completed Git Gateway
 
 **Date:** 2025-01-18
 **PR:** #305
-**Phase/Step:** 1.2
+**Phase/Step:** 1B
 
 ### What Was Done
 
-- Created DryRunGit that logs operations without executing
-- Integrated with existing print_dry_run utility
-- Added tests for all mutation methods
+- Added remaining FakeGit methods (branch, checkout, etc.)
+- Created DryRunGit wrapper
+- Migrated all Git tests to use FakeGit
 
 ### Lessons Learned
 
@@ -197,7 +221,7 @@ branch state, not just commits.
 
 ### Roadmap Updates
 
-- Step 1.2: pending → done
+- Phase 1B: all steps → done
 ```
 
 ## Common Patterns
