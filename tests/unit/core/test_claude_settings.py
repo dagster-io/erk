@@ -20,6 +20,8 @@ from erk.core.claude_settings import (
     get_repo_claude_settings_path,
     has_erk_hooks,
     has_erk_permission,
+    has_exit_plan_hook,
+    has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
 )
@@ -159,6 +161,79 @@ def test_add_erk_permission_is_pure_function() -> None:
 def test_erk_permission_constant_value() -> None:
     """Test that ERK_PERMISSION has the expected value."""
     assert ERK_PERMISSION == "Bash(erk:*)"
+
+
+# --- Tests for standalone hook detection functions ---
+
+
+def test_has_user_prompt_hook_returns_false_for_empty_settings() -> None:
+    """Test has_user_prompt_hook returns False for empty settings."""
+    assert has_user_prompt_hook({}) is False
+
+
+def test_has_user_prompt_hook_returns_true_when_configured() -> None:
+    """Test has_user_prompt_hook returns True when hook is configured."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert has_user_prompt_hook(settings) is True
+
+
+def test_has_user_prompt_hook_returns_false_for_different_command() -> None:
+    """Test has_user_prompt_hook returns False for non-erk hook."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [{"type": "command", "command": "other-command"}],
+                }
+            ]
+        }
+    }
+    assert has_user_prompt_hook(settings) is False
+
+
+def test_has_exit_plan_hook_returns_false_for_empty_settings() -> None:
+    """Test has_exit_plan_hook returns False for empty settings."""
+    assert has_exit_plan_hook({}) is False
+
+
+def test_has_exit_plan_hook_returns_true_when_configured() -> None:
+    """Test has_exit_plan_hook returns True when hook is configured."""
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert has_exit_plan_hook(settings) is True
+
+
+def test_has_exit_plan_hook_returns_false_for_wrong_matcher() -> None:
+    """Test has_exit_plan_hook returns False when matcher is wrong."""
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "Bash",  # Wrong matcher
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert has_exit_plan_hook(settings) is False
 
 
 # --- Integration tests using filesystem ---

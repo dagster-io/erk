@@ -5,6 +5,7 @@ specifically for managing permissions in the repo's .claude/settings.json.
 """
 
 import json
+from collections import defaultdict
 from pathlib import Path
 
 # The permission pattern that allows Claude to run erk commands without prompting
@@ -41,6 +42,43 @@ def has_erk_permission(settings: dict) -> bool:
     return ERK_PERMISSION in allow_list
 
 
+def has_user_prompt_hook(settings: dict) -> bool:
+    """Check if erk UserPromptSubmit hook is configured.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if the erk UserPromptSubmit hook is configured
+    """
+    hooks = settings.get("hooks", {})
+    user_prompt_hooks = hooks.get("UserPromptSubmit", [])
+    for entry in user_prompt_hooks:
+        for hook in entry.get("hooks", []):
+            if hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND:
+                return True
+    return False
+
+
+def has_exit_plan_hook(settings: dict) -> bool:
+    """Check if erk ExitPlanMode hook is configured.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if the erk ExitPlanMode PreToolUse hook is configured
+    """
+    hooks = settings.get("hooks", {})
+    pre_tool_hooks = hooks.get("PreToolUse", [])
+    for entry in pre_tool_hooks:
+        if entry.get("matcher") == "ExitPlanMode":
+            for hook in entry.get("hooks", []):
+                if hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND:
+                    return True
+    return False
+
+
 def has_erk_hooks(settings: dict) -> tuple[bool, bool]:
     """Check if erk hooks are configured in Claude settings.
 
@@ -48,34 +86,9 @@ def has_erk_hooks(settings: dict) -> tuple[bool, bool]:
         settings: Parsed Claude settings dictionary
 
     Returns:
-        Tuple of (has_user_prompt_hook, has_pre_tool_use_hook)
+        Tuple of (has_user_prompt_hook, has_exit_plan_hook)
     """
-    hooks = settings.get("hooks", {})
-
-    # Check UserPromptSubmit for exact command match
-    has_user_prompt = False
-    user_prompt_hooks = hooks.get("UserPromptSubmit", [])
-    for entry in user_prompt_hooks:
-        for hook in entry.get("hooks", []):
-            if hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND:
-                has_user_prompt = True
-                break
-        if has_user_prompt:
-            break
-
-    # Check PreToolUse for exact command match with ExitPlanMode matcher
-    has_pre_tool = False
-    pre_tool_hooks = hooks.get("PreToolUse", [])
-    for entry in pre_tool_hooks:
-        if entry.get("matcher") == "ExitPlanMode":
-            for hook in entry.get("hooks", []):
-                if hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND:
-                    has_pre_tool = True
-                    break
-        if has_pre_tool:
-            break
-
-    return (has_user_prompt, has_pre_tool)
+    return (has_user_prompt_hook(settings), has_exit_plan_hook(settings))
 
 
 def add_erk_hooks(settings: dict) -> dict:
@@ -93,17 +106,14 @@ def add_erk_hooks(settings: dict) -> dict:
     # Deep copy to avoid mutating input
     new_settings = json.loads(json.dumps(settings))
 
-    # Ensure hooks structure exists
-    if "hooks" not in new_settings:
-        new_settings["hooks"] = {}
+    # Use defaultdict for cleaner hook list initialization
+    hooks: defaultdict[str, list] = defaultdict(list, new_settings.get("hooks", {}))
 
     has_user_prompt, has_pre_tool = has_erk_hooks(settings)
 
     # Add UserPromptSubmit hook if missing
     if not has_user_prompt:
-        if "UserPromptSubmit" not in new_settings["hooks"]:
-            new_settings["hooks"]["UserPromptSubmit"] = []
-        new_settings["hooks"]["UserPromptSubmit"].append(
+        hooks["UserPromptSubmit"].append(
             {
                 "matcher": "",
                 "hooks": [
@@ -117,9 +127,7 @@ def add_erk_hooks(settings: dict) -> dict:
 
     # Add PreToolUse hook for ExitPlanMode if missing
     if not has_pre_tool:
-        if "PreToolUse" not in new_settings["hooks"]:
-            new_settings["hooks"]["PreToolUse"] = []
-        new_settings["hooks"]["PreToolUse"].append(
+        hooks["PreToolUse"].append(
             {
                 "matcher": "ExitPlanMode",
                 "hooks": [
@@ -131,6 +139,7 @@ def add_erk_hooks(settings: dict) -> dict:
             }
         )
 
+    new_settings["hooks"] = dict(hooks)
     return new_settings
 
 

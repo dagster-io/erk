@@ -80,6 +80,47 @@ def _add_gitignore_entry_with_prompt(
     return (new_content, True)
 
 
+def _run_gitignore_prompts(repo_root: Path) -> None:
+    """Run interactive prompts for .gitignore entries.
+
+    Offers to add .env, .erk/scratch/, and .impl/ to .gitignore.
+
+    Args:
+        repo_root: Path to the repository root
+    """
+    gitignore_path = repo_root / ".gitignore"
+    if not gitignore_path.exists():
+        return
+
+    gitignore_content = gitignore_path.read_text(encoding="utf-8")
+
+    # Add .env
+    gitignore_content, env_added = _add_gitignore_entry_with_prompt(
+        gitignore_content,
+        ".env",
+        "Add .env to .gitignore?",
+    )
+
+    # Add .erk/scratch/
+    gitignore_content, scratch_added = _add_gitignore_entry_with_prompt(
+        gitignore_content,
+        ".erk/scratch/",
+        "Add .erk/scratch/ to .gitignore (session-specific working files)?",
+    )
+
+    # Add .impl/
+    gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
+        gitignore_content,
+        ".impl/",
+        "Add .impl/ to .gitignore (temporary implementation plans)?",
+    )
+
+    # Write if any entry was modified
+    if env_added or scratch_added or impl_added:
+        gitignore_path.write_text(gitignore_content, encoding="utf-8")
+        user_output(f"Updated {gitignore_path}")
+
+
 def print_shell_setup_instructions(
     shell: str, rc_file: Path, completion_line: str, wrapper_content: str
 ) -> None:
@@ -215,9 +256,11 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
         user_output(f"   {e}")
         return
 
-    # No settings file - create one with hooks
-    if settings is None:
+    # No settings file - will create one
+    creating_new_file = settings is None
+    if creating_new_file:
         settings = {}
+        user_output(f"\nNo .claude/settings.json found. Will create: {settings_path}")
 
     has_user_prompt, has_pre_tool = has_erk_hooks(settings)
     if has_user_prompt and has_pre_tool:
@@ -395,47 +438,16 @@ def init_cmd(
     cfg_path.write_text(content, encoding="utf-8")
     user_output(f"Wrote {cfg_path}")
 
-    # Interactive prompts (skip if --no-interactive)
-    if not no_interactive:
-        # Check for .gitignore and add .env
-        gitignore_path = repo_context.root / ".gitignore"
-        if gitignore_path.exists():
-            gitignore_content = gitignore_path.read_text(encoding="utf-8")
+    # Skip interactive prompts if requested
+    interactive = not no_interactive
 
-            # Add .env
-            gitignore_content, env_added = _add_gitignore_entry_with_prompt(
-                gitignore_content,
-                ".env",
-                "Add .env to .gitignore?",
-            )
-
-            # Add .erk/scratch/
-            gitignore_content, scratch_added = _add_gitignore_entry_with_prompt(
-                gitignore_content,
-                ".erk/scratch/",
-                "Add .erk/scratch/ to .gitignore (session-specific working files)?",
-            )
-
-            # Add .impl/
-            gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
-                gitignore_content,
-                ".impl/",
-                "Add .impl/ to .gitignore (temporary implementation plans)?",
-            )
-
-            # Write if any entry was modified
-            if env_added or scratch_added or impl_added:
-                gitignore_path.write_text(gitignore_content, encoding="utf-8")
-                user_output(f"Updated {gitignore_path}")
-
-        # Offer to add erk permission to repo's Claude Code settings
+    if interactive:
+        _run_gitignore_prompts(repo_context.root)
         offer_claude_permission_setup(repo_context.root)
-
-        # Offer to add erk hooks to repo's Claude Code settings
         offer_claude_hook_setup(repo_context.root)
 
     # On first-time init, offer shell setup if not already completed
-    if first_time_init and not no_interactive:
+    if first_time_init and interactive:
         # Reload global config after creating it
         fresh_config = ctx.config_store.load()
         if not fresh_config.shell_setup_complete:
