@@ -34,6 +34,11 @@ def shell_completion_context(ctx: click.Context) -> Generator[ErkContext]:
     - Click's shell completion protocol expects functions to return empty lists on error
     - This allows tab-completion to fail gracefully without disrupting the user
 
+    Why we create ErkContext if ctx.obj is None:
+    - Click's shell completion runs with resilient_parsing=True
+    - This mode skips command callbacks, so the cli() callback that creates ctx.obj never runs
+    - We must create a fresh ErkContext to provide completion data
+
     Usage:
         with shell_completion_context(ctx) as erk_ctx:
             # ... completion logic
@@ -45,7 +50,16 @@ def shell_completion_context(ctx: click.Context) -> Generator[ErkContext]:
         https://click.palletsprojects.com/en/stable/shell-completion/
     """
     try:
-        yield ctx.find_root().obj
+        root_ctx = ctx.find_root()
+        erk_ctx = root_ctx.obj
+
+        # Click's resilient_parsing mode skips callbacks, so ctx.obj may be None
+        if erk_ctx is None:
+            from erk.core.context import create_context
+
+            erk_ctx = create_context(dry_run=False)
+
+        yield erk_ctx
     except Exception:
         # Suppress exceptions for graceful degradation, but log for debugging
         # Shell completion should never break the user's shell experience

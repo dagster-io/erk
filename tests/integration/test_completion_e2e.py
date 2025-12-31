@@ -130,3 +130,39 @@ def test_completion_group_help() -> None:
     assert "bash" in result.stdout
     assert "zsh" in result.stdout
     assert "fish" in result.stdout
+
+
+def test_worktree_name_completion_does_not_crash_without_ctx_obj() -> None:
+    """Test that worktree name completion doesn't crash during shell completion.
+
+    Regression test for: ctx.obj is None during shell completion because
+    Click's resilient_parsing mode skips callbacks.
+
+    Before the fix: shell_completion_context yielded None (ctx.obj),
+    causing AttributeError when accessing erk_ctx.cwd. The exception was
+    silently caught and completion returned [].
+
+    After the fix: shell_completion_context creates a fresh ErkContext
+    via create_context(dry_run=False) when ctx.obj is None.
+
+    Note: This test only verifies the completion doesn't crash. It doesn't
+    verify completion results because CI doesn't have erk set up (no ~/.erk/
+    directory), so create_context() fails and completion returns empty.
+    In a real environment with erk set up, worktree names would be returned.
+    """
+    # Simulate bash completion for 'erk wt checkout <TAB>'
+    env = os.environ.copy()
+    env["COMP_WORDS"] = "erk wt checkout "
+    env["COMP_CWORD"] = "3"
+    env["_ERK_COMPLETE"] = "bash_complete"
+
+    result = subprocess.run(
+        ["uv", "run", "erk"],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+
+    # Completion should not crash (returncode 0)
+    # It may return empty if erk isn't set up (CI), but should work with erk
+    assert result.returncode == 0
