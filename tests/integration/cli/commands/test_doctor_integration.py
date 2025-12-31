@@ -54,11 +54,9 @@ def test_doctor_passes_user_prompt_hook_check(tmp_path: Path) -> None:
     )
 
     # Assert: UserPromptSubmit hook check should pass
-    # Look for the passing indicator in output
+    # The check message is "UserPromptSubmit hook configured"
     output = result.stdout + result.stderr
-    assert "user-prompt-hook" in output.lower()
-    # The check should pass (indicated by checkmark or 'configured')
-    assert "configured" in output.lower() or "✓" in output or "✔" in output
+    assert "userpromptsubmit hook configured" in output.lower()
 
 
 @pytest.mark.parametrize(
@@ -112,6 +110,6 @@ def test_doctor_fails_user_prompt_hook_check_wrong_command(
     )
 
     # Assert: UserPromptSubmit hook check should fail
+    # The check message is "UserPromptSubmit hook missing unified hook script"
     output = result.stdout + result.stderr
-    # Should indicate missing unified hook or expected command
-    assert "missing" in output.lower() or "expected" in output.lower()
+    assert "userpromptsubmit hook missing" in output.lower()
