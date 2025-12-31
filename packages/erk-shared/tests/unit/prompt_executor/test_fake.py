@@ -1,10 +1,11 @@
-"""Unit tests for RealPromptExecutor retry logic using FakePromptExecutor.
+"""Unit tests for FakePromptExecutor and retry configuration.
 
-These tests verify the retry constants and behavior patterns without
-mocking subprocess. For subprocess integration tests, see:
+Tests:
+- FakePromptExecutor transient_failures behavior (Layer 1: test infrastructure)
+- RETRY_DELAYS constants validation
+
+For RealPromptExecutor subprocess integration tests, see:
 tests/integration/prompt_executor/test_real.py
-
-Layer 4 tests: Business logic tests using fakes.
 """
 
 from erk_shared.prompt_executor.fake import FakePromptExecutor
