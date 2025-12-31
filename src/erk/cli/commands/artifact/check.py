@@ -4,9 +4,9 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.orphans import BUNDLED_AGENTS, BUNDLED_SKILLS, find_orphaned_artifacts
+from erk.artifacts.discovery import discover_artifacts
+from erk.artifacts.orphans import find_orphaned_artifacts
 from erk.artifacts.staleness import check_staleness
-from erk.artifacts.sync import get_bundled_claude_dir
 
 
 def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
@@ -28,28 +28,27 @@ def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
             click.echo(f"     rm .claude/{folder}/{filename}")
 
 
-def _display_bundled_artifacts() -> None:
-    """Display list of bundled artifacts."""
-    bundled_dir = get_bundled_claude_dir()
-    artifacts: list[str] = []
+def _display_installed_artifacts(claude_dir: Path) -> None:
+    """Display list of artifacts actually installed in project's .claude/ directory."""
+    artifacts = discover_artifacts(claude_dir)
 
-    # Collect agents
-    for agent in sorted(BUNDLED_AGENTS):
-        artifacts.append(f"agents/{agent}")
-
-    # Collect commands
-    commands_dir = bundled_dir / "commands" / "erk"
-    if commands_dir.exists():
-        for cmd_file in sorted(commands_dir.iterdir()):
-            if cmd_file.is_file() and cmd_file.suffix == ".md":
-                artifacts.append(f"commands/erk/{cmd_file.name}")
-
-    # Collect skills
-    for skill in sorted(BUNDLED_SKILLS):
-        artifacts.append(f"skills/{skill}")
+    if not artifacts:
+        click.echo("   (no artifacts installed)")
+        return
 
     for artifact in artifacts:
-        click.echo(f"   {artifact}")
+        # Format based on artifact type
+        if artifact.artifact_type == "command":
+            # Commands can be namespaced (local:foo) or top-level (foo)
+            if ":" in artifact.name:
+                namespace, name = artifact.name.split(":", 1)
+                click.echo(f"   commands/{namespace}/{name}.md")
+            else:
+                click.echo(f"   commands/{artifact.name}.md")
+        elif artifact.artifact_type == "skill":
+            click.echo(f"   skills/{artifact.name}")
+        elif artifact.artifact_type == "agent":
+            click.echo(f"   agents/{artifact.name}")
 
 
 @click.command("check")
@@ -67,6 +66,7 @@ def check_cmd() -> None:
       erk artifact check
     """
     project_dir = Path.cwd()
+    claude_dir = project_dir / ".claude"
 
     staleness_result = check_staleness(project_dir)
     orphan_result = find_orphaned_artifacts(project_dir)
@@ -76,7 +76,7 @@ def check_cmd() -> None:
     # Check staleness
     if staleness_result.reason == "erk-repo":
         click.echo(click.style("✓ ", fg="green") + "Development mode (artifacts read from source)")
-        _display_bundled_artifacts()
+        _display_installed_artifacts(claude_dir)
     elif staleness_result.reason == "not-initialized":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts not initialized")
         click.echo(f"   Current erk version: {staleness_result.current_version}")
@@ -93,7 +93,7 @@ def check_cmd() -> None:
             click.style("✓ ", fg="green")
             + f"Artifacts up to date (v{staleness_result.current_version})"
         )
-        _display_bundled_artifacts()
+        _display_installed_artifacts(claude_dir)
 
     # Check for orphans (skip if erk-repo or no-claude-dir)
     if orphan_result.skipped_reason is None:

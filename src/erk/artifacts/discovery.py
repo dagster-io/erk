@@ -41,14 +41,28 @@ def _discover_skills(claude_dir: Path) -> list[InstalledArtifact]:
 def _discover_commands(claude_dir: Path) -> list[InstalledArtifact]:
     """Discover commands in .claude/commands/ directory.
 
-    Commands are organized by namespace.
-    Pattern: commands/<namespace>/<command>.md
+    Commands can be:
+    - Top-level: commands/<command>.md (no namespace)
+    - Namespaced: commands/<namespace>/<command>.md
     """
     commands_dir = claude_dir / "commands"
     if not commands_dir.exists():
         return []
 
     artifacts: list[InstalledArtifact] = []
+
+    # Discover top-level commands (no namespace)
+    for cmd_file in commands_dir.glob("*.md"):
+        artifacts.append(
+            InstalledArtifact(
+                name=cmd_file.stem,
+                artifact_type="command",
+                path=cmd_file,
+                content_hash=_compute_content_hash(cmd_file),
+            )
+        )
+
+    # Discover namespaced commands
     for namespace_dir in commands_dir.iterdir():
         if not namespace_dir.is_dir():
             continue
