@@ -182,9 +182,7 @@ def read_claude_settings(settings_path: Path) -> dict | None:
     return json.loads(content)
 
 
-def write_claude_settings(
-    settings_path: Path, settings: dict
-) -> Path | NoBackupCreated:
+def write_claude_settings(settings_path: Path, settings: dict) -> Path | NoBackupCreated:
     """Write Claude settings to disk.
 
     Creates a backup of the existing file before writing (if it exists).

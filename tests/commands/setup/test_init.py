@@ -1099,8 +1099,8 @@ def test_init_offers_claude_permission_when_missing() -> None:
             global_config=global_config,
         )
 
-        # Accept permission (y), confirm write (y), decline hooks (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\nn\n")
+        # Accept permission (y), confirm write (y), delete backup (y), decline hooks (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Claude settings found" in result.output
