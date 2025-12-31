@@ -18,7 +18,6 @@ from erk.cli.commands.exec.scripts.user_prompt_hook import (
     check_venv,
 )
 
-
 # ============================================================================
 # Pure Logic Tests for check_venv() - NO MOCKING REQUIRED
 # ============================================================================
