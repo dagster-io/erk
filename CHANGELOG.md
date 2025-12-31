@@ -7,7 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of af8fa25c9
+### Release Overview
+
+This release dramatically simplifies ERK's architecture by eliminating the kit system and consolidating artifact management into a single, automated workflow.
+
+#### Kit System Eliminated
+
+The kit system has been completely removed. Previously, users installed and managed "kits" (bundles of skills, commands, and agents) per-project. Now ERK owns its artifacts directly:
+
+- No `erk kit install`, `erk kit sync`, or kit registry commands
+- Artifacts are bundled with ERK itself and synced automatically
+- One less concept to understand, one less thing to manage
+
+#### Unified Artifact Management
+
+ERK now maintains a set of **bundled artifacts** that it syncs to target projects:
+
+- **Skills**: `dignified-python`, `learned-docs`, `erk-diff-analysis`
+- **Commands**: All `/erk:*` namespace commands (`/erk:plan-implement`, `/erk:pr-submit`, etc.)
+- **Agents**: `devrun` (for running pytest/pyright/ruff/make)
+- **Workflows**: `erk-impl.yml` (for remote plan implementation via GitHub Actions)
+- **Hooks**: `user-prompt-hook` and `exit-plan-mode-hook` (session management and plan tracking)
+
+Running `erk init` or `erk artifact sync`:
+
+1. Copies file-based artifacts to `.claude/` and `.github/workflows/`
+2. Adds hook configurations to `.claude/settings.json`
+3. Stamps the version in `.erk/state.toml` for staleness detection
+
+`erk doctor` and `erk artifact check` detect stale, missing, or orphaned artifacts—including missing hook configurations. Projects keep full ownership of `.claude/`; ERK only manages its namespaced artifacts.
+
+#### Repo-Level Constraint
+
+ERK now requires Claude to be launched from the git repository root. This simplifies worktree detection, artifact paths, and context creation. If you previously ran Claude from subdirectories, launch from the repo root instead. This matches how most users already work and provides a stable foundation.
+
+#### Global Install Required (UVX Not Supported)
+
+We explored using `uvx erk` for zero-install usage, but this isn't feasible due to shell integration. Commands like `erk implement`, `erk up`, `erk down`, and `erk wt checkout` change your shell's working directory—something only a shell function can do. This requires a shell wrapper function (installed via `erk init --shell`) that calls a persistent `erk` binary in your PATH.
+
+**The solution is simple**: Install ERK globally with `uv tool install erk`. ERK handles the rest:
+
+- Each repo has a `.erk/required-erk-uv-tool-version` file specifying the required version
+- If your installed version doesn't match, ERK warns you immediately with the fix: `uv tool upgrade erk`
+- One person on the team updates the version file; everyone else follows the prompt
+
+You don't install ERK into each project—just keep your global tool current and artifacts synced. ERK tells you when action is needed.
+
+---
 
 ### Major Changes
 
