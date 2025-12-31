@@ -60,8 +60,7 @@ packages = ["src/erk"]
 ".claude/commands/erk" = "erk/data/claude/commands/erk"
 # Skills: selected skills useful for external projects
 ".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
-".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
-".claude/skills/agent-docs" = "erk/data/claude/skills/agent-docs"
+".claude/skills/learned-docs" = "erk/data/claude/skills/learned-docs"
 ".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
 # Agents: devrun only
 ".claude/agents/devrun" = "erk/data/claude/agents/devrun"
