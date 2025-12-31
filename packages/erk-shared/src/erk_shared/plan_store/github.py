@@ -7,6 +7,7 @@ Schema Version 2:
 """
 
 import sys
+import time
 from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
@@ -65,6 +66,65 @@ class GitHubPlanStore(PlanStore):
         plan_body = self._get_plan_body(repo_root, issue_info)
         return self._convert_to_plan(issue_info, plan_body)
 
+    def _fetch_comment_with_retry(
+        self,
+        repo_root: Path,
+        comment_id: int,
+    ) -> str | None:
+        """Fetch comment by ID with retry logic for transient errors.
+
+        Attempts to fetch the comment with exponential backoff to handle
+        transient GitHub API failures. Falls back gracefully if the comment
+        is permanently missing (deleted, invalid ID).
+
+        Retries up to 2 times (3 total attempts) with delays of 0.5s and 1s.
+
+        Args:
+            repo_root: Repository root directory
+            comment_id: GitHub comment ID to fetch
+
+        Returns:
+            Plan content extracted from comment, or None if fetch fails
+        """
+        max_retries = 2
+        retry_delays = [0.5, 1.0]  # Exponential backoff: 0.5s, 1s
+
+        for attempt in range(max_retries + 1):
+            try:
+                comment_body = self._github_issues.get_comment_by_id(repo_root, comment_id)
+                plan_content = extract_plan_from_comment(comment_body)
+                if attempt > 0:
+                    print(
+                        f"Successfully fetched comment {comment_id} on retry {attempt}",
+                        file=sys.stderr,
+                    )
+                return plan_content
+            except RuntimeError as e:
+                is_last_attempt = attempt == max_retries
+                if is_last_attempt:
+                    # All retries exhausted - log and fall back
+                    print(
+                        f"Warning: Failed to fetch plan comment {comment_id} after "
+                        f"{max_retries + 1} attempts: {e}",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "Falling back to first comment lookup (comment may be deleted)",
+                        file=sys.stderr,
+                    )
+                    return None
+
+                # Retry with backoff
+                delay = retry_delays[attempt] if attempt < len(retry_delays) else retry_delays[-1]
+                print(
+                    f"Warning: Failed to fetch comment {comment_id} (attempt {attempt + 1}): {e}",
+                    file=sys.stderr,
+                )
+                print(f"Retrying in {delay}s...", file=sys.stderr)
+                time.sleep(delay)
+
+        return None
+
     def _get_plan_body(self, repo_root: Path, issue_info: IssueInfo) -> str:
         """Get the plan body from the issue.
 
@@ -78,16 +138,7 @@ class GitHubPlanStore(PlanStore):
         plan_body = None
         plan_comment_id = extract_plan_header_comment_id(issue_info.body)
         if plan_comment_id is not None:
-            try:
-                comment_body = self._github_issues.get_comment_by_id(repo_root, plan_comment_id)
-                plan_body = extract_plan_from_comment(comment_body)
-            except RuntimeError as e:
-                # Comment fetch failed (404, network error, etc.) - fall back to first comment
-                print(
-                    f"Warning: Failed to fetch plan comment {plan_comment_id}: {e}",
-                    file=sys.stderr,
-                )
-                print("Falling back to first comment lookup", file=sys.stderr)
+            plan_body = self._fetch_comment_with_retry(repo_root, plan_comment_id)
 
         if plan_body:
             return plan_body
