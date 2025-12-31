@@ -89,10 +89,15 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
         else:
             badge = click.style(" [local]", fg="yellow")
 
+        # Add location suffix for workflows in default mode
+        location_suffix = ""
+        if artifact.artifact_type == "workflow" and not verbose:
+            location_suffix = click.style(" (github workflows)", dim=True)
+
         if verbose:
             click.echo(f"    {artifact.name}{badge}")
             click.echo(click.style(f"      Path: {artifact.path}", dim=True))
             if artifact.content_hash:
                 click.echo(click.style(f"      Hash: {artifact.content_hash}", dim=True))
         else:
-            click.echo(f"    {artifact.name}{badge}")
+            click.echo(f"    {artifact.name}{badge}{location_suffix}")
