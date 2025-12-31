@@ -55,9 +55,7 @@ def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
     return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
 
 
-def has_issue_closing_reference(
-    body: str, issue_number: int, plans_repo: str | None
-) -> bool:
+def has_issue_closing_reference(body: str, issue_number: int, plans_repo: str | None) -> bool:
     """Check if PR body contains a closing reference for a specific issue.
 
     Checks for patterns like "Closes #123" (same-repo) or "Closes owner/repo#123"

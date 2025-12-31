@@ -328,6 +328,7 @@ def test_create_runs_post_create_commands() -> None:
             env={},
             post_create_commands=["echo hello > test.txt"],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(
@@ -361,6 +362,7 @@ def test_create_sets_env_variables() -> None:
             env={"MY_VAR": "my_value"},
             post_create_commands=[],
             post_create_shell=None,
+            plans_repo=None,
         )
 
         git_ops = FakeGit(

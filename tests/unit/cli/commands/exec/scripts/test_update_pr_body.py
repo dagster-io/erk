@@ -55,6 +55,7 @@ def test_build_pr_body_includes_summary_and_footer() -> None:
         issue_number=456,
         run_id=None,
         run_url=None,
+        plans_repo=None,
     )
 
     assert "## Summary" in body
@@ -71,6 +72,7 @@ def test_build_pr_body_includes_workflow_link_when_provided() -> None:
         issue_number=456,
         run_id="789",
         run_url="https://github.com/owner/repo/actions/runs/789",
+        plans_repo=None,
     )
 
     assert "Remotely executed" in body
@@ -86,6 +88,7 @@ def test_build_pr_body_omits_workflow_link_when_not_provided() -> None:
         issue_number=456,
         run_id=None,
         run_url=None,
+        plans_repo=None,
     )
 
     assert "Remotely executed" not in body
@@ -138,7 +141,14 @@ def test_impl_success(tmp_path: Path) -> None:
     executor = FakePromptExecutor(output="Generated PR summary")
 
     result = _update_pr_body_impl(
-        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+        git,
+        github,
+        executor,
+        tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
     )
 
     assert isinstance(result, UpdateSuccess)
@@ -154,7 +164,14 @@ def test_impl_no_pr_for_branch(tmp_path: Path) -> None:
     executor = FakePromptExecutor()
 
     result = _update_pr_body_impl(
-        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+        git,
+        github,
+        executor,
+        tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
     )
 
     assert isinstance(result, UpdateError)
@@ -202,7 +219,14 @@ def test_impl_empty_diff(tmp_path: Path) -> None:
     executor = FakePromptExecutor()
 
     result = _update_pr_body_impl(
-        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+        git,
+        github,
+        executor,
+        tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
     )
 
     assert isinstance(result, UpdateError)
@@ -250,7 +274,14 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
     executor = FakePromptExecutor(should_fail=True, error="API error")
 
     result = _update_pr_body_impl(
-        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+        git,
+        github,
+        executor,
+        tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
     )
 
     assert isinstance(result, UpdateError)

@@ -46,9 +46,7 @@ def test_build_pr_body_footer_includes_sync_command() -> None:
 
 def test_build_pr_body_footer_cross_repo_issue() -> None:
     """Test footer uses owner/repo#N format for cross-repo plans."""
-    result = build_pr_body_footer(
-        pr_number=100, issue_number=123, plans_repo="owner/plans-repo"
-    )
+    result = build_pr_body_footer(pr_number=100, issue_number=123, plans_repo="owner/plans-repo")
 
     assert "Closes owner/plans-repo#123" in result
     assert "Closes #123" not in result

@@ -1347,18 +1347,20 @@ def test_get_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) ->
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout=json.dumps({
-                "number": 42,
-                "title": "Test",
-                "body": "Body",
-                "state": "open",
-                "html_url": "https://github.com/owner/plans-repo/issues/42",
-                "labels": [],
-                "assignees": [],
-                "created_at": "2024-01-01T00:00:00Z",
-                "updated_at": "2024-01-01T00:00:00Z",
-                "user": {"login": "testuser"},
-            }),
+            stdout=json.dumps(
+                {
+                    "number": 42,
+                    "title": "Test",
+                    "body": "Body",
+                    "state": "open",
+                    "html_url": "https://github.com/owner/plans-repo/issues/42",
+                    "labels": [],
+                    "assignees": [],
+                    "created_at": "2024-01-01T00:00:00Z",
+                    "updated_at": "2024-01-01T00:00:00Z",
+                    "user": {"login": "testuser"},
+                }
+            ),
             stderr="",
         )
 

@@ -153,9 +153,7 @@ def ensure_worktree_for_branch(
     config = (
         ctx.local_config
         if ctx.local_config is not None
-        else LoadedConfig(
-            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-        )
+        else LoadedConfig(env={}, post_create_commands=[], post_create_shell=None, plans_repo=None)
     )
 
     # Generate and ensure unique worktree name

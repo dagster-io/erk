@@ -131,9 +131,7 @@ def _build_pr_body(
 
     # Add footer with checkout instructions
     parts.append(
-        build_pr_body_footer(
-            pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo
-        )
+        build_pr_body_footer(pr_number=pr_number, issue_number=issue_number, plans_repo=plans_repo)
     )
 
     return "\n".join(parts)
@@ -219,9 +217,7 @@ def _update_pr_body_impl(
         )
 
     # Build full PR body
-    pr_body = _build_pr_body(
-        result.output, pr_number, issue_number, run_id, run_url, plans_repo
-    )
+    pr_body = _build_pr_body(result.output, pr_number, issue_number, run_id, run_url, plans_repo)
 
     # Update PR body
     try:

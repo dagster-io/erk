@@ -143,9 +143,7 @@ def load_config(repo_root: Path) -> LoadedConfig:
         return _parse_config_file(config_path)
 
     # No config found
-    return LoadedConfig(
-        env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-    )
+    return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None, plans_repo=None)
 
 
 def load_project_config(project_root: Path) -> ProjectConfig:

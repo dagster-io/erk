@@ -474,13 +474,15 @@ def _build_plans_table(
             # Show just repo name (owner/repo -> repo) for brevity
             impl_repo_cell = source_repo.split("/")[-1] if source_repo else "-"
             row.append(impl_repo_cell)
-        row.extend([
-            pr_cell,
-            checks_cell,
-            worktree_name_cell,
-            activity_cell,
-            local_run_cell,
-        ])
+        row.extend(
+            [
+                pr_cell,
+                checks_cell,
+                worktree_name_cell,
+                activity_cell,
+                local_run_cell,
+            ]
+        )
         if runs:
             row.extend([remote_run_cell, run_id_cell, run_outcome_cell])
         table.add_row(*row)

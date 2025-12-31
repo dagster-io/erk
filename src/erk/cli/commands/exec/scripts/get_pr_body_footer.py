@@ -50,9 +50,7 @@ from erk_shared.github.pr_footer import build_pr_body_footer
 @click.option(
     "--plans-repo", type=str, required=False, help="Target repo in owner/repo format (cross-repo)"
 )
-def get_pr_body_footer(
-    pr_number: int, issue_number: int | None, plans_repo: str | None
-) -> None:
+def get_pr_body_footer(pr_number: int, issue_number: int | None, plans_repo: str | None) -> None:
     """Generate PR body footer with checkout command.
 
     Outputs a markdown footer section that includes the `erk pr checkout` command,
