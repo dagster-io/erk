@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of `c98a03440`
+
 ### Release Overview
 
 This release dramatically simplifies erk's architecture by eliminating the kit system and consolidating artifact management into a single, automated workflow.
@@ -69,6 +71,7 @@ You don't install erk into each project—just keep your global tool current and
 
 ### Added
 
+- Add uvx/`uv tool run` detection with warning and confirmation prompt for shell integration commands (c98a03440)
 - Add missing artifact detection to complement orphan detection for bidirectional artifact health checks (26d86f12a)
 - Add doctor checks for exit-plan-hook and required-version validation (fa8abf494)
 - Add erk-managed indicator badges to artifact list command output (36455b0c6)
