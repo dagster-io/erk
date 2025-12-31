@@ -61,13 +61,15 @@ This command:
 ```
 
 If `success` is false and error indicates missing "As of" marker:
+
 1. Get the current HEAD commit hash via `git rev-parse --short HEAD`
-2. Add the marker line `As of \`{hash}\`` immediately after `## [Unreleased]`
+2. Add the marker line `As of \`{hash}\``immediately after`## [Unreleased]`
 3. Report "Added 'As of' marker to CHANGELOG.md (now as of {hash})" and exit
 
 If `success` is false for other reasons, display the error message and exit.
 
 If `commits` array is empty, the changelog content is current but the marker should still be updated:
+
 1. Update the "As of" line to the current HEAD commit hash
 2. Report "CHANGELOG.md is already up-to-date. Updated marker to {head_commit}." and exit
 
