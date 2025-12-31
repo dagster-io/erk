@@ -10,10 +10,10 @@ from erk.cli.commands.artifact.sync_cmd import sync_cmd
 
 @click.group(name="artifact")
 def artifact_group() -> None:
-    """Manage artifacts in .claude/ directory.
+    """Manage erk-managed artifacts.
 
     Artifacts are Claude Code extensions like skills, commands, agents,
-    and docs that are stored in your project's .claude/ directory.
+    and workflows stored in your project's .claude/ and .github/ directories.
 
     \b
     Commands:

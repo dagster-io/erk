@@ -1,9 +1,10 @@
-"""Discover artifacts installed in a project's .claude/ directory."""
+"""Discover artifacts installed in a project's .claude/ and .github/ directories."""
 
 import hashlib
 from pathlib import Path
 
 from erk.artifacts.models import ArtifactType, InstalledArtifact
+from erk.artifacts.orphans import BUNDLED_WORKFLOWS
 
 
 def _compute_content_hash(path: Path) -> str:
@@ -107,35 +108,71 @@ def _discover_agents(claude_dir: Path) -> list[InstalledArtifact]:
     return artifacts
 
 
-def discover_artifacts(claude_dir: Path) -> list[InstalledArtifact]:
-    """Scan .claude/ directory and return all installed artifacts.
+def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
+    """Discover erk-managed workflows in .github/workflows/ directory.
 
-    Discovers:
-    - skills: skills/<name>/SKILL.md
-    - commands: commands/<namespace>/<name>.md
-    - agents: agents/<name>/<name>.md
+    Only discovers workflows that are in the BUNDLED_WORKFLOWS registry
+    to avoid surfacing user workflows that erk doesn't manage.
+
+    Pattern: .github/workflows/<name>.yml
     """
-    if not claude_dir.exists():
+    if not workflows_dir.exists():
         return []
 
     artifacts: list[InstalledArtifact] = []
-    artifacts.extend(_discover_skills(claude_dir))
-    artifacts.extend(_discover_commands(claude_dir))
-    artifacts.extend(_discover_agents(claude_dir))
+    for workflow_file in workflows_dir.iterdir():
+        if not workflow_file.is_file():
+            continue
+        if workflow_file.suffix not in (".yml", ".yaml"):
+            continue
+        # Only include erk-managed workflows
+        if workflow_file.name not in BUNDLED_WORKFLOWS:
+            continue
+        artifacts.append(
+            InstalledArtifact(
+                name=workflow_file.stem,
+                artifact_type="workflow",
+                path=workflow_file,
+                content_hash=_compute_content_hash(workflow_file),
+            )
+        )
+    return artifacts
+
+
+def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
+    """Scan project directory and return all installed artifacts.
+
+    Discovers:
+    - skills: .claude/skills/<name>/SKILL.md
+    - commands: .claude/commands/<namespace>/<name>.md
+    - agents: .claude/agents/<name>/<name>.md
+    - workflows: .github/workflows/<name>.yml (only erk-managed)
+    """
+    claude_dir = project_dir / ".claude"
+    workflows_dir = project_dir / ".github" / "workflows"
+
+    artifacts: list[InstalledArtifact] = []
+
+    if claude_dir.exists():
+        artifacts.extend(_discover_skills(claude_dir))
+        artifacts.extend(_discover_commands(claude_dir))
+        artifacts.extend(_discover_agents(claude_dir))
+
+    artifacts.extend(_discover_workflows(workflows_dir))
 
     # Sort by type then name for consistent output
     return sorted(artifacts, key=lambda a: (a.artifact_type, a.name))
 
 
 def get_artifact_by_name(
-    claude_dir: Path, name: str, artifact_type: ArtifactType | None
+    project_dir: Path, name: str, artifact_type: ArtifactType | None
 ) -> InstalledArtifact | None:
     """Find a specific artifact by name.
 
     If artifact_type is provided, only search that type.
     Otherwise, search all types and return first match.
     """
-    artifacts = discover_artifacts(claude_dir)
+    artifacts = discover_artifacts(project_dir)
     for artifact in artifacts:
         if artifact.name == name:
             if artifact_type is None or artifact.artifact_type == artifact_type:

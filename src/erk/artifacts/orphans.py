@@ -4,7 +4,7 @@ from pathlib import Path
 
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import OrphanCheckResult
-from erk.artifacts.sync import get_bundled_claude_dir
+from erk.artifacts.sync import get_bundled_claude_dir, get_bundled_github_dir
 
 # Bundled artifacts that erk syncs to projects
 BUNDLED_SKILLS = frozenset(
@@ -15,13 +15,14 @@ BUNDLED_SKILLS = frozenset(
     }
 )
 BUNDLED_AGENTS = frozenset({"devrun"})
+BUNDLED_WORKFLOWS = frozenset({"erk-impl.yml"})
 
 
-def _find_orphaned_artifacts(
+def _find_orphaned_claude_artifacts(
     project_claude_dir: Path,
     bundled_claude_dir: Path,
 ) -> dict[str, list[str]]:
-    """Find files in bundled artifact folders that exist locally but not in package.
+    """Find files in bundled .claude/ folders that exist locally but not in package.
 
     Compares bundled artifact directories with the local project's .claude/ directory
     to find orphaned files that should be removed.
@@ -95,10 +96,48 @@ def _find_orphaned_artifacts(
     return orphans
 
 
+def _find_orphaned_workflows(
+    project_workflows_dir: Path,
+    bundled_workflows_dir: Path,
+) -> dict[str, list[str]]:
+    """Find erk-managed workflow files that exist locally but not in package.
+
+    Only checks files that are in BUNDLED_WORKFLOWS - we don't want to flag
+    user workflows that erk doesn't manage.
+
+    Args:
+        project_workflows_dir: Path to project's .github/workflows/ directory
+        bundled_workflows_dir: Path to bundled .github/workflows/ in erk package
+
+    Returns:
+        Dict mapping ".github/workflows" to list of orphaned workflow filenames
+    """
+    if not project_workflows_dir.exists():
+        return {}
+    if not bundled_workflows_dir.exists():
+        return {}
+
+    orphans: dict[str, list[str]] = {}
+
+    # Only check erk-managed workflow files
+    for workflow_name in BUNDLED_WORKFLOWS:
+        local_workflow = project_workflows_dir / workflow_name
+        bundled_workflow = bundled_workflows_dir / workflow_name
+
+        # If file exists locally but not in bundled, it's orphaned
+        if local_workflow.exists() and not bundled_workflow.exists():
+            folder_key = ".github/workflows"
+            if folder_key not in orphans:
+                orphans[folder_key] = []
+            orphans[folder_key].append(workflow_name)
+
+    return orphans
+
+
 def find_orphaned_artifacts(project_dir: Path) -> OrphanCheckResult:
     """Find orphaned files in erk-managed artifact directories.
 
-    Compares local .claude/ artifacts with bundled package to find files
+    Compares local .claude/ and .github/ artifacts with bundled package to find files
     that exist locally but are not in the current erk package version.
 
     Args:
@@ -129,7 +168,13 @@ def find_orphaned_artifacts(project_dir: Path) -> OrphanCheckResult:
             skipped_reason="no-bundled-dir",
         )
 
-    orphans = _find_orphaned_artifacts(project_claude_dir, bundled_claude_dir)
+    orphans = _find_orphaned_claude_artifacts(project_claude_dir, bundled_claude_dir)
+
+    # Also check for orphaned workflows
+    bundled_github_dir = get_bundled_github_dir()
+    project_workflows_dir = project_dir / ".github" / "workflows"
+    bundled_workflows_dir = bundled_github_dir / "workflows"
+    orphans.update(_find_orphaned_workflows(project_workflows_dir, bundled_workflows_dir))
 
     return OrphanCheckResult(
         orphans=orphans,

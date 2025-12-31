@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-# Type of artifact based on directory structure in .claude/
-ArtifactType = Literal["skill", "command", "agent"]
+# Type of artifact based on directory structure in .claude/ or .github/
+ArtifactType = Literal["skill", "command", "agent", "workflow"]
 
 
 @dataclass(frozen=True)

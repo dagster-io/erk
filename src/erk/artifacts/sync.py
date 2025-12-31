@@ -57,6 +57,26 @@ def get_bundled_claude_dir() -> Path:
     return erk_package_dir / "data" / "claude"
 
 
+@cache
+def get_bundled_github_dir() -> Path:
+    """Get path to bundled .github/ directory in installed erk package.
+
+    For wheel installs: .github/ is bundled as package data at erk/data/github/
+    via pyproject.toml force-include.
+
+    For editable installs: .github/ is at the erk repo root.
+    """
+    erk_package_dir = _get_erk_package_dir()
+
+    if _is_editable_install():
+        # Editable: erk package is at src/erk/, repo root is ../..
+        erk_repo_root = erk_package_dir.parent.parent
+        return erk_repo_root / ".github"
+
+    # Wheel install: data is bundled at erk/data/github/
+    return erk_package_dir / "data" / "github"
+
+
 def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:
     """Copy directory contents recursively, returning count of files copied."""
     if not source_dir.exists():
@@ -73,8 +93,31 @@ def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:
     return count
 
 
+def _sync_workflows(bundled_github_dir: Path, target_workflows_dir: Path) -> int:
+    """Sync erk-managed workflows to project's .github/workflows/ directory.
+
+    Only syncs files listed in BUNDLED_WORKFLOWS registry.
+    """
+    # Inline import: orphans.py imports get_bundled_*_dir from this module
+    from erk.artifacts.orphans import BUNDLED_WORKFLOWS
+
+    source_workflows_dir = bundled_github_dir / "workflows"
+    if not source_workflows_dir.exists():
+        return 0
+
+    count = 0
+    for workflow_name in BUNDLED_WORKFLOWS:
+        source_path = source_workflows_dir / workflow_name
+        if source_path.exists():
+            target_workflows_dir.mkdir(parents=True, exist_ok=True)
+            target_path = target_workflows_dir / workflow_name
+            shutil.copy2(source_path, target_path)
+            count += 1
+    return count
+
+
 def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
-    """Sync artifacts from erk package to project's .claude/ directory.
+    """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
     When running in the erk repo itself, skips sync since artifacts
     are read directly from source.
@@ -87,12 +130,12 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
             message="Skipped: running in erk repo (artifacts read from source)",
         )
 
-    bundled_dir = get_bundled_claude_dir()
-    if not bundled_dir.exists():
+    bundled_claude_dir = get_bundled_claude_dir()
+    if not bundled_claude_dir.exists():
         return SyncResult(
             success=False,
             artifacts_installed=0,
-            message=f"Bundled .claude/ not found at {bundled_dir}",
+            message=f"Bundled .claude/ not found at {bundled_claude_dir}",
         )
 
     target_claude_dir = project_dir / ".claude"
@@ -102,9 +145,15 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
 
     # Sync artifact folders (commands, skills, agents)
     for subdir in ["commands", "skills", "agents"]:
-        source = bundled_dir / subdir
+        source = bundled_claude_dir / subdir
         target = target_claude_dir / subdir
         total_copied += _copy_directory_contents(source, target)
+
+    # Sync workflows from .github/
+    bundled_github_dir = get_bundled_github_dir()
+    if bundled_github_dir.exists():
+        target_workflows_dir = project_dir / ".github" / "workflows"
+        total_copied += _sync_workflows(bundled_github_dir, target_workflows_dir)
 
     # Save state with current version
     save_artifact_state(project_dir, ArtifactState(version=get_current_version()))

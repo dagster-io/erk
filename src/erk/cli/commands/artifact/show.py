@@ -13,7 +13,7 @@ from erk.artifacts.models import ArtifactType
 @click.option(
     "--type",
     "artifact_type",
-    type=click.Choice(["skill", "command", "agent"]),
+    type=click.Choice(["skill", "command", "agent", "workflow"]),
     help="Artifact type (optional, helps disambiguate)",
 )
 def show_cmd(name: str, artifact_type: str | None) -> None:
@@ -33,7 +33,8 @@ def show_cmd(name: str, artifact_type: str | None) -> None:
       # Disambiguate by type
       erk artifact show my-artifact --type skill
     """
-    claude_dir = Path.cwd() / ".claude"
+    project_dir = Path.cwd()
+    claude_dir = project_dir / ".claude"
     if not claude_dir.exists():
         click.echo("No .claude/ directory found in current directory", err=True)
         raise SystemExit(1)
@@ -42,7 +43,7 @@ def show_cmd(name: str, artifact_type: str | None) -> None:
     if artifact_type is not None:
         type_filter = artifact_type  # type: ignore[assignment]
 
-    artifact = get_artifact_by_name(claude_dir, name, type_filter)
+    artifact = get_artifact_by_name(project_dir, name, type_filter)
 
     if artifact is None:
         click.echo(f"Artifact not found: {name}", err=True)

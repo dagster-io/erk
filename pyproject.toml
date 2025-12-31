@@ -64,6 +64,8 @@ packages = ["src/erk"]
 ".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
 # Agents: devrun only
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
+# Workflows: erk-managed GitHub workflows
+".github/workflows/erk-impl.yml" = "erk/data/github/workflows/erk-impl.yml"
 
 [tool.ruff]
 target-version = "py311"

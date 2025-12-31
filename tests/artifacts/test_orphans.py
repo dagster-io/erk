@@ -216,3 +216,100 @@ def test_find_orphaned_artifacts_user_created_folders_not_checked(
     # Should have no orphans - user-created folders are not checked
     assert result.skipped_reason is None
     assert result.orphans == {}
+
+
+def test_find_orphaned_workflows_not_detected_when_bundled_exists(
+    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+) -> None:
+    """Test that workflow orphans are not detected when bundled workflow exists."""
+    # Create a mock bundled .claude/ directory
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_claude.mkdir(parents=True)
+
+    # Create a mock bundled .github/ directory with workflows
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_workflows = bundled_github / "workflows"
+    bundled_workflows.mkdir(parents=True)
+    (bundled_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+
+    # Create project directory with .claude/ and .github/workflows/
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_claude.mkdir(parents=True)
+    project_workflows = project_dir / ".github" / "workflows"
+    project_workflows.mkdir(parents=True)
+    (project_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_claude)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_github_dir", lambda: bundled_github)
+
+    result = find_orphaned_artifacts(project_dir)
+
+    # No orphans - bundled workflow exists
+    assert result.skipped_reason is None
+    assert result.orphans == {}
+
+
+def test_find_orphaned_workflows_detected_when_bundled_missing(
+    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+) -> None:
+    """Test that workflow orphans are detected when bundled workflow is removed."""
+    # Create a mock bundled .claude/ directory
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_claude.mkdir(parents=True)
+
+    # Create a mock bundled .github/ directory WITHOUT erk-impl.yml
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_workflows = bundled_github / "workflows"
+    bundled_workflows.mkdir(parents=True)
+    # No erk-impl.yml in bundled - simulates it being removed from erk
+
+    # Create project directory with .claude/ and .github/workflows/ with orphan
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_claude.mkdir(parents=True)
+    project_workflows = project_dir / ".github" / "workflows"
+    project_workflows.mkdir(parents=True)
+    (project_workflows / "erk-impl.yml").write_text("name: Erk Impl", encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_claude)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_github_dir", lambda: bundled_github)
+
+    result = find_orphaned_artifacts(project_dir)
+
+    # erk-impl.yml is orphaned since it doesn't exist in bundled
+    assert result.skipped_reason is None
+    assert ".github/workflows" in result.orphans
+    assert "erk-impl.yml" in result.orphans[".github/workflows"]
+
+
+def test_find_orphaned_workflows_ignores_user_workflows(
+    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+) -> None:
+    """Test that user-created workflows are not flagged as orphans."""
+    # Create a mock bundled .claude/ directory
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_claude.mkdir(parents=True)
+
+    # Create a mock bundled .github/ directory
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_workflows = bundled_github / "workflows"
+    bundled_workflows.mkdir(parents=True)
+
+    # Create project directory with user workflows
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_claude.mkdir(parents=True)
+    project_workflows = project_dir / ".github" / "workflows"
+    project_workflows.mkdir(parents=True)
+    (project_workflows / "ci.yml").write_text("name: CI", encoding="utf-8")
+    (project_workflows / "deploy.yml").write_text("name: Deploy", encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_claude)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_github_dir", lambda: bundled_github)
+
+    result = find_orphaned_artifacts(project_dir)
+
+    # No orphans - user workflows are not checked
+    assert result.skipped_reason is None
+    assert result.orphans == {}
