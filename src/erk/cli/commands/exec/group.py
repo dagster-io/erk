@@ -16,6 +16,7 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.check_progress import check_progress
+from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.configure_git_user import configure_git_user
 from erk.cli.commands.exec.scripts.create_extraction_branch import (
     create_extraction_branch,
@@ -94,7 +95,6 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
 from erk.cli.commands.exec.scripts.update_dispatch_info import update_dispatch_info
-from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.update_pr_summary import update_pr_summary
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_plan_content import (

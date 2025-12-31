@@ -17,7 +17,7 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     _update_pr_body_impl,
 )
 from erk.cli.commands.exec.scripts.ci_update_pr_body import (
-    ci_update_pr_body as ci_ci_update_pr_body_command,
+    ci_update_pr_body as ci_update_pr_body_command,
 )
 from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
