@@ -1,4 +1,6 @@
-"""Retry utility for GitHub API calls with exponential backoff."""
+"""GitHub API retry utilities with configurable delays and exception handling."""
+
+from __future__ import annotations
 
 import sys
 from collections.abc import Callable
@@ -6,66 +8,105 @@ from typing import TypeVar
 
 from erk_shared.gateway.time.abc import Time
 
-# Retry delays following exponential backoff pattern: [0.5, 1.0] (~1.5s max, 2 retries)
+# Default retry delays for transient error retry (exponential backoff)
 RETRY_DELAYS = [0.5, 1.0]
 
 T = TypeVar("T")
+
+
+class ShouldRetry(Exception):
+    """Raised by callback to signal that operation should be retried.
+
+    This exception is used for control flow in retry logic. The callback
+    function raises this when it encounters a transient error or when
+    polling for eventual consistency and the desired state hasn't been
+    reached yet.
+    """
 
 
 def with_github_retry(
     time: Time,
     operation_name: str,
     fn: Callable[[], T],
+    retry_delays: list[float] | None = None,
 ) -> T:
-    """Execute function with GitHub API retry logic.
+    """Execute function with configurable retry logic.
 
-    Retries RuntimeError exceptions with exponential backoff. This handles
-    transient GitHub API failures (network errors, rate limits, etc.) while
-    allowing permanent failures to surface after exhausting retries.
+    Supports both transient error retry (quick exponential backoff) and
+    eventual consistency polling (longer constant intervals).
+
+    The callback controls retry behavior by raising ShouldRetry exception.
+    Any other exception bubbles up immediately (permanent failure).
 
     Args:
-        time: Time abstraction for sleep operations (enables fast tests)
-        operation_name: Description of operation for logging
-        fn: Function to execute with retries (should be a lambda or callable)
+        time: Time abstraction for sleep operations
+        operation_name: Description for logging
+        fn: Function to execute with retries. Should raise ShouldRetry to retry,
+           or return success value, or raise other exception for permanent failure.
+        retry_delays: Custom delays. Defaults to [0.5, 1.0] for transient errors.
+                     Use [2.0] * 15 for polling (30s total).
 
     Returns:
         Result from successful function call
 
     Raises:
-        RuntimeError: If all retry attempts fail
+        ShouldRetry: If all retry attempts exhausted
+        Any other exception: Permanent failure from callback
 
-    Example:
-        result = with_github_retry(
+    Examples:
+        # Transient error retry (callback handles RuntimeError):
+        def fetch_with_retry():
+            try:
+                return self._api.get_comment_by_id(id)
+            except RuntimeError as e:
+                # Transient error - retry
+                raise ShouldRetry(f"API error: {e}") from e
+
+        comment = with_github_retry(self._time, "fetch comment", fetch_with_retry)
+
+        # Polling for eventual consistency (callback raises ShouldRetry when not ready):
+        def poll_for_run():
+            try:
+                runs = self._fetch_runs()
+                run = self._find_matching_run(runs, branch)
+                if run:
+                    return run
+                # Not found yet - keep polling
+                raise ShouldRetry("Run not found yet")
+            except (RuntimeError, FileNotFoundError) as e:
+                # Transient API error - retry
+                raise ShouldRetry(f"API error: {e}") from e
+
+        run = with_github_retry(
             self._time,
-            "fetch comment",
-            lambda: self._api.get_comment_by_id(comment_id)
+            "poll for workflow run",
+            poll_for_run,
+            retry_delays=[2.0] * 15  # 30s total
         )
     """
-    for attempt in range(len(RETRY_DELAYS) + 1):
+    delays = retry_delays if retry_delays is not None else RETRY_DELAYS
+
+    for attempt in range(len(delays) + 1):
         try:
             result = fn()
             if attempt > 0:
-                print(
-                    f"Successfully completed {operation_name} on retry {attempt}",
-                    file=sys.stderr,
-                )
+                print(f"Success on retry {attempt}: {operation_name}", file=sys.stderr)
             return result
-        except RuntimeError as e:
-            is_last_attempt = attempt == len(RETRY_DELAYS)
+        except ShouldRetry as e:
+            is_last_attempt = attempt == len(delays)
             if is_last_attempt:
                 print(
-                    f"Failed {operation_name} after {len(RETRY_DELAYS) + 1} attempts: {e}",
+                    f"Failed after {len(delays) + 1} attempts: {operation_name}: {e}",
                     file=sys.stderr,
                 )
                 raise
 
-            delay = RETRY_DELAYS[attempt]
+            delay = delays[attempt]
             print(
-                f"Failed {operation_name} (attempt {attempt + 1}): {e}",
+                f"Retry {attempt + 1} after {delay}s: {operation_name}: {e}",
                 file=sys.stderr,
             )
-            print(f"Retrying in {delay}s...", file=sys.stderr)
             time.sleep(delay)
 
-    # This should never be reached due to raise in last attempt
-    raise AssertionError("Retry logic error: should have raised in last attempt")
+    msg = "Retry logic error"
+    raise AssertionError(msg)

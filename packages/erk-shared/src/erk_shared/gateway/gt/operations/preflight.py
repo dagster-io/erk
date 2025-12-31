@@ -225,25 +225,28 @@ def _execute_submit_only(
     yield ProgressEvent("Branch submitted to Graphite", style="success")
 
     # Wait for PR info
-    max_retries = 5
-    retry_delays = [0.5, 1.0, 2.0, 4.0, 8.0]
+    from erk_shared.github.retry import ShouldRetry, with_github_retry
+
     repo_root = ops.git.get_repository_root(cwd)
 
     yield ProgressEvent("Waiting for PR info from GitHub API... (gh pr view)")
 
-    pr_details = None
-    for attempt in range(max_retries):
-        if attempt > 0:
-            yield ProgressEvent(f"Attempt {attempt + 1}/{max_retries}...")
+    def poll_for_pr():
+        """Poll for PR info, raising ShouldRetry when PR not found."""
         pr_result = ops.github.get_pr_for_branch(repo_root, branch_name)
-        if not isinstance(pr_result, PRNotFound):
-            pr_details = pr_result
-            yield ProgressEvent(f"PR info retrieved (PR #{pr_details.number})", style="success")
-            break
-        if attempt < max_retries - 1:
-            time.sleep(retry_delays[attempt])
+        if isinstance(pr_result, PRNotFound):
+            raise ShouldRetry("PR not found yet")
+        return pr_result
 
-    if pr_details is None:
+    try:
+        pr_details = with_github_retry(
+            ops.time,
+            "poll for PR info",
+            poll_for_pr,
+            retry_delays=[0.5, 1.0, 2.0, 4.0, 8.0],
+        )
+        yield ProgressEvent(f"PR info retrieved (PR #{pr_details.number})", style="success")
+    except ShouldRetry:
         yield CompletionEvent(
             PostAnalysisError(
                 success=False,

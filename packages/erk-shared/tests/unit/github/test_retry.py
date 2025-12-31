@@ -1,15 +1,19 @@
-"""Unit tests for GitHub API retry utility."""
+"""Tests for GitHub retry utility."""
+
+from __future__ import annotations
+
+import pytest
 
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.github.retry import RETRY_DELAYS, with_github_retry
+from erk_shared.github.retry import RETRY_DELAYS, ShouldRetry, with_github_retry
 
 
-def test_with_github_retry_success_on_first_attempt() -> None:
-    """Successful call on first attempt should not retry."""
+def test_success_on_first_attempt():
+    """Test successful operation on first attempt."""
     fake_time = FakeTime()
     call_count = 0
 
-    def operation() -> str:
+    def operation():
         nonlocal call_count
         call_count += 1
         return "success"
@@ -18,122 +22,279 @@ def test_with_github_retry_success_on_first_attempt() -> None:
 
     assert result == "success"
     assert call_count == 1
-    assert fake_time.sleep_calls == []  # No retries, no sleeps
+    assert fake_time.sleep_calls == []
 
 
-def test_with_github_retry_success_on_second_attempt() -> None:
-    """Failure then success should retry once with correct delay."""
+def test_success_on_second_attempt():
+    """Test successful operation after one retry."""
     fake_time = FakeTime()
     call_count = 0
 
-    def operation() -> str:
+    def operation():
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            raise RuntimeError("Transient error")
+            raise ShouldRetry("First attempt failed")
         return "success"
 
     result = with_github_retry(fake_time, "test operation", operation)
 
     assert result == "success"
     assert call_count == 2
-    assert fake_time.sleep_calls == [RETRY_DELAYS[0]]  # One retry: 0.5s
+    assert fake_time.sleep_calls == [RETRY_DELAYS[0]]
 
 
-def test_with_github_retry_success_on_third_attempt() -> None:
-    """Two failures then success should retry twice with correct delays."""
+def test_success_on_third_attempt():
+    """Test successful operation after two retries."""
     fake_time = FakeTime()
     call_count = 0
 
-    def operation() -> str:
+    def operation():
         nonlocal call_count
         call_count += 1
         if call_count < 3:
-            raise RuntimeError("Transient error")
+            raise ShouldRetry(f"Attempt {call_count} failed")
         return "success"
 
     result = with_github_retry(fake_time, "test operation", operation)
 
     assert result == "success"
     assert call_count == 3
-    assert fake_time.sleep_calls == RETRY_DELAYS  # Two retries: [0.5, 1.0]
+    assert fake_time.sleep_calls == RETRY_DELAYS
 
 
-def test_with_github_retry_all_attempts_fail() -> None:
-    """All attempts failing should raise the last exception."""
+def test_all_attempts_fail():
+    """Test when all retry attempts are exhausted."""
     fake_time = FakeTime()
     call_count = 0
 
-    def operation() -> str:
+    def operation():
         nonlocal call_count
         call_count += 1
-        raise RuntimeError(f"Persistent error (attempt {call_count})")
+        raise ShouldRetry(f"Attempt {call_count} failed")
 
-    try:
+    with pytest.raises(ShouldRetry, match="Attempt 3 failed"):
         with_github_retry(fake_time, "test operation", operation)
-        raise AssertionError("Should have raised RuntimeError")
-    except RuntimeError as e:
-        assert "Persistent error (attempt 3)" in str(e)
 
-    assert call_count == 3  # 3 total attempts (initial + 2 retries)
-    assert fake_time.sleep_calls == RETRY_DELAYS  # Two retries: [0.5, 1.0]
+    # Should try 3 times total (1 initial + 2 retries)
+    assert call_count == 3
+    assert fake_time.sleep_calls == RETRY_DELAYS
 
 
-def test_with_github_retry_non_runtime_error_not_retried() -> None:
-    """Non-RuntimeError exceptions should not be retried."""
+def test_non_retryable_exception_bubbles():
+    """Test that exceptions other than ShouldRetry bubble immediately."""
     fake_time = FakeTime()
     call_count = 0
 
-    def operation() -> str:
+    def operation():
         nonlocal call_count
         call_count += 1
-        raise ValueError("Different error type")
+        raise ValueError("Permanent error")
 
-    try:
+    with pytest.raises(ValueError, match="Permanent error"):
         with_github_retry(fake_time, "test operation", operation)
-        raise AssertionError("Should have raised ValueError")
-    except ValueError as e:
-        assert "Different error type" in str(e)
 
-    assert call_count == 1  # No retries for non-RuntimeError
+    # Should only try once - no retries for permanent errors
+    assert call_count == 1
     assert fake_time.sleep_calls == []
 
 
-def test_with_github_retry_preserves_return_type() -> None:
-    """Verify generic return type works with different types."""
+def test_custom_retry_delays():
+    """Test using custom retry delays for polling."""
     fake_time = FakeTime()
+    call_count = 0
+    custom_delays = [2.0, 2.0, 2.0]  # Constant 2s interval
 
-    # Test with string
-    result_str = with_github_retry(fake_time, "str test", lambda: "text")
-    assert isinstance(result_str, str)
-    assert result_str == "text"
+    def operation():
+        nonlocal call_count
+        call_count += 1
+        if call_count < 3:
+            raise ShouldRetry(f"Attempt {call_count} not ready")
+        return "success"
 
-    # Test with int
-    result_int = with_github_retry(fake_time, "int test", lambda: 42)
-    assert isinstance(result_int, int)
-    assert result_int == 42
+    result = with_github_retry(
+        fake_time,
+        "poll operation",
+        operation,
+        retry_delays=custom_delays,
+    )
 
-    # Test with dict
-    result_dict = with_github_retry(fake_time, "dict test", lambda: {"key": "value"})
-    assert isinstance(result_dict, dict)
-    assert result_dict == {"key": "value"}
+    assert result == "success"
+    assert call_count == 3
+    assert fake_time.sleep_calls == [2.0, 2.0]
 
 
-def test_with_github_retry_uses_operation_name_in_logging(capsys) -> None:
-    """Verify operation name appears in error logging (captured to stderr)."""
+def test_custom_delays_all_fail():
+    """Test exhausting custom retry delays."""
+    fake_time = FakeTime()
+    call_count = 0
+    custom_delays = [1.0, 2.0, 4.0]
+
+    def operation():
+        nonlocal call_count
+        call_count += 1
+        raise ShouldRetry(f"Attempt {call_count} failed")
+
+    with pytest.raises(ShouldRetry, match="Attempt 4 failed"):
+        with_github_retry(
+            fake_time,
+            "poll operation",
+            operation,
+            retry_delays=custom_delays,
+        )
+
+    # Should try 4 times total (1 initial + 3 retries from delays)
+    assert call_count == 4
+    assert fake_time.sleep_calls == custom_delays
+
+
+def test_empty_retry_delays():
+    """Test with empty retry delays (fail immediately)."""
     fake_time = FakeTime()
     call_count = 0
 
-    def operation() -> str:
+    def operation():
         nonlocal call_count
         call_count += 1
-        if call_count < 2:
-            raise RuntimeError("First attempt failed")
+        raise ShouldRetry("Failed")
+
+    with pytest.raises(ShouldRetry, match="Failed"):
+        with_github_retry(
+            fake_time,
+            "test operation",
+            operation,
+            retry_delays=[],
+        )
+
+    # Should try only once
+    assert call_count == 1
+    assert fake_time.sleep_calls == []
+
+
+def test_return_type_preservation():
+    """Test that return type is preserved correctly."""
+    fake_time = FakeTime()
+
+    # Test with dict
+    def dict_operation():
+        return {"key": "value"}
+
+    result = with_github_retry(fake_time, "dict op", dict_operation)
+    assert isinstance(result, dict)
+    assert result == {"key": "value"}
+
+    # Test with list
+    def list_operation():
+        return [1, 2, 3]
+
+    result = with_github_retry(fake_time, "list op", list_operation)
+    assert isinstance(result, list)
+    assert result == [1, 2, 3]
+
+    # Test with int
+    def int_operation():
+        return 42
+
+    result = with_github_retry(fake_time, "int op", int_operation)
+    assert isinstance(result, int)
+    assert result == 42
+
+
+def test_callback_handles_multiple_exception_types():
+    """Test callback converting multiple exception types to ShouldRetry."""
+    fake_time = FakeTime()
+    call_count = 0
+
+    def operation():
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            try:
+                raise RuntimeError("Transient error")
+            except RuntimeError as e:
+                raise ShouldRetry(f"API error: {e}") from e
+        if call_count == 2:
+            try:
+                raise FileNotFoundError("File not found")
+            except FileNotFoundError as e:
+                raise ShouldRetry(f"API error: {e}") from e
         return "success"
 
-    with_github_retry(fake_time, "fetch important data", operation)
+    result = with_github_retry(fake_time, "test operation", operation)
 
-    # Check stderr output contains operation name
-    captured = capsys.readouterr()
-    assert "fetch important data" in captured.err
-    assert "Successfully completed" in captured.err
+    assert result == "success"
+    assert call_count == 3
+    assert fake_time.sleep_calls == RETRY_DELAYS
+
+
+def test_polling_pattern_eventual_consistency():
+    """Test polling pattern for eventual consistency."""
+    fake_time = FakeTime()
+    call_count = 0
+    poll_interval = 2.0
+    max_attempts = 5
+    custom_delays = [poll_interval] * max_attempts
+
+    def poll_for_resource():
+        nonlocal call_count
+        call_count += 1
+        # Simulate resource appearing after 3 polls
+        if call_count < 3:
+            raise ShouldRetry("Resource not found yet")
+        return {"id": "123", "status": "ready"}
+
+    result = with_github_retry(
+        fake_time,
+        "poll for resource",
+        poll_for_resource,
+        retry_delays=custom_delays,
+    )
+
+    assert result == {"id": "123", "status": "ready"}
+    assert call_count == 3
+    assert fake_time.sleep_calls == [2.0, 2.0]
+
+
+def test_transient_error_pattern():
+    """Test transient error retry pattern with exponential backoff."""
+    fake_time = FakeTime()
+    call_count = 0
+
+    def fetch_with_retry():
+        nonlocal call_count
+        call_count += 1
+        if call_count == 1:
+            try:
+                raise RuntimeError("502 Bad Gateway")
+            except RuntimeError as e:
+                raise ShouldRetry(f"API error: {e}") from e
+        return {"data": "success"}
+
+    result = with_github_retry(fake_time, "fetch comment", fetch_with_retry)
+
+    assert result == {"data": "success"}
+    assert call_count == 2
+    assert fake_time.sleep_calls == [RETRY_DELAYS[0]]
+
+
+def test_should_retry_exception_chaining():
+    """Test that ShouldRetry properly chains exceptions."""
+    fake_time = FakeTime()
+
+    def operation():
+        try:
+            raise ValueError("Original error")
+        except ValueError as e:
+            raise ShouldRetry("Retrying") from e
+
+    with pytest.raises(ShouldRetry) as exc_info:
+        with_github_retry(
+            fake_time,
+            "test operation",
+            operation,
+            retry_delays=[],
+        )
+
+    # Check exception chaining
+    assert isinstance(exc_info.value.__cause__, ValueError)
+    assert str(exc_info.value.__cause__) == "Original error"
