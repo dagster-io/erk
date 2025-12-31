@@ -20,16 +20,38 @@ class SyncResult:
     message: str
 
 
+def _is_editable_install() -> bool:
+    """Check if erk is installed in editable mode.
+
+    Editable: erk.__file__ is in src/ layout (e.g., .../src/erk/__init__.py)
+    Wheel: erk.__file__ is in site-packages (e.g., .../site-packages/erk/__init__.py)
+    """
+    import erk
+
+    return "site-packages" not in str(Path(erk.__file__).resolve())
+
+
 @cache
 def get_bundled_claude_dir() -> Path:
     """Get path to bundled .claude/ directory in installed erk package.
 
-    The .claude/ directory from the erk repo is bundled as package data
-    at erk/data/claude/ via pyproject.toml force-include.
+    For wheel installs: .claude/ is bundled as package data at erk/data/claude/
+    via pyproject.toml force-include.
+
+    For editable installs: .claude/ is at the erk repo root (no wheel is built,
+    so erk/data/ doesn't exist).
     """
     import erk
 
-    return Path(erk.__file__).parent / "data" / "claude"
+    erk_package_dir = Path(erk.__file__).parent
+
+    if _is_editable_install():
+        # Editable: erk.__file__ is src/erk/__init__.py, repo root is ../..
+        erk_repo_root = erk_package_dir.parent.parent
+        return erk_repo_root / ".claude"
+
+    # Wheel install: data is bundled at erk/data/claude/
+    return erk_package_dir / "data" / "claude"
 
 
 def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:

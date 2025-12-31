@@ -3,7 +3,7 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from erk.artifacts.sync import sync_artifacts
+from erk.artifacts.sync import _is_editable_install, get_bundled_claude_dir, sync_artifacts
 
 
 def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
@@ -72,3 +72,33 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
     assert state_file.exists()
     content = state_file.read_text(encoding="utf-8")
     assert 'version = "2.0.0"' in content
+
+
+def test_is_editable_install_returns_true_for_src_layout() -> None:
+    """Returns True when erk.__file__ is not in site-packages."""
+    with patch("erk.__file__", "/home/user/code/erk/src/erk/__init__.py"):
+        assert _is_editable_install() is True
+
+
+def test_is_editable_install_returns_false_for_site_packages() -> None:
+    """Returns False when erk.__file__ is in site-packages."""
+    with patch("erk.__file__", "/home/user/.venv/lib/python3.11/site-packages/erk/__init__.py"):
+        assert _is_editable_install() is False
+
+
+def test_get_bundled_claude_dir_editable_install() -> None:
+    """Returns .claude/ at repo root for editable installs."""
+    get_bundled_claude_dir.cache_clear()
+    with patch("erk.__file__", "/home/user/code/erk/src/erk/__init__.py"):
+        result = get_bundled_claude_dir()
+        assert result == Path("/home/user/code/erk/.claude")
+    get_bundled_claude_dir.cache_clear()
+
+
+def test_get_bundled_claude_dir_wheel_install() -> None:
+    """Returns erk/data/claude/ for wheel installs."""
+    get_bundled_claude_dir.cache_clear()
+    with patch("erk.__file__", "/home/user/.venv/lib/python3.11/site-packages/erk/__init__.py"):
+        result = get_bundled_claude_dir()
+        assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/claude")
+    get_bundled_claude_dir.cache_clear()
