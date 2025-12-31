@@ -1,10 +1,12 @@
 """Orphaned artifact detection for erk-managed .claude/ directories."""
 
+import json
 from pathlib import Path
 
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import CompletenessCheckResult, OrphanCheckResult
 from erk.artifacts.sync import get_bundled_claude_dir, get_bundled_github_dir
+from erk.core.claude_settings import has_exit_plan_hook, has_user_prompt_hook
 
 # Bundled artifacts that erk syncs to projects
 BUNDLED_SKILLS = frozenset(
@@ -309,17 +311,12 @@ def _find_missing_hooks(project_claude_dir: Path) -> dict[str, list[str]]:
     Returns:
         Dict mapping "settings.json" to list of missing hook names
     """
-    # Inline import: discovery.py imports from claude_settings
-    from erk.core.claude_settings import has_exit_plan_hook, has_user_prompt_hook
-
     settings_path = project_claude_dir / "settings.json"
     missing: dict[str, list[str]] = {}
 
     # If no settings.json, all hooks are missing
     if not settings_path.exists():
         return {"settings.json": sorted(BUNDLED_HOOKS)}
-
-    import json
 
     content = settings_path.read_text(encoding="utf-8")
     settings = json.loads(content)

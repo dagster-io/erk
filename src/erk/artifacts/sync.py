@@ -1,5 +1,6 @@
 """Sync artifacts from erk package to project's .claude/ directory."""
 
+import json
 import shutil
 from dataclasses import dataclass
 from functools import cache
@@ -8,6 +9,7 @@ from pathlib import Path
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import ArtifactState
 from erk.artifacts.state import save_artifact_state
+from erk.core.claude_settings import add_erk_hooks, has_exit_plan_hook, has_user_prompt_hook
 from erk.core.release_notes import get_current_version
 
 
@@ -171,14 +173,6 @@ def _sync_hooks(target_claude_dir: Path) -> int:
     Returns:
         Number of hooks added (0, 1, or 2)
     """
-    import json
-
-    from erk.core.claude_settings import (
-        add_erk_hooks,
-        has_exit_plan_hook,
-        has_user_prompt_hook,
-    )
-
     settings_path = target_claude_dir / "settings.json"
 
     # Read existing settings or start with empty

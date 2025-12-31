@@ -1,10 +1,15 @@
 """Tests for artifact discovery."""
 
+import json
 from pathlib import Path
 
 from erk.artifacts.discovery import (
     discover_artifacts,
     get_artifact_by_name,
+)
+from erk.core.claude_settings import (
+    ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_USER_PROMPT_HOOK_COMMAND,
 )
 
 
@@ -273,13 +278,6 @@ def test_is_erk_managed_workflow_badge_logic(tmp_path: Path) -> None:
 
 def test_discover_hooks_from_settings_json(tmp_path: Path) -> None:
     """Discovers hooks configured in .claude/settings.json."""
-    import json
-
-    from erk.core.claude_settings import (
-        ERK_EXIT_PLAN_HOOK_COMMAND,
-        ERK_USER_PROMPT_HOOK_COMMAND,
-    )
-
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
 
@@ -323,10 +321,6 @@ def test_discover_hooks_no_settings_json(tmp_path: Path) -> None:
 
 def test_discover_hooks_partial_configuration(tmp_path: Path) -> None:
     """Discovers only configured hooks."""
-    import json
-
-    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
-
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
 
@@ -352,10 +346,7 @@ def test_discover_hooks_partial_configuration(tmp_path: Path) -> None:
 
 def test_is_erk_managed_hook_badge_logic(tmp_path: Path) -> None:
     """Verifies badge logic correctly identifies erk-managed hooks."""
-    import json
-
     from erk.cli.commands.artifact.list_cmd import _is_erk_managed
-    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
 
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
@@ -381,8 +372,6 @@ def test_is_erk_managed_hook_badge_logic(tmp_path: Path) -> None:
 
 def test_discover_hooks_finds_local_hooks(tmp_path: Path) -> None:
     """Discovers local/user-defined hooks from settings.json."""
-    import json
-
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
 
@@ -391,9 +380,7 @@ def test_discover_hooks_finds_local_hooks(tmp_path: Path) -> None:
             "UserPromptSubmit": [
                 {
                     "matcher": "",
-                    "hooks": [
-                        {"type": "command", "command": ".claude/hooks/my-custom-hook.sh"}
-                    ],
+                    "hooks": [{"type": "command", "command": ".claude/hooks/my-custom-hook.sh"}],
                 }
             ],
         }
@@ -404,15 +391,11 @@ def test_discover_hooks_finds_local_hooks(tmp_path: Path) -> None:
 
     hook_artifacts = [a for a in result if a.artifact_type == "hook"]
     assert len(hook_artifacts) == 1
-    assert hook_artifacts[0].name == "my-custom-hook"
+    assert hook_artifacts[0].name == ".claude/hooks/my-custom-hook.sh"
 
 
 def test_discover_hooks_mixed_erk_and_local(tmp_path: Path) -> None:
     """Discovers both erk-managed and local hooks."""
-    import json
-
-    from erk.core.claude_settings import ERK_USER_PROMPT_HOOK_COMMAND
-
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
 
@@ -437,13 +420,11 @@ def test_discover_hooks_mixed_erk_and_local(tmp_path: Path) -> None:
     assert len(hook_artifacts) == 2
 
     hook_names = {a.name for a in hook_artifacts}
-    assert hook_names == {"user-prompt-hook", "my-local-hook"}
+    assert hook_names == {"user-prompt-hook", ".claude/hooks/my-local-hook.sh"}
 
 
 def test_is_erk_managed_local_hook_badge_logic(tmp_path: Path) -> None:
     """Verifies badge logic correctly identifies local hooks as NOT erk-managed."""
-    import json
-
     from erk.cli.commands.artifact.list_cmd import _is_erk_managed
 
     claude_dir = tmp_path / ".claude"
@@ -454,9 +435,7 @@ def test_is_erk_managed_local_hook_badge_logic(tmp_path: Path) -> None:
             "UserPromptSubmit": [
                 {
                     "matcher": "",
-                    "hooks": [
-                        {"type": "command", "command": ".claude/hooks/my-local-hook.sh"}
-                    ],
+                    "hooks": [{"type": "command", "command": ".claude/hooks/my-local-hook.sh"}],
                 }
             ],
         }

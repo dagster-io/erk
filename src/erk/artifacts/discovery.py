@@ -143,7 +143,7 @@ def _extract_hook_name(command: str) -> str:
     """Extract a meaningful name from a hook command.
 
     For erk hooks, returns the known name.
-    For local hooks, extracts name from script path or command.
+    For local hooks, returns the full command text for identification.
     """
     # Check for erk-managed hooks first
     if command == ERK_USER_PROMPT_HOOK_COMMAND:
@@ -151,15 +151,8 @@ def _extract_hook_name(command: str) -> str:
     if command == ERK_EXIT_PLAN_HOOK_COMMAND:
         return "exit-plan-mode-hook"
 
-    # For local hooks, try to extract a meaningful name
-    # If command looks like a path (contains /), use the script's stem
-    if "/" in command:
-        # Extract just the script path (first word if command has arguments)
-        script_path = command.split()[0]
-        return Path(script_path).stem
-
-    # For other commands, use the first word
-    return command.split()[0]
+    # For local hooks, use the full command text as the identifier
+    return command
 
 
 def _discover_hooks(claude_dir: Path) -> list[InstalledArtifact]:
