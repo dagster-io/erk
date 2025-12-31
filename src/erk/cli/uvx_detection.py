@@ -4,42 +4,40 @@ This module detects when erk is running via 'uvx erk' or 'uv tool run erk',
 which prevents shell integration from working properly.
 """
 
-import os
 import sys
+from pathlib import Path
 
 
 def is_running_via_uvx() -> bool:
-    """Detect if erk was invoked via 'uvx erk' or 'uv tool run erk'.
+    """Detect if running via uvx/uv tool run (best effort, not officially supported).
 
     Detection strategy:
-    1. Check if sys.prefix contains uv cache markers (cache/uv, .cache/uv)
-    2. Check if VIRTUAL_ENV contains uv cache markers
-    3. Check for UV_TOOL_DIR or UV_CACHE_DIR environment variables
+    1. Check pyvenv.cfg for uv marker - if absent, not a uv-created venv
+    2. Check if prefix path contains ephemeral cache markers (uvx uses cache, not tool dir)
+
+    Note: uvx environments are ephemeral (live in cache directory), while
+    `uv tool install` environments are persistent. We only want to detect uvx.
 
     Returns:
         True if running via uvx, False otherwise
     """
-    # Pattern markers that indicate a uv tool/uvx environment
-    uv_cache_patterns = ("/cache/uv/", "/.cache/uv/", "\\cache\\uv\\")
+    prefix = Path(sys.prefix)
 
-    # Check sys.prefix for uv cache markers
-    prefix = sys.prefix
-    for pattern in uv_cache_patterns:
-        if pattern in prefix:
-            return True
+    # Check pyvenv.cfg for uv marker
+    pyvenv_cfg = prefix / "pyvenv.cfg"
+    if pyvenv_cfg.exists():
+        content = pyvenv_cfg.read_text(encoding="utf-8")
+        if "uv = " not in content:
+            return False  # Not a uv-created venv
 
-    # Check VIRTUAL_ENV environment variable
-    virtual_env = os.environ.get("VIRTUAL_ENV", "")
-    for pattern in uv_cache_patterns:
-        if pattern in virtual_env:
-            return True
-
-    # Check for UV_TOOL_DIR or UV_CACHE_DIR environment variables
-    # These indicate uv is managing tools
-    if "UV_TOOL_DIR" in os.environ or "UV_CACHE_DIR" in os.environ:
-        return True
-
-    return False
+    # uvx environments are ephemeral (in cache), not persistent (in UV_TOOL_DIR)
+    prefix_str = str(prefix)
+    ephemeral_markers = (
+        "/uv/archive-v",  # uvx ephemeral environments
+        "/.cache/uv/",
+        "/cache/uv/",
+    )
+    return any(marker in prefix_str for marker in ephemeral_markers)
 
 
 def get_uvx_warning_message() -> str:
