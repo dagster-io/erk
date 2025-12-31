@@ -4,6 +4,7 @@ import hashlib
 from pathlib import Path
 
 from erk.artifacts.models import ArtifactType, InstalledArtifact
+from erk.artifacts.orphans import BUNDLED_WORKFLOWS
 
 
 def _compute_content_hash(path: Path) -> str:
@@ -115,9 +116,6 @@ def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
 
     Pattern: .github/workflows/<name>.yml
     """
-    # Import here to avoid circular import (orphans imports from sync)
-    from erk.artifacts.orphans import BUNDLED_WORKFLOWS
-
     if not workflows_dir.exists():
         return []
 

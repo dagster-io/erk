@@ -98,6 +98,7 @@ def _sync_workflows(bundled_github_dir: Path, target_workflows_dir: Path) -> int
 
     Only syncs files listed in BUNDLED_WORKFLOWS registry.
     """
+    # Inline import: orphans.py imports get_bundled_*_dir from this module
     from erk.artifacts.orphans import BUNDLED_WORKFLOWS
 
     source_workflows_dir = bundled_github_dir / "workflows"
