@@ -311,19 +311,21 @@ def test_extract_steps_llm_non_string_item_raises_runtime_error() -> None:
         extract_steps_from_plan(plan, executor)
 
 
-def test_extract_steps_llm_empty_output_raises_runtime_error(capsys) -> None:
-    """Test that empty LLM output (success but no content) raises RuntimeError.
+def test_extract_steps_llm_empty_output_warns_and_returns_empty(capsys) -> None:
+    """Test that empty LLM output warns loudly and returns empty list.
 
     This tests the case where Claude CLI returns exit code 0 (success=True)
-    but produces empty stdout. Previously this caused a confusing JSONDecodeError
-    with "Expecting value: line 1 column 1 (char 0)".
+    but produces empty stdout. This gracefully degrades to an empty steps list,
+    consistent with how invalid JSON is handled.
     """
     plan = "# Plan\n\n1. Step one\n2. Step two"
     # FakePromptExecutor with empty output simulates LLM returning empty stdout
     executor = FakePromptExecutor(output="")
 
-    with pytest.raises(RuntimeError, match="LLM returned empty output for step extraction"):
-        extract_steps_from_plan(plan, executor)
+    result = extract_steps_from_plan(plan, executor)
+
+    # Should return empty list instead of raising
+    assert result == []
 
     # Verify diagnostic output was written to stderr
     captured = capsys.readouterr()
@@ -331,6 +333,7 @@ def test_extract_steps_llm_empty_output_raises_runtime_error(capsys) -> None:
     assert "Model: sonnet" in captured.err
     assert "Prompt length:" in captured.err
     assert "First 500 chars of prompt:" in captured.err
+    assert "Falling back to empty steps list" in captured.err
 
 
 def test_create_impl_folder_generates_frontmatter(tmp_path: Path) -> None:

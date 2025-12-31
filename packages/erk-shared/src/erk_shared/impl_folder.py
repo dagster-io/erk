@@ -154,6 +154,7 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
     output = result.output.strip()
 
     # Handle empty output (LLM may return empty response even on success)
+    # Gracefully degrade to empty list, consistent with invalid JSON handling
     if not output:
         # LOUD warning to help debug this edge case
         print("=" * 60, file=sys.stderr)
@@ -163,9 +164,9 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
         print(f"Prompt length: {len(prompt)} chars", file=sys.stderr)
         print("First 500 chars of prompt:", file=sys.stderr)
         print(prompt[:500], file=sys.stderr)
+        print("Falling back to empty steps list", file=sys.stderr)
         print("=" * 60, file=sys.stderr)
-        msg = "LLM returned empty output for step extraction (see stderr for details)"
-        raise RuntimeError(msg)
+        return []
 
     # Handle markdown code blocks (LLM may wrap in ```json ... ```)
     if output.startswith("```"):
