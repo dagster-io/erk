@@ -8,8 +8,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk.artifacts.detection import is_in_erk_repo
-from erk.artifacts.sync import get_bundled_claude_dir
+from erk.artifacts.orphans import find_orphaned_artifacts
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     get_repo_claude_settings_path,
@@ -741,100 +740,11 @@ def check_hook_health(repo_root: Path) -> CheckResult:
     )
 
 
-# Bundled artifacts that erk syncs to projects
-BUNDLED_SKILLS = frozenset(
-    {
-        "dignified-python",
-        "learned-docs",
-        "erk-diff-analysis",
-    }
-)
-BUNDLED_AGENTS = frozenset({"devrun"})
-
-
-def _find_orphaned_artifacts(
-    project_claude_dir: Path,
-    bundled_claude_dir: Path,
-) -> dict[str, list[str]]:
-    """Find files in bundled artifact folders that exist locally but not in package.
-
-    Compares bundled artifact directories with the local project's .claude/ directory
-    to find orphaned files that should be removed.
-
-    Args:
-        project_claude_dir: Path to project's .claude/ directory
-        bundled_claude_dir: Path to bundled .claude/ in erk package
-
-    Returns:
-        Dict mapping folder path (relative to .claude/) to list of orphaned filenames
-    """
-    orphans: dict[str, list[str]] = {}
-
-    # Check commands/erk/ directory
-    local_commands = project_claude_dir / "commands" / "erk"
-    bundled_commands = bundled_claude_dir / "commands" / "erk"
-
-    if local_commands.exists() and bundled_commands.exists():
-        bundled_files = {f.name for f in bundled_commands.iterdir() if f.is_file()}
-        for local_file in local_commands.iterdir():
-            if not local_file.is_file():
-                continue
-            if local_file.name not in bundled_files:
-                folder_key = "commands/erk"
-                if folder_key not in orphans:
-                    orphans[folder_key] = []
-                orphans[folder_key].append(local_file.name)
-
-    # Check bundled skill directories
-    for skill_name in BUNDLED_SKILLS:
-        local_skill = project_claude_dir / "skills" / skill_name
-        bundled_skill = bundled_claude_dir / "skills" / skill_name
-
-        if local_skill.exists() and bundled_skill.exists():
-            # Get all files recursively from bundled
-            bundled_files = {
-                str(f.relative_to(bundled_skill)) for f in bundled_skill.rglob("*") if f.is_file()
-            }
-            # Check local files
-            for local_file in local_skill.rglob("*"):
-                if not local_file.is_file():
-                    continue
-                relative_path = str(local_file.relative_to(local_skill))
-                if relative_path not in bundled_files:
-                    folder_key = f"skills/{skill_name}"
-                    if folder_key not in orphans:
-                        orphans[folder_key] = []
-                    orphans[folder_key].append(relative_path)
-
-    # Check bundled agent directories
-    for agent_name in BUNDLED_AGENTS:
-        local_agent = project_claude_dir / "agents" / agent_name
-        bundled_agent = bundled_claude_dir / "agents" / agent_name
-
-        if local_agent.exists() and bundled_agent.exists():
-            # Get all files recursively from bundled
-            bundled_files = {
-                str(f.relative_to(bundled_agent)) for f in bundled_agent.rglob("*") if f.is_file()
-            }
-            # Check local files
-            for local_file in local_agent.rglob("*"):
-                if not local_file.is_file():
-                    continue
-                relative_path = str(local_file.relative_to(local_agent))
-                if relative_path not in bundled_files:
-                    folder_key = f"agents/{agent_name}"
-                    if folder_key not in orphans:
-                        orphans[folder_key] = []
-                    orphans[folder_key].append(relative_path)
-
-    return orphans
-
-
 def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
     """Check for orphaned files in erk-managed artifact directories.
 
-    Compares local .claude/ artifacts with bundled package to find files
-    that exist locally but are not in the current erk package version.
+    Delegates to find_orphaned_artifacts() and converts the result
+    to the CheckResult format used by erk doctor.
 
     Args:
         repo_root: Path to the repository root
@@ -842,34 +752,32 @@ def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult with orphan status (warning if found, pass otherwise)
     """
-    # Skip check in erk repo - artifacts are source, not synced
-    if is_in_erk_repo(repo_root):
+    result = find_orphaned_artifacts(repo_root)
+
+    # Handle skipped cases
+    if result.skipped_reason == "erk-repo":
         return CheckResult(
             name="orphaned-artifacts",
             passed=True,
             message="Skipped: running in erk repo",
         )
 
-    # Skip if no .claude/ directory
-    project_claude_dir = repo_root / ".claude"
-    if not project_claude_dir.exists():
+    if result.skipped_reason == "no-claude-dir":
         return CheckResult(
             name="orphaned-artifacts",
             passed=True,
             message="No .claude/ directory (nothing to check)",
         )
 
-    bundled_claude_dir = get_bundled_claude_dir()
-    if not bundled_claude_dir.exists():
+    if result.skipped_reason == "no-bundled-dir":
         return CheckResult(
             name="orphaned-artifacts",
             passed=True,
             message="Bundled .claude/ not found (skipping check)",
         )
 
-    orphans = _find_orphaned_artifacts(project_claude_dir, bundled_claude_dir)
-
-    if not orphans:
+    # No orphans found
+    if not result.orphans:
         return CheckResult(
             name="orphaned-artifacts",
             passed=True,
@@ -877,17 +785,17 @@ def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
         )
 
     # Build details with orphaned files and remediation commands
-    total_orphans = sum(len(files) for files in orphans.values())
+    total_orphans = sum(len(files) for files in result.orphans.values())
     details_lines: list[str] = ["Orphaned files (not in current erk package):"]
 
-    for folder, files in sorted(orphans.items()):
+    for folder, files in sorted(result.orphans.items()):
         details_lines.append(f"  {folder}/:")
         for filename in sorted(files):
             details_lines.append(f"    - {filename}")
 
     details_lines.append("")
     details_lines.append("To remove:")
-    for folder, files in sorted(orphans.items()):
+    for folder, files in sorted(result.orphans.items()):
         for filename in sorted(files):
             details_lines.append(f"  rm .claude/{folder}/{filename}")
 

@@ -34,3 +34,11 @@ class StalenessResult:
     reason: Literal["not-initialized", "version-mismatch", "up-to-date", "erk-repo"]
     current_version: str
     installed_version: str | None
+
+
+@dataclass(frozen=True)
+class OrphanCheckResult:
+    """Result of checking for orphaned artifacts."""
+
+    orphans: dict[str, list[str]]  # folder -> list of orphaned filenames
+    skipped_reason: Literal["erk-repo", "no-claude-dir", "no-bundled-dir"] | None
