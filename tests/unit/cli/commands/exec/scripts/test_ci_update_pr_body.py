@@ -255,8 +255,62 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
 
     assert isinstance(result, UpdateError)
     assert result.success is False
-    assert result.error == "claude_failed"
-    assert "API error" in result.message
+    assert result.error == "claude_execution_failed"
+    assert "non-zero exit code" in result.message
+    assert result.stderr == "API error"
+
+
+def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
+    """Test that long stderr is truncated to 500 characters."""
+    git = FakeGit(current_branches={tmp_path: "feature-branch"})
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diffs={123: "+some diff"},
+    )
+
+    # Create a very long error message (> 500 chars)
+    long_error = "x" * 600
+    executor = FakePromptExecutor(should_fail=True, error=long_error)
+
+    result = _update_pr_body_impl(
+        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+    )
+
+    assert isinstance(result, UpdateError)
+    assert result.success is False
+    assert result.error == "claude_execution_failed"
+    # Stderr should be truncated to 500 characters
+    assert result.stderr is not None
+    assert len(result.stderr) == 500
 
 
 def test_impl_claude_empty_output(tmp_path: Path) -> None:
@@ -304,8 +358,9 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
 
     assert isinstance(result, UpdateError)
     assert result.success is False
-    assert result.error == "claude_failed"
+    assert result.error == "claude_empty_output"
     assert "empty output" in result.message.lower()
+    assert result.stderr is None
 
 
 # ============================================================================
@@ -551,8 +606,11 @@ def test_cli_json_output_structure_error(tmp_path: Path) -> None:
     assert "success" in output
     assert "error" in output
     assert "message" in output
+    assert "stderr" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["error"], str)
     assert isinstance(output["message"], str)
+    # stderr can be str or None
+    assert output["stderr"] is None or isinstance(output["stderr"], str)

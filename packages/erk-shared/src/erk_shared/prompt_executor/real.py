@@ -1,6 +1,8 @@
 """Real implementation of PromptExecutor using Claude CLI."""
 
+import os
 import subprocess
+import sys
 from pathlib import Path
 
 from erk_shared.gateway.time.abc import Time
@@ -95,6 +97,10 @@ class RealPromptExecutor(PromptExecutor):
             cwd=cwd,
             check=False,
         )
+
+        # Log stderr for debugging in CI environments
+        if result.returncode != 0 and os.getenv("CI") and result.stderr:
+            print(f"Claude CLI stderr: {result.stderr}", file=sys.stderr)
 
         if result.returncode != 0:
             return PromptResult(
