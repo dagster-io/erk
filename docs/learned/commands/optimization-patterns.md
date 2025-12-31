@@ -68,7 +68,7 @@ Run fast CI checks iteratively (unit tests + pyright).
 Delegate to devrun agent with: "Run pytest tests/ && pyright"
 ```
 
-**Referenced skill** (`.claude/skills/ci-iteration/SKILL.md`):
+**Referenced skill** (`ci-iteration` skill):
 
 - Contains detailed iteration workflow (~246 lines)
 - Loaded once per session
