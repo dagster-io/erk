@@ -24,14 +24,14 @@ def check_outdated_erk_skill(repo_root: Path) -> CheckResult:
     skill_dir = repo_root / ".claude" / "skills" / "erk"
     if not skill_dir.exists():
         return CheckResult(
-            name="outdated erk skill",
+            name="outdated-erk-skill",
             passed=True,
             message="No outdated erk skill found",
         )
 
     # Found outdated skill - return failure with remediation
     return CheckResult(
-        name="outdated erk skill",
+        name="outdated-erk-skill",
         passed=False,
         message="Outdated erk skill found at .claude/skills/erk/",
         details=(

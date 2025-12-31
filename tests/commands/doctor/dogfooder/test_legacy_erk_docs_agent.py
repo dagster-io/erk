@@ -13,7 +13,7 @@ def test_check_passes_when_no_docs_directory(tmp_path: Path) -> None:
 
     assert result.passed is True
     assert result.warning is not True
-    assert result.name == "legacy erk docs"
+    assert result.name == "legacy-erk-docs"
     assert "No legacy" in result.message
 
 
@@ -52,7 +52,7 @@ def test_check_warns_when_docs_agent_has_files(tmp_path: Path) -> None:
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy erk docs"
+    assert result.name == "legacy-erk-docs"
     assert "1 file" in result.message
     assert result.details is not None
     assert "docs/learned" in result.details

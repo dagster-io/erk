@@ -11,7 +11,7 @@ def test_check_passes_when_no_kit_yaml_files(tmp_path: Path) -> None:
 
     assert result.passed is True
     assert result.warning is not True
-    assert result.name == "legacy kit.yaml"
+    assert result.name == "legacy-kit-yaml"
     assert "No legacy" in result.message
 
 
@@ -38,7 +38,7 @@ def test_check_warns_when_kit_yaml_in_claude_dir(tmp_path: Path) -> None:
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy kit.yaml"
+    assert result.name == "legacy-kit-yaml"
     assert "1 legacy kit.yaml" in result.message
     assert result.details is not None
     assert "kit.yaml" in result.details

@@ -50,16 +50,16 @@ from erk.core.health_checks_dogfooder.outdated_erk_skill import (
 
 # Names of all early dogfooder checks - used by doctor.py for category grouping
 EARLY_DOGFOODER_CHECK_NAMES: set[str] = {
-    "deprecated dot-agent config",
-    "legacy claude docs",
-    "legacy config",
-    "legacy config option",
-    "legacy erk docs",
-    "legacy erk kits folder",
-    "legacy hook settings",
-    "legacy kit.yaml",
-    "legacy kits.toml",
-    "outdated erk skill",
+    "deprecated-dot-agent-config",
+    "legacy-claude-docs",
+    "legacy-config",
+    "legacy-config-option",
+    "legacy-erk-docs",
+    "legacy-erk-kits-folder",
+    "legacy-hook-settings",
+    "legacy-kit-yaml",
+    "legacy-kits-toml",
+    "outdated-erk-skill",
 }
 
 

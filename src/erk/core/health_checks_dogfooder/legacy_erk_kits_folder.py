@@ -25,14 +25,14 @@ def check_legacy_erk_kits_folder(repo_root: Path) -> CheckResult:
 
     if not kits_path.exists():
         return CheckResult(
-            name="legacy erk kits folder",
+            name="legacy-erk-kits-folder",
             passed=True,
             message="No legacy .erk/kits/ found",
         )
 
     if not kits_path.is_dir():
         return CheckResult(
-            name="legacy erk kits folder",
+            name="legacy-erk-kits-folder",
             passed=True,
             message="No legacy .erk/kits/ found",
         )
@@ -42,13 +42,13 @@ def check_legacy_erk_kits_folder(repo_root: Path) -> CheckResult:
 
     if not items:
         return CheckResult(
-            name="legacy erk kits folder",
+            name="legacy-erk-kits-folder",
             passed=True,
             message="No legacy .erk/kits/ found (empty directory)",
         )
 
     return CheckResult(
-        name="legacy erk kits folder",
+        name="legacy-erk-kits-folder",
         passed=True,  # Warning only, doesn't fail
         warning=True,
         message=f"Legacy kits folder found ({len(items)} item(s))",

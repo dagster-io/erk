@@ -54,17 +54,17 @@ def doctor_cmd(ctx: ErkContext) -> None:
 
     # Group results by category
     cli_tool_names = {"erk", "claude", "graphite", "github", "uv", "dot-agent"}
-    health_check_names = {"dot-agent health", "orphaned artifacts"}
+    health_check_names = {"dot-agent-health", "orphaned-artifacts"}
     repo_check_names = {
         "repository",
-        "claude settings",
-        "user prompt hook",
+        "claude-settings",
+        "user-prompt-hook",
         "gitignore",
-        "claude erk permission",
-        "claude hooks",
-        "legacy config",
+        "claude-erk-permission",
+        "claude-hooks",
+        "legacy-config",
     }
-    github_check_names = {"github auth", "workflow permissions"}
+    github_check_names = {"github-auth", "workflow-permissions"}
     hooks_check_names = {"hooks"}
 
     cli_checks = [r for r in results if r.name in cli_tool_names]

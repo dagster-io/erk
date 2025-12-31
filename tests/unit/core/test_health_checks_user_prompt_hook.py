@@ -15,7 +15,7 @@ def test_check_fails_when_settings_not_found(tmp_path: Path) -> None:
     result = check_user_prompt_hook(tmp_path)
 
     assert result.passed is False
-    assert result.name == "user prompt hook"
+    assert result.name == "user-prompt-hook"
     assert "no .claude/settings.json" in result.message.lower()
 
 

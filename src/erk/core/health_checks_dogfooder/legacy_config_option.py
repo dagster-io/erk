@@ -31,7 +31,7 @@ def check_legacy_config_option(repo_root: Path) -> CheckResult:
 
     if not config_path.exists():
         return CheckResult(
-            name="legacy config option",
+            name="legacy-config-option",
             passed=True,
             message="No .erk/config.toml found",
         )
@@ -46,7 +46,7 @@ def check_legacy_config_option(repo_root: Path) -> CheckResult:
 
     if not found_deprecated:
         return CheckResult(
-            name="legacy config option",
+            name="legacy-config-option",
             passed=True,
             message="No deprecated config options found",
         )
@@ -60,7 +60,7 @@ def check_legacy_config_option(repo_root: Path) -> CheckResult:
     details_lines.append("Note: 'auto_restack_require_dangerous_flag' has inverted logic.")
 
     return CheckResult(
-        name="legacy config option",
+        name="legacy-config-option",
         passed=False,  # Failure - config won't work correctly
         message=f"Found {len(found_deprecated)} deprecated config option(s)",
         details="\n".join(details_lines),

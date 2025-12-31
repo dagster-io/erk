@@ -26,7 +26,7 @@ def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
     pyproject_path = repo_root / "pyproject.toml"
     if not pyproject_path.exists():
         return CheckResult(
-            name="deprecated dot-agent config",
+            name="deprecated-dot-agent-config",
             passed=True,
             message="No deprecated [tool.dot-agent] config found",
         )
@@ -37,20 +37,20 @@ def check_deprecated_dot_agent_config(repo_root: Path) -> CheckResult:
     # Check for [tool.dot-agent] section
     if "tool" not in data:
         return CheckResult(
-            name="deprecated dot-agent config",
+            name="deprecated-dot-agent-config",
             passed=True,
             message="No deprecated [tool.dot-agent] config found",
         )
     if "dot-agent" not in data["tool"]:
         return CheckResult(
-            name="deprecated dot-agent config",
+            name="deprecated-dot-agent-config",
             passed=True,
             message="No deprecated [tool.dot-agent] config found",
         )
 
     # Found deprecated config - return failure with remediation
     return CheckResult(
-        name="deprecated dot-agent config",
+        name="deprecated-dot-agent-config",
         passed=False,
         message="Deprecated [tool.dot-agent] config in pyproject.toml",
         details=(

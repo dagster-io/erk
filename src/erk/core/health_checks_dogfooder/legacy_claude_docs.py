@@ -25,7 +25,7 @@ def check_legacy_claude_docs(repo_root: Path) -> CheckResult:
 
     if not docs_path.exists():
         return CheckResult(
-            name="legacy claude docs",
+            name="legacy-claude-docs",
             passed=True,
             message="No legacy .claude/docs/ found",
         )
@@ -33,7 +33,7 @@ def check_legacy_claude_docs(repo_root: Path) -> CheckResult:
     # Check if it's a directory with markdown files
     if not docs_path.is_dir():
         return CheckResult(
-            name="legacy claude docs",
+            name="legacy-claude-docs",
             passed=True,
             message="No legacy .claude/docs/ found",
         )
@@ -42,7 +42,7 @@ def check_legacy_claude_docs(repo_root: Path) -> CheckResult:
     md_files = list(docs_path.glob("*.md"))
     if not md_files:
         return CheckResult(
-            name="legacy claude docs",
+            name="legacy-claude-docs",
             passed=True,
             message="No legacy .claude/docs/ found (empty directory)",
         )
@@ -61,7 +61,7 @@ def check_legacy_claude_docs(repo_root: Path) -> CheckResult:
     details_lines.append("Convert to skills under .claude/skills/<name>/SKILL.md")
 
     return CheckResult(
-        name="legacy claude docs",
+        name="legacy-claude-docs",
         passed=True,  # Warning only, doesn't fail
         warning=True,
         message=f"Found {len(md_files)} doc(s) in .claude/docs/",

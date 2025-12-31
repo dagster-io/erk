@@ -65,7 +65,7 @@ def test_check_claude_settings_no_file(tmp_path: Path) -> None:
     """Test claude settings check when no settings file exists."""
     result = check_claude_settings(tmp_path)
 
-    assert result.name == "claude settings"
+    assert result.name == "claude-settings"
     assert result.passed is True
     assert "No .claude/settings.json" in result.message
 
@@ -79,7 +79,7 @@ def test_check_claude_settings_valid_json(tmp_path: Path) -> None:
 
     result = check_claude_settings(tmp_path)
 
-    assert result.name == "claude settings"
+    assert result.name == "claude-settings"
     assert result.passed is True
     assert "looks valid" in result.message.lower() or "using defaults" in result.message.lower()
 
@@ -113,7 +113,7 @@ def test_check_claude_settings_with_hooks(tmp_path: Path) -> None:
 
     result = check_claude_settings(tmp_path)
 
-    assert result.name == "claude settings"
+    assert result.name == "claude-settings"
     assert result.passed is True
 
 
@@ -319,7 +319,7 @@ def test_check_hooks_disabled_no_files(tmp_path: Path, monkeypatch: pytest.Monke
 
     result = check_hooks_disabled()
 
-    assert result.name == "claude hooks"
+    assert result.name == "claude-hooks"
     assert result.passed is True
     assert result.warning is False
     assert "enabled" in result.message.lower()
@@ -335,7 +335,7 @@ def test_check_hooks_disabled_in_settings(tmp_path: Path, monkeypatch: pytest.Mo
 
     result = check_hooks_disabled()
 
-    assert result.name == "claude hooks"
+    assert result.name == "claude-hooks"
     assert result.passed is True
     assert result.warning is True
     assert "settings.json" in result.message
@@ -351,7 +351,7 @@ def test_check_hooks_disabled_in_local(tmp_path: Path, monkeypatch: pytest.Monke
 
     result = check_hooks_disabled()
 
-    assert result.name == "claude hooks"
+    assert result.name == "claude-hooks"
     assert result.passed is True
     assert result.warning is True
     assert "settings.local.json" in result.message
@@ -371,7 +371,7 @@ def test_check_hooks_disabled_in_both(tmp_path: Path, monkeypatch: pytest.Monkey
 
     result = check_hooks_disabled()
 
-    assert result.name == "claude hooks"
+    assert result.name == "claude-hooks"
     assert result.passed is True
     assert result.warning is True
     assert "settings.json" in result.message
@@ -388,7 +388,7 @@ def test_check_hooks_disabled_false(tmp_path: Path, monkeypatch: pytest.MonkeyPa
 
     result = check_hooks_disabled()
 
-    assert result.name == "claude hooks"
+    assert result.name == "claude-hooks"
     assert result.passed is True
     assert result.warning is False
 
@@ -403,7 +403,7 @@ def test_check_hooks_disabled_no_hooks_key(tmp_path: Path, monkeypatch: pytest.M
 
     result = check_hooks_disabled()
 
-    assert result.name == "claude hooks"
+    assert result.name == "claude-hooks"
     assert result.passed is True
     assert result.warning is False
 
@@ -461,7 +461,7 @@ def test_check_legacy_config_primary_location_exists(tmp_path: Path) -> None:
 
     result = check_legacy_config_locations(tmp_path, None)
 
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert result.passed is True
     assert result.warning is False
     assert "primary location" in result.message
@@ -472,7 +472,7 @@ def test_check_legacy_config_no_legacy_configs(tmp_path: Path) -> None:
     # No configs anywhere
     result = check_legacy_config_locations(tmp_path, None)
 
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert result.passed is True
     assert result.warning is False
     assert "No legacy config files found" in result.message
@@ -485,7 +485,7 @@ def test_check_legacy_config_repo_root_legacy(tmp_path: Path) -> None:
 
     result = check_legacy_config_locations(tmp_path, None)
 
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert result.passed is True  # Warning only
     assert result.warning is True
     assert "1 legacy config file(s)" in result.message
@@ -505,7 +505,7 @@ def test_check_legacy_config_metadata_dir_legacy(tmp_path: Path) -> None:
 
     result = check_legacy_config_locations(repo_root, metadata_dir)
 
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert result.passed is True  # Warning only
     assert result.warning is True
     assert "1 legacy config file(s)" in result.message
@@ -525,7 +525,7 @@ def test_check_legacy_config_both_legacy_locations(tmp_path: Path) -> None:
 
     result = check_legacy_config_locations(repo_root, metadata_dir)
 
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert result.passed is True  # Warning only
     assert result.warning is True
     assert "2 legacy config file(s)" in result.message
@@ -547,7 +547,7 @@ def test_check_legacy_config_ignores_legacy_when_primary_exists(tmp_path: Path) 
     result = check_legacy_config_locations(tmp_path, None)
 
     # Should report primary location, not warn about legacy
-    assert result.name == "legacy config"
+    assert result.name == "legacy-config"
     assert result.passed is True
     assert result.warning is False
     assert "primary location" in result.message

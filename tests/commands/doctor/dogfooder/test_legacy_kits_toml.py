@@ -11,7 +11,7 @@ def test_check_passes_when_no_kits_toml(tmp_path: Path) -> None:
 
     assert result.passed is True
     assert result.warning is not True
-    assert result.name == "legacy kits.toml"
+    assert result.name == "legacy-kits-toml"
     assert "No legacy" in result.message
 
 
@@ -38,7 +38,7 @@ def test_check_warns_when_kits_toml_exists(tmp_path: Path) -> None:
 
     assert result.passed is True  # Warning only, doesn't fail
     assert result.warning is True
-    assert result.name == "legacy kits.toml"
+    assert result.name == "legacy-kits-toml"
     assert "Legacy kits.toml found" in result.message
     assert result.details is not None
     assert "kits.toml" in result.details

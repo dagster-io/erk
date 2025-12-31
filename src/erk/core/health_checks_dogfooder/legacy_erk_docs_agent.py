@@ -25,14 +25,14 @@ def check_legacy_erk_docs_agent(repo_root: Path) -> CheckResult:
 
     if not agent_docs_path.exists():
         return CheckResult(
-            name="legacy erk docs",
+            name="legacy-erk-docs",
             passed=True,
             message="No legacy .erk/docs/agent/ found",
         )
 
     if not agent_docs_path.is_dir():
         return CheckResult(
-            name="legacy erk docs",
+            name="legacy-erk-docs",
             passed=True,
             message="No legacy .erk/docs/agent/ found",
         )
@@ -43,13 +43,13 @@ def check_legacy_erk_docs_agent(repo_root: Path) -> CheckResult:
 
     if file_count == 0:
         return CheckResult(
-            name="legacy erk docs",
+            name="legacy-erk-docs",
             passed=True,
             message="No legacy .erk/docs/agent/ found (empty directory)",
         )
 
     return CheckResult(
-        name="legacy erk docs",
+        name="legacy-erk-docs",
         passed=True,  # Warning only, doesn't fail
         warning=True,
         message=f"Legacy docs location found ({file_count} file(s))",
