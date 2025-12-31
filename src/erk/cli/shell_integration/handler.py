@@ -24,25 +24,7 @@ PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}
 # These are top-level flags that don't affect which command is being invoked
 GLOBAL_FLAGS: Final[set[str]] = {"--debug", "--dry-run", "--verbose", "-v"}
 
-# Commands that REQUIRE shell integration to work properly.
-# These commands' primary purpose is to change the shell's directory.
-# When run via uvx, these will not function as expected.
-REQUIRES_SHELL_INTEGRATION: Final[set[str]] = {
-    "checkout",
-    "co",
-    "up",
-    "down",
-    "wt checkout",
-    "wt co",
-    "pr checkout",
-    "pr co",
-    "branch checkout",
-    "branch co",
-    "br checkout",
-    "br co",
-}
-
-# Commands that support shell integration (directory switching)
+# Commands that require shell integration (directory switching)
 # Maps command names (as received from shell) to CLI command paths (for subprocess)
 # Keys are what the shell handler receives, values are what gets passed to subprocess
 SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
@@ -174,8 +156,8 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
             return _build_passthrough_script(command_name, args)
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
-    # Check for uvx invocation and warn (only for commands that require shell integration)
-    if command_name in REQUIRES_SHELL_INTEGRATION and is_running_via_uvx():
+    # Check for uvx invocation and warn (command is already confirmed in SHELL_INTEGRATION_COMMANDS)
+    if is_running_via_uvx():
         user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message(command_name))
         user_output("")  # Blank line for readability
         if not click.confirm("Continue anyway?"):
