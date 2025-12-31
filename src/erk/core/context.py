@@ -501,7 +501,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
-    prompt_executor: PromptExecutor = RealPromptExecutor()
+    prompt_executor: PromptExecutor = RealPromptExecutor(time)
 
     # 13. Create context with all values
     return ErkContext(

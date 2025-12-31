@@ -26,6 +26,7 @@ from pathlib import Path
 
 import click
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.prompt_executor.real import RealPromptExecutor
@@ -59,7 +60,7 @@ def create_worker_impl_from_issue(
     # This allows the command to work when run via erk kit exec without uv
     github_issues = RealGitHubIssues()
     plan_store = GitHubPlanStore(github_issues)
-    prompt_executor = RealPromptExecutor()
+    prompt_executor = RealPromptExecutor(RealTime())
 
     # Fetch plan from GitHub (raises RuntimeError if not found)
     try:
