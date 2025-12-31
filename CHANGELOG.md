@@ -9,19 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Release Overview
 
-This release dramatically simplifies ERK's architecture by eliminating the kit system and consolidating artifact management into a single, automated workflow.
+This release dramatically simplifies erk's architecture by eliminating the kit system and consolidating artifact management into a single, automated workflow.
 
 #### Kit System Eliminated
 
-The kit system has been completely removed. Previously, users installed and managed "kits" (bundles of skills, commands, and agents) per-project. Now ERK owns its artifacts directly:
+The kit system has been completely removed. Previously, users installed and managed "kits" (bundles of skills, commands, and agents) per-project. Now erk owns its artifacts directly:
 
 - No `erk kit install`, `erk kit sync`, or kit registry commands
-- Artifacts are bundled with ERK itself and synced automatically
+- Artifacts are bundled with erk itself and synced automatically
 - One less concept to understand, one less thing to manage
 
 #### Unified Artifact Management
 
-ERK now maintains a set of **bundled artifacts** that it syncs to target projects:
+erk now maintains a set of **bundled artifacts** that it syncs to target projects:
 
 - **Skills**: `dignified-python`, `learned-docs`, `erk-diff-analysis`
 - **Commands**: All `/erk:*` namespace commands (`/erk:plan-implement`, `/erk:pr-submit`, etc.)
@@ -35,30 +35,30 @@ Running `erk init` or `erk artifact sync`:
 2. Adds hook configurations to `.claude/settings.json`
 3. Stamps the version in `.erk/state.toml` for staleness detection
 
-`erk doctor` and `erk artifact check` detect stale, missing, or orphaned artifacts—including missing hook configurations. Projects keep full ownership of `.claude/`; ERK only manages its namespaced artifacts.
+`erk doctor` and `erk artifact check` detect stale, missing, or orphaned artifacts—including missing hook configurations. Projects keep full ownership of `.claude/`; erk only manages its namespaced artifacts.
 
 #### Repo-Level Constraint
 
-ERK now requires Claude to be launched from the git repository root. This simplifies worktree detection, artifact paths, and context creation. If you previously ran Claude from subdirectories, launch from the repo root instead. This matches how most users already work and provides a stable foundation.
+erk now requires Claude to be launched from the git repository root. This simplifies worktree detection, artifact paths, and context creation. If you previously ran Claude from subdirectories, launch from the repo root instead. This matches how most users already work and provides a stable foundation.
 
 #### Global Install Required (UVX Not Supported)
 
 We explored using `uvx erk` for zero-install usage, but this isn't feasible due to shell integration. Commands like `erk implement`, `erk up`, `erk down`, and `erk wt checkout` change your shell's working directory—something only a shell function can do. This requires a shell wrapper function (installed via `erk init --shell`) that calls a persistent `erk` binary in your PATH.
 
-**The solution is simple**: Install ERK globally with `uv tool install erk`. ERK handles the rest:
+**The solution is simple**: Install erk globally with `uv tool install erk`. erk handles the rest:
 
 - Each repo has a `.erk/required-erk-uv-tool-version` file specifying the required version
-- If your installed version doesn't match, ERK warns you immediately with the fix: `uv tool upgrade erk`
+- If your installed version doesn't match, erk warns you immediately with the fix: `uv tool upgrade erk`
 - One person on the team updates the version file; everyone else follows the prompt
 
-You don't install ERK into each project—just keep your global tool current and artifacts synced. ERK tells you when action is needed.
+You don't install erk into each project—just keep your global tool current and artifacts synced. erk tells you when action is needed.
 
 ---
 
 ### Major Changes
 
 - Extend artifact management to GitHub workflows with model configurability and OAuth support (de0bfa279, 52579c0e4, f7597c52e)
-- The kit system has been completed eliminated. Erk installs its own artifacts directly with no user management required.
+- The kit system has been completely eliminated. erk installs its own artifacts directly with no user management required.
 - We have moved back everything to be at repo-level. You must run claude at git repo root. This has simplified the architecture
 - Migrate to static `erk exec` architecture, eliminating dynamic kit script loading (d82789f66)
 - Merge git kit into erk artifacts with unified `/erk:git-pr-push` command namespace (e224d4279)

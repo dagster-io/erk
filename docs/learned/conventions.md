@@ -41,6 +41,7 @@ Use proper capitalization for brand names:
 
 - **GitHub** (not Github)
 - **Graphite** (not graphite)
+- **erk** (always lowercase, even at start of sentence)
 
 ## Worktree Terminology
 
