@@ -132,7 +132,7 @@ class TestCheckCommand:
         assert "out of sync" in result.output
 
     def test_check_up_to_date(self, tmp_path: Path) -> None:
-        """Shows up to date when versions match."""
+        """Shows up to date when versions match and no orphans."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             state_file = Path(".erk/state.toml")
@@ -140,7 +140,11 @@ class TestCheckCommand:
             state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                result = runner.invoke(check_cmd)
+                with patch(
+                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    return_value=Path("/nonexistent"),
+                ):
+                    result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -157,6 +161,73 @@ class TestCheckCommand:
 
         assert result.exit_code == 0
         assert "Development mode" in result.output
+
+    def test_check_with_orphans(self, tmp_path: Path) -> None:
+        """Shows orphaned artifacts and fails when orphans found."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Set up version as up-to-date
+            state_file = Path(".erk/state.toml")
+            state_file.parent.mkdir(parents=True)
+            state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
+
+            # Create bundled directory with one command
+            bundled_dir = tmp_path / "bundled" / ".claude"
+            bundled_commands = bundled_dir / "commands" / "erk"
+            bundled_commands.mkdir(parents=True)
+            (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            # Create .claude/ with orphaned command
+            project_claude = Path(".claude")
+            project_commands = project_claude / "commands" / "erk"
+            project_commands.mkdir(parents=True)
+            (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+            (project_commands / "orphaned.md").write_text("# Orphan", encoding="utf-8")
+
+            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+                with patch(
+                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    return_value=bundled_dir,
+                ):
+                    result = runner.invoke(check_cmd)
+
+        assert result.exit_code == 1
+        assert "up to date" in result.output
+        assert "orphaned artifact" in result.output
+        assert "orphaned.md" in result.output
+        assert "rm .claude/commands/erk/orphaned.md" in result.output
+
+    def test_check_no_orphans(self, tmp_path: Path) -> None:
+        """Shows no orphaned artifacts when none found."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Set up version as up-to-date
+            state_file = Path(".erk/state.toml")
+            state_file.parent.mkdir(parents=True)
+            state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
+
+            # Create bundled directory
+            bundled_dir = tmp_path / "bundled" / ".claude"
+            bundled_commands = bundled_dir / "commands" / "erk"
+            bundled_commands.mkdir(parents=True)
+            (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            # Create .claude/ with same files (no orphans)
+            project_claude = Path(".claude")
+            project_commands = project_claude / "commands" / "erk"
+            project_commands.mkdir(parents=True)
+            (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+                with patch(
+                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    return_value=bundled_dir,
+                ):
+                    result = runner.invoke(check_cmd)
+
+        assert result.exit_code == 0
+        assert "up to date" in result.output
+        assert "No orphaned artifacts" in result.output
 
 
 class TestSyncCommand:

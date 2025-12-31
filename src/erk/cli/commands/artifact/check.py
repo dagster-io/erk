@@ -4,7 +4,27 @@ from pathlib import Path
 
 import click
 
+from erk.artifacts.orphans import find_orphaned_artifacts
 from erk.artifacts.staleness import check_staleness
+
+
+def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
+    """Display orphan warnings with remediation commands."""
+    total_orphans = sum(len(files) for files in orphans.values())
+    click.echo(
+        click.style("⚠️  ", fg="yellow") + f"Found {total_orphans} orphaned artifact(s) in .claude/"
+    )
+    click.echo("   Orphaned files (not in current erk package):")
+    for folder, files in sorted(orphans.items()):
+        click.echo(f"     {folder}/:")
+        for filename in sorted(files):
+            click.echo(f"       - {filename}")
+
+    click.echo("")
+    click.echo("   To remove:")
+    for folder, files in sorted(orphans.items()):
+        for filename in sorted(files):
+            click.echo(f"     rm .claude/{folder}/{filename}")
 
 
 @click.command("check")
@@ -12,7 +32,8 @@ def check_cmd() -> None:
     """Check if artifacts are in sync with erk version.
 
     Compares the version recorded in .erk/state.toml against
-    the currently installed erk package version.
+    the currently installed erk package version. Also checks
+    for orphaned files that should be removed.
 
     Examples:
 
@@ -22,22 +43,38 @@ def check_cmd() -> None:
     """
     project_dir = Path.cwd()
 
-    result = check_staleness(project_dir)
+    staleness_result = check_staleness(project_dir)
+    orphan_result = find_orphaned_artifacts(project_dir)
 
-    if result.reason == "erk-repo":
+    has_errors = False
+
+    # Check staleness
+    if staleness_result.reason == "erk-repo":
         click.echo(click.style("✓ ", fg="green") + "Development mode (artifacts read from source)")
-    elif result.reason == "not-initialized":
+    elif staleness_result.reason == "not-initialized":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts not initialized")
-        click.echo(f"   Current erk version: {result.current_version}")
+        click.echo(f"   Current erk version: {staleness_result.current_version}")
         click.echo("   Run 'erk artifact sync' to initialize")
-        raise SystemExit(1)
-    elif result.reason == "version-mismatch":
+        has_errors = True
+    elif staleness_result.reason == "version-mismatch":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts out of sync")
-        click.echo(f"   Installed version: {result.installed_version}")
-        click.echo(f"   Current erk version: {result.current_version}")
+        click.echo(f"   Installed version: {staleness_result.installed_version}")
+        click.echo(f"   Current erk version: {staleness_result.current_version}")
         click.echo("   Run 'erk artifact sync' to update")
-        raise SystemExit(1)
+        has_errors = True
     else:
         click.echo(
-            click.style("✓ ", fg="green") + f"Artifacts up to date (v{result.current_version})"
+            click.style("✓ ", fg="green")
+            + f"Artifacts up to date (v{staleness_result.current_version})"
         )
+
+    # Check for orphans (skip if erk-repo or no-claude-dir)
+    if orphan_result.skipped_reason is None:
+        if orphan_result.orphans:
+            _display_orphan_warnings(orphan_result.orphans)
+            has_errors = True
+        else:
+            click.echo(click.style("✓ ", fg="green") + "No orphaned artifacts")
+
+    if has_errors:
+        raise SystemExit(1)

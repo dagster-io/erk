@@ -601,7 +601,7 @@ def test_check_orphaned_artifacts_no_orphans(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
     # Monkeypatch get_bundled_claude_dir to return our mock
-    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_orphaned_artifacts(project_dir)
 
@@ -629,7 +629,7 @@ def test_check_orphaned_artifacts_orphaned_command(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
     (project_commands / "old-command.md").write_text("# Old", encoding="utf-8")
 
-    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_orphaned_artifacts(project_dir)
 
@@ -660,7 +660,7 @@ def test_check_orphaned_artifacts_orphaned_skill(
     (project_skill / "core.md").write_text("# Core", encoding="utf-8")
     (project_skill / "deprecated-file.md").write_text("# Deprecated", encoding="utf-8")
 
-    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_orphaned_artifacts(project_dir)
 
@@ -691,7 +691,7 @@ def test_check_orphaned_artifacts_orphaned_agent(
     (project_agent / "agent.md").write_text("# Agent", encoding="utf-8")
     (project_agent / "old-file.md").write_text("# Old", encoding="utf-8")
 
-    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_orphaned_artifacts(project_dir)
 
@@ -722,7 +722,7 @@ def test_check_orphaned_artifacts_detects_init_py(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
     (project_commands / "__init__.py").write_text("", encoding="utf-8")
 
-    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_orphaned_artifacts(project_dir)
 
@@ -761,7 +761,7 @@ def test_check_orphaned_artifacts_user_created_folders_not_checked(
     local_commands.mkdir(parents=True)
     (local_commands / "my-command.md").write_text("# My cmd", encoding="utf-8")
 
-    monkeypatch.setattr("erk.core.health_checks.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr("erk.artifacts.orphans.get_bundled_claude_dir", lambda: bundled_dir)
 
     result = check_orphaned_artifacts(project_dir)
 
