@@ -213,18 +213,35 @@ jobs:
       - name: Update PR body with implementation summary
         if: steps.implement.outputs.implementation_success == 'true'
         env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN == '' && secrets.ANTHROPIC_API_KEY || '' }}
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
           WORKFLOW_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           source $HOME/.cargo/env
-          erk exec update-pr-body \
+
+          # Debug: Check auth
+          echo "Checking Claude CLI authentication..."
+          echo "ANTHROPIC_API_KEY present: $([[ -n "$ANTHROPIC_API_KEY" ]] && echo 'yes' || echo 'no')"
+          echo "CLAUDE_CODE_OAUTH_TOKEN present: $([[ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]] && echo 'yes' || echo 'no')"
+
+          # Run the update
+          result=$(erk exec update-pr-body \
             --issue-number "$ISSUE_NUMBER" \
             --run-id "$WORKFLOW_RUN_ID" \
-            --run-url "$WORKFLOW_RUN_URL"
+            --run-url "$WORKFLOW_RUN_URL")
+
+          echo "$result"
+
+          # Check if it succeeded
+          if echo "$result" | jq -e '.success == false' > /dev/null; then
+            echo "Error: PR body update failed"
+            echo "$result" | jq -r '.message'
+            exit 1
+          fi
+
           echo "PR body updated with implementation summary"
 
       - name: Trigger CI workflows

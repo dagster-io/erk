@@ -259,6 +259,55 @@ def test_impl_claude_failure(tmp_path: Path) -> None:
     assert "API error" in result.message
 
 
+def test_impl_claude_empty_output(tmp_path: Path) -> None:
+    """Test error when Claude returns success but with empty output."""
+    git = FakeGit(current_branches={tmp_path: "feature-branch"})
+
+    pr_details = PRDetails(
+        number=123,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Old body",
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name="feature-branch",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="test-owner",
+        repo="test-repo",
+    )
+
+    github = FakeGitHub(
+        prs={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Test PR",
+                checks_passing=True,
+                owner="test-owner",
+                repo="test-repo",
+            )
+        },
+        pr_details={123: pr_details},
+        pr_diffs={123: "+some diff"},
+    )
+
+    executor = FakePromptExecutor(output="")
+
+    result = _update_pr_body_impl(
+        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+    )
+
+    assert isinstance(result, UpdateError)
+    assert result.success is False
+    assert result.error == "claude_failed"
+    assert "empty output" in result.message.lower()
+
+
 # ============================================================================
 # 3. CLI Command Tests
 # ============================================================================

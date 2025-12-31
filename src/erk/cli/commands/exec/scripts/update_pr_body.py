@@ -209,6 +209,14 @@ def _update_pr_body_impl(
             message=f"Claude execution failed: {result.error}",
         )
 
+    # Check for empty output
+    if not result.output or not result.output.strip():
+        return UpdateError(
+            success=False,
+            error="claude_failed",
+            message="Claude returned empty output (possible API/auth issue)",
+        )
+
     # Build full PR body
     pr_body = _build_pr_body(result.output, pr_number, issue_number, run_id, run_url)
 
