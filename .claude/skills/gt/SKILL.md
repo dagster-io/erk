@@ -1,5 +1,5 @@
 ---
-name: graphite
+name: gt
 description:
   This skill should be used when working with Graphite (gt) for stacked
   pull requests. Use when users mention gt commands, stack management, PR workflows,
