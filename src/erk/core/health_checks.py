@@ -72,33 +72,6 @@ def _get_installed_erk_version() -> str | None:
         return None
 
 
-def check_uvx_invocation() -> CheckResult:
-    """Check if erk is running via uvx (info-level check).
-
-    This is always a passing check, but shows a warning if running via uvx
-    to help users understand why shell integration doesn't work.
-
-    Returns:
-        CheckResult with uvx invocation status
-    """
-    from erk.cli.uvx_detection import is_running_via_uvx
-
-    if is_running_via_uvx():
-        return CheckResult(
-            name="uvx-invocation",
-            passed=True,
-            warning=True,
-            message="Running via 'uvx erk' (shell integration unavailable)",
-            details=("Install as uv tool instead: uv tool install erk\nThen run: erk init --shell"),
-        )
-
-    return CheckResult(
-        name="uvx-invocation",
-        passed=True,
-        message="Not running via uvx (shell integration available)",
-    )
-
-
 def check_required_tool_version(repo_root: Path) -> CheckResult:
     """Check that installed erk version matches the required version file.
 
@@ -963,7 +936,6 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
 
     results = [
         check_erk_version(),
-        check_uvx_invocation(),
         check_claude_cli(shell),
         check_graphite_cli(shell),
         check_github_cli(shell),
