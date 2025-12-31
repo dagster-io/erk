@@ -867,7 +867,7 @@ def check_missing_artifacts(repo_root: Path) -> CheckResult:
         repo_root: Path to the repository root
 
     Returns:
-        CheckResult with missing artifact status (warning if found)
+        CheckResult with missing artifact status (error if found)
     """
     result = find_missing_artifacts(repo_root)
 
@@ -916,8 +916,7 @@ def check_missing_artifacts(repo_root: Path) -> CheckResult:
 
     return CheckResult(
         name="missing-artifacts",
-        passed=True,
-        warning=True,
+        passed=False,
         message=f"Found {total_missing} missing artifact(s)",
         details="\n".join(details_lines),
     )

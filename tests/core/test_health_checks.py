@@ -774,7 +774,7 @@ def test_check_orphaned_artifacts_user_created_folders_not_checked(
 
 
 def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Check warns when artifacts are missing."""
+    """Check fails when artifacts are missing."""
     # Create bundled dir with command
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
@@ -796,9 +796,10 @@ def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.Monke
     result = check_missing_artifacts(project_dir)
 
     assert result.name == "missing-artifacts"
-    assert result.passed is True
-    assert result.warning is True
+    assert result.passed is False
+    assert result.warning is False
     assert "1 missing artifact" in result.message
+    assert result.details is not None
     assert "erk artifact sync" in result.details
 
 
