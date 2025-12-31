@@ -117,6 +117,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     wt_stack_repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else resolved_cwd
     github_issues = RealGitHubIssues()
     time = RealTime()
+    fake_time = FakeTime()
     return ErkContext(
         git=git,
         github=RealGitHub(time=time, repo_info=repo_info),
@@ -126,8 +127,8 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,
         wt_stack=WtStack(git, wt_stack_repo_root, fake_graphite),
-        time=FakeTime(),
-        plan_store=GitHubPlanStore(github_issues),
+        time=fake_time,
+        plan_store=GitHubPlanStore(github_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=SuppressedFeedback(),

@@ -106,18 +106,19 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
     fake_graphite = FakeGraphite()
+    fake_time = FakeTime()
     return ErkContext(
         git=git,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
         issues=fake_issues,
-        plan_store=GitHubPlanStore(fake_issues),
+        plan_store=GitHubPlanStore(fake_issues, fake_time),
         graphite=fake_graphite,
         wt_stack=WtStack(git, cwd, fake_graphite),
         shell=FakeShell(),
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
-        time=FakeTime(),
+        time=fake_time,
         config_store=FakeConfigStore(config=None),
         script_writer=FakeScriptWriter(),
         feedback=FakeUserFeedback(),
@@ -466,7 +467,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 7. Create GitHub-related classes (need repo_info)
     github: GitHub = RealGitHub(time, repo_info)
     issues: GitHubIssues = RealGitHubIssues()
-    plan_store: PlanStore = GitHubPlanStore(issues)
+    plan_store: PlanStore = GitHubPlanStore(issues, time)
     plan_list_service: PlanListService = RealPlanListService(github, issues)
 
     # 8. Load local config (or defaults if no repo)

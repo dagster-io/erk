@@ -108,6 +108,7 @@ def context_for_test(
         worktrees_dir=Path("/fake/erk/repos") / resolved_repo_root.name / "worktrees",
     )
 
+    fake_time = FakeTime()
     return ErkContext(
         git=resolved_git,
         github=resolved_github,
@@ -117,8 +118,8 @@ def context_for_test(
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
         wt_stack=resolved_wt_stack,
-        time=FakeTime(),
-        plan_store=GitHubPlanStore(resolved_issues),
+        time=fake_time,
+        plan_store=GitHubPlanStore(resolved_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=FakeUserFeedback(),

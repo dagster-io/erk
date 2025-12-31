@@ -7,13 +7,15 @@ Schema Version 2:
 """
 
 import sys
-import time
 from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
 
+from erk_shared.gateway.time.abc import Time
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_from_comment, extract_plan_header_comment_id
+from erk_shared.github.retry import with_github_retry
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
 
@@ -28,13 +30,16 @@ class GitHubPlanStore(PlanStore):
     - For old-format issues: body contains plan content directly (backward compatible)
     """
 
-    def __init__(self, github_issues: GitHubIssues):
-        """Initialize GitHubPlanStore with GitHub issues interface.
+    def __init__(self, github_issues: GitHubIssues, time: Time | None = None):
+        """Initialize GitHubPlanStore with GitHub issues interface and optional time dependency.
 
         Args:
             github_issues: GitHubIssues implementation to use for issue operations
+            time: Time abstraction for sleep operations. Defaults to RealTime() for
+                  production use. Pass FakeTime() in tests that need to verify retry behavior.
         """
         self._github_issues = github_issues
+        self._time = time if time is not None else RealTime()
 
     def get_plan(self, repo_root: Path, plan_identifier: str) -> Plan:
         """Fetch plan from GitHub by identifier.
@@ -77,7 +82,8 @@ class GitHubPlanStore(PlanStore):
         transient GitHub API failures. Falls back gracefully if the comment
         is permanently missing (deleted, invalid ID).
 
-        Retries up to 2 times (3 total attempts) with delays of 0.5s and 1s.
+        Uses with_github_retry utility which retries up to 2 times
+        (3 total attempts) with delays of 0.5s and 1s.
 
         Args:
             repo_root: Repository root directory
@@ -86,44 +92,20 @@ class GitHubPlanStore(PlanStore):
         Returns:
             Plan content extracted from comment, or None if fetch fails
         """
-        max_retries = 2
-        retry_delays = [0.5, 1.0]  # Exponential backoff: 0.5s, 1s
-
-        for attempt in range(max_retries + 1):
-            try:
-                comment_body = self._github_issues.get_comment_by_id(repo_root, comment_id)
-                plan_content = extract_plan_from_comment(comment_body)
-                if attempt > 0:
-                    print(
-                        f"Successfully fetched comment {comment_id} on retry {attempt}",
-                        file=sys.stderr,
-                    )
-                return plan_content
-            except RuntimeError as e:
-                is_last_attempt = attempt == max_retries
-                if is_last_attempt:
-                    # All retries exhausted - log and fall back
-                    print(
-                        f"Warning: Failed to fetch plan comment {comment_id} after "
-                        f"{max_retries + 1} attempts: {e}",
-                        file=sys.stderr,
-                    )
-                    print(
-                        "Falling back to first comment lookup (comment may be deleted)",
-                        file=sys.stderr,
-                    )
-                    return None
-
-                # Retry with backoff
-                delay = retry_delays[attempt] if attempt < len(retry_delays) else retry_delays[-1]
-                print(
-                    f"Warning: Failed to fetch comment {comment_id} (attempt {attempt + 1}): {e}",
-                    file=sys.stderr,
-                )
-                print(f"Retrying in {delay}s...", file=sys.stderr)
-                time.sleep(delay)
-
-        return None
+        try:
+            comment_body = with_github_retry(
+                self._time,
+                f"fetch plan comment {comment_id}",
+                lambda: self._github_issues.get_comment_by_id(repo_root, comment_id),
+            )
+            return extract_plan_from_comment(comment_body)
+        except RuntimeError:
+            # All retries exhausted - fall back to first comment
+            print(
+                "Falling back to first comment lookup (comment may be deleted)",
+                file=sys.stderr,
+            )
+            return None
 
     def _get_plan_body(self, repo_root: Path, issue_info: IssueInfo) -> str:
         """Get the plan body from the issue.

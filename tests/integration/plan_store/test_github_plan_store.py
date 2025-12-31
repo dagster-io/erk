@@ -647,6 +647,8 @@ def test_get_plan_body_comment_id_not_found_falls_back() -> None:
     404, network error), the code should catch the RuntimeError and fall back
     to fetching the first comment instead of crashing.
     """
+    from erk_shared.gateway.time.fake import FakeTime
+
     # Issue body has plan_comment_id pointing to non-existent comment
     metadata_body = """<!-- erk:metadata-block:plan-header -->
 <details><summary><code>plan-header</code></summary>
@@ -675,7 +677,8 @@ This is the actual plan content.
         issues={42: issue},
         comments={42: [plan_comment]},
     )
-    store = GitHubPlanStore(fake_github)
+    fake_time = FakeTime()
+    store = GitHubPlanStore(fake_github, fake_time)
 
     # Should successfully fall back to first comment despite invalid plan_comment_id
     result = store.get_plan(Path("/fake/repo"), "42")
@@ -686,3 +689,6 @@ This is the actual plan content.
     assert "This is the actual plan content." in result.body
     # Should NOT contain metadata
     assert "plan_comment_id" not in result.body
+
+    # Verify retry logic was used (should have attempted 3 times with delays of 0.5s and 1s)
+    assert fake_time.sleep_calls == [0.5, 1.0]
