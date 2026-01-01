@@ -39,6 +39,7 @@ import click
 
 from erk_shared.context.helpers import require_cwd, require_git, require_session_store
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore, Session
+from erk_shared.extraction.session_schema import extract_first_user_message_text
 from erk_shared.git.abc import Git
 
 
@@ -155,64 +156,6 @@ def format_display_time(mtime: float) -> str:
     return dt.strftime("%b %-d, %-I:%M %p")
 
 
-def extract_text_from_blocks(blocks: list[dict | str]) -> str:
-    """Extract the first text string from a list of content blocks."""
-    for block in blocks:
-        if isinstance(block, dict) and block.get("type") == "text":
-            return block.get("text", "")
-        elif isinstance(block, str):
-            return block
-    return ""
-
-
-def extract_summary(content: str, max_length: int = 60) -> str:
-    """Extract summary from session content (first user message text).
-
-    Args:
-        content: Raw JSONL session content
-        max_length: Maximum summary length
-
-    Returns:
-        First user message text, truncated to max_length
-    """
-    for line in content.split("\n"):
-        if not line.strip():
-            continue
-        try:
-            entry = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-
-        if entry.get("type") != "user":
-            continue
-
-        message = entry.get("message", {})
-        content_field = message.get("content", "")
-
-        # Content can be string or list of content blocks
-        if isinstance(content_field, str):
-            text = content_field
-        elif isinstance(content_field, list):
-            # Find first text block
-            text = extract_text_from_blocks(content_field)
-            if not text:
-                continue
-        else:
-            continue
-
-        # Clean up the text
-        text = text.strip()
-        if not text:
-            continue
-
-        # Truncate with ellipsis if needed
-        if len(text) > max_length:
-            return text[: max_length - 3] + "..."
-        return text
-
-    return ""
-
-
 def _list_sessions_from_store(
     session_store: ClaudeCodeSessionStore,
     cwd: Path,
@@ -260,7 +203,7 @@ def _list_sessions_from_store(
         content = session_store.read_session(cwd, session.session_id, include_agents=False)
         summary = ""
         if content is not None:
-            summary = extract_summary(content.main_content)
+            summary = extract_first_user_message_text(content.main_content, max_length=60)
 
         # Determine if this is the current session
         is_current = session.session_id == current_session_id

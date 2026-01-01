@@ -12,7 +12,6 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.list_sessions import (
     _list_sessions_from_store,
-    extract_summary,
     format_display_time,
     format_relative_time,
     get_branch_context,
@@ -24,6 +23,7 @@ from erk_shared.extraction.claude_code_session_store import (
     FakeProject,
     FakeSessionData,
 )
+from erk_shared.extraction.session_schema import extract_first_user_message_text
 from erk_shared.git.fake import FakeGit
 
 
@@ -125,7 +125,7 @@ def test_extract_summary_string_content() -> None:
     content = json.dumps(
         {"type": "user", "message": {"content": "how many session ids does this correspond to?"}}
     )
-    result = extract_summary(content)
+    result = extract_first_user_message_text(content, max_length=None)
     assert result == "how many session ids does this correspond to?"
 
 
@@ -133,7 +133,7 @@ def test_extract_summary_structured_content() -> None:
     """Test extraction from user message with structured content."""
     msg = {"type": "user", "message": {"content": [{"type": "text", "text": "Please help"}]}}
     content = json.dumps(msg)
-    result = extract_summary(content)
+    result = extract_first_user_message_text(content, max_length=None)
     assert result == "Please help"
 
 
@@ -141,7 +141,7 @@ def test_extract_summary_truncates_long_text() -> None:
     """Test that long summaries are truncated with ellipsis."""
     long_text = "x" * 100
     content = json.dumps({"type": "user", "message": {"content": long_text}})
-    result = extract_summary(content, max_length=60)
+    result = extract_first_user_message_text(content, max_length=60)
     assert len(result) == 60
     assert result.endswith("...")
 
@@ -152,13 +152,13 @@ def test_extract_summary_skips_assistant_messages() -> None:
     user_msg = {"type": "user", "message": {"content": "My actual question"}}
     lines = [json.dumps(asst_msg), json.dumps(user_msg)]
     content = "\n".join(lines)
-    result = extract_summary(content)
+    result = extract_first_user_message_text(content, max_length=None)
     assert result == "My actual question"
 
 
 def test_extract_summary_empty_content() -> None:
     """Test handling of empty content."""
-    result = extract_summary("")
+    result = extract_first_user_message_text("", max_length=None)
     assert result == ""
 
 
@@ -166,14 +166,14 @@ def test_extract_summary_no_user_messages() -> None:
     """Test handling of content with no user messages."""
     msg = {"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi"}]}}
     content = json.dumps(msg)
-    result = extract_summary(content)
+    result = extract_first_user_message_text(content, max_length=None)
     assert result == ""
 
 
 def test_extract_summary_handles_malformed_json() -> None:
     """Test handling of malformed JSON in content."""
     content = "{invalid json}\n" + json.dumps({"type": "user", "message": {"content": "Valid"}})
-    result = extract_summary(content)
+    result = extract_first_user_message_text(content, max_length=None)
     # Should find the valid entry after skipping malformed
     assert result == "Valid"
 
@@ -181,7 +181,7 @@ def test_extract_summary_handles_malformed_json() -> None:
 def test_extract_summary_content_with_newlines() -> None:
     """Test handling of multi-line content."""
     content = json.dumps({"type": "user", "message": {"content": "Line one"}})
-    result = extract_summary(content)
+    result = extract_first_user_message_text(content, max_length=None)
     assert result == "Line one"
 
 
