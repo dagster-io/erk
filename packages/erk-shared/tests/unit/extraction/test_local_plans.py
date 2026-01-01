@@ -297,9 +297,7 @@ class TestGetLatestPlanContent:
 class TestExtractPlanningAgentIds:
     """Tests for extract_planning_agent_ids function."""
 
-    def test_extracts_plan_agent_ids(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_extracts_plan_agent_ids(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Extracts agent IDs for Task invocations with subagent_type='Plan'."""
         claude_dir = tmp_path / ".claude"
         projects_dir = claude_dir / "projects"
@@ -328,11 +326,7 @@ class TestExtractPlanningAgentIds:
             {
                 "sessionId": session_id,
                 "type": "user",
-                "message": {
-                    "content": [
-                        {"type": "tool_result", "tool_use_id": "toolu_plan_123"}
-                    ]
-                },
+                "message": {"content": [{"type": "tool_result", "tool_use_id": "toolu_plan_123"}]},
                 "toolUseResult": {"agentId": "abc123", "status": "completed"},
             },
         ]
@@ -344,9 +338,7 @@ class TestExtractPlanningAgentIds:
 
         assert result == ["agent-abc123"]
 
-    def test_ignores_non_plan_agents(
-        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-    ) -> None:
+    def test_ignores_non_plan_agents(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Ignores Task invocations with other subagent_types (devrun, Explore)."""
         claude_dir = tmp_path / ".claude"
         projects_dir = claude_dir / "projects"
@@ -375,9 +367,7 @@ class TestExtractPlanningAgentIds:
                 "sessionId": session_id,
                 "type": "user",
                 "message": {
-                    "content": [
-                        {"type": "tool_result", "tool_use_id": "toolu_devrun_123"}
-                    ]
+                    "content": [{"type": "tool_result", "tool_use_id": "toolu_devrun_123"}]
                 },
                 "toolUseResult": {"agentId": "devrun123", "status": "completed"},
             },
@@ -400,9 +390,7 @@ class TestExtractPlanningAgentIds:
                 "sessionId": session_id,
                 "type": "user",
                 "message": {
-                    "content": [
-                        {"type": "tool_result", "tool_use_id": "toolu_explore_456"}
-                    ]
+                    "content": [{"type": "tool_result", "tool_use_id": "toolu_explore_456"}]
                 },
                 "toolUseResult": {"agentId": "explore456", "status": "completed"},
             },
@@ -482,11 +470,7 @@ class TestExtractPlanningAgentIds:
             {
                 "sessionId": session_id,
                 "type": "user",
-                "message": {
-                    "content": [
-                        {"type": "tool_result", "tool_use_id": "toolu_plan_1"}
-                    ]
-                },
+                "message": {"content": [{"type": "tool_result", "tool_use_id": "toolu_plan_1"}]},
                 "toolUseResult": {"agentId": "first123", "status": "completed"},
             },
             # Second Plan agent
@@ -507,11 +491,7 @@ class TestExtractPlanningAgentIds:
             {
                 "sessionId": session_id,
                 "type": "user",
-                "message": {
-                    "content": [
-                        {"type": "tool_result", "tool_use_id": "toolu_plan_2"}
-                    ]
-                },
+                "message": {"content": [{"type": "tool_result", "tool_use_id": "toolu_plan_2"}]},
                 "toolUseResult": {"agentId": "second456", "status": "completed"},
             },
         ]

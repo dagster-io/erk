@@ -362,11 +362,7 @@ def _execute_result(result: HookOutput, hook_input: HookInput) -> None:
     # Snapshot plan whenever a plan exists and user made a decision
     # (implement-now or plan-saved, but NOT when blocking to prompt)
     user_made_decision = result.delete_implement_now_signal or result.delete_plan_saved_signal
-    if (
-        hook_input.plan_file_path is not None
-        and session_id is not None
-        and user_made_decision
-    ):
+    if hook_input.plan_file_path is not None and session_id is not None and user_made_decision:
         repo_root = _get_repo_root()
         slugs = extract_slugs_from_session(session_id, cwd_hint=str(repo_root))
         slug = slugs[-1] if slugs else "unknown"

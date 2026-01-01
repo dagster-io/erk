@@ -17,7 +17,7 @@ import hashlib
 import json
 import shutil
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from erk_shared.scratch.scratch import get_scratch_dir
@@ -180,7 +180,7 @@ def snapshot_plan_file(
     # Write metadata
     metadata = PlanSnapshotMetadata(
         slug=slug,
-        captured_at=datetime.now(timezone.utc).isoformat(),
+        captured_at=datetime.now(UTC).isoformat(),
         content_hash=content_hash,
         source_path=str(plan_file_path),
         planning_agent_ids=tuple(planning_agent_ids),

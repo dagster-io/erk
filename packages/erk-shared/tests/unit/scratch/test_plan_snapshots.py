@@ -12,7 +12,6 @@ from erk_shared.scratch.plan_snapshots import (
     snapshot_plan_file,
 )
 
-
 # compute_content_hash tests
 
 
