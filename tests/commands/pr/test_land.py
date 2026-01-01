@@ -2,15 +2,7 @@
 
 The pr land command now:
 1. Merges the PR
-2. Optionally runs extraction (only with --insights flag)
-3. Prints extraction issue URL (if --insights and successful)
-4. Deletes worktree and navigates to trunk
-
-Note on extraction plans:
-PRs that originate from extraction plans (plan_type: "extraction") automatically
-skip insight extraction even with --insights. This prevents infinite loops where
-extracting insights from an extraction-originated PR would lead to another
-extraction plan.
+2. Deletes worktree and navigates to trunk
 """
 
 from dataclasses import replace
@@ -19,7 +11,6 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk.cli.commands.pr.land_cmd import is_extraction_origin_pr
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
@@ -27,18 +18,16 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
-    """Test pr land (default --no-insights) merges PR, skips extraction, deletes worktree."""
+def test_pr_land_merges_and_deletes_worktree() -> None:
+    """Test pr land merges PR and deletes worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -95,7 +84,6 @@ def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
             merge_should_succeed=True,
         )
 
-        # Note: No issues setup needed since default skips extraction
         issues_ops = FakeGitHubIssues(username="testuser")
 
         repo = RepoContext(
@@ -110,15 +98,15 @@ def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Use --force to skip cleanup confirmation
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
-
-        # Verify NO extraction was attempted (no issues created)
-        assert len(issues_ops.created_issues) == 0
 
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
@@ -134,101 +122,6 @@ def test_pr_land_default_skips_extraction_and_deletes_worktree() -> None:
 
         # Verify "Deleted worktree" message
         assert "Deleted worktree and branch" in result.output
-
-        # Verify extraction-related output NOT shown
-        assert "Extracted insights" not in result.output
-        assert "Extraction failed" not in result.output
-
-
-def test_pr_land_with_insights_extraction_failure_continues() -> None:
-    """Test pr land --insights continues with worktree deletion even if extraction fails."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
-            }
-        )
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-1": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 1",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 1",
-                    body="PR body",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="main",
-                    head_ref_name="feature-1",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                )
-            },
-            pr_bases={123: "main"},
-            merge_should_succeed=True,
-        )
-
-        # FakeGitHubIssues with no username = not authenticated = extraction fails
-        issues_ops = FakeGitHubIssues(username=None)
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
-        )
-        test_ctx = replace(test_ctx, issues=issues_ops)
-
-        result = runner.invoke(
-            pr_group, ["land", "--script", "--insights"], obj=test_ctx, catch_exceptions=False
-        )
-
-        # Should succeed overall despite extraction failure
-        assert result.exit_code == 0
-
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
-
-        # Verify extraction failure warning shown
-        assert "Extraction failed" in result.output
-
-        # Verify worktree still deleted despite extraction failure
-        assert feature_1_path in git_ops.removed_worktrees
-        assert "feature-1" in git_ops.deleted_branches
 
 
 def test_pr_land_error_from_execute_land_pr() -> None:
@@ -328,7 +221,8 @@ def test_pr_land_requires_clean_working_tree() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        # Use --script to bypass shell integration check and reach validation
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result, 1, "Cannot delete current branch with uncommitted changes", "commit or stash"
@@ -352,7 +246,8 @@ def test_pr_land_detached_head() -> None:
 
         test_ctx = env.build_context(git=git_ops, use_graphite=True)
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        # Use --script to bypass shell integration check and reach validation
+        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 
@@ -629,7 +524,10 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Use --force to skip cleanup confirmation
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
@@ -637,272 +535,6 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
         assert len(git_ops.chdir_history) == 0, (
             "Should NOT call safe_chdir (activation script handles cd)"
         )
-
-
-def test_pr_land_with_insights_runs_extraction() -> None:
-    """Test pr land --insights merges PR, runs extraction, deletes worktree."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
-            }
-        )
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-1": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 1",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 1",
-                    body="PR body",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="main",
-                    head_ref_name="feature-1",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                )
-            },
-            pr_bases={123: "main"},
-            merge_should_succeed=True,
-        )
-
-        # FakeGitHubIssues for extraction
-        issues_ops = FakeGitHubIssues(username="testuser")
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
-        )
-        test_ctx = replace(test_ctx, issues=issues_ops)
-
-        result = runner.invoke(
-            pr_group, ["land", "--script", "--insights"], obj=test_ctx, catch_exceptions=False
-        )
-
-        assert result.exit_code == 0
-
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
-
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
-
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
-
-        # Verify output messages
-        assert "Deleted worktree and branch" in result.output
-
-        # Verify activation script points to root repo (trunk)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
-        assert str(repo.root) in script_content
-
-
-def test_pr_land_extraction_origin_skips_extraction_even_with_insights_flag() -> None:
-    """Test pr land --insights auto-skips extraction for PRs with erk-skip-extraction label.
-
-    When a PR has the erk-skip-extraction label, erk pr land --insights should:
-    1. NOT run extraction (even though --insights is specified)
-    2. Delete the worktree and branch
-    3. Navigate to trunk
-
-    This prevents infinite extraction loops from extraction-originated PRs.
-    """
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
-            default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
-            file_statuses={env.cwd: ([], [], [])},
-        )
-
-        graphite_ops = FakeGraphite(
-            branches={
-                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
-                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
-            }
-        )
-
-        github_ops = FakeGitHub(
-            prs={
-                "feature-1": PullRequestInfo(
-                    number=123,
-                    state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
-                    is_draft=False,
-                    title="Feature 1",
-                    checks_passing=None,
-                    owner="owner",
-                    repo="repo",
-                    has_conflicts=None,
-                ),
-            },
-            pr_details={
-                123: PRDetails(
-                    number=123,
-                    url="https://github.com/owner/repo/pull/123",
-                    title="Feature 1",
-                    body="PR body",
-                    state="OPEN",
-                    is_draft=False,
-                    base_ref_name="main",
-                    head_ref_name="feature-1",
-                    is_cross_repository=False,
-                    mergeable="MERGEABLE",
-                    merge_state_status="CLEAN",
-                    owner="owner",
-                    repo="repo",
-                )
-            },
-            pr_bases={123: "main"},
-            merge_should_succeed=True,
-        )
-        # PR has erk-skip-extraction label
-        github_ops.set_pr_labels(123, {ERK_SKIP_EXTRACTION_LABEL})
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-        )
-
-        test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
-        )
-
-        # Use --insights flag explicitly, but extraction should still be skipped
-        result = runner.invoke(
-            pr_group, ["land", "--script", "--insights"], obj=test_ctx, catch_exceptions=False
-        )
-
-        assert result.exit_code == 0
-
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
-
-        # Verify NO pending extraction marker was created
-        assert not marker_exists(feature_1_path, PENDING_EXTRACTION_MARKER)
-
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
-
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
-
-        # Verify user was informed about skipping extraction
-        assert "extraction plan" in result.output
-        assert "skipping insight extraction" in result.output
-
-        # Verify output messages about deletion
-        assert "Deleted worktree and branch" in result.output
-
-
-def test_is_extraction_origin_pr_returns_true_when_label_present(tmp_path: Path) -> None:
-    """Test is_extraction_origin_pr returns True when PR has erk-skip-extraction label."""
-    from erk.core.context import context_for_test
-
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    github_ops = FakeGitHub()
-    # PR has erk-skip-extraction label
-    github_ops.set_pr_labels(456, {ERK_SKIP_EXTRACTION_LABEL})
-
-    ctx = context_for_test(
-        cwd=repo_root,
-        github=github_ops,
-    )
-
-    result = is_extraction_origin_pr(ctx, repo_root, 456)
-
-    assert result is True
-
-
-def test_is_extraction_origin_pr_returns_false_when_label_absent(tmp_path: Path) -> None:
-    """Test is_extraction_origin_pr returns False when PR has no erk-skip-extraction label."""
-    from erk.core.context import context_for_test
-
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    github_ops = FakeGitHub()
-    # PR has other labels, but not erk-skip-extraction
-    github_ops.set_pr_labels(456, {"bug", "enhancement"})
-
-    ctx = context_for_test(
-        cwd=repo_root,
-        github=github_ops,
-    )
-
-    result = is_extraction_origin_pr(ctx, repo_root, 456)
-
-    assert result is False
-
-
-def test_is_extraction_origin_pr_returns_false_when_no_labels(tmp_path: Path) -> None:
-    """Test is_extraction_origin_pr returns False when PR has no labels."""
-    from erk.core.context import context_for_test
-
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    # No labels configured for this PR
-    github_ops = FakeGitHub()
-
-    ctx = context_for_test(
-        cwd=repo_root,
-        github=github_ops,
-    )
-
-    result = is_extraction_origin_pr(ctx, repo_root, 456)
-
-    assert result is False
 
 
 def test_pr_land_with_up_navigates_to_child_branch() -> None:
@@ -983,7 +615,7 @@ def test_pr_land_with_up_navigates_to_child_branch() -> None:
         test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1073,7 +705,7 @@ def test_pr_land_with_up_no_children_fails_before_merge() -> None:
         )
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         # Should fail with exit code 1
@@ -1193,7 +825,7 @@ def test_pr_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         # With the fix: find_worktree_for_branch(main_repo_root, "feature-2")
         # succeeds because main_repo_root is the dict key for worktrees.
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1298,7 +930,7 @@ def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
         )
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         # Should fail with exit code 1
@@ -1389,8 +1021,10 @@ def test_pr_land_default_includes_git_pull_in_activation_script() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Default (no --no-pull flag)
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Default (no --no-pull flag), use --force to skip confirmation
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
 
         assert result.exit_code == 0
 
@@ -1476,7 +1110,10 @@ def test_pr_land_no_pull_flag_omits_git_pull() -> None:
 
         # --no-pull flag
         result = runner.invoke(
-            pr_group, ["land", "--script", "--no-pull"], obj=test_ctx, catch_exceptions=False
+            pr_group,
+            ["land", "--script", "--no-pull", "--force"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -1567,7 +1204,7 @@ def test_pr_land_with_up_does_not_include_git_pull() -> None:
 
         # --up flag navigates to child, not trunk - should NOT include git pull
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1582,3 +1219,700 @@ def test_pr_land_with_up_does_not_include_git_pull() -> None:
         # (git pull is only for trunk after landing)
         assert "git pull" not in script_content
         assert "# Post-activation commands" not in script_content
+
+
+# =============================================================================
+# Tests for erk pr land <pr_number>
+# =============================================================================
+
+
+def test_pr_land_by_number() -> None:
+    """Test erk pr land 123 lands the specified PR by number."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},  # Running from main, not feature-1
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Pass "123" as the PR number argument with --force to skip confirmation
+        result = runner.invoke(
+            pr_group, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+
+def test_pr_land_by_url() -> None:
+    """Test erk pr land <url> lands the specified PR by URL."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=456,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/456",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                456: PRDetails(
+                    number=456,
+                    url="https://github.com/owner/repo/pull/456",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={456: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Pass URL as the argument
+        result = runner.invoke(
+            pr_group,
+            ["land", "https://github.com/owner/repo/pull/456", "--script", "--force"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 456 in github_ops.merged_prs
+
+        # Verify worktree was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+
+def test_pr_land_fork_pr() -> None:
+    """Test landing a fork PR uses pr/{number} branch naming."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", commit_sha="abc123"),
+            }
+        )
+
+        # Fork PR - is_cross_repository=True
+        github_ops = FakeGitHub(
+            pr_details={
+                789: PRDetails(
+                    number=789,
+                    url="https://github.com/owner/repo/pull/789",
+                    title="Fork PR",
+                    body="PR from fork",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="contributor-feature",  # Fork branch name
+                    is_cross_repository=True,  # Fork PR
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={789: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        result = runner.invoke(
+            pr_group, ["land", "789", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 789 in github_ops.merged_prs
+
+        # For fork PRs, we expect "pr/789" branch naming convention
+        assert "Merged PR #789 [pr/789]" in result.output
+
+        # The fork PR's branch doesn't exist locally (never checked out),
+        # so we skip deletion and inform the user
+        assert "Branch 'pr/789' not found locally" in result.output
+        assert "pr/789" not in git_ops.deleted_branches
+
+
+def test_pr_land_cleanup_confirmation_decline() -> None:
+    """Test that declining cleanup confirmation preserves worktree."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Provide "n" as input to decline the confirmation
+        result = runner.invoke(
+            pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False, input="n\n"
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree was NOT removed (user declined)
+        assert feature_1_path not in git_ops.removed_worktrees
+
+        # Verify message about preserved worktree
+        assert "Worktree preserved" in result.output
+
+
+def test_pr_land_force_skips_confirmation() -> None:
+    """Test that --force skips the cleanup confirmation prompt."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Use --force to skip confirmation (no input needed)
+        result = runner.invoke(
+            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree was removed (--force skipped confirmation)
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+
+def test_pr_land_up_rejected_with_pr_argument() -> None:
+    """Test that --up is rejected when a PR number is specified."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            merge_should_succeed=True,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        # Try to use --up with PR number
+        result = runner.invoke(
+            pr_group, ["land", "123", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+        )
+
+        # Should fail
+        assert result.exit_code == 1
+
+        # Should show error about --up not allowed with PR argument
+        assert "Cannot use --up when specifying a PR" in result.output
+
+        # PR should NOT have been merged (fail-fast)
+        assert len(github_ops.merged_prs) == 0
+
+
+def test_pr_land_from_different_worktree() -> None:
+    """Test landing a PR from a different worktree than the PR's branch."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        # We're on main, landing feature-1's PR
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},  # On main
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        result = runner.invoke(
+            pr_group, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+        # Since we weren't in the target worktree, no navigation should happen
+        # (we stay on main). The test completes without the activation script
+        # containing our current location.
+
+
+def test_pr_land_pr_not_found() -> None:
+    """Test error when PR number doesn't exist."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", commit_sha="abc123"),
+            }
+        )
+
+        # No PRs configured
+        github_ops = FakeGitHub()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            pr_group, ["land", "999", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "Pull request #999 not found" in result.output
+
+
+def test_pr_land_invalid_pr_identifier() -> None:
+    """Test error when PR identifier is invalid format."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", commit_sha="abc123"),
+            }
+        )
+
+        github_ops = FakeGitHub()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            pr_group, ["land", "not-a-number", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "Invalid PR identifier" in result.output
