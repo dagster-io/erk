@@ -54,9 +54,10 @@ from pathlib import Path
 import click
 
 from erk.hooks.decorators import logged_hook, project_scoped
+from erk_shared.context.helpers import require_repo_root
 from erk_shared.extraction.local_plans import extract_slugs_from_session
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
-from erk_shared.scratch.scratch import _get_repo_root, get_scratch_dir
+from erk_shared.scratch.scratch import get_scratch_dir
 
 # ============================================================================
 # Data Classes for Pure Logic
@@ -252,19 +253,21 @@ def _get_session_id_from_stdin() -> str | None:
     return None
 
 
-def _get_implement_now_signal_path(session_id: str) -> Path:
+def _get_implement_now_signal_path(session_id: str, repo_root: Path) -> Path:
     """Get implement-now signal path in .erk/scratch/sessions/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
+        repo_root: Repository root path
 
     Returns:
         Path to implement-now signal file
     """
-    return get_scratch_dir(session_id) / "exit-plan-mode-hook.implement-now.signal"
+    scratch = get_scratch_dir(session_id, repo_root=repo_root)
+    return scratch / "exit-plan-mode-hook.implement-now.signal"
 
 
-def _get_plan_saved_signal_path(session_id: str) -> Path:
+def _get_plan_saved_signal_path(session_id: str, repo_root: Path) -> Path:
     """Get plan-saved signal path in .erk/scratch/sessions/<session_id>/.
 
     The plan-saved signal indicates the plan was already saved to GitHub,
@@ -272,14 +275,16 @@ def _get_plan_saved_signal_path(session_id: str) -> Path:
 
     Args:
         session_id: The session ID to build the path for
+        repo_root: Repository root path
 
     Returns:
         Path to plan-saved signal file
     """
-    return get_scratch_dir(session_id) / "exit-plan-mode-hook.plan-saved.signal"
+    scratch = get_scratch_dir(session_id, repo_root=repo_root)
+    return scratch / "exit-plan-mode-hook.plan-saved.signal"
 
 
-def _get_incremental_plan_signal_path(session_id: str) -> Path:
+def _get_incremental_plan_signal_path(session_id: str, repo_root: Path) -> Path:
     """Get incremental-plan signal path in .erk/scratch/sessions/<session_id>/.
 
     The incremental-plan signal indicates this session was started via
@@ -288,18 +293,20 @@ def _get_incremental_plan_signal_path(session_id: str) -> Path:
 
     Args:
         session_id: The session ID to build the path for
+        repo_root: Repository root path
 
     Returns:
         Path to incremental-plan signal file
     """
-    return get_scratch_dir(session_id) / "incremental-plan.signal"
+    return get_scratch_dir(session_id, repo_root=repo_root) / "incremental-plan.signal"
 
 
-def _find_session_plan(session_id: str) -> Path | None:
+def _find_session_plan(session_id: str, repo_root: Path) -> Path | None:
     """Find plan file for the given session using slug lookup.
 
     Args:
         session_id: The session ID to search for
+        repo_root: Repository root path
 
     Returns:
         Path to plan file if found, None otherwise
@@ -308,8 +315,7 @@ def _find_session_plan(session_id: str) -> Path | None:
     if not plans_dir.exists():
         return None
 
-    repo_root = str(_get_repo_root())
-    slugs = extract_slugs_from_session(session_id, cwd_hint=repo_root)
+    slugs = extract_slugs_from_session(session_id, cwd_hint=str(repo_root))
     if not slugs:
         return None
 
@@ -343,8 +349,12 @@ def _get_current_branch_within_hook() -> str | None:
 # ============================================================================
 
 
-def _gather_inputs() -> HookInput:
-    """Gather all inputs from environment. All I/O happens here."""
+def _gather_inputs(repo_root: Path) -> HookInput:
+    """Gather all inputs from environment. All I/O happens here.
+
+    Args:
+        repo_root: Repository root path for locating scratch files
+    """
     session_id = _get_session_id_from_stdin()
 
     # Determine signal existence
@@ -352,14 +362,17 @@ def _gather_inputs() -> HookInput:
     plan_saved_signal_exists = False
     incremental_plan_signal_exists = False
     if session_id:
-        implement_now_signal_exists = _get_implement_now_signal_path(session_id).exists()
-        plan_saved_signal_exists = _get_plan_saved_signal_path(session_id).exists()
-        incremental_plan_signal_exists = _get_incremental_plan_signal_path(session_id).exists()
+        implement_signal = _get_implement_now_signal_path(session_id, repo_root)
+        saved_signal = _get_plan_saved_signal_path(session_id, repo_root)
+        incremental_signal = _get_incremental_plan_signal_path(session_id, repo_root)
+        implement_now_signal_exists = implement_signal.exists()
+        plan_saved_signal_exists = saved_signal.exists()
+        incremental_plan_signal_exists = incremental_signal.exists()
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
     if session_id:
-        plan_file_path = _find_session_plan(session_id)
+        plan_file_path = _find_session_plan(session_id, repo_root)
 
     # Get current branch (only if we need to show the blocking message)
     current_branch = None
@@ -384,18 +397,24 @@ def _gather_inputs() -> HookInput:
     )
 
 
-def _execute_result(result: HookOutput, hook_input: HookInput) -> None:
-    """Execute the decision result. All I/O happens here."""
+def _execute_result(result: HookOutput, hook_input: HookInput, repo_root: Path) -> None:
+    """Execute the decision result. All I/O happens here.
+
+    Args:
+        result: The hook output decision
+        hook_input: The gathered hook inputs
+        repo_root: Repository root path for locating scratch files
+    """
     session_id = hook_input.session_id
 
     if result.delete_implement_now_signal and session_id:
-        _get_implement_now_signal_path(session_id).unlink()
+        _get_implement_now_signal_path(session_id, repo_root).unlink()
 
     if result.delete_plan_saved_signal and session_id:
-        _get_plan_saved_signal_path(session_id).unlink()
+        _get_plan_saved_signal_path(session_id, repo_root).unlink()
 
     if result.delete_incremental_plan_signal and session_id:
-        _get_incremental_plan_signal_path(session_id).unlink()
+        _get_incremental_plan_signal_path(session_id, repo_root).unlink()
 
     # Snapshot plan whenever a plan exists and user made a decision
     # (implement-now or plan-saved, but NOT when blocking to prompt)
@@ -404,7 +423,7 @@ def _execute_result(result: HookOutput, hook_input: HookInput) -> None:
         snapshot_plan_for_session(
             session_id=session_id,
             plan_file_path=hook_input.plan_file_path,
-            cwd_hint=str(_get_repo_root()),
+            cwd_hint=str(repo_root),
         )
 
     if result.message:
@@ -414,9 +433,10 @@ def _execute_result(result: HookOutput, hook_input: HookInput) -> None:
 
 
 @click.command(name="exit-plan-mode-hook")
+@click.pass_context
 @logged_hook
 @project_scoped
-def exit_plan_mode_hook() -> None:
+def exit_plan_mode_hook(ctx: click.Context) -> None:
     """Prompt user about plan saving when ExitPlanMode is called.
 
     This PreToolUse hook intercepts ExitPlanMode calls to ask the user
@@ -426,14 +446,17 @@ def exit_plan_mode_hook() -> None:
         0: Success - allow exit (no plan, skip marker, or no session)
         2: Block - plan exists, prompt user for action
     """
+    # Inject repo_root from context
+    repo_root = require_repo_root(ctx)
+
     # Gather all inputs (I/O layer)
-    hook_input = _gather_inputs()
+    hook_input = _gather_inputs(repo_root)
 
     # Pure decision logic (no I/O)
     result = determine_exit_action(hook_input)
 
     # Execute result (I/O layer)
-    _execute_result(result, hook_input)
+    _execute_result(result, hook_input, repo_root)
 
 
 if __name__ == "__main__":
