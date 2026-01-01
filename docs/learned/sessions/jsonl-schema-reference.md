@@ -169,12 +169,12 @@ Represents notifications, compaction events, and system-level events.
 
 **Observed subtypes:**
 
-| Subtype | Description |
-| ------- | ----------- |
+| Subtype            | Description                            |
+| ------------------ | -------------------------------------- |
 | `compact_boundary` | Context compaction event (most common) |
-| `local_command` | Local CLI command output |
-| `informational` | General informational notifications |
-| `api_error` | API error events |
+| `local_command`    | Local CLI command output               |
+| `informational`    | General informational notifications    |
+| `api_error`        | API error events                       |
 
 ### 5. Queue Operation (`type: "queue-operation"`)
 
@@ -530,25 +530,25 @@ Common structures returned in tool result content.
 
 Fields that appear across multiple entry types:
 
-| Field              | Type    | Description                                                     | Present In             |
-| ------------------ | ------- | --------------------------------------------------------------- | ---------------------- |
-| `uuid`             | string  | Unique message identifier                                       | All entries            |
-| `parentUuid`       | string  | UUID of preceding message                                       | All entries            |
-| `sessionId`        | string  | Session UUID                                                    | All entries            |
-| `timestamp`        | various | Entry timestamp (see [Timestamp Handling](#timestamp-handling)) | All entries            |
-| `cwd`              | string  | Working directory at time of entry                              | user, assistant        |
-| `gitBranch`        | string  | Current git branch                                              | user, assistant        |
-| `isSidechain`      | boolean | True for sub-agent messages                                     | user, assistant        |
-| `userType`         | string  | User type identifier (e.g., `"external"`)                       | user, assistant        |
-| `version`          | string  | Transcript format version (e.g., `"2.0.76"`)                    | First entry in session |
-| `isMeta`           | boolean | True for slash commands                                         | user                   |
-| `slug`             | string  | Plan mode identifier (maps to `~/.claude/plans/{slug}.md`)      | user, assistant        |
-| `thinkingMetadata` | object  | Thinking level configuration                                    | user                   |
-| `todos`            | array   | Current todo list state                                         | user                   |
-| `requestId`        | string  | API request correlation ID                                      | assistant              |
-| `toolUseResult`    | object  | Tool result metadata including `agentId` for Task results       | user                   |
-| `logicalParentUuid`| string  | Parent UUID for branched conversations                          | system                 |
-| `compactMetadata`  | object  | Compaction details (`trigger`, `preTokens`)                     | system                 |
+| Field               | Type    | Description                                                     | Present In             |
+| ------------------- | ------- | --------------------------------------------------------------- | ---------------------- |
+| `uuid`              | string  | Unique message identifier                                       | All entries            |
+| `parentUuid`        | string  | UUID of preceding message                                       | All entries            |
+| `sessionId`         | string  | Session UUID                                                    | All entries            |
+| `timestamp`         | various | Entry timestamp (see [Timestamp Handling](#timestamp-handling)) | All entries            |
+| `cwd`               | string  | Working directory at time of entry                              | user, assistant        |
+| `gitBranch`         | string  | Current git branch                                              | user, assistant        |
+| `isSidechain`       | boolean | True for sub-agent messages                                     | user, assistant        |
+| `userType`          | string  | User type identifier (e.g., `"external"`)                       | user, assistant        |
+| `version`           | string  | Transcript format version (e.g., `"2.0.76"`)                    | First entry in session |
+| `isMeta`            | boolean | True for slash commands                                         | user                   |
+| `slug`              | string  | Plan mode identifier (maps to `~/.claude/plans/{slug}.md`)      | user, assistant        |
+| `thinkingMetadata`  | object  | Thinking level configuration                                    | user                   |
+| `todos`             | array   | Current todo list state                                         | user                   |
+| `requestId`         | string  | API request correlation ID                                      | assistant              |
+| `toolUseResult`     | object  | Tool result metadata including `agentId` for Task results       | user                   |
+| `logicalParentUuid` | string  | Parent UUID for branched conversations                          | system                 |
+| `compactMetadata`   | object  | Compaction details (`trigger`, `preTokens`)                     | system                 |
 
 ## Agent Session Correlation
 
