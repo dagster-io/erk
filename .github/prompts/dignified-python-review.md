@@ -57,10 +57,10 @@ erk exec post-pr-inline-comment \
 
 ## Step 6: Post Summary Comment
 
-Get the current UTC timestamp:
+Get the current Pacific time timestamp:
 
 ```
-date -u '+%Y-%m-%d %H:%M:%S'
+TZ='America/Los_Angeles' date '+%Y-%m-%d %H:%M:%S'
 ```
 
 Post/update the summary comment:
@@ -79,7 +79,7 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 
 ## Dignified Python Review
 
-**Last updated:** YYYY-MM-DD HH:MM:SS UTC
+**Last updated:** YYYY-MM-DD HH:MM:SS PT
 
 Found X issues across Y files. Inline comments posted for each.
 

@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           claude --print \
-            --model claude-sonnet-4-5 \
+            --model claude-opus-4 \
             --allowedTools 'Bash(gh:*),Bash(erk exec:*),Read(*)' \
             --output-format stream-json \
             --verbose \
