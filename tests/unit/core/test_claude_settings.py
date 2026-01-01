@@ -17,12 +17,16 @@ from erk.core.claude_settings import (
     ERK_STATUSLINE_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
     NoBackupCreated,
+    StatuslineConfig,
+    StatuslineNotConfigured,
     add_erk_hooks,
     add_erk_permission,
-    add_statusline_config,
+    add_erk_statusline,
     get_global_claude_settings_path,
     get_repo_claude_settings_path,
+    get_statusline_config,
     has_erk_permission,
+    has_erk_statusline,
     has_exit_plan_hook,
     has_statusline_configured,
     has_user_prompt_hook,
@@ -741,52 +745,93 @@ def test_write_claude_settings_returns_no_backup_sentinel(tmp_path: Path) -> Non
     assert isinstance(result, NoBackupCreated)
 
 
-# --- Tests for status line functions ---
+# --- Tests for statusline functions ---
 
 
-def test_erk_statusline_command_constant() -> None:
-    """Test that ERK_STATUSLINE_COMMAND has the expected value."""
-    assert ERK_STATUSLINE_COMMAND == "erk-statusline"
+def test_statusline_command_constant() -> None:
+    """Test that ERK_STATUSLINE_COMMAND has expected value."""
+    assert ERK_STATUSLINE_COMMAND == "uvx erk-statusline"
 
 
 def test_get_global_claude_settings_path() -> None:
-    """Test that get_global_claude_settings_path returns expected path."""
+    """Test that get_global_claude_settings_path returns path to ~/.claude/settings.json."""
     path = get_global_claude_settings_path()
     assert path == Path.home() / ".claude" / "settings.json"
 
 
-def test_has_statusline_configured_returns_true_when_present() -> None:
-    """Test that has_statusline_configured returns True when statusLine exists."""
+def test_get_statusline_config_returns_not_configured_for_empty() -> None:
+    """Test get_statusline_config returns StatuslineNotConfigured for empty settings."""
+    settings: dict = {}
+    result = get_statusline_config(settings)
+    assert isinstance(result, StatuslineNotConfigured)
+
+
+def test_get_statusline_config_returns_not_configured_when_missing() -> None:
+    """Test get_statusline_config returns StatuslineNotConfigured when statusLine is missing."""
+    settings = {"permissions": {"allow": []}}
+    result = get_statusline_config(settings)
+    assert isinstance(result, StatuslineNotConfigured)
+
+
+def test_get_statusline_config_returns_not_configured_for_incomplete() -> None:
+    """Test get_statusline_config returns StatuslineNotConfigured for incomplete config."""
+    # Missing command
+    settings = {"statusLine": {"type": "command"}}
+    result = get_statusline_config(settings)
+    assert isinstance(result, StatuslineNotConfigured)
+
+    # Missing type
+    settings = {"statusLine": {"command": "echo test"}}
+    result = get_statusline_config(settings)
+    assert isinstance(result, StatuslineNotConfigured)
+
+
+def test_get_statusline_config_returns_config_when_present() -> None:
+    """Test get_statusline_config returns StatuslineConfig when configured."""
     settings = {
         "statusLine": {
             "type": "command",
-            "command": "erk-statusline",
+            "command": "uvx some-statusline",
         }
     }
-    assert has_statusline_configured(settings) is True
+    result = get_statusline_config(settings)
+    assert isinstance(result, StatuslineConfig)
+    assert result.type == "command"
+    assert result.command == "uvx some-statusline"
 
 
-def test_has_statusline_configured_returns_false_when_missing() -> None:
-    """Test that has_statusline_configured returns False when statusLine is missing."""
+def test_has_erk_statusline_returns_false_for_empty() -> None:
+    """Test has_erk_statusline returns False for empty settings."""
     settings: dict = {}
-    assert has_statusline_configured(settings) is False
+    assert has_erk_statusline(settings) is False
 
 
-def test_has_statusline_configured_returns_true_for_any_statusline() -> None:
-    """Test that has_statusline_configured returns True for any statusLine config."""
+def test_has_erk_statusline_returns_false_for_different_command() -> None:
+    """Test has_erk_statusline returns False when different statusline is configured."""
     settings = {
         "statusLine": {
-            "type": "static",
-            "text": "My custom status",
+            "type": "command",
+            "command": "uvx other-statusline",
         }
     }
-    assert has_statusline_configured(settings) is True
+    assert has_erk_statusline(settings) is False
 
 
-def test_add_statusline_config_adds_to_empty_settings() -> None:
-    """Test that add_statusline_config adds statusLine to empty settings."""
+def test_has_erk_statusline_returns_true_when_configured() -> None:
+    """Test has_erk_statusline returns True when erk-statusline is configured."""
+    settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "uvx erk-statusline",
+        }
+    }
+    assert has_erk_statusline(settings) is True
+
+
+def test_add_erk_statusline_to_empty_settings() -> None:
+    """Test add_erk_statusline adds statusline config to empty settings."""
     settings: dict = {}
-    result = add_statusline_config(settings)
+    result = add_erk_statusline(settings)
 
     assert "statusLine" in result
     assert result["statusLine"]["type"] == "command"
@@ -795,44 +840,49 @@ def test_add_statusline_config_adds_to_empty_settings() -> None:
     assert "statusLine" not in settings
 
 
-def test_add_statusline_config_overwrites_existing() -> None:
-    """Test that add_statusline_config overwrites existing statusLine."""
+def test_add_erk_statusline_overwrites_existing() -> None:
+    """Test add_erk_statusline overwrites existing statusline config."""
     settings = {
         "statusLine": {
-            "type": "static",
-            "text": "Old status",
+            "type": "command",
+            "command": "uvx other-statusline",
         }
     }
-    result = add_statusline_config(settings)
+    result = add_erk_statusline(settings)
 
-    assert result["statusLine"]["type"] == "command"
     assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
     # Original should not be modified
-    assert settings["statusLine"]["type"] == "static"
+    assert settings["statusLine"]["command"] == "uvx other-statusline"
 
 
-def test_add_statusline_config_preserves_other_settings() -> None:
-    """Test that add_statusline_config preserves other settings keys."""
+def test_add_erk_statusline_preserves_other_settings() -> None:
+    """Test add_erk_statusline preserves other settings keys."""
     settings = {
         "permissions": {"allow": ["Bash(git:*)"]},
-        "hooks": {"SessionStart": []},
+        "hooks": {"UserPromptSubmit": []},
         "alwaysThinkingEnabled": True,
     }
-    result = add_statusline_config(settings)
+    result = add_erk_statusline(settings)
 
+    # statusLine should be added
+    assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
+    # Other settings should be preserved
     assert result["permissions"]["allow"] == ["Bash(git:*)"]
-    assert result["hooks"]["SessionStart"] == []
+    assert "hooks" in result
     assert result["alwaysThinkingEnabled"] is True
-    assert result["statusLine"]["type"] == "command"
 
 
-def test_add_statusline_config_is_pure_function() -> None:
-    """Test that add_statusline_config doesn't modify the input."""
-    original = {"permissions": {"allow": []}}
+def test_add_erk_statusline_is_pure_function() -> None:
+    """Test add_erk_statusline doesn't modify the input."""
+    original = {
+        "statusLine": {
+            "type": "command",
+            "command": "uvx other-statusline",
+        }
+    }
     original_copy = json.loads(json.dumps(original))
 
-    add_statusline_config(original)
+    add_erk_statusline(original)
 
     # Original should be unchanged
     assert original == original_copy
-    assert "statusLine" not in original

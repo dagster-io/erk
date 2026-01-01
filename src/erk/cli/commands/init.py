@@ -8,13 +8,17 @@ from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
+    ERK_STATUSLINE_COMMAND,
     NoBackupCreated,
+    StatuslineNotConfigured,
     add_erk_hooks,
     add_erk_permission,
-    add_statusline_config,
+    add_erk_statusline,
     get_global_claude_settings_path,
     get_repo_claude_settings_path,
+    get_statusline_config,
     has_erk_permission,
+    has_erk_statusline,
     has_exit_plan_hook,
     has_statusline_configured,
     has_user_prompt_hook,
@@ -337,16 +341,27 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
     user_output(click.style("✓", fg="green") + " Added erk hooks")
 
 
-def perform_statusline_setup() -> bool:
-    """Configure Claude Code status line to use erk-statusline.
+def perform_statusline_setup(settings_path: Path | None = None) -> bool:
+    """Configure erk-statusline in global Claude Code settings.
 
-    This modifies the global ~/.claude/settings.json to add statusLine config.
+    Reads ~/.claude/settings.json, adds statusLine configuration if not present
+    or different, and writes back. Handles edge cases:
+    - File doesn't exist: creates it with just statusLine config
+    - Already configured with same command: skips
+    - Different statusLine command: warns and prompts to overwrite
+
+    Args:
+        settings_path: Path to settings.json. If None, uses ~/.claude/settings.json.
 
     Returns:
         True if status line was configured, False otherwise.
     """
-    settings_path = get_global_claude_settings_path()
+    if settings_path is None:
+        settings_path = get_global_claude_settings_path()
 
+    user_output("\n  Configuring Claude Code status line...")
+
+    # Read existing settings (or None if file doesn't exist)
     try:
         settings = read_claude_settings(settings_path)
     except json.JSONDecodeError as e:
@@ -358,17 +373,25 @@ def perform_statusline_setup() -> bool:
     # No settings file - will create one
     if settings is None:
         settings = {}
+        user_output(f"  Creating: {settings_path}")
 
-    # Check if already configured
-    if has_statusline_configured(settings):
-        user_output(click.style("✓", fg="green") + " Status line already configured")
+    # Check current statusline config
+    current_config = get_statusline_config(settings)
+
+    # Already configured with erk-statusline
+    if has_erk_statusline(settings):
+        user_output(click.style("  ✓", fg="green") + " Statusline already configured")
         return True
 
-    # Explain what status line does
-    user_output("\n  Configuring Claude Code status line...")
-    user_output("  This displays worktree, branch, and PR info in Claude Code.")
+    # Different statusline configured - warn and prompt
+    if not isinstance(current_config, StatuslineNotConfigured):
+        user_output(f"\n  Existing statusLine found: {current_config.command}")
+        if not click.confirm(f"  Replace with {ERK_STATUSLINE_COMMAND}?", default=False):
+            user_output("  Skipped. Keeping existing statusLine configuration.")
+            return False
 
-    new_settings = add_statusline_config(settings)
+    # Add statusline config
+    new_settings = add_erk_statusline(settings)
     write_claude_settings(settings_path, new_settings)
     statusline_msg = " Status line configured in ~/.claude/settings.json"
     user_output(click.style("  ✓", fg="green") + statusline_msg)
@@ -405,6 +428,12 @@ def perform_statusline_setup() -> bool:
     help="Only set up Claude Code hooks.",
 )
 @click.option(
+    "--statusline",
+    "statusline_only",
+    is_flag=True,
+    help="Only configure erk-statusline in Claude Code.",
+)
+@click.option(
     "--no-interactive",
     "no_interactive",
     is_flag=True,
@@ -418,6 +447,7 @@ def init_cmd(
     list_presets: bool,
     shell: bool,
     hooks_only: bool,
+    statusline_only: bool,
     no_interactive: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml.
@@ -500,6 +530,11 @@ def init_cmd(
     # Handle --hooks flag: only do hook setup
     if hooks_only:
         offer_claude_hook_setup(repo_root)
+        return
+
+    # Handle --statusline flag: only do statusline setup
+    if statusline_only:
+        perform_statusline_setup(settings_path=None)
         return
 
     # Validate preset choice

@@ -19,6 +19,9 @@ ERK_STATUSLINE_COMMAND = "erk-statusline"
 ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
 ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
 
+# Statusline configuration
+ERK_STATUSLINE_COMMAND = "uvx erk-statusline"
+
 
 @dataclass(frozen=True)
 class NoBackupCreated:
@@ -221,12 +224,25 @@ def write_claude_settings(settings_path: Path, settings: dict) -> Path | NoBacku
 
 
 def get_global_claude_settings_path() -> Path:
-    """Return the path to the global Claude settings file.
+    """Return the path to the user's global Claude settings file.
 
     Returns:
         Path to ~/.claude/settings.json
     """
     return Path.home() / ".claude" / "settings.json"
+
+
+@dataclass(frozen=True)
+class StatuslineConfig:
+    """Represents the current statusline configuration."""
+
+    type: str
+    command: str
+
+
+@dataclass(frozen=True)
+class StatuslineNotConfigured:
+    """Sentinel indicating statusline is not configured."""
 
 
 def has_statusline_configured(settings: dict) -> bool:
@@ -241,17 +257,53 @@ def has_statusline_configured(settings: dict) -> bool:
     return "statusLine" in settings
 
 
-def add_statusline_config(settings: dict) -> dict:
-    """Return a new settings dict with statusLine configuration added.
-
-    This is a pure function that doesn't modify the input.
-    Sets the statusLine to use the erk-statusline command.
+def get_statusline_config(settings: dict) -> StatuslineConfig | StatuslineNotConfigured:
+    """Get the current statusline configuration from settings.
 
     Args:
         settings: Parsed Claude settings dictionary
 
     Returns:
-        New settings dict with statusLine configuration added
+        StatuslineConfig if configured, StatuslineNotConfigured otherwise
+    """
+    statusline = settings.get("statusLine")
+    if statusline is None:
+        return StatuslineNotConfigured()
+
+    statusline_type = statusline.get("type")
+    command = statusline.get("command")
+
+    if statusline_type is None or command is None:
+        return StatuslineNotConfigured()
+
+    return StatuslineConfig(type=statusline_type, command=command)
+
+
+def has_erk_statusline(settings: dict) -> bool:
+    """Check if erk-statusline is already configured.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if statusLine is configured with erk-statusline command
+    """
+    config = get_statusline_config(settings)
+    if isinstance(config, StatuslineNotConfigured):
+        return False
+    return config.command == ERK_STATUSLINE_COMMAND
+
+
+def add_erk_statusline(settings: dict) -> dict:
+    """Return a new settings dict with erk-statusline configured.
+
+    This is a pure function that doesn't modify the input.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with statusLine configured
     """
     # Deep copy to avoid mutating input
     new_settings = json.loads(json.dumps(settings))

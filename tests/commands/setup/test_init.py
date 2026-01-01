@@ -24,6 +24,7 @@ from unittest import mock
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.cli.commands.init import perform_statusline_setup
 from erk.core.config_store import FakeConfigStore, GlobalConfig
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
@@ -1549,6 +1550,147 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
             assert "Artifact sync failed" in result.output
             assert "Bundled .claude/ not found" in result.output
             assert "Run 'erk artifact sync' to retry" in result.output
+
+
+# --- Tests for --statusline flag ---
+#
+# These tests use perform_statusline_setup() directly with path injection
+# to avoid mocking HOME environment variable.
+
+
+def test_statusline_setup_configures_empty_settings(tmp_path: Path) -> None:
+    """Test perform_statusline_setup configures statusline in empty settings.json."""
+    # Create settings.json
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+    settings_path = claude_dir / "settings.json"
+    settings_path.write_text("{}", encoding="utf-8")
+
+    # Mock click.confirm to return True (confirm write)
+    with mock.patch("click.confirm", return_value=True):
+        perform_statusline_setup(settings_path=settings_path)
+
+    # Verify settings were written
+    updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "statusLine" in updated_settings
+    assert updated_settings["statusLine"]["type"] == "command"
+    assert updated_settings["statusLine"]["command"] == "uvx erk-statusline"
+
+
+def test_statusline_setup_creates_settings_if_missing(tmp_path: Path) -> None:
+    """Test perform_statusline_setup creates settings.json if it doesn't exist."""
+    # No settings.json file
+    settings_path = tmp_path / ".claude" / "settings.json"
+
+    # Mock click.confirm to return True (confirm write)
+    with mock.patch("click.confirm", return_value=True):
+        perform_statusline_setup(settings_path=settings_path)
+
+    # Verify file was created
+    assert settings_path.exists()
+    created_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert created_settings["statusLine"]["command"] == "uvx erk-statusline"
+
+
+def test_statusline_setup_skips_when_already_configured(tmp_path: Path) -> None:
+    """Test perform_statusline_setup skips when erk-statusline is already configured."""
+    # Create settings.json with erk-statusline already configured
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+    settings_path = claude_dir / "settings.json"
+    existing_settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "uvx erk-statusline",
+        }
+    }
+    settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
+
+    # Run setup with injected path (no confirm needed - skips without prompting)
+    perform_statusline_setup(settings_path=settings_path)
+
+    # File should not have been modified - content should be same
+    unchanged_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert unchanged_settings == existing_settings
+
+
+def test_statusline_setup_prompts_for_different_command(tmp_path: Path) -> None:
+    """Test perform_statusline_setup prompts when different statusline is configured."""
+    # Create settings.json with different statusline
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+    settings_path = claude_dir / "settings.json"
+    existing_settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "uvx other-statusline",
+        }
+    }
+    settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
+
+    # Mock click.confirm to return False (decline replacement)
+    with mock.patch("click.confirm", return_value=False):
+        perform_statusline_setup(settings_path=settings_path)
+
+    # Verify settings were NOT changed
+    unchanged_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert unchanged_settings["statusLine"]["command"] == "uvx other-statusline"
+
+
+def test_statusline_setup_replaces_when_confirmed(tmp_path: Path) -> None:
+    """Test perform_statusline_setup replaces existing statusline when user confirms."""
+    # Create settings.json with different statusline
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+    settings_path = claude_dir / "settings.json"
+    existing_settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "uvx other-statusline",
+        }
+    }
+    settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
+
+    # Mock click.confirm to return True for both prompts
+    with mock.patch("click.confirm", return_value=True):
+        perform_statusline_setup(settings_path=settings_path)
+
+    # Verify settings were updated
+    updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert updated_settings["statusLine"]["command"] == "uvx erk-statusline"
+
+
+def test_init_statusline_flag_recognized() -> None:
+    """Test that --statusline flag is recognized and invokes statusline setup.
+
+    This is a minimal CLI integration test - detailed behavior is tested
+    via perform_statusline_setup() unit tests above.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        # Mock the function to avoid HOME dependency in CLI test
+        with mock.patch("erk.cli.commands.init.perform_statusline_setup") as mock_setup:
+            result = runner.invoke(cli, ["init", "--statusline"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify the function was called with settings_path=None (uses default)
+        mock_setup.assert_called_once_with(settings_path=None)
+
+        # Verify no config.toml was created (other init steps skipped)
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert not config_path.exists()
 
 
 # --- Tests for stepped flow and re-init behavior ---

@@ -17,6 +17,8 @@ def _format_check_result(result: CheckResult) -> None:
         icon = click.style("❌", fg="red")
     elif result.warning:
         icon = click.style("⚠️", fg="yellow")
+    elif result.info:
+        icon = click.style("ℹ️", fg="cyan")
     else:
         icon = click.style("✅", fg="green")
 

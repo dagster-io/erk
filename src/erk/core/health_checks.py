@@ -11,8 +11,12 @@ from pathlib import Path
 from erk.artifacts.artifact_health import find_missing_artifacts, find_orphaned_artifacts
 from erk.core.claude_settings import (
     ERK_PERMISSION,
+    StatuslineNotConfigured,
+    get_global_claude_settings_path,
     get_repo_claude_settings_path,
+    get_statusline_config,
     has_erk_permission,
+    has_erk_statusline,
     has_exit_plan_hook,
     read_claude_settings,
 )
@@ -33,6 +37,7 @@ class CheckResult:
         message: Human-readable message describing the result
         details: Optional additional details (e.g., version info)
         warning: If True and passed=True, displays ⚠️ instead of ✅
+        info: If True and passed=True, displays ℹ️ (informational, not success)
     """
 
     name: str
@@ -40,6 +45,7 @@ class CheckResult:
     message: str
     details: str | None = None
     warning: bool = False
+    info: bool = False
 
 
 def check_erk_version() -> CheckResult:
@@ -409,6 +415,54 @@ def check_hooks_disabled() -> CheckResult:
         name="claude-hooks",
         passed=True,
         message="Hooks enabled (not globally disabled)",
+    )
+
+
+def check_statusline_configured() -> CheckResult:
+    """Check if erk-statusline is configured in global Claude settings.
+
+    This is an info-level check - it always passes, but informs users
+    they can configure the erk statusline feature.
+
+    Returns:
+        CheckResult with info about statusline status
+    """
+    settings_path = get_global_claude_settings_path()
+    settings = read_claude_settings(settings_path)
+
+    if settings is None:
+        return CheckResult(
+            name="statusline",
+            passed=True,
+            message="No global Claude settings (statusline not configured)",
+            details="Run 'erk init --statusline' to enable erk statusline",
+            info=True,
+        )
+
+    if has_erk_statusline(settings):
+        return CheckResult(
+            name="statusline",
+            passed=True,
+            message="erk-statusline configured",
+        )
+
+    # Check if a different statusline is configured
+    statusline_config = get_statusline_config(settings)
+    if not isinstance(statusline_config, StatuslineNotConfigured):
+        return CheckResult(
+            name="statusline",
+            passed=True,
+            message=f"Different statusline configured: {statusline_config.command}",
+            details="Run 'erk init --statusline' to switch to erk statusline",
+            info=True,
+        )
+
+    return CheckResult(
+        name="statusline",
+        passed=True,
+        message="erk-statusline not configured",
+        details="Run 'erk init --statusline' to enable erk statusline",
+        info=True,
     )
 
 
@@ -942,6 +996,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_github_auth(shell, admin),
         check_uv_version(shell),
         check_hooks_disabled(),
+        check_statusline_configured(),
     ]
 
     # Add repository check
