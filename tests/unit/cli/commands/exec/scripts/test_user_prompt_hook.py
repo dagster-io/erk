@@ -1,126 +1,17 @@
 """Unit tests for user-prompt-hook command.
 
 This test file uses the pure logic extraction pattern. Most tests call the
-pure functions directly with no mocking required. The hook code is structured
-with data class inputs (HookInput) and outputs (VenvCheckResult), making
-tests clean and focused.
+pure functions directly with no mocking required.
 """
 
 from pathlib import Path
 
 from erk.cli.commands.exec.scripts.user_prompt_hook import (
-    HookAction,
     HookInput,
-    VenvCheckResult,
     build_coding_standards_reminder,
     build_session_context,
     build_tripwires_reminder,
-    check_venv,
 )
-
-# ============================================================================
-# Pure Logic Tests for check_venv() - NO MOCKING REQUIRED
-# ============================================================================
-
-
-def test_check_venv_allows_when_bypass_signal_exists() -> None:
-    """Bypass signal present - always allows, regardless of venv state."""
-    result = check_venv(
-        HookInput(
-            session_id="test-session",
-            repo_root=Path("/repo"),
-            expected_venv=Path("/repo/.venv"),  # Venv expected
-            actual_venv=None,  # But not activated
-            bypass_signal_exists=True,  # Bypass present
-        )
-    )
-    assert result.action == HookAction.ALLOW
-    assert result.error_message == ""
-
-
-def test_check_venv_allows_when_no_venv_expected() -> None:
-    """No .venv directory exists - always allows."""
-    result = check_venv(
-        HookInput(
-            session_id="test-session",
-            repo_root=Path("/repo"),
-            expected_venv=None,  # No .venv exists
-            actual_venv=None,
-            bypass_signal_exists=False,
-        )
-    )
-    assert result.action == HookAction.ALLOW
-    assert result.error_message == ""
-
-
-def test_check_venv_allows_when_correct_venv_activated() -> None:
-    """Correct venv activated - allows."""
-    venv_path = Path("/repo/.venv")
-    result = check_venv(
-        HookInput(
-            session_id="test-session",
-            repo_root=Path("/repo"),
-            expected_venv=venv_path,
-            actual_venv=venv_path,  # Matches expected
-            bypass_signal_exists=False,
-        )
-    )
-    assert result.action == HookAction.ALLOW
-    assert result.error_message == ""
-
-
-def test_check_venv_blocks_when_no_venv_activated_but_expected() -> None:
-    """No venv activated but .venv exists - blocks."""
-    expected = Path("/repo/.venv")
-    result = check_venv(
-        HookInput(
-            session_id="test-session",
-            repo_root=Path("/repo"),
-            expected_venv=expected,
-            actual_venv=None,  # Not activated
-            bypass_signal_exists=False,
-        )
-    )
-    assert result.action == HookAction.BLOCK
-    assert "No virtual environment activated" in result.error_message
-    assert str(expected) in result.error_message
-    assert "source" in result.error_message  # Activation hint
-
-
-def test_check_venv_blocks_when_wrong_venv_activated() -> None:
-    """Wrong venv activated - blocks with helpful message."""
-    expected = Path("/repo/.venv")
-    actual = Path("/other/project/.venv")
-    result = check_venv(
-        HookInput(
-            session_id="test-session",
-            repo_root=Path("/repo"),
-            expected_venv=expected,
-            actual_venv=actual,
-            bypass_signal_exists=False,
-        )
-    )
-    assert result.action == HookAction.BLOCK
-    assert "Wrong virtual environment activated" in result.error_message
-    assert str(expected) in result.error_message
-    assert str(actual) in result.error_message
-
-
-def test_check_venv_result_is_correct_type() -> None:
-    """Verify check_venv returns VenvCheckResult with correct fields."""
-    result = check_venv(
-        HookInput(
-            session_id="test-session",
-            repo_root=Path("/repo"),
-            expected_venv=None,
-            actual_venv=None,
-            bypass_signal_exists=False,
-        )
-    )
-    assert isinstance(result, VenvCheckResult)
-    assert isinstance(result.action, HookAction)
-    assert isinstance(result.error_message, str)
-
 
 # ============================================================================
 # Pure Logic Tests for build_session_context() - NO MOCKING REQUIRED
@@ -204,9 +95,6 @@ def test_hook_input_is_frozen() -> None:
     hook_input = HookInput(
         session_id="test",
         repo_root=Path("/repo"),
-        expected_venv=None,
-        actual_venv=None,
-        bypass_signal_exists=False,
     )
     # Attempting to modify should raise FrozenInstanceError
     try:
@@ -219,49 +107,11 @@ def test_hook_input_is_frozen() -> None:
 def test_hook_input_stores_all_fields() -> None:
     """HookInput correctly stores all provided fields."""
     repo_root = Path("/test/repo")
-    expected = Path("/test/repo/.venv")
-    actual = Path("/other/.venv")
 
     hook_input = HookInput(
         session_id="my-session",
         repo_root=repo_root,
-        expected_venv=expected,
-        actual_venv=actual,
-        bypass_signal_exists=True,
     )
 
     assert hook_input.session_id == "my-session"
     assert hook_input.repo_root == repo_root
-    assert hook_input.expected_venv == expected
-    assert hook_input.actual_venv == actual
-    assert hook_input.bypass_signal_exists is True
-
-
-# ============================================================================
-# Tests for VenvCheckResult data class
-# ============================================================================
-
-
-def test_venv_check_result_is_frozen() -> None:
-    """VenvCheckResult is immutable (frozen dataclass)."""
-    result = VenvCheckResult(HookAction.ALLOW, "")
-    try:
-        result.action = HookAction.BLOCK  # type: ignore[misc]
-        raise AssertionError("Should have raised FrozenInstanceError")
-    except AttributeError:
-        pass  # Expected behavior for frozen dataclass
-
-
-# ============================================================================
-# Tests for HookAction enum
-# ============================================================================
-
-
-def test_hook_action_allow_has_exit_code_zero() -> None:
-    """ALLOW action corresponds to exit code 0."""
-    assert HookAction.ALLOW.value == 0
-
-
-def test_hook_action_block_has_exit_code_two() -> None:
-    """BLOCK action corresponds to exit code 2."""
-    assert HookAction.BLOCK.value == 2
