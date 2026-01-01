@@ -306,7 +306,6 @@ def extract_agent_info_from_jsonl(content: str) -> dict[str, AgentInfo]:
     return agent_infos
 
 
-
 def extract_tool_use_id_from_content(content: list[Any]) -> str | None:
     """Extract tool_use_id from message content blocks.
 
