@@ -17,21 +17,6 @@ from erk_shared.output.output import machine_output, user_output
 from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
 
 
-def ensure_graphite_enabled(ctx: ErkContext) -> None:
-    """Validate that Graphite is enabled.
-
-    Args:
-        ctx: Erk context
-
-    Raises:
-        SystemExit: If Graphite is not enabled
-    """
-    Ensure.invariant(
-        ctx.global_config is not None and ctx.global_config.use_graphite,
-        "This command requires Graphite to be enabled. Run 'erk config set use_graphite true'",
-    )
-
-
 def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
     """Check for pending extraction marker and block deletion if present.
 

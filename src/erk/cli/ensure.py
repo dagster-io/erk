@@ -19,6 +19,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 
 import click
 
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
 from erk_shared.github.types import PRDetails
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
@@ -370,6 +371,56 @@ class Ensure:
                 + "Install it from: https://cli.github.com/\n"
                 + "Then authenticate with: gh auth login"
             )
+            raise SystemExit(1)
+
+    @staticmethod
+    def gt_installed() -> None:
+        """Ensure Graphite CLI (gt) is installed and available on PATH.
+
+        Uses shutil.which to check for gt availability, which is the LBYL
+        approach to validating external tool availability before use.
+
+        Raises:
+            SystemExit: If gt CLI is not found on PATH
+
+        Example:
+            >>> Ensure.gt_installed()
+            >>> # Now safe to call gt commands
+            >>> ctx.graphite.submit_stack(repo.root)
+        """
+        if shutil.which("gt") is None:
+            user_output(
+                click.style("Error: ", fg="red")
+                + "Graphite CLI (gt) is not installed\n\n"
+                + "Install it from: https://withgraphite.com/docs/getting-started\n"
+                + "Or use: npm install -g @withgraphite/graphite-cli"
+            )
+            raise SystemExit(1)
+
+    @staticmethod
+    def graphite_available(ctx: "ErkContext") -> None:
+        """Ensure Graphite integration is available (enabled and installed).
+
+        Checks if ctx.graphite is a GraphiteDisabled sentinel, and if so,
+        outputs a helpful error message based on why Graphite is unavailable
+        (config disabled vs not installed).
+
+        This is the LBYL check for commands that require Graphite functionality.
+
+        Args:
+            ctx: Application context with graphite integration
+
+        Raises:
+            SystemExit: If Graphite is disabled or not installed
+
+        Example:
+            >>> Ensure.graphite_available(ctx)
+            >>> # Now safe to use Graphite operations
+            >>> ctx.graphite.get_parent_branch(ctx.git, repo.root, branch)
+        """
+        if isinstance(ctx.graphite, GraphiteDisabled):
+            error = GraphiteDisabledError(ctx.graphite.reason)
+            user_output(click.style("Error: ", fg="red") + str(error))
             raise SystemExit(1)
 
     @staticmethod

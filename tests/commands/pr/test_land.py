@@ -21,6 +21,10 @@ from click.testing import CliRunner
 from erk.cli.commands.pr import pr_group
 from erk.cli.commands.pr.land_cmd import is_extraction_origin_pr
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.graphite.disabled import (
+    GraphiteDisabled,
+    GraphiteDisabledReason,
+)
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
@@ -271,7 +275,7 @@ def test_pr_land_error_from_execute_land_pr() -> None:
 
 
 def test_pr_land_requires_graphite() -> None:
-    """Test pr land requires Graphite to be enabled."""
+    """Test pr land requires Graphite to be available (not disabled)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git_ops = FakeGit(
@@ -280,8 +284,9 @@ def test_pr_land_requires_graphite() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Graphite is NOT enabled
-        test_ctx = env.build_context(git=git_ops)
+        # GraphiteDisabled sentinel indicates Graphite is NOT available
+        graphite_disabled = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
         result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
 

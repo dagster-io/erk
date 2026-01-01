@@ -25,7 +25,6 @@ from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
     delete_branch_and_worktree,
-    ensure_graphite_enabled,
 )
 from erk.cli.commands.plan.check_cmd import (
     PlanValidationError,
@@ -118,7 +117,7 @@ def pr_land(
     """
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
-    ensure_graphite_enabled(ctx)
+    Ensure.graphite_available(ctx)
     check_clean_working_tree(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
