@@ -140,12 +140,19 @@ try:
     parse_config(path)
 except ValueError:
     raise SystemExit(1)  # Lint error: missing 'from e' or 'from None'
+
+# ✅ CORRECT: CLI error boundary with JSON output
+try:
+    result = some_operation()
+except RuntimeError as e:
+    click.echo(json.dumps({"success": False, "error": str(e)}))
+    raise SystemExit(0) from None  # Exception is in JSON, traceback irrelevant to CLI user
 ```
 
 **When to use each:**
 
 - `from e` - Preserve original exception for debugging
-- `from None` - Intentionally suppress original (e.g., transforming exception type)
+- `from None` - Intentionally suppress original (e.g., transforming exception type, CLI JSON output)
 
 ### Exception Anti-Patterns
 
