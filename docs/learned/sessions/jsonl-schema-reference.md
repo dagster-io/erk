@@ -129,48 +129,52 @@ Marks context compaction boundaries where earlier conversation was summarized.
 
 ```json
 {
-  "sessionId": "session_uuid",
   "type": "summary",
-  "message": {
-    "content": "Summary of previous conversation...",
-    "timestamp": 1700000000.0
-  },
-  "leafUuid": "uuid_of_last_message_before_compaction",
-  "isCompactSummary": true
+  "summary": "Brief description of conversation topic",
+  "leafUuid": "uuid_of_last_message_before_compaction"
 }
 ```
 
 **Key fields:**
 
+- `summary`: Text summarizing the conversation topic
 - `leafUuid`: Links to the last message before compaction
-- `isCompactSummary`: Indicates this is a continuation session
 
 ### 4. System Entry (`type: "system"`)
 
-Represents notifications, hook summaries, and system-level events.
+Represents notifications, compaction events, and system-level events.
 
 ```json
 {
-  "sessionId": "session_uuid",
   "type": "system",
+  "subtype": "compact_boundary",
+  "content": "Conversation compacted",
   "level": "info",
-  "subtype": "stop_hook_summary",
-  "message": {
-    "content": "Hook execution completed",
-    "timestamp": 1700000000.0
-  },
-  "hasOutput": true,
-  "hookErrors": [],
-  "hookInfos": ["Hook xyz executed successfully"]
+  "timestamp": "2024-12-15T10:30:00.000Z",
+  "uuid": "unique_message_uuid",
+  "sessionId": "session_uuid",
+  "compactMetadata": {
+    "trigger": "auto",
+    "preTokens": 157610
+  }
 }
 ```
 
 **Key fields:**
 
 - `level`: Severity (`info`, `warning`, `error`)
-- `subtype`: System entry type (e.g., `stop_hook_summary`)
-- `hasOutput`: Whether hook produced output
-- `hookErrors`, `hookInfos`: Hook execution details
+- `subtype`: System entry subtype (see table below)
+- `content`: Message content (at root level, not in `message` wrapper)
+- `compactMetadata`: Present for `compact_boundary` entries
+
+**Observed subtypes:**
+
+| Subtype | Description |
+| ------- | ----------- |
+| `compact_boundary` | Context compaction event (most common) |
+| `local_command` | Local CLI command output |
+| `informational` | General informational notifications |
+| `api_error` | API error events |
 
 ### 5. Queue Operation (`type: "queue-operation"`)
 
@@ -178,13 +182,10 @@ Represents message queue manipulations (used for steering conversations).
 
 ```json
 {
-  "sessionId": "session_uuid",
   "type": "queue-operation",
-  "operation": "remove",
-  "message": {
-    "content": "User canceled action",
-    "timestamp": 1700000000.0
-  }
+  "operation": "dequeue",
+  "timestamp": "2024-12-15T10:30:00.000Z",
+  "sessionId": "session_uuid"
 }
 ```
 
@@ -201,15 +202,18 @@ Captures file state at a point in time for tracking changes.
 
 ```json
 {
-  "sessionId": "session_uuid",
   "type": "file-history-snapshot",
-  "file-snapshot": {
-    "file_path": "/path/to/file.py",
-    "content": "file contents...",
-    "timestamp": 1700000000.0
-  }
+  "messageId": "uuid_of_related_message",
+  "snapshot": { "...file state data..." },
+  "isSnapshotUpdate": false
 }
 ```
+
+**Key fields:**
+
+- `messageId`: UUID linking to the message that triggered this snapshot
+- `snapshot`: Object containing file state data
+- `isSnapshotUpdate`: Whether this updates a previous snapshot
 
 ## Content Block Types
 
@@ -246,6 +250,8 @@ Content blocks appear in the `message.content` array.
 
 ### Tool Result Block
 
+Tool results appear as **content blocks inside `user` entries**, not as top-level entry types. When a tool completes, the result is delivered in a user entry with a `tool_result` content block.
+
 ```json
 {
   "type": "tool_result",
@@ -260,6 +266,8 @@ Content blocks appear in the `message.content` array.
 - `tool_use_id`: Links to the corresponding `tool_use` block
 - `content`: Can be string or array of content blocks
 - `is_error`: Whether tool execution failed
+
+**Important:** The parent `user` entry may also contain a `toolUseResult` field with additional metadata (e.g., `agentId` for Task tool results).
 
 ### Thinking Block
 
@@ -522,19 +530,25 @@ Common structures returned in tool result content.
 
 Fields that appear across multiple entry types:
 
-| Field         | Type    | Description                                                     | Present In             |
-| ------------- | ------- | --------------------------------------------------------------- | ---------------------- |
-| `uuid`        | string  | Unique message identifier                                       | All entries            |
-| `parentUuid`  | string  | UUID of preceding message                                       | All entries            |
-| `sessionId`   | string  | Session UUID                                                    | All entries            |
-| `timestamp`   | various | Entry timestamp (see [Timestamp Handling](#timestamp-handling)) | All entries            |
-| `cwd`         | string  | Working directory at time of entry                              | user, assistant        |
-| `gitBranch`   | string  | Current git branch                                              | user, assistant        |
-| `isSidechain` | boolean | True for sub-agent messages                                     | user, assistant        |
-| `userType`    | string  | User type identifier                                            | user                   |
-| `version`     | string  | Transcript format version                                       | First entry in session |
-| `isMeta`      | boolean | True for slash commands                                         | user                   |
-| `agentId`     | string  | Sub-agent identifier                                            | Sub-agent entries      |
+| Field              | Type    | Description                                                     | Present In             |
+| ------------------ | ------- | --------------------------------------------------------------- | ---------------------- |
+| `uuid`             | string  | Unique message identifier                                       | All entries            |
+| `parentUuid`       | string  | UUID of preceding message                                       | All entries            |
+| `sessionId`        | string  | Session UUID                                                    | All entries            |
+| `timestamp`        | various | Entry timestamp (see [Timestamp Handling](#timestamp-handling)) | All entries            |
+| `cwd`              | string  | Working directory at time of entry                              | user, assistant        |
+| `gitBranch`        | string  | Current git branch                                              | user, assistant        |
+| `isSidechain`      | boolean | True for sub-agent messages                                     | user, assistant        |
+| `userType`         | string  | User type identifier (e.g., `"external"`)                       | user, assistant        |
+| `version`          | string  | Transcript format version (e.g., `"2.0.76"`)                    | First entry in session |
+| `isMeta`           | boolean | True for slash commands                                         | user                   |
+| `slug`             | string  | Plan mode identifier (maps to `~/.claude/plans/{slug}.md`)      | user, assistant        |
+| `thinkingMetadata` | object  | Thinking level configuration                                    | user                   |
+| `todos`            | array   | Current todo list state                                         | user                   |
+| `requestId`        | string  | API request correlation ID                                      | assistant              |
+| `toolUseResult`    | object  | Tool result metadata including `agentId` for Task results       | user                   |
+| `logicalParentUuid`| string  | Parent UUID for branched conversations                          | system                 |
+| `compactMetadata`  | object  | Compaction details (`trigger`, `preTokens`)                     | system                 |
 
 ## Agent Session Correlation
 
