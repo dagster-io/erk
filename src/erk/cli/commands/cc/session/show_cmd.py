@@ -1,60 +1,22 @@
 """Show details for a specific Claude Code session."""
 
-import json
-from datetime import datetime
 from pathlib import Path
-from typing import NamedTuple
 
 import click
 from rich.console import Console
 
 from erk.cli.commands.cc.session.list_cmd import (
-    extract_summary,
     format_display_time,
     format_size,
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
-
-
-def _parse_timestamp(value: str | float | int | None) -> float | None:
-    """Parse a timestamp value to Unix float.
-
-    Handles:
-    - None -> None
-    - float/int -> returned as-is
-    - ISO 8601 string (e.g., "2024-12-22T13:20:00.000Z") -> Unix timestamp
-
-    Args:
-        value: Timestamp as float, int, ISO string, or None
-
-    Returns:
-        Unix timestamp as float, or None if value is None
-
-    Raises:
-        ValueError: If string timestamp is not valid ISO 8601 format
-    """
-    if value is None:
-        return None
-    if isinstance(value, (int, float)):
-        return float(value)
-    if isinstance(value, str):
-        # Handle "Z" suffix (UTC)
-        if value.endswith("Z"):
-            value = value[:-1] + "+00:00"
-        dt = datetime.fromisoformat(value)
-        return dt.timestamp()
-    msg = f"Unexpected timestamp type: {type(value)}"
-    raise TypeError(msg)
-
-
-class AgentInvocation(NamedTuple):
-    """Information about an agent session extracted from Task invocation."""
-
-    agent_type: str
-    prompt: str
-    duration_secs: float | None
+from erk_shared.extraction.session_schema import (
+    AgentInfo,
+    extract_agent_info_from_jsonl,
+    extract_first_user_message_text,
+)
 
 
 def format_duration(seconds: float) -> str:
@@ -76,95 +38,6 @@ def format_duration(seconds: float) -> str:
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         return f"{hours}h {minutes}m"
-
-
-def extract_agent_info(parent_content: str) -> dict[str, AgentInvocation]:
-    """Extract agent info from Task tool invocations and their results.
-
-    Uses explicit metadata linking:
-    1. Task tool_use entries contain: tool_use.id -> (subagent_type, description)
-    2. tool_result entries contain: tool_use_id + toolUseResult.agentId
-
-    Duration is calculated from entry-level timestamps:
-    - tool_use timestamp (when Task was invoked)
-    - tool_result timestamp (when Task completed)
-
-    This provides deterministic matching without timestamp correlation.
-
-    Args:
-        parent_content: JSONL content of parent session
-
-    Returns:
-        Dict mapping "agent-<id>" session IDs to AgentInvocation
-    """
-    # Step 1: Collect Task tool_use entries: tool_use_id -> (type, prompt, timestamp)
-    task_info: dict[str, tuple[str, str, float | None]] = {}
-
-    # Step 2: Collect tool_result entries: tool_use_id -> (agentId, timestamp)
-    tool_to_agent: dict[str, tuple[str, float | None]] = {}
-
-    for line in parent_content.split("\n"):
-        stripped = line.strip()
-        if not stripped.startswith("{"):
-            continue
-
-        entry = json.loads(stripped)
-
-        entry_type = entry.get("type")
-        message = entry.get("message", {})
-        # Timestamp is at root level of entry (may be Unix float or ISO string)
-        timestamp = _parse_timestamp(entry.get("timestamp"))
-
-        if entry_type == "assistant":
-            # Look for Task tool_use blocks
-            for block in message.get("content", []):
-                if block.get("type") != "tool_use":
-                    continue
-                if block.get("name") != "Task":
-                    continue
-
-                tool_use_id = block.get("id")
-                tool_input = block.get("input", {})
-                subagent_type = tool_input.get("subagent_type", "")
-                prompt = tool_input.get("prompt", "")
-
-                if tool_use_id:
-                    task_info[tool_use_id] = (subagent_type, prompt, timestamp)
-
-        elif entry_type == "user":
-            # Look for tool_result with toolUseResult.agentId
-            tool_use_result = entry.get("toolUseResult")
-            if not isinstance(tool_use_result, dict):
-                continue
-            agent_id = tool_use_result.get("agentId")
-
-            if agent_id:
-                # Find the tool_use_id from message content
-                for block in message.get("content", []):
-                    if block.get("type") != "tool_result":
-                        continue
-                    tool_use_id = block.get("tool_use_id")
-                    if tool_use_id:
-                        tool_to_agent[tool_use_id] = (agent_id, timestamp)
-
-    # Step 3: Build final mapping: agent-<id> -> AgentInvocation
-    agent_infos: dict[str, AgentInvocation] = {}
-    for tool_use_id, (agent_id, result_timestamp) in tool_to_agent.items():
-        info = task_info.get(tool_use_id)
-        if info:
-            subagent_type, prompt, use_timestamp = info
-            # Calculate duration if both timestamps available
-            duration_secs: float | None = None
-            if use_timestamp is not None and result_timestamp is not None:
-                duration_secs = result_timestamp - use_timestamp
-            session_id = f"agent-{agent_id}"
-            agent_infos[session_id] = AgentInvocation(
-                agent_type=subagent_type,
-                prompt=prompt,
-                duration_secs=duration_secs,
-            )
-
-    return agent_infos
 
 
 def _show_session_impl(
@@ -211,10 +84,10 @@ def _show_session_impl(
     # Read session content for summary and agent info extraction
     content = session_store.read_session(cwd, session_id, include_agents=False)
     summary = ""
-    agent_infos: dict[str, AgentInvocation] = {}
+    agent_infos: dict[str, AgentInfo] = {}
     if content is not None:
-        summary = extract_summary(content.main_content, max_length=100)
-        agent_infos = extract_agent_info(content.main_content)
+        summary = extract_first_user_message_text(content.main_content, max_length=100)
+        agent_infos = extract_agent_info_from_jsonl(content.main_content)
 
     # Print inferred message if applicable
     if inferred:
