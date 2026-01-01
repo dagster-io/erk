@@ -1,0 +1,104 @@
+---
+description: Plan and implement a small change to the current PR
+---
+
+# /local:incremental-plan
+
+Streamlines the "plan small change -> implement -> submit" loop for PR iteration.
+
+## Usage
+
+```bash
+/local:incremental-plan
+```
+
+---
+
+## Agent Instructions
+
+### Step 1: Create Signal File
+
+Before entering plan mode, create the incremental-plan signal file to skip the "save as GitHub issue?" prompt later:
+
+```bash
+# Get session ID from hook reminder (📌 session: <id>)
+mkdir -p .erk/scratch/sessions/<session-id>
+touch .erk/scratch/sessions/<session-id>/incremental-plan.signal
+```
+
+**IMPORTANT:** You must create this signal file BEFORE calling EnterPlanMode.
+
+### Step 2: Enter Plan Mode
+
+Use the EnterPlanMode tool to begin planning.
+
+### Step 3: Plan the Change
+
+In plan mode:
+
+1. **Ask the user** what change they want to make (if not already specified in the original prompt)
+2. **Explore relevant code** using Glob, Grep, and Read tools
+3. **Write a concise plan** to the plan file
+
+#### Plan File Requirements
+
+- **Fresh plan**: Overwrite the existing plan file completely. Do NOT combine with or reference any previous plan.
+- **Focused scope**: This is for small, targeted changes - not major features.
+- **Concise format**: Keep the plan brief and actionable.
+
+### Step 4: Exit Plan Mode
+
+When the plan is ready, call ExitPlanMode.
+
+The incremental-plan signal file you created in Step 1 will cause the exit-plan-mode-hook to:
+
+- Skip the "save as GitHub issue?" prompt
+- Proceed directly to implementation
+
+### Step 5: Implement the Change
+
+After exiting plan mode, implement the planned changes:
+
+1. Load required skills (`dignified-python`, `fake-driven-testing` as needed)
+2. Make the code changes
+3. Write/update tests as appropriate
+4. Report completion
+
+### Step 6: Report Completion
+
+When done, inform the user:
+
+```
+Implementation complete.
+
+Next: Run /local:quick-submit to commit and push.
+```
+
+---
+
+## Key Differences from Regular Plan Mode
+
+| Aspect          | Regular Plan Mode         | Incremental Plan                |
+| --------------- | ------------------------- | ------------------------------- |
+| Plan file       | May combine with existing | Always overwritten (fresh)      |
+| Save to GitHub? | Prompted                  | Skipped (implement immediately) |
+| Scope           | Any size feature          | Small, focused changes          |
+| Branch creation | May create worktree       | Stays in current worktree       |
+
+---
+
+## Error Cases
+
+| Error           | Message                                                 |
+| --------------- | ------------------------------------------------------- |
+| No session ID   | Signal file creation skipped; normal plan mode behavior |
+| Not in git repo | `Error: Not in a git repository`                        |
+
+---
+
+## Important Notes
+
+- **DO NOT skip Step 1** - The signal file must be created before entering plan mode
+- **DO NOT save to GitHub** - This workflow skips issue creation
+- **DO NOT create a new branch** - Changes go to the current branch
+- The signal file is automatically deleted when the exit-plan-mode-hook processes it

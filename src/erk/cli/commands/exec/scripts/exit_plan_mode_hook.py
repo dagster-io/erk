@@ -30,10 +30,17 @@ Signal Files:
         Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
         Lifecycle: Deleted after being read by next hook invocation
 
+    incremental-plan.signal
+        Created by: /local:incremental-plan command (via agent creating signal file)
+        Effect: Next ExitPlanMode call is ALLOWED, skipping the save prompt entirely
+        Lifecycle: Deleted after being read by next hook invocation
+        Purpose: Streamlines "plan → implement → submit" loop for PR iteration
+
 State Transitions:
     1. No signal files + plan exists → BLOCK with prompt
     2. implement-now signal exists → ALLOW (delete signal)
-    3. plan-saved signal exists → BLOCK with "session complete" message (delete signal)
+    3. incremental-plan signal exists → ALLOW (delete signal, skip save prompt)
+    4. plan-saved signal exists → BLOCK with "session complete" message (delete signal)
 """
 
 import json
@@ -71,6 +78,7 @@ class HookInput:
     github_planning_enabled: bool
     implement_now_signal_exists: bool
     plan_saved_signal_exists: bool
+    incremental_plan_signal_exists: bool
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     current_branch: str | None
 
@@ -83,6 +91,7 @@ class HookOutput:
     message: str
     delete_implement_now_signal: bool = False
     delete_plan_saved_signal: bool = False
+    delete_incremental_plan_signal: bool = False
 
 
 # ============================================================================
@@ -176,6 +185,15 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             delete_implement_now_signal=True,
         )
 
+    # Incremental-plan signal present (session started via /local:incremental-plan)
+    # Skip the "save as GitHub issue?" prompt and proceed directly to implementation
+    if hook_input.incremental_plan_signal_exists:
+        return HookOutput(
+            ExitAction.ALLOW,
+            "Incremental-plan mode: skipping save prompt, proceeding to implementation",
+            delete_incremental_plan_signal=True,
+        )
+
     # Plan-saved signal present (user chose "Save to GitHub")
     if hook_input.plan_saved_signal_exists:
         return HookOutput(
@@ -261,6 +279,22 @@ def _get_plan_saved_signal_path(session_id: str) -> Path:
     return get_scratch_dir(session_id) / "exit-plan-mode-hook.plan-saved.signal"
 
 
+def _get_incremental_plan_signal_path(session_id: str) -> Path:
+    """Get incremental-plan signal path in .erk/scratch/sessions/<session_id>/.
+
+    The incremental-plan signal indicates this session was started via
+    /local:incremental-plan, so we should skip the "save as GitHub issue?"
+    prompt and proceed directly to implementation.
+
+    Args:
+        session_id: The session ID to build the path for
+
+    Returns:
+        Path to incremental-plan signal file
+    """
+    return get_scratch_dir(session_id) / "incremental-plan.signal"
+
+
 def _find_session_plan(session_id: str) -> Path | None:
     """Find plan file for the given session using slug lookup.
 
@@ -316,9 +350,11 @@ def _gather_inputs() -> HookInput:
     # Determine signal existence
     implement_now_signal_exists = False
     plan_saved_signal_exists = False
+    incremental_plan_signal_exists = False
     if session_id:
         implement_now_signal_exists = _get_implement_now_signal_path(session_id).exists()
         plan_saved_signal_exists = _get_plan_saved_signal_path(session_id).exists()
+        incremental_plan_signal_exists = _get_incremental_plan_signal_path(session_id).exists()
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -331,6 +367,7 @@ def _gather_inputs() -> HookInput:
         session_id
         and plan_file_path is not None
         and not implement_now_signal_exists
+        and not incremental_plan_signal_exists
         and not plan_saved_signal_exists
     )
     if needs_blocking_message:
@@ -341,6 +378,7 @@ def _gather_inputs() -> HookInput:
         github_planning_enabled=_is_github_planning_enabled(),
         implement_now_signal_exists=implement_now_signal_exists,
         plan_saved_signal_exists=plan_saved_signal_exists,
+        incremental_plan_signal_exists=incremental_plan_signal_exists,
         plan_file_path=plan_file_path,
         current_branch=current_branch,
     )
@@ -355,6 +393,9 @@ def _execute_result(result: HookOutput, hook_input: HookInput) -> None:
 
     if result.delete_plan_saved_signal and session_id:
         _get_plan_saved_signal_path(session_id).unlink()
+
+    if result.delete_incremental_plan_signal and session_id:
+        _get_incremental_plan_signal_path(session_id).unlink()
 
     # Snapshot plan whenever a plan exists and user made a decision
     # (implement-now or plan-saved, but NOT when blocking to prompt)
