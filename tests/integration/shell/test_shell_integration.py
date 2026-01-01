@@ -51,7 +51,7 @@ def test_shell_integration_passthrough_marker() -> None:
 def test_shell_integration_sync_returns_script_by_default() -> None:
     """Sync passthrough should return a script path instead of executing inline."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["__shell", "sync"])
+    result = runner.invoke(cli, ["__shell", "sync"], env={"ERK_SKIP_LOCAL_INIT_CHECK": "1"})
     assert result.exit_code == 0
     script_output = result.output.strip()
     assert script_output
@@ -73,7 +73,9 @@ def test_shell_integration_unknown_command() -> None:
 def test_shell_integration_sync_generates_posix_passthrough_script(tmp_path: Path) -> None:
     """When invoked from bash/zsh, __shell should return a passthrough script."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["__shell", "sync"], env={"ERK_SHELL": "bash"})
+    result = runner.invoke(
+        cli, ["__shell", "sync"], env={"ERK_SHELL": "bash", "ERK_SKIP_LOCAL_INIT_CHECK": "1"}
+    )
     assert result.exit_code == 0
     script_output = result.output.strip()
     assert script_output
@@ -89,7 +91,9 @@ def test_shell_integration_sync_generates_posix_passthrough_script(tmp_path: Pat
 def test_shell_integration_sync_generates_fish_passthrough_script(tmp_path: Path) -> None:
     """When invoked from fish, __shell should return a fish-compatible script."""
     runner = CliRunner()
-    result = runner.invoke(cli, ["__shell", "sync"], env={"ERK_SHELL": "fish"})
+    result = runner.invoke(
+        cli, ["__shell", "sync"], env={"ERK_SHELL": "fish", "ERK_SKIP_LOCAL_INIT_CHECK": "1"}
+    )
     assert result.exit_code == 0
     script_output = result.output.strip()
     assert script_output
@@ -110,7 +114,7 @@ def test_shell_integration_fish_escapes_special_characters(tmp_path: Path) -> No
     result = runner.invoke(
         cli,
         ["__shell", "sync", special_arg, second_arg],
-        env={"ERK_SHELL": "fish"},
+        env={"ERK_SHELL": "fish", "ERK_SKIP_LOCAL_INIT_CHECK": "1"},
     )
     assert result.exit_code == 0
     script_output = result.output.strip()
