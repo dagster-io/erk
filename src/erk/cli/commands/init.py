@@ -455,8 +455,8 @@ def init_cmd(
             user_output(f"  {config_path}")
 
             if not click.confirm("Proceed with updating global config?", default=True):
-                user_output("\nShell integration instructions were displayed above.")
-                user_output("Run 'erk init --shell' again to save this preference.")
+                user_output("\nShell integration instructions shown above.")
+                user_output("Run 'erk init --shell' to save this preference.")
                 return
 
             # Update global config with shell_setup_complete=True
@@ -473,8 +473,8 @@ def init_cmd(
             except PermissionError as e:
                 user_output(click.style("\n❌ Error: ", fg="red") + "Could not save global config")
                 user_output(str(e))
-                user_output("\nShell integration instructions were displayed above.")
-                user_output("You can use them now - erk just couldn't save this preference.")
+                user_output("\nShell integration instructions shown above.")
+                user_output("You can use them now - erk just couldn't save.")
                 raise SystemExit(1) from e
         return
 
@@ -640,9 +640,10 @@ def init_cmd(
                         user_output(f"\n  {shell_msg}")
                         user_output(f"    {config_path}")
 
-                        if not click.confirm("  Proceed with updating global config?", default=True):
-                            user_output("\n  Shell integration instructions were displayed above.")
-                            user_output("  Run 'erk init --shell' again to save this preference.")
+                        confirm_msg = "  Proceed with updating global config?"
+                        if not click.confirm(confirm_msg, default=True):
+                            user_output("\n  Shell integration instructions shown above.")
+                            user_output("  Run 'erk init --shell' to save this preference.")
                         else:
                             # Update global config with shell_setup_complete=True
                             new_config = GlobalConfig(
@@ -654,14 +655,14 @@ def init_cmd(
                             )
                             try:
                                 ctx.config_store.save(new_config)
-                                user_output(click.style("  ✓", fg="green") + " Global config updated")
+                                msg = click.style("  ✓", fg="green") + " Global config updated"
+                                user_output(msg)
                             except PermissionError as e:
                                 error_msg = "Could not save global config"
                                 user_output(click.style("\n  ❌ Error: ", fg="red") + error_msg)
                                 user_output(f"  {e}")
-                                user_output("\n  Shell integration instructions were displayed above.")
-                                msg = "  You can use them now - erk just couldn't save this preference."
-                                user_output(msg)
+                                user_output("\n  Shell integration instructions shown above.")
+                                user_output("  You can use them now - erk just couldn't save.")
 
     # 3c. Status line configuration
     if interactive:

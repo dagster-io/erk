@@ -924,8 +924,8 @@ def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
             result = runner.invoke(cli, ["init", "--shell"], obj=test_ctx, input="y\nn\n")
 
         assert result.exit_code == 0, result.output
-        assert "Shell integration instructions were displayed above" in result.output
-        assert "Run 'erk init --shell' again to save this preference" in result.output
+        assert "Shell integration instructions shown above" in result.output
+        assert "Run 'erk init --shell' to save this preference" in result.output
         # Config should NOT have been updated
         loaded = global_config_ops.load()
         assert loaded.shell_setup_complete is False
@@ -984,7 +984,7 @@ def test_shell_setup_confirmation_declined_first_init() -> None:
             result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\ny\nn\n")
 
         assert result.exit_code == 0, result.output
-        assert "Shell integration instructions were displayed above" in result.output
+        assert "Shell integration instructions shown above" in result.output
         # Config should exist (created by first-time init)
         assert global_config_ops.exists()
         # But shell_setup_complete should be False (user declined)
@@ -1029,8 +1029,8 @@ def test_shell_setup_permission_error_with_shell_flag() -> None:
         assert result.exit_code == 1, result.output
         assert "❌ Error: Could not save global config" in result.output
         assert "Cannot write to file" in result.output
-        assert "Shell integration instructions were displayed above" in result.output
-        assert "You can use them now - erk just couldn't save this preference" in result.output
+        assert "Shell integration instructions shown above" in result.output
+        assert "You can use them now - erk just couldn't save" in result.output
 
 
 def test_shell_setup_permission_error_first_init() -> None:
@@ -1077,7 +1077,7 @@ def test_shell_setup_permission_error_first_init() -> None:
         assert result.exit_code == 0, result.output
         assert "❌ Error: Could not save global config" in result.output
         assert "Cannot write to file" in result.output
-        assert "Shell integration instructions were displayed above" in result.output
+        assert "Shell integration instructions shown above" in result.output
         # First save succeeded, second failed
         assert global_config_ops.save_count == 2
 

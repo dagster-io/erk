@@ -38,6 +38,7 @@ erk = "erk.cli.cli:main"
 [dependency-groups]
 dev = [
     "erk-dev",
+    "erk-statusline",
     "ruff>=0.5.0",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
