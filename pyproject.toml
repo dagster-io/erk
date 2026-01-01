@@ -4,6 +4,7 @@ members = ["packages/*"]
 [tool.uv.sources]
 erk-dev = { workspace = true }
 erk-shared = { workspace = true }
+erk-statusline = { workspace = true }
 
 [project]
 name = "erk"
@@ -83,12 +84,12 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "erk_shared"]
+known-first-party = ["erk", "erk_dev", "erk_shared", "erk_statusline"]
 
 [tool.pyright]
 pythonVersion = "3.11"
 typeCheckingMode = "standard"
-include = ["src", "packages/erk-dev/src", "packages/erk-shared/src"]
+include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]
 exclude = [".claude/skills/"]
 venvPath = "."
 venv = ".venv"
@@ -96,6 +97,6 @@ reportMissingImports = "warning"
 
 [tool.pytest.ini_options]
 addopts = "-q"
-testpaths = ["tests", "packages/erk-dev/tests"]
+testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
