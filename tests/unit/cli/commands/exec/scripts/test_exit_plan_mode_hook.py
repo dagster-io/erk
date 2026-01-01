@@ -35,6 +35,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=False,
                 implement_now_signal_exists=True,  # Even with signals
                 plan_saved_signal_exists=True,
+                incremental_plan_signal_exists=True,
                 plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
@@ -50,6 +51,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 implement_now_signal_exists=False,
                 plan_saved_signal_exists=False,
+                incremental_plan_signal_exists=False,
                 plan_file_path=None,
                 current_branch=None,
             )
@@ -65,6 +67,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 implement_now_signal_exists=True,
                 plan_saved_signal_exists=False,
+                incremental_plan_signal_exists=False,
                 plan_file_path=Path("/some/plan.md"),  # Even if plan exists
                 current_branch="main",
             )
@@ -82,12 +85,67 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 implement_now_signal_exists=True,  # Both exist
                 plan_saved_signal_exists=True,
+                incremental_plan_signal_exists=False,
                 plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
         )
         assert result.action == ExitAction.ALLOW
         assert result.delete_implement_now_signal is True
+        assert result.delete_plan_saved_signal is False  # Not touched
+
+    def test_incremental_plan_signal_allows_exit_and_deletes(self) -> None:
+        """Incremental-plan signal allows exit and signals deletion."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                implement_now_signal_exists=False,
+                plan_saved_signal_exists=False,
+                incremental_plan_signal_exists=True,
+                plan_file_path=Path("/some/plan.md"),  # Even if plan exists
+                current_branch="feature-branch",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert "Incremental-plan mode" in result.message
+        assert "skipping save prompt" in result.message
+        assert result.delete_incremental_plan_signal is True
+        assert result.delete_implement_now_signal is False
+        assert result.delete_plan_saved_signal is False
+
+    def test_implement_now_takes_precedence_over_incremental_plan(self) -> None:
+        """Implement-now signal is checked before incremental-plan signal."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                implement_now_signal_exists=True,
+                plan_saved_signal_exists=False,
+                incremental_plan_signal_exists=True,  # Both exist
+                plan_file_path=Path("/some/plan.md"),
+                current_branch="feature-branch",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert result.delete_implement_now_signal is True
+        assert result.delete_incremental_plan_signal is False  # Not touched
+
+    def test_incremental_plan_takes_precedence_over_plan_saved(self) -> None:
+        """Incremental-plan signal is checked before plan-saved signal."""
+        result = determine_exit_action(
+            HookInput(
+                session_id="abc123",
+                github_planning_enabled=True,
+                implement_now_signal_exists=False,
+                plan_saved_signal_exists=True,
+                incremental_plan_signal_exists=True,  # Both exist
+                plan_file_path=Path("/some/plan.md"),
+                current_branch="feature-branch",
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert result.delete_incremental_plan_signal is True
         assert result.delete_plan_saved_signal is False  # Not touched
 
     def test_plan_saved_signal_blocks_and_deletes(self) -> None:
@@ -98,6 +156,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 implement_now_signal_exists=False,
                 plan_saved_signal_exists=True,
+                incremental_plan_signal_exists=False,
                 plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
@@ -115,6 +174,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 implement_now_signal_exists=False,
                 plan_saved_signal_exists=False,
+                incremental_plan_signal_exists=False,
                 plan_file_path=None,
                 current_branch="feature-branch",
             )
@@ -131,6 +191,7 @@ class TestDetermineExitAction:
                 github_planning_enabled=True,
                 implement_now_signal_exists=False,
                 plan_saved_signal_exists=False,
+                incremental_plan_signal_exists=False,
                 plan_file_path=plan_path,
                 current_branch="feature-branch",
             )
@@ -286,6 +347,36 @@ class TestHookIntegration:
         assert result.exit_code == 2  # Block
         assert "Plan already saved to GitHub" in result.output
         assert not plan_saved_signal.exists()  # Signal deleted
+
+    def test_incremental_plan_signal_flow(self, tmp_path: Path) -> None:
+        """Verify incremental-plan signal is deleted and exit is allowed."""
+        runner = CliRunner()
+        session_id = "session-abc123"
+
+        # Create incremental-plan signal
+        signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        signal_dir.mkdir(parents=True)
+        incremental_plan_signal = signal_dir / "incremental-plan.signal"
+        incremental_plan_signal.touch()
+
+        # Mock git repo root to point to tmp_path
+        mock_git_result = MagicMock()
+        mock_git_result.stdout = str(tmp_path) + "\n"
+
+        with (
+            patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
+            patch("subprocess.run", return_value=mock_git_result),
+            patch(
+                "erk.cli.commands.exec.scripts.exit_plan_mode_hook.extract_slugs_from_session",
+                return_value=[],
+            ),
+        ):
+            stdin_data = json.dumps({"session_id": session_id})
+            result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+
+        assert result.exit_code == 0
+        assert "Incremental-plan mode" in result.output
+        assert not incremental_plan_signal.exists()  # Signal deleted
 
     def test_no_stdin_allows_exit(self) -> None:
         """Verify hook works when no stdin provided."""
