@@ -133,6 +133,7 @@ def update_changelog_header(path: Path, new_version: str, dry_run: bool) -> bool
         ## [X.Y.Z] - YYYY-MM-DD
 
     Returns True if updated, False if changelog not found or no unreleased section.
+    Returns False if the version header already exists (to avoid duplicates).
     """
     if not path.exists():
         return False
@@ -141,6 +142,12 @@ def update_changelog_header(path: Path, new_version: str, dry_run: bool) -> bool
 
     # Check if [Unreleased] section exists
     if "## [Unreleased]" not in content:
+        return False
+
+    # Check if this version header already exists (avoid duplicates)
+    # Match version with any date format (YYYY-MM-DD with optional time)
+    version_pattern = rf"## \[{re.escape(new_version)}\] - \d{{4}}-\d{{2}}-\d{{2}}"
+    if re.search(version_pattern, content):
         return False
 
     # Get today's date in YYYY-MM-DD format
@@ -258,11 +265,17 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
     click.echo("\nChangelog:")
     changelog = repo_root / "CHANGELOG.md"
     if changelog.exists():
-        updated = update_changelog_header(changelog, version, dry_run)
-        if updated:
-            click.echo(f"  CHANGELOG.md: [Unreleased] -> [{version}]")
+        # Check if version already exists before calling update
+        content = changelog.read_text(encoding="utf-8")
+        version_pattern = rf"## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}"
+        if re.search(version_pattern, content):
+            click.echo(f"  CHANGELOG.md: [{version}] header already exists")
         else:
-            click.echo("  CHANGELOG.md: no unreleased content")
+            updated = update_changelog_header(changelog, version, dry_run)
+            if updated:
+                click.echo(f"  CHANGELOG.md: [Unreleased] -> [{version}]")
+            else:
+                click.echo("  CHANGELOG.md: no unreleased content")
     else:
         click.echo("  CHANGELOG.md: not found")
 

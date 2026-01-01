@@ -113,15 +113,19 @@ Release {version} prepared:
 - CHANGELOG.md updated with version {version}
 - pyproject.toml bumped to {version}
 
-Next steps:
-1. Review the changes: git diff
+Next steps (see RELEASING.md for full details):
+1. Update required version file:
+   echo "{version}" > .erk/required-erk-uv-tool-version
 2. Squash, commit, and tag:
    uv sync && git add -A
    git reset --soft master
    git commit -m "Release {version}"
    erk-dev release-tag
-3. Publish: make publish
-4. Merge to master after confirming publish works
+3. Run CI locally: make all-ci
+4. Push branch for GitHub CI: git push origin release-{version}
+5. CHECKPOINT: Verify local + GitHub CI pass before proceeding
+6. Publish: make publish
+7. Merge to master after confirming publish works
 ```
 
 ### Output Format
