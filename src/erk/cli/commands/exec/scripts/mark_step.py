@@ -3,17 +3,21 @@
 This exec command updates the YAML frontmatter in .impl/progress.md to mark
 steps as completed or incomplete, then regenerates the checkboxes.
 
+Also updates the GitHub issue metadata (current_step field in plan-header block)
+and posts a progress comment when an issue.json reference exists.
+
 Supports marking multiple steps in a single invocation to avoid race conditions
 when Claude runs parallel commands.
 
 Usage:
     erk exec mark-step STEP_NUM [STEP_NUM ...]
     erk exec mark-step STEP_NUM --incomplete
+    erk exec mark-step STEP_NUM --notes "Implementation details"
     erk exec mark-step STEP_NUM --json
 
 Output:
     JSON format: {"success": true, "step_nums": [N, ...], "completed": true,
-                  "total_completed": X, "total_steps": Y}
+                  "total_completed": X, "total_steps": Y, "github_updated": true}
     Human format: ✓ Step N: <description>\n              Progress: X/Y
 
 Exit Codes:
@@ -31,8 +35,12 @@ Examples:
     ✓ Step 3: Third step
     Progress: 3/10
 
+    $ erk exec mark-step 5 --notes "Added auth middleware"
+    ✓ Step 5: Implement feature X
+    Progress: 5/10
+
     $ erk exec mark-step 5 --json
-    {"success": true, "step_nums": [5], "completed": true, "total_completed": 5, "total_steps": 10}
+    {"success": true, "step_nums": [5], "completed": true, ...}
 
     $ erk exec mark-step 5 --incomplete
     ○ Step 5: Implement feature X
@@ -40,13 +48,19 @@ Examples:
 """
 
 import json
+import os
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, NoReturn
 
 import click
 import frontmatter
 
-from erk_shared.impl_folder import validate_progress_schema
+from erk_shared.context.helpers import require_cwd
+from erk_shared.github.issues.real import RealGitHubIssues
+from erk_shared.github.metadata import format_progress_update_comment, update_step_progress
+from erk_shared.impl_folder import read_issue_reference, validate_progress_schema
 
 
 def _error(msg: str) -> NoReturn:
@@ -55,8 +69,11 @@ def _error(msg: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_progress_file() -> Path:
+def _validate_progress_file(cwd: Path) -> Path:
     """Validate .impl/progress.md exists.
+
+    Args:
+        cwd: Current working directory
 
     Returns:
         Path to progress.md
@@ -64,7 +81,7 @@ def _validate_progress_file() -> Path:
     Raises:
         SystemExit: If validation fails
     """
-    progress_file = Path.cwd() / ".impl" / "progress.md"
+    progress_file = cwd / ".impl" / "progress.md"
 
     if not progress_file.exists():
         _error("No progress.md found in .impl/ folder")
@@ -165,7 +182,7 @@ def _regenerate_checkboxes(steps: list[dict[str, Any]]) -> str:
     """Regenerate checkbox markdown from steps array.
 
     Args:
-        steps: List of step dicts with 'text' and 'completed' fields
+        steps: List of step dicts with 'title' and 'completed' fields
 
     Returns:
         Markdown body with checkboxes
@@ -174,7 +191,7 @@ def _regenerate_checkboxes(steps: list[dict[str, Any]]) -> str:
 
     for step in steps:
         checkbox = "[x]" if step["completed"] else "[ ]"
-        lines.append(f"- {checkbox} {step['text']}")
+        lines.append(f"- {checkbox} {step['title']}")
 
     lines.append("")  # Trailing newline
     return "\n".join(lines)
@@ -183,13 +200,18 @@ def _regenerate_checkboxes(steps: list[dict[str, Any]]) -> str:
 def _write_progress_file(
     progress_file: Path,
     metadata: dict[str, Any],
+    current_step: int,
 ) -> None:
     """Write updated progress.md file with new metadata and regenerated checkboxes.
 
     Args:
         progress_file: Path to progress.md
         metadata: Updated metadata dict
+        current_step: Highest completed step number (0 = not started)
     """
+    # Update current_step in metadata
+    metadata["current_step"] = current_step
+
     # Regenerate body from steps array
     body = _regenerate_checkboxes(metadata["steps"])
 
@@ -199,6 +221,92 @@ def _write_progress_file(
     progress_file.write_text(content, encoding="utf-8")
 
 
+def _calculate_current_step(metadata: dict[str, Any]) -> int:
+    """Calculate current step as highest completed step number.
+
+    Args:
+        metadata: Progress metadata dict
+
+    Returns:
+        Highest completed step number (1-indexed), or 0 if none completed
+    """
+    current_step = 0
+    for i, step in enumerate(metadata["steps"]):
+        if step["completed"]:
+            current_step = max(current_step, i + 1)
+    return current_step
+
+
+def _get_session_id() -> str | None:
+    """Get Claude Code session ID from environment variable."""
+    return os.environ.get("CLAUDE_CODE_SESSION_ID")
+
+
+def _get_user() -> str | None:
+    """Get current user from GitHub auth or git config."""
+    github_issues = RealGitHubIssues(target_repo=None)
+    return github_issues.get_current_username()
+
+
+def _update_github_issue(
+    cwd: Path,
+    issue_number: int,
+    previous_step: int,
+    current_step: int,
+    total_steps: int,
+    steps_completed: list[int],
+    step_titles: list[str],
+    notes: str | None,
+) -> bool:
+    """Update GitHub issue metadata and post progress comment.
+
+    Args:
+        cwd: Current working directory (repo root)
+        issue_number: Issue number to update
+        previous_step: Step number before this update
+        current_step: Current step number after this update
+        total_steps: Total number of steps
+        steps_completed: List of step numbers marked complete in this update
+        step_titles: List of step titles (parallel to steps_completed)
+        notes: Optional implementation notes
+
+    Returns:
+        True if update succeeded, False if failed (silently)
+    """
+    try:
+        github_issues = RealGitHubIssues(target_repo=None)
+
+        # Update plan-header metadata with current_step
+        issue_info = github_issues.get_issue(cwd, issue_number)
+        updated_body = update_step_progress(issue_info.body, current_step)
+        github_issues.update_issue_body(cwd, issue_number, updated_body)
+
+        # Post progress comment
+        timestamp = datetime.now(UTC).isoformat()
+        session_id = _get_session_id()
+        user = _get_user()
+
+        comment_body = format_progress_update_comment(
+            timestamp=timestamp,
+            steps_completed=steps_completed,
+            step_titles=step_titles,
+            previous_step=previous_step,
+            current_step=current_step,
+            total_steps=total_steps,
+            session_id=session_id,
+            user=user,
+            notes=notes,
+        )
+        github_issues.add_comment(cwd, issue_number, comment_body)
+
+        return True
+    except Exception as e:
+        # Best-effort: GitHub update is optional, local update is authoritative
+        # Log to stderr so failures are diagnosable without blocking the operation
+        print(f"Warning: GitHub update failed: {e}", file=sys.stderr)
+        return False
+
+
 @click.command(name="mark-step")
 @click.argument("step_nums", type=int, nargs=-1)
 @click.option(
@@ -206,22 +314,37 @@ def _write_progress_file(
     default=True,
     help="Mark as completed (default) or incomplete",
 )
+@click.option("--notes", type=str, help="Implementation notes to include in progress comment")
 @click.option("--json", "output_json", is_flag=True, help="Output JSON format")
-def mark_step(step_nums: tuple[int, ...], completed: bool, output_json: bool) -> None:
+@click.pass_context
+def mark_step(
+    ctx: click.Context,
+    step_nums: tuple[int, ...],
+    completed: bool,
+    notes: str | None,
+    output_json: bool,
+) -> None:
     """Mark one or more steps as completed or incomplete in progress.md.
 
     Updates the YAML frontmatter to mark STEP_NUMS as completed/incomplete,
     recalculates the completed_steps count, and regenerates checkboxes.
 
+    Also updates GitHub issue metadata and posts a progress comment when
+    issue.json exists (best-effort).
+
     Supports multiple step numbers to avoid race conditions from parallel execution.
 
     STEP_NUMS: One or more step numbers to mark (1-indexed)
     """
-    progress_file = _validate_progress_file()
+    cwd = require_cwd(ctx)
+    progress_file = _validate_progress_file(cwd)
     metadata, _ = _parse_progress_file(progress_file)
 
     # Validate all steps first (fail fast before any modifications)
     _validate_step_nums(step_nums, metadata["total_steps"])
+
+    # Calculate previous_step before making any changes
+    previous_step = _calculate_current_step(metadata)
 
     # Update all steps in a single read-modify-write cycle
     for step_num in step_nums:
@@ -230,12 +353,35 @@ def mark_step(step_nums: tuple[int, ...], completed: bool, output_json: bool) ->
     # Recalculate completed count once after all updates
     _recalculate_completed_steps(metadata)
 
-    _write_progress_file(progress_file, metadata)
+    # Calculate new current_step after updates
+    current_step = _calculate_current_step(metadata)
+
+    _write_progress_file(progress_file, metadata, current_step)
 
     # Verify file integrity after write - fail hard on validation error
     errors = validate_progress_schema(progress_file)
     if errors:
         _error(f"Post-write validation failed: {'; '.join(errors)}")
+
+    # Collect step titles for the completed steps
+    step_titles = [metadata["steps"][s - 1]["title"] for s in step_nums]
+
+    # Update GitHub issue metadata and post comment (best-effort)
+    github_updated = False
+    impl_dir = cwd / ".impl"
+    issue_ref = read_issue_reference(impl_dir)
+    if issue_ref is not None and completed:
+        # Only post progress comment when marking steps complete (not incomplete)
+        github_updated = _update_github_issue(
+            cwd=cwd,
+            issue_number=issue_ref.issue_number,
+            previous_step=previous_step,
+            current_step=current_step,
+            total_steps=metadata["total_steps"],
+            steps_completed=list(step_nums),
+            step_titles=step_titles,
+            notes=notes,
+        )
 
     # Output result
     if output_json:
@@ -245,12 +391,13 @@ def mark_step(step_nums: tuple[int, ...], completed: bool, output_json: bool) ->
             "completed": completed,
             "total_completed": metadata["completed_steps"],
             "total_steps": metadata["total_steps"],
+            "github_updated": github_updated,
         }
         click.echo(json.dumps(result))
     else:
         # Output each marked step
         status_icon = "✓" if completed else "○"
         for step_num in step_nums:
-            step_text = metadata["steps"][step_num - 1]["text"]
-            click.echo(f"{status_icon} Step {step_num}: {step_text}")
+            step_title = metadata["steps"][step_num - 1]["title"]
+            click.echo(f"{status_icon} Step {step_num}: {step_title}")
         click.echo(f"Progress: {metadata['completed_steps']}/{metadata['total_steps']}")

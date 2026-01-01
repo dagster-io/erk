@@ -23,14 +23,18 @@ def valid_progress_file(tmp_path: Path) -> Path:
     progress_md = impl_dir / "progress.md"
     progress_md.write_text(
         """---
+current_step: 1
 completed_steps: 1
 total_steps: 3
 steps:
-  - text: '1. First step'
+  - number: 1
+    title: '1. First step'
     completed: true
-  - text: '2. Second step'
+  - number: 2
+    title: '2. Second step'
     completed: false
-  - text: '3. Third step'
+  - number: 3
+    title: '3. Third step'
     completed: false
 ---
 
@@ -86,6 +90,7 @@ def test_check_progress_empty_steps(tmp_path: Path) -> None:
     progress_md = impl_dir / "progress.md"
     progress_md.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 0
 steps: []
@@ -165,6 +170,7 @@ def test_check_progress_missing_steps_field(tmp_path: Path) -> None:
     progress_md = impl_dir / "progress.md"
     progress_md.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 0
 ---
@@ -195,12 +201,15 @@ def test_check_progress_inconsistent_counts(tmp_path: Path) -> None:
     progress_md = impl_dir / "progress.md"
     progress_md.write_text(
         """---
+current_step: 1
 completed_steps: 3
 total_steps: 2
 steps:
-  - text: '1. Step one'
+  - number: 1
+    title: '1. Step one'
     completed: true
-  - text: '2. Step two'
+  - number: 2
+    title: '2. Step two'
     completed: false
 ---
 
@@ -231,6 +240,7 @@ def test_check_progress_normal_mode_errors(tmp_path: Path) -> None:
     progress_md = impl_dir / "progress.md"
     progress_md.write_text(
         """---
+current_step: 0
 completed_steps: 0
 ---
 
@@ -250,18 +260,20 @@ completed_steps: 0
     assert "Error:" in result.output
 
 
-def test_check_progress_step_missing_text(tmp_path: Path) -> None:
-    """Test error when step is missing text field."""
+def test_check_progress_step_missing_title(tmp_path: Path) -> None:
+    """Test error when step is missing title field."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
     progress_md = impl_dir / "progress.md"
     progress_md.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 1
 steps:
-  - completed: false
+  - number: 1
+    completed: false
 ---
 
 # Progress
@@ -279,4 +291,4 @@ steps:
     assert result.exit_code == 1
     data = json.loads(result.output)
     assert data["valid"] is False
-    assert "Step 1 missing 'text' field" in data["errors"]
+    assert "Step 1 missing 'title' field" in data["errors"]

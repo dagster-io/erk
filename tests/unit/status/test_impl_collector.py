@@ -4,19 +4,12 @@ These tests verify that the impl collector correctly gathers implementation fold
 including issue references for status display.
 """
 
-import json
 from pathlib import Path
 
 from erk.core.context import minimal_context
 from erk.status.collectors.impl import PlanFileCollector
 from erk_shared.git.fake import FakeGit
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
-from erk_shared.prompt_executor.fake import FakePromptExecutor
-
-
-def _make_executor(steps: list[str]) -> FakePromptExecutor:
-    """Create a FakePromptExecutor that returns the given steps as JSON."""
-    return FakePromptExecutor(output=json.dumps(steps))
 
 
 def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
@@ -35,10 +28,9 @@ def test_plan_collector_no_plan_folder(tmp_path: Path) -> None:
 
 def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
     """Test collector returns plan status without issue when no issue.json exists."""
-    # Create plan folder without issue reference
-    plan_content = "# Test Plan\n\n1. Step one\n2. Step two"
-    executor = _make_executor(["1. Step one", "2. Step two"])
-    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    # Create plan folder without issue reference (uses ## Step N: format)
+    plan_content = "# Test Plan\n\n## Step 1: Step one\n## Step 2: Step two\n"
+    create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     git = FakeGit()
     ctx = minimal_context(git, tmp_path)
@@ -54,10 +46,9 @@ def test_plan_collector_with_plan_no_issue(tmp_path: Path) -> None:
 
 def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     """Test collector includes issue reference in PlanStatus."""
-    # Create plan folder
-    plan_content = "# Test Plan\n\n1. Step one"
-    executor = _make_executor(["1. Step one"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    # Create plan folder (uses ## Step N: format)
+    plan_content = "# Test Plan\n\n## Step 1: Step one\n"
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     # Save issue reference
     save_issue_reference(plan_folder, 42, "https://github.com/owner/repo/issues/42")
@@ -78,10 +69,11 @@ def test_plan_collector_issue_reference_with_progress(tmp_path: Path) -> None:
     """Test collector includes both progress and issue information."""
     import frontmatter
 
-    # Create plan folder
-    plan_content = "# Test Plan\n\n1. Step one\n2. Step two\n3. Step three"
-    executor = _make_executor(["1. Step one", "2. Step two", "3. Step three"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    # Create plan folder (uses ## Step N: format for regex extraction)
+    plan_content = (
+        "# Test Plan\n\n## Step 1: Step one\n## Step 2: Step two\n## Step 3: Step three\n"
+    )
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     # Save issue reference
     save_issue_reference(plan_folder, 123, "https://github.com/test/repo/issues/123")
@@ -93,15 +85,16 @@ def test_plan_collector_issue_reference_with_progress(tmp_path: Path) -> None:
     # Parse frontmatter
     post = frontmatter.loads(content)
 
-    # Update the steps array
+    # Update the steps array and current_step
     post.metadata["steps"][0]["completed"] = True
     post.metadata["completed_steps"] = 1
+    post.metadata["current_step"] = 1
 
     # Regenerate checkboxes in body
     body_lines = ["# Progress Tracking\n"]
     for step in post.metadata["steps"]:
         checkbox = "[x]" if step["completed"] else "[ ]"
-        body_lines.append(f"- {checkbox} {step['text']}")
+        body_lines.append(f"- {checkbox} {step['title']}")
     body_lines.append("")
     post.content = "\n".join(body_lines)
 
@@ -125,10 +118,9 @@ def test_plan_collector_issue_reference_with_progress(tmp_path: Path) -> None:
 
 def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     """Test collector handles invalid issue.json gracefully."""
-    # Create plan folder
-    plan_content = "# Test Plan\n\n1. Step"
-    executor = _make_executor(["1. Step"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    # Create plan folder (uses ## Step N: format)
+    plan_content = "# Test Plan\n\n## Step 1: Step\n"
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     # Create invalid issue.json
     issue_file = plan_folder / "issue.json"

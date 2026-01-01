@@ -14,6 +14,7 @@ from erk_shared.impl_folder import (
     add_worktree_creation_comment,
     create_impl_folder,
     extract_steps_from_plan,
+    extract_steps_from_plan_regex,
     get_impl_path,
     get_progress_path,
     has_issue_reference,
@@ -32,22 +33,107 @@ def _make_executor(steps: list[str]) -> FakePromptExecutor:
     return FakePromptExecutor(output=json.dumps(steps))
 
 
+# =============================================================================
+# Regex-Based Step Extraction Tests (New Primary Extraction Method)
+# =============================================================================
+
+
+def test_extract_steps_from_plan_regex_basic() -> None:
+    """Test basic step extraction with ## Step N: Title format."""
+    plan_content = """# Implementation Plan
+
+## Step 1: Create database schema
+Details here...
+
+## Step 2: Add API endpoints
+More details...
+
+## Step 3: Write tests
+Final details...
+"""
+    steps = extract_steps_from_plan_regex(plan_content)
+    assert steps == ["Create database schema", "Add API endpoints", "Write tests"]
+
+
+def test_extract_steps_from_plan_regex_without_colon() -> None:
+    """Test step extraction with ## Step N Title (no colon) format."""
+    plan_content = """# Plan
+
+## Step 1 First step title
+## Step 2 Second step title
+"""
+    steps = extract_steps_from_plan_regex(plan_content)
+    assert steps == ["First step title", "Second step title"]
+
+
+def test_extract_steps_from_plan_regex_empty() -> None:
+    """Test regex extraction returns empty list when no steps found."""
+    plan_content = """# Plan
+
+This plan has no steps in the expected format.
+
+1. Regular numbered list
+2. Another item
+"""
+    steps = extract_steps_from_plan_regex(plan_content)
+    assert steps == []
+
+
+def test_extract_steps_from_plan_regex_mixed_headers() -> None:
+    """Test that only ## Step N headers are extracted, not other headers."""
+    plan_content = """# Main Title
+
+## Overview
+Some overview text.
+
+## Step 1: Actual step one
+Implementation details.
+
+## Context
+More context.
+
+## Step 2: Actual step two
+More implementation.
+
+### Step 3: Wrong level heading (should not match)
+This should not be extracted.
+"""
+    steps = extract_steps_from_plan_regex(plan_content)
+    # Only ## Step N headers should match, not ### or ## without Step
+    assert steps == ["Actual step one", "Actual step two"]
+
+
+def test_extract_steps_from_plan_regex_non_sequential() -> None:
+    """Test that non-sequential step numbers are still extracted."""
+    plan_content = """## Step 1: First
+## Step 5: Fifth
+## Step 10: Tenth
+"""
+    steps = extract_steps_from_plan_regex(plan_content)
+    assert steps == ["First", "Fifth", "Tenth"]
+
+
 def test_create_impl_folder_basic(tmp_path: Path) -> None:
-    """Test creating a plan folder with basic plan content."""
+    """Test creating a plan folder with basic plan content.
+
+    Uses new ## Step N: format for regex-based extraction.
+    """
     plan_content = """# Implementation Plan: Test Feature
 
 ## Objective
 Build a test feature.
 
-## Implementation Steps
+## Step 1: Create module
+Details about creating the module.
 
-1. Create module
-2. Add tests
-3. Update documentation
+## Step 2: Add tests
+Details about adding tests.
+
+## Step 3: Update documentation
+Details about updating docs.
 """
-    # Configure executor to return the expected steps
-    executor = _make_executor(["1. Create module", "2. Add tests", "3. Update documentation"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    # No executor needed - extraction is now regex-based
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     # Verify folder structure
     assert plan_folder.exists()
@@ -58,26 +144,25 @@ Build a test feature.
     assert plan_file.exists()
     assert plan_file.read_text(encoding="utf-8") == plan_content
 
-    # Verify progress.md exists and has checkboxes
+    # Verify progress.md exists with step titles as checkboxes
     progress_file = plan_folder / "progress.md"
     assert progress_file.exists()
     progress_content = progress_file.read_text(encoding="utf-8")
-    assert "- [ ] 1. Create module" in progress_content
-    assert "- [ ] 2. Add tests" in progress_content
-    assert "- [ ] 3. Update documentation" in progress_content
+    assert "- [ ] Create module" in progress_content
+    assert "- [ ] Add tests" in progress_content
+    assert "- [ ] Update documentation" in progress_content
 
 
 def test_create_impl_folder_already_exists(tmp_path: Path) -> None:
     """Test that creating a plan folder when one exists raises error."""
-    plan_content = "# Test Plan\n\n1. Step one"
-    executor = _make_executor(["1. Step one"])
+    plan_content = "# Test Plan\n\n## Step 1: Step one\n"
 
     # Create first time - should succeed
-    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     # Try to create again - should raise
     with pytest.raises(FileExistsError, match="Implementation folder already exists"):
-        create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+        create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
 
 def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
@@ -86,24 +171,25 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
     This is the fix for GitHub issue #2595 where creating a worktree from a branch
     with an existing .impl/ folder would fail because the folder was inherited.
     """
-    old_plan = "# Old Plan\n\n1. Old step one\n2. Old step two"
-    new_plan = "# New Plan\n\n1. New step one\n2. New step two\n3. New step three"
-    old_executor = _make_executor(["1. Old step one", "2. Old step two"])
-    new_executor = _make_executor(["1. New step one", "2. New step two", "3. New step three"])
+    old_plan = "# Old Plan\n\n## Step 1: Old step one\n## Step 2: Old step two\n"
+    new_plan = (
+        "# New Plan\n\n## Step 1: New step one\n"
+        "## Step 2: New step two\n## Step 3: New step three\n"
+    )
 
     # Create first .impl/ folder
-    impl_folder = create_impl_folder(tmp_path, old_plan, old_executor, overwrite=False)
+    impl_folder = create_impl_folder(tmp_path, old_plan, None, overwrite=False)
     old_plan_file = impl_folder / "plan.md"
     old_progress_file = impl_folder / "progress.md"
 
     # Verify old content
     assert old_plan_file.read_text(encoding="utf-8") == old_plan
     old_progress_content = old_progress_file.read_text(encoding="utf-8")
-    assert "1. Old step one" in old_progress_content
+    assert "Old step one" in old_progress_content
     assert "total_steps: 2" in old_progress_content
 
     # Create again with overwrite=True - should succeed and replace content
-    new_impl_folder = create_impl_folder(tmp_path, new_plan, new_executor, overwrite=True)
+    new_impl_folder = create_impl_folder(tmp_path, new_plan, None, overwrite=True)
 
     # Verify new content replaced old
     assert new_impl_folder == impl_folder  # Same path
@@ -112,9 +198,9 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
 
     assert new_plan_file.read_text(encoding="utf-8") == new_plan
     new_progress_content = new_progress_file.read_text(encoding="utf-8")
-    assert "1. New step one" in new_progress_content
-    assert "2. New step two" in new_progress_content
-    assert "3. New step three" in new_progress_content
+    assert "New step one" in new_progress_content
+    assert "New step two" in new_progress_content
+    assert "New step three" in new_progress_content
     assert "total_steps: 3" in new_progress_content
 
     # Verify old content is gone
@@ -122,44 +208,31 @@ def test_create_impl_folder_overwrite_replaces_existing(tmp_path: Path) -> None:
     assert "Old" not in new_progress_content
 
 
-def test_create_impl_folder_with_nested_steps(tmp_path: Path) -> None:
-    """Test creating plan folder with nested step numbering."""
+def test_create_impl_folder_with_multiple_steps(tmp_path: Path) -> None:
+    """Test creating plan folder with multiple steps using ## Step N: format."""
     plan_content = """# Complex Plan
 
-## Phase 1
+## Overview
+Complex implementation plan.
 
-1. Main step one
-1.1. Substep one
-1.2. Substep two
+## Step 1: Main step one
+Description of step one.
 
-2. Main step two
-2.1. Substep one
-2.2. Substep two
-2.3. Substep three
+## Step 2: Main step two
+Description of step two.
+
+## Step 3: Main step three
+Description of step three.
 """
-    executor = _make_executor(
-        [
-            "1. Main step one",
-            "1.1. Substep one",
-            "1.2. Substep two",
-            "2. Main step two",
-            "2.1. Substep one",
-            "2.2. Substep two",
-            "2.3. Substep three",
-        ]
-    )
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
     # Verify all steps are in progress.md
-    assert "- [ ] 1. Main step one" in progress_content
-    assert "- [ ] 1.1. Substep one" in progress_content
-    assert "- [ ] 1.2. Substep two" in progress_content
-    assert "- [ ] 2. Main step two" in progress_content
-    assert "- [ ] 2.1. Substep one" in progress_content
-    assert "- [ ] 2.2. Substep two" in progress_content
-    assert "- [ ] 2.3. Substep three" in progress_content
+    assert "- [ ] Main step one" in progress_content
+    assert "- [ ] Main step two" in progress_content
+    assert "- [ ] Main step three" in progress_content
+    assert "total_steps: 3" in progress_content
 
 
 def test_create_impl_folder_empty_plan(tmp_path: Path) -> None:
@@ -172,12 +245,14 @@ def test_create_impl_folder_empty_plan(tmp_path: Path) -> None:
     """
     plan_content = """# Empty Plan
 
-This plan has no numbered steps.
-Just some text.
+This plan has no steps in ## Step N: format.
+Just some text with numbered lists:
+
+1. First item
+2. Second item
 """
-    # LLM returns empty array when no steps found
-    executor = _make_executor([])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    # No steps match the ## Step N: regex pattern
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -200,9 +275,8 @@ Just some text.
 
 def test_get_impl_path_exists(tmp_path: Path) -> None:
     """Test getting plan path when it exists."""
-    plan_content = "# Test\n\n1. Step"
-    executor = _make_executor(["1. Step"])
-    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    plan_content = "# Test\n\n## Step 1: Step one\n"
+    create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     plan_path = get_impl_path(tmp_path)
     assert plan_path is not None
@@ -218,9 +292,8 @@ def test_get_impl_path_not_exists(tmp_path: Path) -> None:
 
 def test_get_progress_path_exists(tmp_path: Path) -> None:
     """Test getting progress path when it exists."""
-    plan_content = "# Test\n\n1. Step"
-    executor = _make_executor(["1. Step"])
-    create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    plan_content = "# Test\n\n## Step 1: Step one\n"
+    create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     progress_path = get_progress_path(tmp_path)
     assert progress_path is not None
@@ -340,12 +413,16 @@ def test_create_impl_folder_generates_frontmatter(tmp_path: Path) -> None:
     """Test that creating a plan folder generates YAML front matter in progress.md."""
     plan_content = """# Test Plan
 
-1. First step
-2. Second step
-3. Third step
+## Step 1: First step
+Details.
+
+## Step 2: Second step
+Details.
+
+## Step 3: Third step
+Details.
 """
-    executor = _make_executor(["1. First step", "2. Second step", "3. Third step"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -360,12 +437,16 @@ def test_create_impl_folder_generates_steps_array(tmp_path: Path) -> None:
     """Test that creating a plan folder generates steps array in YAML frontmatter."""
     plan_content = """# Test Plan
 
-1. First step
-2. Second step
-3. Third step
+## Step 1: First step
+Details.
+
+## Step 2: Second step
+Details.
+
+## Step 3: Third step
+Details.
 """
-    executor = _make_executor(["1. First step", "2. Second step", "3. Third step"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
     progress_file = plan_folder / "progress.md"
     progress_content = progress_file.read_text(encoding="utf-8")
 
@@ -376,17 +457,22 @@ def test_create_impl_folder_generates_steps_array(tmp_path: Path) -> None:
     assert isinstance(metadata["steps"], list)
     assert len(metadata["steps"]) == 3
 
-    # Verify each step has text and completed fields
-    for step in metadata["steps"]:
-        assert "text" in step
+    # Verify each step has number, title, and completed fields
+    for i, step in enumerate(metadata["steps"]):
+        assert "number" in step
+        assert "title" in step
         assert "completed" in step
+        assert step["number"] == i + 1
         assert isinstance(step["completed"], bool)
         assert step["completed"] is False  # All start uncompleted
 
-    # Verify step texts
-    assert metadata["steps"][0]["text"] == "1. First step"
-    assert metadata["steps"][1]["text"] == "2. Second step"
-    assert metadata["steps"][2]["text"] == "3. Third step"
+    # Verify step titles
+    assert metadata["steps"][0]["title"] == "First step"
+    assert metadata["steps"][1]["title"] == "Second step"
+    assert metadata["steps"][2]["title"] == "Third step"
+
+    # Verify current_step starts at 0
+    assert metadata["current_step"] == 0
 
 
 def test_parse_progress_frontmatter_valid(tmp_path: Path) -> None:
@@ -665,9 +751,8 @@ def test_issue_reference_roundtrip(tmp_path: Path) -> None:
 def test_issue_reference_with_plan_folder(tmp_path: Path) -> None:
     """Test issue reference integration with plan folder creation."""
     # Create plan folder
-    plan_content = "# Test Plan\n\n1. Step one"
-    executor = _make_executor(["1. Step one"])
-    plan_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    plan_content = "# Test Plan\n\n## Step 1: Step one\n"
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
 
     # Initially no issue reference
     assert has_issue_reference(plan_folder) is False
@@ -1020,14 +1105,18 @@ def test_validate_progress_schema_valid_file(tmp_path: Path) -> None:
     progress_file = tmp_path / "progress.md"
     progress_file.write_text(
         """---
+current_step: 1
 completed_steps: 1
 total_steps: 3
 steps:
-  - text: '1. First step'
+  - number: 1
+    title: 'First step'
     completed: true
-  - text: '2. Second step'
+  - number: 2
+    title: 'Second step'
     completed: false
-  - text: '3. Third step'
+  - number: 3
+    title: 'Third step'
     completed: false
 ---
 
@@ -1046,6 +1135,7 @@ def test_validate_progress_schema_empty_steps(tmp_path: Path) -> None:
     progress_file = tmp_path / "progress.md"
     progress_file.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 0
 steps: []
@@ -1130,15 +1220,17 @@ steps: "not a list"
     assert "'steps' must be a list" in errors
 
 
-def test_validate_progress_schema_step_missing_text(tmp_path: Path) -> None:
-    """Test validation fails when step is missing text field."""
+def test_validate_progress_schema_step_missing_number(tmp_path: Path) -> None:
+    """Test validation fails when step is missing number field."""
     progress_file = tmp_path / "progress.md"
     progress_file.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 1
 steps:
-  - completed: false
+  - title: 'Step one'
+    completed: false
 ---
 
 # Progress
@@ -1148,7 +1240,30 @@ steps:
 
     errors = validate_progress_schema(progress_file)
 
-    assert "Step 1 missing 'text' field" in errors
+    assert "Step 1 missing 'number' field" in errors
+
+
+def test_validate_progress_schema_step_missing_title(tmp_path: Path) -> None:
+    """Test validation fails when step is missing title field."""
+    progress_file = tmp_path / "progress.md"
+    progress_file.write_text(
+        """---
+current_step: 0
+completed_steps: 0
+total_steps: 1
+steps:
+  - number: 1
+    completed: false
+---
+
+# Progress
+""",
+        encoding="utf-8",
+    )
+
+    errors = validate_progress_schema(progress_file)
+
+    assert "Step 1 missing 'title' field" in errors
 
 
 def test_validate_progress_schema_step_missing_completed(tmp_path: Path) -> None:
@@ -1156,10 +1271,12 @@ def test_validate_progress_schema_step_missing_completed(tmp_path: Path) -> None
     progress_file = tmp_path / "progress.md"
     progress_file.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 1
 steps:
-  - text: '1. Step'
+  - number: 1
+    title: 'Step one'
 ---
 
 # Progress
@@ -1215,10 +1332,12 @@ def test_validate_progress_schema_total_steps_mismatch(tmp_path: Path) -> None:
     progress_file = tmp_path / "progress.md"
     progress_file.write_text(
         """---
+current_step: 0
 completed_steps: 0
 total_steps: 5
 steps:
-  - text: '1. Step'
+  - number: 1
+    title: 'Step one'
     completed: false
 ---
 
@@ -1238,12 +1357,15 @@ def test_validate_progress_schema_completed_steps_mismatch(tmp_path: Path) -> No
     progress_file = tmp_path / "progress.md"
     progress_file.write_text(
         """---
+current_step: 0
 completed_steps: 2
 total_steps: 2
 steps:
-  - text: '1. Step'
+  - number: 1
+    title: 'Step one'
     completed: true
-  - text: '2. Step'
+  - number: 2
+    title: 'Step two'
     completed: false
 ---
 

@@ -9,13 +9,15 @@ These utilities are used by both erk (for local operations) and erk-kits
 (for kit CLI commands).
 """
 
+from __future__ import annotations
+
 import json
+import re
 import shutil
-import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import frontmatter
 import yaml
@@ -24,13 +26,15 @@ from erk_shared.github.metadata import (
     create_worktree_creation_block,
     render_erk_issue_event,
 )
-from erk_shared.prompt_executor.abc import PromptExecutor
+
+if TYPE_CHECKING:
+    from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 def create_impl_folder(
     worktree_path: Path,
     plan_content: str,
-    prompt_executor: PromptExecutor,
+    prompt_executor: PromptExecutor | None,
     *,
     overwrite: bool,
 ) -> Path:
@@ -39,7 +43,7 @@ def create_impl_folder(
     Args:
         worktree_path: Path to the worktree directory
         plan_content: Content for plan.md file
-        prompt_executor: Executor for LLM-based step extraction
+        prompt_executor: Optional executor (deprecated, now ignored - steps extracted via regex)
         overwrite: If True, remove existing .impl/ folder before creating new one.
                    If False, raise FileExistsError when .impl/ already exists.
 
@@ -48,7 +52,6 @@ def create_impl_folder(
 
     Raises:
         FileExistsError: If .impl/ directory already exists and overwrite is False
-        RuntimeError: If LLM step extraction fails
     """
     impl_folder = worktree_path / ".impl"
 
@@ -65,8 +68,8 @@ def create_impl_folder(
     plan_file = impl_folder / "plan.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    # Extract steps using LLM and generate progress.md
-    steps = extract_steps_from_plan(plan_content, prompt_executor)
+    # Extract steps using regex (deterministic, no LLM needed)
+    steps = extract_steps_from_plan_regex(plan_content)
     progress_content = generate_progress_content(steps)
 
     progress_file = impl_folder / "progress.md"
@@ -114,6 +117,33 @@ def get_progress_path(worktree_path: Path) -> Path | None:
     return None
 
 
+def extract_steps_from_plan_regex(plan_content: str) -> list[str]:
+    """Extract step headers from plan markdown using regex.
+
+    Extracts steps from structural `## Step N: Title` headers.
+    This is deterministic (regex) vs probabilistic (LLM).
+
+    Args:
+        plan_content: Full plan markdown content
+
+    Returns:
+        List of step descriptions (e.g., ["Database Schema", "API Endpoints"])
+
+    Examples:
+        >>> extract_steps_from_plan_regex("## Step 1: Database Schema\\n## Step 2: API")
+        ['Database Schema', 'API']
+        >>> extract_steps_from_plan_regex("# No steps here")
+        []
+    """
+    # Pattern: ## Step N: Title or ## Step N Title (colon optional)
+    # Captures just the title part after the step number
+    pattern = r"^## Step \d+[:\s]+(.+)$"
+    matches = re.findall(pattern, plan_content, re.MULTILINE)
+    return [match.strip() for match in matches]
+
+
+# Legacy LLM-based extraction - kept for backward compatibility during transition
+# New code should use extract_steps_from_plan_regex instead
 _STEP_EXTRACTION_PROMPT = (
     "You are a JSON extraction tool. Your ONLY output must be valid JSON.\n\n"
     "CRITICAL: Output ONLY a JSON array. No explanations, no markdown, no preamble.\n\n"
@@ -130,6 +160,9 @@ _STEP_EXTRACTION_PROMPT = (
 def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) -> list[str]:
     """Extract implementation steps from plan markdown using LLM.
 
+    DEPRECATED: Use extract_steps_from_plan_regex for deterministic extraction.
+    This function is kept for backward compatibility during transition.
+
     Uses Claude Sonnet to semantically understand the plan and extract
     actionable implementation steps.
 
@@ -143,6 +176,8 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
     Raises:
         RuntimeError: If LLM execution fails or returns invalid response
     """
+    import sys
+
     prompt = _STEP_EXTRACTION_PROMPT.format(plan_content=plan_content)
     result = prompt_executor.execute_prompt(prompt, model="sonnet")
 
@@ -201,12 +236,12 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
     return steps
 
 
-def extract_plan_steps(impl_dir: Path, prompt_executor: PromptExecutor) -> list[str]:
+def extract_plan_steps(impl_dir: Path, prompt_executor: PromptExecutor | None) -> list[str]:
     """Extract step descriptions from .impl/plan.md file.
 
     Args:
         impl_dir: Path to .impl/ directory
-        prompt_executor: Executor for LLM-based step extraction
+        prompt_executor: Optional executor (deprecated, now ignored)
 
     Returns:
         List of step description strings
@@ -214,7 +249,6 @@ def extract_plan_steps(impl_dir: Path, prompt_executor: PromptExecutor) -> list[
     Raises:
         FileNotFoundError: If plan.md doesn't exist
         ValueError: If plan.md contains no steps
-        RuntimeError: If LLM step extraction fails
     """
     plan_file = impl_dir / "plan.md"
 
@@ -223,7 +257,7 @@ def extract_plan_steps(impl_dir: Path, prompt_executor: PromptExecutor) -> list[
         raise FileNotFoundError(msg)
 
     plan_content = plan_file.read_text(encoding="utf-8")
-    steps = extract_steps_from_plan(plan_content, prompt_executor)
+    steps = extract_steps_from_plan_regex(plan_content)
 
     if not steps:
         msg = f"No steps found in plan file: {plan_file}"
@@ -261,6 +295,12 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
     Validates that progress.md has valid YAML frontmatter with required fields
     and internal consistency.
 
+    Schema (aligned with GitHub issue plan-header):
+    - steps: [{number: N, title: "...", completed: bool}, ...]
+    - current_step: int (highest completed step number, 0 = not started)
+    - completed_steps: int (count of completed steps)
+    - total_steps: int
+
     Args:
         progress_file: Path to progress.md file
 
@@ -289,14 +329,19 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
     elif not isinstance(metadata["steps"], list):
         errors.append("'steps' must be a list")
     else:
-        # Validate step structure
+        # Validate step structure (number, title, completed)
         for i, step in enumerate(metadata["steps"]):
             if not isinstance(step, dict):
                 errors.append(f"Step {i + 1} must be an object")
-            elif "text" not in step:
-                errors.append(f"Step {i + 1} missing 'text' field")
-            elif "completed" not in step:
-                errors.append(f"Step {i + 1} missing 'completed' field")
+            else:
+                if "number" not in step:
+                    errors.append(f"Step {i + 1} missing 'number' field")
+                elif not isinstance(step["number"], int):
+                    errors.append(f"Step {i + 1} 'number' must be an integer")
+                if "title" not in step:
+                    errors.append(f"Step {i + 1} missing 'title' field")
+                if "completed" not in step:
+                    errors.append(f"Step {i + 1} missing 'completed' field")
 
     if "total_steps" not in metadata:
         errors.append("Missing 'total_steps' field")
@@ -304,16 +349,21 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
     if "completed_steps" not in metadata:
         errors.append("Missing 'completed_steps' field")
 
+    if "current_step" not in metadata:
+        errors.append("Missing 'current_step' field")
+
     # Consistency checks (only if no structural errors)
     if not errors and "steps" in metadata:
         steps = metadata["steps"]
         total_steps = metadata["total_steps"]
         completed_steps = metadata["completed_steps"]
+        current_step = metadata["current_step"]
 
         # Type assertions for pyright (narrows types after YAML loading)
         assert isinstance(steps, list)
         assert isinstance(total_steps, int)
         assert isinstance(completed_steps, int)
+        assert isinstance(current_step, int)
 
         if total_steps != len(steps):
             errors.append(f"total_steps ({total_steps}) != len(steps) ({len(steps)})")
@@ -324,6 +374,12 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
                 f"completed_steps ({completed_steps}) != actual count ({actual_completed})"
             )
 
+        # Validate current_step is consistent with completed steps
+        if current_step < 0:
+            errors.append(f"current_step ({current_step}) must be non-negative")
+        elif current_step > total_steps:
+            errors.append(f"current_step ({current_step}) exceeds total_steps ({total_steps})")
+
     return errors
 
 
@@ -333,17 +389,26 @@ def generate_progress_content(steps: list[str]) -> str:
     The YAML frontmatter contains the source of truth (steps array with completion status),
     while checkboxes are rendered output for human readability.
 
+    Schema aligned with GitHub issue plan-header metadata:
+    - steps: [{number: 1, title: "...", completed: false}, ...]
+    - current_step: 0 (highest completed step number, 0 = not started)
+    - completed_steps: 0 (count of completed steps)
+    - total_steps: N
+
     Args:
-        steps: List of step descriptions
+        steps: List of step descriptions (titles)
 
     Returns:
         Formatted progress markdown with front matter (including steps array) and checkboxes
     """
-    # Build steps array for YAML (even if empty)
-    steps_yaml = [{"text": step, "completed": False} for step in steps]
+    # Build steps array for YAML with number, title, completed (even if empty)
+    steps_yaml = [
+        {"number": i + 1, "title": step, "completed": False} for i, step in enumerate(steps)
+    ]
 
     metadata = {
-        "completed_steps": 0,
+        "current_step": 0,  # Highest completed step number (0 = not started)
+        "completed_steps": 0,  # Count of completed steps
         "total_steps": len(steps),
         "steps": steps_yaml,
     }
