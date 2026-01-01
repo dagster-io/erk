@@ -7,7 +7,7 @@ Only a few integration tests use CliRunner to verify the full hook works.
 
 import json
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -18,6 +18,7 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     determine_exit_action,
     exit_plan_mode_hook,
 )
+from erk_shared.context.context import ErkContext
 
 # ============================================================================
 # Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED
@@ -286,33 +287,30 @@ class TestBuildBlockingMessage:
 
 
 class TestHookIntegration:
-    """Integration tests that verify the full hook works."""
+    """Integration tests that verify the full hook works.
+
+    These tests use ErkContext.for_test() injection instead of mocking subprocess.
+    Only the @project_scoped decorator (is_in_managed_project) is mocked since
+    it's a separate decorator concern.
+    """
 
     def test_implement_now_signal_flow(self, tmp_path: Path) -> None:
         """Verify implement-now signal is actually deleted when present."""
         runner = CliRunner()
         session_id = "session-abc123"
 
-        # Create implement-now signal
+        # Create implement-now signal in tmp_path
         signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         signal_dir.mkdir(parents=True)
         implement_now_signal = signal_dir / "exit-plan-mode-hook.implement-now.signal"
         implement_now_signal.touch()
 
-        # Mock git repo root to point to tmp_path
-        mock_git_result = MagicMock()
-        mock_git_result.stdout = str(tmp_path) + "\n"
+        # Inject via ErkContext - NO subprocess mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with (
-            patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
-            patch("subprocess.run", return_value=mock_git_result),
-            patch(
-                "erk.cli.commands.exec.scripts.exit_plan_mode_hook.extract_slugs_from_session",
-                return_value=[],
-            ),
-        ):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
             stdin_data = json.dumps({"session_id": session_id})
-            result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+            result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 0
         assert "Implement-now signal found" in result.output
@@ -323,26 +321,18 @@ class TestHookIntegration:
         runner = CliRunner()
         session_id = "session-abc123"
 
-        # Create plan-saved signal
+        # Create plan-saved signal in tmp_path
         signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         signal_dir.mkdir(parents=True)
         plan_saved_signal = signal_dir / "exit-plan-mode-hook.plan-saved.signal"
         plan_saved_signal.touch()
 
-        # Mock git repo root
-        mock_git_result = MagicMock()
-        mock_git_result.stdout = str(tmp_path) + "\n"
+        # Inject via ErkContext - NO subprocess mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with (
-            patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
-            patch("subprocess.run", return_value=mock_git_result),
-            patch(
-                "erk.cli.commands.exec.scripts.exit_plan_mode_hook.extract_slugs_from_session",
-                return_value=[],
-            ),
-        ):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
             stdin_data = json.dumps({"session_id": session_id})
-            result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+            result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2  # Block
         assert "Plan already saved to GitHub" in result.output
@@ -353,36 +343,31 @@ class TestHookIntegration:
         runner = CliRunner()
         session_id = "session-abc123"
 
-        # Create incremental-plan signal
+        # Create incremental-plan signal in tmp_path
         signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         signal_dir.mkdir(parents=True)
         incremental_plan_signal = signal_dir / "incremental-plan.signal"
         incremental_plan_signal.touch()
 
-        # Mock git repo root to point to tmp_path
-        mock_git_result = MagicMock()
-        mock_git_result.stdout = str(tmp_path) + "\n"
+        # Inject via ErkContext - NO subprocess mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with (
-            patch("erk.hooks.decorators.is_in_managed_project", return_value=True),
-            patch("subprocess.run", return_value=mock_git_result),
-            patch(
-                "erk.cli.commands.exec.scripts.exit_plan_mode_hook.extract_slugs_from_session",
-                return_value=[],
-            ),
-        ):
+        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
             stdin_data = json.dumps({"session_id": session_id})
-            result = runner.invoke(exit_plan_mode_hook, input=stdin_data)
+            result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 0
         assert "Incremental-plan mode" in result.output
         assert not incremental_plan_signal.exists()  # Signal deleted
 
-    def test_no_stdin_allows_exit(self) -> None:
+    def test_no_stdin_allows_exit(self, tmp_path: Path) -> None:
         """Verify hook works when no stdin provided."""
         runner = CliRunner()
 
+        # Inject via ErkContext - NO subprocess mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
         with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
-            result = runner.invoke(exit_plan_mode_hook)
+            result = runner.invoke(exit_plan_mode_hook, obj=ctx)
 
         assert result.exit_code == 0
