@@ -17,14 +17,10 @@ def _state_file_path(project_dir: Path) -> Path:
 def load_artifact_state(project_dir: Path) -> ArtifactState | None:
     """Load artifact state from .erk/state.toml.
 
-    Returns None if the state file doesn't exist or has no artifacts section.
+    Returns None if the state file doesn't exist, has no artifacts section,
+    or is missing the required files section.
 
-    Handles backwards compatibility for legacy state format without files section.
-    Legacy format:
-        [artifacts]
-        version = "0.3.0"
-
-    New format:
+    Format:
         [artifacts]
         version = "0.3.1"
 
@@ -46,9 +42,12 @@ def load_artifact_state(project_dir: Path) -> ArtifactState | None:
     if "version" not in artifacts_data:
         return None
 
-    # Parse files section if present (new format)
+    # Require files section
+    if "files" not in artifacts_data:
+        return None
+
     files: dict[str, ArtifactFileState] = {}
-    files_data = artifacts_data.get("files", {})
+    files_data = artifacts_data["files"]
 
     for artifact_path, file_data in files_data.items():
         if isinstance(file_data, dict) and "version" in file_data and "hash" in file_data:
