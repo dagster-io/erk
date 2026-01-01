@@ -5,6 +5,7 @@ The unified ErkContext dataclass is defined in erk_shared.context and
 re-exported here for backwards compatibility.
 """
 
+import shutil
 from pathlib import Path
 
 import click
@@ -46,6 +47,10 @@ from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionSto
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.disabled import (
+    GraphiteDisabled,
+    GraphiteDisabledReason,
+)
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.shell import Shell
@@ -445,7 +450,18 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # Create time first so it can be injected into other classes
     time: Time = RealTime()
     git: Git = RealGit()
-    graphite: Graphite = RealGraphite()
+
+    # Create Graphite based on config and availability
+    graphite: Graphite
+    if global_config is not None and global_config.use_graphite:
+        # Config says use Graphite - check if gt is installed
+        if shutil.which("gt") is None:
+            graphite = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
+        else:
+            graphite = RealGraphite()
+    else:
+        # Graphite disabled by config (or config doesn't exist yet)
+        graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
     # 5. Discover repo (only needs cwd, erk_root, git)
     # If global_config is None, use placeholder path for repo discovery

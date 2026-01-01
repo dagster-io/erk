@@ -6,7 +6,6 @@ from erk.cli.commands.navigation_helpers import (
     check_clean_working_tree,
     check_pending_extraction_marker,
     delete_branch_and_worktree,
-    ensure_graphite_enabled,
     resolve_up_navigation,
     verify_pr_closed_or_merged,
 )
@@ -15,6 +14,7 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
 from erk_shared.output.output import machine_output, user_output
 
 
@@ -49,7 +49,13 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
     """
     # Validate preconditions upfront (LBYL)
     Ensure.gh_authenticated(ctx)
-    ensure_graphite_enabled(ctx)
+
+    # Check if Graphite is available
+    if isinstance(ctx.graphite, GraphiteDisabled):
+        error = GraphiteDisabledError(ctx.graphite.reason)
+        user_output(click.style("Error: ", fg="red") + str(error))
+        raise SystemExit(1)
+
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Get current branch
