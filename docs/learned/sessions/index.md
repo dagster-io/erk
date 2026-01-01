@@ -6,6 +6,7 @@
 - **[agent-type-extraction.md](agent-type-extraction.md)** — extracting agent type from session, finding subagent_type for agent sessions, correlating agent sessions to their Task invocation, displaying agent metadata in session show
 - **[context-analysis.md](context-analysis.md)** — analyzing context consumption, debugging context window blowout, understanding why session ran out of context
 - **[context-optimization.md](context-optimization.md)** — analyzing session efficiency, troubleshooting context limits, reducing context waste
+- **[jsonl-schema-reference.md](jsonl-schema-reference.md)** — parsing Claude Code session files, understanding JSONL entry types, extracting data from session logs, building tools that process session transcripts, debugging session parsing issues
 - **[layout.md](layout.md)** — working with session logs, parsing session logs, understanding ~/.claude/projects/ structure, debugging session lookup issues, implementing features that depend on project directory resolution
 - **[parallel-session-awareness.md](parallel-session-awareness.md)** — working with session-specific data, implementing session-scoped features, accessing plans, scratch files, or session metadata
 - **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format

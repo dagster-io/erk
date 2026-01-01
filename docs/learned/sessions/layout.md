@@ -759,6 +759,6 @@ Based on production usage:
 
 ## Related Documentation
 
-- [Agent Debugging](./debugging.md) - Debugging agent execution
-- [Planning Workflow](./planning-workflow.md) - Working with plans and sessions
-- [CLI Output Styling](./cli-output-styling.md) - Formatting output from session data
+- [JSONL Schema Reference](./jsonl-schema-reference.md) - Comprehensive entry types, content blocks, and tool schemas
+- [Agent Type Extraction](./agent-type-extraction.md) - Extracting agent metadata from sessions
+- [Session Hierarchy](./session-hierarchy.md) - Understanding session relationships
