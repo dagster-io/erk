@@ -43,7 +43,6 @@ State Transitions:
     4. plan-saved signal exists → BLOCK with "session complete" message (delete signal)
 """
 
-import json
 import subprocess
 import sys
 import tomllib
@@ -53,8 +52,7 @@ from pathlib import Path
 
 import click
 
-from erk.hooks.decorators import logged_hook
-from erk_shared.context.helpers import require_repo_root
+from erk.hooks.decorators import HookContext, hook_command
 from erk_shared.extraction.local_plans import extract_slugs_from_session
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
@@ -239,20 +237,6 @@ def _is_github_planning_enabled() -> bool:
     return bool(data.get("github_planning", True))
 
 
-def _get_session_id_from_stdin() -> str | None:
-    """Read session ID from stdin if available."""
-    if sys.stdin.isatty():
-        return None
-    try:
-        stdin_data = sys.stdin.read().strip()
-        if stdin_data:
-            context = json.loads(stdin_data)
-            return context.get("session_id")
-    except (json.JSONDecodeError, OSError):
-        pass
-    return None
-
-
 def _get_implement_now_signal_path(session_id: str, repo_root: Path) -> Path:
     """Get implement-now signal path in .erk/scratch/sessions/<session_id>/.
 
@@ -349,15 +333,21 @@ def _get_current_branch_within_hook() -> str | None:
 # ============================================================================
 
 
-def _gather_inputs(repo_root: Path) -> HookInput:
-    """Gather all inputs from environment. All I/O happens here."""
-    session_id = _get_session_id_from_stdin()
+def _gather_inputs(session_id: str | None, repo_root: Path) -> HookInput:
+    """Gather all inputs from environment. All I/O happens here.
 
+    Args:
+        session_id: Claude session ID from hook_ctx, or None if not available.
+        repo_root: Path to the git repository root.
+
+    Returns:
+        HookInput with all gathered state.
+    """
     # Determine signal existence
     implement_now_signal_exists = False
     plan_saved_signal_exists = False
     incremental_plan_signal_exists = False
-    if session_id:
+    if session_id is not None:
         implement_now_signal_exists = _get_implement_now_signal_path(session_id, repo_root).exists()
         plan_saved_signal_exists = _get_plan_saved_signal_path(session_id, repo_root).exists()
         signal_path = _get_incremental_plan_signal_path(session_id, repo_root)
@@ -365,13 +355,13 @@ def _gather_inputs(repo_root: Path) -> HookInput:
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
-    if session_id:
+    if session_id is not None:
         plan_file_path = _find_session_plan(session_id, repo_root)
 
     # Get current branch (only if we need to show the blocking message)
     current_branch = None
     needs_blocking_message = (
-        session_id
+        session_id is not None
         and plan_file_path is not None
         and not implement_now_signal_exists
         and not incremental_plan_signal_exists
@@ -420,10 +410,8 @@ def _execute_result(result: HookOutput, hook_input: HookInput, repo_root: Path) 
     sys.exit(result.action.value)
 
 
-@click.command(name="exit-plan-mode-hook")
-@click.pass_context
-@logged_hook
-def exit_plan_mode_hook(ctx: click.Context) -> None:
+@hook_command(name="exit-plan-mode-hook")
+def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     """Prompt user about plan saving when ExitPlanMode is called.
 
     This PreToolUse hook intercepts ExitPlanMode calls to ask the user
@@ -433,21 +421,18 @@ def exit_plan_mode_hook(ctx: click.Context) -> None:
         0: Success - allow exit (no plan, skip marker, or no session)
         2: Block - plan exists, prompt user for action
     """
-    # Inject repo_root from context
-    repo_root = require_repo_root(ctx)
-
-    # Inline scope check: only run in erk-managed projects
-    if not (repo_root / ".erk").is_dir():
+    # Scope check: only run in erk-managed projects
+    if not hook_ctx.is_erk_project:
         return
 
     # Gather all inputs (I/O layer)
-    hook_input = _gather_inputs(repo_root)
+    hook_input = _gather_inputs(hook_ctx.session_id, hook_ctx.repo_root)
 
     # Pure decision logic (no I/O)
     result = determine_exit_action(hook_input)
 
     # Execute result (I/O layer)
-    _execute_result(result, hook_input, repo_root)
+    _execute_result(result, hook_input, hook_ctx.repo_root)
 
 
 if __name__ == "__main__":

@@ -3,20 +3,14 @@
 
 import click
 
-from erk.hooks.decorators import logged_hook
-from erk_shared.context.helpers import require_repo_root
+from erk.hooks.decorators import HookContext, hook_command
 
 
-@click.command()
-@click.pass_context
-@logged_hook
-def tripwires_reminder_hook(ctx: click.Context) -> None:
+@hook_command()
+def tripwires_reminder_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     """Output tripwires reminder for UserPromptSubmit hook."""
-    # Inject repo_root from context
-    repo_root = require_repo_root(ctx)
-
-    # Inline scope check: only run in erk-managed projects
-    if not (repo_root / ".erk").is_dir():
+    # Scope check: only run in erk-managed projects
+    if not hook_ctx.is_erk_project:
         return
 
     click.echo("🚧 Ensure docs/learned/tripwires.md is loaded and follow its directives.")

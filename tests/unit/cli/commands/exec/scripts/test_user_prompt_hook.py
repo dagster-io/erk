@@ -10,13 +10,12 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.user_prompt_hook import (
-    HookInput,
     build_coding_standards_reminder,
     build_session_context,
     build_tripwires_reminder,
     user_prompt_hook,
 )
-from erk_shared.context.context import ErkContext
+from erk_shared.context import ErkContext
 
 # ============================================================================
 # Pure Logic Tests for build_session_context() - NO MOCKING REQUIRED
@@ -29,9 +28,9 @@ def test_build_session_context_returns_session_prefix() -> None:
     assert "session: abc123" in result
 
 
-def test_build_session_context_returns_empty_for_unknown() -> None:
-    """Unknown session returns empty string."""
-    result = build_session_context("unknown")
+def test_build_session_context_returns_empty_for_none() -> None:
+    """None session returns empty string."""
+    result = build_session_context(None)
     assert result == ""
 
 
@@ -88,38 +87,6 @@ def test_build_tripwires_reminder_mentions_docs_path() -> None:
     """Reminder includes full docs path."""
     result = build_tripwires_reminder()
     assert "docs/learned/tripwires.md" in result
-
-
-# ============================================================================
-# Tests for HookInput data class
-# ============================================================================
-
-
-def test_hook_input_is_frozen() -> None:
-    """HookInput is immutable (frozen dataclass)."""
-    hook_input = HookInput(
-        session_id="test",
-        repo_root=Path("/repo"),
-    )
-    # Attempting to modify should raise FrozenInstanceError
-    try:
-        hook_input.session_id = "changed"  # type: ignore[misc]
-        raise AssertionError("Should have raised FrozenInstanceError")
-    except AttributeError:
-        pass  # Expected behavior for frozen dataclass
-
-
-def test_hook_input_stores_all_fields() -> None:
-    """HookInput correctly stores all provided fields."""
-    repo_root = Path("/test/repo")
-
-    hook_input = HookInput(
-        session_id="my-session",
-        repo_root=repo_root,
-    )
-
-    assert hook_input.session_id == "my-session"
-    assert hook_input.repo_root == repo_root
 
 
 # ============================================================================

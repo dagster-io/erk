@@ -13,35 +13,23 @@ This command is invoked via:
     ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook
 """
 
-import json
-import sys
-from dataclasses import dataclass
 from pathlib import Path
 
 import click
 
-from erk.hooks.decorators import logged_hook
-from erk_shared.context.helpers import require_repo_root
+from erk.hooks.decorators import HookContext, hook_command
 
 # ============================================================================
-# Data Classes for Pure Logic
+# Pure Functions for Output Building
 # ============================================================================
 
 
-@dataclass(frozen=True)
-class HookInput:
-    """All inputs needed for decision logic."""
-
-    session_id: str
-    repo_root: Path
-
-
-def build_session_context(session_id: str) -> str:
+def build_session_context(session_id: str | None) -> str:
     """Build the session ID context string.
 
     Pure function - string building only.
     """
-    if session_id == "unknown":
+    if session_id is None:
         return ""
     return f"session: {session_id}"
 
@@ -76,25 +64,14 @@ def build_tripwires_reminder() -> str:
 # ============================================================================
 
 
-def _get_session_id_from_stdin() -> str:
-    """Read session ID from stdin if available."""
-    if sys.stdin.isatty():
-        return "unknown"
-    stdin_content = sys.stdin.read().strip()
-    if not stdin_content:
-        return "unknown"
-    stdin_data = json.loads(stdin_content)
-    return stdin_data.get("session_id", "unknown")
-
-
-def _persist_session_id(repo_root: Path, session_id: str) -> None:
+def _persist_session_id(repo_root: Path, session_id: str | None) -> None:
     """Write session ID to file.
 
     Args:
         repo_root: Path to the git repository root.
-        session_id: The current session ID.
+        session_id: The current session ID, or None if not available.
     """
-    if session_id == "unknown":
+    if session_id is None:
         return
 
     session_file = repo_root / ".erk" / "scratch" / "current-session-id"
@@ -102,25 +79,13 @@ def _persist_session_id(repo_root: Path, session_id: str) -> None:
     session_file.write_text(session_id, encoding="utf-8")
 
 
-def _gather_inputs(repo_root: Path) -> HookInput:
-    """Gather all inputs from environment. All I/O happens here."""
-    session_id = _get_session_id_from_stdin()
-
-    return HookInput(
-        session_id=session_id,
-        repo_root=repo_root,
-    )
-
-
 # ============================================================================
 # Main Hook Entry Point
 # ============================================================================
 
 
-@click.command(name="user-prompt-hook")
-@click.pass_context
-@logged_hook
-def user_prompt_hook(ctx: click.Context) -> None:
+@hook_command(name="user-prompt-hook")
+def user_prompt_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     """UserPromptSubmit hook for session persistence and coding reminders.
 
     This hook runs on every user prompt submission in erk-managed projects.
@@ -128,22 +93,16 @@ def user_prompt_hook(ctx: click.Context) -> None:
     Exit codes:
         0: Success - context emitted to stdout
     """
-    # Inject repo_root from context
-    repo_root = require_repo_root(ctx)
-
-    # Inline scope check: only run in erk-managed projects
-    if not (repo_root / ".erk").is_dir():
+    # Scope check: only run in erk-managed projects
+    if not hook_ctx.is_erk_project:
         return
 
-    # Gather all inputs (I/O layer)
-    hook_input = _gather_inputs(repo_root)
-
     # Persist session ID
-    _persist_session_id(repo_root, hook_input.session_id)
+    _persist_session_id(hook_ctx.repo_root, hook_ctx.session_id)
 
     # Build and emit context
     context_parts = [
-        build_session_context(hook_input.session_id),
+        build_session_context(hook_ctx.session_id),
         build_coding_standards_reminder(),
         build_tripwires_reminder(),
     ]
