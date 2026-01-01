@@ -30,6 +30,7 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
+from erk_shared.github.parsing import execute_gh_command
 
 
 @dataclass(frozen=True)
@@ -64,8 +65,6 @@ def _get_pr_head_sha(repo_root: Path, pr_number: int) -> str:
     Raises:
         RuntimeError: If gh command fails
     """
-    from erk_shared.github.parsing import execute_gh_command
-
     cmd = [
         "gh",
         "pr",
