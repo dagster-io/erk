@@ -67,15 +67,35 @@ erk-dev release-tag
 
 This ensures a clean single commit for the release with the tag pointing to it.
 
-### 5. Run CI
+### 5. Run CI Locally
 
 ```bash
 make all-ci
 ```
 
-Verify all checks pass before publishing. This catches issues like version mismatches that would break users.
+Verify all checks pass locally before pushing. This catches obvious issues early.
 
-### 6. Publish to PyPI
+### 6. Push Branch for GitHub CI
+
+```bash
+git push origin release-X.Y.Z
+```
+
+Push the release branch to GitHub to run CI in the full environment. Review the GitHub Actions results to catch any environment-specific issues.
+
+### 7. Confirmation Checkpoint
+
+**STOP and verify before publishing:**
+
+- [ ] Local CI passes (`make all-ci`)
+- [ ] GitHub CI passes (check Actions tab)
+- [ ] Version number is correct in pyproject.toml
+- [ ] CHANGELOG.md has correct version header
+- [ ] Git tag exists and points to the release commit
+
+Only proceed to publish after confirming all checks pass. Publishing to PyPI is irreversible.
+
+### 8. Publish to PyPI
 
 ```bash
 make publish
@@ -83,7 +103,7 @@ make publish
 
 This builds and publishes all packages to PyPI in dependency order.
 
-### 7. Merge to Master
+### 9. Merge to Master
 
 After confirming the publish succeeded:
 
