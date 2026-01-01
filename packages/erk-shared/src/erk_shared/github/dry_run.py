@@ -243,3 +243,48 @@ class DryRunGitHub(GitHub):
         Returns True to indicate success without actually adding comment.
         """
         return True
+
+    def create_pr_review_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+        commit_sha: str,
+        path: str,
+        line: int,
+    ) -> int:
+        """No-op for creating PR review comment in dry-run mode.
+
+        Returns a fake comment ID to allow dry-run workflows to continue.
+        """
+        return 1234567890
+
+    def find_pr_comment_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> int | None:
+        """Delegate to wrapped for finding comments (read-only operation)."""
+        return self._wrapped.find_pr_comment_by_marker(repo_root, pr_number, marker)
+
+    def update_pr_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """No-op for updating PR comment in dry-run mode."""
+        pass
+
+    def create_pr_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+    ) -> int:
+        """No-op for creating PR comment in dry-run mode.
+
+        Returns a fake comment ID to allow dry-run workflows to continue.
+        """
+        return 1234567890

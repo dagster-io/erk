@@ -107,6 +107,10 @@ class FakeGitHub(GitHub):
         self._pr_review_threads = pr_review_threads or {}
         self._resolved_thread_ids: set[str] = set()
         self._thread_replies: list[tuple[str, str]] = []
+        self._pr_review_comments: list[tuple[int, str, str, str, int]] = []
+        self._pr_comments: list[tuple[int, str]] = []
+        self._pr_comment_updates: list[tuple[int, str]] = []
+        self._next_comment_id = 1000000
 
     @property
     def merged_prs(self) -> list[int]:
@@ -701,3 +705,85 @@ class FakeGitHub(GitHub):
         Returns list of (thread_id, body) tuples.
         """
         return self._thread_replies
+
+    def create_pr_review_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+        commit_sha: str,
+        path: str,
+        line: int,
+    ) -> int:
+        """Record PR review comment in mutation tracking list.
+
+        Returns a generated comment ID.
+        """
+        self._pr_review_comments.append((pr_number, body, commit_sha, path, line))
+        comment_id = self._next_comment_id
+        self._next_comment_id += 1
+        return comment_id
+
+    @property
+    def pr_review_comments(self) -> list[tuple[int, str, str, str, int]]:
+        """Read-only access to tracked PR review comments for test assertions.
+
+        Returns list of (pr_number, body, commit_sha, path, line) tuples.
+        """
+        return self._pr_review_comments
+
+    def find_pr_comment_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> int | None:
+        """Find a PR comment by marker in tracked comments.
+
+        Searches _pr_comments for a comment containing the marker.
+        Returns None if not found (typical for first run).
+        """
+        for i, (stored_pr, body) in enumerate(self._pr_comments):
+            if stored_pr == pr_number and marker in body:
+                return 1000000 + i
+        return None
+
+    def update_pr_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Record PR comment update in mutation tracking list."""
+        self._pr_comment_updates.append((comment_id, body))
+
+    @property
+    def pr_comment_updates(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR comment updates for test assertions.
+
+        Returns list of (comment_id, body) tuples.
+        """
+        return self._pr_comment_updates
+
+    def create_pr_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+    ) -> int:
+        """Record PR comment creation in mutation tracking list.
+
+        Returns a generated comment ID.
+        """
+        self._pr_comments.append((pr_number, body))
+        comment_id = self._next_comment_id
+        self._next_comment_id += 1
+        return comment_id
+
+    @property
+    def pr_comments(self) -> list[tuple[int, str]]:
+        """Read-only access to tracked PR comments for test assertions.
+
+        Returns list of (pr_number, body) tuples.
+        """
+        return self._pr_comments

@@ -256,3 +256,49 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Add a reply to a PR review thread with printed output."""
         self._emit(self._format_command(f"gh api graphql (add reply to thread {thread_id})"))
         return self._wrapped.add_review_thread_reply(repo_root, thread_id, body)
+
+    def create_pr_review_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+        commit_sha: str,
+        path: str,
+        line: int,
+    ) -> int:
+        """Create PR review comment with printed output."""
+        self._emit(
+            self._format_command(f"gh api repos/.../pulls/{pr_number}/comments (line {line})")
+        )
+        return self._wrapped.create_pr_review_comment(
+            repo_root, pr_number, body, commit_sha, path, line
+        )
+
+    def find_pr_comment_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> int | None:
+        """Find PR comment by marker (read-only, no print)."""
+        return self._wrapped.find_pr_comment_by_marker(repo_root, pr_number, marker)
+
+    def update_pr_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Update PR comment with printed output."""
+        self._emit(self._format_command(f"gh api PATCH .../comments/{comment_id}"))
+        self._wrapped.update_pr_comment(repo_root, comment_id, body)
+
+    def create_pr_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+    ) -> int:
+        """Create PR comment with printed output."""
+        self._emit(self._format_command(f"gh pr comment {pr_number}"))
+        return self._wrapped.create_pr_comment(repo_root, pr_number, body)

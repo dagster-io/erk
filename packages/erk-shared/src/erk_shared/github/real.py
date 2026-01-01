@@ -1786,3 +1786,125 @@ query {{
             response.get("data", {}).get("addPullRequestReviewThreadReply", {}).get("comment")
         )
         return comment_data is not None
+
+    def create_pr_review_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+        commit_sha: str,
+        path: str,
+        line: int,
+    ) -> int:
+        """Create an inline review comment on a specific line of a PR.
+
+        Uses GitHub REST API to create a pull request review comment.
+        """
+        cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/comments",
+            "-f",
+            f"body={body}",
+            "-f",
+            f"commit_id={commit_sha}",
+            "-f",
+            f"path={path}",
+            "-F",
+            f"line={line}",
+            "-f",
+            "side=RIGHT",
+        ]
+
+        stdout = execute_gh_command(cmd, repo_root)
+        response = json.loads(stdout)
+        return response["id"]
+
+    def find_pr_comment_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> int | None:
+        """Find a PR/issue comment containing a specific HTML marker.
+
+        Uses gh pr view to get comments and searches for the marker.
+        """
+        cmd = [
+            "gh",
+            "pr",
+            "view",
+            str(pr_number),
+            "--json",
+            "comments",
+            "--jq",
+            f'.comments[] | select(.body | contains("{marker}")) | .databaseId',
+        ]
+
+        try:
+            stdout = execute_gh_command(cmd, repo_root)
+            # jq returns each match on a separate line; take first match
+            lines = stdout.strip().split("\n")
+            if lines and lines[0]:
+                return int(lines[0])
+            return None
+        except RuntimeError:
+            # No matching comment found
+            return None
+
+    def update_pr_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Update an existing PR/issue comment.
+
+        Uses GitHub REST API via gh api command.
+        """
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}",
+            "-f",
+            f"body={body}",
+        ]
+        execute_gh_command(cmd, repo_root)
+
+    def create_pr_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+    ) -> int:
+        """Create a new comment on a PR.
+
+        Uses gh pr comment and then fetches the comment ID.
+        """
+        # Use gh pr comment to create the comment
+        cmd = [
+            "gh",
+            "pr",
+            "comment",
+            str(pr_number),
+            "--body",
+            body,
+        ]
+        execute_gh_command(cmd, repo_root)
+
+        # Fetch the latest comment to get its ID
+        # The comment we just created should be the most recent one
+        get_cmd = [
+            "gh",
+            "pr",
+            "view",
+            str(pr_number),
+            "--json",
+            "comments",
+            "--jq",
+            ".comments[-1].databaseId",
+        ]
+        stdout = execute_gh_command(get_cmd, repo_root)
+        return int(stdout.strip())

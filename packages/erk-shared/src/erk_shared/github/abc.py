@@ -548,3 +548,94 @@ class GitHub(ABC):
             True if comment added successfully
         """
         ...
+
+    @abstractmethod
+    def create_pr_review_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+        commit_sha: str,
+        path: str,
+        line: int,
+    ) -> int:
+        """Create an inline review comment on a specific line of a PR.
+
+        Uses GitHub REST API to create a pull request review comment
+        attached to a specific line of a file in the PR diff.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            pr_number: PR number to comment on
+            body: Comment body text (markdown supported)
+            commit_sha: The SHA of the commit to comment on (PR head commit)
+            path: Relative path to the file being commented on
+            line: Line number in the diff to attach the comment to
+
+        Returns:
+            Comment ID of the created comment
+        """
+        ...
+
+    @abstractmethod
+    def find_pr_comment_by_marker(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        marker: str,
+    ) -> int | None:
+        """Find a PR/issue comment containing a specific HTML marker.
+
+        Searches PR comments for one containing the marker string
+        (typically an HTML comment like <!-- marker-name -->).
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            pr_number: PR number to search comments in
+            marker: String to search for in comment body
+
+        Returns:
+            Comment database ID if found, None otherwise
+        """
+        ...
+
+    @abstractmethod
+    def update_pr_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Update an existing PR/issue comment.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            comment_id: Database ID of the comment to update
+            body: New comment body text
+
+        Raises:
+            RuntimeError: If update fails
+        """
+        ...
+
+    @abstractmethod
+    def create_pr_comment(
+        self,
+        repo_root: Path,
+        pr_number: int,
+        body: str,
+    ) -> int:
+        """Create a new comment on a PR.
+
+        This creates a general PR discussion comment, not an inline
+        review comment on a specific line.
+
+        Args:
+            repo_root: Repository root (for gh CLI context)
+            pr_number: PR number to comment on
+            body: Comment body text
+
+        Returns:
+            Database ID of the created comment
+        """
+        ...

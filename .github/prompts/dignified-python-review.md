@@ -46,23 +46,14 @@ For each Python file changed, analyze against ALL dignified-python rules includi
 
 ## Step 4: Post Inline Comments
 
-For each specific violation, post an inline comment using GitHub API.
-
-First get the commit SHA:
+For each specific violation, post an inline comment using the erk exec command:
 
 ```
-COMMIT_SHA=$(gh pr view {{ github.event.pull_request.number }} --json headRefOid -q '.headRefOid')
-```
-
-Then for each violation, post a comment:
-
-```
-gh api repos/{{ github.repository }}/pulls/{{ github.event.pull_request.number }}/comments \
-  -f body="**Dignified Python**: [explanation with fix suggestion]" \
-  -f commit_id="$COMMIT_SHA" \
-  -f path="path/to/file.py" \
-  -F line=LINE_NUMBER \
-  -f side="RIGHT"
+erk exec post-pr-inline-comment \
+  --pr-number {{ github.event.pull_request.number }} \
+  --path "path/to/file.py" \
+  --line LINE_NUMBER \
+  --body "**Dignified Python**: [explanation with fix suggestion]"
 ```
 
 Use the line number from the diff where the violation occurs.
@@ -70,27 +61,16 @@ The comment body should explain the rule violated and suggest a fix.
 
 ## Step 5: Post Summary Comment
 
-Find existing comment with marker:
+Post or update a summary comment with a marker:
 
 ```
-COMMENT_ID=$(gh pr view {{ github.event.pull_request.number }} --json comments \
-  --jq '.comments[] | select(.body | contains("<!-- dignified-python-review -->")) | .databaseId')
+erk exec post-or-update-pr-summary \
+  --pr-number {{ github.event.pull_request.number }} \
+  --marker "<!-- dignified-python-review -->" \
+  --body "SUMMARY_TEXT"
 ```
 
-If comment ID found, update it:
-
-```
-gh api --method PATCH /repos/{{ github.repository }}/issues/comments/$COMMENT_ID \
-  -f body="YOUR_SUMMARY_TEXT"
-```
-
-If no comment found, create new one:
-
-```
-gh pr comment {{ github.event.pull_request.number }} --body "YOUR_SUMMARY_TEXT"
-```
-
-Summary comment format:
+Summary comment format (the body must include the marker):
 
 ```
 _Last updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')_
