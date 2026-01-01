@@ -4,14 +4,19 @@ This test file uses the pure logic extraction pattern. Most tests call the
 pure functions directly with no mocking required.
 """
 
+import json
 from pathlib import Path
+
+from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.user_prompt_hook import (
     HookInput,
     build_coding_standards_reminder,
     build_session_context,
     build_tripwires_reminder,
+    user_prompt_hook,
 )
+from erk_shared.context.context import ErkContext
 
 # ============================================================================
 # Pure Logic Tests for build_session_context() - NO MOCKING REQUIRED
@@ -115,3 +120,74 @@ def test_hook_input_stores_all_fields() -> None:
 
     assert hook_input.session_id == "my-session"
     assert hook_input.repo_root == repo_root
+
+
+# ============================================================================
+# Integration Tests - Verify I/O Layer Works
+# ============================================================================
+
+
+class TestHookIntegration:
+    """Integration tests that verify the full hook works.
+
+    These tests use ErkContext.for_test() injection. The .erk/ directory
+    is created in tmp_path to mark it as a managed project.
+    """
+
+    def test_outputs_session_context_and_reminders(self, tmp_path: Path) -> None:
+        """Verify hook outputs session context and coding reminders."""
+        runner = CliRunner()
+        session_id = "session-abc123"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Inject via ErkContext - NO mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(user_prompt_hook, input=stdin_data, obj=ctx)
+
+        assert result.exit_code == 0
+        assert f"session: {session_id}" in result.output
+        assert "dignified-python" in result.output
+        assert "tripwires.md" in result.output
+
+    def test_persists_session_id_to_file(self, tmp_path: Path) -> None:
+        """Verify hook writes session ID to .erk/scratch/current-session-id."""
+        runner = CliRunner()
+        session_id = "session-xyz789"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Inject via ErkContext
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(user_prompt_hook, input=stdin_data, obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify file was created with correct content
+        session_file = tmp_path / ".erk" / "scratch" / "current-session-id"
+        assert session_file.exists()
+        assert session_file.read_text(encoding="utf-8") == session_id
+
+    def test_silent_when_not_in_managed_project(self, tmp_path: Path) -> None:
+        """Verify hook produces no output when not in a managed project."""
+        runner = CliRunner()
+        session_id = "session-abc123"
+
+        # No .erk/ directory - NOT a managed project
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(user_prompt_hook, input=stdin_data, obj=ctx)
+
+        assert result.exit_code == 0
+        assert result.output == ""
+
+        # Verify file was NOT created
+        session_file = tmp_path / ".erk" / "scratch" / "current-session-id"
+        assert not session_file.exists()

@@ -20,8 +20,8 @@ from pathlib import Path
 
 import click
 
-from erk.hooks.decorators import logged_hook, project_scoped
-from erk_shared.scratch.scratch import _get_repo_root
+from erk.hooks.decorators import logged_hook
+from erk_shared.context.helpers import require_repo_root
 
 # ============================================================================
 # Data Classes for Pure Logic
@@ -118,9 +118,9 @@ def _gather_inputs(repo_root: Path) -> HookInput:
 
 
 @click.command(name="user-prompt-hook")
+@click.pass_context
 @logged_hook
-@project_scoped
-def user_prompt_hook() -> None:
+def user_prompt_hook(ctx: click.Context) -> None:
     """UserPromptSubmit hook for session persistence and coding reminders.
 
     This hook runs on every user prompt submission in erk-managed projects.
@@ -128,8 +128,12 @@ def user_prompt_hook() -> None:
     Exit codes:
         0: Success - context emitted to stdout
     """
-    # Get repo root (we're project-scoped, so this should exist)
-    repo_root = _get_repo_root()
+    # Inject repo_root from context
+    repo_root = require_repo_root(ctx)
+
+    # Inline scope check: only run in erk-managed projects
+    if not (repo_root / ".erk").is_dir():
+        return
 
     # Gather all inputs (I/O layer)
     hook_input = _gather_inputs(repo_root)

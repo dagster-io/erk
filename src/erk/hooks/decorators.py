@@ -11,7 +11,6 @@ from contextlib import redirect_stderr, redirect_stdout
 from datetime import UTC, datetime
 from typing import TypeVar
 
-from erk.hooks.scope import is_in_managed_project
 from erk_shared.hooks.logging import (
     MAX_STDERR_BYTES,
     MAX_STDIN_BYTES,
@@ -154,24 +153,5 @@ def logged_hook(func: F) -> F:
         # Re-raise SystemExit if hook exited with non-zero
         if exit_code != 0:
             raise SystemExit(exit_code)
-
-    return wrapper  # type: ignore[return-value]
-
-
-def project_scoped(func: F) -> F:
-    """Decorator to make a hook only fire within managed projects.
-
-    Usage:
-        @click.command()
-        @project_scoped
-        def my_reminder_hook() -> None:
-            click.echo("My reminder message")
-    """
-
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if not is_in_managed_project():
-            return  # Silent exit
-        return func(*args, **kwargs)
 
     return wrapper  # type: ignore[return-value]

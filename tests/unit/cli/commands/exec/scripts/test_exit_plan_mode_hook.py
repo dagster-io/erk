@@ -7,7 +7,6 @@ Only a few integration tests use CliRunner to verify the full hook works.
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -289,9 +288,8 @@ class TestBuildBlockingMessage:
 class TestHookIntegration:
     """Integration tests that verify the full hook works.
 
-    These tests use ErkContext.for_test() injection instead of mocking subprocess.
-    Only the @project_scoped decorator (is_in_managed_project) is mocked since
-    it's a separate decorator concern.
+    These tests use ErkContext.for_test() injection. The .erk/ directory
+    is created in tmp_path to mark it as a managed project.
     """
 
     def test_implement_now_signal_flow(self, tmp_path: Path) -> None:
@@ -299,18 +297,20 @@ class TestHookIntegration:
         runner = CliRunner()
         session_id = "session-abc123"
 
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
         # Create implement-now signal in tmp_path
         signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         signal_dir.mkdir(parents=True)
         implement_now_signal = signal_dir / "exit-plan-mode-hook.implement-now.signal"
         implement_now_signal.touch()
 
-        # Inject via ErkContext - NO subprocess mocking needed
+        # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
-            stdin_data = json.dumps({"session_id": session_id})
-            result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 0
         assert "Implement-now signal found" in result.output
@@ -321,18 +321,20 @@ class TestHookIntegration:
         runner = CliRunner()
         session_id = "session-abc123"
 
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
         # Create plan-saved signal in tmp_path
         signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         signal_dir.mkdir(parents=True)
         plan_saved_signal = signal_dir / "exit-plan-mode-hook.plan-saved.signal"
         plan_saved_signal.touch()
 
-        # Inject via ErkContext - NO subprocess mocking needed
+        # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
-            stdin_data = json.dumps({"session_id": session_id})
-            result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 2  # Block
         assert "Plan already saved to GitHub" in result.output
@@ -343,18 +345,20 @@ class TestHookIntegration:
         runner = CliRunner()
         session_id = "session-abc123"
 
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
         # Create incremental-plan signal in tmp_path
         signal_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
         signal_dir.mkdir(parents=True)
         incremental_plan_signal = signal_dir / "incremental-plan.signal"
         incremental_plan_signal.touch()
 
-        # Inject via ErkContext - NO subprocess mocking needed
+        # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
-            stdin_data = json.dumps({"session_id": session_id})
-            result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
         assert result.exit_code == 0
         assert "Incremental-plan mode" in result.output
@@ -364,10 +368,24 @@ class TestHookIntegration:
         """Verify hook works when no stdin provided."""
         runner = CliRunner()
 
-        # Inject via ErkContext - NO subprocess mocking needed
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Inject via ErkContext - NO mocking needed
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
-        with patch("erk.hooks.decorators.is_in_managed_project", return_value=True):
-            result = runner.invoke(exit_plan_mode_hook, obj=ctx)
+        result = runner.invoke(exit_plan_mode_hook, obj=ctx)
 
         assert result.exit_code == 0
+
+    def test_silent_when_not_in_managed_project(self, tmp_path: Path) -> None:
+        """Verify hook produces no output when not in a managed project."""
+        runner = CliRunner()
+
+        # No .erk/ directory - NOT a managed project
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(exit_plan_mode_hook, obj=ctx)
+
+        assert result.exit_code == 0
+        assert result.output == ""
