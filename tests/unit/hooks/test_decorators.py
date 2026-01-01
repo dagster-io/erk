@@ -3,6 +3,8 @@
 Tests the HookContext injection functionality of the @logged_hook decorator.
 """
 
+import dataclasses
+import json
 from pathlib import Path
 
 import click
@@ -42,8 +44,6 @@ def test_hook_context_injection_with_erk_project(tmp_path: Path) -> None:
 
 def test_hook_context_injection_with_session_id(tmp_path: Path) -> None:
     """Test that session_id is extracted from stdin and scratch_dir is computed."""
-    import json
-
     received_ctx: HookContext | None = None
 
     @click.command()
@@ -123,8 +123,6 @@ def test_hook_context_frozen() -> None:
     )
 
     # Attempting to modify should raise FrozenInstanceError
-    import dataclasses
-
     try:
         hook_ctx.session_id = "modified"  # type: ignore[misc]
         raise AssertionError("Expected FrozenInstanceError")
