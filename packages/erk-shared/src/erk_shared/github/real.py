@@ -1850,8 +1850,10 @@ query {{
                     if comment_id is not None:
                         return int(comment_id)
             return None
-        except RuntimeError:
-            # Command failed
+        except RuntimeError as e:
+            # Command failed - log for diagnostics but return None
+            # (marker not found is expected on first run)
+            debug_log(f"find_pr_comment_by_marker failed: {e}")
             return None
 
     def update_pr_comment(
