@@ -421,6 +421,15 @@ class TestParseGitHubRepoFromRemote:
 
         assert result is None
 
+    @patch("erk_statusline.statusline.run_git")
+    def test_spoofed_github_url_returns_none(self, mock_run_git: MagicMock) -> None:
+        """Should return None for URLs with github.com in subdirectory (security fix)."""
+        mock_run_git.return_value = "https://evil.com/github.com/owner/repo"
+
+        result = _parse_github_repo_from_remote("/fake/cwd")
+
+        assert result is None
+
 
 class TestFetchGitHubDataGraphQL:
     """Test GraphQL data fetching with mocked subprocess."""

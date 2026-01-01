@@ -335,11 +335,12 @@ def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
             return owner, repo
 
     # Parse HTTPS format: https://github.com/owner/repo
-    if "github.com/" in remote_url:
-        parts = remote_url.split("github.com/", 1)
-        if len(parts) == 2 and "/" in parts[1]:
-            owner, repo = parts[1].split("/", 1)
-            return owner, repo
+    for prefix in ("https://github.com/", "http://github.com/"):
+        if remote_url.startswith(prefix):
+            path = remote_url[len(prefix) :]
+            if "/" in path:
+                owner, repo = path.split("/", 1)
+                return owner, repo
 
     return None
 
