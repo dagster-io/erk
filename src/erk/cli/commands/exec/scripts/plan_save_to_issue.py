@@ -184,6 +184,7 @@ def plan_save_to_issue(
     session_ids: list[str] = []
 
     # Step 9: Create signal file to indicate plan was saved
+    snapshot_result = None
     if effective_session_id:
         _create_plan_saved_signal(effective_session_id, repo_root)
 
@@ -200,7 +201,7 @@ def plan_save_to_issue(
                 snapshot_path = None
 
         if snapshot_path is not None and snapshot_path.exists():
-            snapshot_plan_for_session(
+            snapshot_result = snapshot_plan_for_session(
                 session_id=effective_session_id,
                 plan_file_path=snapshot_path,
                 cwd_hint=str(cwd),
@@ -223,19 +224,20 @@ def plan_save_to_issue(
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
         if session_context_chunks > 0:
             click.echo(f"Session context: {session_context_chunks} chunks")
+        if snapshot_result is not None:
+            click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
         click.echo(format_next_steps_plain(result.issue_number))
     else:
-        click.echo(
-            json.dumps(
-                {
-                    "success": True,
-                    "issue_number": result.issue_number,
-                    "issue_url": result.issue_url,
-                    "title": result.title,
-                    "enriched": is_enriched,
-                    "session_context_chunks": session_context_chunks,
-                    "session_ids": session_ids,
-                }
-            )
-        )
+        output_data = {
+            "success": True,
+            "issue_number": result.issue_number,
+            "issue_url": result.issue_url,
+            "title": result.title,
+            "enriched": is_enriched,
+            "session_context_chunks": session_context_chunks,
+            "session_ids": session_ids,
+        }
+        if snapshot_result is not None:
+            output_data["archived_to"] = str(snapshot_result.snapshot_dir)
+        click.echo(json.dumps(output_data))
