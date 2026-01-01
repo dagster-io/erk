@@ -45,4 +45,5 @@ jobs:
             --model claude-sonnet-4-5 \
             --allowedTools 'Bash(gh:*),Bash(erk exec:*),Read(*)' \
             --output-format stream-json \
+            --verbose \
             "$(cat /tmp/dignified-python-prompt.md)"
