@@ -56,10 +56,27 @@ Fill out remaining functionality.
 
 **Test:** [Full acceptance criteria]
 
-## Key Technical Details
+## Implementation Context
 
-[Reference material: code snippets, state formats, architectural notes, etc.
-Include anything that would be useful when working on related plans.]
+### Current Architecture
+
+[File locations, what exists now, how things are wired]
+
+### Patterns to Follow
+
+[References to existing patterns - NOT code skeletons]
+
+### Technical Requirements
+
+[What methods/components need what behavior, error message requirements]
+
+### Test Strategy
+
+[What needs testing, test helper considerations]
+
+**Note:** Provide context and references, not prescriptive code.
+The implementing agent should have freedom to design the solution
+while having all the context they need.
 
 ## Current Focus
 
@@ -110,12 +127,25 @@ Each action comment logs work done and lessons learned. Post one comment per sig
 - **Be concrete** - "Fixed auth flow" not "Made improvements"
 - **Link PRs** - Always reference the PR if applicable
 
+### Action Title Format
+
+Use past-tense to indicate completed action:
+
+- ✅ "Action: Added Implementation Context"
+- ✅ "Action: Completed Phase 1A"
+- ✅ "Action: Refined error message requirements"
+- ❌ "Implementation Context" (not an action)
+- ❌ "Phase 1A" (not descriptive)
+
 ### When to Update
 
 Update after:
 
 - Completing one or more roadmap steps
 - Merging a related PR
+- **Adding implementation context**
+- **Adding or refining design decisions**
+- **Adding new phases or steps**
 - Hitting a blocker that changes the plan
 - Discovering new work that needs adding to the roadmap
 - Changing direction or design decisions
@@ -133,7 +163,39 @@ After posting an action comment, update these sections in the issue body:
 - **Roadmap tables** - Change step statuses, add PR links
 - **Current Focus** - Update "Next action" to reflect new state
 - **Design Decisions** - Add any new decisions that emerged
-- **Key Technical Details** - Add reference material discovered
+- **Implementation Context** - Add reference material discovered
+
+### Adding Context (Non-Completion Action)
+
+When adding implementation context or refining the objective:
+
+**Action Comment:**
+
+```markdown
+## Action: Added Implementation Context
+
+**Date:** 2026-01-01
+
+### What Was Done
+
+- Added current architecture details (file locations, existing patterns)
+- Documented patterns to follow with references
+- Listed ABC methods by behavior category
+- Added error message requirements
+- Outlined test strategy
+
+### Lessons Learned
+
+- [Any insights from the exploration]
+
+### Why
+
+Enable session handoff - any future session can implement without re-exploring.
+```
+
+**Body Changes:**
+
+- Added "Implementation Context" section with all details
 
 ## Example: Steelthread-Structured Objective
 
@@ -198,11 +260,27 @@ All gateway ABCs have:
 
 **Test:** All GitHub gateway tests use FakeGitHub.
 
-## Key Technical Details
+## Implementation Context
+
+### Current Architecture
 
 Gateway ABC pattern uses abstract base classes with real and fake implementations.
-See `erk/gateways/git/` for the full pattern. Key insight: fakes need to track
-branch state, not just commits.
+See `erk/gateways/git/` for the full pattern.
+
+### Patterns to Follow
+
+- Gateway ABC: `erk/gateways/git/` shows complete pattern
+- Fakes need to track branch state, not just commits
+
+### Technical Requirements
+
+- FakeGitHub must implement all methods from GitHub ABC
+- State tracking for PRs, issues, and reviews
+
+### Test Strategy
+
+- Tests should use FakeGitHub instead of subprocess mocking
+- One integration test per major workflow
 
 ## Current Focus
 

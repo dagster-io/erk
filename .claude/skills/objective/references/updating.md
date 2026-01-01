@@ -8,9 +8,19 @@ See [format.md](format.md) for:
 
 ## Quick Summary
 
-Updates have two steps that always happen together:
+The two-step pattern applies to ALL objective changes, not just completions:
 
-1. **Post action comment** - Captures what happened and lessons learned
-2. **Update issue body** - Reflects new roadmap state
+| Change Type     | Comment                      | Body Update           |
+| --------------- | ---------------------------- | --------------------- |
+| Complete a step | "Action: Completed X"        | Status → done, add PR |
+| Add context     | "Action: Added X"            | Add section to body   |
+| Refine decision | "Action: Refined X"          | Update decision text  |
+| Add phase       | "Action: Added Phase X"      | Add phase to roadmap  |
+| Hit blocker     | "Action: Identified blocker" | Status → blocked      |
+
+**Why both steps?**
+
+- Comment = changelog (when/why things changed)
+- Body = source of truth (current complete state)
 
 Comment first (captures the moment), then body (reflects new state).

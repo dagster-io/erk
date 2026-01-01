@@ -42,6 +42,10 @@ capture lessons learned along the way.
 6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
 7. **One PR per sub-phase** - Sub-phases (1A, 1B, 1C) are sized for coherent single PRs
 8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
 
 ## Quick Reference
 

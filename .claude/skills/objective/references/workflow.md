@@ -214,6 +214,37 @@ Split a phase if:
 2. **Coherent scope** - All steps relate to same concern
 3. **Shippable state** - System works after merge
 
+## Designing for Session Handoff
+
+Objectives coordinate work across multiple sessions. The body should be self-contained enough that any session can pick up a phase and implement without re-exploring the codebase.
+
+### What the Body Should Include
+
+1. **Design decisions** - Locked choices that guide implementation
+2. **Implementation context** - Architecture, patterns, requirements
+3. **Clear roadmap** - What to do, in what order
+4. **Current focus** - Exactly what's next
+
+### What to Avoid
+
+- **Prescriptive code skeletons** - Let implementing agent design the solution
+- **Incomplete context** - "See the codebase" is not helpful
+- **Stale information** - Keep body current after every change
+
+### The Two-Step Discipline
+
+Every change to the objective follows two steps:
+
+1. **Comment first** - Log what changed and why (changelog entry)
+2. **Body second** - Update to reflect new state (source of truth)
+
+This applies to:
+
+- Completing steps (obvious)
+- Adding context (often forgotten)
+- Refining decisions (often forgotten)
+- Adding phases (often forgotten)
+
 ## Best Practices
 
 ### Keep the Body Current
