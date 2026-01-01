@@ -9,6 +9,26 @@ import tomllib
 from pathlib import Path
 
 
+def is_repo_erk_ified(repo_root: Path) -> bool:
+    """Check if a repository has been initialized with erk.
+
+    A repository is considered erk-ified if it has a .erk/config.toml file.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        True if .erk/config.toml exists, False otherwise
+
+    Example:
+        >>> repo_root = Path("/path/to/repo")
+        >>> is_repo_erk_ified(repo_root)
+        False
+    """
+    config_path = repo_root / ".erk" / "config.toml"
+    return config_path.exists()
+
+
 def detect_root_project_name(repo_root: Path) -> str | None:
     """Return the declared project name at the repo root, if any.
 

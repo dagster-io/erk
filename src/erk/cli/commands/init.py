@@ -11,9 +11,12 @@ from erk.core.claude_settings import (
     NoBackupCreated,
     add_erk_hooks,
     add_erk_permission,
+    add_statusline_config,
+    get_global_claude_settings_path,
     get_repo_claude_settings_path,
     has_erk_permission,
     has_exit_plan_hook,
+    has_statusline_configured,
     has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
@@ -24,11 +27,17 @@ from erk.core.init_utils import (
     add_gitignore_entry,
     discover_presets,
     get_shell_wrapper_content,
+    is_repo_erk_ified,
     is_repo_named,
     render_config_template,
 )
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.repo_discovery import (
+    NoRepoSentinel,
+    discover_repo_or_sentinel,
+    ensure_erk_metadata_dir,
+)
 from erk.core.shell import Shell
+from erk_shared.git.real import RealGit
 from erk_shared.output.output import user_output
 
 
@@ -327,6 +336,46 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
     user_output(click.style("✓", fg="green") + " Added erk hooks")
 
 
+def perform_statusline_setup() -> bool:
+    """Configure Claude Code status line to use erk-statusline.
+
+    This modifies the global ~/.claude/settings.json to add statusLine config.
+
+    Returns:
+        True if status line was configured, False otherwise.
+    """
+    settings_path = get_global_claude_settings_path()
+
+    try:
+        settings = read_claude_settings(settings_path)
+    except json.JSONDecodeError as e:
+        warning = click.style("⚠️  Warning: ", fg="yellow")
+        user_output(warning + "Invalid JSON in ~/.claude/settings.json")
+        user_output(f"   {e}")
+        return False
+
+    # No settings file - will create one
+    if settings is None:
+        settings = {}
+
+    # Check if already configured
+    if has_statusline_configured(settings):
+        user_output(click.style("✓", fg="green") + " Status line already configured")
+        return True
+
+    # Explain what status line does
+    user_output("\n  Configuring Claude Code status line...")
+    user_output("  This displays worktree, branch, and PR info in Claude Code.")
+
+    new_settings = add_statusline_config(settings)
+    write_claude_settings(settings_path, new_settings)
+    statusline_msg = " Status line configured in ~/.claude/settings.json"
+    user_output(click.style("  ✓", fg="green") + statusline_msg)
+    user_output("  Note: Install erk-statusline with: uv tool install erk-statusline")
+
+    return True
+
+
 @click.command("init")
 @click.option("--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
@@ -370,9 +419,26 @@ def init_cmd(
     hooks_only: bool,
     no_interactive: bool,
 ) -> None:
-    """Initialize erk for this repo and scaffold config.toml."""
+    """Initialize erk for this repo and scaffold config.toml.
 
-    # Handle --shell flag: only do shell setup
+    Runs in three sequential steps:
+    1. Repo verification - checks that you're in a git repository
+    2. Project setup - erk-ifies the repo (if not already)
+    3. User setup - configures shell integration and Claude Code status line
+    """
+    # Discover available presets on demand (needed for --list-presets)
+    presets_dir = _get_presets_dir()
+    available_presets = discover_presets(presets_dir)
+    valid_choices = ["auto"] + available_presets
+
+    # Handle --list-presets flag (doesn't require repo)
+    if list_presets:
+        user_output("Available presets:")
+        for p in available_presets:
+            user_output(f"  - {p}")
+        return
+
+    # Handle --shell flag: only do shell setup (doesn't require repo)
     if shell:
         if ctx.global_config is None:
             config_path = ctx.config_store.path()
@@ -411,22 +477,28 @@ def init_cmd(
                 raise SystemExit(1) from e
         return
 
+    # =========================================================================
+    # STEP 1: Repo Verification
+    # =========================================================================
+    user_output("\nStep 1: Checking repository...")
+
+    # Check if we're in a git repo (before any other setup)
+    # Use a temporary erk_root for discovery - will be replaced after global config setup
+    temp_erk_root = Path.home() / ".erk"
+    repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, temp_erk_root, RealGit())
+
+    if isinstance(repo_or_sentinel, NoRepoSentinel):
+        user_output(click.style("Error: ", fg="red") + "Not in a git repository.")
+        user_output("Run 'erk init' from within a git repository.")
+        raise SystemExit(1)
+
+    # We have a valid repo - extract the root for display
+    repo_root = repo_or_sentinel.root
+    user_output(click.style("✓", fg="green") + f" Git repository detected: {repo_root.name}")
+
     # Handle --hooks flag: only do hook setup
     if hooks_only:
-        repo_context = discover_repo_context(ctx, ctx.cwd)
-        offer_claude_hook_setup(repo_context.root)
-        return
-
-    # Discover available presets on demand
-    presets_dir = _get_presets_dir()
-    available_presets = discover_presets(presets_dir)
-    valid_choices = ["auto"] + available_presets
-
-    # Handle --list-presets flag
-    if list_presets:
-        user_output("Available presets:")
-        for p in available_presets:
-            user_output(f"  - {p}")
+        offer_claude_hook_setup(repo_root)
         return
 
     # Validate preset choice
@@ -434,116 +506,143 @@ def init_cmd(
         user_output(f"Invalid preset '{preset}'. Available options: {', '.join(valid_choices)}")
         raise SystemExit(1)
 
-    # Track if this is the first time init is run
-    first_time_init = False
+    # =========================================================================
+    # STEP 2: Project Configuration
+    # =========================================================================
+    user_output("\nStep 2: Project configuration...")
 
-    # Check for global config first
-    if not ctx.config_store.exists():
-        first_time_init = True
-        config_path = ctx.config_store.path()
-        user_output(f"Global config not found at {config_path}")
-        user_output("Please provide the path for your .erk folder.")
-        user_output("(This directory will contain worktrees for each repository)")
-        default_erk_root = Path.home() / ".erk"
-        erk_root = click.prompt(".erk folder", type=Path, default=str(default_erk_root))
-        erk_root = erk_root.expanduser().resolve()
-        config = create_and_save_global_config(ctx, erk_root, shell_setup_complete=False)
-        # Update context with newly created config
-        ctx = dataclasses.replace(ctx, global_config=config)
-        user_output(f"Created global config at {config_path}")
-        # Show graphite status on first init
-        has_graphite = detect_graphite(ctx.shell)
-        if has_graphite:
-            user_output("Graphite (gt) detected - will use 'gt create' for new branches")
+    # Check if repo is already erk-ified
+    already_erkified = is_repo_erk_ified(repo_root)
+
+    if already_erkified and not force:
+        user_output(click.style("✓", fg="green") + " Repository already configured for erk")
+    else:
+        # Check for global config first
+        if not ctx.config_store.exists():
+            config_path = ctx.config_store.path()
+            user_output(f"  Global config not found at {config_path}")
+            user_output("  Please provide the path for your .erk folder.")
+            user_output("  (This directory will contain worktrees for each repository)")
+            default_erk_root = Path.home() / ".erk"
+            erk_root = click.prompt("  .erk folder", type=Path, default=str(default_erk_root))
+            erk_root = erk_root.expanduser().resolve()
+            config = create_and_save_global_config(ctx, erk_root, shell_setup_complete=False)
+            # Update context with newly created config
+            ctx = dataclasses.replace(ctx, global_config=config)
+            user_output(f"  Created global config at {config_path}")
+            # Show graphite status on first init
+            has_graphite = detect_graphite(ctx.shell)
+            if has_graphite:
+                user_output("  Graphite (gt) detected - will use 'gt create' for new branches")
+            else:
+                user_output("  Graphite (gt) not detected - will use 'git' for branch creation")
+
+        # Now re-discover repo with correct erk_root
+        if ctx.global_config is not None:
+            repo_context = discover_repo_context(ctx, ctx.cwd)
         else:
-            user_output("Graphite (gt) not detected - will use 'git' for branch creation")
+            # Fallback (shouldn't happen, but defensive)
+            repo_context = repo_or_sentinel
 
-    # Now proceed with repo-specific setup
-    repo_context = discover_repo_context(ctx, ctx.cwd)
+        # Ensure .erk directory exists
+        erk_dir = repo_context.root / ".erk"
+        erk_dir.mkdir(parents=True, exist_ok=True)
 
-    # Ensure .erk directory exists
-    erk_dir = repo_context.root / ".erk"
-    erk_dir.mkdir(parents=True, exist_ok=True)
+        # All repo config now goes to .erk/config.toml (consolidated location)
+        cfg_path = erk_dir / "config.toml"
 
-    # All repo config now goes to .erk/config.toml (consolidated location)
-    cfg_path = erk_dir / "config.toml"
+        # Also ensure metadata directory exists (needed for worktrees dir)
+        ensure_erk_metadata_dir(repo_context)
 
-    # Also ensure metadata directory exists (needed for worktrees dir)
-    ensure_erk_metadata_dir(repo_context)
+        effective_preset: str | None
+        choice = preset.lower()
+        if choice == "auto":
+            is_dagster = is_repo_named(repo_context.root, "dagster")
+            effective_preset = "dagster" if is_dagster else "generic"
+        else:
+            effective_preset = choice
 
-    if cfg_path.exists() and not force:
-        user_output(f"Config already exists: {cfg_path}. Use --force to overwrite.")
-        raise SystemExit(1)
+        content = render_config_template(presets_dir, effective_preset)
+        cfg_path.write_text(content, encoding="utf-8")
+        user_output(f"  Wrote {cfg_path}")
 
-    effective_preset: str | None
-    choice = preset.lower()
-    if choice == "auto":
-        effective_preset = "dagster" if is_repo_named(repo_context.root, "dagster") else "generic"
-    else:
-        effective_preset = choice
+        # Sync artifacts (skills, commands, agents, workflows)
+        sync_result = sync_artifacts(repo_context.root, force=False)
+        if sync_result.success:
+            user_output(click.style("  ✓ ", fg="green") + sync_result.message)
+        else:
+            # Non-fatal: warn but continue init
+            warn_msg = f"Artifact sync failed: {sync_result.message}"
+            user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
+            user_output("    Run 'erk artifact sync' to retry")
 
-    content = render_config_template(presets_dir, effective_preset)
-    cfg_path.write_text(content, encoding="utf-8")
-    user_output(f"Wrote {cfg_path}")
+        # Create prompt hooks directory with README
+        _create_prompt_hooks_directory(repo_root=repo_context.root)
 
-    # Sync artifacts (skills, commands, agents, workflows)
-    sync_result = sync_artifacts(repo_context.root, force=False)
-    if sync_result.success:
-        user_output(click.style("✓ ", fg="green") + sync_result.message)
-    else:
-        # Non-fatal: warn but continue init
-        user_output(click.style("⚠ ", fg="yellow") + f"Artifact sync failed: {sync_result.message}")
-        user_output("  Run 'erk artifact sync' to retry")
+        # Skip interactive prompts if requested
+        interactive = not no_interactive
 
-    # Create prompt hooks directory with README
-    _create_prompt_hooks_directory(repo_root=repo_context.root)
+        # Track backup files for cleanup at end
+        pending_backup: Path | NoBackupCreated = NoBackupCreated()
+
+        if interactive:
+            _run_gitignore_prompts(repo_context.root)
+            pending_backup = offer_claude_permission_setup(repo_context.root)
+            offer_claude_hook_setup(repo_context.root)
+
+        # Offer to clean up any pending backup files (at end of project setup)
+        if not isinstance(pending_backup, NoBackupCreated):
+            offer_backup_cleanup(pending_backup)
+
+    # =========================================================================
+    # STEP 3: User Configuration (always runs)
+    # =========================================================================
+    user_output("\nStep 3: User configuration...")
 
     # Skip interactive prompts if requested
     interactive = not no_interactive
 
-    # Track backup files for cleanup at end
-    pending_backup: Path | NoBackupCreated = NoBackupCreated()
+    # 3a. Global config (if not exists) - already handled in step 2 if needed
 
+    # 3b. Shell integration
     if interactive:
-        _run_gitignore_prompts(repo_context.root)
-        pending_backup = offer_claude_permission_setup(repo_context.root)
-        offer_claude_hook_setup(repo_context.root)
+        # Only check if global config exists
+        if ctx.global_config is not None or ctx.config_store.exists():
+            fresh_config = ctx.config_store.load() if ctx.config_store.exists() else None
+            if fresh_config is not None and not fresh_config.shell_setup_complete:
+                setup_complete = perform_shell_setup(ctx.shell)
+                if setup_complete:
+                    # Show what we're about to write
+                    config_path = ctx.config_store.path()
+                    shell_msg = "To remember that shell setup is complete, erk needs to update:"
+                    user_output(f"\n  {shell_msg}")
+                    user_output(f"    {config_path}")
 
-    # On first-time init, offer shell setup if not already completed
-    if first_time_init and interactive:
-        # Reload global config after creating it
-        fresh_config = ctx.config_store.load()
-        if not fresh_config.shell_setup_complete:
-            setup_complete = perform_shell_setup(ctx.shell)
-            if setup_complete:
-                # Show what we're about to write
-                config_path = ctx.config_store.path()
-                user_output("\nTo remember that shell setup is complete, erk needs to update:")
-                user_output(f"  {config_path}")
+                    if not click.confirm("  Proceed with updating global config?", default=True):
+                        user_output("\n  Shell integration instructions were displayed above.")
+                        user_output("  Run 'erk init --shell' again to save this preference.")
+                    else:
+                        # Update global config with shell_setup_complete=True
+                        new_config = GlobalConfig(
+                            erk_root=fresh_config.erk_root,
+                            use_graphite=fresh_config.use_graphite,
+                            shell_setup_complete=True,
+                            show_pr_info=fresh_config.show_pr_info,
+                            github_planning=fresh_config.github_planning,
+                        )
+                        try:
+                            ctx.config_store.save(new_config)
+                            user_output(click.style("  ✓", fg="green") + " Global config updated")
+                        except PermissionError as e:
+                            error_msg = "Could not save global config"
+                            user_output(click.style("\n  ❌ Error: ", fg="red") + error_msg)
+                            user_output(f"  {e}")
+                            user_output("\n  Shell integration instructions were displayed above.")
+                            msg = "  You can use them now - erk just couldn't save this preference."
+                            user_output(msg)
 
-                if not click.confirm("Proceed with updating global config?", default=True):
-                    user_output("\nShell integration instructions were displayed above.")
-                    user_output("Run 'erk init --shell' again to save this preference.")
-                else:
-                    # Update global config with shell_setup_complete=True
-                    new_config = GlobalConfig(
-                        erk_root=fresh_config.erk_root,
-                        use_graphite=fresh_config.use_graphite,
-                        shell_setup_complete=True,
-                        show_pr_info=fresh_config.show_pr_info,
-                        github_planning=fresh_config.github_planning,
-                    )
-                    try:
-                        ctx.config_store.save(new_config)
-                        user_output(click.style("✓", fg="green") + " Global config updated")
-                    except PermissionError as e:
-                        error_msg = "Could not save global config"
-                        user_output(click.style("\n❌ Error: ", fg="red") + error_msg)
-                        user_output(str(e))
-                        user_output("\nShell integration instructions were displayed above.")
-                        msg = "You can use them now - erk just couldn't save this preference."
-                        user_output(msg)
+    # 3c. Status line configuration
+    if interactive:
+        perform_statusline_setup()
 
-    # Offer to clean up any pending backup files (at end to ensure safety)
-    if not isinstance(pending_backup, NoBackupCreated):
-        offer_backup_cleanup(pending_backup)
+    user_output(click.style("\n✓", fg="green") + " Initialization complete!")

@@ -12,6 +12,9 @@ from pathlib import Path
 # The permission pattern that allows Claude to run erk commands without prompting
 ERK_PERMISSION = "Bash(erk:*)"
 
+# Status line configuration for erk-statusline integration
+ERK_STATUSLINE_COMMAND = "erk-statusline"
+
 # Hook commands for erk integration
 ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
 ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
@@ -215,3 +218,47 @@ def write_claude_settings(settings_path: Path, settings: dict) -> Path | NoBacku
     settings_path.write_text(content, encoding="utf-8")
 
     return backup_result
+
+
+def get_global_claude_settings_path() -> Path:
+    """Return the path to the global Claude settings file.
+
+    Returns:
+        Path to ~/.claude/settings.json
+    """
+    return Path.home() / ".claude" / "settings.json"
+
+
+def has_statusline_configured(settings: dict) -> bool:
+    """Check if statusLine is configured in Claude settings.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if statusLine configuration exists
+    """
+    return "statusLine" in settings
+
+
+def add_statusline_config(settings: dict) -> dict:
+    """Return a new settings dict with statusLine configuration added.
+
+    This is a pure function that doesn't modify the input.
+    Sets the statusLine to use the erk-statusline command.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with statusLine configuration added
+    """
+    # Deep copy to avoid mutating input
+    new_settings = json.loads(json.dumps(settings))
+
+    new_settings["statusLine"] = {
+        "type": "command",
+        "command": ERK_STATUSLINE_COMMAND,
+    }
+
+    return new_settings

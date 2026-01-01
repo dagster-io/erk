@@ -364,8 +364,13 @@ def test_init_force_overwrites_existing_config() -> None:
         assert "# Old config" not in content
 
 
-def test_init_fails_without_force_when_exists() -> None:
-    """Test that init fails when config exists without --force."""
+def test_init_skips_silently_when_already_erkified() -> None:
+    """Test that init skips project setup when config exists (no error).
+
+    NOTE: Behavior changed from failing to silently skipping project setup.
+    The new stepped flow (Step 2) detects already-erk-ified repos and skips
+    project configuration, proceeding directly to user setup (Step 3).
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -377,7 +382,7 @@ def test_init_fails_without_force_when_exists() -> None:
         config_path.write_text("# Existing config\n", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
         global_config_ops = FakeConfigStore(config=global_config)
 
@@ -387,11 +392,14 @@ def test_init_fails_without_force_when_exists() -> None:
             global_config=global_config,
         )
 
-        result = runner.invoke(cli, ["init"], obj=test_ctx)
+        result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
-        assert result.exit_code == 1
-        assert "Config already exists" in result.output
-        assert "Use --force to overwrite" in result.output
+        # Now succeeds and shows "already configured" message
+        assert result.exit_code == 0, result.output
+        assert "Repository already configured for erk" in result.output
+        # Config should NOT be overwritten
+        content = config_path.read_text(encoding="utf-8")
+        assert "# Existing config" in content
 
 
 def test_init_adds_env_to_gitignore() -> None:
@@ -1541,3 +1549,121 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
             assert "Artifact sync failed" in result.output
             assert "Bundled .claude/ not found" in result.output
             assert "Run 'erk artifact sync' to retry" in result.output
+
+
+# --- Tests for stepped flow and re-init behavior ---
+
+
+def test_init_stepped_flow_shows_three_steps() -> None:
+    """Test that init shows the three-step flow in output."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify three steps are shown
+        assert "Step 1: Checking repository..." in result.output
+        assert "Step 2: Project configuration..." in result.output
+        assert "Step 3: User configuration..." in result.output
+        assert "Initialization complete!" in result.output
+
+
+def test_init_skips_project_setup_when_already_erkified() -> None:
+    """Test that init skips project setup when repo is already erk-ified."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create existing erk config to simulate already erk-ified repo
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        config_path = erk_dir / "config.toml"
+        config_path.write_text("# Existing config\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify it shows "already configured" message
+        assert "Repository already configured for erk" in result.output
+        # Verify config was NOT overwritten
+        content = config_path.read_text(encoding="utf-8")
+        assert "# Existing config" in content
+
+
+def test_init_force_overwrites_when_already_erkified() -> None:
+    """Test that init --force overwrites config even when already erk-ified."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create existing erk config
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        config_path = erk_dir / "config.toml"
+        config_path.write_text("# Old config\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--force", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify config was overwritten
+        content = config_path.read_text(encoding="utf-8")
+        assert "# Old config" not in content
+
+
+def test_init_step1_shows_repo_name() -> None:
+    """Test that step 1 shows the detected repository name."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+        global_config_ops = FakeConfigStore(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            config_store=global_config_ops,
+            global_config=global_config,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        # Verify step 1 shows the repo name (the directory name)
+        assert "Git repository detected:" in result.output

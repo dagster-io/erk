@@ -14,13 +14,17 @@ import pytest
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_PERMISSION,
+    ERK_STATUSLINE_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
     NoBackupCreated,
     add_erk_hooks,
     add_erk_permission,
+    add_statusline_config,
+    get_global_claude_settings_path,
     get_repo_claude_settings_path,
     has_erk_permission,
     has_exit_plan_hook,
+    has_statusline_configured,
     has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
@@ -735,3 +739,100 @@ def test_write_claude_settings_returns_no_backup_sentinel(tmp_path: Path) -> Non
 
     # Verify return value is the sentinel
     assert isinstance(result, NoBackupCreated)
+
+
+# --- Tests for status line functions ---
+
+
+def test_erk_statusline_command_constant() -> None:
+    """Test that ERK_STATUSLINE_COMMAND has the expected value."""
+    assert ERK_STATUSLINE_COMMAND == "erk-statusline"
+
+
+def test_get_global_claude_settings_path() -> None:
+    """Test that get_global_claude_settings_path returns expected path."""
+    path = get_global_claude_settings_path()
+    assert path == Path.home() / ".claude" / "settings.json"
+
+
+def test_has_statusline_configured_returns_true_when_present() -> None:
+    """Test that has_statusline_configured returns True when statusLine exists."""
+    settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "erk-statusline",
+        }
+    }
+    assert has_statusline_configured(settings) is True
+
+
+def test_has_statusline_configured_returns_false_when_missing() -> None:
+    """Test that has_statusline_configured returns False when statusLine is missing."""
+    settings: dict = {}
+    assert has_statusline_configured(settings) is False
+
+
+def test_has_statusline_configured_returns_true_for_any_statusline() -> None:
+    """Test that has_statusline_configured returns True for any statusLine config."""
+    settings = {
+        "statusLine": {
+            "type": "static",
+            "text": "My custom status",
+        }
+    }
+    assert has_statusline_configured(settings) is True
+
+
+def test_add_statusline_config_adds_to_empty_settings() -> None:
+    """Test that add_statusline_config adds statusLine to empty settings."""
+    settings: dict = {}
+    result = add_statusline_config(settings)
+
+    assert "statusLine" in result
+    assert result["statusLine"]["type"] == "command"
+    assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
+    # Original should not be modified
+    assert "statusLine" not in settings
+
+
+def test_add_statusline_config_overwrites_existing() -> None:
+    """Test that add_statusline_config overwrites existing statusLine."""
+    settings = {
+        "statusLine": {
+            "type": "static",
+            "text": "Old status",
+        }
+    }
+    result = add_statusline_config(settings)
+
+    assert result["statusLine"]["type"] == "command"
+    assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
+    # Original should not be modified
+    assert settings["statusLine"]["type"] == "static"
+
+
+def test_add_statusline_config_preserves_other_settings() -> None:
+    """Test that add_statusline_config preserves other settings keys."""
+    settings = {
+        "permissions": {"allow": ["Bash(git:*)"]},
+        "hooks": {"SessionStart": []},
+        "alwaysThinkingEnabled": True,
+    }
+    result = add_statusline_config(settings)
+
+    assert result["permissions"]["allow"] == ["Bash(git:*)"]
+    assert result["hooks"]["SessionStart"] == []
+    assert result["alwaysThinkingEnabled"] is True
+    assert result["statusLine"]["type"] == "command"
+
+
+def test_add_statusline_config_is_pure_function() -> None:
+    """Test that add_statusline_config doesn't modify the input."""
+    original = {"permissions": {"allow": []}}
+    original_copy = json.loads(json.dumps(original))
+
+    add_statusline_config(original)
+
+    # Original should be unchanged
+    assert original == original_copy
+    assert "statusLine" not in original
