@@ -4,7 +4,9 @@ These tests use FakeGit with pre-configured WorktreeInfo data instead of
 real git operations, providing 5-10x speedup while maintaining full CLI coverage.
 """
 
+import os
 from pathlib import Path
+from unittest import mock
 
 from click.testing import CliRunner
 
@@ -169,7 +171,9 @@ def test_current_handles_missing_git_gracefully(tmp_path: Path) -> None:
     )
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["wt", "current"], obj=ctx)
+    # Skip local init check to avoid warning messages
+    with mock.patch.dict(os.environ, {"ERK_SKIP_LOCAL_INIT_CHECK": "1"}):
+        result = runner.invoke(cli, ["wt", "current"], obj=ctx)
 
     assert result.exit_code == 1
     # When not in a git repo, discovery fails before we check worktrees
@@ -216,7 +220,9 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
     )
 
     runner = CliRunner()
-    result = runner.invoke(cli, ["wt", "current"], obj=ctx)
+    # Skip local init check to avoid warning messages
+    with mock.patch.dict(os.environ, {"ERK_SKIP_LOCAL_INIT_CHECK": "1"}):
+        result = runner.invoke(cli, ["wt", "current"], obj=ctx)
 
     # Should return the deepest (most specific) worktree
     assert result.exit_code == 0

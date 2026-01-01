@@ -6,6 +6,7 @@ from erk.core.version_check import (
     format_version_warning,
     get_required_version,
     is_version_mismatch,
+    write_required_version,
 )
 
 
@@ -64,18 +65,18 @@ def test_format_version_warning_includes_both_versions() -> None:
     assert "0.2.8" in result
 
 
-def test_format_version_warning_includes_upgrade_command() -> None:
-    """Test that format_version_warning includes upgrade command."""
+def test_format_version_warning_suggests_upgrade_when_installed_older() -> None:
+    """Test that format_version_warning suggests uv tool upgrade when installed < required."""
     result = format_version_warning("0.2.7", "0.2.8")
 
     assert "uv tool upgrade erk" in result
 
 
-def test_format_version_warning_includes_must_update_message() -> None:
-    """Test that format_version_warning includes urgency message."""
-    result = format_version_warning("0.2.7", "0.2.8")
+def test_format_version_warning_suggests_project_upgrade_when_installed_newer() -> None:
+    """Test that format_version_warning suggests erk project upgrade when installed > required."""
+    result = format_version_warning("0.3.0", "0.2.8")
 
-    assert "must update" in result
+    assert "erk project upgrade" in result
 
 
 def test_format_version_warning_includes_warning_emoji() -> None:
@@ -83,3 +84,40 @@ def test_format_version_warning_includes_warning_emoji() -> None:
     result = format_version_warning("0.2.7", "0.2.8")
 
     assert "⚠️" in result
+
+
+def test_format_version_warning_mentions_mismatch() -> None:
+    """Test that format_version_warning mentions version mismatch."""
+    result = format_version_warning("0.2.7", "0.2.8")
+
+    assert "does not match" in result
+
+
+def test_write_required_version_creates_file(tmp_path: Path) -> None:
+    """Test that write_required_version creates version file."""
+    write_required_version(tmp_path, "0.3.0")
+
+    version_file = tmp_path / ".erk" / "required-erk-uv-tool-version"
+    assert version_file.exists()
+    assert version_file.read_text(encoding="utf-8").strip() == "0.3.0"
+
+
+def test_write_required_version_creates_erk_directory(tmp_path: Path) -> None:
+    """Test that write_required_version creates .erk directory if needed."""
+    assert not (tmp_path / ".erk").exists()
+
+    write_required_version(tmp_path, "0.3.0")
+
+    assert (tmp_path / ".erk").is_dir()
+
+
+def test_write_required_version_overwrites_existing(tmp_path: Path) -> None:
+    """Test that write_required_version overwrites existing version file."""
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    version_file = erk_dir / "required-erk-uv-tool-version"
+    version_file.write_text("0.2.0\n", encoding="utf-8")
+
+    write_required_version(tmp_path, "0.3.0")
+
+    assert version_file.read_text(encoding="utf-8").strip() == "0.3.0"

@@ -143,6 +143,46 @@ def _show_version_warning() -> None:
         logging.warning("Failed to check version: %s", e)
 
 
+def _show_local_init_warning() -> None:
+    """Show a light warning if local init hasn't been run in an erk-ified repo.
+
+    This is a non-blocking warning to prompt users to run `erk init`.
+    Designed to never fail - exceptions are logged but don't break the CLI.
+    """
+    # Skip if user has disabled this check
+    if os.environ.get("ERK_SKIP_LOCAL_INIT_CHECK") == "1":
+        return
+
+    try:
+        # Find git repo root (if in a git repo)
+        git = RealGit()
+        repo_root = git.get_repository_root(Path.cwd())
+        if repo_root is None:
+            return
+
+        # Check if repo is erk-ified (has .erk directory)
+        erk_dir = repo_root / ".erk"
+        if not erk_dir.exists():
+            return  # Not erk-ified, nothing to check
+
+        # Check for local init state
+        from erk.core.local_state import load_local_state
+
+        local_state = load_local_state(repo_root)
+        if local_state is not None:
+            return  # Already initialized locally
+
+        # Show light warning
+        click.echo(
+            click.style("ℹ️  Run 'erk init' to set up your local environment", dim=True),
+            err=True,
+        )
+        click.echo(file=sys.stderr)
+    except Exception as e:
+        # Never let this check break the CLI
+        logging.warning("Failed to check local init state: %s", e)
+
+
 @click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
@@ -156,6 +196,7 @@ def cli(ctx: click.Context, debug: bool) -> None:
     if not ctx.resilient_parsing:
         _show_version_change_banner()
         _show_version_warning()
+        _show_local_init_warning()
 
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:

@@ -79,3 +79,41 @@ def test_check_fails_when_installed_version_unknown(tmp_path: Path) -> None:
     assert result.passed is False
     assert result.name == "required-version"
     assert "could not determine" in result.message.lower()
+
+
+def test_check_suggests_upgrade_when_installed_older(tmp_path: Path) -> None:
+    """Test that check suggests uv tool upgrade when installed < required."""
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    version_file = erk_dir / "required-erk-uv-tool-version"
+    version_file.write_text("0.3.0", encoding="utf-8")
+
+    # Mock older installed version
+    with patch(
+        "erk.core.health_checks._get_installed_erk_version",
+        return_value="0.2.8",
+    ):
+        result = check_required_tool_version(tmp_path)
+
+    assert result.passed is False
+    assert result.details is not None
+    assert "uv tool upgrade erk" in result.details
+
+
+def test_check_suggests_project_upgrade_when_installed_newer(tmp_path: Path) -> None:
+    """Test that check suggests erk project upgrade when installed > required."""
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    version_file = erk_dir / "required-erk-uv-tool-version"
+    version_file.write_text("0.2.8", encoding="utf-8")
+
+    # Mock newer installed version
+    with patch(
+        "erk.core.health_checks._get_installed_erk_version",
+        return_value="0.3.0",
+    ):
+        result = check_required_tool_version(tmp_path)
+
+    assert result.passed is False
+    assert result.details is not None
+    assert "erk project upgrade" in result.details

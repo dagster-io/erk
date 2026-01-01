@@ -102,11 +102,21 @@ def check_required_tool_version(repo_root: Path) -> CheckResult:
         )
 
     if is_version_mismatch(installed_version, required_version):
+        from packaging.version import Version
+
+        installed_v = Version(installed_version)
+        required_v = Version(required_version)
+
+        if installed_v < required_v:
+            details = "Run 'uv tool upgrade erk' to update"
+        else:
+            details = "Run 'erk project upgrade' to update project"
+
         return CheckResult(
             name="required-version",
             passed=False,
             message=f"Version mismatch: installed {installed_version}, required {required_version}",
-            details="Run 'uv tool upgrade erk' to update",
+            details=details,
         )
 
     return CheckResult(
@@ -412,6 +422,38 @@ def check_hooks_disabled() -> CheckResult:
     )
 
 
+def check_local_init(repo_root: Path) -> CheckResult:
+    """Check if local init has been run for this repository.
+
+    This is an info-level check - it always passes, but shows whether
+    the local developer environment has been initialized.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult with local init status
+    """
+    from erk.core.local_state import load_local_state
+
+    local_state = load_local_state(repo_root)
+
+    if local_state is None:
+        return CheckResult(
+            name="local-init",
+            passed=True,
+            warning=True,
+            message="Local environment not initialized",
+            details="Run 'erk init' to set up your local environment",
+        )
+
+    return CheckResult(
+        name="local-init",
+        passed=True,
+        message=f"Local environment initialized (v{local_state.initialized_version})",
+    )
+
+
 def check_gitignore_entries(repo_root: Path) -> CheckResult:
     """Check that required gitignore entries exist.
 
@@ -421,7 +463,7 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult indicating whether required entries are present
     """
-    required_entries = [".erk/scratch/", ".impl/"]
+    required_entries = [".erk/scratch/", ".erk/local-state.toml", ".impl/"]
     gitignore_path = repo_root / ".gitignore"
 
     # No gitignore file - pass (user may not have one yet)
@@ -960,6 +1002,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_exit_plan_hook(repo_root))
         results.append(check_gitignore_entries(repo_root))
         results.append(check_required_tool_version(repo_root))
+        results.append(check_local_init(repo_root))
         results.append(check_legacy_prompt_hooks(repo_root))
         # Hook health check
         results.append(check_hook_health(repo_root))

@@ -25,6 +25,18 @@ def get_required_version(repo_root: Path) -> str | None:
     return version_file.read_text(encoding="utf-8").strip()
 
 
+def write_required_version(repo_root: Path, version: str) -> None:
+    """Write required version to .erk/required-erk-uv-tool-version.
+
+    Args:
+        repo_root: Path to the git repository root
+        version: Version string to write
+    """
+    version_file = repo_root / ".erk" / "required-erk-uv-tool-version"
+    version_file.parent.mkdir(parents=True, exist_ok=True)
+    version_file.write_text(version + "\n", encoding="utf-8")
+
+
 def is_version_mismatch(installed: str, required: str) -> bool:
     """Check if installed version doesn't match required version exactly.
 
@@ -39,17 +51,30 @@ def is_version_mismatch(installed: str, required: str) -> bool:
 
 
 def format_version_warning(installed: str, required: str) -> str:
-    """Format warning message for version mismatch.
+    """Format warning message for version mismatch with direction-specific advice.
+
+    When installed < required: suggests upgrading erk
+    When installed > required: suggests running `erk project upgrade`
 
     Args:
         installed: Currently installed version
         required: Required version from repo
 
     Returns:
-        Formatted warning message
+        Formatted warning message with appropriate action
     """
+    installed_v = Version(installed)
+    required_v = Version(required)
+
+    if installed_v < required_v:
+        # User needs to upgrade their local erk
+        action = "   Run: uv tool upgrade erk"
+    else:
+        # User has newer erk - project needs upgrading
+        action = "   Run: erk project upgrade"
+
     return (
-        f"⚠️  Your erk ({installed}) doesn't match required ({required})\n"
-        f"   You must update or erk may not work properly.\n"
-        f"   Update: uv tool upgrade erk"
+        f"⚠️  Globally installed erk ({installed}) does not match the version "
+        f"this repository is pinned to ({required}).\n"
+        f"{action}"
     )

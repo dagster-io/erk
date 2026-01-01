@@ -618,25 +618,35 @@ def erk_isolated_fs_env(runner: CliRunner) -> Generator[ErkIsolatedFsEnv]:
                 )
         ```
     """
-    with runner.isolated_filesystem():
-        base = Path.cwd()  # isolated_filesystem() creates temp dir and changes cwd to it
+    # Skip local init check in tests to avoid warning messages breaking JSON output
+    old_skip_check = os.environ.get("ERK_SKIP_LOCAL_INIT_CHECK")
+    os.environ["ERK_SKIP_LOCAL_INIT_CHECK"] = "1"
+    try:
+        with runner.isolated_filesystem():
+            base = Path.cwd()  # isolated_filesystem() creates temp dir and cwd to it
 
-        # Create root worktree with .git directory
-        root_worktree = base / "repo"
-        root_worktree.mkdir()
-        (root_worktree / ".git").mkdir()
+            # Create root worktree with .git directory
+            root_worktree = base / "repo"
+            root_worktree.mkdir()
+            (root_worktree / ".git").mkdir()
 
-        # Create erks directory
-        erk_root = base / "erks"
-        erk_root.mkdir()
+            # Create erks directory
+            erk_root = base / "erks"
+            erk_root.mkdir()
 
-        # Default to root worktree
-        os.chdir(root_worktree)
+            # Default to root worktree
+            os.chdir(root_worktree)
 
-        yield ErkIsolatedFsEnv(
-            root_worktree=root_worktree,
-            erk_root=erk_root,
-        )
+            yield ErkIsolatedFsEnv(
+                root_worktree=root_worktree,
+                erk_root=erk_root,
+            )
+    finally:
+        # Restore original environment
+        if old_skip_check is None:
+            os.environ.pop("ERK_SKIP_LOCAL_INIT_CHECK", None)
+        else:
+            os.environ["ERK_SKIP_LOCAL_INIT_CHECK"] = old_skip_check
 
 
 class ErkInMemEnv:
@@ -1144,6 +1154,10 @@ def erk_inmem_env(
     # Create in-memory script writer
     script_writer = FakeScriptWriter()
 
+    # Skip local init check in tests to avoid warning messages breaking JSON output
+    old_skip_check = os.environ.get("ERK_SKIP_LOCAL_INIT_CHECK")
+    os.environ["ERK_SKIP_LOCAL_INIT_CHECK"] = "1"
+
     # No isolated_filesystem(), no os.chdir(), no mkdir()
     try:
         yield ErkInMemEnv(
@@ -1157,3 +1171,9 @@ def erk_inmem_env(
         from tests.test_utils.paths import SentinelPath
 
         SentinelPath.clear_file_storage()
+
+        # Restore original environment
+        if old_skip_check is None:
+            os.environ.pop("ERK_SKIP_LOCAL_INIT_CHECK", None)
+        else:
+            os.environ["ERK_SKIP_LOCAL_INIT_CHECK"] = old_skip_check

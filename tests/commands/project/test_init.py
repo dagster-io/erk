@@ -1,4 +1,8 @@
-"""Tests for the project init command."""
+"""Tests for the project subproject command.
+
+This tests the subproject initialization command (erk project subproject),
+which creates .erk/project.toml for monorepo subprojects.
+"""
 
 from click.testing import CliRunner
 
@@ -7,8 +11,8 @@ from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_project_init_creates_project_toml() -> None:
-    """Test that project init creates .erk/project.toml."""
+def test_project_subproject_creates_project_toml() -> None:
+    """Test that project subproject creates .erk/project.toml."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up a project subdirectory
@@ -22,7 +26,7 @@ def test_project_init_creates_project_toml() -> None:
             cwd=project_dir,  # We're in the project subdirectory
         )
 
-        result = runner.invoke(cli, ["project", "init"], obj=test_ctx)
+        result = runner.invoke(cli, ["project", "subproject"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert "Initialized project" in result.output
@@ -36,8 +40,8 @@ def test_project_init_creates_project_toml() -> None:
         assert "[post_create]" in content
 
 
-def test_project_init_fails_if_already_exists() -> None:
-    """Test that project init fails if project.toml already exists."""
+def test_project_subproject_fails_if_already_exists() -> None:
+    """Test that project subproject fails if project.toml already exists."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up a project subdirectory with existing project.toml
@@ -53,14 +57,14 @@ def test_project_init_fails_if_already_exists() -> None:
             cwd=project_dir,
         )
 
-        result = runner.invoke(cli, ["project", "init"], obj=test_ctx)
+        result = runner.invoke(cli, ["project", "subproject"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "already initialized" in result.output
 
 
-def test_project_init_fails_at_repo_root() -> None:
-    """Test that project init fails when run at repo root."""
+def test_project_subproject_fails_at_repo_root() -> None:
+    """Test that project subproject fails when run at repo root."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -70,7 +74,7 @@ def test_project_init_fails_at_repo_root() -> None:
             cwd=env.cwd,  # At repo root
         )
 
-        result = runner.invoke(cli, ["project", "init"], obj=test_ctx)
+        result = runner.invoke(cli, ["project", "subproject"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "Cannot initialize project at repository root" in result.output

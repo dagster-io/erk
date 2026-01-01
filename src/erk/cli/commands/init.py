@@ -1,34 +1,26 @@
+"""Local init command - set up local developer environment.
+
+This command performs local developer setup:
+- Checks if repo is erk-ified (prompts to run `erk project init` if not)
+- Checks version compatibility and prompts for upgrade if needed
+- Sets up global config if needed
+- Optionally sets up shell integration
+- Saves local init state
+"""
+
 import dataclasses
-import json
 from pathlib import Path
 
 import click
 
-from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
-from erk.core.claude_settings import (
-    ERK_PERMISSION,
-    NoBackupCreated,
-    add_erk_hooks,
-    add_erk_permission,
-    get_repo_claude_settings_path,
-    has_erk_permission,
-    has_exit_plan_hook,
-    has_user_prompt_hook,
-    read_claude_settings,
-    write_claude_settings,
-)
 from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
-from erk.core.init_utils import (
-    add_gitignore_entry,
-    discover_presets,
-    get_shell_wrapper_content,
-    is_repo_named,
-    render_config_template,
-)
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.init_utils import get_shell_wrapper_content
+from erk.core.local_state import create_local_init_state, load_local_state, save_local_state
+from erk.core.release_notes import get_current_version
 from erk.core.shell import Shell
+from erk.core.version_check import get_required_version, is_version_mismatch
 from erk_shared.output.output import user_output
 
 
@@ -53,100 +45,6 @@ def create_and_save_global_config(
     )
     ctx.config_store.save(config)
     return config
-
-
-def _add_gitignore_entry_with_prompt(
-    content: str, entry: str, prompt_message: str
-) -> tuple[str, bool]:
-    """Add an entry to gitignore content if not present and user confirms.
-
-    This wrapper adds user interaction to the pure add_gitignore_entry function.
-
-    Args:
-        content: Current gitignore content
-        entry: Entry to add (e.g., ".env")
-        prompt_message: Message to show user when confirming
-
-    Returns:
-        Tuple of (updated_content, was_modified)
-    """
-    # Entry already present
-    if entry in content:
-        return (content, False)
-
-    # User declined
-    if not click.confirm(prompt_message, default=True):
-        return (content, False)
-
-    # Use pure function to add entry
-    new_content = add_gitignore_entry(content, entry)
-    return (new_content, True)
-
-
-def _create_prompt_hooks_directory(repo_root: Path) -> None:
-    """Create .erk/prompt-hooks/ directory and install README.
-
-    Args:
-        repo_root: Path to the repository root
-    """
-    prompt_hooks_dir = repo_root / ".erk" / "prompt-hooks"
-    prompt_hooks_dir.mkdir(parents=True, exist_ok=True)
-
-    # Install README template
-    template_path = Path(__file__).parent.parent / "prompt_hooks_templates" / "README.md"
-    readme_path = prompt_hooks_dir / "README.md"
-
-    if template_path.exists():
-        readme_content = template_path.read_text(encoding="utf-8")
-        readme_path.write_text(readme_content, encoding="utf-8")
-        user_output(click.style("✓", fg="green") + " Created prompt hooks directory")
-        user_output("  See .erk/prompt-hooks/README.md for available hooks")
-    else:
-        # Fallback: create directory but warn about missing template
-        user_output(
-            click.style("⚠️", fg="yellow") + " Created .erk/prompt-hooks/ (template not found)"
-        )
-
-
-def _run_gitignore_prompts(repo_root: Path) -> None:
-    """Run interactive prompts for .gitignore entries.
-
-    Offers to add .env, .erk/scratch/, and .impl/ to .gitignore.
-
-    Args:
-        repo_root: Path to the repository root
-    """
-    gitignore_path = repo_root / ".gitignore"
-    if not gitignore_path.exists():
-        return
-
-    gitignore_content = gitignore_path.read_text(encoding="utf-8")
-
-    # Add .env
-    gitignore_content, env_added = _add_gitignore_entry_with_prompt(
-        gitignore_content,
-        ".env",
-        "Add .env to .gitignore?",
-    )
-
-    # Add .erk/scratch/
-    gitignore_content, scratch_added = _add_gitignore_entry_with_prompt(
-        gitignore_content,
-        ".erk/scratch/",
-        "Add .erk/scratch/ to .gitignore (session-specific working files)?",
-    )
-
-    # Add .impl/
-    gitignore_content, impl_added = _add_gitignore_entry_with_prompt(
-        gitignore_content,
-        ".impl/",
-        "Add .impl/ to .gitignore (temporary implementation plans)?",
-    )
-
-    # Write if any entry was modified
-    if env_added or scratch_added or impl_added:
-        gitignore_path.write_text(gitignore_content, encoding="utf-8")
-        user_output(f"Updated {gitignore_path}")
 
 
 def print_shell_setup_instructions(
@@ -210,167 +108,57 @@ def perform_shell_setup(shell_ops: Shell) -> bool:
     return True
 
 
-def _get_presets_dir() -> Path:
-    """Get the path to the presets directory."""
-    return Path(__file__).parent.parent / "presets"
-
-
-def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
-    """Offer to add erk permission to repo's Claude Code settings.
-
-    This checks if the repo's .claude/settings.json exists and whether the erk
-    permission is already configured. If the file exists but permission is missing,
-    it prompts the user to add it.
+def _check_version_compatibility(
+    repo_root: Path, installed_version: str
+) -> tuple[bool, str | None]:
+    """Check if installed version is compatible with required version.
 
     Args:
         repo_root: Path to the repository root
+        installed_version: Currently installed erk version
 
     Returns:
-        Path to backup file if one was created, NoBackupCreated sentinel otherwise.
+        Tuple of (compatible, required_version)
+        - compatible: True if versions match or no version file exists
+        - required_version: Required version string or None if no file
     """
-    settings_path = get_repo_claude_settings_path(repo_root)
+    required_version = get_required_version(repo_root)
+    if required_version is None:
+        return (True, None)
 
-    try:
-        settings = read_claude_settings(settings_path)
-    except json.JSONDecodeError as e:
-        warning = click.style("⚠️  Warning: ", fg="yellow")
-        user_output(warning + "Invalid JSON in .claude/settings.json")
-        user_output(f"   {e}")
-        return NoBackupCreated()
+    if is_version_mismatch(installed_version, required_version):
+        return (False, required_version)
 
-    # No settings file - skip silently (repo may not have Claude settings)
-    if settings is None:
-        return NoBackupCreated()
-
-    # Permission already exists - skip silently
-    if has_erk_permission(settings):
-        return NoBackupCreated()
-
-    # Offer to add permission
-    user_output("\nClaude settings found. The erk permission allows Claude to run")
-    user_output("erk commands without prompting for approval each time.")
-
-    if not click.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
-        user_output("Skipped. You can add the permission manually to .claude/settings.json")
-        return NoBackupCreated()
-
-    # Add permission
-    new_settings = add_erk_permission(settings)
-
-    # Confirm before overwriting
-    user_output(f"\nThis will update: {settings_path}")
-    if not click.confirm("Proceed with writing changes?", default=True):
-        user_output("Skipped. No changes made to settings.json")
-        return NoBackupCreated()
-
-    backup_result = write_claude_settings(settings_path, new_settings)
-    user_output(click.style("✓", fg="green") + f" Added {ERK_PERMISSION} to {settings_path}")
-
-    # If backup was created, inform user (deletion offered at end of init)
-    if not isinstance(backup_result, NoBackupCreated):
-        user_output(f"\n📁 Backup created: {backup_result}")
-        user_output(f"   To restore: cp {backup_result} {settings_path}")
-
-    return backup_result
-
-
-def offer_backup_cleanup(backup_path: Path) -> None:
-    """Offer to delete a backup file.
-
-    Args:
-        backup_path: Path to the backup file to potentially delete
-    """
-    if click.confirm("Delete backup?", default=True):
-        backup_path.unlink()
-        user_output(click.style("✓", fg="green") + " Backup deleted")
-
-
-def offer_claude_hook_setup(repo_root: Path) -> None:
-    """Offer to add erk hooks to repo's Claude Code settings.
-
-    This checks if the repo's .claude/settings.json exists and whether the erk
-    hooks are already configured. If the file exists but hooks are missing,
-    it prompts the user to add them.
-
-    Args:
-        repo_root: Path to the repository root
-    """
-    settings_path = get_repo_claude_settings_path(repo_root)
-
-    try:
-        settings = read_claude_settings(settings_path)
-    except json.JSONDecodeError as e:
-        warning = click.style("⚠️  Warning: ", fg="yellow")
-        user_output(warning + "Invalid JSON in .claude/settings.json")
-        user_output(f"   {e}")
-        return
-
-    # No settings file - will create one
-    creating_new_file = settings is None
-    if creating_new_file:
-        settings = {}
-        user_output(f"\nNo .claude/settings.json found. Will create: {settings_path}")
-
-    if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):
-        user_output(click.style("✓", fg="green") + " Hooks already configured")
-        return
-
-    # Explain what hooks do
-    user_output("\nErk uses Claude Code hooks for session management and plan tracking.")
-
-    if not click.confirm("Add erk hooks to .claude/settings.json?", default=True):
-        user_output("Skipped. You can add hooks later with: erk init --hooks")
-        return
-
-    new_settings = add_erk_hooks(settings)
-    write_claude_settings(settings_path, new_settings)
-    user_output(click.style("✓", fg="green") + " Added erk hooks")
+    return (True, required_version)
 
 
 @click.command("init")
-@click.option("--force", is_flag=True, help="Overwrite existing repo config if present.")
-@click.option(
-    "--preset",
-    type=str,
-    default="auto",
-    help=(
-        "Config template to use. 'auto' detects preset based on repo characteristics. "
-        f"Available: auto, {', '.join(discover_presets(_get_presets_dir()))}."
-    ),
-)
-@click.option(
-    "--list-presets",
-    is_flag=True,
-    help="List available presets and exit.",
-)
 @click.option(
     "--shell",
     is_flag=True,
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
-@click.option(
-    "--hooks",
-    "hooks_only",
-    is_flag=True,
-    help="Only set up Claude Code hooks.",
-)
-@click.option(
-    "--no-interactive",
-    "no_interactive",
-    is_flag=True,
-    help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
-)
 @click.pass_obj
 def init_cmd(
     ctx: ErkContext,
-    force: bool,
-    preset: str,
-    list_presets: bool,
     shell: bool,
-    hooks_only: bool,
-    no_interactive: bool,
 ) -> None:
-    """Initialize erk for this repo and scaffold config.toml."""
+    """Set up local erk development environment.
+
+    This command performs local developer setup for an erk-ified repository:
+
+    1. Checks if the repository has been initialized with 'erk project init'
+    2. Verifies version compatibility with the repository's required version
+    3. Sets up global configuration (erk root, graphite detection)
+    4. Optionally configures shell integration
+
+    For repo admins setting up erk in a new project, use 'erk project init' instead.
+
+    Example:
+        cd /path/to/erk-ified-repo
+        erk init
+    """
+    installed_version = get_current_version()
 
     # Handle --shell flag: only do shell setup
     if shell:
@@ -411,30 +199,7 @@ def init_cmd(
                 raise SystemExit(1) from e
         return
 
-    # Handle --hooks flag: only do hook setup
-    if hooks_only:
-        repo_context = discover_repo_context(ctx, ctx.cwd)
-        offer_claude_hook_setup(repo_context.root)
-        return
-
-    # Discover available presets on demand
-    presets_dir = _get_presets_dir()
-    available_presets = discover_presets(presets_dir)
-    valid_choices = ["auto"] + available_presets
-
-    # Handle --list-presets flag
-    if list_presets:
-        user_output("Available presets:")
-        for p in available_presets:
-            user_output(f"  - {p}")
-        return
-
-    # Validate preset choice
-    if preset not in valid_choices:
-        user_output(f"Invalid preset '{preset}'. Available options: {', '.join(valid_choices)}")
-        raise SystemExit(1)
-
-    # Track if this is the first time init is run
+    # Track if this is the first time init is run (for shell setup offer)
     first_time_init = False
 
     # Check for global config first
@@ -458,60 +223,74 @@ def init_cmd(
         else:
             user_output("Graphite (gt) not detected - will use 'git' for branch creation")
 
-    # Now proceed with repo-specific setup
+    # Discover repo context
     repo_context = discover_repo_context(ctx, ctx.cwd)
 
-    # Ensure .erk directory exists
+    # Check if repo is erk-ified
     erk_dir = repo_context.root / ".erk"
-    erk_dir.mkdir(parents=True, exist_ok=True)
-
-    # All repo config now goes to .erk/config.toml (consolidated location)
-    cfg_path = erk_dir / "config.toml"
-
-    # Also ensure metadata directory exists (needed for worktrees dir)
-    ensure_erk_metadata_dir(repo_context)
-
-    if cfg_path.exists() and not force:
-        user_output(f"Config already exists: {cfg_path}. Use --force to overwrite.")
+    if not erk_dir.exists():
+        user_output("")
+        user_output(click.style("⚠️  Repository not erk-ified", fg="yellow"))
+        user_output("")
+        user_output("This repository hasn't been set up for erk yet.")
+        user_output("For repo admins: run 'erk project init' to erk-ify this repository.")
+        user_output("")
+        user_output("If you're a developer on an already erk-ified repo, make sure you're")
+        user_output("in the correct directory and have pulled the latest changes.")
         raise SystemExit(1)
 
-    effective_preset: str | None
-    choice = preset.lower()
-    if choice == "auto":
-        effective_preset = "dagster" if is_repo_named(repo_context.root, "dagster") else "generic"
-    else:
-        effective_preset = choice
+    # Check version compatibility
+    compatible, required_version = _check_version_compatibility(
+        repo_context.root, installed_version
+    )
 
-    content = render_config_template(presets_dir, effective_preset)
-    cfg_path.write_text(content, encoding="utf-8")
-    user_output(f"Wrote {cfg_path}")
+    if not compatible and required_version is not None:
+        user_output("")
+        user_output(click.style("⚠️  Version mismatch", fg="yellow"))
+        user_output(f"   Installed: {installed_version}")
+        user_output(f"   Required:  {required_version}")
+        user_output("")
 
-    # Sync artifacts (skills, commands, agents, workflows)
-    sync_result = sync_artifacts(repo_context.root, force=False)
-    if sync_result.success:
-        user_output(click.style("✓ ", fg="green") + sync_result.message)
-    else:
-        # Non-fatal: warn but continue init
-        user_output(click.style("⚠ ", fg="yellow") + f"Artifact sync failed: {sync_result.message}")
-        user_output("  Run 'erk artifact sync' to retry")
+        from packaging.version import Version
 
-    # Create prompt hooks directory with README
-    _create_prompt_hooks_directory(repo_root=repo_context.root)
+        installed_v = Version(installed_version)
+        required_v = Version(required_version)
 
-    # Skip interactive prompts if requested
-    interactive = not no_interactive
+        if installed_v < required_v:
+            # User needs to upgrade their local erk
+            user_output("Your erk is older than the project requires.")
+            user_output("Run: uv tool upgrade erk")
+        else:
+            # User has newer erk - project may need upgrading
+            user_output("Your erk is newer than the project requires.")
+            user_output("If you're the project maintainer, run: erk project upgrade")
+            user_output(
+                "Otherwise, you may need to downgrade: uv tool install erk@{required_version}"
+            )
 
-    # Track backup files for cleanup at end
-    pending_backup: Path | NoBackupCreated = NoBackupCreated()
+        raise SystemExit(1)
 
-    if interactive:
-        _run_gitignore_prompts(repo_context.root)
-        pending_backup = offer_claude_permission_setup(repo_context.root)
-        offer_claude_hook_setup(repo_context.root)
+    # Check local init state
+    local_state = load_local_state(repo_context.root)
+    if local_state is not None:
+        # Already initialized
+        if local_state.initialized_version == installed_version:
+            user_output(click.style("✓ ", fg="green") + "Local environment already initialized")
+            user_output(f"  Version: {installed_version}")
+            return
+        else:
+            old_ver = local_state.initialized_version
+            user_output(f"Updating local init state from {old_ver} to {installed_version}")
+
+    # Save local init state
+    new_state = create_local_init_state(installed_version)
+    save_local_state(repo_context.root, new_state)
+    user_output(
+        click.style("✓ ", fg="green") + f"Local environment initialized (v{installed_version})"
+    )
 
     # On first-time init, offer shell setup if not already completed
-    if first_time_init and interactive:
-        # Reload global config after creating it
+    if first_time_init:
         fresh_config = ctx.config_store.load()
         if not fresh_config.shell_setup_complete:
             setup_complete = perform_shell_setup(ctx.shell)
@@ -543,7 +322,3 @@ def init_cmd(
                         user_output("\nShell integration instructions were displayed above.")
                         msg = "You can use them now - erk just couldn't save this preference."
                         user_output(msg)
-
-    # Offer to clean up any pending backup files (at end to ensure safety)
-    if not isinstance(pending_backup, NoBackupCreated):
-        offer_backup_cleanup(pending_backup)
