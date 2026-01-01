@@ -58,11 +58,13 @@ erk exec post-pr-inline-comment \
 ## Step 6: Post Summary Comment
 
 Get the current UTC timestamp:
+
 ```
 date -u '+%Y-%m-%d %H:%M:%S'
 ```
 
 Post/update the summary comment:
+
 ```
 erk exec post-or-update-pr-summary \
   --pr-number {{ github.event.pull_request.number }} \
@@ -92,6 +94,7 @@ Found X issues across Y files. Inline comments posted for each.
 ```
 
 Activity log entry examples:
+
 - "Found 2 issues (LBYL violation in x.py, inline import in y.py)"
 - "All issues resolved"
 - "False positive dismissed: CLI error boundary pattern"
