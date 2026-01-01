@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from erk_shared.extraction.local_plans import (
+    extract_planning_agent_ids,
     extract_slugs_from_session,
     find_project_dir_for_session,
     get_latest_plan_content,
@@ -291,3 +292,235 @@ class TestGetLatestPlanContent:
         result = get_latest_plan_content(session_id=session_id)
 
         assert result == fallback_content
+
+
+class TestExtractPlanningAgentIds:
+    """Tests for extract_planning_agent_ids function."""
+
+    def test_extracts_plan_agent_ids(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Extracts agent IDs for Task invocations with subagent_type='Plan'."""
+        claude_dir = tmp_path / ".claude"
+        projects_dir = claude_dir / "projects"
+        project_dir = projects_dir / "-test-project"
+        project_dir.mkdir(parents=True)
+
+        session_id = "test-session-123"
+        session_log = project_dir / f"{session_id}.jsonl"
+        entries = [
+            # Task tool_use for Plan agent
+            {
+                "sessionId": session_id,
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_plan_123",
+                            "name": "Task",
+                            "input": {"subagent_type": "Plan", "prompt": "Plan something"},
+                        }
+                    ]
+                },
+            },
+            # tool_result with agentId
+            {
+                "sessionId": session_id,
+                "type": "user",
+                "message": {
+                    "content": [
+                        {"type": "tool_result", "tool_use_id": "toolu_plan_123"}
+                    ]
+                },
+                "toolUseResult": {"agentId": "abc123", "status": "completed"},
+            },
+        ]
+        session_log.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        result = extract_planning_agent_ids(session_id, cwd_hint="/test/project")
+
+        assert result == ["agent-abc123"]
+
+    def test_ignores_non_plan_agents(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Ignores Task invocations with other subagent_types (devrun, Explore)."""
+        claude_dir = tmp_path / ".claude"
+        projects_dir = claude_dir / "projects"
+        project_dir = projects_dir / "-test-project"
+        project_dir.mkdir(parents=True)
+
+        session_id = "test-session-456"
+        session_log = project_dir / f"{session_id}.jsonl"
+        entries = [
+            # Task tool_use for devrun agent (should be ignored)
+            {
+                "sessionId": session_id,
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_devrun_123",
+                            "name": "Task",
+                            "input": {"subagent_type": "devrun", "prompt": "Run tests"},
+                        }
+                    ]
+                },
+            },
+            {
+                "sessionId": session_id,
+                "type": "user",
+                "message": {
+                    "content": [
+                        {"type": "tool_result", "tool_use_id": "toolu_devrun_123"}
+                    ]
+                },
+                "toolUseResult": {"agentId": "devrun123", "status": "completed"},
+            },
+            # Task tool_use for Explore agent (should be ignored)
+            {
+                "sessionId": session_id,
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_explore_456",
+                            "name": "Task",
+                            "input": {"subagent_type": "Explore", "prompt": "Find files"},
+                        }
+                    ]
+                },
+            },
+            {
+                "sessionId": session_id,
+                "type": "user",
+                "message": {
+                    "content": [
+                        {"type": "tool_result", "tool_use_id": "toolu_explore_456"}
+                    ]
+                },
+                "toolUseResult": {"agentId": "explore456", "status": "completed"},
+            },
+        ]
+        session_log.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        result = extract_planning_agent_ids(session_id, cwd_hint="/test/project")
+
+        assert result == []
+
+    def test_returns_empty_for_no_plan_agents(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Returns empty list when session has no Plan agent invocations."""
+        claude_dir = tmp_path / ".claude"
+        projects_dir = claude_dir / "projects"
+        project_dir = projects_dir / "-test-project"
+        project_dir.mkdir(parents=True)
+
+        session_id = "test-session-789"
+        session_log = project_dir / f"{session_id}.jsonl"
+        entries = [
+            {"sessionId": session_id, "type": "start"},
+            {"sessionId": session_id, "type": "end"},
+        ]
+        session_log.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        result = extract_planning_agent_ids(session_id, cwd_hint="/test/project")
+
+        assert result == []
+
+    def test_returns_empty_when_session_not_found(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Returns empty list when session ID not found."""
+        claude_dir = tmp_path / ".claude"
+        projects_dir = claude_dir / "projects"
+        projects_dir.mkdir(parents=True)
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        result = extract_planning_agent_ids("nonexistent-session", cwd_hint=None)
+
+        assert result == []
+
+    def test_extracts_multiple_plan_agents(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Extracts all Plan agent IDs when multiple exist."""
+        claude_dir = tmp_path / ".claude"
+        projects_dir = claude_dir / "projects"
+        project_dir = projects_dir / "-test-project"
+        project_dir.mkdir(parents=True)
+
+        session_id = "test-session-multi"
+        session_log = project_dir / f"{session_id}.jsonl"
+        entries = [
+            # First Plan agent
+            {
+                "sessionId": session_id,
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_plan_1",
+                            "name": "Task",
+                            "input": {"subagent_type": "Plan", "prompt": "First plan"},
+                        }
+                    ]
+                },
+            },
+            {
+                "sessionId": session_id,
+                "type": "user",
+                "message": {
+                    "content": [
+                        {"type": "tool_result", "tool_use_id": "toolu_plan_1"}
+                    ]
+                },
+                "toolUseResult": {"agentId": "first123", "status": "completed"},
+            },
+            # Second Plan agent
+            {
+                "sessionId": session_id,
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "id": "toolu_plan_2",
+                            "name": "Task",
+                            "input": {"subagent_type": "Plan", "prompt": "Second plan"},
+                        }
+                    ]
+                },
+            },
+            {
+                "sessionId": session_id,
+                "type": "user",
+                "message": {
+                    "content": [
+                        {"type": "tool_result", "tool_use_id": "toolu_plan_2"}
+                    ]
+                },
+                "toolUseResult": {"agentId": "second456", "status": "completed"},
+            },
+        ]
+        session_log.write_text("\n".join(json.dumps(e) for e in entries), encoding="utf-8")
+
+        monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+        result = extract_planning_agent_ids(session_id, cwd_hint="/test/project")
+
+        assert len(result) == 2
+        assert "agent-first123" in result
+        assert "agent-second456" in result
