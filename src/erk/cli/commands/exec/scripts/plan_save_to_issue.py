@@ -34,14 +34,10 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.extraction.local_plans import (
-    extract_planning_agent_ids,
-    extract_slugs_from_session,
-    get_plans_dir,
-)
+from erk_shared.extraction.local_plans import extract_slugs_from_session, get_plans_dir
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
-from erk_shared.scratch.plan_snapshots import snapshot_plan_file
+from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
@@ -192,30 +188,22 @@ def plan_save_to_issue(
         _create_plan_saved_signal(effective_session_id, repo_root)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
-        # Determine plan file path and slug
+        # Determine plan file path
         if plan_file:
             snapshot_path = plan_file
-            snapshot_slug = plan_file.stem  # filename without extension
         else:
             # Look up slug from session to find plan file
             slugs = extract_slugs_from_session(effective_session_id, cwd_hint=str(cwd))
             if slugs:
-                snapshot_slug = slugs[-1]
-                snapshot_path = get_plans_dir() / f"{snapshot_slug}.md"
+                snapshot_path = get_plans_dir() / f"{slugs[-1]}.md"
             else:
-                snapshot_slug = None
                 snapshot_path = None
 
-        if snapshot_path is not None and snapshot_path.exists() and snapshot_slug is not None:
-            planning_agent_ids = extract_planning_agent_ids(
-                effective_session_id,
-                cwd_hint=str(cwd),
-            )
-            snapshot_plan_file(
+        if snapshot_path is not None and snapshot_path.exists():
+            snapshot_plan_for_session(
                 session_id=effective_session_id,
                 plan_file_path=snapshot_path,
-                slug=snapshot_slug,
-                planning_agent_ids=planning_agent_ids,
+                cwd_hint=str(cwd),
                 repo_root=repo_root,
             )
 

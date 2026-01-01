@@ -180,6 +180,7 @@ def test_snapshot_plan_file_writes_metadata(tmp_path: Path) -> None:
     )
 
     assert result.metadata_file.exists()
+    assert result.metadata_file.name == "test-slug.meta.json"
     metadata = json.loads(result.metadata_file.read_text(encoding="utf-8"))
 
     assert metadata["slug"] == "test-slug"

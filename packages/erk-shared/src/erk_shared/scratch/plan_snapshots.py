@@ -6,11 +6,11 @@ This compensates for Claude Code's opaque plan file naming and overwrite behavio
 Storage layout:
     .erk/scratch/sessions/<session-id>/plans/
         000001-a1b2c3d4/
-            quirky-drifting-comet.md   # Original Claude filename preserved
-            meta.json                  # Provenance metadata
+            quirky-drifting-comet.md        # Original Claude filename preserved
+            quirky-drifting-comet.meta.json # Provenance metadata
         000002-e5f6g7h8/
             bold-flying-star.md
-            meta.json
+            bold-flying-star.meta.json
 """
 
 import hashlib
@@ -20,6 +20,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from erk_shared.extraction.local_plans import (
+    extract_planning_agent_ids,
+    extract_slugs_from_session,
+)
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
@@ -31,7 +35,7 @@ class PlanSnapshotMetadata:
     captured_at: str
     content_hash: str
     source_path: str
-    planning_agent_ids: tuple[str, ...]
+    planning_agent_ids: list[str]
 
 
 @dataclass(frozen=True)
@@ -183,15 +187,15 @@ def snapshot_plan_file(
         captured_at=datetime.now(UTC).isoformat(),
         content_hash=content_hash,
         source_path=str(plan_file_path),
-        planning_agent_ids=tuple(planning_agent_ids),
+        planning_agent_ids=list(planning_agent_ids),
     )
-    metadata_file = snapshot_dir / "meta.json"
+    metadata_file = snapshot_dir / f"{slug}.meta.json"
     metadata_dict = {
         "slug": metadata.slug,
         "captured_at": metadata.captured_at,
         "content_hash": metadata.content_hash,
         "source_path": metadata.source_path,
-        "planning_agent_ids": list(metadata.planning_agent_ids),
+        "planning_agent_ids": metadata.planning_agent_ids,
     }
     metadata_file.write_text(json.dumps(metadata_dict, indent=2), encoding="utf-8")
 
@@ -201,4 +205,39 @@ def snapshot_plan_file(
         metadata_file=metadata_file,
         sequence_number=sequence,
         content_hash_short=hash_short,
+    )
+
+
+def snapshot_plan_for_session(
+    session_id: str,
+    plan_file_path: Path,
+    cwd_hint: str,
+    *,
+    repo_root: Path | None = None,
+) -> PlanSnapshot:
+    """Snapshot a plan file with session context auto-discovery.
+
+    Convenience function that extracts the slug and planning agent IDs
+    from session logs, then calls snapshot_plan_file.
+
+    Args:
+        session_id: Claude session ID.
+        plan_file_path: Path to the plan file to snapshot.
+        cwd_hint: Current working directory hint for session lookup.
+        repo_root: Repo root path. If None, auto-detects via git.
+
+    Returns:
+        PlanSnapshot with paths to created files.
+    """
+    slugs = extract_slugs_from_session(session_id, cwd_hint=cwd_hint)
+    slug = slugs[-1] if slugs else "unknown"
+
+    planning_agent_ids = extract_planning_agent_ids(session_id, cwd_hint=cwd_hint)
+
+    return snapshot_plan_file(
+        session_id=session_id,
+        plan_file_path=plan_file_path,
+        slug=slug,
+        planning_agent_ids=planning_agent_ids,
+        repo_root=repo_root,
     )
