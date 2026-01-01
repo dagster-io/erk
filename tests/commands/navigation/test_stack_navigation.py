@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
@@ -323,10 +324,10 @@ def test_up_down_graphite_not_enabled() -> None:
             git_common_dirs={env.cwd: env.git_dir},
         )
 
-        # Graphite is NOT enabled
-        graphite_ops = FakeGraphite()
+        # Graphite is NOT enabled - use GraphiteDisabled sentinel
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
-        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops)
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
         # Try 'erk up'
         result = runner.invoke(cli, ["up"], obj=test_ctx, catch_exceptions=False)
