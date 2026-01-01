@@ -1,0 +1,24 @@
+name: "Setup Claude Code and Erk"
+description: "Install uv, Claude Code CLI, and erk tools"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install uv
+      shell: bash
+      run: |
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.cargo/bin" >> $GITHUB_PATH
+
+    - name: Install Claude Code
+      shell: bash
+      run: |
+        curl -fsSL https://claude.ai/install.sh | bash
+        echo "$HOME/.claude/local" >> $GITHUB_PATH
+
+    - name: Install erk
+      shell: bash
+      run: |
+        source $HOME/.cargo/env
+        cd $GITHUB_WORKSPACE
+        uv tool install --from . --with ./packages/erk-shared erk
