@@ -11,9 +11,40 @@ from erk.core.claude_settings import (
 )
 
 
-def _compute_content_hash(path: Path) -> str:
-    """Compute SHA256 hash of file content."""
+def _compute_file_hash(path: Path) -> str:
+    """Compute SHA256 hash of single file content."""
     return hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+
+
+def _compute_directory_hash(path: Path) -> str:
+    """Compute combined hash of all files in directory.
+
+    Includes relative path in hash to detect structural changes (renames, moves).
+    Files are processed in sorted order for deterministic hashing.
+    """
+    hasher = hashlib.sha256()
+    for file_path in sorted(path.rglob("*")):
+        if file_path.is_file():
+            # Include relative path in hash for structural changes
+            hasher.update(file_path.relative_to(path).as_posix().encode())
+            hasher.update(file_path.read_bytes())
+    return hasher.hexdigest()[:16]
+
+
+def _compute_hook_hash(command: str) -> str:
+    """Compute hash of hook command string."""
+    return hashlib.sha256(command.encode()).hexdigest()[:16]
+
+
+def _compute_content_hash(path: Path) -> str:
+    """Compute SHA256 hash of file or directory content.
+
+    For files: hashes the file content directly.
+    For directories: hashes all files with their relative paths.
+    """
+    if path.is_dir():
+        return _compute_directory_hash(path)
+    return _compute_file_hash(path)
 
 
 def _discover_skills(claude_dir: Path) -> list[InstalledArtifact]:
@@ -21,6 +52,9 @@ def _discover_skills(claude_dir: Path) -> list[InstalledArtifact]:
 
     Skills are identified by their SKILL.md entry point file.
     Pattern: skills/<skill-name>/SKILL.md
+
+    Content hash is computed over the entire skill directory (all files),
+    not just the SKILL.md entry point.
     """
     skills_dir = claude_dir / "skills"
     if not skills_dir.exists():
@@ -37,7 +71,8 @@ def _discover_skills(claude_dir: Path) -> list[InstalledArtifact]:
                     name=skill_dir.name,
                     artifact_type="skill",
                     path=skill_file,
-                    content_hash=_compute_content_hash(skill_file),
+                    # Hash the entire skill directory, not just SKILL.md
+                    content_hash=_compute_directory_hash(skill_dir),
                 )
             )
     return artifacts
@@ -89,6 +124,9 @@ def _discover_agents(claude_dir: Path) -> list[InstalledArtifact]:
     """Discover agents in .claude/agents/ directory.
 
     Pattern: agents/<agent-name>/<agent-name>.md
+
+    Content hash is computed over the entire agent directory (all files),
+    not just the entry point file.
     """
     agents_dir = claude_dir / "agents"
     if not agents_dir.exists():
@@ -106,7 +144,8 @@ def _discover_agents(claude_dir: Path) -> list[InstalledArtifact]:
                     name=agent_dir.name,
                     artifact_type="agent",
                     path=agent_file,
-                    content_hash=_compute_content_hash(agent_file),
+                    # Hash the entire agent directory, not just entry point
+                    content_hash=_compute_directory_hash(agent_dir),
                 )
             )
     return artifacts
@@ -202,7 +241,7 @@ def _discover_hooks(claude_dir: Path) -> list[InstalledArtifact]:
                         name=name,
                         artifact_type="hook",
                         path=settings_path,
-                        content_hash=None,  # Hooks don't have individual content hashes
+                        content_hash=_compute_hook_hash(command),
                     )
                 )
 

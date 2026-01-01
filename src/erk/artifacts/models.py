@@ -1,5 +1,6 @@
 """Data models for artifact management."""
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -21,10 +22,19 @@ class InstalledArtifact:
 
 
 @dataclass(frozen=True)
+class ArtifactFileState:
+    """Per-artifact state tracking version and hash at sync time."""
+
+    version: str  # erk version when this artifact was synced
+    hash: str  # content hash at sync time
+
+
+@dataclass(frozen=True)
 class ArtifactState:
     """State stored in .erk/state.toml tracking installed artifacts."""
 
-    version: str
+    version: str  # last full sync version (keep for backwards compat)
+    files: Mapping[str, ArtifactFileState]  # key: artifact path like "skills/dignified-python"
 
 
 @dataclass(frozen=True)

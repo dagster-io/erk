@@ -4,9 +4,15 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.artifact_health import find_missing_artifacts, find_orphaned_artifacts
+from erk.artifacts.artifact_health import (
+    ArtifactStatus,
+    find_missing_artifacts,
+    find_orphaned_artifacts,
+    get_artifact_health,
+)
 from erk.artifacts.discovery import discover_artifacts
 from erk.artifacts.staleness import check_staleness
+from erk.artifacts.state import load_artifact_state
 
 
 def _display_orphan_warnings(orphans: dict[str, list[str]]) -> None:
@@ -70,8 +76,60 @@ def _display_installed_artifacts(project_dir: Path) -> None:
             click.echo(f"   hooks/{artifact.name} (settings.json)")
 
 
+def _format_artifact_status(artifact: ArtifactStatus) -> str:
+    """Format artifact status for verbose output."""
+    if artifact.status == "up-to-date":
+        icon = click.style("✓", fg="green")
+        detail = f"{artifact.current_version} (up to date)"
+    elif artifact.status == "changed-upstream":
+        icon = click.style("⚠", fg="yellow")
+        if artifact.installed_version:
+            detail = f"{artifact.installed_version} → {artifact.current_version} (changed upstream)"
+        else:
+            detail = f"→ {artifact.current_version} (new in this version)"
+    elif artifact.status == "locally-modified":
+        icon = click.style("⚠", fg="yellow")
+        detail = f"{artifact.current_version} (locally modified)"
+    else:  # not-installed
+        icon = click.style("✗", fg="red")
+        detail = "(not installed)"
+
+    return f"  {icon} {artifact.name}: {detail}"
+
+
+def _display_verbose_status(project_dir: Path) -> bool:
+    """Display per-artifact status breakdown.
+
+    Returns True if any artifacts need attention (not up-to-date).
+    """
+    state = load_artifact_state(project_dir)
+    saved_files = dict(state.files) if state else {}
+
+    health_result = get_artifact_health(project_dir, saved_files)
+
+    if health_result.skipped_reason is not None:
+        return False
+
+    click.echo("")
+    click.echo("Artifact status:")
+
+    has_issues = False
+    for artifact in health_result.artifacts:
+        click.echo(_format_artifact_status(artifact))
+        if artifact.status != "up-to-date":
+            has_issues = True
+
+    return has_issues
+
+
 @click.command("check")
-def check_cmd() -> None:
+@click.option(
+    "--verbose",
+    "-v",
+    is_flag=True,
+    help="Show per-artifact version and modification status.",
+)
+def check_cmd(verbose: bool) -> None:
     """Check if artifacts are in sync with erk version.
 
     Compares the version recorded in .erk/state.toml against
@@ -83,6 +141,10 @@ def check_cmd() -> None:
     \b
       # Check sync status
       erk artifact check
+
+    \b
+      # Show per-artifact breakdown
+      erk artifact check --verbose
     """
     project_dir = Path.cwd()
 
@@ -112,7 +174,14 @@ def check_cmd() -> None:
             click.style("✓ ", fg="green")
             + f"Artifacts up to date (v{staleness_result.current_version})"
         )
-        _display_installed_artifacts(project_dir)
+        if not verbose:
+            _display_installed_artifacts(project_dir)
+
+    # Show verbose per-artifact breakdown if requested
+    if verbose and staleness_result.reason not in ("erk-repo", "not-initialized"):
+        verbose_has_issues = _display_verbose_status(project_dir)
+        if verbose_has_issues:
+            has_errors = True
 
     # Check for orphans (skip if erk-repo or no-claude-dir)
     if orphan_result.skipped_reason is None:
