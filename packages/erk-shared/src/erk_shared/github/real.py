@@ -1828,28 +1828,30 @@ query {{
     ) -> int | None:
         """Find a PR/issue comment containing a specific HTML marker.
 
-        Uses gh pr view to get comments and searches for the marker.
+        Uses REST API to list issue comments (PRs are issues in GitHub's model).
+        Returns the numeric database ID needed for update operations.
+        Fetches all comments as JSON and searches in Python to avoid
+        shell escaping issues with special characters in markers.
         """
         cmd = [
             "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "comments",
-            "--jq",
-            f'.comments[] | select(.body | contains("{marker}")) | .databaseId',
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
+            "--paginate",
         ]
 
         try:
             stdout = execute_gh_command(cmd, repo_root)
-            # jq returns each match on a separate line; take first match
-            lines = stdout.strip().split("\n")
-            if lines and lines[0]:
-                return int(lines[0])
+            comments = json.loads(stdout)
+            for comment in comments:
+                body = comment.get("body", "")
+                if marker in body:
+                    comment_id = comment.get("id")
+                    if comment_id is not None:
+                        return int(comment_id)
             return None
         except RuntimeError:
-            # No matching comment found
+            # Command failed
             return None
 
     def update_pr_comment(
@@ -1881,30 +1883,16 @@ query {{
     ) -> int:
         """Create a new comment on a PR.
 
-        Uses gh pr comment and then fetches the comment ID.
+        Uses GitHub REST API to create the comment and returns the ID.
+        PRs are issues in GitHub's data model, so we use the issues endpoint.
         """
-        # Use gh pr comment to create the comment
         cmd = [
             "gh",
-            "pr",
-            "comment",
-            str(pr_number),
-            "--body",
-            body,
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{pr_number}/comments",
+            "-f",
+            f"body={body}",
         ]
-        execute_gh_command(cmd, repo_root)
-
-        # Fetch the latest comment to get its ID
-        # The comment we just created should be the most recent one
-        get_cmd = [
-            "gh",
-            "pr",
-            "view",
-            str(pr_number),
-            "--json",
-            "comments",
-            "--jq",
-            ".comments[-1].databaseId",
-        ]
-        stdout = execute_gh_command(get_cmd, repo_root)
-        return int(stdout.strip())
+        stdout = execute_gh_command(cmd, repo_root)
+        response = json.loads(stdout)
+        return response["id"]

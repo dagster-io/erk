@@ -840,3 +840,126 @@ def test_fake_github_merge_pr_returns_error_string_on_failure() -> None:
     assert isinstance(result, str)
     assert "Merge failed" in result
     assert ops.merged_prs == []  # PR was not merged
+
+
+# Tests for create_pr_review_comment
+
+
+def test_fake_github_create_pr_review_comment_returns_int_id() -> None:
+    """Test create_pr_review_comment returns an integer comment ID."""
+    ops = FakeGitHub()
+
+    result = ops.create_pr_review_comment(
+        sentinel_path(),
+        pr_number=123,
+        body="**Dignified Python**: Use LBYL pattern",
+        commit_sha="abc123",
+        path="src/foo.py",
+        line=42,
+    )
+
+    # Must return an integer ID, not None or string
+    assert isinstance(result, int)
+    assert result > 0
+
+
+def test_fake_github_create_pr_review_comment_tracks_mutation() -> None:
+    """Test create_pr_review_comment tracks the comment in mutation list."""
+    ops = FakeGitHub()
+
+    ops.create_pr_review_comment(
+        sentinel_path(),
+        pr_number=123,
+        body="Comment body",
+        commit_sha="abc123",
+        path="src/foo.py",
+        line=42,
+    )
+
+    assert ops.pr_review_comments == [(123, "Comment body", "abc123", "src/foo.py", 42)]
+
+
+def test_fake_github_create_pr_review_comment_increments_ids() -> None:
+    """Test create_pr_review_comment returns unique incrementing IDs."""
+    ops = FakeGitHub()
+
+    id1 = ops.create_pr_review_comment(sentinel_path(), 123, "First", "sha1", "file1.py", 1)
+    id2 = ops.create_pr_review_comment(sentinel_path(), 123, "Second", "sha2", "file2.py", 2)
+
+    assert id2 > id1
+    assert len(ops.pr_review_comments) == 2
+
+
+# Tests for create_pr_comment
+
+
+def test_fake_github_create_pr_comment_returns_int_id() -> None:
+    """Test create_pr_comment returns an integer comment ID."""
+    ops = FakeGitHub()
+
+    result = ops.create_pr_comment(sentinel_path(), 123, "Summary comment")
+
+    # Must return an integer ID, not None or string
+    assert isinstance(result, int)
+    assert result > 0
+
+
+def test_fake_github_create_pr_comment_tracks_mutation() -> None:
+    """Test create_pr_comment tracks the comment in mutation list."""
+    ops = FakeGitHub()
+
+    ops.create_pr_comment(sentinel_path(), 123, "Summary comment body")
+
+    assert ops.pr_comments == [(123, "Summary comment body")]
+
+
+# Tests for find_pr_comment_by_marker
+
+
+def test_fake_github_find_pr_comment_by_marker_returns_none_when_not_found() -> None:
+    """Test find_pr_comment_by_marker returns None when no matching comment."""
+    ops = FakeGitHub()
+
+    result = ops.find_pr_comment_by_marker(sentinel_path(), 123, "<!-- my-marker -->")
+
+    assert result is None
+
+
+def test_fake_github_find_pr_comment_by_marker_finds_matching_comment() -> None:
+    """Test find_pr_comment_by_marker finds comment containing marker."""
+    ops = FakeGitHub()
+
+    # Create a comment with a marker
+    ops.create_pr_comment(sentinel_path(), 123, "Header\n\n<!-- my-marker -->\n\nBody")
+
+    result = ops.find_pr_comment_by_marker(sentinel_path(), 123, "<!-- my-marker -->")
+
+    # Should find the comment we just created
+    assert result is not None
+    assert isinstance(result, int)
+
+
+def test_fake_github_find_pr_comment_by_marker_ignores_different_pr() -> None:
+    """Test find_pr_comment_by_marker only searches specified PR."""
+    ops = FakeGitHub()
+
+    # Create comment on PR 123
+    ops.create_pr_comment(sentinel_path(), 123, "<!-- marker -->\nOn PR 123")
+
+    # Search on PR 456
+    result = ops.find_pr_comment_by_marker(sentinel_path(), 456, "<!-- marker -->")
+
+    # Should not find it
+    assert result is None
+
+
+# Tests for update_pr_comment
+
+
+def test_fake_github_update_pr_comment_tracks_mutation() -> None:
+    """Test update_pr_comment tracks the update in mutation list."""
+    ops = FakeGitHub()
+
+    ops.update_pr_comment(sentinel_path(), 12345, "Updated body")
+
+    assert ops.pr_comment_updates == [(12345, "Updated body")]
