@@ -57,11 +57,15 @@ erk exec post-pr-inline-comment \
 
 ## Step 6: Post Summary Comment
 
-Get the current Pacific time timestamp:
+**IMPORTANT: All timestamps MUST be in Pacific Time (PT), NOT UTC.**
+
+Get the current Pacific time timestamp by running this command:
 
 ```
 TZ='America/Los_Angeles' date '+%Y-%m-%d %H:%M:%S'
 ```
+
+Use this timestamp (with " PT" suffix) for both "Last updated" and Activity Log entries.
 
 Post/update the summary comment:
 
