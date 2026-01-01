@@ -14,14 +14,24 @@ Read these skill files from the repository:
 3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
 4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
 
-## Step 2: Get the Python Diff
+## Step 2: Get Existing Review Comment
+
+Fetch the existing review comment to preserve the activity log:
+
+```
+gh pr view {{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("<!-- dignified-python-review -->")) | .body'
+```
+
+If a comment exists, extract the Activity Log section (everything after `### Activity Log`). You will append to this log.
+
+## Step 3: Get the Python Diff
 
 ```
 gh pr diff {{ github.event.pull_request.number }} --name-only | grep '\.py$'
 gh pr diff {{ github.event.pull_request.number }}
 ```
 
-## Step 3: Analyze Code
+## Step 4: Analyze Code
 
 Check each Python file against dignified-python rules:
 
@@ -33,7 +43,7 @@ Check each Python file against dignified-python rules:
 - Dependency injection with ABC
 - Frozen dataclasses
 
-## Step 4: Post Inline Comments
+## Step 5: Post Inline Comments
 
 **IMPORTANT: You MUST post an inline comment for EACH violation found.**
 
@@ -45,8 +55,14 @@ erk exec post-pr-inline-comment \
   --body "**Dignified Python**: [rule violated] - [fix suggestion]"
 ```
 
-## Step 5: Post Summary Comment
+## Step 6: Post Summary Comment
 
+Get the current UTC timestamp:
+```
+date -u '+%Y-%m-%d %H:%M:%S'
+```
+
+Post/update the summary comment:
 ```
 erk exec post-or-update-pr-summary \
   --pr-number {{ github.event.pull_request.number }} \
@@ -54,15 +70,30 @@ erk exec post-or-update-pr-summary \
   --body "SUMMARY_TEXT"
 ```
 
-Summary format:
+Summary format (preserve existing Activity Log entries and prepend new entry):
 
 ```
 <!-- dignified-python-review -->
 
 ## Dignified Python Review
 
+**Last updated:** YYYY-MM-DD HH:MM:SS UTC
+
 Found X issues across Y files. Inline comments posted for each.
 
 ### Files Reviewed
 - `file.py`: N issues
+
+---
+
+### Activity Log
+- **YYYY-MM-DD HH:MM:SS**: [Brief description of this review's findings]
+- [Previous log entries preserved here...]
 ```
+
+Activity log entry examples:
+- "Found 2 issues (LBYL violation in x.py, inline import in y.py)"
+- "All issues resolved"
+- "False positive dismissed: CLI error boundary pattern"
+
+Keep the last 10 log entries maximum.
