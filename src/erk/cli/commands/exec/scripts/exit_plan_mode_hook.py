@@ -263,7 +263,8 @@ def _get_implement_now_signal_path(session_id: str, repo_root: Path) -> Path:
     Returns:
         Path to implement-now signal file
     """
-    return get_scratch_dir(session_id, repo_root=repo_root) / "exit-plan-mode-hook.implement-now.signal"
+    scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    return scratch_dir / "exit-plan-mode-hook.implement-now.signal"
 
 
 def _get_plan_saved_signal_path(session_id: str, repo_root: Path) -> Path:
@@ -279,7 +280,8 @@ def _get_plan_saved_signal_path(session_id: str, repo_root: Path) -> Path:
     Returns:
         Path to plan-saved signal file
     """
-    return get_scratch_dir(session_id, repo_root=repo_root) / "exit-plan-mode-hook.plan-saved.signal"
+    scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    return scratch_dir / "exit-plan-mode-hook.plan-saved.signal"
 
 
 def _get_incremental_plan_signal_path(session_id: str, repo_root: Path) -> Path:
@@ -358,7 +360,8 @@ def _gather_inputs(repo_root: Path) -> HookInput:
     if session_id:
         implement_now_signal_exists = _get_implement_now_signal_path(session_id, repo_root).exists()
         plan_saved_signal_exists = _get_plan_saved_signal_path(session_id, repo_root).exists()
-        incremental_plan_signal_exists = _get_incremental_plan_signal_path(session_id, repo_root).exists()
+        signal_path = _get_incremental_plan_signal_path(session_id, repo_root)
+        incremental_plan_signal_exists = signal_path.exists()
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
