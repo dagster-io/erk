@@ -7,7 +7,11 @@ selection and session-scoped lookup via slugs.
 
 import json
 from pathlib import Path
-from typing import Any
+
+from erk_shared.extraction.session_schema import (
+    extract_agent_id_from_tool_result,
+    extract_task_tool_use_id,
+)
 
 
 def get_plans_dir() -> Path:
@@ -150,53 +154,6 @@ def extract_slugs_from_session(session_id: str, cwd_hint: str | None = None) -> 
     return slugs
 
 
-def _extract_tool_use_id_from_content(content: list[Any]) -> str | None:
-    """Extract tool_use_id from message content blocks.
-
-    Searches for tool_result blocks and returns the first tool_use_id found.
-
-    Args:
-        content: List of content blocks from a message.
-
-    Returns:
-        The tool_use_id if found, None otherwise.
-    """
-    for block in content:
-        if not isinstance(block, dict):
-            continue
-        if block.get("type") != "tool_result":
-            continue
-        tool_use_id = block.get("tool_use_id")
-        if tool_use_id:
-            return tool_use_id
-    return None
-
-
-def _extract_agent_id_from_entry(entry: dict[str, Any]) -> tuple[str, str] | None:
-    """Extract agent_id and tool_use_id from a user entry with toolUseResult.
-
-    Args:
-        entry: A session log entry of type "user".
-
-    Returns:
-        Tuple of (tool_use_id, agent_id) if found, None otherwise.
-    """
-    tool_use_result = entry.get("toolUseResult")
-    if not isinstance(tool_use_result, dict):
-        return None
-    agent_id = tool_use_result.get("agentId")
-    if not agent_id:
-        return None
-    message = entry.get("message", {})
-    content = message.get("content", [])
-    if not isinstance(content, list):
-        return None
-    tool_use_id = _extract_tool_use_id_from_content(content)
-    if tool_use_id is None:
-        return None
-    return (tool_use_id, agent_id)
-
-
 def extract_planning_agent_ids(session_id: str, cwd_hint: str | None) -> list[str]:
     """Extract agent IDs for Task invocations with subagent_type='Plan'.
 
@@ -225,23 +182,14 @@ def extract_planning_agent_ids(session_id: str, cwd_hint: str | None) -> list[st
 
     for entry in entries:
         entry_type = entry.get("type")
-        message = entry.get("message", {})
 
         if entry_type == "assistant":
-            # Look for Task tool_use blocks with subagent_type="Plan"
-            content = message.get("content", [])
-            if isinstance(content, list):
-                for block in content:
-                    if isinstance(block, dict) and block.get("type") == "tool_use":
-                        if block.get("name") == "Task":
-                            tool_input = block.get("input", {})
-                            if tool_input.get("subagent_type") == "Plan":
-                                tool_use_id = block.get("id")
-                                if tool_use_id:
-                                    plan_task_ids.add(tool_use_id)
+            tool_use_id = extract_task_tool_use_id(entry, subagent_type="Plan")
+            if tool_use_id is not None:
+                plan_task_ids.add(tool_use_id)
 
         elif entry_type == "user":
-            result = _extract_agent_id_from_entry(entry)
+            result = extract_agent_id_from_tool_result(entry)
             if result is not None:
                 tool_use_id, agent_id = result
                 tool_to_agent[tool_use_id] = agent_id
