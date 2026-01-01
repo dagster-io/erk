@@ -89,7 +89,7 @@ Found X issues across Y files. Inline comments posted for each.
 ---
 
 ### Activity Log
-- **YYYY-MM-DD HH:MM:SS**: [Brief description of this review's findings]
+- **YYYY-MM-DD HH:MM:SS PT**: [Brief description of this review's findings]
 - [Previous log entries preserved here...]
 ```
 
