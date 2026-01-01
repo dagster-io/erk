@@ -27,6 +27,7 @@ from erk.core.init_utils import (
     add_gitignore_entry,
     discover_presets,
     get_shell_wrapper_content,
+    has_shell_integration_in_rc,
     is_repo_erk_ified,
     is_repo_named,
     render_config_template,
@@ -610,19 +611,17 @@ def init_cmd(
         if ctx.global_config is not None or ctx.config_store.exists():
             fresh_config = ctx.config_store.load() if ctx.config_store.exists() else None
             if fresh_config is not None and not fresh_config.shell_setup_complete:
-                setup_complete = perform_shell_setup(ctx.shell)
-                if setup_complete:
-                    # Show what we're about to write
-                    config_path = ctx.config_store.path()
-                    shell_msg = "To remember that shell setup is complete, erk needs to update:"
-                    user_output(f"\n  {shell_msg}")
-                    user_output(f"    {config_path}")
-
-                    if not click.confirm("  Proceed with updating global config?", default=True):
-                        user_output("\n  Shell integration instructions were displayed above.")
-                        user_output("  Run 'erk init --shell' again to save this preference.")
-                    else:
-                        # Update global config with shell_setup_complete=True
+                # Check if shell integration is already in the RC file
+                shell_info = ctx.shell.detect_shell()
+                already_in_rc = False
+                if shell_info is not None:
+                    shell_name, rc_path = shell_info
+                    already_in_rc = has_shell_integration_in_rc(rc_path)
+                    if already_in_rc:
+                        # Already configured - just show message and update config flag
+                        msg = f" Shell integration already configured ({shell_name})"
+                        user_output(click.style("✓", fg="green") + msg)
+                        # Update global config to remember this
                         new_config = GlobalConfig(
                             erk_root=fresh_config.erk_root,
                             use_graphite=fresh_config.use_graphite,
@@ -630,16 +629,39 @@ def init_cmd(
                             show_pr_info=fresh_config.show_pr_info,
                             github_planning=fresh_config.github_planning,
                         )
-                        try:
-                            ctx.config_store.save(new_config)
-                            user_output(click.style("  ✓", fg="green") + " Global config updated")
-                        except PermissionError as e:
-                            error_msg = "Could not save global config"
-                            user_output(click.style("\n  ❌ Error: ", fg="red") + error_msg)
-                            user_output(f"  {e}")
+                        ctx.config_store.save(new_config)
+
+                if not already_in_rc:
+                    setup_complete = perform_shell_setup(ctx.shell)
+                    if setup_complete:
+                        # Show what we're about to write
+                        config_path = ctx.config_store.path()
+                        shell_msg = "To remember that shell setup is complete, erk needs to update:"
+                        user_output(f"\n  {shell_msg}")
+                        user_output(f"    {config_path}")
+
+                        if not click.confirm("  Proceed with updating global config?", default=True):
                             user_output("\n  Shell integration instructions were displayed above.")
-                            msg = "  You can use them now - erk just couldn't save this preference."
-                            user_output(msg)
+                            user_output("  Run 'erk init --shell' again to save this preference.")
+                        else:
+                            # Update global config with shell_setup_complete=True
+                            new_config = GlobalConfig(
+                                erk_root=fresh_config.erk_root,
+                                use_graphite=fresh_config.use_graphite,
+                                shell_setup_complete=True,
+                                show_pr_info=fresh_config.show_pr_info,
+                                github_planning=fresh_config.github_planning,
+                            )
+                            try:
+                                ctx.config_store.save(new_config)
+                                user_output(click.style("  ✓", fg="green") + " Global config updated")
+                            except PermissionError as e:
+                                error_msg = "Could not save global config"
+                                user_output(click.style("\n  ❌ Error: ", fg="red") + error_msg)
+                                user_output(f"  {e}")
+                                user_output("\n  Shell integration instructions were displayed above.")
+                                msg = "  You can use them now - erk just couldn't save this preference."
+                                user_output(msg)
 
     # 3c. Status line configuration
     if interactive:

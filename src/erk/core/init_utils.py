@@ -164,6 +164,34 @@ def get_shell_wrapper_content(shell_integration_dir: Path, shell: str) -> str:
     return wrapper_file.read_text(encoding="utf-8")
 
 
+# Marker string that identifies erk shell integration in RC files
+ERK_SHELL_INTEGRATION_MARKER = "# Erk shell integration"
+
+
+def has_shell_integration_in_rc(rc_path: Path) -> bool:
+    """Check if shell RC file contains erk shell integration.
+
+    Looks for the marker comment that erk adds when shell integration is configured.
+
+    Args:
+        rc_path: Path to the shell RC file (e.g., ~/.zshrc)
+
+    Returns:
+        True if the marker is found in the file, False otherwise
+        (also returns False if file doesn't exist)
+
+    Example:
+        >>> rc_path = Path.home() / ".zshrc"
+        >>> has_shell_integration_in_rc(rc_path)
+        False
+    """
+    if not rc_path.exists():
+        return False
+
+    content = rc_path.read_text(encoding="utf-8")
+    return ERK_SHELL_INTEGRATION_MARKER in content
+
+
 def add_gitignore_entry(content: str, entry: str) -> str:
     """Add an entry to gitignore content if not already present.
 
