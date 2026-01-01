@@ -22,9 +22,21 @@ jobs:
         with:
           fetch-depth: 1
 
+      - name: Read prompt file
+        id: read-prompt
+        run: |
+          # Read prompt file and substitute GitHub context variables
+          PROMPT=$(cat .github/prompts/dignified-python-review.md)
+          PROMPT="${PROMPT//\{\{ github.repository \}\}/${{ github.repository }}}"
+          PROMPT="${PROMPT//\{\{ github.event.pull_request.number \}\}/${{ github.event.pull_request.number }}}"
+          # Use heredoc to handle multiline output
+          echo "prompt<<PROMPT_EOF" >> $GITHUB_OUTPUT
+          echo "$PROMPT" >> $GITHUB_OUTPUT
+          echo "PROMPT_EOF" >> $GITHUB_OUTPUT
+
       - name: Run Dignified Python Review
         uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          prompt_file: .github/prompts/dignified-python-review.md
-          claude_args: '--allowed-tools "Bash(gh api:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Read(*)"'
+          prompt: ${{ steps.read-prompt.outputs.prompt }}
+          claude_args: '--allowed-tools "Bash(gh api:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(erk exec:*),Read(*)"'
