@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of `5a95af155`
+As of `f018f17f2`
 
 ### Major Changes
 
@@ -29,10 +29,14 @@ As of `5a95af155`
 - Add dynamic tripwire enforcement system (47d3acb30)
 - Add erk-statusline configuration to init and health checks (f5e5b8251)
 - Add copy-pasteable commands section to plan issues (d27cd9a97)
+- Add auto-rebase when local branch is behind remote before push (a05b100dd)
+- Add `--session-id` flag to marker CLI commands for explicit session ID (3a6cff2c6)
+- Add configurable `default` parameter to `user_confirm` function (207dde0a8)
 
 ### Changed
 
 - Restructure init command with stepped flow and status line setup (6b0885273)
+- Standardize GitHub Actions workflow naming to kebab-case (43284a061)
 
 ### Fixed
 
@@ -41,6 +45,11 @@ As of `5a95af155`
 - Fix `erk wt delete --all` to show accurate PR/plan status in planning phase (85178be5b)
 - Fix confirmation prompt output to stderr for consistency (2cc4b578a)
 - Fix pr-address skill handling of outdated review threads (6556b208f)
+- Fix changelog commit hash marker parsing to expect backtick formatting (f018f17f2)
+- Fix frontmatter deprecation warning cluttering test output (b8533f923)
+- Fix GitHub Actions shell specification in review workflows (03ede9320)
+- Fix Claude Code installation path in Docker image (a638315e8)
+- Fix status comparison: compare against `StatusData.loading()` not `is None` (5a00d16ca)
 
 ## [0.3.1] - 2025-12-31 15:52 PT
 
