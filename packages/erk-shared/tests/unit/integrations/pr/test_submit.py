@@ -406,7 +406,9 @@ class TestExecuteCoreSubmit:
             commits_ahead={(tmp_path, "main"): 2},
             branch_divergence={
                 (tmp_path, "feature-branch", "origin"): BranchDivergence(
-                    is_diverged=False, ahead=2, behind=0  # Only ahead, not behind
+                    is_diverged=False,
+                    ahead=2,
+                    behind=0,  # Only ahead, not behind
                 )
             },
         )
@@ -439,7 +441,9 @@ class TestExecuteCoreSubmit:
             commits_ahead={(tmp_path, "main"): 2},
             branch_divergence={
                 (tmp_path, "feature-branch", "origin"): BranchDivergence(
-                    is_diverged=True, ahead=2, behind=1  # Diverged before rebase
+                    is_diverged=True,
+                    ahead=2,
+                    behind=1,  # Diverged before rebase
                 )
             },
         )
