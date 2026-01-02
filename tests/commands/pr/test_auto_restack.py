@@ -241,7 +241,7 @@ def test_pr_auto_restack_fallback_on_conflicts() -> None:
 
         # Fallback path: Claude SHOULD be invoked
         assert len(claude_executor.executed_commands) == 1
-        command, _, dangerous_flag, _ = claude_executor.executed_commands[0]
+        command, _, dangerous_flag, _, _ = claude_executor.executed_commands[0]
         assert command == "/erk:auto-restack"
         assert dangerous_flag is True
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.implement import _detect_target_type, implement
+from erk.cli.commands.implement import _detect_target_type, _normalize_model_name, implement
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
@@ -1033,13 +1033,14 @@ def test_interactive_mode_calls_executor() -> None:
         assert len(executor.interactive_calls) == 1
         assert len(executor.executed_commands) == 0
 
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
         assert "42-add-authentication-feature-01-15-1430" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:plan-implement"
         # No relative path preservation when running from worktree root
         assert target_subpath is None
+        assert model is None
 
 
 def test_interactive_mode_with_dangerous_flag() -> None:
@@ -1063,9 +1064,10 @@ def test_interactive_mode_with_dangerous_flag() -> None:
 
         # Verify dangerous flag was passed to execute_interactive
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert dangerous is True
         assert command == "/erk:plan-implement"
+        assert model is None
 
 
 def test_interactive_mode_from_plan_file() -> None:
@@ -1091,10 +1093,11 @@ def test_interactive_mode_from_plan_file() -> None:
 
         # Verify execute_interactive was called
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert "my-feature" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:plan-implement"
+        assert model is None
 
         # Verify plan file was deleted (moved to worktree)
         assert not plan_file.exists()
@@ -1183,10 +1186,11 @@ def test_non_interactive_executes_single_command() -> None:
 
         # Verify one command execution
         assert len(executor.executed_commands) == 1
-        command, worktree_path, dangerous, verbose = executor.executed_commands[0]
+        command, worktree_path, dangerous, verbose, model = executor.executed_commands[0]
         assert command == "/erk:plan-implement"
         assert dangerous is False
         assert verbose is False
+        assert model is None
 
 
 def test_non_interactive_with_submit_runs_all_commands() -> None:
@@ -1214,7 +1218,7 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
 
         # Verify three command executions
         assert len(executor.executed_commands) == 3
-        commands = [cmd for cmd, _, _, _ in executor.executed_commands]
+        commands = [cmd for cmd, _, _, _, _ in executor.executed_commands]
         assert commands[0] == "/erk:plan-implement"
         assert commands[1] == "/fast-ci"
         assert commands[2] == "/gt:pr-submit"
@@ -1328,13 +1332,13 @@ def test_yolo_flag_sets_all_flags() -> None:
 
         # Verify three command executions (submit mode)
         assert len(executor.executed_commands) == 3
-        commands = [cmd for cmd, _, dangerous, _ in executor.executed_commands]
+        commands = [cmd for cmd, _, dangerous, _, _ in executor.executed_commands]
         assert commands[0] == "/erk:plan-implement"
         assert commands[1] == "/fast-ci"
         assert commands[2] == "/gt:pr-submit"
 
         # Verify dangerous flag was set for all commands
-        for _, _, dangerous, _ in executor.executed_commands:
+        for _, _, dangerous, _, _ in executor.executed_commands:
             assert dangerous is True
 
 
@@ -1514,11 +1518,12 @@ def test_interactive_mode_preserves_relative_path_from_subdirectory() -> None:
 
         # Verify execute_interactive was called with relative path
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert dangerous is False
         assert command == "/erk:plan-implement"
         # The relative path from worktree root to src/lib should be passed
         assert target_subpath == Path("src/lib")
+        assert model is None
 
 
 def test_interactive_mode_no_relative_path_from_worktree_root() -> None:
@@ -1548,8 +1553,9 @@ def test_interactive_mode_no_relative_path_from_worktree_root() -> None:
 
         # Verify target_subpath is None when at worktree root
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert target_subpath is None
+        assert model is None
 
 
 def test_interactive_mode_preserves_relative_path_from_plan_file() -> None:
@@ -1585,5 +1591,230 @@ def test_interactive_mode_preserves_relative_path_from_plan_file() -> None:
 
         # Verify execute_interactive was called with relative path
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert target_subpath == Path("docs")
+        assert model is None
+
+
+# Model Normalization Tests
+
+
+def test_normalize_model_name_full_names() -> None:
+    """Test normalizing full model names (haiku, sonnet, opus)."""
+    assert _normalize_model_name("haiku") == "haiku"
+    assert _normalize_model_name("sonnet") == "sonnet"
+    assert _normalize_model_name("opus") == "opus"
+
+
+def test_normalize_model_name_aliases() -> None:
+    """Test normalizing model name aliases (h, s, o)."""
+    assert _normalize_model_name("h") == "haiku"
+    assert _normalize_model_name("s") == "sonnet"
+    assert _normalize_model_name("o") == "opus"
+
+
+def test_normalize_model_name_case_insensitive() -> None:
+    """Test that model names are case-insensitive."""
+    assert _normalize_model_name("HAIKU") == "haiku"
+    assert _normalize_model_name("Sonnet") == "sonnet"
+    assert _normalize_model_name("OPUS") == "opus"
+    assert _normalize_model_name("H") == "haiku"
+    assert _normalize_model_name("S") == "sonnet"
+    assert _normalize_model_name("O") == "opus"
+
+
+def test_normalize_model_name_none() -> None:
+    """Test that None input returns None."""
+    assert _normalize_model_name(None) is None
+
+
+def test_normalize_model_name_invalid() -> None:
+    """Test that invalid model names raise ClickException."""
+    import click
+    import pytest
+
+    with pytest.raises(click.ClickException) as exc_info:
+        _normalize_model_name("invalid")
+    assert "Invalid model: 'invalid'" in str(exc_info.value)
+    assert "Valid options:" in str(exc_info.value)
+
+
+# Model Flag Integration Tests
+
+
+def test_model_flag_in_interactive_mode() -> None:
+    """Verify --model flag is passed to executor in interactive mode."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+
+        result = runner.invoke(implement, ["#42", "--model", "opus"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify model was passed to execute_interactive
+        assert len(executor.interactive_calls) == 1
+        _, _, _, _, model = executor.interactive_calls[0]
+        assert model == "opus"
+
+
+def test_model_flag_short_form_in_interactive_mode() -> None:
+    """Verify -m short form flag is passed to executor in interactive mode."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+
+        result = runner.invoke(implement, ["#42", "-m", "sonnet"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify model was passed to execute_interactive
+        assert len(executor.interactive_calls) == 1
+        _, _, _, _, model = executor.interactive_calls[0]
+        assert model == "sonnet"
+
+
+def test_model_alias_in_interactive_mode() -> None:
+    """Verify model alias (h, s, o) is expanded in interactive mode."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+
+        result = runner.invoke(implement, ["#42", "-m", "h"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify model alias was expanded to full name
+        assert len(executor.interactive_calls) == 1
+        _, _, _, _, model = executor.interactive_calls[0]
+        assert model == "haiku"
+
+
+def test_model_flag_in_non_interactive_mode() -> None:
+    """Verify --model flag is passed to executor in non-interactive mode."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+
+        result = runner.invoke(implement, ["#42", "--no-interactive", "--model", "opus"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify model was passed to execute_command
+        assert len(executor.executed_commands) == 1
+        _, _, _, _, model = executor.executed_commands[0]
+        assert model == "opus"
+
+
+def test_model_flag_in_script_mode() -> None:
+    """Verify --model flag is included in generated script."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#42", "--script", "--model", "sonnet"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify script path is output
+        assert result.stdout
+        script_path = Path(result.stdout.strip())
+
+        # Verify script file exists and read its content
+        assert script_path.exists()
+        script_content = script_path.read_text(encoding="utf-8")
+
+        # Verify --model flag is present in the generated command
+        assert "--model sonnet" in script_content
+
+
+def test_model_flag_in_dry_run() -> None:
+    """Verify --model flag is shown in dry-run output."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(
+            implement, ["#42", "--dry-run", "--no-interactive", "--model", "opus"], obj=ctx
+        )
+
+        assert result.exit_code == 0
+        assert "Dry-run mode" in result.output
+
+        # Verify --model flag is shown in the command sequence
+        assert "--model opus" in result.output
+
+        # Verify no worktree was created
+        assert len(git.added_worktrees) == 0
+
+
+def test_invalid_model_flag() -> None:
+    """Verify invalid model names are rejected."""
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#42", "--model", "invalid-model"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "Invalid model" in result.output

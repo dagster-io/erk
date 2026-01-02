@@ -123,6 +123,7 @@ def stream_command_with_feedback(
     command: str,
     worktree_path: Path,
     dangerous: bool,
+    model: str | None = None,
     console: Console | None = None,
     debug: bool = False,
 ) -> CommandResult:
@@ -145,6 +146,7 @@ def stream_command_with_feedback(
         command: The slash command to execute (e.g., "/gt:pr-submit")
         worktree_path: Path to worktree directory to run command in
         dangerous: Whether to skip permission prompts
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         console: Rich Console for output (if None, creates one with force_terminal=True)
         debug: Whether to show debug output for stream parsing
 
@@ -171,7 +173,7 @@ def stream_command_with_feedback(
 
     # Stream events in real-time
     event_stream = executor.execute_command_streaming(
-        command, worktree_path, dangerous, verbose=False, debug=debug
+        command, worktree_path, dangerous, verbose=False, debug=debug, model=model
     )
     if debug:
         console.print("[DEBUG] Starting event stream...", style="yellow")

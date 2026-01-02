@@ -52,6 +52,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
+        model: str | None = None,
     ) -> Iterator[ClaudeEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
 
@@ -59,6 +60,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         - Uses subprocess.Popen() for streaming stdout line-by-line
         - Passes --permission-mode acceptEdits, --output-format stream-json
         - Optionally passes --dangerously-skip-permissions when dangerous=True
+        - Optionally passes --model when model is specified
         - In verbose mode: streams output to terminal (no parsing, no events yielded)
         - In filtered mode: parses stream-json and yields events in real-time
         - In debug mode: emits additional debug information to stderr
@@ -74,6 +76,8 @@ class RealClaudeExecutor(ClaudeExecutor):
         ]
         if dangerous:
             cmd_args.append("--dangerously-skip-permissions")
+        if model is not None:
+            cmd_args.extend(["--model", model])
         cmd_args.append(command)
 
         if verbose:
@@ -396,6 +400,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         command: str,
         target_subpath: Path | None,
+        model: str | None = None,
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -430,6 +435,8 @@ class RealClaudeExecutor(ClaudeExecutor):
         cmd_args = ["claude", "--permission-mode", "acceptEdits"]
         if dangerous:
             cmd_args.append("--dangerously-skip-permissions")
+        if model is not None:
+            cmd_args.extend(["--model", model])
         cmd_args.append(command)
 
         # Redirect stdin/stdout/stderr to /dev/tty only if they are not already TTYs.
