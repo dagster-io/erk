@@ -67,7 +67,7 @@ The primary workflow: create a plan, save it, implement it, ship it. **Often com
    claude
    ```
 
-2. Enter plan mode and develop your plan
+2. Enter plan mode by pressing `Shift+Tab` twice (if plan mode isn't already your default in `settings.json`), then develop your plan
 
 3. Save plan to GitHub issue (system prompts automatically after plan mode)
 
