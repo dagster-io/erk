@@ -17,6 +17,9 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
 # Install uv (recommended: copy from official image)
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
+# Pre-install Python 3.11 for uv tool environments
+RUN uv python install 3.11
+
 # Install Claude Code
 ENV PATH="/root/.local/bin:${PATH}"
 RUN curl -fsSL https://claude.ai/install.sh | bash
@@ -25,4 +28,4 @@ RUN curl -fsSL https://claude.ai/install.sh | bash
 RUN npm install -g prettier@3.6.0 @withgraphite/graphite-cli
 
 # Verify installations
-RUN uv --version && claude --version && prettier --version && gt --version
+RUN uv --version && python3.11 --version && claude --version && prettier --version && gt --version
