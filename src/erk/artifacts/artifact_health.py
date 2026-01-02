@@ -36,6 +36,8 @@ BUNDLED_SKILLS = frozenset(
 )
 BUNDLED_AGENTS = frozenset({"devrun"})
 BUNDLED_WORKFLOWS = frozenset({"erk-impl.yml"})
+# Actions (composite GitHub actions) that erk syncs
+BUNDLED_ACTIONS = frozenset({"setup-claude-erk"})
 # Hook configurations that erk adds to settings.json
 BUNDLED_HOOKS = frozenset({"user-prompt-hook", "exit-plan-mode-hook"})
 
@@ -57,6 +59,8 @@ def is_erk_managed(artifact: InstalledArtifact) -> bool:
         return artifact.name in BUNDLED_AGENTS
     if artifact.artifact_type == "workflow":
         return f"{artifact.name}.yml" in BUNDLED_WORKFLOWS
+    if artifact.artifact_type == "action":
+        return artifact.name in BUNDLED_ACTIONS
     if artifact.artifact_type == "hook":
         return artifact.name in BUNDLED_HOOKS
     return False
@@ -180,6 +184,7 @@ def get_artifact_health(
         return ArtifactHealthResult(artifacts=[], skipped_reason="no-bundled-dir")
 
     project_workflows_dir = project_dir / ".github" / "workflows"
+    project_actions_dir = project_dir / ".github" / "actions"
     current_version = get_current_version()
 
     artifacts: list[ArtifactStatus] = []
@@ -240,6 +245,13 @@ def get_artifact_health(
         key = f"workflows/{workflow_name}"
         path = project_workflows_dir / workflow_name
         installed_hash = _compute_path_hash(path, is_directory=False)
+        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
+
+    # Check actions (always directory-based)
+    for name in BUNDLED_ACTIONS:
+        key = f"actions/{name}"
+        path = project_actions_dir / name
+        installed_hash = _compute_path_hash(path, is_directory=True)
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check hooks
@@ -492,6 +504,38 @@ def _find_missing_workflows(
     return missing
 
 
+def _find_missing_actions(
+    project_actions_dir: Path,
+    bundled_actions_dir: Path,
+) -> dict[str, list[str]]:
+    """Find erk-managed actions that exist in bundle but missing locally.
+
+    Args:
+        project_actions_dir: Path to project's .github/actions/ directory
+        bundled_actions_dir: Path to bundled .github/actions/ in erk package
+
+    Returns:
+        Dict mapping ".github/actions" to list of missing action names
+    """
+    if not bundled_actions_dir.exists():
+        return {}
+
+    missing: dict[str, list[str]] = {}
+
+    for action_name in BUNDLED_ACTIONS:
+        bundled_action = bundled_actions_dir / action_name
+        local_action = project_actions_dir / action_name
+
+        # If bundled but not local, it's missing
+        if bundled_action.exists() and not local_action.exists():
+            folder_key = ".github/actions"
+            if folder_key not in missing:
+                missing[folder_key] = []
+            missing[folder_key].append(action_name)
+
+    return missing
+
+
 def _find_missing_hooks(project_claude_dir: Path) -> dict[str, list[str]]:
     """Find erk-managed hooks that are missing from settings.json.
 
@@ -560,11 +604,15 @@ def find_missing_artifacts(project_dir: Path) -> CompletenessCheckResult:
 
     missing = _find_missing_claude_artifacts(project_claude_dir, bundled_claude_dir)
 
-    # Check workflows
+    # Check workflows and actions
     bundled_github_dir = get_bundled_github_dir()
     project_workflows_dir = project_dir / ".github" / "workflows"
     bundled_workflows_dir = bundled_github_dir / "workflows"
     missing.update(_find_missing_workflows(project_workflows_dir, bundled_workflows_dir))
+
+    project_actions_dir = project_dir / ".github" / "actions"
+    bundled_actions_dir = bundled_github_dir / "actions"
+    missing.update(_find_missing_actions(project_actions_dir, bundled_actions_dir))
 
     # Check hooks in settings.json
     missing.update(_find_missing_hooks(project_claude_dir))

@@ -58,6 +58,7 @@ from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
 from erk.cli.commands.exec.scripts.get_progress import get_progress
+from erk.cli.commands.exec.scripts.get_prompt import get_prompt
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
@@ -141,6 +142,7 @@ exec_group.add_command(format_success_output, name="format-success-output")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
+exec_group.add_command(get_prompt, name="get-prompt")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")

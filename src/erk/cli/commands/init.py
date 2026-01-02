@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.sync import sync_artifacts
+from erk.artifacts.sync import sync_artifacts, sync_feature
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -438,6 +438,12 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     is_flag=True,
     help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
 )
+@click.option(
+    "--with-dignified-review",
+    "with_dignified_review",
+    is_flag=True,
+    help="Install the dignified-review feature (Python code review workflow).",
+)
 @click.pass_obj
 def init_cmd(
     ctx: ErkContext,
@@ -448,6 +454,7 @@ def init_cmd(
     hooks_only: bool,
     statusline_only: bool,
     no_interactive: bool,
+    with_dignified_review: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml.
 
@@ -601,7 +608,7 @@ def init_cmd(
         cfg_path.write_text(content, encoding="utf-8")
         user_output(f"  Wrote {cfg_path}")
 
-        # Sync artifacts (skills, commands, agents, workflows)
+        # Sync artifacts (skills, commands, agents, workflows, actions)
         sync_result = sync_artifacts(repo_context.root, force=False)
         if sync_result.success:
             user_output(click.style("  ✓ ", fg="green") + sync_result.message)
@@ -610,6 +617,15 @@ def init_cmd(
             warn_msg = f"Artifact sync failed: {sync_result.message}"
             user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
             user_output("    Run 'erk artifact sync' to retry")
+
+        # Sync optional features if requested
+        if with_dignified_review:
+            feature_result = sync_feature(repo_context.root, "dignified-review")
+            if feature_result.success:
+                user_output(click.style("  ✓ ", fg="green") + feature_result.message)
+            else:
+                warn_msg = f"Feature install failed: {feature_result.message}"
+                user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
 
         # Create prompt hooks directory with README
         _create_prompt_hooks_directory(repo_root=repo_context.root)

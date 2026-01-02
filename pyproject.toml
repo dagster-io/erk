@@ -68,6 +68,11 @@ packages = ["src/erk"]
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 # Workflows: erk-managed GitHub workflows
 ".github/workflows/erk-impl.yml" = "erk/data/github/workflows/erk-impl.yml"
+# Actions: composite GitHub actions (needed by workflows)
+".github/actions/setup-claude-erk" = "erk/data/github/actions/setup-claude-erk"
+# Optional feature: dignified-review (workflow + prompt)
+".github/workflows/dignified-python-review.yml" = "erk/data/github/workflows/dignified-python-review.yml"
+".github/prompts/dignified-python-review.md" = "erk/data/github/prompts/dignified-python-review.md"
 
 [tool.ruff]
 target-version = "py311"

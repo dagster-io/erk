@@ -259,6 +259,101 @@ def _sync_workflows(
     return count, synced
 
 
+def _sync_actions(
+    bundled_github_dir: Path, target_actions_dir: Path
+) -> tuple[int, list[SyncedArtifact]]:
+    """Sync erk-managed actions to project's .github/actions/ directory.
+
+    Only syncs directories listed in BUNDLED_ACTIONS registry.
+    Returns tuple of (file_count, synced_artifacts).
+    """
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
+    from erk.artifacts.artifact_health import BUNDLED_ACTIONS
+
+    source_actions_dir = bundled_github_dir / "actions"
+    if not source_actions_dir.exists():
+        return 0, []
+
+    count = 0
+    synced: list[SyncedArtifact] = []
+    for action_name in sorted(BUNDLED_ACTIONS):
+        source_path = source_actions_dir / action_name
+        if source_path.exists() and source_path.is_dir():
+            target_path = target_actions_dir / action_name
+            file_count = _copy_directory_contents(source_path, target_path)
+            count += file_count
+            synced.append(
+                SyncedArtifact(
+                    key=f"actions/{action_name}",
+                    hash=_compute_directory_hash(target_path),
+                    file_count=file_count,
+                )
+            )
+    return count, synced
+
+
+def _sync_prompts(
+    bundled_github_dir: Path, target_prompts_dir: Path, prompt_names: frozenset[str]
+) -> tuple[int, list[SyncedArtifact]]:
+    """Sync prompt files to project's .github/prompts/ directory.
+
+    Only syncs files listed in the provided prompt_names set.
+    Returns tuple of (file_count, synced_artifacts).
+    """
+    source_prompts_dir = bundled_github_dir / "prompts"
+    if not source_prompts_dir.exists():
+        return 0, []
+
+    count = 0
+    synced: list[SyncedArtifact] = []
+    for prompt_name in sorted(prompt_names):
+        source_path = source_prompts_dir / prompt_name
+        if source_path.exists():
+            target_prompts_dir.mkdir(parents=True, exist_ok=True)
+            target_path = target_prompts_dir / prompt_name
+            shutil.copy2(source_path, target_path)
+            count += 1
+            synced.append(
+                SyncedArtifact(
+                    key=f"prompts/{prompt_name}",
+                    hash=_compute_file_hash(target_path),
+                    file_count=1,
+                )
+            )
+    return count, synced
+
+
+def _sync_feature_workflows(
+    bundled_github_dir: Path, target_workflows_dir: Path, workflow_names: frozenset[str]
+) -> tuple[int, list[SyncedArtifact]]:
+    """Sync feature-specific workflows to project's .github/workflows/ directory.
+
+    Unlike _sync_workflows, this takes an explicit list of workflow names to sync.
+    Returns tuple of (file_count, synced_artifacts).
+    """
+    source_workflows_dir = bundled_github_dir / "workflows"
+    if not source_workflows_dir.exists():
+        return 0, []
+
+    count = 0
+    synced: list[SyncedArtifact] = []
+    for workflow_name in sorted(workflow_names):
+        source_path = source_workflows_dir / workflow_name
+        if source_path.exists():
+            target_workflows_dir.mkdir(parents=True, exist_ok=True)
+            target_path = target_workflows_dir / workflow_name
+            shutil.copy2(source_path, target_path)
+            count += 1
+            synced.append(
+                SyncedArtifact(
+                    key=f"workflows/{workflow_name}",
+                    hash=_compute_file_hash(target_path),
+                    file_count=1,
+                )
+            )
+    return count, synced
+
+
 def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
     """Sync erk-managed hooks to project's .claude/settings.json.
 
@@ -373,7 +468,12 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
 
     Instead of copying files, just compute hashes from the source artifacts.
     """
-    from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS, BUNDLED_WORKFLOWS
+    from erk.artifacts.artifact_health import (
+        BUNDLED_ACTIONS,
+        BUNDLED_AGENTS,
+        BUNDLED_SKILLS,
+        BUNDLED_WORKFLOWS,
+    )
 
     bundled_claude_dir = get_bundled_claude_dir()
     bundled_github_dir = get_bundled_github_dir()
@@ -411,6 +511,10 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
                         file_count=1,
                     )
                 )
+
+    # Hash actions from source
+    actions_dir = bundled_github_dir / "actions"
+    artifacts.extend(_hash_directory_artifacts(actions_dir, BUNDLED_ACTIONS, "actions"))
 
     # Hash hooks (check if installed in settings.json)
     settings_path = project_dir / ".claude" / "settings.json"
@@ -488,11 +592,16 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     total_copied += count
     all_synced.extend(synced)
 
-    # Sync workflows from .github/
+    # Sync workflows and actions from .github/
     bundled_github_dir = get_bundled_github_dir()
     if bundled_github_dir.exists():
         target_workflows_dir = project_dir / ".github" / "workflows"
         count, synced = _sync_workflows(bundled_github_dir, target_workflows_dir)
+        total_copied += count
+        all_synced.extend(synced)
+
+        target_actions_dir = project_dir / ".github" / "actions"
+        count, synced = _sync_actions(bundled_github_dir, target_actions_dir)
         total_copied += count
         all_synced.extend(synced)
 
@@ -517,4 +626,90 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
         success=True,
         artifacts_installed=total_copied,
         message=f"Synced {total_copied} artifact files",
+    )
+
+
+@dataclass(frozen=True)
+class FeatureSyncResult:
+    """Result of feature sync operation."""
+
+    success: bool
+    artifacts_installed: int
+    message: str
+    feature_name: str
+
+
+def sync_feature(project_dir: Path, feature_name: str) -> FeatureSyncResult:
+    """Sync an optional feature's artifacts to the project.
+
+    Features include workflows and prompts that are installed on-demand.
+
+    Args:
+        project_dir: Path to the project root
+        feature_name: Name of the feature to install (e.g., "dignified-review")
+
+    Returns:
+        FeatureSyncResult with success status and artifact count
+    """
+    from erk.artifacts.features import get_feature
+
+    feature = get_feature(feature_name)
+    if feature is None:
+        return FeatureSyncResult(
+            success=False,
+            artifacts_installed=0,
+            message=f"Unknown feature: {feature_name}",
+            feature_name=feature_name,
+        )
+
+    bundled_github_dir = get_bundled_github_dir()
+    if not bundled_github_dir.exists():
+        return FeatureSyncResult(
+            success=False,
+            artifacts_installed=0,
+            message=f"Bundled .github/ not found at {bundled_github_dir}",
+            feature_name=feature_name,
+        )
+
+    total_copied = 0
+    all_synced: list[SyncedArtifact] = []
+
+    # Sync feature workflows
+    if feature.workflows:
+        target_workflows_dir = project_dir / ".github" / "workflows"
+        count, synced = _sync_feature_workflows(
+            bundled_github_dir, target_workflows_dir, feature.workflows
+        )
+        total_copied += count
+        all_synced.extend(synced)
+
+    # Note: Prompts are accessed via `erk exec get-prompt` rather than synced
+
+    # Update state with newly synced artifacts
+    current_version = get_current_version()
+    state_path = project_dir / ".erk" / "state.toml"
+
+    # Load existing state if present
+    existing_files: dict[str, ArtifactFileState] = {}
+    if state_path.exists():
+        from erk.artifacts.state import load_artifact_state
+
+        existing_state = load_artifact_state(project_dir)
+        if existing_state is not None:
+            existing_files = dict(existing_state.files)
+
+    # Add new artifacts to state
+    for artifact in all_synced:
+        existing_files[artifact.key] = ArtifactFileState(
+            version=current_version,
+            hash=artifact.hash,
+        )
+
+    save_artifact_state(project_dir, ArtifactState(version=current_version, files=existing_files))
+
+    return FeatureSyncResult(
+        success=True,
+        artifacts_installed=total_copied,
+        message=f"Installed feature '{feature_name}': {total_copied} files",
+        feature_name=feature_name,
     )

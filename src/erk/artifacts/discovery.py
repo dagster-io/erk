@@ -196,6 +196,37 @@ def _discover_workflows(workflows_dir: Path) -> list[InstalledArtifact]:
     return artifacts
 
 
+def _discover_actions(actions_dir: Path) -> list[InstalledArtifact]:
+    """Discover all actions in .github/actions/ directory.
+
+    Actions are directories containing an action.yml or action.yaml file.
+
+    Pattern: .github/actions/<name>/action.yml
+    """
+    if not actions_dir.exists():
+        return []
+
+    artifacts: list[InstalledArtifact] = []
+    for action_path in actions_dir.iterdir():
+        if not action_path.is_dir():
+            continue
+        # Look for action.yml or action.yaml
+        action_file = action_path / "action.yml"
+        if not action_file.exists():
+            action_file = action_path / "action.yaml"
+        if not action_file.exists():
+            continue
+        artifacts.append(
+            InstalledArtifact(
+                name=action_path.name,
+                artifact_type="action",
+                path=action_file,
+                content_hash=_compute_directory_hash(action_path),
+            )
+        )
+    return artifacts
+
+
 def _extract_hook_name(command: str) -> str:
     """Extract a meaningful name from a hook command.
 
@@ -274,10 +305,12 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
     - commands: .claude/commands/<namespace>/<name>.md
     - agents: .claude/agents/<name>/<name>.md
     - workflows: .github/workflows/<name>.yml (all workflows)
+    - actions: .github/actions/<name>/action.yml (all actions)
     - hooks: configured in .claude/settings.json
     """
     claude_dir = project_dir / ".claude"
     workflows_dir = project_dir / ".github" / "workflows"
+    actions_dir = project_dir / ".github" / "actions"
 
     artifacts: list[InstalledArtifact] = []
 
@@ -288,6 +321,7 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
         artifacts.extend(_discover_hooks(claude_dir))
 
     artifacts.extend(_discover_workflows(workflows_dir))
+    artifacts.extend(_discover_actions(actions_dir))
 
     # Sort by type then name for consistent output
     return sorted(artifacts, key=lambda a: (a.artifact_type, a.name))
