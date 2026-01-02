@@ -915,7 +915,13 @@ def format_plan_commands_section(issue_number: int) -> str:
 
 ```bash
 erk implement {issue_number}
+```
+
+```bash
 erk implement {issue_number} --dangerous
+```
+
+```bash
 erk plan submit {issue_number}
 ```"""
 
