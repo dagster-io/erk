@@ -56,6 +56,11 @@ def get_workspace_packages(repo_root: Path) -> list[PackageInfo]:
             pyproject_path=repo_root / "packages" / "erk-shared" / "pyproject.toml",
         ),
         PackageInfo(
+            name="erk-statusline",
+            path=repo_root / "packages" / "erk-statusline",
+            pyproject_path=repo_root / "packages" / "erk-statusline" / "pyproject.toml",
+        ),
+        PackageInfo(
             name="erk",
             path=repo_root,
             pyproject_path=repo_root / "pyproject.toml",
