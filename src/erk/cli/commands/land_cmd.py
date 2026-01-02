@@ -52,15 +52,20 @@ def parse_argument(arg: str) -> ParsedArgument:
     Returns:
         ParsedArgument with:
         - arg_type="pr_number", pr_number=N if arg is a numeric PR number
-        - arg_type="pr_url", pr_number=N if arg is a URL containing /pull/N
+        - arg_type="pr_url", pr_number=N if arg is a GitHub or Graphite PR URL
         - arg_type="branch", pr_number=None if arg is a branch name
     """
     # Try parsing as a plain number (PR number)
     if arg.isdigit():
         return ParsedArgument(arg_type="pr_number", pr_number=int(arg))
 
-    # Try parsing as a GitHub PR URL
+    # Try parsing as a GitHub PR URL (e.g., https://github.com/owner/repo/pull/123)
     match = re.search(r"/pull/(\d+)", arg)
+    if match:
+        return ParsedArgument(arg_type="pr_url", pr_number=int(match.group(1)))
+
+    # Try parsing as a Graphite PR URL (e.g., https://app.graphite.com/github/pr/owner/repo/123)
+    match = re.search(r"/pr/[^/]+/[^/]+/(\d+)", arg)
     if match:
         return ParsedArgument(arg_type="pr_url", pr_number=int(match.group(1)))
 
