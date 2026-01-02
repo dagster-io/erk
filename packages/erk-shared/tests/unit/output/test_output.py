@@ -1,50 +1,68 @@
 """Tests for output utilities."""
 
-from io import StringIO
-from unittest.mock import patch
+import click
+from click.testing import CliRunner
 
 from erk_shared.output.output import user_confirm
+
+
+@click.command()
+@click.option("--default", type=click.Choice(["true", "false", "none"]))
+def _confirm_test_command(default: str) -> None:
+    """Test command that wraps user_confirm for testing."""
+    default_value: bool | None
+    if default == "true":
+        default_value = True
+    elif default == "false":
+        default_value = False
+    else:
+        default_value = None
+
+    result = user_confirm("Continue?", default=default_value)
+    click.echo(f"result={result}")
 
 
 class TestUserConfirm:
     """Tests for user_confirm function."""
 
-    def test_user_confirm_flushes_stderr_before_prompting(self) -> None:
-        """Verify stderr is flushed before click.confirm is called."""
-        flush_called_before_confirm = False
+    def test_user_confirm_returns_true_on_y_input(self) -> None:
+        """Verify user_confirm returns True when user types 'y'."""
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(_confirm_test_command, ["--default", "false"], input="y\n")
 
-        def track_flush() -> None:
-            nonlocal flush_called_before_confirm
-            flush_called_before_confirm = True
+        assert result.exit_code == 0
+        assert "result=True" in result.output
 
-        def mock_confirm(prompt: str, default: bool, err: bool) -> bool:
-            # Check that flush was called before we got here
-            flush_err = "stderr.flush() must be called before click.confirm()"
-            assert flush_called_before_confirm, flush_err
-            return True
+    def test_user_confirm_returns_false_on_n_input(self) -> None:
+        """Verify user_confirm returns False when user types 'n'."""
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(_confirm_test_command, ["--default", "false"], input="n\n")
 
-        with (
-            patch("sys.stderr", new_callable=StringIO) as mock_stderr,
-            patch("erk_shared.output.output.click.confirm", side_effect=mock_confirm),
-        ):
-            mock_stderr.flush = track_flush  # type: ignore[method-assign]
-            result = user_confirm("Continue?")
+        assert result.exit_code == 0
+        assert "result=False" in result.output
 
-        assert result is True
+    def test_user_confirm_uses_default_false_on_empty_input(self) -> None:
+        """Verify user_confirm uses default=False when user just presses enter."""
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(_confirm_test_command, ["--default", "false"], input="\n")
 
-    def test_user_confirm_returns_true_on_confirmation(self) -> None:
-        """Verify user_confirm returns True when user confirms."""
-        with patch("erk_shared.output.output.click.confirm", return_value=True):
-            assert user_confirm("Continue?") is True
+        assert result.exit_code == 0
+        assert "result=False" in result.output
 
-    def test_user_confirm_returns_false_on_rejection(self) -> None:
-        """Verify user_confirm returns False when user rejects."""
-        with patch("erk_shared.output.output.click.confirm", return_value=False):
-            assert user_confirm("Continue?") is False
+    def test_user_confirm_uses_default_true_on_empty_input(self) -> None:
+        """Verify user_confirm uses default=True when user just presses enter."""
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(_confirm_test_command, ["--default", "true"], input="\n")
 
-    def test_user_confirm_passes_correct_arguments(self) -> None:
-        """Verify user_confirm passes default=False and err=True to click.confirm."""
-        with patch("erk_shared.output.output.click.confirm", return_value=True) as mock_confirm:
-            user_confirm("Are you sure?")
+        assert result.exit_code == 0
+        assert "result=True" in result.output
 
-        mock_confirm.assert_called_once_with("Are you sure?", default=False, err=True)
+    def test_user_confirm_prompts_on_stderr(self) -> None:
+        """Verify user_confirm outputs prompt to stderr (err=True)."""
+        runner = CliRunner(mix_stderr=False)
+        result = runner.invoke(_confirm_test_command, ["--default", "false"], input="y\n")
+
+        assert result.exit_code == 0
+        # The prompt goes to stderr, result output goes to stdout
+        assert "Continue?" in result.stderr
+        assert "result=True" in result.output

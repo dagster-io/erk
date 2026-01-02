@@ -307,7 +307,7 @@ def _confirm_operations(force: bool, dry_run: bool) -> bool:
         return True
 
     user_output()
-    if not user_confirm("Proceed with these operations?"):
+    if not user_confirm("Proceed with these operations?", default=True):
         user_output(click.style("⭕ Aborted.", fg="red", bold=True))
         return False
 

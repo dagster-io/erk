@@ -132,7 +132,7 @@ def check_unresolved_comments(
             click.style("⚠ ", fg="yellow")
             + f"PR #{pr_number} has {len(threads)} unresolved review comment(s)."
         )
-        if not user_confirm("Continue anyway?"):
+        if not user_confirm("Continue anyway?", default=False):
             raise SystemExit(0)
 
 
