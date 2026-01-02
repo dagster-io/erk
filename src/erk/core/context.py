@@ -7,6 +7,7 @@ re-exported here for backwards compatibility.
 
 import shutil
 from pathlib import Path
+from typing import Any, cast
 
 import click
 import tomlkit
@@ -365,16 +366,22 @@ def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None
     else:
         doc = tomlkit.document()
 
+    # Cast Document to dict-like type for indexing
+    # tomlkit.Document supports dict operations at runtime but stubs are incomplete
+    doc_dict = cast(dict[str, Any], doc)
+
     # Ensure [tool] section exists
-    if "tool" not in doc:
-        doc["tool"] = tomlkit.table()  # type: ignore[index]
+    if "tool" not in doc_dict:
+        doc_dict["tool"] = tomlkit.table()
 
     # Ensure [tool.erk] section exists
-    if "erk" not in doc["tool"]:  # type: ignore[operator]
-        doc["tool"]["erk"] = tomlkit.table()  # type: ignore[index]
+    tool_section = cast(dict[str, Any], doc_dict["tool"])
+    if "erk" not in tool_section:
+        tool_section["erk"] = tomlkit.table()
 
     # Set trunk_branch value
-    doc["tool"]["erk"]["trunk_branch"] = trunk  # type: ignore[index]
+    erk_section = cast(dict[str, Any], tool_section["erk"])
+    erk_section["trunk_branch"] = trunk
 
     # Write back to file
     with pyproject_path.open("w", encoding="utf-8") as f:

@@ -2,7 +2,7 @@
 
 import shutil
 from collections.abc import Callable
-from typing import TypeVar
+from typing import Any, TypeVar, cast
 
 import click
 
@@ -86,9 +86,12 @@ class CommandWithHiddenOptions(click.Command):
             if is_hidden:
                 if show_hidden:
                     # Temporarily unhide to get help record (Click returns None for hidden)
-                    param.hidden = False  # type: ignore[attr-defined]
+                    # Cast to Any to access runtime-only 'hidden' attribute
+                    # (Click's Parameter type stubs don't declare it)
+                    param_any = cast(Any, param)
+                    param_any.hidden = False
                     rv = param.get_help_record(ctx)
-                    param.hidden = True  # type: ignore[attr-defined]
+                    param_any.hidden = True
                     if rv is not None:
                         hidden_opts.append(rv)
             else:
