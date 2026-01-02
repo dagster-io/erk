@@ -38,7 +38,7 @@ from erk_shared.naming import (
     sanitize_worktree_name,
     strip_plan_from_filename,
 )
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 # Valid model names and their aliases
 _MODEL_ALIASES: dict[str, str] = {
@@ -637,8 +637,7 @@ def _handle_force_delete(
 
     # Prompt for confirmation
     if not dry_run:
-        prompt_text = click.style("Proceed with deletion?", fg="yellow", bold=True)
-        if not click.confirm(f"\n{prompt_text}", default=False, err=True):
+        if not user_confirm("Proceed with deletion?"):
             user_output(click.style("⭕ Aborted.", fg="red", bold=True))
             raise SystemExit(1) from None
 

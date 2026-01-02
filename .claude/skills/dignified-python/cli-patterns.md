@@ -9,6 +9,7 @@
 2. **Exit with `raise SystemExit(1)` for CLI errors**
 3. **Error boundaries at command level**
 4. **Use `err=True` for error output**
+5. **Use `user_confirm()` for confirmation prompts** (handles stderr flushing)
 
 ## Basic Click Patterns
 
@@ -94,11 +95,21 @@ def sync(obj: dict, path: str, dry_run: bool) -> None:
 ## User Interaction
 
 ```python
-# Confirmation prompt
-if click.confirm("Are you sure?"):
+from erk_shared.output import user_output, user_confirm
+
+# ✅ CORRECT: Use user_confirm() for confirmation prompts
+# This ensures stderr is flushed before prompting
+user_output("Warning: This operation is destructive!")
+if user_confirm("Are you sure?"):
     perform_dangerous_operation()
 
-# User input
+# ❌ WRONG: Direct click.confirm() after user_output()
+# This can hang because stderr isn't flushed before the prompt
+user_output("Warning: This operation is destructive!")
+if click.confirm("Are you sure?"):  # BAD: buffering hang
+    perform_dangerous_operation()
+
+# User input (for non-boolean prompts, use click.prompt directly)
 name = click.prompt("Enter your name", default="User")
 
 # Password input

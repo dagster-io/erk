@@ -42,7 +42,7 @@ from erk.core.repo_discovery import (
 )
 from erk.core.shell import Shell
 from erk_shared.git.real import RealGit
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 
 def detect_graphite(shell_ops: Shell) -> bool:
@@ -263,7 +263,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
     user_output("\nClaude settings found. The erk permission allows Claude to run")
     user_output("erk commands without prompting for approval each time.")
 
-    if not click.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
+    if not user_confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?"):
         user_output("Skipped. You can add the permission manually to .claude/settings.json")
         return NoBackupCreated()
 
@@ -272,7 +272,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
 
     # Confirm before overwriting
     user_output(f"\nThis will update: {settings_path}")
-    if not click.confirm("Proceed with writing changes?", default=True):
+    if not user_confirm("Proceed with writing changes?"):
         user_output("Skipped. No changes made to settings.json")
         return NoBackupCreated()
 
@@ -331,7 +331,7 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
     # Explain what hooks do
     user_output("\nErk uses Claude Code hooks for session management and plan tracking.")
 
-    if not click.confirm("Add erk hooks to .claude/settings.json?", default=True):
+    if not user_confirm("Add erk hooks to .claude/settings.json?"):
         user_output("Skipped. You can add hooks later with: erk init --hooks")
         return
 
@@ -385,7 +385,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     # Different statusline configured - warn and prompt
     if not isinstance(current_config, StatuslineNotConfigured):
         user_output(f"\n  Existing statusLine found: {current_config.command}")
-        if not click.confirm(f"  Replace with {get_erk_statusline_command()}?", default=False):
+        if not user_confirm(f"  Replace with {get_erk_statusline_command()}?"):
             user_output("  Skipped. Keeping existing statusLine configuration.")
             return False
 
@@ -490,7 +490,7 @@ def init_cmd(
             user_output("\nTo remember that shell setup is complete, erk needs to update:")
             user_output(f"  {config_path}")
 
-            if not click.confirm("Proceed with updating global config?", default=True):
+            if not user_confirm("Proceed with updating global config?"):
                 user_output("\nShell integration instructions shown above.")
                 user_output("Run 'erk init --shell' to save this preference.")
                 return
@@ -692,8 +692,7 @@ def init_cmd(
                         user_output(f"\n  {shell_msg}")
                         user_output(f"    {config_path}")
 
-                        confirm_msg = "  Proceed with updating global config?"
-                        if not click.confirm(confirm_msg, default=True):
+                        if not user_confirm("  Proceed with updating global config?"):
                             user_output("\n  Shell integration instructions shown above.")
                             user_output("  Run 'erk init --shell' to save this preference.")
                         else:

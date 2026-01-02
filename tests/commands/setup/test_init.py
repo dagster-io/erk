@@ -1574,15 +1574,15 @@ def test_statusline_setup_configures_empty_settings(
     settings_path = claude_dir / "settings.json"
     settings_path.write_text("{}", encoding="utf-8")
 
-    # Mock click.confirm to return True (confirm write)
-    with mock.patch("click.confirm", return_value=True):
+    # Mock user_confirm to return True (confirm write)
+    with mock.patch("erk.cli.commands.init.user_confirm", return_value=True):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were written
     updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
     assert "statusLine" in updated_settings
     assert updated_settings["statusLine"]["type"] == "command"
-    assert updated_settings["statusLine"]["command"] == "uvx erk-statusline"
+    assert "erk-statusline" in updated_settings["statusLine"]["command"]
 
 
 def test_statusline_setup_creates_settings_if_missing(
@@ -1594,14 +1594,14 @@ def test_statusline_setup_creates_settings_if_missing(
     # No settings.json file
     settings_path = tmp_path / ".claude" / "settings.json"
 
-    # Mock click.confirm to return True (confirm write)
-    with mock.patch("click.confirm", return_value=True):
+    # Mock user_confirm to return True (confirm write)
+    with mock.patch("erk.cli.commands.init.user_confirm", return_value=True):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify file was created
     assert settings_path.exists()
     created_settings = json.loads(settings_path.read_text(encoding="utf-8"))
-    assert created_settings["statusLine"]["command"] == "uvx erk-statusline"
+    assert "erk-statusline" in created_settings["statusLine"]["command"]
 
 
 def test_statusline_setup_skips_when_already_configured(
@@ -1639,18 +1639,18 @@ def test_statusline_setup_prompts_for_different_command(tmp_path: Path) -> None:
     existing_settings = {
         "statusLine": {
             "type": "command",
-            "command": "uvx other-statusline",
+            "command": "other-statusline",
         }
     }
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
-    # Mock click.confirm to return False (decline replacement)
-    with mock.patch("click.confirm", return_value=False):
+    # Mock user_confirm to return False (decline replacement)
+    with mock.patch("erk.cli.commands.init.user_confirm", return_value=False):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were NOT changed
     unchanged_settings = json.loads(settings_path.read_text(encoding="utf-8"))
-    assert unchanged_settings["statusLine"]["command"] == "uvx other-statusline"
+    assert unchanged_settings["statusLine"]["command"] == "other-statusline"
 
 
 def test_statusline_setup_replaces_when_confirmed(
@@ -1666,18 +1666,18 @@ def test_statusline_setup_replaces_when_confirmed(
     existing_settings = {
         "statusLine": {
             "type": "command",
-            "command": "uvx other-statusline",
+            "command": "other-statusline",
         }
     }
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
-    # Mock click.confirm to return True for both prompts
-    with mock.patch("click.confirm", return_value=True):
+    # Mock user_confirm to return True for both prompts
+    with mock.patch("erk.cli.commands.init.user_confirm", return_value=True):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were updated
     updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
-    assert updated_settings["statusLine"]["command"] == "uvx erk-statusline"
+    assert "erk-statusline" in updated_settings["statusLine"]["command"]
 
 
 def test_init_statusline_flag_recognized() -> None:

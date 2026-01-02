@@ -15,7 +15,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.git.abc import WorktreeInfo
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 
 def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) -> Path | None:
@@ -101,9 +101,8 @@ def _ensure_graphite_tracking(
         return
 
     # Prompt user for confirmation
-    if not click.confirm(
-        f"Branch '{branch}' is not tracked by Graphite. Track it with parent '{trunk_branch}'?",
-        default=True,
+    if not user_confirm(
+        f"Branch '{branch}' is not tracked by Graphite. Track it with parent '{trunk_branch}'?"
     ):
         return
 
