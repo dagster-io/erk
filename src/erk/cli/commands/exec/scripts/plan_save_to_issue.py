@@ -133,9 +133,19 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     default=None,
     help="Session ID for scoped plan lookup (uses slug from session logs)",
 )
+@click.option(
+    "--objective-issue",
+    type=int,
+    default=None,
+    help="Link plan to parent objective issue number",
+)
 @click.pass_context
 def plan_save_to_issue(
-    ctx: click.Context, output_format: str, plan_file: Path | None, session_id: str | None
+    ctx: click.Context,
+    output_format: str,
+    plan_file: Path | None,
+    session_id: str | None,
+    objective_issue: int | None,
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
@@ -197,7 +207,7 @@ def plan_save_to_issue(
         source_plan_issues=None,
         extraction_session_ids=None,
         source_repo=source_repo,
-        objective_issue=None,
+        objective_issue=objective_issue,
     )
 
     if not result.success:

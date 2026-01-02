@@ -28,6 +28,7 @@ I'll structure it into a formal objective for your review.
 ```
 
 Wait for the user's response. They may provide:
+
 - A brief summary
 - A detailed brain dump
 - Existing notes or documentation
@@ -47,6 +48,22 @@ Based on the user's description:
    - If the user references specific code, read it to understand context
    - If architecture decisions are mentioned, verify current state
    - Gather enough context to propose realistic phases
+
+3. **Capture context for downstream implementers:**
+
+   During objective creation, you gather valuable context that would otherwise be lost: web searches, codebase exploration, user feedback, and your reasoning. **This context belongs in the objective issue.**
+
+   Ask yourself: "What would a future agent (or human) implementing this need to know?"
+
+   Examples of valuable context:
+   - **Inventories**: Grep results showing all instances of a pattern, categorized by type
+   - **Root cause analysis**: Why the current state exists, what caused the problem
+   - **Codebase findings**: Relevant files, existing patterns, architectural constraints
+   - **External research**: API docs, library behavior, migration guides discovered via web search
+   - **Design rationale**: Why certain approaches were chosen or rejected
+   - **User preferences**: Feedback and decisions made during the conversation
+
+   This context goes in a dedicated section after the Roadmap (see template below)
 
 ### Step 3: Propose Structured Objective
 
@@ -68,28 +85,52 @@ Write a structured objective proposal and show it to the user. Use this template
 
 ## Roadmap
 
-### Phase 1: [Name] (1 PR)
-[Description of what this phase accomplishes]
+### Phase 1A: [Name] Steelthread (1 PR)
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 1.1  | ...         | pending | |
-| 1.2  | ...         | pending | |
+Minimal vertical slice proving the concept works end-to-end.
 
-Test: [How to verify this phase is complete]
+| Step | Description                  | Status  | PR  |
+| ---- | ---------------------------- | ------- | --- |
+| 1A.1 | [Minimal infrastructure]     | pending |     |
+| 1A.2 | [Wire into one command/path] | pending |     |
 
-### Phase 2: [Name] (1 PR)
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 1B: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Step | Description                    | Status  | PR  |
+| ---- | ------------------------------ | ------- | --- |
+| 1B.1 | [Extend to remaining commands] | pending |     |
+| 1B.2 | [Full test coverage]           | pending |     |
+
+**Test:** [Full acceptance criteria]
+
+### Phase 2: [Next Component] (1 PR)
+
 [Description]
 
-| Step | Description | Status | PR |
-|------|-------------|--------|-----|
-| 2.1  | ...         | pending | |
+| Step | Description | Status  | PR  |
+| ---- | ----------- | ------- | --- |
+| 2.1  | ...         | pending |     |
 
-Test: [Verification criteria]
+**Test:** [Verification criteria]
 
 ## Implementation Context
 
 [Current architecture, target architecture, patterns to follow - include if helpful]
+
+## Exploration Notes
+
+[Context gathered during objective creation that implementers will need. Structure flexibly based on what's relevant:]
+
+- Inventories/audits with counts and categorization
+- Root cause analysis
+- Codebase findings (files, patterns, constraints)
+- External research (API docs, library behavior)
+- Design decisions and rationale
+- User feedback incorporated
 
 ## Related Documentation
 
@@ -97,12 +138,27 @@ Test: [Verification criteria]
 - Docs to reference: [relevant docs]
 ```
 
+**Key structuring principles:**
+
+1. **Prefer steelthread**: When tractable, Phase 1A should be a minimal vertical slice that proves the concept works end-to-end. This de-risks the approach early. Sometimes this isn't feasible (e.g., infrastructure must exist before any use case works).
+
+2. **One PR per phase**: Each phase (1A, 1B, 2, etc.) should be a self-contained PR that:
+   - Has a coherent, reviewable scope
+   - Includes its own tests (unit + integration as appropriate)
+   - Leaves the system in a working state when merged
+
+3. **Always shippable**: After each merged PR, the system must remain functional. Never leave the codebase in a broken state between phases.
+
+4. **Test per phase**: Every phase needs a **Test:** section describing acceptance criteria. This becomes the definition of "done" for that PR.
+
 **Section guidelines:**
+
 - **Goal**: Always include - this is the north star
 - **Design Decisions**: Include if there are meaningful choices already made
 - **Roadmap**: Include for bounded objectives - break into shippable phases (1 PR each typically)
 - **Principles/Guidelines**: Include for perpetual objectives instead of a roadmap
 - **Implementation Context**: Include for larger refactors where current/target state matters
+- **Exploration Notes**: Include when you gathered valuable context during creation (inventories, research, reasoning). This is often the most valuable section for implementers
 - **Related Documentation**: Include if specific skills or docs are relevant
 
 **For perpetual objectives**, replace the Roadmap section with:
@@ -128,6 +184,7 @@ to the roadmap, or restructure the phases.
 ### Step 4: Iterate Until Approved
 
 The user may:
+
 - **Approve as-is**: Proceed to Step 5
 - **Request changes**: Make the requested adjustments and show again
 - **Add information**: Incorporate new details and show again
@@ -144,11 +201,13 @@ Once approved:
    - Write the approved objective content to that file
 
 2. **Create the GitHub issue:**
+
    ```bash
    erk exec objective-save-to-issue --session-id=<session-id> --format=display
    ```
 
 3. **Report success:**
+
    ```
    Objective created: #<number>
    URL: <issue-url>
@@ -171,25 +230,27 @@ Once approved:
 
 ## Differences from /erk:plan-save
 
-| Feature          | /erk:plan-save     | /objective:create     |
-| ---------------- | ------------------ | --------------------- |
-| Label            | `erk-plan`         | `erk-plan` + `erk-objective` |
+| Feature          | /erk:plan-save      | /objective:create               |
+| ---------------- | ------------------- | ------------------------------- |
+| Label            | `erk-plan`          | `erk-plan` + `erk-objective`    |
 | Purpose          | Implementation plan | Roadmap or perpetual focus area |
-| Title suffix     | `[erk-plan]`       | None                  |
-| Metadata block   | Yes                | No                    |
-| Commands section | Yes                | No                    |
-| Body content     | Metadata only      | Objective directly    |
-| Input            | Existing plan file | Interactive creation  |
+| Title suffix     | `[erk-plan]`        | None                            |
+| Metadata block   | Yes                 | No                              |
+| Commands section | Yes                 | No                              |
+| Body content     | Metadata only       | Objective directly              |
+| Input            | Existing plan file  | Interactive creation            |
 
 ---
 
 ## Types of Objectives
 
 **Bounded objectives** - Have a clear end state and roadmap:
+
 - "Refactor GitHub gateway into facade pattern"
 - "Add dark mode support"
 
 **Perpetual objectives** - Ongoing areas of focus without a defined end:
+
 - "Improve test coverage"
 - "Documentation maintenance"
 - "Performance optimization"
@@ -200,9 +261,9 @@ The structure adapts to the type - perpetual objectives may have principles/guid
 
 ## Error Cases
 
-| Scenario             | Action                                     |
-| -------------------- | ------------------------------------------ |
-| User provides no description | Re-prompt with examples |
-| Not authenticated    | Report GitHub auth error                   |
-| Issue creation fails | Report API error, offer to retry           |
-| Plan file write fails | Report error with path                    |
+| Scenario                     | Action                           |
+| ---------------------------- | -------------------------------- |
+| User provides no description | Re-prompt with examples          |
+| Not authenticated            | Report GitHub auth error         |
+| Issue creation fails         | Report API error, offer to retry |
+| Plan file write fails        | Report error with path           |
