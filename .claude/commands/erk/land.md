@@ -88,8 +88,14 @@ erk exec get-plan-metadata <plan-number> objective_issue
 ```
 
 **Output format:**
+
 ```json
-{"success": true, "value": 3400, "issue_number": 3509, "field": "objective_issue"}
+{
+  "success": true,
+  "value": 3400,
+  "issue_number": 3509,
+  "field": "objective_issue"
+}
 ```
 
 - If `success` is `true` and `value` is an integer, record that objective issue number
