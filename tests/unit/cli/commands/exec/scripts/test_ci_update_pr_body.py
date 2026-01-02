@@ -333,7 +333,14 @@ def test_impl_claude_failure_truncates_long_stderr(tmp_path: Path) -> None:
     executor = FakePromptExecutor(should_fail=True, error=long_error)
 
     result = _update_pr_body_impl(
-        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+        git,
+        github,
+        executor,
+        tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
     )
 
     assert isinstance(result, UpdateError)
@@ -384,7 +391,14 @@ def test_impl_claude_empty_output(tmp_path: Path) -> None:
     executor = FakePromptExecutor(output="")
 
     result = _update_pr_body_impl(
-        git, github, executor, tmp_path, issue_number=456, run_id=None, run_url=None
+        git,
+        github,
+        executor,
+        tmp_path,
+        issue_number=456,
+        run_id=None,
+        run_url=None,
+        plans_repo=None,
     )
 
     assert isinstance(result, UpdateError)
