@@ -400,7 +400,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
 
 
 @click.command("init")
-@click.option("--force", is_flag=True, help="Overwrite existing repo config if present.")
+@click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
     "--preset",
     type=str,

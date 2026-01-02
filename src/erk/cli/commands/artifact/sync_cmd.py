@@ -8,7 +8,7 @@ from erk.artifacts.sync import sync_artifacts
 
 
 @click.command("sync")
-@click.option("--force", is_flag=True, help="Force sync even if up to date")
+@click.option("-f", "--force", is_flag=True, help="Force sync even if up to date")
 def sync_cmd(force: bool) -> None:
     """Sync artifacts from erk package to .claude/ directory.
 

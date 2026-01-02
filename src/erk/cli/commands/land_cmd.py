@@ -275,6 +275,7 @@ def _navigate_after_land(
     help="Navigate to child branch instead of trunk after landing",
 )
 @click.option(
+    "-f",
     "--force",
     is_flag=True,
     help="Skip all confirmation prompts (unresolved comments, worktree deletion)",

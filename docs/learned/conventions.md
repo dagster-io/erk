@@ -9,6 +9,8 @@ read_when:
 tripwires:
   - action: "writing `__all__` to a Python file"
     warning: "Re-export modules are forbidden. Import directly from where code is defined."
+  - action: "adding --force flag to a CLI command"
+    warning: "Always include -f as the short form. Pattern: @click.option(\"-f\", \"--force\", ...)"
 ---
 
 # Code Conventions
@@ -54,6 +56,16 @@ In code, use the `is_root` field to identify the root worktree.
 Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations.
 
 See [CLI Development](cli/) for the complete decision framework.
+
+## CLI Flag Conventions
+
+All `--force` flags must have `-f` as the short form. This provides consistent UX across all commands.
+
+**Pattern:**
+
+```python
+@click.option("-f", "--force", is_flag=True, help="...")
+```
 
 ## Import Conventions
 
