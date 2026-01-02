@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import sys
@@ -20,6 +21,7 @@ from erk.cli.commands.implement import implement
 from erk.cli.commands.info import info_group
 from erk.cli.commands.init import init_cmd
 from erk.cli.commands.land_cmd import land
+from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
@@ -33,6 +35,7 @@ from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
 from erk.cli.help_formatter import ErkCommandGroup
+from erk.core.command_log import get_cli_args, log_command_end, log_command_start
 from erk.core.context import create_context
 from erk.core.release_notes import check_for_version_change, get_current_version
 from erk.core.version_check import (
@@ -176,6 +179,7 @@ cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_cmd)
 cli.add_command(land)
+cli.add_command(log_cmd)
 cli.add_command(dash)
 cli.add_command(plan_group)
 cli.add_command(planner_group)
@@ -197,4 +201,24 @@ cli.add_command(md_group)
 
 def main() -> None:
     """CLI entry point used by the `erk` console script."""
+    # Log command start with context
+    cwd = Path.cwd()
+    entry_id = log_command_start(get_cli_args(), cwd)
+
+    # Register exit handler to log command completion
+    # Using atexit ensures logging even on exceptions or SystemExit
+    def _log_exit() -> None:
+        # Get exit code from sys.exc_info if exiting due to exception
+        exc_info = sys.exc_info()
+        exc = exc_info[1]
+        if isinstance(exc, SystemExit):
+            exit_code = exc.code if isinstance(exc.code, int) else 1
+        elif exc is not None:
+            exit_code = 1
+        else:
+            exit_code = 0
+        log_command_end(entry_id, exit_code)
+
+    atexit.register(_log_exit)
+
     cli()
