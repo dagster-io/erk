@@ -821,11 +821,7 @@ def test_has_erk_statusline_returns_true_when_configured(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test has_erk_statusline returns True when erk-statusline is configured."""
-<<<<<<< HEAD
     monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
-=======
-    # Use the actual command value (may be overridden by env var)
->>>>>>> e825f6230 (Fix stderr buffering hangs in confirmation prompts)
     settings = {
         "statusLine": {
             "type": "command",

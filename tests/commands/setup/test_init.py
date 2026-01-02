@@ -1617,7 +1617,7 @@ def test_statusline_setup_skips_when_already_configured(
     existing_settings = {
         "statusLine": {
             "type": "command",
-            "command": "erk-statusline",
+            "command": "uvx erk-statusline",
         }
     }
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
