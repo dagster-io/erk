@@ -62,6 +62,9 @@ jobs:
           echo "Skipping autofix"
           exit 0
 
+      # Security: Fork PRs are blocked above (lines 45-52) before reaching this checkout.
+      # Only same-repo PRs can trigger code execution in this privileged workflow.
+      # CodeQL query: actions/untrusted-checkout/critical - mitigated by fork check
       - uses: actions/checkout@v4
         if: github.event_name == 'workflow_dispatch' || steps.pr.outputs.skip != 'true'
         with:

@@ -1,0 +1,15 @@
+# CodeQL configuration for this repository
+# See: https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+
+name: "Erk CodeQL Config"
+
+# Suppress specific queries that have been manually mitigated
+query-filters:
+  # The autofix.yml workflow has fork protection (lines 45-52) that prevents
+  # untrusted code execution. CodeQL's static analysis cannot see this runtime check.
+  - exclude:
+      id: actions/untrusted-checkout/critical
+      # This exclusion is safe because:
+      # 1. Fork PRs are blocked before checkout (head_repo != base_repo check)
+      # 2. Only same-repo PRs can trigger code execution
+      # 3. The workflow is only useful for same-repo PRs anyway (can't push to forks)
