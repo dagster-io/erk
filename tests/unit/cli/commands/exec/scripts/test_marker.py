@@ -38,6 +38,60 @@ class TestMarkerCreate:
         marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "my-marker.marker"
         assert marker_file.exists()
 
+    def test_create_marker_with_explicit_session_id(self, tmp_path: Path) -> None:
+        """Test creating marker with --session-id flag."""
+        runner = CliRunner()
+        session_id = "explicit-session-456"
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["create", "--session-id", session_id, "my-marker"],
+            obj=ctx,
+            env={},  # No env var, should use --session-id flag
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert "my-marker" in data["message"]
+
+        # Verify marker file was created in correct location
+        marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "my-marker.marker"
+        assert marker_file.exists()
+
+    def test_create_marker_session_id_option_takes_precedence_over_env(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that --session-id flag takes precedence over environment variable."""
+        runner = CliRunner()
+        env_session_id = "env-session-789"
+        flag_session_id = "flag-session-999"
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["create", "--session-id", flag_session_id, "my-marker"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": env_session_id},
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["success"] is True
+
+        # Verify marker file was created using flag value, not env var
+        marker_file_flag = (
+            tmp_path / ".erk" / "scratch" / "sessions" / flag_session_id / "my-marker.marker"
+        )
+        marker_file_env = (
+            tmp_path / ".erk" / "scratch" / "sessions" / env_session_id / "my-marker.marker"
+        )
+        assert marker_file_flag.exists()
+        assert not marker_file_env.exists()
+
     def test_create_marker_missing_session_id(self, tmp_path: Path) -> None:
         """Test creating marker fails without session ID."""
         runner = CliRunner()
@@ -54,7 +108,7 @@ class TestMarkerCreate:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"]
+        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
 
 
 class TestMarkerExists:
@@ -78,6 +132,31 @@ class TestMarkerExists:
             ["exists", "my-marker"],
             obj=ctx,
             env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert "exists" in data["message"]
+
+    def test_exists_with_explicit_session_id(self, tmp_path: Path) -> None:
+        """Test exists with --session-id flag."""
+        runner = CliRunner()
+        session_id = "explicit-session-456"
+
+        # Pre-create the marker file
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "my-marker.marker"
+        marker_file.touch()
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["exists", "--session-id", session_id, "my-marker"],
+            obj=ctx,
+            env={},  # No env var, should use --session-id flag
         )
 
         assert result.exit_code == 0
@@ -120,7 +199,7 @@ class TestMarkerExists:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"]
+        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
 
 
 class TestMarkerDelete:
@@ -144,6 +223,34 @@ class TestMarkerDelete:
             ["delete", "my-marker"],
             obj=ctx,
             env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert "Deleted" in data["message"]
+
+        # Verify marker file was deleted
+        assert not marker_file.exists()
+
+    def test_delete_marker_with_explicit_session_id(self, tmp_path: Path) -> None:
+        """Test deleting marker with --session-id flag."""
+        runner = CliRunner()
+        session_id = "explicit-session-456"
+
+        # Pre-create the marker file
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "my-marker.marker"
+        marker_file.touch()
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["delete", "--session-id", session_id, "my-marker"],
+            obj=ctx,
+            env={},  # No env var, should use --session-id flag
         )
 
         assert result.exit_code == 0
@@ -189,4 +296,4 @@ class TestMarkerDelete:
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"]
+        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
