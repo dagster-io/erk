@@ -22,9 +22,7 @@ def test_check_staleness_version_mismatch(tmp_path: Path) -> None:
     # Create state file with old version (requires files section)
     state_file = tmp_path / ".erk" / "state.toml"
     state_file.parent.mkdir(parents=True)
-    state_file.write_text(
-        '[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8"
-    )
+    state_file.write_text('[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
     with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
         result = check_staleness(tmp_path)
@@ -40,9 +38,7 @@ def test_check_staleness_up_to_date(tmp_path: Path) -> None:
     # Create state file with matching version (requires files section)
     state_file = tmp_path / ".erk" / "state.toml"
     state_file.parent.mkdir(parents=True)
-    state_file.write_text(
-        '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
-    )
+    state_file.write_text('[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
     with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
         result = check_staleness(tmp_path)

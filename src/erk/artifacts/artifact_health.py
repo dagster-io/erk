@@ -183,9 +183,7 @@ def get_artifact_health(
         key = f"workflows/{workflow_name}"
         path = project_workflows_dir / workflow_name
         installed_hash = _compute_path_hash(path, is_directory=False)
-        artifacts.append(
-            _build_artifact_status(key, installed_hash, saved_files, current_version)
-        )
+        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check hooks
     settings_path = project_claude_dir / "settings.json"
@@ -210,9 +208,7 @@ def get_artifact_health(
     return ArtifactHealthResult(artifacts=artifacts, skipped_reason=None)
 
 
-def _find_orphaned_in_directory(
-    local_dir: Path, bundled_dir: Path, folder_key: str
-) -> list[str]:
+def _find_orphaned_in_directory(local_dir: Path, bundled_dir: Path, folder_key: str) -> list[str]:
     """Find orphaned files in a directory (files in local but not in bundled)."""
     if not local_dir.exists() or not bundled_dir.exists():
         return []

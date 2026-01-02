@@ -462,9 +462,7 @@ class TestCheckCommand:
 
             # Add settings.json with hooks to avoid missing hooks
             settings = add_erk_hooks({})
-            (project_claude / "settings.json").write_text(
-                json.dumps(settings), encoding="utf-8"
-            )
+            (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
             # Create bundled github dir (empty, no workflows)
             bundled_github = tmp_path / "bundled" / ".github"
