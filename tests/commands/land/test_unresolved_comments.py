@@ -342,5 +342,3 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
 
         # Worktree should have been removed
         assert feature_1_path in git_ops.removed_worktrees
-
-
