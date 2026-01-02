@@ -16,17 +16,15 @@ Streamlines the "plan small change -> implement -> submit" loop for PR iteration
 
 ## Agent Instructions
 
-### Step 1: Create Signal File
+### Step 1: Create Marker File
 
-Before entering plan mode, create the incremental-plan signal file to skip the "save as GitHub issue?" prompt later:
+Before entering plan mode, create the incremental-plan marker to skip the "save as GitHub issue?" prompt later:
 
 ```bash
-# Get session ID from hook reminder (📌 session: <id>)
-mkdir -p .erk/scratch/sessions/<session-id>
-touch .erk/scratch/sessions/<session-id>/incremental-plan.signal
+erk exec marker create incremental-plan
 ```
 
-**IMPORTANT:** You must create this signal file BEFORE calling EnterPlanMode.
+**IMPORTANT:** You must create this marker BEFORE calling EnterPlanMode.
 
 ### Step 2: Enter Plan Mode
 
@@ -50,7 +48,7 @@ In plan mode:
 
 When the plan is ready, call ExitPlanMode.
 
-The incremental-plan signal file you created in Step 1 will cause the exit-plan-mode-hook to:
+The incremental-plan marker you created in Step 1 will cause the exit-plan-mode-hook to:
 
 - Skip the "save as GitHub issue?" prompt
 - Proceed directly to implementation
@@ -89,16 +87,16 @@ Next: Run /local:quick-submit to commit and push.
 
 ## Error Cases
 
-| Error           | Message                                                 |
-| --------------- | ------------------------------------------------------- |
-| No session ID   | Signal file creation skipped; normal plan mode behavior |
-| Not in git repo | `Error: Not in a git repository`                        |
+| Error           | Message                                                  |
+| --------------- | -------------------------------------------------------- |
+| No session ID   | Marker creation fails; normal plan mode behavior applies |
+| Not in git repo | `Error: Not in a git repository`                         |
 
 ---
 
 ## Important Notes
 
-- **DO NOT skip Step 1** - The signal file must be created before entering plan mode
+- **DO NOT skip Step 1** - The marker must be created before entering plan mode
 - **DO NOT save to GitHub** - This workflow skips issue creation
 - **DO NOT create a new branch** - Changes go to the current branch
-- The signal file is automatically deleted when the exit-plan-mode-hook processes it
+- The marker is automatically deleted when the exit-plan-mode-hook processes it

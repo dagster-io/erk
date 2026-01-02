@@ -6,41 +6,41 @@ the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
 or implement immediately.
 
 Exit codes:
-    0: Success (allow exit - no plan, implement-now signal present, or no session)
-    2: Block (plan exists, no implement-now signal - prompt user)
+    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    2: Block (plan exists, no implement-now marker - prompt user)
 
 This command is invoked via:
     erk exec exit-plan-mode-hook
 
-Signal File State Machine
+Marker File State Machine
 =========================
 
-This hook uses signal files in .erk/scratch/sessions/<session-id>/ for state management.
-Signal files are self-describing: their names indicate their purpose and their contents
+This hook uses marker files in .erk/scratch/sessions/<session-id>/ for state management.
+Marker files are self-describing: their names indicate their purpose and their contents
 explain their effect.
 
-Signal Files:
-    exit-plan-mode-hook.implement-now.signal
+Marker Files:
+    exit-plan-mode-hook.implement-now.marker
         Created by: Agent (when user chooses "Implement now")
         Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
         Lifecycle: Deleted after being read by next hook invocation
 
-    exit-plan-mode-hook.plan-saved.signal
+    exit-plan-mode-hook.plan-saved.marker
         Created by: /erk:plan-save command
         Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
         Lifecycle: Deleted after being read by next hook invocation
 
-    incremental-plan.signal
-        Created by: /local:incremental-plan-mode command (via agent creating signal file)
+    incremental-plan.marker
+        Created by: /local:incremental-plan-mode command (via `erk exec marker create`)
         Effect: Next ExitPlanMode call is ALLOWED, skipping the save prompt entirely
         Lifecycle: Deleted after being read by next hook invocation
         Purpose: Streamlines "plan → implement → submit" loop for PR iteration
 
 State Transitions:
-    1. No signal files + plan exists → BLOCK with prompt
-    2. implement-now signal exists → ALLOW (delete signal)
-    3. incremental-plan signal exists → ALLOW (delete signal, skip save prompt)
-    4. plan-saved signal exists → BLOCK with "session complete" message (delete signal)
+    1. No marker files + plan exists → BLOCK with prompt
+    2. implement-now marker exists → ALLOW (delete marker)
+    3. incremental-plan marker exists → ALLOW (delete marker, skip save prompt)
+    4. plan-saved marker exists → BLOCK with "session complete" message (delete marker)
 """
 
 import subprocess
@@ -75,9 +75,9 @@ class HookInput:
 
     session_id: str | None
     github_planning_enabled: bool
-    implement_now_signal_exists: bool
-    plan_saved_signal_exists: bool
-    incremental_plan_signal_exists: bool
+    implement_now_marker_exists: bool
+    plan_saved_marker_exists: bool
+    incremental_plan_marker_exists: bool
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     current_branch: str | None
 
@@ -88,9 +88,9 @@ class HookOutput:
 
     action: ExitAction
     message: str
-    delete_implement_now_signal: bool = False
-    delete_plan_saved_signal: bool = False
-    delete_incremental_plan_signal: bool = False
+    delete_implement_now_marker: bool = False
+    delete_plan_saved_marker: bool = False
+    delete_incremental_plan_marker: bool = False
 
 
 # ============================================================================
@@ -142,9 +142,8 @@ def build_blocking_message(
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
             "If user chooses 'Implement now':",
-            "  1. Create implement-now signal:",
-            f"     mkdir -p .erk/scratch/sessions/{session_id} && "
-            f"touch .erk/scratch/sessions/{session_id}/exit-plan-mode-hook.implement-now.signal",
+            "  1. Create implement-now marker:",
+            "     erk exec marker create exit-plan-mode-hook.implement-now",
             "  2. Call ExitPlanMode",
         ]
     )
@@ -176,29 +175,29 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     if hook_input.session_id is None:
         return HookOutput(ExitAction.ALLOW, "No session context available, allowing exit")
 
-    # Implement-now signal present (user chose "Implement now")
-    if hook_input.implement_now_signal_exists:
+    # Implement-now marker present (user chose "Implement now")
+    if hook_input.implement_now_marker_exists:
         return HookOutput(
             ExitAction.ALLOW,
-            "Implement-now signal found, allowing exit",
-            delete_implement_now_signal=True,
+            "Implement-now marker found, allowing exit",
+            delete_implement_now_marker=True,
         )
 
-    # Incremental-plan signal present (session started via /local:incremental-plan-mode)
+    # Incremental-plan marker present (session started via /local:incremental-plan-mode)
     # Skip the "save as GitHub issue?" prompt and proceed directly to implementation
-    if hook_input.incremental_plan_signal_exists:
+    if hook_input.incremental_plan_marker_exists:
         return HookOutput(
             ExitAction.ALLOW,
             "Incremental-plan mode: skipping save prompt, proceeding to implementation",
-            delete_incremental_plan_signal=True,
+            delete_incremental_plan_marker=True,
         )
 
-    # Plan-saved signal present (user chose "Save to GitHub")
-    if hook_input.plan_saved_signal_exists:
+    # Plan-saved marker present (user chose "Save to GitHub")
+    if hook_input.plan_saved_marker_exists:
         return HookOutput(
             ExitAction.BLOCK,
             "✅ Plan already saved to GitHub. Session complete - no further action needed.",
-            delete_plan_saved_signal=True,
+            delete_plan_saved_marker=True,
         )
 
     # No plan file
@@ -208,7 +207,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             "No plan file found for this session, allowing exit",
         )
 
-    # Plan exists, no implement-now signal - block and instruct
+    # Plan exists, no implement-now marker - block and instruct
     return HookOutput(
         ExitAction.BLOCK,
         build_blocking_message(
@@ -237,24 +236,24 @@ def _is_github_planning_enabled() -> bool:
     return bool(data.get("github_planning", True))
 
 
-def _get_implement_now_signal_path(session_id: str, repo_root: Path) -> Path:
-    """Get implement-now signal path in .erk/scratch/sessions/<session_id>/.
+def _get_implement_now_marker_path(session_id: str, repo_root: Path) -> Path:
+    """Get implement-now marker path in .erk/scratch/sessions/<session_id>/.
 
     Args:
         session_id: The session ID to build the path for
         repo_root: Path to the git repository root
 
     Returns:
-        Path to implement-now signal file
+        Path to implement-now marker file
     """
     scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    return scratch_dir / "exit-plan-mode-hook.implement-now.signal"
+    return scratch_dir / "exit-plan-mode-hook.implement-now.marker"
 
 
-def _get_plan_saved_signal_path(session_id: str, repo_root: Path) -> Path:
-    """Get plan-saved signal path in .erk/scratch/sessions/<session_id>/.
+def _get_plan_saved_marker_path(session_id: str, repo_root: Path) -> Path:
+    """Get plan-saved marker path in .erk/scratch/sessions/<session_id>/.
 
-    The plan-saved signal indicates the plan was already saved to GitHub,
+    The plan-saved marker indicates the plan was already saved to GitHub,
     so exit should proceed without triggering implementation.
 
     Args:
@@ -262,16 +261,16 @@ def _get_plan_saved_signal_path(session_id: str, repo_root: Path) -> Path:
         repo_root: Path to the git repository root
 
     Returns:
-        Path to plan-saved signal file
+        Path to plan-saved marker file
     """
     scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    return scratch_dir / "exit-plan-mode-hook.plan-saved.signal"
+    return scratch_dir / "exit-plan-mode-hook.plan-saved.marker"
 
 
-def _get_incremental_plan_signal_path(session_id: str, repo_root: Path) -> Path:
-    """Get incremental-plan signal path in .erk/scratch/sessions/<session_id>/.
+def _get_incremental_plan_marker_path(session_id: str, repo_root: Path) -> Path:
+    """Get incremental-plan marker path in .erk/scratch/sessions/<session_id>/.
 
-    The incremental-plan signal indicates this session was started via
+    The incremental-plan marker indicates this session was started via
     /local:incremental-plan, so we should skip the "save as GitHub issue?"
     prompt and proceed directly to implementation.
 
@@ -280,9 +279,9 @@ def _get_incremental_plan_signal_path(session_id: str, repo_root: Path) -> Path:
         repo_root: Path to the git repository root
 
     Returns:
-        Path to incremental-plan signal file
+        Path to incremental-plan marker file
     """
-    return get_scratch_dir(session_id, repo_root=repo_root) / "incremental-plan.signal"
+    return get_scratch_dir(session_id, repo_root=repo_root) / "incremental-plan.marker"
 
 
 def _find_session_plan(session_id: str, repo_root: Path) -> Path | None:
@@ -343,15 +342,15 @@ def _gather_inputs(session_id: str | None, repo_root: Path) -> HookInput:
     Returns:
         HookInput with all gathered state.
     """
-    # Determine signal existence
-    implement_now_signal_exists = False
-    plan_saved_signal_exists = False
-    incremental_plan_signal_exists = False
+    # Determine marker existence
+    implement_now_marker_exists = False
+    plan_saved_marker_exists = False
+    incremental_plan_marker_exists = False
     if session_id is not None:
-        implement_now_signal_exists = _get_implement_now_signal_path(session_id, repo_root).exists()
-        plan_saved_signal_exists = _get_plan_saved_signal_path(session_id, repo_root).exists()
-        signal_path = _get_incremental_plan_signal_path(session_id, repo_root)
-        incremental_plan_signal_exists = signal_path.exists()
+        implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
+        plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
+        marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
+        incremental_plan_marker_exists = marker_path.exists()
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -363,9 +362,9 @@ def _gather_inputs(session_id: str | None, repo_root: Path) -> HookInput:
     needs_blocking_message = (
         session_id is not None
         and plan_file_path is not None
-        and not implement_now_signal_exists
-        and not incremental_plan_signal_exists
-        and not plan_saved_signal_exists
+        and not implement_now_marker_exists
+        and not incremental_plan_marker_exists
+        and not plan_saved_marker_exists
     )
     if needs_blocking_message:
         current_branch = _get_current_branch_within_hook()
@@ -373,9 +372,9 @@ def _gather_inputs(session_id: str | None, repo_root: Path) -> HookInput:
     return HookInput(
         session_id=session_id,
         github_planning_enabled=_is_github_planning_enabled(),
-        implement_now_signal_exists=implement_now_signal_exists,
-        plan_saved_signal_exists=plan_saved_signal_exists,
-        incremental_plan_signal_exists=incremental_plan_signal_exists,
+        implement_now_marker_exists=implement_now_marker_exists,
+        plan_saved_marker_exists=plan_saved_marker_exists,
+        incremental_plan_marker_exists=incremental_plan_marker_exists,
         plan_file_path=plan_file_path,
         current_branch=current_branch,
     )
@@ -385,18 +384,18 @@ def _execute_result(result: HookOutput, hook_input: HookInput, repo_root: Path) 
     """Execute the decision result. All I/O happens here."""
     session_id = hook_input.session_id
 
-    if result.delete_implement_now_signal and session_id:
-        _get_implement_now_signal_path(session_id, repo_root).unlink()
+    if result.delete_implement_now_marker and session_id:
+        _get_implement_now_marker_path(session_id, repo_root).unlink()
 
-    if result.delete_plan_saved_signal and session_id:
-        _get_plan_saved_signal_path(session_id, repo_root).unlink()
+    if result.delete_plan_saved_marker and session_id:
+        _get_plan_saved_marker_path(session_id, repo_root).unlink()
 
-    if result.delete_incremental_plan_signal and session_id:
-        _get_incremental_plan_signal_path(session_id, repo_root).unlink()
+    if result.delete_incremental_plan_marker and session_id:
+        _get_incremental_plan_marker_path(session_id, repo_root).unlink()
 
     # Snapshot plan whenever a plan exists and user made a decision
     # (implement-now or plan-saved, but NOT when blocking to prompt)
-    user_made_decision = result.delete_implement_now_signal or result.delete_plan_saved_signal
+    user_made_decision = result.delete_implement_now_marker or result.delete_plan_saved_marker
     if hook_input.plan_file_path is not None and session_id is not None and user_made_decision:
         snapshot_plan_for_session(
             session_id=session_id,

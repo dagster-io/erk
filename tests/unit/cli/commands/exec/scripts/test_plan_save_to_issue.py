@@ -304,8 +304,8 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     assert isinstance(output["session_ids"], list)
 
 
-def test_plan_save_to_issue_session_id_still_creates_signal(tmp_path: Path) -> None:
-    """Test that --session-id argument still creates signal file even with context disabled."""
+def test_plan_save_to_issue_session_id_still_creates_marker(tmp_path: Path) -> None:
+    """Test that --session-id argument still creates marker file even with context disabled."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
@@ -341,16 +341,16 @@ def test_plan_save_to_issue_session_id_still_creates_signal(tmp_path: Path) -> N
         assert output["session_ids"] == []
         assert output["session_context_chunks"] == 0
 
-        # But signal file should still be created
-        signal_file = (
+        # But marker file should still be created
+        marker_file = (
             Path(td)
             / ".erk"
             / "scratch"
             / "sessions"
             / test_session_id
-            / "exit-plan-mode-hook.plan-saved.signal"
+            / "exit-plan-mode-hook.plan-saved.marker"
         )
-        assert signal_file.exists()
+        assert marker_file.exists()
 
 
 def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Path) -> None:
@@ -500,14 +500,14 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
     assert output["session_context_chunks"] == 0
 
 
-def test_plan_save_to_issue_creates_signal_file(tmp_path: Path) -> None:
-    """Test plan_save_to_issue creates signal file on success."""
+def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
+    """Test plan_save_to_issue creates marker file on success."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    test_session_id = "signal-test-session-id"
+    test_session_id = "marker-test-session-id"
     plan_content = "# Feature Plan\n\n- Step 1"
     fake_store = FakeClaudeCodeSessionStore(
-        plans={"signal-test": plan_content},
+        plans={"marker-test": plan_content},
     )
     runner = CliRunner()
 
@@ -522,33 +522,33 @@ def test_plan_save_to_issue_creates_signal_file(tmp_path: Path) -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
 
-        # Verify signal file was created at correct path with sessions/ segment
-        signal_file = (
+        # Verify marker file was created at correct path with sessions/ segment
+        marker_file = (
             Path(td)
             / ".erk"
             / "scratch"
             / "sessions"
             / test_session_id
-            / "exit-plan-mode-hook.plan-saved.signal"
+            / "exit-plan-mode-hook.plan-saved.marker"
         )
-        assert signal_file.exists()
+        assert marker_file.exists()
 
-        # Verify signal file has descriptive content
-        content = signal_file.read_text(encoding="utf-8")
+        # Verify marker file has descriptive content
+        content = marker_file.read_text(encoding="utf-8")
         assert "Created by:" in content
         assert "Trigger:" in content
         assert "Effect:" in content
         assert "Lifecycle:" in content
 
 
-def test_plan_save_to_issue_no_signal_without_session_id(tmp_path: Path) -> None:
-    """Test signal file is not created when no session ID is provided."""
+def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None:
+    """Test marker file is not created when no session ID is provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     plan_content = "# Feature Plan\n\n- Step 1"
     # Session store has plan but no session ID will be passed
     fake_store = FakeClaudeCodeSessionStore(
-        plans={"no-signal-test": plan_content},
+        plans={"no-marker-test": plan_content},
     )
     runner = CliRunner()
 
@@ -561,7 +561,7 @@ def test_plan_save_to_issue_no_signal_without_session_id(tmp_path: Path) -> None
 
         assert result.exit_code == 0, f"Failed: {result.output}"
 
-        # Verify no signal directories were created
+        # Verify no marker directories were created
         scratch_dir = Path(td) / ".erk" / "scratch"
         if scratch_dir.exists():
             # Only the scratch dir should exist (no subdirectories)
