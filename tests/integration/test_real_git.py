@@ -1003,6 +1003,12 @@ def test_pull_rebase_integrates_remote_commits(tmp_path: Path) -> None:
         capture_output=True,
     )
 
+    # Configure git identity in cloned repo (needed for CI)
+    subprocess.run(
+        ["git", "config", "user.email", "test@test.com"], cwd=local_repo, check=True
+    )
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=local_repo, check=True)
+
     # Create a local commit
     (local_repo / "local_file.txt").write_text("local content\n", encoding="utf-8")
     subprocess.run(["git", "add", "local_file.txt"], cwd=local_repo, check=True)
