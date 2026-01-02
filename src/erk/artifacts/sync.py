@@ -380,7 +380,8 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     artifacts: list[SyncedArtifact] = []
 
     # Hash directory-based skills
-    artifacts.extend(_hash_directory_artifacts(bundled_claude_dir / "skills", BUNDLED_SKILLS, "skills"))
+    skills_dir = bundled_claude_dir / "skills"
+    artifacts.extend(_hash_directory_artifacts(skills_dir, BUNDLED_SKILLS, "skills"))
 
     # Hash agents (supports both directory-based and single-file)
     artifacts.extend(_hash_agent_artifacts(bundled_claude_dir / "agents", BUNDLED_AGENTS))
