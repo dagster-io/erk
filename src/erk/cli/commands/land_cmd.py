@@ -112,7 +112,20 @@ def check_unresolved_comments(
     Raises:
         SystemExit(0) if user declines to continue
     """
-    threads = ctx.github.get_pr_review_threads(repo_root, pr_number, include_resolved=False)
+    # Handle rate limit errors gracefully - this is an advisory check.
+    # We cannot LBYL for rate limits (no way to check quota before calling),
+    # so try/except is the appropriate pattern here.
+    try:
+        threads = ctx.github.get_pr_review_threads(repo_root, pr_number, include_resolved=False)
+    except RuntimeError as e:
+        error_str = str(e)
+        if "RATE_LIMIT" in error_str or "rate limit" in error_str.lower():
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + "Could not check for unresolved comments (API rate limited)"
+            )
+            return  # Continue without blocking
+        raise  # Re-raise other errors
 
     if threads and not force:
         user_output(
@@ -388,6 +401,11 @@ def _land_current_branch(
         else:
             target_child_branch = children[0]
 
+    # Look up PR for current branch to check unresolved comments BEFORE merge
+    pr_details = ctx.github.get_pr_for_branch(repo.root, current_branch)
+    if not isinstance(pr_details, PRNotFound):
+        check_unresolved_comments(ctx, repo.root, pr_details.number, force)
+
     # Step 1: Execute land-pr (merges the PR)
     # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
     result = render_events(execute_land_pr(ctx, ctx.cwd))
@@ -398,14 +416,10 @@ def _land_current_branch(
 
     # Success - PR was merged
     success_result: LandPrSuccess = result
-    pr_number = success_result.pr_number
-
-    # Check for unresolved comments AFTER successful merge status check
-    # but BEFORE cleanup (so user can still bail out)
-    check_unresolved_comments(ctx, repo.root, pr_number, force)
 
     user_output(
-        click.style("✓", fg="green") + f" Merged PR #{pr_number} [{success_result.branch_name}]"
+        click.style("✓", fg="green")
+        + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
     # Check for linked objective
