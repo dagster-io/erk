@@ -1161,6 +1161,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
+        objective_issue: Parent objective issue number (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -1185,6 +1186,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "source_plan_issues",
             "extraction_session_ids",
             "source_repo",
+            "objective_issue",
         }
 
         # Check required fields exist
@@ -1317,6 +1319,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                     "extraction_session_ids is required when plan_type is 'extraction'"
                 )
 
+        # Validate optional objective_issue field
+        if "objective_issue" in data and data["objective_issue"] is not None:
+            if not isinstance(data["objective_issue"], int):
+                raise ValueError("objective_issue must be an integer or null")
+            if data["objective_issue"] <= 0:
+                raise ValueError("objective_issue must be positive when provided")
+
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
@@ -1331,20 +1340,21 @@ def create_plan_header_block(
     *,
     created_at: str,
     created_by: str,
-    worktree_name: str | None = None,
-    plan_comment_id: int | None = None,
-    last_dispatched_run_id: str | None = None,
-    last_dispatched_node_id: str | None = None,
-    last_dispatched_at: str | None = None,
-    last_local_impl_at: str | None = None,
-    last_local_impl_event: str | None = None,
-    last_local_impl_session: str | None = None,
-    last_local_impl_user: str | None = None,
-    last_remote_impl_at: str | None = None,
-    plan_type: str | None = None,
-    source_plan_issues: list[int] | None = None,
-    extraction_session_ids: list[str] | None = None,
-    source_repo: str | None = None,
+    worktree_name: str | None,
+    plan_comment_id: int | None,
+    last_dispatched_run_id: str | None,
+    last_dispatched_node_id: str | None,
+    last_dispatched_at: str | None,
+    last_local_impl_at: str | None,
+    last_local_impl_event: str | None,
+    last_local_impl_session: str | None,
+    last_local_impl_user: str | None,
+    last_remote_impl_at: str | None,
+    plan_type: str | None,
+    source_plan_issues: list[int] | None,
+    extraction_session_ids: list[str] | None,
+    source_repo: str | None,
+    objective_issue: int | None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1365,6 +1375,7 @@ def create_plan_header_block(
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
+        objective_issue: Optional parent objective issue number
 
     Returns:
         MetadataBlock with plan-header schema
@@ -1403,6 +1414,10 @@ def create_plan_header_block(
     if source_repo is not None:
         data["source_repo"] = source_repo
 
+    # Include objective_issue if provided
+    if objective_issue is not None:
+        data["objective_issue"] = objective_issue
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1414,20 +1429,21 @@ def format_plan_header_body(
     *,
     created_at: str,
     created_by: str,
-    worktree_name: str | None = None,
-    plan_comment_id: int | None = None,
-    last_dispatched_run_id: str | None = None,
-    last_dispatched_node_id: str | None = None,
-    last_dispatched_at: str | None = None,
-    last_local_impl_at: str | None = None,
-    last_local_impl_event: str | None = None,
-    last_local_impl_session: str | None = None,
-    last_local_impl_user: str | None = None,
-    last_remote_impl_at: str | None = None,
-    plan_type: str | None = None,
-    source_plan_issues: list[int] | None = None,
-    extraction_session_ids: list[str] | None = None,
-    source_repo: str | None = None,
+    worktree_name: str | None,
+    plan_comment_id: int | None,
+    last_dispatched_run_id: str | None,
+    last_dispatched_node_id: str | None,
+    last_dispatched_at: str | None,
+    last_local_impl_at: str | None,
+    last_local_impl_event: str | None,
+    last_local_impl_session: str | None,
+    last_local_impl_user: str | None,
+    last_remote_impl_at: str | None,
+    plan_type: str | None,
+    source_plan_issues: list[int] | None,
+    extraction_session_ids: list[str] | None,
+    source_repo: str | None,
+    objective_issue: int | None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -1451,6 +1467,7 @@ def format_plan_header_body(
         source_plan_issues: For extraction plans, list of issue numbers analyzed
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
+        objective_issue: Optional parent objective issue number
 
     Returns:
         Issue body string with metadata block only
@@ -1472,6 +1489,7 @@ def format_plan_header_body(
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
         source_repo=source_repo,
+        objective_issue=objective_issue,
     )
 
     return render_metadata_block(block)
@@ -1944,6 +1962,22 @@ def extract_plan_header_source_repo(issue_body: str) -> str | None:
         return None
 
     return block.data.get("source_repo")
+
+
+def extract_plan_header_objective_issue(issue_body: str) -> int | None:
+    """Extract objective_issue from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        objective_issue number if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("objective_issue")
 
 
 # =============================================================================

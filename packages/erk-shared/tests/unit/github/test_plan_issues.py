@@ -20,6 +20,13 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -50,8 +57,13 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
             plan_type="extraction",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
             extraction_session_ids=["session-abc", "session-def"],
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -76,6 +88,12 @@ class TestCreatePlanIssueSuccess:
             repo_root=tmp_path,
             plan_content=plan_content,
             title="Correct Title",
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -92,7 +110,13 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
             title_suffix="[custom-suffix]",
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -108,7 +132,13 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
             extra_labels=["bug", "priority-high"],
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -124,8 +154,13 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
             plan_type="extraction",
+            extra_labels=None,
+            title_suffix=None,
             source_plan_issues=[123, 456],
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -185,6 +220,13 @@ class TestCreatePlanIssueTitleExtraction:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.title == "Feature: Add Auth"
@@ -198,6 +240,13 @@ class TestCreatePlanIssueTitleExtraction:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.title == "Add Feature X"
@@ -211,6 +260,13 @@ class TestCreatePlanIssueTitleExtraction:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.title == "Refactor Y"
@@ -228,6 +284,13 @@ class TestCreatePlanIssueErrors:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is False
@@ -251,6 +314,13 @@ class TestCreatePlanIssueErrors:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is False
@@ -271,6 +341,13 @@ class TestCreatePlanIssueErrors:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is False
@@ -296,6 +373,13 @@ class TestCreatePlanIssuePartialSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         # Partial success: issue created but comment failed
@@ -318,6 +402,13 @@ class TestCreatePlanIssuePartialSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is False
@@ -336,6 +427,13 @@ class TestCreatePlanIssueLabelManagement:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -355,8 +453,13 @@ class TestCreatePlanIssueLabelManagement:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
             plan_type="extraction",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
             extraction_session_ids=["abc"],
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -375,6 +478,13 @@ class TestCreatePlanIssueLabelManagement:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -390,7 +500,13 @@ class TestCreatePlanIssueLabelManagement:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
             extra_labels=["erk-plan", "bug"],  # erk-plan would be duplicate
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -445,6 +561,13 @@ class TestCreatePlanIssueCommandsSection:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -470,8 +593,13 @@ class TestCreatePlanIssueCommandsSection:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
             plan_type="extraction",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
             extraction_session_ids=["session-abc"],
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -495,6 +623,13 @@ class TestCreatePlanIssueCommandsSection:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            objective_issue=None,
         )
 
         assert result.success is True

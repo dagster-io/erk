@@ -69,6 +69,13 @@ def create_issue_from_session(ctx: click.Context, session_id: str | None) -> Non
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan_text,
+        title=None,
+        plan_type=None,
+        extra_labels=None,
+        title_suffix=None,
+        source_plan_issues=None,
+        extraction_session_ids=None,
+        objective_issue=None,
     )
 
     if not result.success:

@@ -59,13 +59,14 @@ def create_plan_issue(
     repo_root: Path,
     plan_content: str,
     *,
-    title: str | None = None,
-    plan_type: str | None = None,
-    extra_labels: list[str] | None = None,
-    title_suffix: str | None = None,
-    source_plan_issues: list[int] | None = None,
-    extraction_session_ids: list[str] | None = None,
-    source_repo: str | None = None,
+    title: str | None,
+    plan_type: str | None,
+    extra_labels: list[str] | None,
+    title_suffix: str | None,
+    source_plan_issues: list[int] | None,
+    extraction_session_ids: list[str] | None,
+    source_repo: str | None,
+    objective_issue: int | None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2/v3 plan issue with proper structure.
 
@@ -87,6 +88,7 @@ def create_plan_issue(
         source_plan_issues: For extraction plans, list of source issue numbers
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
+        objective_issue: Optional parent objective issue number
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -146,10 +148,21 @@ def create_plan_issue(
     issue_body = format_plan_header_body(
         created_at=created_at,
         created_by=username,
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         plan_type=plan_type,
         source_plan_issues=source_plan_issues if source_plan_issues else [],
         extraction_session_ids=extraction_session_ids if extraction_session_ids else [],
         source_repo=source_repo,
+        objective_issue=objective_issue,
     )
 
     # Create issue

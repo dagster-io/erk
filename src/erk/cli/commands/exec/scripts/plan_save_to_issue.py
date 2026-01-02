@@ -127,7 +127,14 @@ def plan_save_to_issue(
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan,
+        title=None,
+        plan_type=None,
+        extra_labels=None,
+        title_suffix=None,
+        source_plan_issues=None,
+        extraction_session_ids=None,
         source_repo=source_repo,
+        objective_issue=None,
     )
 
     if not result.success:

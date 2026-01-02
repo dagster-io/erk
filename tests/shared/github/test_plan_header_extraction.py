@@ -187,9 +187,20 @@ def test_create_plan_header_block_with_extraction_type() -> None:
     block = create_plan_header_block(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         plan_type="extraction",
         source_plan_issues=[123, 456],
         extraction_session_ids=["abc123", "def456"],
+        objective_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -203,6 +214,20 @@ def test_create_plan_header_block_without_extraction_type() -> None:
     block = create_plan_header_block(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        plan_type=None,
+        source_plan_issues=None,
+        extraction_session_ids=None,
+        objective_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -219,9 +244,20 @@ def test_format_plan_header_body_with_extraction() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         plan_type="extraction",
         source_plan_issues=[123],
         extraction_session_ids=["abc123"],
+        objective_issue=None,
     )
 
     # Verify the block can be parsed back
@@ -237,9 +273,20 @@ def test_render_and_extract_extraction_plan_header() -> None:
     block = create_plan_header_block(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         plan_type="extraction",
         source_plan_issues=[100, 200],
         extraction_session_ids=["session-1", "session-2"],
+        objective_issue=None,
     )
 
     rendered = render_metadata_block(block)

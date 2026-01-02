@@ -32,7 +32,9 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
+from erk_shared.github.metadata import extract_plan_header_objective_issue
 from erk_shared.github.types import PRDetails, PRNotFound
+from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
@@ -121,6 +123,26 @@ def check_unresolved_comments(
             raise SystemExit(0)
 
 
+def _get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> int | None:
+    """Extract objective issue number from branch's linked plan issue.
+
+    Returns objective issue number if:
+    1. Branch has P<number>- prefix (plan issue link)
+    2. Plan issue has objective_issue in its metadata
+
+    Returns None otherwise (fail-open - never blocks landing).
+    """
+    plan_number = extract_leading_issue_number(branch)
+    if plan_number is None:
+        return None
+
+    issue = ctx.issues.get_issue(repo_root, plan_number)
+    if issue is None:
+        return None
+
+    return extract_plan_header_objective_issue(issue.body)
+
+
 def _cleanup_and_navigate(
     ctx: ErkContext,
     repo: RepoContext,
@@ -174,6 +196,9 @@ def _cleanup_and_navigate(
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
         _navigate_after_land(ctx, repo, script, pull_flag, target_child_branch)
+    else:
+        # Command succeeded but no navigation needed - exit cleanly
+        raise SystemExit(0)
 
 
 def _navigate_after_land(
@@ -383,6 +408,12 @@ def _land_current_branch(
         click.style("✓", fg="green") + f" Merged PR #{pr_number} [{success_result.branch_name}]"
     )
 
+    # Check for linked objective
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    objective_number = _get_objective_for_branch(ctx, main_repo_root, current_branch)
+    if objective_number is not None:
+        user_output(f"   Linked to Objective #{objective_number}")
+
     # Step 2: Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
@@ -475,6 +506,11 @@ def _land_specific_pr(
         raise SystemExit(1)
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
+
+    # Check for linked objective
+    objective_number = _get_objective_for_branch(ctx, main_repo_root, branch)
+    if objective_number is not None:
+        user_output(f"   Linked to Objective #{objective_number}")
 
     # Cleanup and navigate
     _cleanup_and_navigate(

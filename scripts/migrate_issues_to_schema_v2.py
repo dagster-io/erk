@@ -78,8 +78,19 @@ def migrate_issue(issue: dict) -> None:
         created_at=created_at,
         created_by=author,
         worktree_name=worktree_name,
+        plan_comment_id=None,
         last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
         last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        plan_type=None,
+        source_plan_issues=None,
+        extraction_session_ids=None,
+        objective_issue=None,
     )
 
     # Render the metadata block

@@ -25,9 +25,20 @@ def _make_extraction_issue(
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         plan_type="extraction",
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
+        objective_issue=None,
     )
     return IssueInfo(
         number=number,
@@ -170,6 +181,20 @@ def test_complete_rejects_non_extraction_plan() -> None:
     standard_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        plan_type=None,
+        source_plan_issues=None,
+        extraction_session_ids=None,
+        objective_issue=None,
     )
     standard_issue = IssueInfo(
         number=100,
