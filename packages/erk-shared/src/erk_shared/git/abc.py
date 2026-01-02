@@ -49,6 +49,19 @@ class BranchSyncInfo:
     behind: int
 
 
+@dataclass(frozen=True)
+class RebaseResult:
+    """Result of a git rebase operation.
+
+    Attributes:
+        success: True if rebase completed without conflicts
+        conflict_files: Tuple of file paths with conflicts (empty if success=True)
+    """
+
+    success: bool
+    conflict_files: tuple[str, ...]
+
+
 def find_worktree_for_branch(worktrees: list[WorktreeInfo], branch: str) -> Path | None:
     """Find the path of the worktree that has the given branch checked out.
 
@@ -796,5 +809,37 @@ class Git(ABC):
 
         Returns:
             BranchDivergence with is_diverged flag and ahead/behind counts.
+        """
+        ...
+
+    @abstractmethod
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Rebase the current branch onto a target ref.
+
+        Runs `git rebase <target_ref>` to replay current branch commits on top
+        of the target ref.
+
+        Args:
+            cwd: Working directory (must be in a git repository)
+            target_ref: The ref to rebase onto (e.g., "origin/main", branch name)
+
+        Returns:
+            RebaseResult with success flag and any conflict files.
+            If conflicts occur, the rebase will be left in progress.
+        """
+        ...
+
+    @abstractmethod
+    def rebase_abort(self, cwd: Path) -> None:
+        """Abort an in-progress rebase operation.
+
+        Runs `git rebase --abort` to cancel a rebase that has conflicts
+        and restore the branch to its original state.
+
+        Args:
+            cwd: Working directory (must have a rebase in progress)
+
+        Raises:
+            subprocess.CalledProcessError: If no rebase is in progress
         """
         ...
