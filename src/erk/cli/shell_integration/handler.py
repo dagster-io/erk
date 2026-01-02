@@ -53,6 +53,8 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "branch co": ["branch", "checkout"],
     "br checkout": ["branch", "checkout"],
     "br co": ["branch", "checkout"],
+    "branch land": ["branch", "land"],
+    "br land": ["branch", "land"],
 }
 
 
