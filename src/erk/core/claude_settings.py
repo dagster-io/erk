@@ -20,7 +20,7 @@ ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-promp
 ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
 
 # Statusline configuration
-ERK_STATUSLINE_COMMAND = "uvx erk-statusline"
+ERK_STATUSLINE_COMMAND = "erk-statusline"
 
 
 @dataclass(frozen=True)
