@@ -13,6 +13,10 @@ hash = "7bba89938d33f2b7"
 version = "0.3.1"
 hash = "a0f0a1e27f928a90"
 
+[artifacts.files."agents/devrun.md"]
+version = "0.3.1"
+hash = "ef8f76c10172f003"
+
 [artifacts.files."commands/erk/plan-implement.md"]
 version = "0.3.1"
 hash = "b7e9a90550e89d9d"

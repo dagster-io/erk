@@ -192,17 +192,34 @@ def get_artifact_health(
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check agents (can be directory-based or single-file)
+    # Key format depends on structure:
+    #   - Directory: agents/{name} (like skills)
+    #   - Single-file: agents/{name}.md (like commands)
     for name in BUNDLED_AGENTS:
-        key = f"agents/{name}"
         dir_path = project_claude_dir / "agents" / name
         file_path = project_claude_dir / "agents" / f"{name}.md"
 
+        # Check bundled structure to determine canonical key format
+        bundled_dir = bundled_claude_dir / "agents" / name
+        bundled_file = bundled_claude_dir / "agents" / f"{name}.md"
+
         # Directory-based takes precedence, then single-file
-        if dir_path.exists() and dir_path.is_dir():
+        if bundled_dir.exists() and bundled_dir.is_dir():
+            key = f"agents/{name}"
+            installed_hash = _compute_path_hash(dir_path, is_directory=True)
+        elif bundled_file.exists() and bundled_file.is_file():
+            key = f"agents/{name}.md"
+            installed_hash = _compute_path_hash(file_path, is_directory=False)
+        elif dir_path.exists() and dir_path.is_dir():
+            # Fallback: check installed structure
+            key = f"agents/{name}"
             installed_hash = _compute_path_hash(dir_path, is_directory=True)
         elif file_path.exists() and file_path.is_file():
+            key = f"agents/{name}.md"
             installed_hash = _compute_path_hash(file_path, is_directory=False)
         else:
+            # Not installed anywhere - use single-file key as default for new agents
+            key = f"agents/{name}.md"
             installed_hash = None
 
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))

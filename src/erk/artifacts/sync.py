@@ -114,13 +114,13 @@ class SyncedArtifact:
 def _sync_directory_artifacts(
     source_dir: Path, target_dir: Path, names: frozenset[str], key_prefix: str
 ) -> tuple[int, list[SyncedArtifact]]:
-    """Sync directory-based artifacts (skills or agents) to project.
+    """Sync directory-based artifacts (skills) to project.
 
     Args:
         source_dir: Parent directory containing source artifacts (e.g., bundled/skills/)
         target_dir: Parent directory for target artifacts (e.g., project/.claude/skills/)
         names: Set of artifact names to sync (e.g., BUNDLED_SKILLS)
-        key_prefix: Prefix for artifact keys (e.g., "skills" or "agents")
+        key_prefix: Prefix for artifact keys (e.g., "skills")
 
     Returns tuple of (file_count, synced_artifacts).
     """
@@ -140,6 +140,53 @@ def _sync_directory_artifacts(
                     key=f"{key_prefix}/{name}",
                     hash=_compute_directory_hash(target),
                     file_count=count,
+                )
+            )
+    return copied, synced
+
+
+def _sync_agent_artifacts(
+    source_dir: Path, target_dir: Path, names: frozenset[str]
+) -> tuple[int, list[SyncedArtifact]]:
+    """Sync agent artifacts to project (supports both directory-based and single-file).
+
+    Key format depends on structure:
+      - Directory: agents/{name} (like skills)
+      - Single-file: agents/{name}.md (like commands)
+
+    Returns tuple of (file_count, synced_artifacts).
+    """
+    if not source_dir.exists():
+        return 0, []
+
+    copied = 0
+    synced: list[SyncedArtifact] = []
+    for name in names:
+        source_dir_path = source_dir / name
+        source_file_path = source_dir / f"{name}.md"
+
+        # Directory-based takes precedence, then single-file
+        if source_dir_path.exists() and source_dir_path.is_dir():
+            target = target_dir / name
+            count = _copy_directory_contents(source_dir_path, target)
+            copied += count
+            synced.append(
+                SyncedArtifact(
+                    key=f"agents/{name}",
+                    hash=_compute_directory_hash(target),
+                    file_count=count,
+                )
+            )
+        elif source_file_path.exists() and source_file_path.is_file():
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_file = target_dir / f"{name}.md"
+            shutil.copy2(source_file_path, target_file)
+            copied += 1
+            synced.append(
+                SyncedArtifact(
+                    key=f"agents/{name}.md",
+                    hash=_compute_file_hash(target_file),
+                    file_count=1,
                 )
             )
     return copied, synced
@@ -286,6 +333,41 @@ def _hash_directory_artifacts(
     return artifacts
 
 
+def _hash_agent_artifacts(agents_dir: Path, names: frozenset[str]) -> list[SyncedArtifact]:
+    """Compute hashes for agents (supports both directory-based and single-file).
+
+    Key format depends on structure:
+      - Directory: agents/{name} (like skills)
+      - Single-file: agents/{name}.md (like commands)
+    """
+    if not agents_dir.exists():
+        return []
+
+    artifacts: list[SyncedArtifact] = []
+    for name in names:
+        dir_path = agents_dir / name
+        file_path = agents_dir / f"{name}.md"
+
+        # Directory-based takes precedence, then single-file
+        if dir_path.exists() and dir_path.is_dir():
+            artifacts.append(
+                SyncedArtifact(
+                    key=f"agents/{name}",
+                    hash=_compute_directory_hash(dir_path),
+                    file_count=sum(1 for f in dir_path.rglob("*") if f.is_file()),
+                )
+            )
+        elif file_path.exists() and file_path.is_file():
+            artifacts.append(
+                SyncedArtifact(
+                    key=f"agents/{name}.md",
+                    hash=_compute_file_hash(file_path),
+                    file_count=1,
+                )
+            )
+    return artifacts
+
+
 def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     """Compute artifact state from source (for erk repo dogfooding).
 
@@ -297,9 +379,11 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     bundled_github_dir = get_bundled_github_dir()
     artifacts: list[SyncedArtifact] = []
 
-    # Hash directory-based artifacts (skills, agents)
-    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
-        artifacts.extend(_hash_directory_artifacts(bundled_claude_dir / prefix, names, prefix))
+    # Hash directory-based skills
+    artifacts.extend(_hash_directory_artifacts(bundled_claude_dir / "skills", BUNDLED_SKILLS, "skills"))
+
+    # Hash agents (supports both directory-based and single-file)
+    artifacts.extend(_hash_agent_artifacts(bundled_claude_dir / "agents", BUNDLED_AGENTS))
 
     # Hash commands from source
     commands_dir = bundled_claude_dir / "commands" / "erk"
@@ -385,13 +469,19 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     total_copied = 0
     all_synced: list[SyncedArtifact] = []
 
-    # Sync directory-based artifacts (skills, agents)
-    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
-        count, synced = _sync_directory_artifacts(
-            bundled_claude_dir / prefix, target_claude_dir / prefix, names, prefix
-        )
-        total_copied += count
-        all_synced.extend(synced)
+    # Sync directory-based skills
+    count, synced = _sync_directory_artifacts(
+        bundled_claude_dir / "skills", target_claude_dir / "skills", BUNDLED_SKILLS, "skills"
+    )
+    total_copied += count
+    all_synced.extend(synced)
+
+    # Sync agents (supports both directory-based and single-file)
+    count, synced = _sync_agent_artifacts(
+        bundled_claude_dir / "agents", target_claude_dir / "agents", BUNDLED_AGENTS
+    )
+    total_copied += count
+    all_synced.extend(synced)
 
     count, synced = _sync_commands(bundled_claude_dir / "commands", target_claude_dir / "commands")
     total_copied += count

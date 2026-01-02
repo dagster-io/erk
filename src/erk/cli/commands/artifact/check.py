@@ -79,7 +79,8 @@ def _display_installed_artifacts(project_dir: Path) -> None:
         return
 
     for artifact in artifacts:
-        click.echo(f"   {_format_artifact_path(artifact)}")
+        suffix = "" if is_erk_managed(artifact) else " (unmanaged)"
+        click.echo(f"   {_format_artifact_path(artifact)}{suffix}")
 
 
 def _format_artifact_status(artifact: ArtifactStatus, show_hashes: bool) -> str:
@@ -163,7 +164,7 @@ def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
 
     if project_artifacts:
         click.echo("")
-        click.echo("Project artifacts:")
+        click.echo("Project artifacts (unmanaged):")
         for artifact in project_artifacts:
             click.echo(f"   {_format_artifact_path(artifact)}")
 
