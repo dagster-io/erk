@@ -345,13 +345,18 @@ def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
     return None
 
 
-def _fetch_github_data_graphql(cwd: str) -> GitHubData | None:
-    """Fetch repository, PR, and checks data via single GraphQL query.
+def _fetch_github_data_rest(cwd: str) -> GitHubData | None:
+    """Fetch repository, PR, and checks data via REST API.
+
+    Uses 3 API calls:
+    1. List PRs by branch → get PR number, state, draft, head SHA
+    2. Get single PR → get mergeable status
+    3. Get check runs → get CI status
 
     Returns:
-        GitHubData with all GitHub information, or None if query fails.
+        GitHubData with all GitHub information, or None if any call fails.
     """
-    # Get current branch to use as headRefName
+    # Get current branch
     branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
     if not branch:
         return None
@@ -364,71 +369,33 @@ def _fetch_github_data_graphql(cwd: str) -> GitHubData | None:
     owner, repo = repo_info
 
     try:
-        # Build GraphQL query with variables
-        query_with_vars = f"""
-        query {{
-          repository(owner: "{owner}", name: "{repo}") {{
-            nameWithOwner
-            pullRequests(first: 1, states: [OPEN, CLOSED, MERGED], headRefName: "{branch}") {{
-              nodes {{
-                number
-                state
-                isDraft
-                mergeable
-                commits(last: 1) {{
-                  nodes {{
-                    commit {{
-                      statusCheckRollup {{
-                        contexts(first: 100) {{
-                          nodes {{
-                            __typename
-                            ... on CheckRun {{
-                              conclusion
-                              status
-                              name
-                            }}
-                            ... on StatusContext {{
-                              state
-                              context
-                            }}
-                          }}
-                        }}
-                      }}
-                    }}
-                  }}
-                }}
-              }}
-            }}
-          }}
-        }}
-        """
-
-        # Execute GraphQL query
-        result = subprocess.run(
-            ["gh", "api", "graphql", "-f", f"query={query_with_vars}"],
+        # Call 1: List PRs by branch
+        # Using state=all returns OPEN PRs first, which fixes the "wrong PR" bug
+        list_prs_result = subprocess.run(
+            [
+                "gh",
+                "api",
+                f"repos/{owner}/{repo}/pulls",
+                "-X",
+                "GET",
+                "-f",
+                f"head={owner}:{branch}",
+                "-f",
+                "state=all",
+            ],
             cwd=cwd,
             capture_output=True,
             text=True,
             timeout=2,
         )
 
-        if result.returncode != 0:
+        if list_prs_result.returncode != 0:
             return None
 
-        data = json.loads(result.stdout)
+        prs = json.loads(list_prs_result.stdout)
 
-        # Extract repository data
-        if "data" not in data:
-            return None
-        if "repository" not in data["data"]:
-            return None
-
-        repository = data["data"]["repository"]
-
-        # Extract PR data
-        pr_nodes = repository.get("pullRequests", {}).get("nodes", [])
-        if not pr_nodes:
-            # No PR for this branch
+        # No PR for this branch
+        if not prs:
             return GitHubData(
                 owner=owner,
                 repo=repo,
@@ -439,21 +406,65 @@ def _fetch_github_data_graphql(cwd: str) -> GitHubData | None:
                 check_contexts=[],
             )
 
-        pr = pr_nodes[0]
+        # Take first PR (REST API returns OPEN PRs first with state=all)
+        pr = prs[0]
         pr_number = pr.get("number", 0)
-        pr_state = pr.get("state", "")
-        is_draft = pr.get("isDraft", False)
-        mergeable = pr.get("mergeable", "")
+        pr_state = pr.get("state", "").upper()  # REST returns lowercase
+        is_draft = pr.get("draft", False)
+        head_sha = pr.get("head", {}).get("sha", "")
 
-        # Extract check contexts
-        check_contexts = []
-        commits = pr.get("commits", {}).get("nodes", [])
-        if commits:
-            commit = commits[0].get("commit", {})
-            status_check_rollup = commit.get("statusCheckRollup")
-            if status_check_rollup:
-                contexts_data = status_check_rollup.get("contexts", {}).get("nodes", [])
-                check_contexts = contexts_data
+        # Call 2: Get single PR for mergeable status
+        get_pr_result = subprocess.run(
+            ["gh", "api", f"repos/{owner}/{repo}/pulls/{pr_number}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+
+        mergeable = ""
+        if get_pr_result.returncode == 0:
+            pr_detail = json.loads(get_pr_result.stdout)
+            mergeable_value = pr_detail.get("mergeable")
+            mergeable_state = pr_detail.get("mergeable_state", "")
+
+            # Map REST mergeable fields to GraphQL-style values
+            if mergeable_value is True:
+                mergeable = "MERGEABLE"
+            elif mergeable_value is False:
+                if mergeable_state == "dirty":
+                    mergeable = "CONFLICTING"
+                else:
+                    mergeable = "UNKNOWN"
+            else:
+                # mergeable is null (GitHub hasn't computed yet)
+                mergeable = "UNKNOWN"
+
+        # Call 3: Get check runs for CI status
+        check_contexts: list[dict[str, str]] = []
+        if head_sha:
+            check_runs_result = subprocess.run(
+                ["gh", "api", f"repos/{owner}/{repo}/commits/{head_sha}/check-runs"],
+                cwd=cwd,
+                capture_output=True,
+                text=True,
+                timeout=2,
+            )
+
+            if check_runs_result.returncode == 0:
+                check_runs_data = json.loads(check_runs_result.stdout)
+                raw_runs = check_runs_data.get("check_runs", [])
+
+                # Map REST format to GraphQL-compatible format
+                for run in raw_runs:
+                    check_contexts.append(
+                        {
+                            "__typename": "CheckRun",
+                            "conclusion": (run.get("conclusion") or "").upper(),
+                            "status": (run.get("status") or "").upper(),
+                            "name": run.get("name", ""),
+                        }
+                    )
 
         return GitHubData(
             owner=owner,
@@ -479,7 +490,7 @@ def _categorize_check_buckets(check_contexts: list[dict[str, str]]) -> str:
     """Categorize check contexts into bucket status.
 
     Args:
-        check_contexts: List of check context dicts from GraphQL statusCheckRollup
+        check_contexts: List of check context dicts (normalized to GraphQL format)
 
     Returns:
         "✅" if all checks pass
@@ -812,8 +823,8 @@ def main():
         else:
             model_code = model[:1].upper() if model else "?"
 
-        # Fetch GitHub data once via GraphQL
-        github_data = _fetch_github_data_graphql(cwd) if cwd else None
+        # Fetch GitHub data via REST API
+        github_data = _fetch_github_data_rest(cwd) if cwd else None
 
         # Get repo info from GitHub data
         repo_info = get_repo_info(github_data)

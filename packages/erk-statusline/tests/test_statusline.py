@@ -1,4 +1,4 @@
-"""Tests for statusline.py GraphQL GitHub integration."""
+"""Tests for statusline.py GitHub integration."""
 
 import json
 import tempfile
@@ -9,7 +9,7 @@ from erk_statusline.statusline import (
     GitHubData,
     RepoInfo,
     _categorize_check_buckets,
-    _fetch_github_data_graphql,
+    _fetch_github_data_rest,
     _parse_github_repo_from_remote,
     build_gh_label,
     build_new_plan_label,
@@ -431,15 +431,15 @@ class TestParseGitHubRepoFromRemote:
         assert result is None
 
 
-class TestFetchGitHubDataGraphQL:
-    """Test GraphQL data fetching with mocked subprocess."""
+class TestFetchGitHubDataRest:
+    """Test REST API data fetching with mocked subprocess."""
 
     @patch("erk_statusline.statusline.run_git")
     def test_branch_detection_failure_returns_none(self, mock_run_git: MagicMock) -> None:
         """Failed branch detection should return None."""
-        mock_run_git.return_value = ""  # Empty branch means failure
+        mock_run_git.return_value = ""
 
-        result = _fetch_github_data_graphql("/fake/cwd")
+        result = _fetch_github_data_rest("/fake/cwd")
         assert result is None
 
     @patch("erk_statusline.statusline.subprocess.run")
@@ -448,25 +448,15 @@ class TestFetchGitHubDataGraphQL:
         self, mock_run_git: MagicMock, mock_subprocess: MagicMock
     ) -> None:
         """No PR for branch should return GitHubData with pr_number=0."""
-        # Mock run_git to return branch first, then git remote URL
         mock_run_git.side_effect = [
-            "feature-branch",  # First call: get branch name
-            "git@github.com:owner/repo.git",  # Second call: get remote URL
+            "feature-branch",
+            "git@github.com:owner/repo.git",
         ]
 
-        graphql_response = {
-            "data": {
-                "repository": {
-                    "nameWithOwner": "owner/repo",
-                    "pullRequests": {"nodes": []},  # Empty - no PR
-                }
-            }
-        }
+        # REST API returns empty array when no PRs
+        mock_subprocess.return_value = MagicMock(returncode=0, stdout="[]")
 
-        # Only one subprocess call now - the GraphQL query
-        mock_subprocess.return_value = MagicMock(returncode=0, stdout=json.dumps(graphql_response))
-
-        result = _fetch_github_data_graphql("/fake/cwd")
+        result = _fetch_github_data_rest("/fake/cwd")
         assert result is not None
         assert result.owner == "owner"
         assert result.repo == "repo"
@@ -478,67 +468,145 @@ class TestFetchGitHubDataGraphQL:
 
     @patch("erk_statusline.statusline.subprocess.run")
     @patch("erk_statusline.statusline.run_git")
-    def test_pr_with_all_fields_returns_complete_data(
+    def test_returns_open_pr_when_multiple_exist(
         self, mock_run_git: MagicMock, mock_subprocess: MagicMock
     ) -> None:
-        """PR with all fields should return complete GitHubData."""
-        # Mock run_git to return branch first, then git remote URL (HTTPS format this time)
+        """REST API should return OPEN PR first when both OPEN and MERGED exist."""
         mock_run_git.side_effect = [
-            "feature-branch",  # First call: get branch name
-            "https://github.com/owner/repo.git",  # Second call: get remote URL
+            "feature-branch",
+            "git@github.com:owner/repo.git",
         ]
 
-        graphql_response = {
-            "data": {
-                "repository": {
-                    "nameWithOwner": "owner/repo",
-                    "pullRequests": {
-                        "nodes": [
-                            {
-                                "number": 123,
-                                "state": "OPEN",
-                                "isDraft": True,
-                                "mergeable": "CONFLICTING",
-                                "commits": {
-                                    "nodes": [
-                                        {
-                                            "commit": {
-                                                "statusCheckRollup": {
-                                                    "contexts": {
-                                                        "nodes": [
-                                                            {
-                                                                "__typename": "CheckRun",
-                                                                "conclusion": "SUCCESS",
-                                                                "status": "COMPLETED",
-                                                                "name": "test",
-                                                            }
-                                                        ]
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    ]
-                                },
-                            }
-                        ]
-                    },
-                }
-            }
+        # REST API with state=all returns OPEN PRs first
+        list_prs_response = [
+            {"number": 456, "state": "open", "draft": False, "head": {"sha": "abc123"}},
+            {"number": 123, "state": "merged", "draft": False, "head": {"sha": "def456"}},
+        ]
+        get_pr_response = {"mergeable": True, "mergeable_state": "clean"}
+        check_runs_response = {"check_runs": []}
+
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(list_prs_response)),
+            MagicMock(returncode=0, stdout=json.dumps(get_pr_response)),
+            MagicMock(returncode=0, stdout=json.dumps(check_runs_response)),
+        ]
+
+        result = _fetch_github_data_rest("/fake/cwd")
+        assert result is not None
+        assert result.pr_number == 456  # Should return the OPEN PR
+        assert result.pr_state == "OPEN"
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    @patch("erk_statusline.statusline.run_git")
+    def test_maps_rest_fields_to_github_data(
+        self, mock_run_git: MagicMock, mock_subprocess: MagicMock
+    ) -> None:
+        """REST fields should map correctly to GitHubData."""
+        mock_run_git.side_effect = [
+            "feature-branch",
+            "https://github.com/owner/repo.git",
+        ]
+
+        list_prs_response = [
+            {"number": 123, "state": "open", "draft": True, "head": {"sha": "abc123"}}
+        ]
+        get_pr_response = {"mergeable": False, "mergeable_state": "dirty"}
+        check_runs_response = {
+            "check_runs": [
+                {"name": "test", "status": "completed", "conclusion": "success"},
+                {"name": "build", "status": "in_progress", "conclusion": None},
+            ]
         }
 
-        # Only one subprocess call now - the GraphQL query
-        mock_subprocess.return_value = MagicMock(returncode=0, stdout=json.dumps(graphql_response))
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(list_prs_response)),
+            MagicMock(returncode=0, stdout=json.dumps(get_pr_response)),
+            MagicMock(returncode=0, stdout=json.dumps(check_runs_response)),
+        ]
 
-        result = _fetch_github_data_graphql("/fake/cwd")
+        result = _fetch_github_data_rest("/fake/cwd")
         assert result is not None
         assert result.owner == "owner"
         assert result.repo == "repo"
         assert result.pr_number == 123
-        assert result.pr_state == "OPEN"
+        assert result.pr_state == "OPEN"  # Lowercase converted to uppercase
         assert result.is_draft is True
-        assert result.mergeable == "CONFLICTING"
-        assert len(result.check_contexts) == 1
+        assert result.mergeable == "CONFLICTING"  # mergeable=False, state=dirty
+        assert len(result.check_contexts) == 2
         assert result.check_contexts[0]["__typename"] == "CheckRun"
+        assert result.check_contexts[0]["conclusion"] == "SUCCESS"
+        assert result.check_contexts[0]["status"] == "COMPLETED"
+        assert result.check_contexts[1]["status"] == "IN_PROGRESS"
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    @patch("erk_statusline.statusline.run_git")
+    def test_mergeable_true_maps_to_mergeable(
+        self, mock_run_git: MagicMock, mock_subprocess: MagicMock
+    ) -> None:
+        """REST mergeable=True should map to MERGEABLE."""
+        mock_run_git.side_effect = [
+            "feature-branch",
+            "git@github.com:owner/repo.git",
+        ]
+
+        list_prs_response = [
+            {"number": 123, "state": "open", "draft": False, "head": {"sha": "abc123"}}
+        ]
+        get_pr_response = {"mergeable": True, "mergeable_state": "clean"}
+        check_runs_response = {"check_runs": []}
+
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(list_prs_response)),
+            MagicMock(returncode=0, stdout=json.dumps(get_pr_response)),
+            MagicMock(returncode=0, stdout=json.dumps(check_runs_response)),
+        ]
+
+        result = _fetch_github_data_rest("/fake/cwd")
+        assert result is not None
+        assert result.mergeable == "MERGEABLE"
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    @patch("erk_statusline.statusline.run_git")
+    def test_mergeable_null_maps_to_unknown(
+        self, mock_run_git: MagicMock, mock_subprocess: MagicMock
+    ) -> None:
+        """REST mergeable=null should map to UNKNOWN."""
+        mock_run_git.side_effect = [
+            "feature-branch",
+            "git@github.com:owner/repo.git",
+        ]
+
+        list_prs_response = [
+            {"number": 123, "state": "open", "draft": False, "head": {"sha": "abc123"}}
+        ]
+        get_pr_response = {"mergeable": None, "mergeable_state": "unknown"}
+        check_runs_response = {"check_runs": []}
+
+        mock_subprocess.side_effect = [
+            MagicMock(returncode=0, stdout=json.dumps(list_prs_response)),
+            MagicMock(returncode=0, stdout=json.dumps(get_pr_response)),
+            MagicMock(returncode=0, stdout=json.dumps(check_runs_response)),
+        ]
+
+        result = _fetch_github_data_rest("/fake/cwd")
+        assert result is not None
+        assert result.mergeable == "UNKNOWN"
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    @patch("erk_statusline.statusline.run_git")
+    def test_list_prs_failure_returns_none(
+        self, mock_run_git: MagicMock, mock_subprocess: MagicMock
+    ) -> None:
+        """Failed list PRs call should return None."""
+        mock_run_git.side_effect = [
+            "feature-branch",
+            "git@github.com:owner/repo.git",
+        ]
+
+        mock_subprocess.return_value = MagicMock(returncode=1, stdout="")
+
+        result = _fetch_github_data_rest("/fake/cwd")
+        assert result is None
 
 
 class TestGetPlanProgress:
