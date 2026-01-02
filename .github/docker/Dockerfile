@@ -14,16 +14,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install uv
-ENV CARGO_HOME=/usr/local/cargo
-ENV PATH="${CARGO_HOME}/bin:${PATH}"
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+# Install uv (recommended: copy from official image)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 
 # Install Claude Code
-ENV CLAUDE_HOME=/usr/local/claude
-ENV PATH="${CLAUDE_HOME}/local:${PATH}"
-RUN mkdir -p ${CLAUDE_HOME} \
-    && curl -fsSL https://claude.ai/install.sh | CLAUDE_INSTALL_DIR=${CLAUDE_HOME} bash
+ENV PATH="/root/.claude/local:${PATH}"
+RUN curl -fsSL https://claude.ai/install.sh | bash
 
 # Install npm tools
 RUN npm install -g prettier@3.6.0 @withgraphite/graphite-cli
