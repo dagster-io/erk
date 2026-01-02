@@ -1916,3 +1916,104 @@ def test_pr_land_invalid_pr_identifier() -> None:
 
         assert result.exit_code == 1
         assert "Invalid PR identifier" in result.output
+
+
+def test_pr_land_confirmation_prompt_uses_stderr() -> None:
+    """Test that confirmation prompt appears on stderr, not stdout.
+
+    This is critical for shell integration: stdout is captured to read the
+    activation script path. If click.confirm writes to stdout, the prompt
+    is hidden from the user and the command appears to hang.
+
+    The fix: click.confirm(..., err=True) writes to stderr instead.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Run WITHOUT --force to trigger the confirmation prompt
+        # Provide "y\n" to accept
+        result = runner.invoke(
+            pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False, input="y\n"
+        )
+
+        assert result.exit_code == 0
+
+        # CRITICAL: The confirmation prompt must appear on stderr, not stdout
+        # If this assertion fails, shell integration will hide the prompt
+        # causing the command to appear to hang
+        assert "Delete worktree and branch" in result.stderr, (
+            "Confirmation prompt must appear on stderr for shell integration. "
+            f"stdout={result.output!r}, stderr={result.stderr!r}"
+        )
+
+        # stdout should only contain the activation script path, not the prompt
+        assert "Delete worktree and branch" not in result.stdout, (
+            "Confirmation prompt must NOT appear on stdout (captured by shell integration). "
+            f"stdout={result.stdout!r}"
+        )
