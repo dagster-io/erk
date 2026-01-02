@@ -146,7 +146,9 @@ For each comment in the batch:
 
 **For Review Threads:**
 
-1. Read the file at the specified path and line to understand context
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
 2. Make the fix following the reviewer's feedback
 3. Track the change for the batch commit message
 
@@ -165,10 +167,16 @@ For each comment in the batch:
 
 **For Outdated Review Threads** (`is_outdated: true`):
 
-- The code has changed since the comment was made
-- Check if the issue is already fixed in current code
-- If fixed, resolve as "Already addressed by subsequent changes"
-- If not fixed, apply the fix as normal
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed → Proceed directly to Step 3.4 to resolve the thread
+   - If not fixed → Apply the fix, then proceed to Step 3.4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
 
 #### Step 3.2: Run CI Checks
 
@@ -202,6 +210,12 @@ After committing, resolve each review thread and mark each discussion comment:
 
 ```bash
 erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
+```
+
+**Resolving already-fixed outdated threads:**
+
+```bash
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Already addressed in current code - this outdated thread can be resolved."
 ```
 
 **For Discussion Comments:**
