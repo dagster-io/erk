@@ -123,6 +123,7 @@ class FakeGit(Git):
         branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
         rebase_onto_result: RebaseResult | None = None,
         rebase_abort_raises: Exception | None = None,
+        pull_rebase_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -172,6 +173,7 @@ class FakeGit(Git):
                 for is_branch_diverged_from_remote()
             rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
             rebase_abort_raises: Exception to raise when rebase_abort() is called
+            pull_rebase_raises: Exception to raise when pull_rebase() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -214,6 +216,7 @@ class FakeGit(Git):
         self._branch_divergence = branch_divergence or {}
         self._rebase_onto_result = rebase_onto_result
         self._rebase_abort_raises = rebase_abort_raises
+        self._pull_rebase_raises = pull_rebase_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -235,6 +238,7 @@ class FakeGit(Git):
         self._pushed_tags: list[tuple[str, str]] = []  # (remote, tag_name)
         self._rebase_onto_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
         self._rebase_abort_calls: list[Path] = []
+        self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.
@@ -1084,3 +1088,29 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return list(self._rebase_abort_calls)
+
+    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+        """Pull and rebase from remote branch.
+
+        Tracks call for test assertions. Raises configured exception if set.
+        On success, clears the behind count in branch_divergence for this branch.
+        """
+        self._pull_rebase_calls.append((cwd, remote, branch))
+        if self._pull_rebase_raises is not None:
+            raise self._pull_rebase_raises
+        # Simulate successful rebase by clearing behind count
+        key = (cwd, branch, remote)
+        if key in self._branch_divergence:
+            old = self._branch_divergence[key]
+            self._branch_divergence[key] = BranchDivergence(
+                is_diverged=False, ahead=old.ahead, behind=0
+            )
+
+    @property
+    def pull_rebase_calls(self) -> list[tuple[Path, str, str]]:
+        """Get list of pull_rebase calls for test assertions.
+
+        Returns list of (cwd, remote, branch) tuples.
+        This property is for test assertions only.
+        """
+        return list(self._pull_rebase_calls)

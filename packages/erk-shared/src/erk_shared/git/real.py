@@ -979,3 +979,11 @@ class RealGit(Git):
             operation_context="abort rebase",
             cwd=cwd,
         )
+
+    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+        """Pull and rebase from remote branch."""
+        run_subprocess_with_context(
+            ["git", "pull", "--rebase", remote, branch],
+            operation_context=f"pull --rebase {remote} {branch}",
+            cwd=cwd,
+        )

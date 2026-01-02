@@ -985,3 +985,56 @@ def test_rebase_abort_cancels_rebase(tmp_path: Path) -> None:
     branch = git_ops.get_current_branch(repo)
     assert branch == "feature"
     assert "FEATURE" in (repo / "file.txt").read_text()
+
+
+def test_pull_rebase_integrates_remote_commits(tmp_path: Path) -> None:
+    """Test pull_rebase integrates remote commits via rebase."""
+    # Setup: Create a "remote" repo and a "local" clone
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Clone the remote
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    # Configure git identity in cloned repo (needed for CI)
+    subprocess.run(["git", "config", "user.email", "test@test.com"], cwd=local_repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=local_repo, check=True)
+
+    # Create a local commit
+    (local_repo / "local_file.txt").write_text("local content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "local_file.txt"], cwd=local_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add local file"], cwd=local_repo, check=True)
+
+    # Create a remote commit (simulating CI adding a commit)
+    (remote_repo / "remote_file.txt").write_text("remote content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "remote_file.txt"], cwd=remote_repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add remote file"], cwd=remote_repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act: Pull with rebase
+    git_ops.pull_rebase(local_repo, "origin", "main")
+
+    # Assert: Local should now have both files
+    assert (local_repo / "local_file.txt").exists()
+    assert (local_repo / "remote_file.txt").exists()
+
+    # Verify the local commit was rebased on top of remote
+    result = subprocess.run(
+        ["git", "log", "--oneline", "-3"],
+        cwd=local_repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    # Local commit should be on top (most recent)
+    assert "Add local file" in result.stdout.split("\n")[0]
+    # Remote commit should be below
+    assert "Add remote file" in result.stdout
