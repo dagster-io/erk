@@ -120,6 +120,7 @@ Plan ready! To save this as an erk-plan issue for implementation:
   /erk:plan-save
 
 This will:
+
 - Create a GitHub issue with the erk-plan label
 - Link it to the parent objective
 - Generate a plan branch for implementation
@@ -139,13 +140,14 @@ This will:
 
 ## Error Cases
 
-| Scenario                | Action                                     |
-| ----------------------- | ------------------------------------------ |
-| Issue not found         | Report error and exit                      |
-| Issue is erk-plan       | Redirect to `/erk:plan-implement`          |
-| No pending steps        | Report all steps complete, suggest closing |
-| Invalid argument format | Prompt for valid issue number              |
-| Roadmap not parseable   | Ask user to specify which step to plan     |
+| Scenario                                | Action                                          |
+| --------------------------------------- | ----------------------------------------------- |
+| Issue not found                         | Report error and exit                           |
+| Issue is erk-plan                       | Redirect to `/erk:plan-implement`               |
+| No pending steps                        | Report all steps complete, suggest closing      |
+| Invalid argument format                 | Prompt for valid issue number                   |
+| Roadmap not parseable                   | Ask user to specify which step to plan          |
+| Verification fails (no objective_issue) | Fix issue body or recreate with correct command |
 
 ---
 
