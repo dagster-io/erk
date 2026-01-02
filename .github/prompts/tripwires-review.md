@@ -5,9 +5,21 @@ PR NUMBER: {{ github.event.pull_request.number }}
 
 Review code changes for violations of erk tripwire patterns.
 
-## Step 1: Load the Tripwires Documentation
+## Step 1: Load Tripwire Index
 
-Read `docs/learned/tripwires.md` for the complete tripwire list.
+Read `docs/learned/tripwires.md`. This is the **definitive source** of all tripwires.
+
+Each tripwire follows this format:
+
+```
+**CRITICAL: Before [trigger action]** → Read [linked doc] first. [summary]
+```
+
+Parse EVERY tripwire entry to extract:
+
+- **Trigger**: The action pattern (e.g., "calling os.chdir()", "passing dry_run boolean flags")
+- **Linked doc**: The documentation file to read if triggered
+- **Summary**: Brief description of what the rule enforces
 
 ## Step 2: Get Existing Review Comment
 
@@ -26,34 +38,33 @@ gh pr diff {{ github.event.pull_request.number }} --name-only
 gh pr diff {{ github.event.pull_request.number }}
 ```
 
-## Step 4: Analyze Code for Tripwire Violations
+## Step 4: Match Tripwires to Diff
 
-### High-Confidence Patterns (flag directly)
+For EACH tripwire parsed in Step 1, scan the diff for code matching its trigger pattern.
 
-These patterns are almost always violations:
+**Deriving search patterns from tripwires:**
 
-| Pattern                           | Violation                      | Fix                                                                 |
-| --------------------------------- | ------------------------------ | ------------------------------------------------------------------- |
-| `import time` or `time.sleep(`    | Direct time module usage       | Use `context.time.sleep()`                                          |
-| `subprocess.run` without wrapper  | Bare subprocess                | Use `run_subprocess_with_context()` or `run_with_error_reporting()` |
-| `__all__ =`                       | Re-export module               | Import directly from source                                         |
-| `/tmp/` in paths for AI workflows | Wrong scratch location         | Use `.erk/scratch/<session-id>/`                                    |
-| `gt sync` or `gt repo sync`       | Auto-running dangerous command | Never auto-run; require explicit user action                        |
+Each tripwire's trigger text (e.g., "Before calling os.chdir()") tells you what to search for:
 
-### Context-Required Patterns (read surrounding code)
+- Extract the action from the trigger (e.g., "calling os.chdir()" → search for `os.chdir(`)
+- Convert natural language to code patterns (e.g., "importing time module" → `import time`)
+- Look for the specific constructs mentioned (e.g., "adding a new method to Git ABC" → new method definitions in `src/erk/gateways/git/abc.py`)
 
-These need surrounding code context to determine if they're violations:
+This is DYNAMIC - the tripwires.md file is the single source of truth. New tripwires added there are automatically checked.
 
-| Pattern                             | Check                               | Violation Criteria                                                     |
-| ----------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| `dry_run: bool` parameter           | Is this at CLI boundary?            | Violation if in business logic; OK at CLI entry point                  |
-| `os.chdir(`                         | Does `regenerate_context()` follow? | Violation if no context regeneration after chdir                       |
-| New method in gateway `abc.py`      | Are all 5 implementations present?  | Violation if missing from real.py, fake.py, dry_run.py, or printing.py |
-| `get_pr_for_branch` + `is not None` | How is return value checked?        | Should use `isinstance(pr, PRNotFound)`                                |
-| Protocol with bare attributes       | Used with frozen dataclasses?       | Should use `@property` decorators                                      |
-| `path == repo_root` for worktree    | Detecting root worktree?            | Use `WorktreeInfo.is_root` instead                                     |
+Track which tripwires matched the diff (triggered tripwires).
 
-## Step 5: Post Inline Comments
+## Step 5: Load Docs for Matched Tripwires (Lazy Loading)
+
+For EACH tripwire that matched in Step 4:
+
+1. Read the linked documentation file
+2. Extract ALL rules from that doc
+3. Verify the diff follows EVERY rule in the doc
+
+**Do NOT skip to pattern matching** - read the full doc to understand context and all requirements.
+
+## Step 6: Post Inline Comments for Violations
 
 **IMPORTANT: Post an inline comment for EACH violation found.**
 
@@ -65,7 +76,7 @@ erk exec post-pr-inline-comment \
   --body "**Tripwire**: [pattern detected] - [why it's a problem] - [fix suggestion]"
 ```
 
-## Step 6: Post Summary Comment
+## Step 7: Post Summary Comment
 
 **IMPORTANT: All timestamps MUST be in Pacific Time (PT), NOT UTC.**
 
@@ -95,13 +106,17 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 
 Found X violations across Y files. Inline comments posted for each.
 
-### Patterns Checked
-✅ import time / time.sleep() - None found
-✅ Bare subprocess.run - None found
-❌ __all__ exports - Found in src/foo.py:12
-✅ /tmp/ for AI workflows - None found
+### Tripwires Triggered
+- [tripwire name] → loaded [doc path]
+- [tripwire name] → loaded [doc path]
 
-(Use ✅ when pattern NOT found, ❌ when pattern found. Only list patterns relevant to the diff.)
+(List only tripwires that matched the diff)
+
+### Patterns Checked
+✅ [pattern] - None found
+❌ [pattern] - Found in src/foo.py:12
+
+(Use ✅ when compliant, ❌ when violation found. Only list patterns relevant to the diff.)
 
 ### Violations Summary
 - `file.py:123`: [brief description]
@@ -122,5 +137,6 @@ Activity log entry examples:
 - "Found 2 violations (bare subprocess.run in x.py, /tmp/ usage in y.py)"
 - "All violations resolved"
 - "No tripwire violations detected"
+- "Triggered 3 tripwires, loaded docs, found 1 violation"
 
 Keep the last 10 log entries maximum.
