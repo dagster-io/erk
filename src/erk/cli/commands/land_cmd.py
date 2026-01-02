@@ -1,12 +1,13 @@
-"""Land PR and delete worktree.
+"""Unified land command for PRs.
 
 This command merges a PR and cleans up the worktree/branch.
-It can operate on the current branch or a specified PR.
+It accepts a branch name, PR number, or PR URL as argument.
 
 Usage:
-    erk pr land          # Land current branch's PR
-    erk pr land 123      # Land PR by number
-    erk pr land <url>    # Land PR by URL
+    erk land              # Land current branch's PR
+    erk land 123          # Land PR by number
+    erk land <url>        # Land PR by URL
+    erk land <branch>     # Land PR for branch
 """
 
 import re
@@ -34,26 +35,29 @@ from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_output
 
 
-def parse_pr_or_url(pr_or_url: str) -> int | None:
-    """Parse a PR number or URL, returning the PR number.
+def parse_argument(arg: str) -> tuple[str, int | None]:
+    """Parse argument to determine type.
 
     Args:
-        pr_or_url: Either a PR number (e.g., "123") or a GitHub PR URL
+        arg: The argument string (PR number, PR URL, or branch name)
 
     Returns:
-        PR number if parsed successfully, None if invalid format
+        Tuple of (argument_type, pr_number):
+        - ("pr_number", N) if arg is a numeric PR number
+        - ("pr_url", N) if arg is a URL containing /pull/N
+        - ("branch", None) if arg is a branch name
     """
-    # Try parsing as a plain number
-    if pr_or_url.isdigit():
-        return int(pr_or_url)
+    # Try parsing as a plain number (PR number)
+    if arg.isdigit():
+        return ("pr_number", int(arg))
 
     # Try parsing as a GitHub PR URL
-    # Handles: https://github.com/owner/repo/pull/123
-    match = re.search(r"/pull/(\d+)", pr_or_url)
+    match = re.search(r"/pull/(\d+)", arg)
     if match:
-        return int(match.group(1))
+        return ("pr_url", int(match.group(1)))
 
-    return None
+    # Treat as branch name
+    return ("branch", None)
 
 
 def resolve_branch_for_pr(ctx: ErkContext, repo_root: Path, pr_details: PRDetails) -> str:
@@ -74,6 +78,34 @@ def resolve_branch_for_pr(ctx: ErkContext, repo_root: Path, pr_details: PRDetail
         # Fork PR - local checkout uses pr/{number} naming convention
         return f"pr/{pr_details.number}"
     return pr_details.head_ref_name
+
+
+def check_unresolved_comments(
+    ctx: ErkContext,
+    repo_root: Path,
+    pr_number: int,
+    force: bool,
+) -> None:
+    """Check for unresolved review threads and prompt if any exist.
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root directory
+        pr_number: PR number to check
+        force: If True, skip confirmation prompt
+
+    Raises:
+        SystemExit(0) if user declines to continue
+    """
+    threads = ctx.github.get_pr_review_threads(repo_root, pr_number, include_resolved=False)
+
+    if threads and not force:
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + f"PR #{pr_number} has {len(threads)} unresolved review comment(s)."
+        )
+        if not click.confirm("Continue anyway?", default=False):
+            raise SystemExit(0)
 
 
 def _cleanup_and_navigate(
@@ -163,7 +195,7 @@ def _navigate_after_land(
             click.style("💡", fg="cyan")
             + f" Run 'gt restack' in {target_child_branch} to update PR base branch"
         )
-        activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="pr-land")
+        activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="land")
         # activate_worktree raises SystemExit(0)
     else:
         # Construct git pull commands if pull_flag is set
@@ -177,14 +209,14 @@ def _navigate_after_land(
             ]
         # Output activation script pointing to trunk/root repo
         activate_root_repo(
-            ctx, post_deletion_repo, script, command_name="pr-land", post_cd_commands=post_commands
+            ctx, post_deletion_repo, script, command_name="land", post_cd_commands=post_commands
         )
         # activate_root_repo raises SystemExit(0)
 
 
 @click.command("land", cls=CommandWithHiddenOptions)
 @script_option
-@click.argument("pr_or_url", required=False)
+@click.argument("target", required=False)
 @click.option(
     "--up",
     "up_flag",
@@ -194,7 +226,7 @@ def _navigate_after_land(
 @click.option(
     "--force",
     is_flag=True,
-    help="Skip cleanup confirmation prompt",
+    help="Skip all confirmation prompts (unresolved comments, worktree deletion)",
 )
 @click.option(
     "--pull/--no-pull",
@@ -203,29 +235,31 @@ def _navigate_after_land(
     help="Pull latest changes after landing (default: --pull)",
 )
 @click.pass_obj
-def pr_land(
+def land(
     ctx: ErkContext,
     script: bool,
-    pr_or_url: str | None,
+    target: str | None,
     up_flag: bool,
     force: bool,
     pull_flag: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
-    Can land the current branch's PR or a specific PR by number/URL.
+    Can land the current branch's PR, a specific PR by number/URL,
+    or a PR for a specific branch.
 
     \b
     Usage:
-      erk pr land          # Land current branch's PR
-      erk pr land 123      # Land PR #123
-      erk pr land <url>    # Land PR by GitHub URL
+      erk land              # Land current branch's PR
+      erk land 123          # Land PR #123
+      erk land <url>        # Land PR by GitHub URL
+      erk land <branch>     # Land PR for branch
 
     With shell integration (recommended):
-      erk pr land
+      erk land
 
     Without shell integration:
-      source <(erk pr land --script)
+      source <(erk land --script)
 
     Requires:
     - Graphite enabled: 'erk config set use_graphite true'
@@ -244,19 +278,32 @@ def pr_land(
             click.style("Error: ", fg="red")
             + "This command requires shell integration for activation.\n\n"
             + "Options:\n"
-            + "  1. Use shell integration: erk pr land\n"
+            + "  1. Use shell integration: erk land\n"
             + "     (Requires 'erk init --shell' setup)\n\n"
-            + "  2. Use --script flag: source <(erk pr land --script)\n"
+            + "  2. Use --script flag: source <(erk land --script)\n"
         )
         raise SystemExit(1)
 
-    # Determine if landing current branch or a specific PR
-    if pr_or_url is None:
+    # Determine if landing current branch or a specific target
+    if target is None:
         # Landing current branch's PR (original behavior)
         _land_current_branch(ctx, repo, script, up_flag, force, pull_flag)
     else:
-        # Landing a specific PR by number or URL
-        _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, pr_or_url)
+        # Parse the target argument
+        arg_type, pr_number = parse_argument(target)
+
+        if arg_type == "branch":
+            # Landing a PR for a specific branch
+            _land_by_branch(ctx, repo, script, force, pull_flag, target)
+        else:
+            # Landing a specific PR by number or URL
+            if pr_number is None:
+                user_output(
+                    click.style("Error: ", fg="red") + f"Invalid PR identifier: {target}\n"
+                    "Expected a PR number (e.g., 123) or GitHub URL."
+                )
+                raise SystemExit(1)
+            _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, pr_number)
 
 
 def _land_current_branch(
@@ -288,7 +335,7 @@ def _land_current_branch(
             user_output(
                 click.style("Error: ", fg="red")
                 + f"Cannot use --up: branch '{current_branch}' has no children.\n"
-                "Use 'erk pr land' without --up to return to trunk."
+                "Use 'erk land' without --up to return to trunk."
             )
             raise SystemExit(1)
         elif len(children) > 1:
@@ -297,7 +344,7 @@ def _land_current_branch(
                 click.style("Error: ", fg="red")
                 + f"Cannot use --up: branch '{current_branch}' has multiple children: "
                 f"{children_list}.\n"
-                "Use 'erk pr land' without --up, then 'erk co <branch>' to choose."
+                "Use 'erk land' without --up, then 'erk co <branch>' to choose."
             )
             raise SystemExit(1)
         else:
@@ -313,9 +360,14 @@ def _land_current_branch(
 
     # Success - PR was merged
     success_result: LandPrSuccess = result
+    pr_number = success_result.pr_number
+
+    # Check for unresolved comments AFTER successful merge status check
+    # but BEFORE cleanup (so user can still bail out)
+    check_unresolved_comments(ctx, repo.root, pr_number, force)
+
     user_output(
-        click.style("✓", fg="green")
-        + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
+        click.style("✓", fg="green") + f" Merged PR #{pr_number} [{success_result.branch_name}]"
     )
 
     # Step 2: Cleanup and navigate
@@ -339,23 +391,14 @@ def _land_specific_pr(
     up_flag: bool,
     force: bool,
     pull_flag: bool,
-    pr_or_url: str,
+    pr_number: int,
 ) -> None:
-    """Land a specific PR by number or URL."""
+    """Land a specific PR by number."""
     # Validate --up is not used with PR argument
     if up_flag:
         user_output(
             click.style("Error: ", fg="red") + "Cannot use --up when specifying a PR.\n"
             "The --up flag only works when landing the current branch's PR."
-        )
-        raise SystemExit(1)
-
-    # Parse PR number from argument
-    pr_number = parse_pr_or_url(pr_or_url)
-    if pr_number is None:
-        user_output(
-            click.style("Error: ", fg="red") + f"Invalid PR identifier: {pr_or_url}\n"
-            "Expected a PR number (e.g., 123) or GitHub URL."
         )
         raise SystemExit(1)
 
@@ -398,9 +441,12 @@ def _land_specific_pr(
             + f"but should target '{trunk}'.\n\n"
             + "The GitHub PR's base branch has diverged from your local stack.\n"
             + "Run: gt restack && gt submit\n"
-            + f"Then retry: erk pr land {pr_number}"
+            + f"Then retry: erk land {pr_number}"
         )
         raise SystemExit(1)
+
+    # Check for unresolved comments BEFORE merge
+    check_unresolved_comments(ctx, main_repo_root, pr_number, force)
 
     # Merge the PR via GitHub API
     user_output(f"Merging PR #{pr_number}...")
@@ -422,6 +468,92 @@ def _land_specific_pr(
         ctx,
         repo,
         branch,
+        worktree_path,
+        script,
+        pull_flag,
+        force,
+        is_current_branch,
+        target_child_branch=None,
+    )
+
+
+def _land_by_branch(
+    ctx: ErkContext,
+    repo: RepoContext,
+    script: bool,
+    force: bool,
+    pull_flag: bool,
+    branch_name: str,
+) -> None:
+    """Land a PR for a specific branch."""
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Look up PR for branch
+    pr_details = ctx.github.get_pr_for_branch(main_repo_root, branch_name)
+
+    if isinstance(pr_details, PRNotFound):
+        user_output(
+            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch_name}'."
+        )
+        raise SystemExit(1)
+
+    pr_number = pr_details.number
+
+    # Determine if we're in the target branch's worktree
+    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    is_current_branch = current_branch == branch_name
+
+    # Check if worktree exists for this branch
+    worktree_path = ctx.git.find_worktree_for_branch(main_repo_root, branch_name)
+
+    # If in target worktree, validate clean working tree
+    if is_current_branch:
+        check_clean_working_tree(ctx)
+
+    # Validate PR state
+    if pr_details.state != "OPEN":
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Pull request #{pr_number} is not open (state: {pr_details.state})."
+        )
+        raise SystemExit(1)
+
+    # Validate PR base is trunk
+    trunk = ctx.git.detect_trunk_branch(main_repo_root)
+    if pr_details.base_ref_name != trunk:
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
+            + f"but should target '{trunk}'.\n\n"
+            + "The GitHub PR's base branch has diverged from your local stack.\n"
+            + "Run: gt restack && gt submit\n"
+            + f"Then retry: erk land {branch_name}"
+        )
+        raise SystemExit(1)
+
+    # Check for unresolved comments BEFORE merge
+    check_unresolved_comments(ctx, main_repo_root, pr_number, force)
+
+    # Merge the PR via GitHub API
+    user_output(f"Merging PR #{pr_number} for branch '{branch_name}'...")
+    subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
+    body = pr_details.body or None
+    merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
+
+    if merge_result is not True:
+        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+        user_output(
+            click.style("Error: ", fg="red") + f"Failed to merge PR #{pr_number}\n\n{error_detail}"
+        )
+        raise SystemExit(1)
+
+    user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
+
+    # Cleanup and navigate (uses shared function)
+    _cleanup_and_navigate(
+        ctx,
+        repo,
+        branch_name,
         worktree_path,
         script,
         pull_flag,

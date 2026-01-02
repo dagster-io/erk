@@ -35,8 +35,8 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "down": ["down"],
     "implement": ["implement"],
     "impl": ["implement"],  # Alias for implement
+    "land": ["land"],  # Top-level land command
     # Subcommands under pr
-    "pr land": ["pr", "land"],
     "pr checkout": ["pr", "checkout"],
     "pr co": ["pr", "checkout"],  # Alias for pr checkout
     # Legacy top-level aliases (map to actual CLI paths)
