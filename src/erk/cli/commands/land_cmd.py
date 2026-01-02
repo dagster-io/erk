@@ -17,13 +17,6 @@ from typing import Literal, NamedTuple
 
 import click
 
-
-class ParsedArgument(NamedTuple):
-    """Result of parsing a land command argument."""
-
-    arg_type: Literal["pr_number", "pr_url", "branch"]
-    pr_number: int | None
-
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -41,6 +34,13 @@ from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_output
+
+
+class ParsedArgument(NamedTuple):
+    """Result of parsing a land command argument."""
+
+    arg_type: Literal["pr_number", "pr_url", "branch"]
+    pr_number: int | None
 
 
 def parse_argument(arg: str) -> ParsedArgument:
