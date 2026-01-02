@@ -52,7 +52,8 @@ jobs:
         run: |
           claude --print \
             --model claude-opus-4-5 \
-            --allowedTools 'Bash(gh:*),Bash(erk exec:*),Read(*)' \
+            --allowedTools 'Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)' \
+            --dangerously-skip-permissions \
             --output-format stream-json \
             --verbose \
             "$(cat /tmp/tripwires-prompt.md)"
