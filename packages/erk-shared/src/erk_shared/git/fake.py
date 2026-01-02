@@ -123,6 +123,7 @@ class FakeGit(Git):
         branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
         rebase_onto_result: RebaseResult | None = None,
         rebase_abort_raises: Exception | None = None,
+        in_git_repository: bool = True,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -172,6 +173,7 @@ class FakeGit(Git):
                 for is_branch_diverged_from_remote()
             rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
             rebase_abort_raises: Exception to raise when rebase_abort() is called
+            in_git_repository: Whether is_in_git_repository() should return True
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -214,6 +216,7 @@ class FakeGit(Git):
         self._branch_divergence = branch_divergence or {}
         self._rebase_onto_result = rebase_onto_result
         self._rebase_abort_raises = rebase_abort_raises
+        self._in_git_repository = in_git_repository
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -1084,3 +1087,7 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return list(self._rebase_abort_calls)
+
+    def is_in_git_repository(self, cwd: Path) -> bool:
+        """Check if the given path is inside a git repository."""
+        return self._in_git_repository

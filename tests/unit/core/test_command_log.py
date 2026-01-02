@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from erk.core.command_log import (
     CommandLogEntry,
+    _get_current_branch,
     _is_logging_disabled,
     _rotate_log_if_needed,
     log_command_end,
@@ -433,3 +434,9 @@ def test_command_log_entry_is_frozen() -> None:
     # Verify attributes are set correctly
     assert entry.command == "erk doctor"
     assert entry.exit_code == 0
+
+
+def test_get_current_branch_returns_none_outside_git_repo(tmp_path: Path) -> None:
+    """Test _get_current_branch returns None when not in a git repository."""
+    result = _get_current_branch(tmp_path)
+    assert result is None

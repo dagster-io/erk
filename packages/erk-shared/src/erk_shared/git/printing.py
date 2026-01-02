@@ -329,3 +329,7 @@ class PrintingGit(PrintingBase, Git):
         """Abort rebase with printed output."""
         self._emit(self._format_command("git rebase --abort"))
         self._wrapped.rebase_abort(cwd)
+
+    def is_in_git_repository(self, cwd: Path) -> bool:
+        """Check if in git repository (read-only, no printing)."""
+        return self._wrapped.is_in_git_repository(cwd)

@@ -985,3 +985,34 @@ def test_rebase_abort_cancels_rebase(tmp_path: Path) -> None:
     branch = git_ops.get_current_branch(repo)
     assert branch == "feature"
     assert "FEATURE" in (repo / "file.txt").read_text()
+
+
+def test_is_in_git_repository_returns_true_in_repo(tmp_path: Path) -> None:
+    """Test is_in_git_repository returns True inside a git repo."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    assert git_ops.is_in_git_repository(repo) is True
+
+
+def test_is_in_git_repository_returns_false_outside_repo(tmp_path: Path) -> None:
+    """Test is_in_git_repository returns False outside a git repo."""
+    non_repo = tmp_path / "not-a-repo"
+    non_repo.mkdir()
+
+    git_ops = RealGit()
+
+    assert git_ops.is_in_git_repository(non_repo) is False
+
+
+def test_is_in_git_repository_returns_false_for_nonexistent_path(tmp_path: Path) -> None:
+    """Test is_in_git_repository returns False for nonexistent path."""
+    nonexistent = tmp_path / "does-not-exist"
+
+    git_ops = RealGit()
+
+    assert git_ops.is_in_git_repository(nonexistent) is False

@@ -330,3 +330,7 @@ class DryRunGit(Git):
     def rebase_abort(self, cwd: Path) -> None:
         """No-op for rebase abort in dry-run mode."""
         pass
+
+    def is_in_git_repository(self, cwd: Path) -> bool:
+        """Check if in git repository (read-only, delegates to wrapped)."""
+        return self._wrapped.is_in_git_repository(cwd)

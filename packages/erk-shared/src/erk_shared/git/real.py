@@ -979,3 +979,16 @@ class RealGit(Git):
             operation_context="abort rebase",
             cwd=cwd,
         )
+
+    def is_in_git_repository(self, cwd: Path) -> bool:
+        """Check if the given path is inside a git repository."""
+        if not cwd.exists():
+            return False
+        result = subprocess.run(
+            ["git", "rev-parse", "--git-dir"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        return result.returncode == 0

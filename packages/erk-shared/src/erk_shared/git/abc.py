@@ -843,3 +843,19 @@ class Git(ABC):
             subprocess.CalledProcessError: If no rebase is in progress
         """
         ...
+
+    @abstractmethod
+    def is_in_git_repository(self, cwd: Path) -> bool:
+        """Check if the given path is inside a git repository.
+
+        Uses `git rev-parse --git-dir` to detect if cwd is within a git repo.
+        This is useful for LBYL checks before calling methods that require
+        being in a git repository.
+
+        Args:
+            cwd: Path to check
+
+        Returns:
+            True if cwd is inside a git repository, False otherwise
+        """
+        ...
