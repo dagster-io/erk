@@ -793,6 +793,35 @@ def test_feature_being_built_now():
 
 ---
 
+### Speculative Test Infrastructure
+
+**Don't add parameters to fakes "just in case" they might be useful for testing.**
+
+Fakes should mirror production interfaces. Adding test-only configuration knobs that never get used creates dead code and false complexity.
+
+```python
+# ❌ WRONG: Test-only parameter that's never used in production
+class FakeGitHub:
+    def __init__(
+        self,
+        prs: dict[str, PullRequestInfo] | None = None,
+        rate_limited: bool = False,  # "Might test this later"
+    ) -> None:
+        self._rate_limited = rate_limited  # Never set to True anywhere
+
+# ✅ CORRECT: Only add infrastructure when you need it
+class FakeGitHub:
+    def __init__(
+        self,
+        prs: dict[str, PullRequestInfo] | None = None,
+    ) -> None:
+        ...
+```
+
+**The test for this:** If grep shows a parameter is only ever passed in test files, and those tests are testing hypothetical scenarios rather than actual production behavior, delete both the parameter and the tests.
+
+---
+
 ## Code Organization
 
 ### Declare Variables Close to Use
