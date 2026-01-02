@@ -30,9 +30,18 @@ The `make py-fast-ci` target runs these checks in order:
 
 Load the `ci-iteration` skill for the iterative fix workflow.
 
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on Python code quality issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint format ty` together (ruff lint + ruff format + type checking). If ANY fails, stop immediately to fix issues before proceeding to test runs.
+2. **Phase 2 (Test Runs)**: Only after phase 1 passes, run `make test-unit-erk test-erk-dev`.
+
+This ensures that syntax/formatting and type errors are caught and fixed first, providing rapid feedback without waiting for test execution.
+
 ## Begin Now
 
-Start by using the Task tool with the devrun agent to run `make py-fast-ci` from the repository root and begin the iterative fix process. Track your progress with TodoWrite and report your final status clearly.
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint format ty`) from the repository root. If that passes, proceed with test targets (`make test-unit-erk test-erk-dev`). Track your progress with TodoWrite and report your final status clearly.
 
 **Remember**:
 
