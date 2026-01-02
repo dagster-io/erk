@@ -8,14 +8,23 @@ from erk.artifacts.models import CompletenessCheckResult
 
 def test_find_missing_artifacts_no_missing(tmp_path: Path, monkeypatch) -> None:
     """All bundled artifacts present locally."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
     # Create bundled and project with same files
     bundled_cmd = tmp_path / "bundled" / ".claude" / "commands" / "erk"
     bundled_cmd.mkdir(parents=True)
     (bundled_cmd / "plan-save.md").write_text("content")
 
-    project_cmd = tmp_path / "project" / ".claude" / "commands" / "erk"
+    project_claude = tmp_path / "project" / ".claude"
+    project_cmd = project_claude / "commands" / "erk"
     project_cmd.mkdir(parents=True)
     (project_cmd / "plan-save.md").write_text("content")
+
+    # Add settings.json with hooks to avoid missing hooks
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
     monkeypatch.setattr(
         "erk.artifacts.artifact_health.get_bundled_claude_dir",

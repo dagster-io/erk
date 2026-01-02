@@ -111,63 +111,33 @@ class SyncedArtifact:
     file_count: int
 
 
-def _sync_skills(
-    source_skills_dir: Path, target_skills_dir: Path
+def _sync_directory_artifacts(
+    source_dir: Path, target_dir: Path, names: frozenset[str], key_prefix: str
 ) -> tuple[int, list[SyncedArtifact]]:
-    """Sync bundled skills to project. Only syncs BUNDLED_SKILLS.
+    """Sync directory-based artifacts (skills or agents) to project.
+
+    Args:
+        source_dir: Parent directory containing source artifacts (e.g., bundled/skills/)
+        target_dir: Parent directory for target artifacts (e.g., project/.claude/skills/)
+        names: Set of artifact names to sync (e.g., BUNDLED_SKILLS)
+        key_prefix: Prefix for artifact keys (e.g., "skills" or "agents")
 
     Returns tuple of (file_count, synced_artifacts).
     """
-    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
-    from erk.artifacts.artifact_health import BUNDLED_SKILLS
-
-    if not source_skills_dir.exists():
+    if not source_dir.exists():
         return 0, []
 
     copied = 0
     synced: list[SyncedArtifact] = []
-    for skill_name in BUNDLED_SKILLS:
-        source = source_skills_dir / skill_name
+    for name in names:
+        source = source_dir / name
         if source.exists():
-            target = target_skills_dir / skill_name
+            target = target_dir / name
             count = _copy_directory_contents(source, target)
             copied += count
-            # Compute hash after copying
             synced.append(
                 SyncedArtifact(
-                    key=f"skills/{skill_name}",
-                    hash=_compute_directory_hash(target),
-                    file_count=count,
-                )
-            )
-    return copied, synced
-
-
-def _sync_agents(
-    source_agents_dir: Path, target_agents_dir: Path
-) -> tuple[int, list[SyncedArtifact]]:
-    """Sync bundled agents to project. Only syncs BUNDLED_AGENTS.
-
-    Returns tuple of (file_count, synced_artifacts).
-    """
-    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
-    from erk.artifacts.artifact_health import BUNDLED_AGENTS
-
-    if not source_agents_dir.exists():
-        return 0, []
-
-    copied = 0
-    synced: list[SyncedArtifact] = []
-    for agent_name in BUNDLED_AGENTS:
-        source = source_agents_dir / agent_name
-        if source.exists():
-            target = target_agents_dir / agent_name
-            count = _copy_directory_contents(source, target)
-            copied += count
-            # Compute hash after copying
-            synced.append(
-                SyncedArtifact(
-                    key=f"agents/{agent_name}",
+                    key=f"{key_prefix}/{name}",
                     hash=_compute_directory_hash(target),
                     file_count=count,
                 )
@@ -295,6 +265,27 @@ def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
     return added, synced
 
 
+def _hash_directory_artifacts(
+    parent_dir: Path, names: frozenset[str], key_prefix: str
+) -> list[SyncedArtifact]:
+    """Compute hashes for directory-based artifacts without copying."""
+    if not parent_dir.exists():
+        return []
+
+    artifacts: list[SyncedArtifact] = []
+    for name in names:
+        artifact_dir = parent_dir / name
+        if artifact_dir.exists():
+            artifacts.append(
+                SyncedArtifact(
+                    key=f"{key_prefix}/{name}",
+                    hash=_compute_directory_hash(artifact_dir),
+                    file_count=sum(1 for f in artifact_dir.rglob("*") if f.is_file()),
+                )
+            )
+    return artifacts
+
+
 def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     """Compute artifact state from source (for erk repo dogfooding).
 
@@ -306,33 +297,9 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     bundled_github_dir = get_bundled_github_dir()
     artifacts: list[SyncedArtifact] = []
 
-    # Hash skills from source
-    skills_dir = bundled_claude_dir / "skills"
-    if skills_dir.exists():
-        for skill_name in BUNDLED_SKILLS:
-            skill_dir = skills_dir / skill_name
-            if skill_dir.exists():
-                artifacts.append(
-                    SyncedArtifact(
-                        key=f"skills/{skill_name}",
-                        hash=_compute_directory_hash(skill_dir),
-                        file_count=sum(1 for _ in skill_dir.rglob("*") if _.is_file()),
-                    )
-                )
-
-    # Hash agents from source
-    agents_dir = bundled_claude_dir / "agents"
-    if agents_dir.exists():
-        for agent_name in BUNDLED_AGENTS:
-            agent_dir = agents_dir / agent_name
-            if agent_dir.exists():
-                artifacts.append(
-                    SyncedArtifact(
-                        key=f"agents/{agent_name}",
-                        hash=_compute_directory_hash(agent_dir),
-                        file_count=sum(1 for _ in agent_dir.rglob("*") if _.is_file()),
-                    )
-                )
+    # Hash directory-based artifacts (skills, agents)
+    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
+        artifacts.extend(_hash_directory_artifacts(bundled_claude_dir / prefix, names, prefix))
 
     # Hash commands from source
     commands_dir = bundled_claude_dir / "commands" / "erk"
@@ -365,22 +332,15 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     if settings_path.exists():
         content = settings_path.read_text(encoding="utf-8")
         settings = json.loads(content)
-        if has_user_prompt_hook(settings):
-            artifacts.append(
-                SyncedArtifact(
-                    key="hooks/user-prompt-hook",
-                    hash=_compute_hook_hash(ERK_USER_PROMPT_HOOK_COMMAND),
-                    file_count=1,
+        hook_checks = [
+            ("hooks/user-prompt-hook", has_user_prompt_hook, ERK_USER_PROMPT_HOOK_COMMAND),
+            ("hooks/exit-plan-mode-hook", has_exit_plan_hook, ERK_EXIT_PLAN_HOOK_COMMAND),
+        ]
+        for key, check_fn, command in hook_checks:
+            if check_fn(settings):
+                artifacts.append(
+                    SyncedArtifact(key=key, hash=_compute_hook_hash(command), file_count=1)
                 )
-            )
-        if has_exit_plan_hook(settings):
-            artifacts.append(
-                SyncedArtifact(
-                    key="hooks/exit-plan-mode-hook",
-                    hash=_compute_hook_hash(ERK_EXIT_PLAN_HOOK_COMMAND),
-                    file_count=1,
-                )
-            )
 
     return artifacts
 
@@ -391,6 +351,9 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     When running in the erk repo itself, skips file copying but still computes
     and saves state for dogfooding.
     """
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
+    from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS
+
     # In erk repo: skip copying but still save state for dogfooding
     if is_in_erk_repo(project_dir):
         all_synced = _compute_source_artifact_state(project_dir)
@@ -422,14 +385,13 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     total_copied = 0
     all_synced: list[SyncedArtifact] = []
 
-    # Sync filtered artifact folders (only bundled items, not all dev artifacts)
-    count, synced = _sync_skills(bundled_claude_dir / "skills", target_claude_dir / "skills")
-    total_copied += count
-    all_synced.extend(synced)
-
-    count, synced = _sync_agents(bundled_claude_dir / "agents", target_claude_dir / "agents")
-    total_copied += count
-    all_synced.extend(synced)
+    # Sync directory-based artifacts (skills, agents)
+    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
+        count, synced = _sync_directory_artifacts(
+            bundled_claude_dir / prefix, target_claude_dir / prefix, names, prefix
+        )
+        total_copied += count
+        all_synced.extend(synced)
 
     count, synced = _sync_commands(bundled_claude_dir / "commands", target_claude_dir / "commands")
     total_copied += count

@@ -254,7 +254,9 @@ class TestCheckCommand:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
-            state_file.write_text('[artifacts]\nversion = "0.9.0"\n', encoding="utf-8")
+            state_file.write_text(
+                '[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 result = runner.invoke(check_cmd)
@@ -268,11 +270,13 @@ class TestCheckCommand:
         with runner.isolated_filesystem(temp_dir=tmp_path):
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
-            state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
+            state_file.write_text(
+                '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
                     return_value=Path("/nonexistent"),
                 ):
                     result = runner.invoke(check_cmd)
@@ -332,7 +336,9 @@ class TestCheckCommand:
             # Set up version as up-to-date
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
-            state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
+            state_file.write_text(
+                '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
 
             # Create actual .claude directory with installed artifacts
             agent_dir = Path(".claude/agents/devrun")
@@ -349,7 +355,7 @@ class TestCheckCommand:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
                     return_value=Path("/nonexistent"),
                 ):
                     result = runner.invoke(check_cmd)
@@ -368,7 +374,9 @@ class TestCheckCommand:
             # Set up version mismatch
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
-            state_file.write_text('[artifacts]\nversion = "0.9.0"\n', encoding="utf-8")
+            state_file.write_text(
+                '[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
 
             # Create actual .claude directory with installed artifacts
             agent_dir = Path(".claude/agents/devrun")
@@ -395,7 +403,9 @@ class TestCheckCommand:
             # Set up version as up-to-date
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
-            state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
+            state_file.write_text(
+                '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
 
             # Create bundled directory with one command
             bundled_dir = tmp_path / "bundled" / ".claude"
@@ -412,7 +422,7 @@ class TestCheckCommand:
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
                     return_value=bundled_dir,
                 ):
                     result = runner.invoke(check_cmd)
@@ -425,12 +435,18 @@ class TestCheckCommand:
 
     def test_check_no_orphans(self, tmp_path: Path) -> None:
         """Shows no orphaned artifacts when none found."""
+        import json
+
+        from erk.core.claude_settings import add_erk_hooks
+
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Set up version as up-to-date
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
-            state_file.write_text('[artifacts]\nversion = "1.0.0"\n', encoding="utf-8")
+            state_file.write_text(
+                '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
 
             # Create bundled directory
             bundled_dir = tmp_path / "bundled" / ".claude"
@@ -444,12 +460,26 @@ class TestCheckCommand:
             project_commands.mkdir(parents=True)
             (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
+            # Add settings.json with hooks to avoid missing hooks
+            settings = add_erk_hooks({})
+            (project_claude / "settings.json").write_text(
+                json.dumps(settings), encoding="utf-8"
+            )
+
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 with patch(
-                    "erk.artifacts.orphans.get_bundled_claude_dir",
+                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
                     return_value=bundled_dir,
                 ):
-                    result = runner.invoke(check_cmd)
+                    with patch(
+                        "erk.artifacts.artifact_health.get_bundled_github_dir",
+                        return_value=bundled_github,
+                    ):
+                        result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -460,7 +490,7 @@ class TestSyncCommand:
     """Tests for erk artifact sync."""
 
     def test_sync_in_erk_repo(self, tmp_path: Path) -> None:
-        """Skips sync when in erk repo."""
+        """Updates state when in erk repo (development mode)."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create pyproject.toml with erk name
@@ -469,7 +499,7 @@ class TestSyncCommand:
             result = runner.invoke(sync_cmd)
 
         assert result.exit_code == 0
-        assert "Skipped" in result.output
+        assert "Development mode" in result.output
 
     def test_sync_bundled_not_found(self, tmp_path: Path) -> None:
         """Fails when bundled .claude/ not found."""

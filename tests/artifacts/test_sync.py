@@ -3,13 +3,13 @@
 from pathlib import Path
 from unittest.mock import patch
 
+from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS
 from erk.artifacts.sync import (
     _get_erk_package_dir,
     _is_editable_install,
-    _sync_agents,
     _sync_commands,
+    _sync_directory_artifacts,
     _sync_hooks,
-    _sync_skills,
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
@@ -17,7 +17,7 @@ from erk.artifacts.sync import (
 
 
 def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
-    """Skips sync when running in erk repo."""
+    """Skips file copying in erk repo but still updates state."""
     # Create pyproject.toml with erk name
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
@@ -26,7 +26,7 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
 
     assert result.success is True
     assert result.artifacts_installed == 0
-    assert "erk repo" in result.message
+    assert "Development mode" in result.message
 
 
 def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
@@ -63,7 +63,8 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    assert result.artifacts_installed == 1
+    # 1 skill file + 2 hooks = 3 artifacts
+    assert result.artifacts_installed == 3
 
     # Verify file was copied
     copied_file = target_dir / ".claude" / "skills" / "dignified-python" / "SKILL.md"
@@ -197,8 +198,8 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # Only erk-impl.yml should be synced (it's in BUNDLED_WORKFLOWS)
-    assert result.artifacts_installed == 1
+    # erk-impl.yml + 2 hooks = 3 artifacts
+    assert result.artifacts_installed == 3
 
     # Verify erk-impl.yml was copied
     copied_workflow = target_dir / ".github" / "workflows" / "erk-impl.yml"
@@ -210,8 +211,8 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     assert not other_workflow.exists()
 
 
-def test_sync_skills_only_syncs_bundled_skills(tmp_path: Path) -> None:
-    """_sync_skills only copies skills listed in BUNDLED_SKILLS registry."""
+def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> None:
+    """_sync_directory_artifacts only copies items in the provided name set."""
     source_dir = tmp_path / "source" / "skills"
 
     # Create a bundled skill (dignified-python is in BUNDLED_SKILLS)
@@ -226,7 +227,7 @@ def test_sync_skills_only_syncs_bundled_skills(tmp_path: Path) -> None:
 
     target_dir = tmp_path / "target" / "skills"
 
-    copied = _sync_skills(source_dir, target_dir)
+    copied, _ = _sync_directory_artifacts(source_dir, target_dir, BUNDLED_SKILLS, "skills")
 
     # Should copy exactly 1 file (the bundled skill)
     assert copied == 1
@@ -238,8 +239,8 @@ def test_sync_skills_only_syncs_bundled_skills(tmp_path: Path) -> None:
     assert not (target_dir / "fake-driven-testing").exists()
 
 
-def test_sync_agents_only_syncs_bundled_agents(tmp_path: Path) -> None:
-    """_sync_agents only copies agents listed in BUNDLED_AGENTS registry."""
+def test_sync_directory_artifacts_only_syncs_bundled_agents(tmp_path: Path) -> None:
+    """_sync_directory_artifacts only copies items in the provided name set."""
     source_dir = tmp_path / "source" / "agents"
 
     # Create a bundled agent (devrun is in BUNDLED_AGENTS)
@@ -254,7 +255,7 @@ def test_sync_agents_only_syncs_bundled_agents(tmp_path: Path) -> None:
 
     target_dir = tmp_path / "target" / "agents"
 
-    copied = _sync_agents(source_dir, target_dir)
+    copied, _ = _sync_directory_artifacts(source_dir, target_dir, BUNDLED_AGENTS, "agents")
 
     # Should copy exactly 1 file (the bundled agent)
     assert copied == 1
@@ -287,7 +288,7 @@ def test_sync_commands_only_syncs_erk_namespace(tmp_path: Path) -> None:
 
     target_dir = tmp_path / "target" / "commands"
 
-    copied = _sync_commands(source_dir, target_dir)
+    copied, _ = _sync_commands(source_dir, target_dir)
 
     # Should copy exactly 1 file (the erk namespace command)
     assert copied == 1
@@ -346,8 +347,8 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # Should copy: 1 skill + 1 agent + 1 command = 3 files
-    assert result.artifacts_installed == 3
+    # Should copy: 1 skill + 1 agent + 1 command + 2 hooks = 5 artifacts
+    assert result.artifacts_installed == 5
 
     # Bundled artifacts should exist
     assert (target_dir / ".claude" / "skills" / "dignified-python" / "SKILL.md").exists()
@@ -373,7 +374,7 @@ def test_sync_hooks_adds_missing_hooks(tmp_path: Path) -> None:
     target_claude_dir.mkdir(parents=True)
 
     # No settings.json exists yet
-    added = _sync_hooks(target_claude_dir)
+    added, _ = _sync_hooks(target_claude_dir)
 
     # Both hooks should be added
     assert added == 2
@@ -440,7 +441,7 @@ def test_sync_hooks_skips_existing_hooks(tmp_path: Path) -> None:
     settings_path = target_claude_dir / "settings.json"
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
-    added = _sync_hooks(target_claude_dir)
+    added, _ = _sync_hooks(target_claude_dir)
 
     # No hooks should be added
     assert added == 0
