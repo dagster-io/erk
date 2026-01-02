@@ -17,6 +17,7 @@ from typing import Literal, NamedTuple
 
 import click
 
+from erk.cli.commands.learn import _maybe_capture_learn
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -340,6 +341,12 @@ def _navigate_after_land(
     default=True,
     help="Pull latest changes after landing (default: --pull)",
 )
+@click.option(
+    "--learn/--no-learn",
+    "learn_flag",
+    default=None,
+    help="Capture session for docs (default: prompt if .impl/ exists)",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -348,6 +355,7 @@ def land(
     up_flag: bool,
     force: bool,
     pull_flag: bool,
+    learn_flag: bool | None,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -393,14 +401,14 @@ def land(
     # Determine if landing current branch or a specific target
     if target is None:
         # Landing current branch's PR (original behavior)
-        _land_current_branch(ctx, repo, script, up_flag, force, pull_flag)
+        _land_current_branch(ctx, repo, script, up_flag, force, pull_flag, learn_flag)
     else:
         # Parse the target argument
         parsed = parse_argument(target)
 
         if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
-            _land_by_branch(ctx, repo, script, force, pull_flag, target)
+            _land_by_branch(ctx, repo, script, force, pull_flag, target, learn_flag)
         else:
             # Landing a specific PR by number or URL
             if parsed.pr_number is None:
@@ -409,7 +417,9 @@ def land(
                     "Expected a PR number (e.g., 123) or GitHub URL."
                 )
                 raise SystemExit(1)
-            _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, parsed.pr_number)
+            _land_specific_pr(
+                ctx, repo, script, up_flag, force, pull_flag, parsed.pr_number, learn_flag
+            )
 
 
 def _land_current_branch(
@@ -419,6 +429,7 @@ def _land_current_branch(
     up_flag: bool,
     force: bool,
     pull_flag: bool,
+    learn_flag: bool | None,
 ) -> None:
     """Land the current branch's PR (original behavior)."""
     check_clean_working_tree(ctx)
@@ -485,6 +496,15 @@ def _land_current_branch(
             ctx, main_repo_root, objective_number, success_result.pr_number, force
         )
 
+    # Post-merge: Capture for learn (never blocks landing)
+    _maybe_capture_learn(
+        ctx,
+        current_worktree_path,
+        current_branch,
+        success_result.pr_number,
+        learn_flag,
+    )
+
     # Step 2: Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
@@ -507,6 +527,7 @@ def _land_specific_pr(
     force: bool,
     pull_flag: bool,
     pr_number: int,
+    learn_flag: bool | None,
 ) -> None:
     """Land a specific PR by number."""
     # Validate --up is not used with PR argument
@@ -583,6 +604,17 @@ def _land_specific_pr(
     if objective_number is not None:
         _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, force)
 
+    # Post-merge: Capture for learn (never blocks landing)
+    # Only attempt if we have a worktree path (where .impl/ would be)
+    if worktree_path is not None:
+        _maybe_capture_learn(
+            ctx,
+            worktree_path,
+            branch,
+            pr_number,
+            learn_flag,
+        )
+
     # Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
@@ -604,6 +636,7 @@ def _land_by_branch(
     force: bool,
     pull_flag: bool,
     branch_name: str,
+    learn_flag: bool | None,
 ) -> None:
     """Land a PR for a specific branch."""
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
@@ -673,6 +706,17 @@ def _land_by_branch(
     objective_number = _get_objective_for_branch(ctx, main_repo_root, branch_name)
     if objective_number is not None:
         _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, force)
+
+    # Post-merge: Capture for learn (never blocks landing)
+    # Only attempt if we have a worktree path (where .impl/ would be)
+    if worktree_path is not None:
+        _maybe_capture_learn(
+            ctx,
+            worktree_path,
+            branch_name,
+            pr_number,
+            learn_flag,
+        )
 
     # Cleanup and navigate (uses shared function)
     _cleanup_and_navigate(
