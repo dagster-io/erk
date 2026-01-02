@@ -81,13 +81,26 @@ Example: `P3699-objective-aware-pr-land` -> Plan Issue #3699
 
 ### Step 5: Check for Objective Link
 
-If branch has P-prefix, fetch the plan issue and check for `objective_issue`:
+If branch has P-prefix, use the `get-plan-metadata` exec command to extract the objective issue:
 
-````bash
-gh issue view <plan-number> --json body -q '.body' | sed -n '/```yaml/,/```/p' | sed '1d;$d' | grep 'objective_issue:'
-````
+```bash
+erk exec get-plan-metadata <plan-number> objective_issue
+```
 
-Record the objective issue number if present. If not present, null, or parsing fails, record that there's no objective link.
+**Output format:**
+
+```json
+{
+  "success": true,
+  "value": 3400,
+  "issue_number": 3509,
+  "field": "objective_issue"
+}
+```
+
+- If `success` is `true` and `value` is an integer, record that objective issue number
+- If `success` is `true` and `value` is `null`, there's no objective link
+- If `success` is `false`, warn and skip objective workflow (fail-open behavior)
 
 ### Step 6: Execute erk pr land
 
