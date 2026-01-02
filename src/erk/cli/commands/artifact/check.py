@@ -76,11 +76,16 @@ def _display_installed_artifacts(project_dir: Path) -> None:
             click.echo(f"   hooks/{artifact.name} (settings.json)")
 
 
-def _format_artifact_status(artifact: ArtifactStatus) -> str:
-    """Format artifact status for verbose output."""
+def _format_artifact_status(artifact: ArtifactStatus, show_hashes: bool) -> str:
+    """Format artifact status for verbose output.
+
+    Args:
+        artifact: The artifact status to format
+        show_hashes: If True, show hash comparison details
+    """
     if artifact.status == "up-to-date":
         icon = click.style("✓", fg="green")
-        detail = f"{artifact.current_version} (up to date)"
+        detail = f"{artifact.current_version} (up-to-date)"
     elif artifact.status == "changed-upstream":
         icon = click.style("⚠", fg="yellow")
         if artifact.installed_version:
@@ -94,11 +99,30 @@ def _format_artifact_status(artifact: ArtifactStatus) -> str:
         icon = click.style("✗", fg="red")
         detail = "(not installed)"
 
-    return f"  {icon} {artifact.name}: {detail}"
+    lines = [f"  {icon} {artifact.name}: {detail}"]
+
+    if show_hashes:
+        # Show state.toml values
+        if artifact.installed_version is not None and artifact.installed_hash is not None:
+            lines.append(f"       state.toml: version={artifact.installed_version}, hash={artifact.installed_hash}")
+        else:
+            lines.append("       state.toml: (not tracked)")
+
+        # Show current source values
+        if artifact.current_hash is not None:
+            lines.append(f"       source:     version={artifact.current_version}, hash={artifact.current_hash}")
+        else:
+            lines.append("       source:     (not installed)")
+
+    return "\n".join(lines)
 
 
-def _display_verbose_status(project_dir: Path) -> bool:
+def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
     """Display per-artifact status breakdown.
+
+    Args:
+        project_dir: Path to the project root
+        show_hashes: If True, show hash comparison details for each artifact
 
     Returns True if any artifacts need attention (not up-to-date).
     """
@@ -115,7 +139,7 @@ def _display_verbose_status(project_dir: Path) -> bool:
 
     has_issues = False
     for artifact in health_result.artifacts:
-        click.echo(_format_artifact_status(artifact))
+        click.echo(_format_artifact_status(artifact, show_hashes))
         if artifact.status != "up-to-date":
             has_issues = True
 
@@ -126,10 +150,10 @@ def _display_verbose_status(project_dir: Path) -> bool:
 @click.option(
     "--verbose",
     "-v",
-    is_flag=True,
-    help="Show per-artifact version and modification status.",
+    count=True,
+    help="Show per-artifact status. Use -vv to also show hash comparisons.",
 )
-def check_cmd(verbose: bool) -> None:
+def check_cmd(verbose: int) -> None:
     """Check if artifacts are in sync with erk version.
 
     Compares the version recorded in .erk/state.toml against
@@ -144,7 +168,11 @@ def check_cmd(verbose: bool) -> None:
 
     \b
       # Show per-artifact breakdown
-      erk artifact check --verbose
+      erk artifact check -v
+
+    \b
+      # Show hash comparisons (state.toml vs source)
+      erk artifact check -vv
     """
     project_dir = Path.cwd()
 
@@ -153,11 +181,13 @@ def check_cmd(verbose: bool) -> None:
     missing_result = find_missing_artifacts(project_dir)
 
     has_errors = False
+    show_per_artifact = verbose >= 1
+    show_hashes = verbose >= 2
 
     # Check staleness
     if staleness_result.reason == "erk-repo":
         click.echo(click.style("✓ ", fg="green") + "Development mode (artifacts read from source)")
-        if not verbose:
+        if not show_per_artifact:
             _display_installed_artifacts(project_dir)
     elif staleness_result.reason == "not-initialized":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts not initialized")
@@ -175,12 +205,12 @@ def check_cmd(verbose: bool) -> None:
             click.style("✓ ", fg="green")
             + f"Artifacts up to date (v{staleness_result.current_version})"
         )
-        if not verbose:
+        if not show_per_artifact:
             _display_installed_artifacts(project_dir)
 
     # Show verbose per-artifact breakdown if requested
-    if verbose and staleness_result.reason != "not-initialized":
-        verbose_has_issues = _display_verbose_status(project_dir)
+    if show_per_artifact and staleness_result.reason != "not-initialized":
+        verbose_has_issues = _display_verbose_status(project_dir, show_hashes)
         if verbose_has_issues:
             has_errors = True
 
