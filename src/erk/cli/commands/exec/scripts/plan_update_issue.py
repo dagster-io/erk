@@ -100,9 +100,7 @@ def plan_update_issue(
             click.echo("  erk exec plan-update-issue --issue NUMBER --session-id ID", err=True)
             click.echo("  cat plan.md | erk exec plan-update-issue --issue NUMBER", err=True)
         else:
-            click.echo(
-                json.dumps({"success": False, "error": "No plan content provided"})
-            )
+            click.echo(json.dumps({"success": False, "error": "No plan content provided"}))
         raise SystemExit(1)
 
     # Update the plan issue

@@ -47,6 +47,7 @@ if result.success:
 ```
 
 The function:
+
 1. Extracts title from H1 heading (or uses provided title)
 2. Creates erk-plan label if needed
 3. Creates issue with metadata-only body
@@ -95,14 +96,15 @@ The issue body contains a `plan-header` metadata block:
 
 ```yaml
 # plan-header
-schema_version: '2'
-created_at: '2025-01-01T00:00:00Z'
-created_by: 'username'
-plan_comment_id: 1234567890  # Direct lookup for plan content
+schema_version: "2"
+created_at: "2025-01-01T00:00:00Z"
+created_by: "username"
+plan_comment_id: 1234567890 # Direct lookup for plan content
 # ... other optional fields
 ```
 
 Key fields:
+
 - `schema_version`: Always '2' for current format
 - `plan_comment_id`: GitHub comment ID containing plan content
 - `created_at`, `created_by`: Creation metadata
@@ -131,10 +133,12 @@ Standard plans (not extraction plans) include a Commands section in the issue bo
 ## Commands
 
 Implement this plan:
+
 - Interactive: `erk implement 42`
 - Non-interactive: `erk implement 42 --dangerous`
 
 Submit to remote:
+
 - `erk plan submit 42`
 ```
 
