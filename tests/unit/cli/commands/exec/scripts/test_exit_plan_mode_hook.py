@@ -223,7 +223,8 @@ class TestBuildBlockingMessage:
         assert "edits code in the current worktree" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
-        assert "erk exec marker create exit-plan-mode-hook.implement-now" in message
+        assert "erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID" in message
+        assert "exit-plan-mode-hook.implement-now" in message
 
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""

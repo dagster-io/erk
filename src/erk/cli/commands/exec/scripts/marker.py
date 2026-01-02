@@ -1,9 +1,9 @@
 """Marker file operations for inter-process communication.
 
 Usage:
-    erk exec marker create [--session-id SESSION_ID] <name>
-    erk exec marker exists [--session-id SESSION_ID] <name>
-    erk exec marker delete [--session-id SESSION_ID] <name>
+    erk exec marker create --session-id SESSION_ID <name>
+    erk exec marker exists --session-id SESSION_ID <name>
+    erk exec marker delete --session-id SESSION_ID <name>
 
 Marker files are stored in `.erk/scratch/sessions/<session-id>/` and are used for
 inter-process communication between hooks and commands. Session ID can be provided

@@ -420,7 +420,7 @@ When a hook needs to allow future operations after user confirmation, use a mark
 
 1. Hook checks for marker file → if exists, delete and allow
 2. Hook blocks if no marker → Claude asks user
-3. On user confirmation, Claude creates marker via `erk exec marker create <name>`
+3. On user confirmation, Claude creates marker via `erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID <name>`
 4. Next invocation succeeds
 
 **Implementation:**

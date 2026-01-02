@@ -31,7 +31,7 @@ Marker Files:
         Lifecycle: Deleted after being read by next hook invocation
 
     incremental-plan.marker
-        Created by: /local:incremental-plan-mode command (via `erk exec marker create`)
+        Created by: /local:incremental-plan-mode command (via `erk exec marker create --session-id`)
         Effect: Next ExitPlanMode call is ALLOWED, skipping the save prompt entirely
         Lifecycle: Deleted after being read by next hook invocation
         Purpose: Streamlines "plan → implement → submit" loop for PR iteration
@@ -143,7 +143,8 @@ def build_blocking_message(
             "",
             "If user chooses 'Implement now':",
             "  1. Create implement-now marker:",
-            "     erk exec marker create exit-plan-mode-hook.implement-now",
+            "     erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID \\",
+            "       exit-plan-mode-hook.implement-now",
             "  2. Call ExitPlanMode",
         ]
     )
