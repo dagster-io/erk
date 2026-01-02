@@ -3,7 +3,6 @@
 import json
 import shutil
 from dataclasses import dataclass
-from functools import cache
 from pathlib import Path
 
 from erk.artifacts.detection import is_in_erk_repo
@@ -17,7 +16,8 @@ from erk.core.claude_settings import (
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
-from erk.core.release_notes import get_current_version
+from erk_shared.gateway.installation.abc import ErkInstallation
+from erk_shared.gateway.installation.real import RealErkInstallation
 
 
 @dataclass(frozen=True)
@@ -29,61 +29,9 @@ class SyncResult:
     message: str
 
 
-@cache
-def _get_erk_package_dir() -> Path:
-    """Get the erk package directory (where erk/__init__.py lives)."""
-    # __file__ is .../erk/artifacts/sync.py, so parent.parent is erk/
-    return Path(__file__).parent.parent
-
-
-def _is_editable_install() -> bool:
-    """Check if erk is installed in editable mode.
-
-    Editable: erk package is in src/ layout (e.g., .../src/erk/)
-    Wheel: erk package is in site-packages (e.g., .../site-packages/erk/)
-    """
-    return "site-packages" not in str(_get_erk_package_dir().resolve())
-
-
-@cache
-def get_bundled_claude_dir() -> Path:
-    """Get path to bundled .claude/ directory in installed erk package.
-
-    For wheel installs: .claude/ is bundled as package data at erk/data/claude/
-    via pyproject.toml force-include.
-
-    For editable installs: .claude/ is at the erk repo root (no wheel is built,
-    so erk/data/ doesn't exist).
-    """
-    erk_package_dir = _get_erk_package_dir()
-
-    if _is_editable_install():
-        # Editable: erk package is at src/erk/, repo root is ../..
-        erk_repo_root = erk_package_dir.parent.parent
-        return erk_repo_root / ".claude"
-
-    # Wheel install: data is bundled at erk/data/claude/
-    return erk_package_dir / "data" / "claude"
-
-
-@cache
-def get_bundled_github_dir() -> Path:
-    """Get path to bundled .github/ directory in installed erk package.
-
-    For wheel installs: .github/ is bundled as package data at erk/data/github/
-    via pyproject.toml force-include.
-
-    For editable installs: .github/ is at the erk repo root.
-    """
-    erk_package_dir = _get_erk_package_dir()
-
-    if _is_editable_install():
-        # Editable: erk package is at src/erk/, repo root is ../..
-        erk_repo_root = erk_package_dir.parent.parent
-        return erk_repo_root / ".github"
-
-    # Wheel install: data is bundled at erk/data/github/
-    return erk_package_dir / "data" / "github"
+# Module-level singleton for backward compatibility
+# Tests should use FakeErkInstallation instead of mocking these functions
+_default_installation: ErkInstallation = RealErkInstallation()
 
 
 def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:
@@ -233,7 +181,6 @@ def _sync_workflows(
     Only syncs files listed in BUNDLED_WORKFLOWS registry.
     Returns tuple of (file_count, synced_artifacts).
     """
-    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import BUNDLED_WORKFLOWS
 
     source_workflows_dir = bundled_github_dir / "workflows"
@@ -267,7 +214,6 @@ def _sync_actions(
     Only syncs directories listed in BUNDLED_ACTIONS registry.
     Returns tuple of (file_count, synced_artifacts).
     """
-    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import BUNDLED_ACTIONS
 
     source_actions_dir = bundled_github_dir / "actions"
@@ -463,7 +409,10 @@ def _hash_agent_artifacts(agents_dir: Path, names: frozenset[str]) -> list[Synce
     return artifacts
 
 
-def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
+def _compute_source_artifact_state(
+    project_dir: Path,
+    installation: ErkInstallation,
+) -> list[SyncedArtifact]:
     """Compute artifact state from source (for erk repo dogfooding).
 
     Instead of copying files, just compute hashes from the source artifacts.
@@ -475,8 +424,8 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
         BUNDLED_WORKFLOWS,
     )
 
-    bundled_claude_dir = get_bundled_claude_dir()
-    bundled_github_dir = get_bundled_github_dir()
+    bundled_claude_dir = installation.get_bundled_claude_dir()
+    bundled_github_dir = installation.get_bundled_github_dir()
     artifacts: list[SyncedArtifact] = []
 
     # Hash directory-based skills
@@ -534,19 +483,30 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     return artifacts
 
 
-def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
+def sync_artifacts(
+    project_dir: Path,
+    force: bool,
+    installation: ErkInstallation | None = None,
+) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
     When running in the erk repo itself, skips file copying but still computes
     and saves state for dogfooding.
+
+    Args:
+        project_dir: Path to the project root directory
+        force: If True, sync even if versions match
+        installation: ErkInstallation instance for path/version resolution.
+            If None, uses _default_installation (RealErkInstallation singleton).
     """
-    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS
+
+    inst = installation if installation is not None else _default_installation
 
     # In erk repo: skip copying but still save state for dogfooding
     if is_in_erk_repo(project_dir):
-        all_synced = _compute_source_artifact_state(project_dir)
-        current_version = get_current_version()
+        all_synced = _compute_source_artifact_state(project_dir, inst)
+        current_version = inst.get_current_version()
         files: dict[str, ArtifactFileState] = {}
         for artifact in all_synced:
             files[artifact.key] = ArtifactFileState(
@@ -560,7 +520,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
             message="Development mode: state.toml updated (artifacts read from source)",
         )
 
-    bundled_claude_dir = get_bundled_claude_dir()
+    bundled_claude_dir = inst.get_bundled_claude_dir()
     if not bundled_claude_dir.exists():
         return SyncResult(
             success=False,
@@ -593,7 +553,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     all_synced.extend(synced)
 
     # Sync workflows and actions from .github/
-    bundled_github_dir = get_bundled_github_dir()
+    bundled_github_dir = inst.get_bundled_github_dir()
     if bundled_github_dir.exists():
         target_workflows_dir = project_dir / ".github" / "workflows"
         count, synced = _sync_workflows(bundled_github_dir, target_workflows_dir)
@@ -611,7 +571,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     all_synced.extend(synced)
 
     # Build per-artifact state from synced artifacts
-    current_version = get_current_version()
+    current_version = inst.get_current_version()
     files: dict[str, ArtifactFileState] = {}
     for artifact in all_synced:
         files[artifact.key] = ArtifactFileState(
@@ -639,7 +599,11 @@ class FeatureSyncResult:
     feature_name: str
 
 
-def sync_feature(project_dir: Path, feature_name: str) -> FeatureSyncResult:
+def sync_feature(
+    project_dir: Path,
+    feature_name: str,
+    installation: ErkInstallation | None = None,
+) -> FeatureSyncResult:
     """Sync an optional feature's artifacts to the project.
 
     Features include workflows and prompts that are installed on-demand.
@@ -647,11 +611,15 @@ def sync_feature(project_dir: Path, feature_name: str) -> FeatureSyncResult:
     Args:
         project_dir: Path to the project root
         feature_name: Name of the feature to install (e.g., "dignified-review")
+        installation: ErkInstallation instance for path/version resolution.
+            If None, uses _default_installation (RealErkInstallation singleton).
 
     Returns:
         FeatureSyncResult with success status and artifact count
     """
     from erk.artifacts.features import get_feature
+
+    inst = installation if installation is not None else _default_installation
 
     feature = get_feature(feature_name)
     if feature is None:
@@ -662,7 +630,7 @@ def sync_feature(project_dir: Path, feature_name: str) -> FeatureSyncResult:
             feature_name=feature_name,
         )
 
-    bundled_github_dir = get_bundled_github_dir()
+    bundled_github_dir = inst.get_bundled_github_dir()
     if not bundled_github_dir.exists():
         return FeatureSyncResult(
             success=False,
@@ -686,7 +654,7 @@ def sync_feature(project_dir: Path, feature_name: str) -> FeatureSyncResult:
     # Note: Prompts are accessed via `erk exec get-prompt` rather than synced
 
     # Update state with newly synced artifacts
-    current_version = get_current_version()
+    current_version = inst.get_current_version()
     state_path = project_dir / ".erk" / "state.toml"
 
     # Load existing state if present

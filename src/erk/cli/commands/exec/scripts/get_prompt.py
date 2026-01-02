@@ -24,7 +24,7 @@ Examples:
 
 import click
 
-from erk.artifacts.sync import get_bundled_github_dir
+from erk_shared.gateway.installation.real import RealErkInstallation
 
 # Available prompts that can be retrieved
 AVAILABLE_PROMPTS = frozenset(
@@ -50,7 +50,8 @@ def get_prompt(prompt_name: str) -> None:
         click.echo(f"Available prompts: {available}", err=True)
         raise SystemExit(1)
 
-    bundled_github_dir = get_bundled_github_dir()
+    installation = RealErkInstallation()
+    bundled_github_dir = installation.get_bundled_github_dir()
     prompt_path = bundled_github_dir / "prompts" / f"{prompt_name}.md"
 
     if not prompt_path.exists():

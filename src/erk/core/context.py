@@ -53,6 +53,9 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
+from erk_shared.gateway.installation.abc import ErkInstallation
+from erk_shared.gateway.installation.fake import FakeErkInstallation
+from erk_shared.gateway.installation.real import RealErkInstallation
 from erk_shared.gateway.shell import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -112,6 +115,11 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_issues = FakeGitHubIssues()
     fake_graphite = FakeGraphite()
     fake_time = FakeTime()
+    fake_installation = FakeErkInstallation(
+        bundled_claude_dir=Path("/fake/bundled/claude"),
+        bundled_github_dir=Path("/fake/bundled/github"),
+        current_version="0.0.0-test",
+    )
     return ErkContext(
         git=git,
         github=fake_github,
@@ -127,6 +135,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         config_store=FakeConfigStore(config=None),
         script_writer=FakeScriptWriter(),
         feedback=FakeUserFeedback(),
+        installation=fake_installation,
         plan_list_service=FakePlanListService(),
         planner_registry=FakePlannerRegistry(),
         session_store=FakeClaudeCodeSessionStore(),
@@ -158,6 +167,7 @@ def context_for_test(
     config_store: ConfigStore | None = None,
     script_writer: ScriptWriter | None = None,
     feedback: UserFeedback | None = None,
+    installation: ErkInstallation | None = None,
     plan_list_service: PlanListService | None = None,
     planner_registry: PlannerRegistry | None = None,
     session_store: ClaudeCodeSessionStore | None = None,
@@ -278,6 +288,13 @@ def context_for_test(
     if prompt_executor is None:
         prompt_executor = FakePromptExecutor()
 
+    if installation is None:
+        installation = FakeErkInstallation(
+            bundled_claude_dir=Path("/fake/bundled/claude"),
+            bundled_github_dir=Path("/fake/bundled/github"),
+            current_version="0.0.0-test",
+        )
+
     if global_config is None:
         global_config = GlobalConfig(
             erk_root=Path("/test/erks"),
@@ -325,6 +342,7 @@ def context_for_test(
         config_store=config_store,
         script_writer=script_writer,
         feedback=feedback,
+        installation=installation,
         plan_list_service=plan_list_service,
         planner_registry=planner_registry,
         session_store=session_store,
@@ -544,6 +562,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         config_store=RealConfigStore(),
         script_writer=RealScriptWriter(),
         feedback=feedback,
+        installation=RealErkInstallation(),
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(),
         session_store=session_store,

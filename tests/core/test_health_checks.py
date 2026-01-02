@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -19,6 +20,7 @@ from erk.core.health_checks import (
 from erk.core.health_checks_dogfooder.legacy_config_locations import (
     check_legacy_config_locations,
 )
+from erk_shared.gateway.installation.fake import FakeErkInstallation
 from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
 from tests.fakes.shell import FakeShell
@@ -584,15 +586,16 @@ def test_check_orphaned_artifacts_in_erk_repo(tmp_path: Path) -> None:
     assert "Skipped: running in erk repo" in result.message
 
 
-def test_check_orphaned_artifacts_no_orphans(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_orphaned_artifacts_no_orphans(tmp_path: Path) -> None:
     """Test orphaned artifacts check when no orphaned files exist."""
     # Create a mock bundled directory
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project directory
     project_dir = tmp_path / "project"
@@ -601,10 +604,13 @@ def test_check_orphaned_artifacts_no_orphans(
     project_commands.mkdir(parents=True)
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
-    # Monkeypatch get_bundled_claude_dir to return our mock
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-
-    result = check_orphaned_artifacts(project_dir)
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_orphaned_artifacts(project_dir)
 
     assert result.name == "orphaned-artifacts"
     assert result.passed is True
@@ -612,15 +618,16 @@ def test_check_orphaned_artifacts_no_orphans(
     assert "No orphaned artifacts" in result.message
 
 
-def test_check_orphaned_artifacts_orphaned_command(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_orphaned_artifacts_orphaned_command(tmp_path: Path) -> None:
     """Test orphaned command file → warning with remediation."""
     # Create a mock bundled directory with one command
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project directory with an extra orphaned command
     project_dir = tmp_path / "project"
@@ -630,9 +637,13 @@ def test_check_orphaned_artifacts_orphaned_command(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
     (project_commands / "old-command.md").write_text("# Old", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-
-    result = check_orphaned_artifacts(project_dir)
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_orphaned_artifacts(project_dir)
 
     assert result.name == "orphaned-artifacts"
     assert result.passed is True
@@ -643,15 +654,16 @@ def test_check_orphaned_artifacts_orphaned_command(
     assert "rm .claude/commands/erk/old-command.md" in result.details
 
 
-def test_check_orphaned_artifacts_orphaned_skill(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_orphaned_artifacts_orphaned_skill(tmp_path: Path) -> None:
     """Test orphaned skill file → warning with remediation."""
     # Create a mock bundled directory with a skill
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_skill = bundled_dir / "skills" / "dignified-python"
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "core.md").write_text("# Core", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project directory with an extra orphaned file in the skill
     project_dir = tmp_path / "project"
@@ -661,9 +673,13 @@ def test_check_orphaned_artifacts_orphaned_skill(
     (project_skill / "core.md").write_text("# Core", encoding="utf-8")
     (project_skill / "deprecated-file.md").write_text("# Deprecated", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-
-    result = check_orphaned_artifacts(project_dir)
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_orphaned_artifacts(project_dir)
 
     assert result.name == "orphaned-artifacts"
     assert result.passed is True
@@ -674,15 +690,16 @@ def test_check_orphaned_artifacts_orphaned_skill(
     assert "rm .claude/skills/dignified-python/deprecated-file.md" in result.details
 
 
-def test_check_orphaned_artifacts_orphaned_agent(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_orphaned_artifacts_orphaned_agent(tmp_path: Path) -> None:
     """Test orphaned agent file → warning with remediation."""
     # Create a mock bundled directory with an agent
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_agent = bundled_dir / "agents" / "devrun"
     bundled_agent.mkdir(parents=True)
     (bundled_agent / "agent.md").write_text("# Agent", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project directory with an extra orphaned file in the agent
     project_dir = tmp_path / "project"
@@ -692,9 +709,13 @@ def test_check_orphaned_artifacts_orphaned_agent(
     (project_agent / "agent.md").write_text("# Agent", encoding="utf-8")
     (project_agent / "old-file.md").write_text("# Old", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-
-    result = check_orphaned_artifacts(project_dir)
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_orphaned_artifacts(project_dir)
 
     assert result.name == "orphaned-artifacts"
     assert result.passed is True
@@ -705,15 +726,16 @@ def test_check_orphaned_artifacts_orphaned_agent(
     assert "rm .claude/agents/devrun/old-file.md" in result.details
 
 
-def test_check_orphaned_artifacts_detects_init_py(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_orphaned_artifacts_detects_init_py(tmp_path: Path) -> None:
     """Test that __init__.py files are detected as orphans in commands/erk/."""
     # Create a mock bundled directory
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project directory with __init__.py (should be flagged as orphan)
     project_dir = tmp_path / "project"
@@ -723,9 +745,13 @@ def test_check_orphaned_artifacts_detects_init_py(
     (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
     (project_commands / "__init__.py").write_text("", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-
-    result = check_orphaned_artifacts(project_dir)
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_orphaned_artifacts(project_dir)
 
     assert result.name == "orphaned-artifacts"
     assert result.passed is True
@@ -735,15 +761,16 @@ def test_check_orphaned_artifacts_detects_init_py(
     assert "__init__.py" in result.details
 
 
-def test_check_orphaned_artifacts_user_created_folders_not_checked(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_orphaned_artifacts_user_created_folders_not_checked(tmp_path: Path) -> None:
     """Test that user-created folders (e.g., local/) are not checked."""
     # Create a mock bundled directory (no local/ folder)
     bundled_dir = tmp_path / "bundled" / ".claude"
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project directory with a user-created local/ folder
     project_dir = tmp_path / "project"
@@ -762,9 +789,13 @@ def test_check_orphaned_artifacts_user_created_folders_not_checked(
     local_commands.mkdir(parents=True)
     (local_commands / "my-command.md").write_text("# My cmd", encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-
-    result = check_orphaned_artifacts(project_dir)
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_orphaned_artifacts(project_dir)
 
     # Should pass without warnings - user-created folders are not checked
     assert result.name == "orphaned-artifacts"
@@ -773,10 +804,8 @@ def test_check_orphaned_artifacts_user_created_folders_not_checked(
     assert "No orphaned artifacts" in result.message
 
 
-def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_check_missing_artifacts_found(tmp_path: Path) -> None:
     """Check fails when artifacts are missing."""
-    import json
-
     from erk.core.claude_settings import add_erk_hooks
 
     # Create bundled dir with command
@@ -784,6 +813,9 @@ def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.Monke
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project dir WITHOUT the command but WITH hooks (to isolate test)
     project_dir = tmp_path / "project"
@@ -793,14 +825,13 @@ def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.Monke
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
     )
-    monkeypatch.setattr("erk.artifacts.artifact_health.is_in_erk_repo", lambda _: False)
-
-    result = check_missing_artifacts(project_dir)
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_missing_artifacts(project_dir)
 
     assert result.name == "missing-artifacts"
     assert result.passed is False
@@ -810,12 +841,8 @@ def test_check_missing_artifacts_found(tmp_path: Path, monkeypatch: pytest.Monke
     assert "erk artifact sync" in result.details
 
 
-def test_check_missing_artifacts_all_present(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_check_missing_artifacts_all_present(tmp_path: Path) -> None:
     """Check passes when all artifacts present."""
-    import json
-
     from erk.core.claude_settings import add_erk_hooks
 
     # Create bundled dir with command
@@ -823,6 +850,9 @@ def test_check_missing_artifacts_all_present(
     bundled_commands = bundled_dir / "commands" / "erk"
     bundled_commands.mkdir(parents=True)
     (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
 
     # Create project dir WITH the command and hooks
     project_dir = tmp_path / "project"
@@ -834,14 +864,13 @@ def test_check_missing_artifacts_all_present(
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.get_bundled_github_dir",
-        lambda: tmp_path / "bundled" / ".github",
+    fake = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
     )
-    monkeypatch.setattr("erk.artifacts.artifact_health.is_in_erk_repo", lambda _: False)
-
-    result = check_missing_artifacts(project_dir)
+    with patch("erk.artifacts.artifact_health._default_installation", fake):
+        result = check_missing_artifacts(project_dir)
 
     assert result.name == "missing-artifacts"
     assert result.passed is True

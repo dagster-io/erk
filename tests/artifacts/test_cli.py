@@ -11,6 +11,7 @@ from erk.cli.commands.artifact.check import check_cmd
 from erk.cli.commands.artifact.list_cmd import list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
+from erk_shared.gateway.installation.fake import FakeErkInstallation
 
 
 class TestListCommand:
@@ -111,8 +112,8 @@ class TestListCommand:
         assert "devrun" in result.output
         assert "[erk]" in result.output
 
-    def test_list_shows_local_badge_for_local_artifacts(self, tmp_path: Path) -> None:
-        """Shows [local] badge for local/user-defined artifacts."""
+    def test_list_shows_unmanaged_badge_for_local_artifacts(self, tmp_path: Path) -> None:
+        """Shows [unmanaged] badge for local/user-defined artifacts."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Local command
@@ -130,9 +131,9 @@ class TestListCommand:
         assert result.exit_code == 0
         assert "local:my-cmd" in result.output
         assert "my-skill" in result.output
-        # Both should show [local] badge, not [erk]
-        assert "[local]" in result.output
-        assert result.output.count("[local]") == 2  # Both artifacts
+        # Both should show [unmanaged] badge, not [erk]
+        assert "[unmanaged]" in result.output
+        assert result.output.count("[unmanaged]") == 2  # Both artifacts
 
 
 class TestIsErkManaged:
@@ -236,14 +237,29 @@ class TestShowCommand:
         assert "My Test Skill Content" in result.output
 
 
+def _make_fake_installation(
+    tmp_path: Path,
+    bundled_claude_dir: Path | None = None,
+    bundled_github_dir: Path | None = None,
+    current_version: str = "1.0.0",
+) -> FakeErkInstallation:
+    """Create a FakeErkInstallation for CLI tests."""
+    return FakeErkInstallation(
+        bundled_claude_dir=bundled_claude_dir if bundled_claude_dir else tmp_path / "bundled",
+        bundled_github_dir=bundled_github_dir if bundled_github_dir else tmp_path / "bundled_github",
+        current_version=current_version,
+    )
+
+
 class TestCheckCommand:
     """Tests for erk artifact check."""
 
     def test_check_not_initialized(self, tmp_path: Path) -> None:
         """Shows not initialized when no state."""
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd)
 
         assert result.exit_code == 1
@@ -252,6 +268,7 @@ class TestCheckCommand:
     def test_check_version_mismatch(self, tmp_path: Path) -> None:
         """Shows mismatch when versions differ."""
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
@@ -259,7 +276,7 @@ class TestCheckCommand:
                 '[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8"
             )
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd)
 
         assert result.exit_code == 1
@@ -268,6 +285,10 @@ class TestCheckCommand:
     def test_check_up_to_date(self, tmp_path: Path) -> None:
         """Shows up to date when versions match and no orphans."""
         runner = CliRunner()
+        # Use nonexistent bundled dir to skip orphan/missing checks
+        fake = _make_fake_installation(
+            tmp_path, bundled_claude_dir=Path("/nonexistent"), current_version="1.0.0"
+        )
         with runner.isolated_filesystem(temp_dir=tmp_path):
             state_file = Path(".erk/state.toml")
             state_file.parent.mkdir(parents=True)
@@ -275,12 +296,11 @@ class TestCheckCommand:
                 '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
             )
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
-                    return_value=Path("/nonexistent"),
-                ):
-                    result = runner.invoke(check_cmd)
+            with (
+                patch("erk.artifacts.staleness._default_installation", fake),
+                patch("erk.artifacts.artifact_health._default_installation", fake),
+            ):
+                result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -288,11 +308,12 @@ class TestCheckCommand:
     def test_check_erk_repo(self, tmp_path: Path) -> None:
         """Shows development mode when in erk repo."""
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create pyproject.toml with erk name
             Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
@@ -301,6 +322,7 @@ class TestCheckCommand:
     def test_check_erk_repo_shows_installed_artifacts(self, tmp_path: Path) -> None:
         """Shows installed artifacts list in development mode."""
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create pyproject.toml with erk name
             Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
@@ -319,7 +341,7 @@ class TestCheckCommand:
             (cmd_dir / "plan-implement.md").write_text("# Command", encoding="utf-8")
             (cmd_dir / "pr-submit.md").write_text("# Command", encoding="utf-8")
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
@@ -333,6 +355,10 @@ class TestCheckCommand:
     def test_check_up_to_date_shows_installed_artifacts(self, tmp_path: Path) -> None:
         """Shows installed artifacts list when artifacts are up to date."""
         runner = CliRunner()
+        # Use nonexistent bundled dir to skip orphan/missing checks
+        fake = _make_fake_installation(
+            tmp_path, bundled_claude_dir=Path("/nonexistent"), current_version="1.0.0"
+        )
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Set up version as up-to-date
             state_file = Path(".erk/state.toml")
@@ -354,12 +380,11 @@ class TestCheckCommand:
             cmd_dir.mkdir(parents=True)
             (cmd_dir / "auto-restack.md").write_text("# Command", encoding="utf-8")
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
-                    return_value=Path("/nonexistent"),
-                ):
-                    result = runner.invoke(check_cmd)
+            with (
+                patch("erk.artifacts.staleness._default_installation", fake),
+                patch("erk.artifacts.artifact_health._default_installation", fake),
+            ):
+                result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -371,6 +396,7 @@ class TestCheckCommand:
     def test_check_version_mismatch_does_not_show_artifacts(self, tmp_path: Path) -> None:
         """Does NOT show artifacts when version is mismatched."""
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Set up version mismatch
             state_file = Path(".erk/state.toml")
@@ -388,7 +414,7 @@ class TestCheckCommand:
             cmd_dir.mkdir(parents=True)
             (cmd_dir / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd)
 
         assert result.exit_code == 1
@@ -414,6 +440,16 @@ class TestCheckCommand:
             bundled_commands.mkdir(parents=True)
             (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
+            fake = FakeErkInstallation(
+                bundled_claude_dir=bundled_dir,
+                bundled_github_dir=bundled_github,
+                current_version="1.0.0",
+            )
+
             # Create .claude/ with orphaned command
             project_claude = Path(".claude")
             project_commands = project_claude / "commands" / "erk"
@@ -421,12 +457,11 @@ class TestCheckCommand:
             (project_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
             (project_commands / "orphaned.md").write_text("# Orphan", encoding="utf-8")
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
-                    return_value=bundled_dir,
-                ):
-                    result = runner.invoke(check_cmd)
+            with (
+                patch("erk.artifacts.staleness._default_installation", fake),
+                patch("erk.artifacts.artifact_health._default_installation", fake),
+            ):
+                result = runner.invoke(check_cmd)
 
         assert result.exit_code == 1
         assert "up to date" in result.output
@@ -455,6 +490,16 @@ class TestCheckCommand:
             bundled_commands.mkdir(parents=True)
             (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
+            fake = FakeErkInstallation(
+                bundled_claude_dir=bundled_dir,
+                bundled_github_dir=bundled_github,
+                current_version="1.0.0",
+            )
+
             # Create .claude/ with same files (no orphans)
             project_claude = Path(".claude")
             project_commands = project_claude / "commands" / "erk"
@@ -465,20 +510,11 @@ class TestCheckCommand:
             settings = add_erk_hooks({})
             (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-            # Create bundled github dir (empty, no workflows)
-            bundled_github = tmp_path / "bundled" / ".github"
-            bundled_github.mkdir(parents=True)
-
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
-                    return_value=bundled_dir,
-                ):
-                    with patch(
-                        "erk.artifacts.artifact_health.get_bundled_github_dir",
-                        return_value=bundled_github,
-                    ):
-                        result = runner.invoke(check_cmd)
+            with (
+                patch("erk.artifacts.staleness._default_installation", fake),
+                patch("erk.artifacts.artifact_health._default_installation", fake),
+            ):
+                result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
         assert "up to date" in result.output
@@ -503,11 +539,13 @@ class TestSyncCommand:
     def test_sync_bundled_not_found(self, tmp_path: Path) -> None:
         """Fails when bundled .claude/ not found."""
         runner = CliRunner()
+        fake = FakeErkInstallation(
+            bundled_claude_dir=Path("/nonexistent"),
+            bundled_github_dir=Path("/nonexistent"),
+            current_version="1.0.0",
+        )
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            with patch(
-                "erk.artifacts.sync.get_bundled_claude_dir",
-                return_value=Path("/nonexistent"),
-            ):
+            with patch("erk.artifacts.sync._default_installation", fake):
                 result = runner.invoke(sync_cmd)
 
         assert result.exit_code == 1
@@ -526,6 +564,7 @@ class TestCheckCommandShowsActualArtifacts:
         doesn't.
         """
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create pyproject.toml with erk name (triggers dev mode)
             Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
@@ -538,7 +577,7 @@ class TestCheckCommandShowsActualArtifacts:
             # No agents directory at all
             # The old bug would still list "agents/devrun" from BUNDLED_AGENTS
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd)
 
         assert result.exit_code == 0
@@ -573,6 +612,16 @@ class TestCheckVerboseShowsBothArtifactTypes:
             bundled_commands.mkdir(parents=True)
             (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
+            fake = FakeErkInstallation(
+                bundled_claude_dir=bundled_dir,
+                bundled_github_dir=bundled_github,
+                current_version="1.0.0",
+            )
+
             # Create .claude/ with both erk-managed and project artifacts
             project_claude = Path(".claude")
             project_commands_erk = project_claude / "commands" / "erk"
@@ -589,30 +638,21 @@ class TestCheckVerboseShowsBothArtifactTypes:
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Custom", encoding="utf-8")
 
-            # Create bundled github dir (empty, no workflows)
-            bundled_github = tmp_path / "bundled" / ".github"
-            bundled_github.mkdir(parents=True)
-
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
-                    return_value=bundled_dir,
-                ):
-                    with patch(
-                        "erk.artifacts.artifact_health.get_bundled_github_dir",
-                        return_value=bundled_github,
-                    ):
-                        result = runner.invoke(check_cmd, ["-v"])
+            with (
+                patch("erk.artifacts.staleness._default_installation", fake),
+                patch("erk.artifacts.artifact_health._default_installation", fake),
+            ):
+                result = runner.invoke(check_cmd, ["-v"])
 
         # Verify verbose output has both sections
         assert "Erk-managed artifacts:" in result.output
-        assert "Project artifacts:" in result.output
+        assert "Project artifacts (unmanaged):" in result.output
         # Should show project artifacts
         assert "commands/local/my-command.md" in result.output
         assert "skills/my-custom-skill" in result.output
 
     def test_verbose_without_project_artifacts_omits_section(self, tmp_path: Path) -> None:
-        """Verbose mode omits Project artifacts section when none exist."""
+        """Verbose mode omits Project artifacts (unmanaged) section when none exist."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Set up version as up-to-date
@@ -628,34 +668,36 @@ class TestCheckVerboseShowsBothArtifactTypes:
             bundled_commands.mkdir(parents=True)
             (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
+            fake = FakeErkInstallation(
+                bundled_claude_dir=bundled_dir,
+                bundled_github_dir=bundled_github,
+                current_version="1.0.0",
+            )
+
             # Only erk-managed artifacts, no project-specific ones
             project_claude = Path(".claude")
             project_commands_erk = project_claude / "commands" / "erk"
             project_commands_erk.mkdir(parents=True)
             (project_commands_erk / "plan-implement.md").write_text("# Command", encoding="utf-8")
 
-            # Create bundled github dir (empty, no workflows)
-            bundled_github = tmp_path / "bundled" / ".github"
-            bundled_github.mkdir(parents=True)
-
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-                with patch(
-                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
-                    return_value=bundled_dir,
-                ):
-                    with patch(
-                        "erk.artifacts.artifact_health.get_bundled_github_dir",
-                        return_value=bundled_github,
-                    ):
-                        result = runner.invoke(check_cmd, ["-v"])
+            with (
+                patch("erk.artifacts.staleness._default_installation", fake),
+                patch("erk.artifacts.artifact_health._default_installation", fake),
+            ):
+                result = runner.invoke(check_cmd, ["-v"])
 
         assert "Erk-managed artifacts:" in result.output
-        # Project artifacts section should be omitted when no project artifacts exist
-        assert "Project artifacts:" not in result.output
+        # Project artifacts (unmanaged) section should be omitted when no project artifacts exist
+        assert "Project artifacts (unmanaged):" not in result.output
 
     def test_verbose_dev_mode_shows_both_sections(self, tmp_path: Path) -> None:
         """Verbose mode in dev repo shows both erk-managed and project artifacts."""
         runner = CliRunner()
+        fake = _make_fake_installation(tmp_path)
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Create pyproject.toml with erk name (triggers dev mode)
             Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
@@ -670,12 +712,12 @@ class TestCheckVerboseShowsBothArtifactTypes:
             cmd_dir.mkdir(parents=True)
             (cmd_dir / "my-local-cmd.md").write_text("# Local", encoding="utf-8")
 
-            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+            with patch("erk.artifacts.staleness._default_installation", fake):
                 result = runner.invoke(check_cmd, ["-v"])
 
         # Dev mode always succeeds
         assert result.exit_code == 0
         assert "Development mode" in result.output
         assert "Erk-managed artifacts:" in result.output
-        assert "Project artifacts:" in result.output
+        assert "Project artifacts (unmanaged):" in result.output
         assert "commands/local/my-local-cmd.md" in result.output

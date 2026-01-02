@@ -5,11 +5,23 @@ from pathlib import Path
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import StalenessResult
 from erk.artifacts.state import load_artifact_state
-from erk.core.release_notes import get_current_version
+from erk_shared.gateway.installation.abc import ErkInstallation
+from erk_shared.gateway.installation.real import RealErkInstallation
+
+# Module-level singleton for backward compatibility
+_default_installation: ErkInstallation = RealErkInstallation()
 
 
-def check_staleness(project_dir: Path) -> StalenessResult:
+def check_staleness(
+    project_dir: Path,
+    installation: ErkInstallation | None = None,
+) -> StalenessResult:
     """Check if artifacts are stale compared to current erk version.
+
+    Args:
+        project_dir: Path to the project root
+        installation: ErkInstallation instance for version resolution.
+            If None, uses _default_installation (RealErkInstallation singleton).
 
     Returns a StalenessResult with:
     - is_stale: True if artifacts need to be synced
@@ -17,7 +29,8 @@ def check_staleness(project_dir: Path) -> StalenessResult:
     - current_version: The installed erk package version
     - installed_version: The version artifacts were last synced from (or None)
     """
-    current_version = get_current_version()
+    inst = installation if installation is not None else _default_installation
+    current_version = inst.get_current_version()
 
     # In erk repo, artifacts are read from source - always up to date
     # Still load state.toml to dogfood the state loading path

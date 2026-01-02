@@ -1,15 +1,20 @@
 """Tests for artifact staleness checking."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from erk.artifacts.staleness import check_staleness
+from erk_shared.gateway.installation.fake import FakeErkInstallation
 
 
 def test_check_staleness_not_initialized(tmp_path: Path) -> None:
     """Returns not-initialized when no state file exists."""
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled",
+        bundled_github_dir=tmp_path / "bundled_github",
+        current_version="1.0.0",
+    )
+
+    result = check_staleness(tmp_path, installation=installation)
 
     assert result.is_stale is True
     assert result.reason == "not-initialized"
@@ -24,8 +29,13 @@ def test_check_staleness_version_mismatch(tmp_path: Path) -> None:
     state_file.parent.mkdir(parents=True)
     state_file.write_text('[artifacts]\nversion = "0.9.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled",
+        bundled_github_dir=tmp_path / "bundled_github",
+        current_version="1.0.0",
+    )
+
+    result = check_staleness(tmp_path, installation=installation)
 
     assert result.is_stale is True
     assert result.reason == "version-mismatch"
@@ -40,8 +50,13 @@ def test_check_staleness_up_to_date(tmp_path: Path) -> None:
     state_file.parent.mkdir(parents=True)
     state_file.write_text('[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled",
+        bundled_github_dir=tmp_path / "bundled_github",
+        current_version="1.0.0",
+    )
+
+    result = check_staleness(tmp_path, installation=installation)
 
     assert result.is_stale is False
     assert result.reason == "up-to-date"
@@ -55,8 +70,13 @@ def test_check_staleness_erk_repo(tmp_path: Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled",
+        bundled_github_dir=tmp_path / "bundled_github",
+        current_version="1.0.0",
+    )
+
+    result = check_staleness(tmp_path, installation=installation)
 
     assert result.is_stale is False
     assert result.reason == "erk-repo"
@@ -75,8 +95,13 @@ def test_check_staleness_erk_repo_with_state(tmp_path: Path) -> None:
     state_file.parent.mkdir(parents=True)
     state_file.write_text('[artifacts]\nversion = "0.5.0"\n\n[artifacts.files]\n', encoding="utf-8")
 
-    with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
-        result = check_staleness(tmp_path)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled",
+        bundled_github_dir=tmp_path / "bundled_github",
+        current_version="1.0.0",
+    )
+
+    result = check_staleness(tmp_path, installation=installation)
 
     assert result.is_stale is False
     assert result.reason == "erk-repo"

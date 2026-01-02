@@ -81,6 +81,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
     from erk_shared.git.real import RealGit
     from erk_shared.github.issues import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
+    from erk_shared.gateway.installation.real import RealErkInstallation
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.real import RealPromptExecutor
@@ -132,6 +133,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkConte
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=SuppressedFeedback(),
+        installation=RealErkInstallation(),
         claude_executor=FakeClaudeExecutor(),
         config_store=FakeConfigStore(),
         script_writer=FakeScriptWriter(),

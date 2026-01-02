@@ -26,6 +26,7 @@ from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionSto
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.installation.abc import ErkInstallation
 from erk_shared.gateway.shell import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.wt_stack.wt_stack import WtStack
@@ -74,6 +75,7 @@ class ErkContext:
     shell: Shell
     completion: Completion
     feedback: UserFeedback
+    installation: ErkInstallation  # Erk package installation info
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
     claude_executor: ClaudeExecutor

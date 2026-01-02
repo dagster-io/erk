@@ -1,22 +1,18 @@
 """Tests for artifact sync."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS
 from erk.artifacts.sync import (
-    _get_erk_package_dir,
-    _is_editable_install,
     _sync_actions,
     _sync_commands,
     _sync_directory_artifacts,
     _sync_feature_workflows,
     _sync_hooks,
-    get_bundled_claude_dir,
-    get_bundled_github_dir,
     sync_artifacts,
     sync_feature,
 )
+from erk_shared.gateway.installation.fake import FakeErkInstallation
 
 
 def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
@@ -25,7 +21,13 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
-    result = sync_artifacts(tmp_path, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled" / "claude",
+        bundled_github_dir=tmp_path / "bundled" / "github",
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(tmp_path, force=False, installation=installation)
 
     assert result.success is True
     assert result.artifacts_installed == 0
@@ -35,8 +37,13 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
 def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
     """Fails when bundled .claude/ directory doesn't exist."""
     nonexistent = tmp_path / "nonexistent"
-    with patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=nonexistent):
-        result = sync_artifacts(tmp_path, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=nonexistent,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(tmp_path, force=False, installation=installation)
 
     assert result.success is False
     assert result.artifacts_installed == 0
@@ -56,14 +63,14 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    # Mock both bundled dirs - github dir doesn't exist so no workflows synced
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(target_dir, force=False, installation=installation)
 
     assert result.success is True
     # 1 skill file + 2 hooks = 3 artifacts
@@ -84,96 +91,19 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="2.0.0"),
-    ):
-        sync_artifacts(target_dir, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=nonexistent,
+        current_version="2.0.0",
+    )
+
+    sync_artifacts(target_dir, force=False, installation=installation)
 
     # Verify state was saved
     state_file = target_dir / ".erk" / "state.toml"
     assert state_file.exists()
     content = state_file.read_text(encoding="utf-8")
     assert 'version = "2.0.0"' in content
-
-
-def test_is_editable_install_returns_true_for_src_layout() -> None:
-    """Returns True when erk package is not in site-packages."""
-    _get_erk_package_dir.cache_clear()
-    with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
-        return_value=Path("/home/user/code/erk/src/erk"),
-    ):
-        assert _is_editable_install() is True
-    _get_erk_package_dir.cache_clear()
-
-
-def test_is_editable_install_returns_false_for_site_packages() -> None:
-    """Returns False when erk package is in site-packages."""
-    _get_erk_package_dir.cache_clear()
-    with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
-        return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
-    ):
-        assert _is_editable_install() is False
-    _get_erk_package_dir.cache_clear()
-
-
-def test_get_bundled_claude_dir_editable_install() -> None:
-    """Returns .claude/ at repo root for editable installs."""
-    _get_erk_package_dir.cache_clear()
-    get_bundled_claude_dir.cache_clear()
-    with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
-        return_value=Path("/home/user/code/erk/src/erk"),
-    ):
-        result = get_bundled_claude_dir()
-        assert result == Path("/home/user/code/erk/.claude")
-    _get_erk_package_dir.cache_clear()
-    get_bundled_claude_dir.cache_clear()
-
-
-def test_get_bundled_claude_dir_wheel_install() -> None:
-    """Returns erk/data/claude/ for wheel installs."""
-    _get_erk_package_dir.cache_clear()
-    get_bundled_claude_dir.cache_clear()
-    with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
-        return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
-    ):
-        result = get_bundled_claude_dir()
-        assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/claude")
-    _get_erk_package_dir.cache_clear()
-    get_bundled_claude_dir.cache_clear()
-
-
-def test_get_bundled_github_dir_editable_install() -> None:
-    """Returns .github/ at repo root for editable installs."""
-    _get_erk_package_dir.cache_clear()
-    get_bundled_github_dir.cache_clear()
-    with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
-        return_value=Path("/home/user/code/erk/src/erk"),
-    ):
-        result = get_bundled_github_dir()
-        assert result == Path("/home/user/code/erk/.github")
-    _get_erk_package_dir.cache_clear()
-    get_bundled_github_dir.cache_clear()
-
-
-def test_get_bundled_github_dir_wheel_install() -> None:
-    """Returns erk/data/github/ for wheel installs."""
-    _get_erk_package_dir.cache_clear()
-    get_bundled_github_dir.cache_clear()
-    with patch(
-        "erk.artifacts.sync._get_erk_package_dir",
-        return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
-    ):
-        result = get_bundled_github_dir()
-        assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/github")
-    _get_erk_package_dir.cache_clear()
-    get_bundled_github_dir.cache_clear()
 
 
 def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
@@ -193,12 +123,13 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(target_dir, force=False, installation=installation)
 
     assert result.success is True
     # erk-impl.yml + 2 hooks = 3 artifacts
@@ -342,12 +273,13 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(target_dir, force=False, installation=installation)
 
     assert result.success is True
     # Should copy: 1 skill + 1 agent + 1 command + 2 hooks = 5 artifacts
@@ -461,12 +393,13 @@ def test_sync_artifacts_includes_hooks(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(target_dir, force=False, installation=installation)
 
     assert result.success is True
     # Should include 2 hooks in the count
@@ -548,11 +481,13 @@ def test_sync_feature_installs_dignified_review(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with (
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_feature(target_dir, "dignified-review")
+    installation = FakeErkInstallation(
+        bundled_claude_dir=tmp_path / "bundled",
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+
+    result = sync_feature(target_dir, "dignified-review", installation=installation)
 
     assert result.success is True
     assert result.feature_name == "dignified-review"
@@ -587,12 +522,13 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    installation = FakeErkInstallation(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+    )
+
+    result = sync_artifacts(target_dir, force=False, installation=installation)
 
     assert result.success is True
     # 1 action + 2 hooks = 3 artifacts
