@@ -10,7 +10,7 @@ tripwires:
   - action: "writing `__all__` to a Python file"
     warning: "Re-export modules are forbidden. Import directly from where code is defined."
   - action: "adding --force flag to a CLI command"
-    warning: "Always include -f as the short form. Pattern: @click.option(\"-f\", \"--force\", ...)"
+    warning: 'Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)'
 ---
 
 # Code Conventions
