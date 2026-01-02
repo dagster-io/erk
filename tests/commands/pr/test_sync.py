@@ -1,6 +1,8 @@
 """Tests for erk pr sync command."""
 
+import subprocess
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
@@ -11,7 +13,6 @@ from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -94,21 +95,22 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         # Simulate an existing commit that will be amended
         git._commits.append((env.cwd, "Original message", []))
 
-        # Setup FakeClaudeExecutor for auto-restack
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run for erk pr auto-restack call
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "Restack complete"
+        mock_result.stderr = ""
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result) as mock_run:
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Base branch: main" in result.output
         assert "Branch tracked with Graphite" in result.output
         assert "Squashed commits into 1" in result.output
         assert "Commit message updated" in result.output
-        assert "/erk:auto-restack" in result.output
         assert "synchronized with Graphite" in result.output
 
         # Verify track was called with correct arguments
@@ -123,12 +125,10 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert len(git.commits) == 1
         assert git.commits[0][1] == "Add awesome feature\n\nThis PR adds an awesome feature."
 
-        # Verify auto-restack was called via ClaudeExecutor
-        assert len(claude_executor.executed_commands) == 1
-        command, worktree_path, dangerous, _verbose = claude_executor.executed_commands[0]
-        assert command == "/erk:auto-restack"
-        assert worktree_path == env.cwd
-        assert dangerous is True
+        # Verify auto-restack was called as subprocess
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert call_args[0][0] == ["erk", "pr", "auto-restack", "--dangerous"]
 
         # Verify submit was called with force=True (needed after squashing)
         assert len(graphite.submit_stack_calls) == 1
@@ -351,8 +351,6 @@ def test_pr_sync_fails_when_cross_repo_fork(tmp_path: Path) -> None:
 
 def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
     """Test sync handles single-commit case gracefully (no squash needed)."""
-    import subprocess
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -387,13 +385,14 @@ def test_pr_sync_handles_squash_single_commit(tmp_path: Path) -> None:
             commits_ahead={(env.cwd, "main"): 1},  # Single commit
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run for erk pr auto-restack call
+        mock_result = MagicMock()
+        mock_result.returncode = 0
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result):
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         # Should succeed - squash_branch_idempotent handles "nothing to squash" gracefully
         assert result.exit_code == 0
@@ -434,13 +433,14 @@ def test_pr_sync_handles_submit_failure_gracefully(tmp_path: Path) -> None:
             commits_ahead={(env.cwd, "main"): 2},  # Commits to squash
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run for erk pr auto-restack call
+        mock_result = MagicMock()
+        mock_result.returncode = 0
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result):
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         # Submit failure should fail the command
         assert result.exit_code == 1
@@ -519,13 +519,14 @@ def test_pr_sync_uses_correct_base_branch(tmp_path: Path) -> None:
             commits_ahead={(env.cwd, "main"): 2},  # Commits ahead of detected trunk
         )
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run for erk pr auto-restack call
+        mock_result = MagicMock()
+        mock_result.returncode = 0
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result):
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Base branch: release/v1.0" in result.output
@@ -563,13 +564,14 @@ def test_pr_sync_updates_commit_with_title_only(tmp_path: Path) -> None:
         )
         git._commits.append((env.cwd, "Original message", []))
 
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run for erk pr auto-restack call
+        mock_result = MagicMock()
+        mock_result.returncode = 0
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result):
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Commit message updated" in result.output
@@ -606,14 +608,14 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
         )
         git._commits.append((env.cwd, "Original message", []))
 
-        # Setup FakeClaudeExecutor
-        claude_executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run for erk pr auto-restack call
+        mock_result = MagicMock()
+        mock_result.returncode = 0
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result):
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
         assert result.exit_code == 0
         # Should NOT update commit message
@@ -624,8 +626,13 @@ def test_pr_sync_skips_commit_update_when_no_title(tmp_path: Path) -> None:
         assert git.commits[0][1] == "Original message"
 
 
-def test_pr_sync_fails_when_claude_not_available(tmp_path: Path) -> None:
-    """Test sync fails when Claude CLI is not available."""
+def test_pr_sync_fails_when_auto_restack_subprocess_fails(tmp_path: Path) -> None:
+    """Test sync fails when auto-restack subprocess fails.
+
+    This test covers error handling when the 'erk pr auto-restack --dangerous' subprocess
+    returns a non-zero exit code. The subprocess handles its own error cases (Claude not
+    available, semantic conflicts, etc.) and sync just needs to handle subprocess failure.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -651,101 +658,20 @@ def test_pr_sync_fails_when_claude_not_available(tmp_path: Path) -> None:
         )
         git._commits.append((env.cwd, "Original message", []))
 
-        # Claude NOT available
-        claude_executor = FakeClaudeExecutor(claude_available=False)
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
 
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
+        # Mock subprocess.run to simulate auto-restack failure
+        mock_result = MagicMock()
+        mock_result.returncode = 1  # Non-zero exit code
+        mock_result.stdout = ""
+        mock_result.stderr = "Auto-restack failed: some error"
 
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+        with patch("erk.cli.subprocess_utils.subprocess.run", return_value=mock_result):
+            result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
 
+        # Should fail with error message from run_with_error_reporting
         assert result.exit_code == 1
-        assert "Claude CLI not found" in result.output
-        assert "https://claude.com/download" in result.output
-
-
-def test_pr_sync_fails_when_auto_restack_requires_interactive(tmp_path: Path) -> None:
-    """Test sync fails when auto-restack detects semantic conflict."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
-
-        # Setup PR
-        pr_info = _make_pr_info(888, "feature-branch", title="Feature")
-        pr_details = _make_pr_details(
-            number=888,
-            head_ref_name="feature-branch",
-            title="Feature",
-        )
-        github = FakeGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={888: pr_details},
-        )
-
-        graphite = FakeGraphite(branches={})
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
-            commits_ahead={(env.cwd, "main"): 2},
-        )
-        git._commits.append((env.cwd, "Original message", []))
-
-        # Auto-restack will require interactive resolution (semantic conflict)
-        claude_executor = FakeClaudeExecutor(
-            claude_available=True,
-            simulated_tool_events=["AskUserQuestion: How should we resolve this conflict?"],
-        )
-
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
-
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
-
-        assert result.exit_code == 1
-        assert "Semantic conflict requires interactive resolution" in result.output
-
-
-def test_pr_sync_fails_when_auto_restack_fails(tmp_path: Path) -> None:
-    """Test sync fails when auto-restack command fails."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
-
-        # Setup PR
-        pr_info = _make_pr_info(999, "feature-branch", title="Feature")
-        pr_details = _make_pr_details(
-            number=999,
-            head_ref_name="feature-branch",
-            title="Feature",
-        )
-        github = FakeGitHub(
-            prs={"feature-branch": pr_info},
-            pr_details={999: pr_details},
-        )
-
-        graphite = FakeGraphite(branches={})
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            current_branches={env.cwd: "feature-branch"},
-            commits_ahead={(env.cwd, "main"): 2},
-        )
-        git._commits.append((env.cwd, "Original message", []))
-
-        # Auto-restack will fail
-        claude_executor = FakeClaudeExecutor(claude_available=True, command_should_fail=True)
-
-        ctx = build_workspace_test_context(
-            env, git=git, github=github, graphite=graphite, claude_executor=claude_executor
-        )
-
-        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
-
-        assert result.exit_code == 1
-        assert "/erk:auto-restack failed" in result.output
+        assert "Auto-restack failed" in result.output
 
 
 def test_pr_sync_graphite_not_enabled(tmp_path: Path) -> None:
