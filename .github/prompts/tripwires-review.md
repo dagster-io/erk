@@ -42,30 +42,15 @@ gh pr diff {{ github.event.pull_request.number }}
 
 For EACH tripwire parsed in Step 1, scan the diff for code matching its trigger pattern.
 
-**Pattern Matching Guidelines:**
+**Deriving search patterns from tripwires:**
 
-| Trigger Pattern                                             | What to Search For                             |
-| ----------------------------------------------------------- | ---------------------------------------------- |
-| "passing dry_run boolean flags"                             | `dry_run: bool` in function signatures         |
-| "calling os.chdir()"                                        | `os.chdir(` in code                            |
-| "importing time module or calling time.sleep()"             | `import time` or `time.sleep(`                 |
-| "implementing CLI flags that affect post-mutation behavior" | New CLI flags with `--` prefix                 |
-| "editing docs/agent/index.md or docs/agent/tripwires.md"    | Changes to those files                         |
-| "comparing worktree path to repo_root"                      | `path == repo_root` or similar comparisons     |
-| "adding a new method to Git/GitHub/Graphite ABC"            | New method definitions in gateway abc.py files |
-| "passing variables to gh api graphql as JSON blob"          | `gh api graphql` with `-f variables=`          |
-| "passing array or object variables to gh api graphql"       | `-F key=[` or `-F key={` patterns              |
-| "checking if get_pr_for_branch() returned a PR"             | `get_pr_for_branch` + `is not None`            |
-| "creating Protocol with bare attributes"                    | Protocol class with non-@property attributes   |
-| "using bare subprocess.run with check=True"                 | `subprocess.run` without wrapper               |
-| "adding a command with --script flag"                       | New `--script` flag definitions                |
-| "writing `__all__` to a Python file"                        | `__all__ =` in Python files                    |
-| "running gt sync or gt repo sync"                           | `gt sync` or `gt repo sync` commands           |
-| "writing to /tmp/"                                          | `/tmp/` in path strings for AI workflows       |
-| "creating temp files for AI workflows"                      | temp file creation patterns                    |
-| "working with session-specific data"                        | session data access patterns                   |
+Each tripwire's trigger text (e.g., "Before calling os.chdir()") tells you what to search for:
 
-This is DYNAMIC - new tripwires added to tripwires.md are automatically checked.
+- Extract the action from the trigger (e.g., "calling os.chdir()" → search for `os.chdir(`)
+- Convert natural language to code patterns (e.g., "importing time module" → `import time`)
+- Look for the specific constructs mentioned (e.g., "adding a new method to Git ABC" → new method definitions in `src/erk/gateways/git/abc.py`)
+
+This is DYNAMIC - the tripwires.md file is the single source of truth. New tripwires added there are automatically checked.
 
 Track which tripwires matched the diff (triggered tripwires).
 
