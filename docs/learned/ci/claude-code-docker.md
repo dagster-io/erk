@@ -3,15 +3,18 @@ title: Claude Code in Docker CI
 read_when:
   - Running Claude Code in GitHub Actions containers
   - Debugging permission errors in CI Docker containers
-  - Using --dangerously-skip-permissions in CI
-  - Setting up Claude Code for headless/automated execution
+  - Choosing between container and container-less CI approaches
 ---
 
 # Claude Code in Docker CI
 
 ## Overview
 
-This document covers the specific requirements and gotchas for running Claude Code in Docker containers within GitHub Actions CI workflows.
+This document covers the container-based approach for running Claude Code in GitHub Actions. For the container-less alternative, see [containerless-ci.md](containerless-ci.md).
+
+**Pros:** Consistent environment, tools pre-installed, faster execution after image pull.
+
+**Cons:** Image maintenance overhead, root user workarounds required, temp directory permission fixes needed.
 
 ## The Root User Restriction
 
@@ -110,15 +113,12 @@ The `--allowedTools` flag provides granular control:
 
 ## Affected Workflows
 
-Workflows in this project using the Docker container:
-
-- `.github/workflows/tripwires-review.yml`
-- `.github/workflows/dignified-python-review.yml`
-
-Both require:
+Workflows using the container-based approach require:
 
 1. The `ghcr.io/dagster-io/erk-ci:latest` image with ci-user
 2. The temp directory permission fix step
+
+See [containerless-ci.md](containerless-ci.md) for workflows using the alternative native installation approach.
 
 ## Alternative Approaches
 
