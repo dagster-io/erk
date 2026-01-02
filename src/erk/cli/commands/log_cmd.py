@@ -10,6 +10,32 @@ import click
 from erk.core.command_log import CommandLogEntry, read_log_entries
 
 
+def _is_numeric_string(s: str) -> bool:
+    """Check if string represents an integer (possibly negative)."""
+    if not s:
+        return False
+    if s[0] in "+-":
+        return s[1:].isdigit() if len(s) > 1 else False
+    return s.isdigit()
+
+
+def _is_iso_datetime_format(s: str) -> bool:
+    """Check if string looks like an ISO datetime format.
+
+    Validates basic structure: YYYY-MM-DDTHH:MM:SS with optional timezone.
+    """
+    # Basic length check (minimum: 2024-01-01 = 10 chars)
+    if len(s) < 10:
+        return False
+    # Check date part structure
+    if len(s) >= 10 and not (s[4] == "-" and s[7] == "-"):
+        return False
+    # Check year/month/day are digits
+    if not (s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit()):
+        return False
+    return True
+
+
 def _parse_since(value: str | None) -> datetime | None:
     """Parse --since value into datetime.
 
@@ -26,11 +52,11 @@ def _parse_since(value: str | None) -> datetime | None:
     if value.endswith(" ago"):
         parts = value[:-4].strip().split()
         if len(parts) == 2:
-            try:
-                amount = int(parts[0])
-            except ValueError as e:
-                raise click.BadParameter(f"Invalid time amount: {parts[0]}") from e
+            amount_str = parts[0]
+            if not _is_numeric_string(amount_str):
+                raise click.BadParameter(f"Invalid time amount: {amount_str}")
 
+            amount = int(amount_str)
             unit = parts[1].rstrip("s")  # "hours" -> "hour"
             now = datetime.now(UTC)
 
@@ -46,13 +72,12 @@ def _parse_since(value: str | None) -> datetime | None:
                 raise click.BadParameter(f"Unknown time unit: {unit}")
 
     # Try ISO format
-    try:
-        return datetime.fromisoformat(value)
-    except ValueError as e:
+    if not _is_iso_datetime_format(value):
         raise click.BadParameter(
             f"Invalid time format: {value}. Use 'N unit ago' (e.g., '1 hour ago') "
             "or ISO format (e.g., '2024-01-01T00:00:00')"
-        ) from e
+        )
+    return datetime.fromisoformat(value)
 
 
 def _format_entry_line(entry: CommandLogEntry, show_cwd: bool, show_full: bool) -> str:
