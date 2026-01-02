@@ -26,8 +26,30 @@ from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanQuery, PlanState
 
 
-def _find_plan_for_worktree(ctx: ErkContext, repo_root: Path, worktree_name: str) -> int | None:
-    """Find an open plan associated with a worktree name.
+def _get_pr_info_for_branch(
+    ctx: ErkContext, repo_root: Path, branch: str
+) -> tuple[int, str] | None:
+    """Get PR info for display during planning phase.
+
+    Args:
+        ctx: Erk context with GitHub operations
+        repo_root: Repository root directory
+        branch: Branch name to find PR for
+
+    Returns:
+        Tuple of (PR number, state) if found, None otherwise.
+        State is one of: "OPEN", "CLOSED", "MERGED"
+    """
+    pr = ctx.github.get_pr_for_branch(repo_root, branch)
+    if isinstance(pr, PRNotFound):
+        return None
+    return (pr.number, pr.state)
+
+
+def _get_plan_info_for_worktree(
+    ctx: ErkContext, repo_root: Path, worktree_name: str
+) -> tuple[int, PlanState] | None:
+    """Find a plan associated with a worktree name (any state).
 
     Args:
         ctx: Erk context with plan store
@@ -35,16 +57,16 @@ def _find_plan_for_worktree(ctx: ErkContext, repo_root: Path, worktree_name: str
         worktree_name: Name of the worktree to find a plan for
 
     Returns:
-        Plan issue number if found, None otherwise
+        Tuple of (plan number, state) if found, None otherwise.
     """
-    query = PlanQuery(labels=["erk-plan"], state=PlanState.OPEN)
+    # Search ALL states (open and closed) to find the plan
+    query = PlanQuery(labels=["erk-plan"])
     plans = ctx.plan_store.list_plans(repo_root, query)
 
     for plan in plans:
         plan_worktree_name = extract_plan_header_worktree_name(plan.body)
         if plan_worktree_name == worktree_name:
-            # The plan_identifier for GitHub is the issue number as string
-            return int(plan.plan_identifier)
+            return (int(plan.plan_identifier), plan.state)
 
     return None
 
@@ -101,10 +123,17 @@ def _close_plan_for_worktree(
     Returns:
         Plan issue number if closed, None otherwise
     """
-    plan_number = _find_plan_for_worktree(ctx, repo_root, worktree_name)
+    plan_info = _get_plan_info_for_worktree(ctx, repo_root, worktree_name)
 
-    if plan_number is None:
+    if plan_info is None:
         user_output(click.style("ℹ️  ", fg="blue", bold=True) + "No associated plan found")
+        return None
+
+    plan_number, state = plan_info
+    if state == PlanState.CLOSED:
+        user_output(
+            click.style("ℹ️  ", fg="blue", bold=True) + f"Plan #{plan_number} already closed"
+        )
         return None
 
     ctx.plan_store.close_plan(repo_root, str(plan_number))
@@ -208,9 +237,19 @@ def _collect_branch_to_delete(
 def _display_planned_operations(
     wt_path: Path,
     branch_to_delete: str | None,
-    close_all: bool = False,
+    close_all: bool,
+    pr_info: tuple[int, str] | None,
+    plan_info: tuple[int, PlanState] | None,
 ) -> None:
-    """Display the operations that will be performed."""
+    """Display the operations that will be performed.
+
+    Args:
+        wt_path: Path to the worktree being deleted
+        branch_to_delete: Branch name to delete, or None if detached HEAD
+        close_all: Whether -a/--all flag was passed
+        pr_info: Tuple of (PR number, state) if found, None otherwise
+        plan_info: Tuple of (plan number, state) if found, None otherwise
+    """
     user_output(click.style("📋 Planning to perform the following operations:", bold=True))
     worktree_text = click.style(str(wt_path), fg="cyan")
     step = 1
@@ -218,14 +257,45 @@ def _display_planned_operations(
 
     if close_all and branch_to_delete:
         step += 1
-        user_output(f"  {step}. 🔒 Close associated PR (if open)")
+        pr_text = _format_pr_plan_text(pr_info, "PR")
+        user_output(f"  {step}. 🔒 {pr_text}")
         step += 1
-        user_output(f"  {step}. 📝 Close associated plan (if open)")
+        plan_text = _format_plan_text(plan_info)
+        user_output(f"  {step}. 📝 {plan_text}")
 
     if branch_to_delete:
         step += 1
         branch_text = click.style(branch_to_delete, fg="yellow")
         user_output(f"  {step}. 🌳 Delete branch: {branch_text}")
+
+
+def _format_pr_plan_text(pr_info: tuple[int, str] | None, item_type: str) -> str:
+    """Format PR info for display in planning phase."""
+    if pr_info is None:
+        return f"Close associated {item_type} (if any)"
+
+    number, state = pr_info
+    if state == "OPEN":
+        return f"Close {item_type} #{number} (currently open)"
+    elif state == "MERGED":
+        state_text = click.style("merged", fg="green")
+        return f"{item_type} #{number} already {state_text}"
+    else:
+        state_text = click.style("closed", fg="yellow")
+        return f"{item_type} #{number} already {state_text}"
+
+
+def _format_plan_text(plan_info: tuple[int, PlanState] | None) -> str:
+    """Format plan info for display in planning phase."""
+    if plan_info is None:
+        return "Close associated plan (if any)"
+
+    number, state = plan_info
+    if state == PlanState.OPEN:
+        return f"Close plan #{number} (currently open)"
+    else:
+        state_text = click.style("closed", fg="yellow")
+        return f"Plan #{number} already {state_text}"
 
 
 def _confirm_operations(force: bool, dry_run: bool) -> bool:
@@ -393,8 +463,15 @@ def _delete_worktree(
     if delete_branch:
         branch_to_delete = _collect_branch_to_delete(ctx, repo.root, wt_path, name)
 
+    # Fetch PR/plan info before displaying plan (for informative planning output)
+    pr_info: tuple[int, str] | None = None
+    plan_info: tuple[int, PlanState] | None = None
+    if close_all and branch_to_delete:
+        pr_info = _get_pr_info_for_branch(ctx, repo.root, branch_to_delete)
+        plan_info = _get_plan_info_for_worktree(ctx, repo.root, name)
+
     if not quiet:
-        _display_planned_operations(wt_path, branch_to_delete, close_all=close_all)
+        _display_planned_operations(wt_path, branch_to_delete, close_all, pr_info, plan_info)
 
     if not _confirm_operations(force, dry_run):
         return

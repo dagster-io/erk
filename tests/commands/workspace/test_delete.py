@@ -571,7 +571,150 @@ def test_delete_all_shows_plan_steps_in_confirmation() -> None:
         )
 
         assert_cli_success(result)
-        # Should show PR and plan closing steps
-        assert "Close associated PR" in result.output
-        assert "Close associated plan" in result.output
+        # Should show PR and plan closing steps (no PR/plan exists, so shows "if any")
+        assert "Close associated PR (if any)" in result.output
+        assert "Close associated plan (if any)" in result.output
         assert "Delete branch" in result.output
+
+
+def test_delete_all_shows_closed_plan_status() -> None:
+    """Test that --all finds and reports already-closed plans."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Create a CLOSED plan with worktree_name in metadata
+        now = datetime.now(UTC)
+        plan = Plan(
+            plan_identifier="456",
+            title="Implement feature",
+            body=_make_plan_body_with_worktree("test-feature"),
+            state=PlanState.CLOSED,  # Already closed
+            url="https://github.com/owner/repo/issues/456",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        fake_plan_store, fake_issues = create_plan_store_with_plans({"456": plan})
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=FakeGitHub(),
+            plan_store=fake_plan_store,
+            issues=fake_issues,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a", "-f"], obj=test_ctx)
+
+        assert_cli_success(result)
+        # Should show that plan was already closed
+        assert "Plan #456 already closed" in result.output
+        # Plan should NOT be in closed_issues (it was already closed)
+        assert 456 not in fake_issues.closed_issues
+
+
+def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
+    """Test that --all planning phase shows actual PR/plan numbers when they exist."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Create OPEN plan with worktree_name in metadata
+        now = datetime.now(UTC)
+        plan = Plan(
+            plan_identifier="789",
+            title="Implement feature",
+            body=_make_plan_body_with_worktree("test-feature"),
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/789",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        fake_plan_store, fake_issues = create_plan_store_with_plans({"789": plan})
+
+        # Create OPEN PR for the branch
+        pr_info = _make_pr_info(123, state="OPEN")
+        pr_details = _make_pr_details(123, "feature-branch", state="OPEN")
+        fake_github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=fake_github,
+            plan_store=fake_plan_store,
+            issues=fake_issues,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        # Abort at confirmation to see the planning output
+        result = runner.invoke(
+            cli, ["wt", "delete", "test-feature", "-a"], input="n\n", obj=test_ctx
+        )
+
+        assert_cli_success(result)
+        # Should show actual PR and plan numbers in planning phase
+        assert "Close PR #123 (currently open)" in result.output
+        assert "Close plan #789 (currently open)" in result.output
+
+
+def test_delete_all_shows_merged_pr_status_in_confirmation() -> None:
+    """Test that --all planning phase shows merged PR status."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_name = env.cwd.name
+        wt = env.erk_root / "repos" / repo_name / "worktrees" / "test-feature"
+
+        # Create MERGED PR for the branch
+        pr_info = _make_pr_info(999, state="MERGED")
+        pr_details = _make_pr_details(999, "feature-branch", state="MERGED")
+        fake_github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={999: pr_details},
+        )
+
+        # Build fake git ops with worktree info
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=wt, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=fake_github,
+            shell=FakeShell(),
+            existing_paths={wt},
+        )
+
+        # Abort at confirmation to see the planning output
+        result = runner.invoke(
+            cli, ["wt", "delete", "test-feature", "-a"], input="n\n", obj=test_ctx
+        )
+
+        assert_cli_success(result)
+        # Should show that PR is already merged in planning phase
+        assert "PR #999 already" in result.output
+        assert "merged" in result.output.lower()
