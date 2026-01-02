@@ -13,8 +13,16 @@ Usage:
 import re
 from dataclasses import replace
 from pathlib import Path
+from typing import Literal, NamedTuple
 
 import click
+
+
+class ParsedArgument(NamedTuple):
+    """Result of parsing a land command argument."""
+
+    arg_type: Literal["pr_number", "pr_url", "branch"]
+    pr_number: int | None
 
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
@@ -35,29 +43,29 @@ from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_output
 
 
-def parse_argument(arg: str) -> tuple[str, int | None]:
+def parse_argument(arg: str) -> ParsedArgument:
     """Parse argument to determine type.
 
     Args:
         arg: The argument string (PR number, PR URL, or branch name)
 
     Returns:
-        Tuple of (argument_type, pr_number):
-        - ("pr_number", N) if arg is a numeric PR number
-        - ("pr_url", N) if arg is a URL containing /pull/N
-        - ("branch", None) if arg is a branch name
+        ParsedArgument with:
+        - arg_type="pr_number", pr_number=N if arg is a numeric PR number
+        - arg_type="pr_url", pr_number=N if arg is a URL containing /pull/N
+        - arg_type="branch", pr_number=None if arg is a branch name
     """
     # Try parsing as a plain number (PR number)
     if arg.isdigit():
-        return ("pr_number", int(arg))
+        return ParsedArgument(arg_type="pr_number", pr_number=int(arg))
 
     # Try parsing as a GitHub PR URL
     match = re.search(r"/pull/(\d+)", arg)
     if match:
-        return ("pr_url", int(match.group(1)))
+        return ParsedArgument(arg_type="pr_url", pr_number=int(match.group(1)))
 
     # Treat as branch name
-    return ("branch", None)
+    return ParsedArgument(arg_type="branch", pr_number=None)
 
 
 def resolve_branch_for_pr(ctx: ErkContext, repo_root: Path, pr_details: PRDetails) -> str:
@@ -290,20 +298,20 @@ def land(
         _land_current_branch(ctx, repo, script, up_flag, force, pull_flag)
     else:
         # Parse the target argument
-        arg_type, pr_number = parse_argument(target)
+        parsed = parse_argument(target)
 
-        if arg_type == "branch":
+        if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
             _land_by_branch(ctx, repo, script, force, pull_flag, target)
         else:
             # Landing a specific PR by number or URL
-            if pr_number is None:
+            if parsed.pr_number is None:
                 user_output(
                     click.style("Error: ", fg="red") + f"Invalid PR identifier: {target}\n"
                     "Expected a PR number (e.g., 123) or GitHub URL."
                 )
                 raise SystemExit(1)
-            _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, pr_number)
+            _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, parsed.pr_number)
 
 
 def _land_current_branch(
