@@ -6,7 +6,7 @@ read_when:
   - "debugging empty steps in progress.md"
 tripwires:
   - action: "creating test plan content without frontmatter steps"
-    warning: "Plans MUST have a `steps:` array in YAML frontmatter. The /erk:plan-save command will reject plans without frontmatter steps."
+    warning: "Plans MUST have a `steps:` array in YAML frontmatter with dictionaries containing 'name' keys. The /erk:plan-save command will reject plans without proper frontmatter steps."
 ---
 
 # Step Extraction Format
@@ -15,14 +15,14 @@ Implementation plans must include a `steps:` array in YAML frontmatter for step 
 
 ## Primary Format: YAML Frontmatter Steps (Required)
 
-Plans saved via `/erk:plan-save` **must** include steps in YAML frontmatter:
+Plans saved via `/erk:plan-save` **must** include steps in YAML frontmatter. Each step must be a dictionary with a `name` key:
 
 ```markdown
 ---
 steps:
-  - "Create database schema"
-  - "Implement API endpoints"
-  - "Add integration tests"
+  - name: "Create database schema"
+  - name: "Implement API endpoints"
+  - name: "Add integration tests"
 ---
 
 # Implementation Plan
@@ -38,6 +38,18 @@ Details here...
 
 The frontmatter `steps:` array is the **authoritative source** for step tracking.
 
+## Why Dictionaries?
+
+Using `- name: "..."` instead of plain strings makes the schema extensible. Future fields can be added without breaking existing plans:
+
+```yaml
+steps:
+  - name: "Create database schema"
+    estimate: "small"
+  - name: "Implement API endpoints"
+    depends_on: 1
+```
+
 ## Validation at Save Time
 
 The `plan-save-to-issue` command validates frontmatter before saving:
@@ -45,6 +57,8 @@ The `plan-save-to-issue` command validates frontmatter before saving:
 - **Missing `steps:` key** → Error with instructions to add frontmatter
 - **`steps:` not a list** → Error with type mismatch message
 - **Empty `steps: []`** → Error requiring at least one step
+- **Step not a dict** → Error with format instructions
+- **Step missing `name`** → Error with format instructions
 
 This ensures all plans have valid step tracking from the start.
 
@@ -80,11 +94,11 @@ This matches:
 When writing tests, use frontmatter steps for reliability:
 
 ```python
-# CORRECT: Uses frontmatter steps (preferred)
+# CORRECT: Uses frontmatter steps with name key (preferred)
 plan_content = """---
 steps:
-  - "First step"
-  - "Second step"
+  - name: "First step"
+  - name: "Second step"
 ---
 
 # Test Plan
@@ -152,7 +166,8 @@ def extract_steps_from_plan_with_fallback(plan_content: str) -> list[str]:
 1. **Reliable**: Agent explicitly lists steps, no parsing ambiguity
 2. **Validated**: Errors at save time, not implementation time
 3. **Flexible**: Step titles don't need to match header format
-4. **Simple**: No regex knowledge required for agents
+4. **Extensible**: Dictionary format allows future metadata fields
+5. **Simple**: No regex knowledge required for agents
 
 ## Related Documentation
 

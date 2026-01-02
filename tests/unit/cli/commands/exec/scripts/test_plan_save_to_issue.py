@@ -26,8 +26,8 @@ def test_plan_save_to_issue_success() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """---
 steps:
-  - "Step 1"
-  - "Step 2"
+  - name: "Step 1"
+  - name: "Step 2"
 ---
 
 # My Feature
@@ -61,7 +61,7 @@ def test_plan_save_to_issue_enriched_plan() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """---
 steps:
-  - "Implement feature"
+  - name: "Implement feature"
 ---
 
 # My Feature
@@ -116,7 +116,7 @@ def test_plan_save_to_issue_format() -> None:
     fake_git = FakeGit()
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Test Plan
@@ -157,7 +157,7 @@ def test_plan_save_to_issue_display_format() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """---
 steps:
-  - "Implementation step"
+  - name: "Implementation step"
 ---
 
 # Test Feature
@@ -197,7 +197,7 @@ def test_plan_save_to_issue_label_created() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """---
 steps:
-  - "Implement feature"
+  - name: "Implement feature"
 ---
 
 # Feature
@@ -242,7 +242,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
     )
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -296,7 +296,7 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     fake_git = FakeGit()
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -335,7 +335,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     fake_git = FakeGit()
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature
@@ -378,7 +378,7 @@ def test_plan_save_to_issue_session_id_still_creates_marker(tmp_path: Path) -> N
     test_session_id = "test-session-12345"
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -434,7 +434,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -485,7 +485,7 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -546,7 +546,7 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -598,7 +598,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     test_session_id = "marker-test-session-id"
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -645,7 +645,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
     fake_git = FakeGit()
     plan_content = """---
 steps:
-  - "Step 1"
+  - name: "Step 1"
 ---
 
 # Feature Plan
@@ -685,8 +685,8 @@ def test_validate_plan_frontmatter_valid() -> None:
     """Test validation passes for valid frontmatter with steps."""
     plan_content = """---
 steps:
-  - "First step"
-  - "Second step"
+  - name: "First step"
+  - name: "Second step"
 ---
 
 # Plan
@@ -765,6 +765,36 @@ steps: [invalid yaml
     assert "Invalid YAML frontmatter" in exc_info.value.message
 
 
+def test_validate_plan_frontmatter_step_not_dict() -> None:
+    """Test validation fails when step is not a dictionary."""
+    plan_content = """---
+steps:
+  - "Plain string not dict"
+---
+
+# Plan
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "Step 1 must be a dictionary" in exc_info.value.message
+
+
+def test_validate_plan_frontmatter_step_missing_name() -> None:
+    """Test validation fails when step dict is missing name key."""
+    plan_content = """---
+steps:
+  - description: "Has description but no name"
+---
+
+# Plan
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "Step 1 missing required 'name' key" in exc_info.value.message
+
+
 def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
     """Test command rejects plan without frontmatter steps."""
     fake_gh = FakeGitHubIssues()
@@ -795,8 +825,8 @@ def test_plan_save_to_issue_accepts_plan_with_frontmatter() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """---
 steps:
-  - "First step"
-  - "Second step"
+  - name: "First step"
+  - name: "Second step"
 ---
 
 # My Feature

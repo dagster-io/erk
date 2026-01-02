@@ -19,13 +19,13 @@ This separation keeps machine-readable metadata in the body while the human-read
 
 ### Step 0: Ensure Plan Has Frontmatter Steps
 
-Before saving, verify the plan file has a `steps:` array in YAML frontmatter:
+Before saving, verify the plan file has a `steps:` array in YAML frontmatter. Each step must be a dictionary with a `name` key:
 
 ```markdown
 ---
 steps:
-  - "First implementation step"
-  - "Second implementation step"
+  - name: "First implementation step"
+  - name: "Second implementation step"
 ---
 
 # Plan Title
@@ -37,7 +37,7 @@ If the plan is missing frontmatter steps:
 
 1. Read the plan file
 2. Extract the logical implementation steps from the content
-3. Add them to YAML frontmatter at the top of the file
+3. Add them to YAML frontmatter at the top of the file using the `- name: "..."` format
 4. Save the updated plan file
 
 The frontmatter is required for step tracking during implementation.

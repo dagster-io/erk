@@ -124,9 +124,9 @@ def test_extract_steps_from_frontmatter_basic() -> None:
     """Test basic step extraction from YAML frontmatter."""
     plan_content = """---
 steps:
-  - "First step"
-  - "Second step"
-  - "Third step"
+  - name: "First step"
+  - name: "Second step"
+  - name: "Third step"
 ---
 
 # Implementation Plan
@@ -197,18 +197,35 @@ steps: [invalid yaml
 
 
 def test_extract_steps_from_frontmatter_converts_to_strings() -> None:
-    """Test that non-string values are converted to strings."""
+    """Test that non-string name values are converted to strings."""
     plan_content = """---
 steps:
-  - 123
-  - true
-  - "Normal string"
+  - name: 123
+  - name: true
+  - name: "Normal string"
 ---
 
 # Plan
 """
     steps = extract_steps_from_frontmatter(plan_content)
     assert steps == ["123", "True", "Normal string"]
+
+
+def test_extract_steps_from_frontmatter_skips_invalid_entries() -> None:
+    """Test that entries without 'name' key are skipped."""
+    plan_content = """---
+steps:
+  - name: "Valid step"
+  - invalid: "No name key"
+  - "Plain string without dict"
+  - name: "Another valid"
+---
+
+# Plan
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    # Only dict entries with 'name' key are extracted
+    assert steps == ["Valid step", "Another valid"]
 
 
 # =============================================================================
@@ -220,7 +237,7 @@ def test_extract_steps_with_fallback_uses_frontmatter_when_present() -> None:
     """Test frontmatter is used when present."""
     plan_content = """---
 steps:
-  - "From frontmatter"
+  - name: "From frontmatter"
 ---
 
 ## Step 1: From regex
@@ -278,8 +295,8 @@ def test_create_impl_folder_with_frontmatter_steps(tmp_path: Path) -> None:
     """Test create_impl_folder uses frontmatter steps."""
     plan_content = """---
 steps:
-  - "Frontmatter step one"
-  - "Frontmatter step two"
+  - name: "Frontmatter step one"
+  - name: "Frontmatter step two"
 ---
 
 # Plan

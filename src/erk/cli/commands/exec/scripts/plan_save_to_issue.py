@@ -66,8 +66,8 @@ def validate_plan_frontmatter(plan_content: str) -> None:
             "Add steps to the plan file before saving:\n\n"
             "---\n"
             "steps:\n"
-            '  - "First step"\n'
-            '  - "Second step"\n'
+            '  - name: "First step"\n'
+            '  - name: "Second step"\n'
             "---"
         )
 
@@ -77,6 +77,23 @@ def validate_plan_frontmatter(plan_content: str) -> None:
 
     if len(steps) == 0:
         raise click.ClickException("Plan has empty 'steps' array. Add implementation steps.")
+
+    # Validate each step is a dict with 'name' key
+    for i, step in enumerate(steps):
+        if not isinstance(step, dict):
+            raise click.ClickException(
+                f"Step {i + 1} must be a dictionary with 'name' key, got {type(step).__name__}.\n"
+                "Use format:\n"
+                "steps:\n"
+                '  - name: "Step description"'
+            )
+        if "name" not in step:
+            raise click.ClickException(
+                f"Step {i + 1} missing required 'name' key.\n"
+                "Use format:\n"
+                "steps:\n"
+                '  - name: "Step description"'
+            )
 
 
 def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:

@@ -154,17 +154,19 @@ def extract_steps_from_plan_regex(plan_content: str) -> list[str]:
 def extract_steps_from_frontmatter(plan_content: str) -> list[str] | None:
     """Extract steps from plan YAML frontmatter.
 
-    Looks for a `steps:` array in the frontmatter and returns it if valid.
+    Looks for a `steps:` array in the frontmatter and returns step names.
+    Steps must be dictionaries with a 'name' key.
     Returns None if frontmatter is missing, invalid, or has no steps key.
 
     Args:
         plan_content: Full plan markdown content
 
     Returns:
-        List of step descriptions if frontmatter has valid steps, None otherwise
+        List of step names if frontmatter has valid steps, None otherwise
 
     Examples:
-        >>> extract_steps_from_frontmatter("---\\nsteps:\\n  - First\\n  - Second\\n---\\n# Plan")
+        >>> content = "---\\nsteps:\\n  - name: First\\n  - name: Second\\n---\\n# Plan"
+        >>> extract_steps_from_frontmatter(content)
         ['First', 'Second']
         >>> extract_steps_from_frontmatter("# No frontmatter")
         None
@@ -182,8 +184,14 @@ def extract_steps_from_frontmatter(plan_content: str) -> list[str] | None:
     if not isinstance(steps, list):
         return None
 
-    # Convert all items to strings (handle any YAML types)
-    return [str(s) for s in steps]
+    # Extract 'name' from each step dict
+    result = []
+    for step in steps:
+        if isinstance(step, dict) and "name" in step:
+            result.append(str(step["name"]))
+        # Skip invalid entries silently
+
+    return result
 
 
 def extract_steps_from_plan_with_fallback(plan_content: str) -> list[str]:
