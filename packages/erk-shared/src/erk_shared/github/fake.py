@@ -48,6 +48,7 @@ class FakeGitHub(GitHub):
         merge_should_succeed: bool = True,
         pr_update_should_succeed: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
+        review_threads_rate_limited: bool = False,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -72,6 +73,8 @@ class FakeGitHub(GitHub):
             merge_should_succeed: Whether merge_pr() should succeed (default True)
             pr_update_should_succeed: Whether PR updates should succeed (default True)
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
+            review_threads_rate_limited: Whether get_pr_review_threads() should raise
+                RuntimeError simulating GraphQL rate limit
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -93,6 +96,7 @@ class FakeGitHub(GitHub):
         self._merge_should_succeed = merge_should_succeed
         self._pr_update_should_succeed = pr_update_should_succeed
         self._pr_review_threads = pr_review_threads or {}
+        self._review_threads_rate_limited = review_threads_rate_limited
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -644,7 +648,11 @@ class FakeGitHub(GitHub):
         Applies any resolutions that happened during the test, then filters
         and sorts the results.
 
+        Raises RuntimeError if review_threads_rate_limited is True, simulating
+        a GraphQL API rate limit error.
         """
+        if self._review_threads_rate_limited:
+            raise RuntimeError("GraphQL API RATE_LIMIT exceeded")
         threads = self._pr_review_threads.get(pr_number, [])
 
         # Apply any resolutions that happened during test

@@ -342,3 +342,101 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
 
         # Worktree should have been removed
         assert feature_1_path in git_ops.removed_worktrees
+
+
+def test_land_handles_rate_limit_gracefully() -> None:
+    """Test land continues with warning when GraphQL API is rate limited.
+
+    When the GitHub GraphQL API returns a rate limit error for review threads,
+    the land command should show a warning and continue instead of crashing.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+            review_threads_rate_limited=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # "y\n" to confirm worktree cleanup
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+            input="y\n",
+        )
+
+        assert result.exit_code == 0
+
+        # Should show rate limit warning (not crash)
+        assert "Could not check for unresolved comments (API rate limited)" in result.output
+
+        # PR should have been merged (rate limit on review threads shouldn't block)
+        assert 123 in github_ops.merged_prs
+
+        # Worktree should have been removed
+        assert feature_1_path in git_ops.removed_worktrees
