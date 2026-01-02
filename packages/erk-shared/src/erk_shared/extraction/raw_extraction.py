@@ -215,6 +215,7 @@ def create_raw_extraction_plan(
         title_suffix=None,
         source_plan_issues=None,
         extraction_session_ids=session_ids,
+        source_repo=None,
         objective_issue=None,
     )
 

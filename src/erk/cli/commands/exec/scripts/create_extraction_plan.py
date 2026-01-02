@@ -203,6 +203,7 @@ def create_extraction_plan(
         title_suffix=None,
         source_plan_issues=source_issues if source_issues else None,
         extraction_session_ids=session_ids,
+        source_repo=None,
         objective_issue=None,
     )
 

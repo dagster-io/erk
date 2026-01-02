@@ -75,6 +75,7 @@ def create_issue_from_session(ctx: click.Context, session_id: str | None) -> Non
         title_suffix=None,
         source_plan_issues=None,
         extraction_session_ids=None,
+        source_repo=None,
         objective_issue=None,
     )
 

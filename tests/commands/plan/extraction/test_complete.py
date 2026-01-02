@@ -38,6 +38,7 @@ def _make_extraction_issue(
         plan_type="extraction",
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
+        source_repo=None,
         objective_issue=None,
     )
     return IssueInfo(
@@ -194,6 +195,7 @@ def test_complete_rejects_non_extraction_plan() -> None:
         plan_type=None,
         source_plan_issues=None,
         extraction_session_ids=None,
+        source_repo=None,
         objective_issue=None,
     )
     standard_issue = IssueInfo(
