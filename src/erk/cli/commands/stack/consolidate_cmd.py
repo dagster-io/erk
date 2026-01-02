@@ -7,8 +7,8 @@ import click
 
 from erk.cli.activation import render_activation_script
 from erk.cli.core import discover_repo_context, worktree_path_for
-from erk.cli.ensure import Ensure
-from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
+from erk.cli.help_formatter import script_option
 from erk.core.consolidation_utils import calculate_stack_range, create_consolidation_plan
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
@@ -70,7 +70,7 @@ def _format_removal_progress(removed_paths: list[Path]) -> str:
     return "\n".join(lines)
 
 
-@click.command("consolidate", cls=CommandWithHiddenOptions)
+@click.command("consolidate", cls=GraphiteCommandWithHiddenOptions)
 @click.argument("branch", required=False, default=None)
 @click.option(
     "--name",
@@ -146,7 +146,7 @@ def consolidate_stack(
     if dry_run:
         script = False
 
-    Ensure.graphite_available(ctx)
+    # Note: Graphite availability is checked by GraphiteCommandWithHiddenOptions
 
     # Validate that --down and BRANCH are not used together
     if down and branch is not None:

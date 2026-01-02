@@ -8,11 +8,12 @@ from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.graphite import find_worktrees_containing_branch
+from erk.cli.graphite_command import GraphiteCommand
 from erk.core.context import ErkContext
 
 
 @alias("ls")
-@click.command("list")
+@click.command("list", cls=GraphiteCommand)
 @click.pass_obj
 def list_stack(ctx: ErkContext) -> None:
     """List the worktree stack with branch info.
@@ -25,7 +26,7 @@ def list_stack(ctx: ErkContext) -> None:
     - branch: Branch name
     - worktree: Worktree directory name
     """
-    Ensure.graphite_available(ctx)
+    # Note: Graphite availability is checked by GraphiteCommand
     repo = discover_repo_context(ctx, ctx.cwd)
     current_branch = ctx.git.get_current_branch(repo.root)
 

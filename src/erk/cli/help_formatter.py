@@ -7,8 +7,26 @@ import click
 
 from erk.cli.alias import get_aliases
 from erk.core.config_store import RealConfigStore
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 
 F = TypeVar("F", bound=Callable[..., object])
+
+# Type names for Graphite-requiring commands (checked by string to avoid circular imports)
+_GRAPHITE_COMMAND_TYPES = frozenset(
+    {
+        "GraphiteCommand",
+        "GraphiteCommandWithHiddenOptions",
+        "GraphiteGroup",
+    }
+)
+
+
+def _requires_graphite(cmd: click.Command) -> bool:
+    """Check if a command requires Graphite integration.
+
+    Uses class name matching to avoid circular imports with graphite_command.py.
+    """
+    return type(cmd).__name__ in _GRAPHITE_COMMAND_TYPES
 
 
 def _get_show_hidden_from_context(ctx: click.Context) -> bool:
@@ -143,6 +161,11 @@ class ErkCommandGroup(click.Group):
         """Format commands into organized sections or flat list."""
         show_hidden = getattr(ctx, "show_hidden", False)
 
+        # Check if Graphite is available (for hiding Graphite-dependent commands)
+        graphite_available = ctx.obj is not None and not isinstance(
+            ctx.obj.graphite, GraphiteDisabled
+        )
+
         commands = []
         hidden_commands = []
         # Build alias map: alias_name -> primary_name
@@ -157,7 +180,12 @@ class ErkCommandGroup(click.Group):
             for alias_name in get_aliases(cmd):
                 alias_map[alias_name] = subcommand
 
-            if cmd.hidden:
+            # Commands are effectively hidden if:
+            # 1. They have hidden=True, OR
+            # 2. They require Graphite and Graphite is unavailable
+            effectively_hidden = cmd.hidden or (_requires_graphite(cmd) and not graphite_available)
+
+            if effectively_hidden:
                 if show_hidden:
                     hidden_commands.append((subcommand, cmd))
                 continue

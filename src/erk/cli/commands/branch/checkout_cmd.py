@@ -11,7 +11,8 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.graphite import find_worktrees_containing_branch
-from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
+from erk.cli.help_formatter import script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
@@ -253,7 +254,7 @@ def _perform_checkout(
 
 
 @alias("co")
-@click.command("checkout", cls=CommandWithHiddenOptions)
+@click.command("checkout", cls=GraphiteCommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH", shell_complete=complete_branch_names)
 @script_option
 @click.pass_obj
@@ -275,7 +276,7 @@ def branch_checkout(ctx: ErkContext, branch: str, script: bool) -> None:
 
     If multiple worktrees contain the branch, all options are shown.
     """
-    Ensure.graphite_available(ctx)
+    # Note: Graphite availability is checked by GraphiteCommandWithHiddenOptions
 
     # Use existing repo from context if available (for tests), otherwise discover
     if isinstance(ctx.repo, RepoContext):
