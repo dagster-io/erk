@@ -105,3 +105,6 @@ addopts = "-q"
 testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore:codecs.open\\(\\) is deprecated:DeprecationWarning:frontmatter",
+]
