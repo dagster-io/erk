@@ -27,9 +27,18 @@ The `make fast-ci` target runs these checks in order:
 
 Load the `ci-iteration` skill for the iterative fix workflow.
 
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
 ## Begin Now
 
-Start by using the Task tool with the devrun agent to run `make fast-ci` from the repository root and begin the iterative fix process. Track your progress with TodoWrite and report your final status clearly.
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with the remaining checks (`make format-check prettier-check md-check docs-validate test check`). Track your progress with TodoWrite and report your final status clearly.
 
 **Remember**:
 
