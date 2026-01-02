@@ -118,9 +118,51 @@ executor = FakeClaudeExecutor(
 executor = FakeClaudeExecutor(simulated_zero_turns=True)
 ```
 
+## Real-World Usage Example
+
+The `erk land` command demonstrates `execute_command()` for optional post-operation actions:
+
+```python
+def _prompt_objective_update(
+    ctx: ErkContext,
+    repo_root: Path,
+    objective_number: int,
+    pr_number: int,
+    force: bool,
+) -> None:
+    """Prompt user to update objective after landing."""
+    user_output(f"   Linked to Objective #{objective_number}")
+
+    if force:
+        # --force skips prompts, show command for later
+        user_output("   Run '/objective:update-landed-pr' to update objective")
+        return
+
+    # User chooses to run now
+    result = ctx.claude_executor.execute_command(
+        "/objective:update-landed-pr",
+        repo_root,
+        dangerous=True,  # Skip permission prompts for non-interactive
+    )
+    if result.success:
+        user_output(click.style("✓", fg="green") + " Objective updated")
+    else:
+        user_output(
+            click.style("⚠", fg="yellow")
+            + f" Objective update failed: {result.error_message}"
+        )
+```
+
+Key points:
+
+- Use `dangerous=True` when the user has already confirmed the action
+- Handle both success and failure gracefully
+- Provide fallback command for manual retry on failure
+
 ## File Locations
 
-- **Interface**: `src/erk/core/claude_executor.py` (ClaudeExecutor ABC)
+- **ABC**: `packages/erk-shared/src/erk_shared/core/claude_executor.py`
+- **Real**: `src/erk/core/claude_executor.py` (RealClaudeExecutor)
 - **Fake**: `tests/fakes/claude_executor.py`
 
 ## Related Topics
