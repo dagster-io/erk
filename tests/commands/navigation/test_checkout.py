@@ -694,7 +694,8 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
             worktrees_dir=work_dir / "worktrees",
         )
 
-        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo)
+        # use_graphite=True is required for Graphite tracking behavior
+        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, use_graphite=True)
 
         # Checkout the untracked branch (non-script mode, confirm with 'y')
         result = runner.invoke(
@@ -752,7 +753,8 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
             worktrees_dir=work_dir / "worktrees",
         )
 
-        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo)
+        # use_graphite=True is required for Graphite tracking prompt
+        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, use_graphite=True)
 
         # Checkout the untracked branch (non-script mode, decline with 'n')
         result = runner.invoke(
@@ -806,7 +808,8 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
             worktrees_dir=work_dir / "worktrees",
         )
 
-        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo)
+        # use_graphite=True to test that script mode skips tracking prompt
+        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, use_graphite=True)
 
         # Checkout with --script flag (no interactive prompt)
         result = runner.invoke(

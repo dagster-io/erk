@@ -78,6 +78,11 @@ def _ensure_graphite_tracking(
         branch: Target branch name
         script: Whether to output only the activation script
     """
+    # Skip if Graphite is disabled
+    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+    if not use_graphite:
+        return
+
     trunk_branch = ctx.trunk_branch
     # Skip if no trunk branch detected (shouldn't happen in checkout context)
     if trunk_branch is None:
