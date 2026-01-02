@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Get prompt content from bundled prompts.
+"""Get embedded prompt content from bundled prompts.
 
 This command reads prompt files bundled with the erk package and outputs
 their content. Useful for GitHub Actions workflows that need prompt content.
 
 Usage:
-    erk exec get-prompt <prompt-name>
+    erk exec get-embedded-prompt <prompt-name>
 
 Output:
     The prompt content (markdown)
@@ -15,11 +15,11 @@ Exit Codes:
     1: Prompt not found
 
 Examples:
-    $ erk exec get-prompt dignified-python-review
+    $ erk exec get-embedded-prompt dignified-python-review
     # Dignified Python Review Prompt
     ...
 
-    $ erk exec get-prompt dignified-python-review > /tmp/prompt.md
+    $ erk exec get-embedded-prompt dignified-python-review > /tmp/prompt.md
 """
 
 import click
@@ -34,10 +34,10 @@ AVAILABLE_PROMPTS = frozenset(
 )
 
 
-@click.command(name="get-prompt")
+@click.command(name="get-embedded-prompt")
 @click.argument("prompt_name")
-def get_prompt(prompt_name: str) -> None:
-    """Get prompt content from bundled prompts.
+def get_embedded_prompt(prompt_name: str) -> None:
+    """Get embedded prompt content from bundled prompts.
 
     Reads the specified prompt from the erk package's bundled prompts
     and outputs its content to stdout.

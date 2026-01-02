@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.sync import sync_artifacts, sync_feature
+from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
@@ -442,7 +442,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     "--with-dignified-review",
     "with_dignified_review",
     is_flag=True,
-    help="Install the dignified-review feature (Python code review workflow).",
+    help="Install dignified-python skill and review workflow.",
 )
 @click.pass_obj
 def init_cmd(
@@ -618,13 +618,15 @@ def init_cmd(
             user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
             user_output("    Run 'erk artifact sync' to retry")
 
-        # Sync optional features if requested
+        # Sync optional dignified-review feature if requested
         if with_dignified_review:
-            feature_result = sync_feature(repo_context.root, "dignified-review")
-            if feature_result.success:
-                user_output(click.style("  ✓ ", fg="green") + feature_result.message)
+            from erk.artifacts.sync import sync_dignified_review
+
+            dr_result = sync_dignified_review(repo_context.root)
+            if dr_result.success:
+                user_output(click.style("  ✓ ", fg="green") + dr_result.message)
             else:
-                warn_msg = f"Feature install failed: {feature_result.message}"
+                warn_msg = f"dignified-review sync failed: {dr_result.message}"
                 user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
 
         # Create prompt hooks directory with README

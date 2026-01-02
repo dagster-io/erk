@@ -82,13 +82,13 @@ def test_find_missing_artifacts_missing_command(tmp_path: Path, monkeypatch) -> 
 def test_find_missing_artifacts_missing_skill_file(tmp_path: Path, monkeypatch) -> None:
     """Bundled skill file missing locally."""
     # Bundled skill with multiple files
-    bundled_skill = tmp_path / "bundled" / ".claude" / "skills" / "dignified-python"
+    bundled_skill = tmp_path / "bundled" / ".claude" / "skills" / "learned-docs"
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "SKILL.md").write_text("skill")
     (bundled_skill / "cli-patterns.md").write_text("patterns")
 
     # Project missing cli-patterns.md
-    project_skill = tmp_path / "project" / ".claude" / "skills" / "dignified-python"
+    project_skill = tmp_path / "project" / ".claude" / "skills" / "learned-docs"
     project_skill.mkdir(parents=True)
     (project_skill / "SKILL.md").write_text("skill")
 
@@ -107,8 +107,8 @@ def test_find_missing_artifacts_missing_skill_file(tmp_path: Path, monkeypatch) 
 
     result = find_missing_artifacts(tmp_path / "project")
 
-    assert "skills/dignified-python" in result.missing
-    assert "cli-patterns.md" in result.missing["skills/dignified-python"]
+    assert "skills/learned-docs" in result.missing
+    assert "cli-patterns.md" in result.missing["skills/learned-docs"]
 
 
 def test_find_missing_artifacts_skip_erk_repo(tmp_path: Path, monkeypatch) -> None:

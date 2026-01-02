@@ -292,68 +292,6 @@ def _sync_actions(
     return count, synced
 
 
-def _sync_prompts(
-    bundled_github_dir: Path, target_prompts_dir: Path, prompt_names: frozenset[str]
-) -> tuple[int, list[SyncedArtifact]]:
-    """Sync prompt files to project's .github/prompts/ directory.
-
-    Only syncs files listed in the provided prompt_names set.
-    Returns tuple of (file_count, synced_artifacts).
-    """
-    source_prompts_dir = bundled_github_dir / "prompts"
-    if not source_prompts_dir.exists():
-        return 0, []
-
-    count = 0
-    synced: list[SyncedArtifact] = []
-    for prompt_name in sorted(prompt_names):
-        source_path = source_prompts_dir / prompt_name
-        if source_path.exists():
-            target_prompts_dir.mkdir(parents=True, exist_ok=True)
-            target_path = target_prompts_dir / prompt_name
-            shutil.copy2(source_path, target_path)
-            count += 1
-            synced.append(
-                SyncedArtifact(
-                    key=f"prompts/{prompt_name}",
-                    hash=_compute_file_hash(target_path),
-                    file_count=1,
-                )
-            )
-    return count, synced
-
-
-def _sync_feature_workflows(
-    bundled_github_dir: Path, target_workflows_dir: Path, workflow_names: frozenset[str]
-) -> tuple[int, list[SyncedArtifact]]:
-    """Sync feature-specific workflows to project's .github/workflows/ directory.
-
-    Unlike _sync_workflows, this takes an explicit list of workflow names to sync.
-    Returns tuple of (file_count, synced_artifacts).
-    """
-    source_workflows_dir = bundled_github_dir / "workflows"
-    if not source_workflows_dir.exists():
-        return 0, []
-
-    count = 0
-    synced: list[SyncedArtifact] = []
-    for workflow_name in sorted(workflow_names):
-        source_path = source_workflows_dir / workflow_name
-        if source_path.exists():
-            target_workflows_dir.mkdir(parents=True, exist_ok=True)
-            target_path = target_workflows_dir / workflow_name
-            shutil.copy2(source_path, target_path)
-            count += 1
-            synced.append(
-                SyncedArtifact(
-                    key=f"workflows/{workflow_name}",
-                    hash=_compute_file_hash(target_path),
-                    file_count=1,
-                )
-            )
-    return count, synced
-
-
 def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
     """Sync erk-managed hooks to project's .claude/settings.json.
 
@@ -534,6 +472,58 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     return artifacts
 
 
+def sync_dignified_review(project_dir: Path) -> SyncResult:
+    """Sync dignified-review feature artifacts to project.
+
+    Installs opt-in artifacts for the dignified-review workflow:
+    - dignified-python skill (.claude/skills/dignified-python/)
+    - dignified-python-review.yml workflow (.github/workflows/)
+    - dignified-python-review.md prompt (.github/prompts/)
+
+    Args:
+        project_dir: Project root directory
+
+    Returns:
+        SyncResult indicating success/failure and count of files installed.
+    """
+    bundled_claude_dir = get_bundled_claude_dir()
+    bundled_github_dir = get_bundled_github_dir()
+
+    target_claude_dir = project_dir / ".claude"
+    target_github_dir = project_dir / ".github"
+
+    total_copied = 0
+
+    # 1. Sync dignified-python skill
+    skill_src = bundled_claude_dir / "skills" / "dignified-python"
+    if skill_src.exists():
+        skill_dst = target_claude_dir / "skills" / "dignified-python"
+        count = _copy_directory_contents(skill_src, skill_dst)
+        total_copied += count
+
+    # 2. Sync dignified-python-review.yml workflow
+    workflow_src = bundled_github_dir / "workflows" / "dignified-python-review.yml"
+    if workflow_src.exists():
+        workflow_dst = target_github_dir / "workflows" / "dignified-python-review.yml"
+        workflow_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(workflow_src, workflow_dst)
+        total_copied += 1
+
+    # 3. Sync dignified-python-review.md prompt
+    prompt_src = bundled_github_dir / "prompts" / "dignified-python-review.md"
+    if prompt_src.exists():
+        prompt_dst = target_github_dir / "prompts" / "dignified-python-review.md"
+        prompt_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(prompt_src, prompt_dst)
+        total_copied += 1
+
+    return SyncResult(
+        success=True,
+        artifacts_installed=total_copied,
+        message=f"Installed dignified-review ({total_copied} files)",
+    )
+
+
 def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
@@ -626,90 +616,4 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
         success=True,
         artifacts_installed=total_copied,
         message=f"Synced {total_copied} artifact files",
-    )
-
-
-@dataclass(frozen=True)
-class FeatureSyncResult:
-    """Result of feature sync operation."""
-
-    success: bool
-    artifacts_installed: int
-    message: str
-    feature_name: str
-
-
-def sync_feature(project_dir: Path, feature_name: str) -> FeatureSyncResult:
-    """Sync an optional feature's artifacts to the project.
-
-    Features include workflows and prompts that are installed on-demand.
-
-    Args:
-        project_dir: Path to the project root
-        feature_name: Name of the feature to install (e.g., "dignified-review")
-
-    Returns:
-        FeatureSyncResult with success status and artifact count
-    """
-    from erk.artifacts.features import get_feature
-
-    feature = get_feature(feature_name)
-    if feature is None:
-        return FeatureSyncResult(
-            success=False,
-            artifacts_installed=0,
-            message=f"Unknown feature: {feature_name}",
-            feature_name=feature_name,
-        )
-
-    bundled_github_dir = get_bundled_github_dir()
-    if not bundled_github_dir.exists():
-        return FeatureSyncResult(
-            success=False,
-            artifacts_installed=0,
-            message=f"Bundled .github/ not found at {bundled_github_dir}",
-            feature_name=feature_name,
-        )
-
-    total_copied = 0
-    all_synced: list[SyncedArtifact] = []
-
-    # Sync feature workflows
-    if feature.workflows:
-        target_workflows_dir = project_dir / ".github" / "workflows"
-        count, synced = _sync_feature_workflows(
-            bundled_github_dir, target_workflows_dir, feature.workflows
-        )
-        total_copied += count
-        all_synced.extend(synced)
-
-    # Note: Prompts are accessed via `erk exec get-prompt` rather than synced
-
-    # Update state with newly synced artifacts
-    current_version = get_current_version()
-    state_path = project_dir / ".erk" / "state.toml"
-
-    # Load existing state if present
-    existing_files: dict[str, ArtifactFileState] = {}
-    if state_path.exists():
-        from erk.artifacts.state import load_artifact_state
-
-        existing_state = load_artifact_state(project_dir)
-        if existing_state is not None:
-            existing_files = dict(existing_state.files)
-
-    # Add new artifacts to state
-    for artifact in all_synced:
-        existing_files[artifact.key] = ArtifactFileState(
-            version=current_version,
-            hash=artifact.hash,
-        )
-
-    save_artifact_state(project_dir, ArtifactState(version=current_version, files=existing_files))
-
-    return FeatureSyncResult(
-        success=True,
-        artifacts_installed=total_copied,
-        message=f"Installed feature '{feature_name}': {total_copied} files",
-        feature_name=feature_name,
     )
