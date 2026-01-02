@@ -6,6 +6,7 @@ from rich.table import Table
 
 from erk.cli.alias import alias
 from erk.cli.core import discover_repo_context
+from erk.cli.ensure import Ensure
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.core.context import ErkContext
 
@@ -24,6 +25,7 @@ def list_stack(ctx: ErkContext) -> None:
     - branch: Branch name
     - worktree: Worktree directory name
     """
+    Ensure.graphite_available(ctx)
     repo = discover_repo_context(ctx, ctx.cwd)
     current_branch = ctx.git.get_current_branch(repo.root)
 

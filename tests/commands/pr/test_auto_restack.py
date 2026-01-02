@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
 from tests.fakes.claude_executor import FakeClaudeExecutor
@@ -379,3 +380,57 @@ def test_pr_auto_restack_fails_when_no_work_events() -> None:
         assert result.exit_code != 0
         assert "without producing any output" in result.output
         assert "check hooks" in result.output
+
+
+def test_pr_auto_restack_graphite_not_enabled() -> None:
+    """Test pr auto-restack command requires Graphite to be enabled."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        # Graphite is NOT enabled - use GraphiteDisabled sentinel
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite_disabled, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "requires Graphite to be enabled" in result.output
+        assert "erk config set use_graphite true" in result.output
+
+
+def test_pr_auto_restack_graphite_not_installed() -> None:
+    """Test pr auto-restack command shows appropriate error when Graphite CLI is not installed."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        # Graphite not installed - use GraphiteDisabled with NOT_INSTALLED reason
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env, git=git, graphite=graphite_disabled, claude_executor=claude_executor
+        )
+
+        result = runner.invoke(pr_group, ["auto-restack", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "requires Graphite to be installed" in result.output
+        assert "npm install -g @withgraphite/graphite-cli" in result.output

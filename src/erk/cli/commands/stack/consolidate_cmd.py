@@ -7,6 +7,7 @@ import click
 
 from erk.cli.activation import render_activation_script
 from erk.cli.core import discover_repo_context, worktree_path_for
+from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.consolidation_utils import calculate_stack_range, create_consolidation_plan
 from erk.core.context import ErkContext, create_context
@@ -144,6 +145,8 @@ def consolidate_stack(
     # During dry-run, always show output regardless of shell integration
     if dry_run:
         script = False
+
+    Ensure.graphite_available(ctx)
 
     # Validate that --down and BRANCH are not used together
     if down and branch is not None:

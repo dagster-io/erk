@@ -5,6 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
@@ -745,3 +746,49 @@ def test_pr_sync_fails_when_auto_restack_fails(tmp_path: Path) -> None:
 
         assert result.exit_code == 1
         assert "/erk:auto-restack failed" in result.output
+
+
+def test_pr_sync_graphite_not_enabled(tmp_path: Path) -> None:
+    """Test pr sync command requires Graphite to be enabled."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        # Graphite is NOT enabled - use GraphiteDisabled sentinel
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+
+        ctx = build_workspace_test_context(env, git=git, graphite=graphite_disabled)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "requires Graphite to be enabled" in result.output
+        assert "erk config set use_graphite true" in result.output
+
+
+def test_pr_sync_graphite_not_installed(tmp_path: Path) -> None:
+    """Test pr sync command shows appropriate error when Graphite CLI is not installed."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        # Graphite not installed - use GraphiteDisabled with NOT_INSTALLED reason
+        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
+
+        ctx = build_workspace_test_context(env, git=git, graphite=graphite_disabled)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "requires Graphite to be installed" in result.output
+        assert "npm install -g @withgraphite/graphite-cli" in result.output
