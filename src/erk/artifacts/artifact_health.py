@@ -170,10 +170,6 @@ def get_artifact_health(
     Returns:
         ArtifactHealthResult with status for each bundled artifact
     """
-    # Skip check in erk repo - artifacts are source, not synced
-    if is_in_erk_repo(project_dir):
-        return ArtifactHealthResult(artifacts=[], skipped_reason="erk-repo")
-
     # Skip if no .claude/ directory
     project_claude_dir = project_dir / ".claude"
     if not project_claude_dir.exists():

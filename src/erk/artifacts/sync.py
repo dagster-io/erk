@@ -295,18 +295,117 @@ def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
     return added, synced
 
 
+def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
+    """Compute artifact state from source (for erk repo dogfooding).
+
+    Instead of copying files, just compute hashes from the source artifacts.
+    """
+    from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS, BUNDLED_WORKFLOWS
+
+    bundled_claude_dir = get_bundled_claude_dir()
+    bundled_github_dir = get_bundled_github_dir()
+    artifacts: list[SyncedArtifact] = []
+
+    # Hash skills from source
+    skills_dir = bundled_claude_dir / "skills"
+    if skills_dir.exists():
+        for skill_name in BUNDLED_SKILLS:
+            skill_dir = skills_dir / skill_name
+            if skill_dir.exists():
+                artifacts.append(
+                    SyncedArtifact(
+                        key=f"skills/{skill_name}",
+                        hash=_compute_directory_hash(skill_dir),
+                        file_count=sum(1 for _ in skill_dir.rglob("*") if _.is_file()),
+                    )
+                )
+
+    # Hash agents from source
+    agents_dir = bundled_claude_dir / "agents"
+    if agents_dir.exists():
+        for agent_name in BUNDLED_AGENTS:
+            agent_dir = agents_dir / agent_name
+            if agent_dir.exists():
+                artifacts.append(
+                    SyncedArtifact(
+                        key=f"agents/{agent_name}",
+                        hash=_compute_directory_hash(agent_dir),
+                        file_count=sum(1 for _ in agent_dir.rglob("*") if _.is_file()),
+                    )
+                )
+
+    # Hash commands from source
+    commands_dir = bundled_claude_dir / "commands" / "erk"
+    if commands_dir.exists():
+        for cmd_file in commands_dir.glob("*.md"):
+            artifacts.append(
+                SyncedArtifact(
+                    key=f"commands/erk/{cmd_file.name}",
+                    hash=_compute_file_hash(cmd_file),
+                    file_count=1,
+                )
+            )
+
+    # Hash workflows from source
+    workflows_dir = bundled_github_dir / "workflows"
+    if workflows_dir.exists():
+        for workflow_name in BUNDLED_WORKFLOWS:
+            workflow_file = workflows_dir / workflow_name
+            if workflow_file.exists():
+                artifacts.append(
+                    SyncedArtifact(
+                        key=f"workflows/{workflow_name}",
+                        hash=_compute_file_hash(workflow_file),
+                        file_count=1,
+                    )
+                )
+
+    # Hash hooks (check if installed in settings.json)
+    settings_path = project_dir / ".claude" / "settings.json"
+    if settings_path.exists():
+        content = settings_path.read_text(encoding="utf-8")
+        settings = json.loads(content)
+        if has_user_prompt_hook(settings):
+            artifacts.append(
+                SyncedArtifact(
+                    key="hooks/user-prompt-hook",
+                    hash=_compute_hook_hash(ERK_USER_PROMPT_HOOK_COMMAND),
+                    file_count=1,
+                )
+            )
+        if has_exit_plan_hook(settings):
+            artifacts.append(
+                SyncedArtifact(
+                    key="hooks/exit-plan-mode-hook",
+                    hash=_compute_hook_hash(ERK_EXIT_PLAN_HOOK_COMMAND),
+                    file_count=1,
+                )
+            )
+
+    return artifacts
+
+
 def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
-    When running in the erk repo itself, skips sync since artifacts
-    are read directly from source.
+    When running in the erk repo itself, skips file copying but still computes
+    and saves state for dogfooding.
     """
-    # Skip sync in erk repo - artifacts are already at source
+    # In erk repo: skip copying but still save state for dogfooding
     if is_in_erk_repo(project_dir):
+        all_synced = _compute_source_artifact_state(project_dir)
+        current_version = get_current_version()
+        files: dict[str, ArtifactFileState] = {}
+        for artifact in all_synced:
+            files[artifact.key] = ArtifactFileState(
+                version=current_version,
+                hash=artifact.hash,
+            )
+        save_artifact_state(project_dir, ArtifactState(version=current_version, files=files))
         return SyncResult(
             success=True,
             artifacts_installed=0,
-            message="Skipped: running in erk repo (artifacts read from source)",
+            message="Development mode: state.toml updated (artifacts read from source)",
         )
 
     bundled_claude_dir = get_bundled_claude_dir()

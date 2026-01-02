@@ -157,7 +157,8 @@ def check_cmd(verbose: bool) -> None:
     # Check staleness
     if staleness_result.reason == "erk-repo":
         click.echo(click.style("✓ ", fg="green") + "Development mode (artifacts read from source)")
-        _display_installed_artifacts(project_dir)
+        if not verbose:
+            _display_installed_artifacts(project_dir)
     elif staleness_result.reason == "not-initialized":
         click.echo(click.style("⚠️  ", fg="yellow") + "Artifacts not initialized")
         click.echo(f"   Current erk version: {staleness_result.current_version}")
@@ -178,7 +179,7 @@ def check_cmd(verbose: bool) -> None:
             _display_installed_artifacts(project_dir)
 
     # Show verbose per-artifact breakdown if requested
-    if verbose and staleness_result.reason not in ("erk-repo", "not-initialized"):
+    if verbose and staleness_result.reason != "not-initialized":
         verbose_has_issues = _display_verbose_status(project_dir)
         if verbose_has_issues:
             has_errors = True
