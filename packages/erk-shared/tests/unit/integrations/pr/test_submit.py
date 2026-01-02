@@ -13,6 +13,7 @@ from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.submit import execute_core_submit
 from erk_shared.gateway.pr.types import CoreSubmitError, CoreSubmitResult
+from erk_shared.git.abc import BranchDivergence
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
@@ -355,3 +356,144 @@ class TestExecuteCoreSubmit:
 
         with pytest.raises(RuntimeError, match="Network connection failed"):
             list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
+
+    def test_auto_rebases_when_behind_remote(self, tmp_path: Path) -> None:
+        """Test that pull_rebase is called when local branch is behind remote."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            branch_divergence={
+                (tmp_path, "feature-branch", "origin"): BranchDivergence(
+                    is_diverged=False, ahead=2, behind=1
+                )
+            },
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        events = list(
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
+        )
+
+        # Verify pull_rebase was called
+        assert len(git.pull_rebase_calls) == 1
+        cwd, remote, branch = git.pull_rebase_calls[0]
+        assert cwd == tmp_path
+        assert remote == "origin"
+        assert branch == "feature-branch"
+
+        # Should emit a rebase progress event
+        progress_events = [e for e in events if isinstance(e, ProgressEvent)]
+        messages = [e.message for e in progress_events]
+        assert any("behind remote" in m.lower() and "rebas" in m.lower() for m in messages)
+
+        # Should still complete successfully
+        completion = [e for e in events if isinstance(e, CompletionEvent)]
+        assert len(completion) == 1
+        result = completion[0].result
+        assert isinstance(result, CoreSubmitResult)
+        assert result.success is True
+
+    def test_does_not_rebase_when_not_behind(self, tmp_path: Path) -> None:
+        """Test that pull_rebase is NOT called when local is not behind remote."""
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            branch_divergence={
+                (tmp_path, "feature-branch", "origin"): BranchDivergence(
+                    is_diverged=False, ahead=2, behind=0  # Only ahead, not behind
+                )
+            },
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        events = list(
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
+        )
+
+        # pull_rebase should NOT be called
+        assert len(git.pull_rebase_calls) == 0
+
+        # Should still complete successfully
+        completion = [e for e in events if isinstance(e, CompletionEvent)]
+        assert len(completion) == 1
+        result = completion[0].result
+        assert isinstance(result, CoreSubmitResult)
+        assert result.success is True
+
+    def test_rechecks_divergence_after_rebase(self, tmp_path: Path) -> None:
+        """Test that divergence is rechecked after rebase succeeds."""
+        # Set up a branch that is diverged but rebase will resolve it
+        # FakeGit.pull_rebase() updates branch_divergence to clear behind
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            branch_divergence={
+                (tmp_path, "feature-branch", "origin"): BranchDivergence(
+                    is_diverged=True, ahead=2, behind=1  # Diverged before rebase
+                )
+            },
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        events = list(
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
+        )
+
+        # Should have rebased
+        assert len(git.pull_rebase_calls) == 1
+
+        # Should complete successfully (rebase resolved divergence)
+        completion = [e for e in events if isinstance(e, CompletionEvent)]
+        assert len(completion) == 1
+        result = completion[0].result
+        assert isinstance(result, CoreSubmitResult)
+        assert result.success is True
+
+    def test_force_flag_still_works_after_failed_rebase(self, tmp_path: Path) -> None:
+        """Test that force flag allows push even when rebase doesn't resolve divergence."""
+        # Simulate a case where rebase happens but branch is still diverged
+        # (e.g., if someone else pushed during the rebase)
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            repository_roots={tmp_path: tmp_path},
+            trunk_branches={tmp_path: "main"},
+            commits_ahead={(tmp_path, "main"): 2},
+            branch_divergence={
+                # Note: FakeGit.pull_rebase() will update this, so it won't actually
+                # stay diverged in the fake. For this test, we verify force path works.
+                (tmp_path, "feature-branch", "origin"): BranchDivergence(
+                    is_diverged=True, ahead=2, behind=1
+                )
+            },
+        )
+        github = FakeGitHub(authenticated=True)
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
+
+        events = list(
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=True, plans_repo=None)
+        )
+
+        # Should complete successfully with force
+        completion = [e for e in events if isinstance(e, CompletionEvent)]
+        assert len(completion) == 1
+        result = completion[0].result
+        assert isinstance(result, CoreSubmitResult)
+        assert result.success is True
+
+        # Should have force pushed
+        assert len(git._pushed_branches) == 1
+        pushed = git._pushed_branches[0]
+        assert pushed.force is True

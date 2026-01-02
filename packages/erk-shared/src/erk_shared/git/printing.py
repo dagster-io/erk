@@ -329,3 +329,8 @@ class PrintingGit(PrintingBase, Git):
         """Abort rebase with printed output."""
         self._emit(self._format_command("git rebase --abort"))
         self._wrapped.rebase_abort(cwd)
+
+    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+        """Pull with rebase with printed output."""
+        self._emit(self._format_command(f"git pull --rebase {remote} {branch}"))
+        self._wrapped.pull_rebase(cwd, remote, branch)

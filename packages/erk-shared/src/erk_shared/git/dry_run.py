@@ -330,3 +330,7 @@ class DryRunGit(Git):
     def rebase_abort(self, cwd: Path) -> None:
         """No-op for rebase abort in dry-run mode."""
         pass
+
+    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+        """No-op for pull --rebase in dry-run mode."""
+        pass

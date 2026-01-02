@@ -843,3 +843,21 @@ class Git(ABC):
             subprocess.CalledProcessError: If no rebase is in progress
         """
         ...
+
+    @abstractmethod
+    def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
+        """Pull and rebase from a remote branch.
+
+        Runs `git pull --rebase <remote> <branch>` to fetch remote changes
+        and rebase local commits on top of them. This is useful for integrating
+        CI commits or other remote changes before pushing.
+
+        Args:
+            cwd: Working directory (must be in a git repository)
+            remote: Remote name (e.g., "origin")
+            branch: Branch name to pull from
+
+        Raises:
+            subprocess.CalledProcessError: If rebase fails (e.g., conflicts)
+        """
+        ...

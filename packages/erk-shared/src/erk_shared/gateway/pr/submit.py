@@ -198,8 +198,20 @@ def execute_core_submit(
             issue_number = issue_ref.issue_number
             yield ProgressEvent(f"Found linked issue: #{issue_number}")
 
-    # Step 6: Pre-flight divergence check
+    # Step 6: Pre-flight divergence check and auto-rebase
     divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+
+    # If behind remote, auto-rebase first (handles CI commits)
+    if divergence.behind > 0:
+        yield ProgressEvent(
+            f"Branch is {divergence.behind} commit(s) behind remote, rebasing...",
+            style="info",
+        )
+        ctx.git.pull_rebase(cwd, "origin", branch_name)
+        # Re-check divergence after rebase
+        divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+
+    # Only fail on true divergence (ahead AND behind after rebase attempt)
     if divergence.is_diverged:
         if not force:
             yield CompletionEvent(
@@ -207,7 +219,7 @@ def execute_core_submit(
             )
             return
         yield ProgressEvent(
-            f"Branch diverged (ahead={divergence.ahead}, behind={divergence.behind}), "
+            f"Branch still diverged (ahead={divergence.ahead}, behind={divergence.behind}), "
             "force pushing...",
             style="warning",
         )
