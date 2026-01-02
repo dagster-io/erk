@@ -19,6 +19,7 @@ from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.implement import implement
 from erk.cli.commands.info import info_group
 from erk.cli.commands.init import init_cmd
+from erk.cli.commands.land_cmd import land
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
@@ -174,6 +175,7 @@ cli.add_command(doctor_cmd)
 cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
 cli.add_command(init_cmd)
+cli.add_command(land)
 cli.add_command(dash)
 cli.add_command(plan_group)
 cli.add_command(planner_group)

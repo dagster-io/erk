@@ -1,8 +1,14 @@
-"""Tests for erk pr land command.
+"""Tests for erk land command.
 
-The pr land command now:
+The land command:
 1. Merges the PR
 2. Deletes worktree and navigates to trunk
+
+It accepts:
+- No argument (current branch's PR)
+- PR number
+- PR URL
+- Branch name
 """
 
 from dataclasses import replace
@@ -10,7 +16,7 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.pr import pr_group
+from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
@@ -21,13 +27,13 @@ from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import PRDetails, PullRequestInfo
+from erk_shared.github.types import PRDetails, PRReviewThread, PullRequestInfo
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_pr_land_merges_and_deletes_worktree() -> None:
-    """Test pr land merges PR and deletes worktree."""
+def test_land_merges_and_deletes_worktree() -> None:
+    """Test land merges PR and deletes worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -100,7 +106,7 @@ def test_pr_land_merges_and_deletes_worktree() -> None:
 
         # Use --force to skip cleanup confirmation
         result = runner.invoke(
-            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -124,8 +130,8 @@ def test_pr_land_merges_and_deletes_worktree() -> None:
         assert "Deleted worktree and branch" in result.output
 
 
-def test_pr_land_error_from_execute_land_pr() -> None:
-    """Test pr land shows error when parent is not trunk."""
+def test_land_error_from_execute_land_pr() -> None:
+    """Test land shows error when parent is not trunk."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -162,13 +168,13 @@ def test_pr_land_error_from_execute_land_pr() -> None:
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Branch must be exactly one level up from main")
 
 
-def test_pr_land_requires_graphite() -> None:
-    """Test pr land requires Graphite to be available (not disabled)."""
+def test_land_requires_graphite() -> None:
+    """Test land requires Graphite to be available (not disabled)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git_ops = FakeGit(
@@ -181,15 +187,15 @@ def test_pr_land_requires_graphite() -> None:
         graphite_disabled = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
         test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result, 1, "requires Graphite to be enabled", "erk config set use_graphite true"
         )
 
 
-def test_pr_land_requires_clean_working_tree() -> None:
-    """Test pr land blocks when uncommitted changes exist."""
+def test_land_requires_clean_working_tree() -> None:
+    """Test land blocks when uncommitted changes exist."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -222,15 +228,15 @@ def test_pr_land_requires_clean_working_tree() -> None:
         )
 
         # Use --script to bypass shell integration check and reach validation
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(
             result, 1, "Cannot delete current branch with uncommitted changes", "commit or stash"
         )
 
 
-def test_pr_land_detached_head() -> None:
-    """Test pr land fails gracefully on detached HEAD."""
+def test_land_detached_head() -> None:
+    """Test land fails gracefully on detached HEAD."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         from erk_shared.git.abc import WorktreeInfo
@@ -247,13 +253,13 @@ def test_pr_land_detached_head() -> None:
         test_ctx = env.build_context(git=git_ops, use_graphite=True)
 
         # Use --script to bypass shell integration check and reach validation
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 
 
-def test_pr_land_no_script_flag_fails_fast() -> None:
-    """Test pr land without --script fails before any operations.
+def test_land_no_script_flag_fails_fast() -> None:
+    """Test land without --script fails before any operations.
 
     When shell integration is bypassed (e.g., via alias), we fail fast BEFORE
     merging the PR, because:
@@ -324,19 +330,19 @@ def test_pr_land_no_script_flag_fails_fast() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land"], obj=test_ctx, catch_exceptions=False)
 
         # Should fail with clear error about needing shell integration
         assert result.exit_code == 1
         assert "requires shell integration" in result.output
-        assert "source <(erk pr land --script)" in result.output
+        assert "source <(erk land --script)" in result.output
 
         # CRITICAL: No operations should have happened
         assert len(github_ops.merged_prs) == 0, "PR should NOT be merged without shell integration"
 
 
-def test_pr_land_error_no_pr_found() -> None:
-    """Test pr land shows specific error when no PR exists."""
+def test_land_error_no_pr_found() -> None:
+    """Test land shows specific error when no PR exists."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -371,13 +377,13 @@ def test_pr_land_error_no_pr_found() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "No pull request found")
 
 
-def test_pr_land_error_pr_not_open() -> None:
-    """Test pr land shows error when PR is not open."""
+def test_land_error_pr_not_open() -> None:
+    """Test land shows error when PR is not open."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -443,13 +449,13 @@ def test_pr_land_error_pr_not_open() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Pull request is not open")
 
 
-def test_pr_land_does_not_call_safe_chdir() -> None:
-    """Test pr land does NOT call safe_chdir (it's ineffective).
+def test_land_does_not_call_safe_chdir() -> None:
+    """Test land does NOT call safe_chdir (it's ineffective).
 
     A subprocess cannot change the parent shell's working directory.
     The shell integration (activation script) handles the cd, so calling
@@ -526,7 +532,7 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
 
         # Use --force to skip cleanup confirmation
         result = runner.invoke(
-            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -537,7 +543,7 @@ def test_pr_land_does_not_call_safe_chdir() -> None:
         )
 
 
-def test_pr_land_with_up_navigates_to_child_branch() -> None:
+def test_land_with_up_navigates_to_child_branch() -> None:
     """Test --up navigates to child branch after landing."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -615,7 +621,7 @@ def test_pr_land_with_up_navigates_to_child_branch() -> None:
         test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -636,7 +642,7 @@ def test_pr_land_with_up_navigates_to_child_branch() -> None:
         assert str(feature_2_path) in script_content
 
 
-def test_pr_land_with_up_no_children_fails_before_merge() -> None:
+def test_land_with_up_no_children_fails_before_merge() -> None:
     """Test --up fails BEFORE merge when no children exist."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -705,7 +711,7 @@ def test_pr_land_with_up_no_children_fails_before_merge() -> None:
         )
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         # Should fail with exit code 1
@@ -714,13 +720,13 @@ def test_pr_land_with_up_no_children_fails_before_merge() -> None:
         # Should show error about no children
         assert "Cannot use --up" in result.output
         assert "has no children" in result.output
-        assert "Use 'erk pr land' without --up" in result.output
+        assert "Use 'erk land' without --up" in result.output
 
         # CRITICAL: PR should NOT have been merged (fail-fast)
         assert len(github_ops.merged_prs) == 0
 
 
-def test_pr_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
+def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
     """Test --up uses main_repo_root (not deleted worktree path) for navigation.
 
     This regression test verifies fix for issue where repo.root pointed to the
@@ -825,7 +831,7 @@ def test_pr_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         # With the fix: find_worktree_for_branch(main_repo_root, "feature-2")
         # succeeds because main_repo_root is the dict key for worktrees.
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -855,7 +861,7 @@ def test_pr_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         )
 
 
-def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
+def test_land_with_up_multiple_children_fails_before_merge() -> None:
     """Test --up fails BEFORE merge when multiple children exist."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -930,7 +936,7 @@ def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
         )
 
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         # Should fail with exit code 1
@@ -950,8 +956,8 @@ def test_pr_land_with_up_multiple_children_fails_before_merge() -> None:
 # git pull tests
 
 
-def test_pr_land_default_includes_git_pull_in_activation_script() -> None:
-    """Test default pr land (no --no-pull) includes git pull in activation script."""
+def test_land_default_includes_git_pull_in_activation_script() -> None:
+    """Test default land (no --no-pull) includes git pull in activation script."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1023,7 +1029,7 @@ def test_pr_land_default_includes_git_pull_in_activation_script() -> None:
 
         # Default (no --no-pull flag), use --force to skip confirmation
         result = runner.invoke(
-            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1037,8 +1043,8 @@ def test_pr_land_default_includes_git_pull_in_activation_script() -> None:
         assert "# Post-activation commands" in script_content
 
 
-def test_pr_land_no_pull_flag_omits_git_pull() -> None:
-    """Test pr land --no-pull omits git pull from activation script."""
+def test_land_no_pull_flag_omits_git_pull() -> None:
+    """Test land --no-pull omits git pull from activation script."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1110,7 +1116,7 @@ def test_pr_land_no_pull_flag_omits_git_pull() -> None:
 
         # --no-pull flag
         result = runner.invoke(
-            pr_group,
+            cli,
             ["land", "--script", "--no-pull", "--force"],
             obj=test_ctx,
             catch_exceptions=False,
@@ -1126,8 +1132,8 @@ def test_pr_land_no_pull_flag_omits_git_pull() -> None:
         assert "# Post-activation commands" not in script_content
 
 
-def test_pr_land_with_up_does_not_include_git_pull() -> None:
-    """Test pr land --up does NOT include git pull (navigates to child, not trunk)."""
+def test_land_with_up_does_not_include_git_pull() -> None:
+    """Test land --up does NOT include git pull (navigates to child, not trunk)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1204,7 +1210,7 @@ def test_pr_land_with_up_does_not_include_git_pull() -> None:
 
         # --up flag navigates to child, not trunk - should NOT include git pull
         result = runner.invoke(
-            pr_group, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1222,12 +1228,12 @@ def test_pr_land_with_up_does_not_include_git_pull() -> None:
 
 
 # =============================================================================
-# Tests for erk pr land <pr_number>
+# Tests for erk land <pr_number>
 # =============================================================================
 
 
-def test_pr_land_by_number() -> None:
-    """Test erk pr land 123 lands the specified PR by number."""
+def test_land_by_number() -> None:
+    """Test erk land 123 lands the specified PR by number."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1300,7 +1306,7 @@ def test_pr_land_by_number() -> None:
 
         # Pass "123" as the PR number argument with --force to skip confirmation
         result = runner.invoke(
-            pr_group, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1315,8 +1321,8 @@ def test_pr_land_by_number() -> None:
         assert "feature-1" in git_ops.deleted_branches
 
 
-def test_pr_land_by_url() -> None:
-    """Test erk pr land <url> lands the specified PR by URL."""
+def test_land_by_url() -> None:
+    """Test erk land <url> lands the specified PR by URL."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1389,7 +1395,7 @@ def test_pr_land_by_url() -> None:
 
         # Pass URL as the argument
         result = runner.invoke(
-            pr_group,
+            cli,
             ["land", "https://github.com/owner/repo/pull/456", "--script", "--force"],
             obj=test_ctx,
             catch_exceptions=False,
@@ -1404,7 +1410,98 @@ def test_pr_land_by_url() -> None:
         assert feature_1_path in git_ops.removed_worktrees
 
 
-def test_pr_land_fork_pr() -> None:
+def test_land_by_branch_name() -> None:
+    """Test erk land <branch> lands the branch's PR."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},  # Running from main
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        result = runner.invoke(
+            cli,
+            ["land", "feature-1", "--script", "--force"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+
+def test_land_fork_pr() -> None:
     """Test landing a fork PR uses pr/{number} branch naming."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1463,7 +1560,7 @@ def test_pr_land_fork_pr() -> None:
         test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
-            pr_group, ["land", "789", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "789", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1480,7 +1577,7 @@ def test_pr_land_fork_pr() -> None:
         assert "pr/789" not in git_ops.deleted_branches
 
 
-def test_pr_land_cleanup_confirmation_decline() -> None:
+def test_land_cleanup_confirmation_decline() -> None:
     """Test that declining cleanup confirmation preserves worktree."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1554,7 +1651,7 @@ def test_pr_land_cleanup_confirmation_decline() -> None:
 
         # Provide "n" as input to decline the confirmation
         result = runner.invoke(
-            pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False, input="n\n"
+            cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False, input="n\n"
         )
 
         assert result.exit_code == 0
@@ -1569,7 +1666,7 @@ def test_pr_land_cleanup_confirmation_decline() -> None:
         assert "Worktree preserved" in result.output
 
 
-def test_pr_land_force_skips_confirmation() -> None:
+def test_land_force_skips_cleanup_confirmation() -> None:
     """Test that --force skips the cleanup confirmation prompt."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1643,7 +1740,7 @@ def test_pr_land_force_skips_confirmation() -> None:
 
         # Use --force to skip confirmation (no input needed)
         result = runner.invoke(
-            pr_group, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1658,7 +1755,7 @@ def test_pr_land_force_skips_confirmation() -> None:
         assert "feature-1" in git_ops.deleted_branches
 
 
-def test_pr_land_up_rejected_with_pr_argument() -> None:
+def test_land_up_rejected_with_pr_argument() -> None:
     """Test that --up is rejected when a PR number is specified."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1727,7 +1824,7 @@ def test_pr_land_up_rejected_with_pr_argument() -> None:
 
         # Try to use --up with PR number
         result = runner.invoke(
-            pr_group, ["land", "123", "--script", "--up"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "123", "--script", "--up"], obj=test_ctx, catch_exceptions=False
         )
 
         # Should fail
@@ -1740,7 +1837,7 @@ def test_pr_land_up_rejected_with_pr_argument() -> None:
         assert len(github_ops.merged_prs) == 0
 
 
-def test_pr_land_from_different_worktree() -> None:
+def test_land_from_different_worktree() -> None:
     """Test landing a PR from a different worktree than the PR's branch."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1814,7 +1911,7 @@ def test_pr_land_from_different_worktree() -> None:
         test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
-            pr_group, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -1833,7 +1930,7 @@ def test_pr_land_from_different_worktree() -> None:
         # containing our current location.
 
 
-def test_pr_land_pr_not_found() -> None:
+def test_land_pr_not_found() -> None:
     """Test error when PR number doesn't exist."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -1869,21 +1966,21 @@ def test_pr_land_pr_not_found() -> None:
         )
 
         result = runner.invoke(
-            pr_group, ["land", "999", "--script"], obj=test_ctx, catch_exceptions=False
+            cli, ["land", "999", "--script"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "Pull request #999 not found" in result.output
 
 
-def test_pr_land_invalid_pr_identifier() -> None:
-    """Test error when PR identifier is invalid format."""
+def test_land_branch_no_pr_found() -> None:
+    """Test error when branch has no associated PR."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main", repo_dir=repo_dir),
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
             current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
@@ -1893,10 +1990,12 @@ def test_pr_land_invalid_pr_identifier() -> None:
 
         graphite_ops = FakeGraphite(
             branches={
-                "main": BranchMetadata.trunk("main", commit_sha="abc123"),
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
             }
         )
 
+        # No PRs configured
         github_ops = FakeGitHub()
 
         repo = RepoContext(
@@ -1911,29 +2010,189 @@ def test_pr_land_invalid_pr_identifier() -> None:
         )
 
         result = runner.invoke(
-            pr_group, ["land", "not-a-number", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["land", "feature-1", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 1
-        assert "Invalid PR identifier" in result.output
+        assert "No pull request found for branch 'feature-1'" in result.output
 
 
-def test_pr_land_confirmation_prompt_uses_stderr() -> None:
-    """Test that confirmation prompt appears on stderr, not stdout.
-
-    This is critical for shell integration: stdout is captured to read the
-    activation script path. If click.confirm writes to stdout, the prompt
-    is hidden from the user and the command appears to hang.
-
-    The fix: click.confirm(..., err=True) writes to stderr instead.
-    """
+def test_land_branch_pr_not_open() -> None:
+    """Test error when PR is not open (using branch argument)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        # PR is already merged
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="MERGED",  # Not open
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="MERGED",  # Not open
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli,
+            ["land", "feature-1", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "is not open" in result.output
+
+
+def test_land_branch_pr_base_not_trunk() -> None:
+    """Test error when PR base branch is not trunk (using branch argument)."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        # PR targets feature-1, not main
+        github_ops = FakeGitHub(
+            prs={
+                "feature-2": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 2",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 2",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="feature-1",  # Not trunk
+                    head_ref_name="feature-2",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli,
+            ["land", "feature-2", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "targets 'feature-1' but should target 'main'" in result.output
+
+
+# =============================================================================
+# Tests for unresolved comments warning
+# =============================================================================
+
+
+def test_land_warns_on_unresolved_comments() -> None:
+    """Test land shows warning when PR has unresolved review comments."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
@@ -1980,6 +2239,27 @@ def test_pr_land_confirmation_prompt_uses_stderr() -> None:
             },
             pr_bases={123: "main"},
             merge_should_succeed=True,
+            # Configure unresolved review threads
+            pr_review_threads={
+                123: [
+                    PRReviewThread(
+                        id="thread1",
+                        path="src/main.py",
+                        line=10,
+                        is_resolved=False,
+                        is_outdated=False,
+                        comments=(),
+                    ),
+                    PRReviewThread(
+                        id="thread2",
+                        path="src/utils.py",
+                        line=20,
+                        is_resolved=False,
+                        is_outdated=False,
+                        comments=(),
+                    ),
+                ]
+            },
         )
 
         issues_ops = FakeGitHubIssues(username="testuser")
@@ -1996,24 +2276,232 @@ def test_pr_land_confirmation_prompt_uses_stderr() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Run WITHOUT --force to trigger the confirmation prompt
-        # Provide "y\n" to accept
+        # User declines to continue when prompted about unresolved comments
         result = runner.invoke(
-            pr_group, ["land", "--script"], obj=test_ctx, catch_exceptions=False, input="y\n"
+            cli,
+            ["land", "123", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+            input="n\n",
+        )
+
+        # Should exit cleanly (user chose not to continue)
+        assert result.exit_code == 0
+
+        # Should show warning about unresolved comments
+        assert "has 2 unresolved review comment(s)" in result.output
+        assert "Continue anyway?" in result.output
+
+        # PR should NOT have been merged (user declined)
+        assert len(github_ops.merged_prs) == 0
+
+
+def test_land_force_skips_unresolved_comments_warning() -> None:
+    """Test --force skips the unresolved comments confirmation."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+            # Configure unresolved review threads
+            pr_review_threads={
+                123: [
+                    PRReviewThread(
+                        id="thread1",
+                        path="src/main.py",
+                        line=10,
+                        is_resolved=False,
+                        is_outdated=False,
+                        comments=(),
+                    ),
+                ]
+            },
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Use --force to skip all confirmations
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script", "--force"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
 
-        # CRITICAL: The confirmation prompt must appear on stderr, not stdout
-        # If this assertion fails, shell integration will hide the prompt
-        # causing the command to appear to hang
-        assert "Delete worktree and branch" in result.stderr, (
-            "Confirmation prompt must appear on stderr for shell integration. "
-            f"stdout={result.output!r}, stderr={result.stderr!r}"
+        # Should NOT prompt about unresolved comments when --force is used
+        assert "Continue anyway?" not in result.output
+
+        # PR should have been merged
+        assert 123 in github_ops.merged_prs
+
+        # Worktree should have been removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+
+def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
+    """Test land proceeds when user confirms despite unresolved comments."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
         )
 
-        # stdout should only contain the activation script path, not the prompt
-        assert "Delete worktree and branch" not in result.stdout, (
-            "Confirmation prompt must NOT appear on stdout (captured by shell integration). "
-            f"stdout={result.stdout!r}"
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
         )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+            # Configure unresolved review threads
+            pr_review_threads={
+                123: [
+                    PRReviewThread(
+                        id="thread1",
+                        path="src/main.py",
+                        line=10,
+                        is_resolved=False,
+                        is_outdated=False,
+                        comments=(),
+                    ),
+                ]
+            },
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # User confirms with "y\n" for unresolved comments, then "y\n" for cleanup
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+            input="y\ny\n",
+        )
+
+        assert result.exit_code == 0
+
+        # Should show warning about unresolved comments
+        assert "has 1 unresolved review comment(s)" in result.output
+
+        # PR should have been merged (user confirmed)
+        assert 123 in github_ops.merged_prs
+
+        # Worktree should have been removed
+        assert feature_1_path in git_ops.removed_worktrees

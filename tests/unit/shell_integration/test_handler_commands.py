@@ -9,20 +9,14 @@ from erk.cli.shell_integration.handler import (
 )
 
 
-def test_pr_land_compound_command_registered() -> None:
-    """Verify 'pr land' compound command is registered for shell integration.
+def test_land_top_level_command_registered() -> None:
+    """Verify 'land' top-level command is registered for shell integration.
 
-    This prevents regression of the bug where 'erk pr land' via shell wrapper
-    failed with "requires shell integration" error because the compound command
-    was not registered in SHELL_INTEGRATION_COMMANDS.
-
-    When compound commands are missing:
-    1. Shell wrapper intercepts → calls 'erk __shell pr land'
-    2. Handler checks for "pr land" compound command → NOT FOUND
-    3. Falls back to "pr" (the group) → --script goes to pr_group, not pr_land
-    4. pr_land never receives --script flag → fails with error
+    The land command was promoted from 'erk pr land' to 'erk land' (top-level)
+    in issue #3711. It must be registered for shell integration so the
+    --script flag is properly routed.
     """
-    assert "pr land" in SHELL_INTEGRATION_COMMANDS
+    assert "land" in SHELL_INTEGRATION_COMMANDS
 
 
 def test_pr_group_not_registered() -> None:
@@ -84,9 +78,9 @@ def test_compound_commands_have_all_expected_entries() -> None:
         "wt checkout",
         "wt co",  # alias for wt checkout
         "stack consolidate",
-        "pr land",
         "pr checkout",
         "pr co",  # alias for pr checkout
+        # Note: "pr land" was moved to top-level "land" command in #3711
     ]
 
     for cmd in expected_compound_commands:
@@ -102,6 +96,7 @@ def test_top_level_commands_registered() -> None:
         "down",
         "implement",
         "impl",  # alias
+        "land",  # promoted from "pr land" in #3711
     ]
 
     for cmd in expected_top_level:
@@ -122,21 +117,21 @@ def test_legacy_aliases_registered() -> None:
 def test_global_flags_stripped_before_command_matching() -> None:
     """Global flags like --debug should not prevent command recognition.
 
-    When running 'erk --debug pr land', the handler receives args like
-    ('--debug', 'pr', 'land'). Without stripping global flags, the handler
-    tries to match '--debug pr' as a compound command (not found), then
+    When running 'erk --debug land', the handler receives args like
+    ('--debug', 'land'). Without stripping global flags, the handler
+    tries to match '--debug land' as a compound command (not found), then
     '--debug' as a single command (not found), and falls back to passthrough.
 
     This test verifies that global flags are stripped before command matching,
-    so 'pr land' is correctly recognized as a compound command.
+    so 'land' is correctly recognized as a top-level command.
     """
-    # With --help present, the handler should recognize 'pr land' and passthrough
+    # With --help present, the handler should recognize 'land' and passthrough
     # (since --help causes passthrough behavior for recognized commands)
-    result = handle_shell_request(("--debug", "pr", "land", "--help"))
+    result = handle_shell_request(("--debug", "land", "--help"))
     assert result.passthrough is True
 
     # Multiple global flags should all be stripped
-    result = handle_shell_request(("--debug", "--verbose", "pr", "land", "--help"))
+    result = handle_shell_request(("--debug", "--verbose", "land", "--help"))
     assert result.passthrough is True
 
 
