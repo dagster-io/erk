@@ -472,6 +472,58 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     return artifacts
 
 
+def sync_dignified_review(project_dir: Path) -> SyncResult:
+    """Sync dignified-review feature artifacts to project.
+
+    Installs opt-in artifacts for the dignified-review workflow:
+    - dignified-python skill (.claude/skills/dignified-python/)
+    - dignified-python-review.yml workflow (.github/workflows/)
+    - dignified-python-review.md prompt (.github/prompts/)
+
+    Args:
+        project_dir: Project root directory
+
+    Returns:
+        SyncResult indicating success/failure and count of files installed.
+    """
+    bundled_claude_dir = get_bundled_claude_dir()
+    bundled_github_dir = get_bundled_github_dir()
+
+    target_claude_dir = project_dir / ".claude"
+    target_github_dir = project_dir / ".github"
+
+    total_copied = 0
+
+    # 1. Sync dignified-python skill
+    skill_src = bundled_claude_dir / "skills" / "dignified-python"
+    if skill_src.exists():
+        skill_dst = target_claude_dir / "skills" / "dignified-python"
+        count = _copy_directory_contents(skill_src, skill_dst)
+        total_copied += count
+
+    # 2. Sync dignified-python-review.yml workflow
+    workflow_src = bundled_github_dir / "workflows" / "dignified-python-review.yml"
+    if workflow_src.exists():
+        workflow_dst = target_github_dir / "workflows" / "dignified-python-review.yml"
+        workflow_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(workflow_src, workflow_dst)
+        total_copied += 1
+
+    # 3. Sync dignified-python-review.md prompt
+    prompt_src = bundled_github_dir / "prompts" / "dignified-python-review.md"
+    if prompt_src.exists():
+        prompt_dst = target_github_dir / "prompts" / "dignified-python-review.md"
+        prompt_dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(prompt_src, prompt_dst)
+        total_copied += 1
+
+    return SyncResult(
+        success=True,
+        artifacts_installed=total_copied,
+        message=f"Installed dignified-review ({total_copied} files)",
+    )
+
+
 def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 

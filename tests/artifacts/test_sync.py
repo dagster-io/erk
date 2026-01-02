@@ -14,6 +14,7 @@ from erk.artifacts.sync import (
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
+    sync_dignified_review,
 )
 
 
@@ -45,8 +46,8 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     """Copies artifact files from bundled to target."""
     # Create bundled artifacts directory
     bundled_dir = tmp_path / "bundled"
-    # Use a skill that's in BUNDLED_SKILLS (dignified-python)
-    skill_dir = bundled_dir / "skills" / "dignified-python"
+    # Use a skill that's in BUNDLED_SKILLS (learned-docs)
+    skill_dir = bundled_dir / "skills" / "learned-docs"
     skill_dir.mkdir(parents=True)
     (skill_dir / "SKILL.md").write_text("# Test Skill", encoding="utf-8")
 
@@ -68,7 +69,7 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     assert result.artifacts_installed == 3
 
     # Verify file was copied
-    copied_file = target_dir / ".claude" / "skills" / "dignified-python" / "SKILL.md"
+    copied_file = target_dir / ".claude" / "skills" / "learned-docs" / "SKILL.md"
     assert copied_file.exists()
     assert copied_file.read_text(encoding="utf-8") == "# Test Skill"
 
@@ -216,15 +217,16 @@ def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> N
     """_sync_directory_artifacts only copies items in the provided name set."""
     source_dir = tmp_path / "source" / "skills"
 
-    # Create a bundled skill (dignified-python is in BUNDLED_SKILLS)
-    bundled_skill = source_dir / "dignified-python"
+    # Create a bundled skill (learned-docs is in BUNDLED_SKILLS)
+    bundled_skill = source_dir / "learned-docs"
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "SKILL.md").write_text("# Bundled Skill", encoding="utf-8")
 
     # Create a non-bundled skill (should NOT be synced)
-    non_bundled_skill = source_dir / "fake-driven-testing"
+    # Note: dignified-python is now opt-in via --with-dignified-review
+    non_bundled_skill = source_dir / "dignified-python"
     non_bundled_skill.mkdir(parents=True)
-    (non_bundled_skill / "SKILL.md").write_text("# Non-bundled Skill", encoding="utf-8")
+    (non_bundled_skill / "SKILL.md").write_text("# Opt-in Skill", encoding="utf-8")
 
     target_dir = tmp_path / "target" / "skills"
 
@@ -234,10 +236,10 @@ def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> N
     assert copied == 1
 
     # Bundled skill should exist
-    assert (target_dir / "dignified-python" / "SKILL.md").exists()
+    assert (target_dir / "learned-docs" / "SKILL.md").exists()
 
-    # Non-bundled skill should NOT exist
-    assert not (target_dir / "fake-driven-testing").exists()
+    # Opt-in skill should NOT exist (dignified-python is now opt-in)
+    assert not (target_dir / "dignified-python").exists()
 
 
 def test_sync_directory_artifacts_only_syncs_bundled_agents(tmp_path: Path) -> None:
@@ -306,15 +308,15 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     """Full integration test: sync_artifacts filters skills, agents, and commands."""
     bundled_claude = tmp_path / "bundled"
 
-    # Create bundled skills (only bundled ones)
-    bundled_skill = bundled_claude / "skills" / "dignified-python"
+    # Create bundled skills (learned-docs is in BUNDLED_SKILLS)
+    bundled_skill = bundled_claude / "skills" / "learned-docs"
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "SKILL.md").write_text("# Bundled", encoding="utf-8")
 
-    # Create non-bundled skill (simulating editable install with dev artifacts)
-    non_bundled_skill = bundled_claude / "skills" / "fake-driven-testing"
+    # Create non-bundled skill (dignified-python is now opt-in)
+    non_bundled_skill = bundled_claude / "skills" / "dignified-python"
     non_bundled_skill.mkdir(parents=True)
-    (non_bundled_skill / "SKILL.md").write_text("# Dev Only", encoding="utf-8")
+    (non_bundled_skill / "SKILL.md").write_text("# Opt-in", encoding="utf-8")
 
     # Create bundled agent
     bundled_agent = bundled_claude / "agents" / "devrun"
@@ -352,12 +354,12 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     assert result.artifacts_installed == 5
 
     # Bundled artifacts should exist
-    assert (target_dir / ".claude" / "skills" / "dignified-python" / "SKILL.md").exists()
+    assert (target_dir / ".claude" / "skills" / "learned-docs" / "SKILL.md").exists()
     assert (target_dir / ".claude" / "agents" / "devrun" / "AGENT.md").exists()
     assert (target_dir / ".claude" / "commands" / "erk" / "plan-implement.md").exists()
 
-    # Non-bundled artifacts should NOT exist
-    assert not (target_dir / ".claude" / "skills" / "fake-driven-testing").exists()
+    # Non-bundled/opt-in artifacts should NOT exist
+    assert not (target_dir / ".claude" / "skills" / "dignified-python").exists()
     assert not (target_dir / ".claude" / "agents" / "haiku-devrun").exists()
     assert not (target_dir / ".claude" / "commands" / "local").exists()
 
@@ -539,3 +541,76 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
 
     # Verify action was copied
     assert (target_dir / ".github" / "actions" / "setup-claude-erk" / "action.yml").exists()
+
+
+def test_sync_dignified_review_copies_all_artifacts(tmp_path: Path) -> None:
+    """sync_dignified_review copies skill, workflow, and prompt."""
+    # Create bundled .claude/ with dignified-python skill
+    bundled_claude = tmp_path / "bundled_claude"
+    skill_dir = bundled_claude / "skills" / "dignified-python"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "dignified-python.md").write_text("# Skill", encoding="utf-8")
+    (skill_dir / "dignified-python-core.md").write_text("# Core", encoding="utf-8")
+
+    # Create bundled .github/ with workflow and prompt
+    bundled_github = tmp_path / "bundled_github"
+    workflow_dir = bundled_github / "workflows"
+    workflow_dir.mkdir(parents=True)
+    (workflow_dir / "dignified-python-review.yml").write_text("name: Review", encoding="utf-8")
+
+    prompt_dir = bundled_github / "prompts"
+    prompt_dir.mkdir(parents=True)
+    (prompt_dir / "dignified-python-review.md").write_text("# Prompt", encoding="utf-8")
+
+    # Create target directory
+    target_dir = tmp_path / "project"
+    target_dir.mkdir()
+
+    with (
+        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
+        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
+    ):
+        result = sync_dignified_review(target_dir)
+
+    assert result.success is True
+    # 2 skill files + 1 workflow + 1 prompt = 4 files
+    assert result.artifacts_installed == 4
+    assert "dignified-review" in result.message
+
+    # Verify skill was copied
+    assert (target_dir / ".claude" / "skills" / "dignified-python" / "dignified-python.md").exists()
+    assert (
+        target_dir / ".claude" / "skills" / "dignified-python" / "dignified-python-core.md"
+    ).exists()
+
+    # Verify workflow was copied
+    workflow_path = target_dir / ".github" / "workflows" / "dignified-python-review.yml"
+    assert workflow_path.exists()
+    assert workflow_path.read_text(encoding="utf-8") == "name: Review"
+
+    # Verify prompt was copied
+    prompt_path = target_dir / ".github" / "prompts" / "dignified-python-review.md"
+    assert prompt_path.exists()
+    assert prompt_path.read_text(encoding="utf-8") == "# Prompt"
+
+
+def test_sync_dignified_review_handles_missing_sources(tmp_path: Path) -> None:
+    """sync_dignified_review succeeds with 0 files when sources don't exist."""
+    # Create empty bundled directories
+    bundled_claude = tmp_path / "bundled_claude"
+    bundled_claude.mkdir()
+
+    bundled_github = tmp_path / "bundled_github"
+    bundled_github.mkdir()
+
+    target_dir = tmp_path / "project"
+    target_dir.mkdir()
+
+    with (
+        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
+        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
+    ):
+        result = sync_dignified_review(target_dir)
+
+    assert result.success is True
+    assert result.artifacts_installed == 0

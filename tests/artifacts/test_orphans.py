@@ -108,14 +108,14 @@ def test_find_orphaned_artifacts_orphaned_skill(
     """Test orphaned skill file is detected."""
     # Create a mock bundled directory with a skill
     bundled_dir = tmp_path / "bundled" / ".claude"
-    bundled_skill = bundled_dir / "skills" / "dignified-python"
+    bundled_skill = bundled_dir / "skills" / "learned-docs"
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "core.md").write_text("# Core", encoding="utf-8")
 
     # Create project directory with an extra orphaned file in the skill
     project_dir = tmp_path / "project"
     project_claude = project_dir / ".claude"
-    project_skill = project_claude / "skills" / "dignified-python"
+    project_skill = project_claude / "skills" / "learned-docs"
     project_skill.mkdir(parents=True)
     (project_skill / "core.md").write_text("# Core", encoding="utf-8")
     (project_skill / "deprecated-file.md").write_text("# Orphan", encoding="utf-8")
@@ -125,8 +125,8 @@ def test_find_orphaned_artifacts_orphaned_skill(
     result = find_orphaned_artifacts(project_dir)
 
     assert result.skipped_reason is None
-    assert "skills/dignified-python" in result.orphans
-    assert "deprecated-file.md" in result.orphans["skills/dignified-python"]
+    assert "skills/learned-docs" in result.orphans
+    assert "deprecated-file.md" in result.orphans["skills/learned-docs"]
 
 
 def test_find_orphaned_artifacts_orphaned_agent(

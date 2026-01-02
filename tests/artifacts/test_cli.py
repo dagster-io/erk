@@ -86,14 +86,14 @@ class TestListCommand:
         """Shows [erk] badge for bundled skills."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir = Path(".claude/skills/learned-docs")
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
             result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "dignified-python" in result.output
+        assert "learned-docs" in result.output
         assert "[erk]" in result.output
 
     def test_list_shows_erk_indicator_for_bundled_agent(self, tmp_path: Path) -> None:
@@ -111,8 +111,8 @@ class TestListCommand:
         assert "devrun" in result.output
         assert "[erk]" in result.output
 
-    def test_list_shows_local_badge_for_local_artifacts(self, tmp_path: Path) -> None:
-        """Shows [local] badge for local/user-defined artifacts."""
+    def test_list_shows_unmanaged_badge_for_local_artifacts(self, tmp_path: Path) -> None:
+        """Shows [unmanaged] badge for local/user-defined artifacts."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
             # Local command
@@ -130,9 +130,9 @@ class TestListCommand:
         assert result.exit_code == 0
         assert "local:my-cmd" in result.output
         assert "my-skill" in result.output
-        # Both should show [local] badge, not [erk]
-        assert "[local]" in result.output
-        assert result.output.count("[local]") == 2  # Both artifacts
+        # Both should show [unmanaged] badge, not [erk]
+        assert "[unmanaged]" in result.output
+        assert result.output.count("[unmanaged]") == 2  # Both artifacts
 
 
 class TestIsErkManaged:
@@ -161,9 +161,9 @@ class TestIsErkManaged:
     def test_bundled_skill_is_managed(self) -> None:
         """Skills in BUNDLED_SKILLS are erk-managed."""
         artifact = InstalledArtifact(
-            name="dignified-python",
+            name="learned-docs",
             artifact_type="skill",
-            path=Path(".claude/skills/dignified-python"),
+            path=Path(".claude/skills/learned-docs"),
             content_hash=None,
         )
         assert is_erk_managed(artifact) is True
@@ -310,7 +310,7 @@ class TestCheckCommand:
             agent_dir.mkdir(parents=True)
             (agent_dir / "devrun.md").write_text("# Agent", encoding="utf-8")
 
-            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir = Path(".claude/skills/learned-docs")
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
@@ -326,7 +326,7 @@ class TestCheckCommand:
         assert "Development mode" in result.output
         # Verify installed artifacts are shown
         assert "agents/devrun" in result.output
-        assert "skills/dignified-python" in result.output
+        assert "skills/learned-docs" in result.output
         assert "commands/erk/plan-implement.md" in result.output
         assert "commands/erk/pr-submit.md" in result.output
 
@@ -346,7 +346,7 @@ class TestCheckCommand:
             agent_dir.mkdir(parents=True)
             (agent_dir / "devrun.md").write_text("# Agent", encoding="utf-8")
 
-            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir = Path(".claude/skills/learned-docs")
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
@@ -365,7 +365,7 @@ class TestCheckCommand:
         assert "up to date" in result.output
         # Verify installed artifacts are shown
         assert "agents/devrun" in result.output
-        assert "skills/dignified-python" in result.output
+        assert "skills/learned-docs" in result.output
         assert "commands/erk/auto-restack.md" in result.output
 
     def test_check_version_mismatch_does_not_show_artifacts(self, tmp_path: Path) -> None:
@@ -531,7 +531,7 @@ class TestCheckCommandShowsActualArtifacts:
             Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
             # Create .claude with ONLY a skill, no agents
-            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir = Path(".claude/skills/learned-docs")
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Dignified Python", encoding="utf-8")
 
@@ -544,7 +544,7 @@ class TestCheckCommandShowsActualArtifacts:
         assert result.exit_code == 0
         assert "Development mode" in result.output
         # Should show the skill that exists
-        assert "skills/dignified-python" in result.output
+        assert "skills/learned-docs" in result.output
         # Should NOT show agents/devrun - it doesn't exist in .claude/
         assert "agents/devrun" not in result.output
 
@@ -606,7 +606,7 @@ class TestCheckVerboseShowsBothArtifactTypes:
 
         # Verify verbose output has both sections
         assert "Erk-managed artifacts:" in result.output
-        assert "Project artifacts:" in result.output
+        assert "Project artifacts (unmanaged):" in result.output
         # Should show project artifacts
         assert "commands/local/my-command.md" in result.output
         assert "skills/my-custom-skill" in result.output
@@ -651,7 +651,7 @@ class TestCheckVerboseShowsBothArtifactTypes:
 
         assert "Erk-managed artifacts:" in result.output
         # Project artifacts section should be omitted when no project artifacts exist
-        assert "Project artifacts:" not in result.output
+        assert "Project artifacts (unmanaged):" not in result.output
 
     def test_verbose_dev_mode_shows_both_sections(self, tmp_path: Path) -> None:
         """Verbose mode in dev repo shows both erk-managed and project artifacts."""
@@ -661,7 +661,7 @@ class TestCheckVerboseShowsBothArtifactTypes:
             Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
             # Create .claude/ with bundled skill
-            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir = Path(".claude/skills/learned-docs")
             skill_dir.mkdir(parents=True)
             (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
@@ -677,5 +677,5 @@ class TestCheckVerboseShowsBothArtifactTypes:
         assert result.exit_code == 0
         assert "Development mode" in result.output
         assert "Erk-managed artifacts:" in result.output
-        assert "Project artifacts:" in result.output
+        assert "Project artifacts (unmanaged):" in result.output
         assert "commands/local/my-local-cmd.md" in result.output
