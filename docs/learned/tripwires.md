@@ -39,6 +39,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](architecture/subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI).
 
+**CRITICAL: Before adding a command with --script flag** → Read [CLI Script Mode](cli/script-mode.md) first. Must register in SHELL_INTEGRATION_COMMANDS with all alias variants (e.g., br land, branch land).
+
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
 **CRITICAL: Before running gt sync or gt repo sync on user's behalf** → Read [Auto-Restack Command Usage](erk/auto-restack.md) first. NEVER run 'gt sync' or 'gt repo sync' automatically. This command synchronizes all Graphite branches with GitHub and can delete branches, modify stack relationships, and make irreversible changes. The user must run this command explicitly.

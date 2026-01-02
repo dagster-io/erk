@@ -43,12 +43,13 @@ safe_chdir(new_path)  # Only affects the subprocess
 
 These commands MUST use shell integration (the `--script` flag pattern):
 
-| Command                 | Why                                           |
-| ----------------------- | --------------------------------------------- |
-| `pr land`               | Deletes current worktree after landing PR     |
-| `down --delete-current` | Deletes current worktree and moves down stack |
-| `up --delete-current`   | Deletes current worktree and moves up stack   |
-| `rm` (when in worktree) | Deletes the current worktree                  |
+| Command                   | Why                                                  |
+| ------------------------- | ---------------------------------------------------- |
+| `pr land`                 | Deletes current worktree after landing PR            |
+| `branch land` / `br land` | Lands PR by branch name, deletes worktree if current |
+| `down --delete-current`   | Deletes current worktree and moves down stack        |
+| `up --delete-current`     | Deletes current worktree and moves up stack          |
+| `rm` (when in worktree)   | Deletes the current worktree                         |
 
 ## Implementation Pattern: Fail-Fast Validation
 

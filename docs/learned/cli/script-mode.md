@@ -8,6 +8,9 @@ read_when:
   - "global flag handling in shell integration"
   - "shell integration handler not recognizing commands"
   - "adding a command with --script flag"
+tripwires:
+  - action: "adding a command with --script flag"
+    warning: "Must register in SHELL_INTEGRATION_COMMANDS with all alias variants (e.g., br land, branch land)."
 ---
 
 # CLI Script Mode
