@@ -81,7 +81,7 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 ```
 <!-- dignified-python-review -->
 
-## Dignified Python Review
+## ✅ Dignified Python Review   (use ✅ if 0 issues, ❌ if 1+ issues)
 
 **Last updated:** YYYY-MM-DD HH:MM:SS PT
 

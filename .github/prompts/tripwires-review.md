@@ -89,7 +89,7 @@ Summary format (preserve existing Activity Log entries and prepend new entry):
 ```
 <!-- tripwires-review -->
 
-## Tripwires Review
+## ✅ Tripwires Review   (use ✅ if 0 violations, ❌ if 1+ violations)
 
 **Last updated:** YYYY-MM-DD HH:MM:SS PT
 
