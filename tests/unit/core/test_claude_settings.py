@@ -816,8 +816,11 @@ def test_has_erk_statusline_returns_false_for_different_command() -> None:
     assert has_erk_statusline(settings) is False
 
 
-def test_has_erk_statusline_returns_true_when_configured() -> None:
+def test_has_erk_statusline_returns_true_when_configured(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test has_erk_statusline returns True when erk-statusline is configured."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     settings = {
         "statusLine": {
             "type": "command",
@@ -827,8 +830,11 @@ def test_has_erk_statusline_returns_true_when_configured() -> None:
     assert has_erk_statusline(settings) is True
 
 
-def test_add_erk_statusline_to_empty_settings() -> None:
+def test_add_erk_statusline_to_empty_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test add_erk_statusline adds statusline config to empty settings."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     settings: dict = {}
     result = add_erk_statusline(settings)
 
@@ -839,8 +845,11 @@ def test_add_erk_statusline_to_empty_settings() -> None:
     assert "statusLine" not in settings
 
 
-def test_add_erk_statusline_overwrites_existing() -> None:
+def test_add_erk_statusline_overwrites_existing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test add_erk_statusline overwrites existing statusline config."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     settings = {
         "statusLine": {
             "type": "command",
@@ -854,8 +863,11 @@ def test_add_erk_statusline_overwrites_existing() -> None:
     assert settings["statusLine"]["command"] == "uvx other-statusline"
 
 
-def test_add_erk_statusline_preserves_other_settings() -> None:
+def test_add_erk_statusline_preserves_other_settings(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test add_erk_statusline preserves other settings keys."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     settings = {
         "permissions": {"allow": ["Bash(git:*)"]},
         "hooks": {"UserPromptSubmit": []},

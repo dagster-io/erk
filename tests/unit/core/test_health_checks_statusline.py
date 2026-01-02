@@ -8,6 +8,8 @@ import json
 from pathlib import Path
 from unittest import mock
 
+import pytest
+
 from erk.core.health_checks import check_statusline_configured
 
 
@@ -29,8 +31,12 @@ def test_returns_info_when_no_settings_file(tmp_path: Path) -> None:
     assert "erk init --statusline" in result.details
 
 
-def test_returns_configured_when_erk_statusline_present(tmp_path: Path) -> None:
+def test_returns_configured_when_erk_statusline_present(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test returns configured status when erk-statusline is set."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     settings_path = tmp_path / ".claude" / "settings.json"
     settings_path.parent.mkdir(parents=True)
     settings_path.write_text(

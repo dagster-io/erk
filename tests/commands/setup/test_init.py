@@ -21,6 +21,7 @@ import os
 from pathlib import Path
 from unittest import mock
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -1561,8 +1562,12 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
 # to avoid mocking HOME environment variable.
 
 
-def test_statusline_setup_configures_empty_settings(tmp_path: Path) -> None:
+def test_statusline_setup_configures_empty_settings(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test perform_statusline_setup configures statusline in empty settings.json."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     # Create settings.json
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
@@ -1580,8 +1585,12 @@ def test_statusline_setup_configures_empty_settings(tmp_path: Path) -> None:
     assert updated_settings["statusLine"]["command"] == "uvx erk-statusline"
 
 
-def test_statusline_setup_creates_settings_if_missing(tmp_path: Path) -> None:
+def test_statusline_setup_creates_settings_if_missing(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test perform_statusline_setup creates settings.json if it doesn't exist."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     # No settings.json file
     settings_path = tmp_path / ".claude" / "settings.json"
 
@@ -1595,8 +1604,12 @@ def test_statusline_setup_creates_settings_if_missing(tmp_path: Path) -> None:
     assert created_settings["statusLine"]["command"] == "uvx erk-statusline"
 
 
-def test_statusline_setup_skips_when_already_configured(tmp_path: Path) -> None:
+def test_statusline_setup_skips_when_already_configured(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test perform_statusline_setup skips when erk-statusline is already configured."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     # Create settings.json with erk-statusline already configured
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
@@ -1640,8 +1653,12 @@ def test_statusline_setup_prompts_for_different_command(tmp_path: Path) -> None:
     assert unchanged_settings["statusLine"]["command"] == "uvx other-statusline"
 
 
-def test_statusline_setup_replaces_when_confirmed(tmp_path: Path) -> None:
+def test_statusline_setup_replaces_when_confirmed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test perform_statusline_setup replaces existing statusline when user confirms."""
+    monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
     # Create settings.json with different statusline
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
