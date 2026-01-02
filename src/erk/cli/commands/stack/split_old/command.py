@@ -16,7 +16,7 @@ from erk.cli.commands.stack.split_old.plan import (
     get_stack_branches,
 )
 from erk.cli.core import discover_repo_context
-from erk.cli.ensure import Ensure
+from erk.cli.graphite_command import GraphiteCommand
 from erk.core.context import ErkContext
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -117,7 +117,7 @@ def apply_stack_filter(
 # Main CLI command
 
 
-@click.command("split")
+@click.command("split", cls=GraphiteCommand)
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
 @click.option(
     "--dry-run",
@@ -179,7 +179,6 @@ def split_cmd(
     """
     # 1. Validate input flags
     validate_flags(up, down)
-    Ensure.graphite_available(ctx)
 
     # 2. Gather repository context
     current_worktree = ctx.cwd

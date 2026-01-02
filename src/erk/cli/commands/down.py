@@ -12,13 +12,14 @@ from erk.cli.commands.navigation_helpers import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
-from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
+from erk.cli.help_formatter import script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.output.output import machine_output, user_output
 
 
-@click.command("down", cls=CommandWithHiddenOptions)
+@click.command("down", cls=GraphiteCommandWithHiddenOptions)
 @script_option
 @click.option(
     "--delete-current",
@@ -50,7 +51,6 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     """
     # Validate preconditions upfront (LBYL)
     Ensure.gh_authenticated(ctx)
-    Ensure.graphite_available(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
     trunk_branch = ctx.trunk_branch

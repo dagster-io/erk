@@ -20,6 +20,7 @@ from pathlib import Path
 import click
 
 from erk.cli.ensure import Ensure
+from erk.cli.graphite_command import GraphiteCommand
 from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
@@ -57,7 +58,7 @@ def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: 
         user_output(click.style("✓", fg="green") + " Commit message updated")
 
 
-@click.command("sync")
+@click.command("sync", cls=GraphiteCommand)
 @click.option(
     "--dangerous",
     is_flag=True,
@@ -92,7 +93,6 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # dangerous flag is required to indicate acknowledgment
     _ = dangerous
     # Step 1: Validate preconditions
-    Ensure.graphite_available(ctx)
     Ensure.gh_authenticated(ctx)
     Ensure.gt_authenticated(ctx)
     Ensure.invariant(

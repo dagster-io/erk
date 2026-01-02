@@ -7,9 +7,10 @@ from erk.cli.commands.stack.consolidate_cmd import consolidate_stack
 from erk.cli.commands.stack.list_cmd import list_stack
 from erk.cli.commands.stack.move_cmd import move_stack
 from erk.cli.commands.stack.split_old.command import split_cmd as split_stack
+from erk.cli.graphite_command import GraphiteGroup
 
 
-@click.group("stack")
+@click.group("stack", cls=GraphiteGroup)
 def stack_group() -> None:
     """Manage worktree stack operations."""
     pass

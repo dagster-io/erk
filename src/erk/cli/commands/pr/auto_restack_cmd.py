@@ -6,7 +6,7 @@ Slow path: If conflicts detected, delegates to Claude for intelligent resolution
 
 import click
 
-from erk.cli.ensure import Ensure
+from erk.cli.graphite_command import GraphiteCommand
 from erk.cli.output import stream_auto_restack
 from erk.core.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
@@ -19,7 +19,7 @@ from erk_shared.gateway.gt.types import (
 )
 
 
-@click.command("auto-restack")
+@click.command("auto-restack", cls=GraphiteCommand)
 @click.option(
     "--dangerous",
     is_flag=True,
@@ -58,7 +58,6 @@ def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
                 "Missing option '--dangerous'.\n"
                 "To disable: erk config set auto_restack_require_dangerous_flag false"
             )
-    Ensure.graphite_available(ctx)
     cwd = ctx.cwd
 
     # Phase 1: Try fast path (preflight: squash + attempt restack)
