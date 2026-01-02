@@ -3,7 +3,7 @@ name: ci-iteration
 description: >
   This skill should be used when running CI checks iteratively and fixing failures. Use when
   executing make targets (fast-ci, all-ci, ci), iterating on lint/format/type/test errors, or
-  needing the devrun agent pattern for pytest/pyright/ruff/prettier/make/gt commands.
+  needing the devrun agent pattern for pytest/ty/ruff/prettier/make/gt commands.
 ---
 
 # CI Iteration
@@ -16,7 +16,7 @@ Run the specified CI target and automatically fix any failures. Keep iterating u
 
 ## Sub-Agent Policy
 
-**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `pyright`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
 
 ```
 Task tool with:
@@ -27,7 +27,7 @@ Task tool with:
 
 **FORBIDDEN**:
 
-- Spawning general-purpose or other sub-agents for make/pytest/pyright/ruff/prettier/gt
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
 - Giving sub-agents prompts like "fix issues" or "iterate until passing"
 
 **REQUIRED**:
@@ -56,7 +56,7 @@ Analyze the output to identify which check(s) failed:
 - **Format failures**: "ruff format --check" or files needing reformatting
 - **Prettier failures**: Markdown files needing formatting
 - **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
-- **Pyright failures**: Type errors with file paths and line numbers
+- **ty failures**: Type errors with file paths and line numbers
 - **Test failures**: pytest failures with test names and assertion errors
 
 ### 3. Apply Targeted Fixes
@@ -70,7 +70,7 @@ Based on failure type, apply appropriate fixes:
 | Prettier     | `make prettier` via devrun                  |
 | Sync-Kit     | `erk sync` directly                         |
 | MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
-| Pyright      | Edit files to fix type annotations          |
+| ty           | Edit files to fix type annotations          |
 | Tests        | Read and edit source/test files             |
 
 ### 4. Verify and Repeat
@@ -123,7 +123,7 @@ All CI checks passed after N iteration(s):
 
 (check) **AGENTS.md Standard (md-check)**: PASSED
 
-(check) **Pyright**: PASSED
+(check) **ty**: PASSED
 
 (check) **Tests**: PASSED
 
@@ -141,7 +141,7 @@ The code is ready for commit/PR.
 
 I was unable to resolve the following issue after N attempts:
 
-**Check**: [lint/format/prettier/md-check/pyright/test]
+**Check**: [lint/format/prettier/md-check/ty/test]
 
 **Error**:
 [Exact error message]
@@ -187,7 +187,7 @@ Iteration 2:
 
 Iteration 3:
 - Use Task tool with devrun agent to run make target from repo root
-- Found: 2 pyright errors in switch.py:45 and switch.py:67
+- Found: 2 ty errors in switch.py:45 and switch.py:67
 - Fix: Add type annotations
 - Result: All checks pass
 
@@ -196,7 +196,7 @@ SUCCESS
 
 ## Important Reminders
 
-- NEVER run pytest/pyright/ruff/prettier/make/gt directly via Bash
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
 - Always use the Task tool with subagent_type: devrun
-- Covered tools: pytest, pyright, ruff, prettier, make, gt
+- Covered tools: pytest, ty, ruff, prettier, make, gt
 - Always ensure make commands execute from the repository root directory

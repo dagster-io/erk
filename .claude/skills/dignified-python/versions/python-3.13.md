@@ -548,27 +548,26 @@ def serialize(obj: Any) -> str:
 - Trivial private helpers
 - Test fixture setup code (if types add no clarity)
 
-## Type Checking with Pyright
+## Type Checking with ty
 
-Dignified Python uses Pyright for static type checking:
+Dignified Python uses ty for static type checking:
 
 ```bash
 # Check all files
-pyright
+ty check
 
 # Check specific file
-pyright src/mymodule.py
+ty check src/mymodule.py
 
 # Check with specific Python version
-pyright --pythonversion 3.13
+ty check --python-version 3.13
 ```
 
 **Configuration** (in `pyproject.toml`):
 
 ```toml
-[tool.pyright]
-pythonVersion = "3.13"
-strict = ["src/**/*.py"]
+[tool.ty.environment]
+python-version = "3.13"
 ```
 
 ## Anti-Patterns

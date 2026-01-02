@@ -192,7 +192,7 @@ The `make all-ci` target runs these checks in order:
 1. **lint** - Ruff linting checks
 2. **format** - Ruff code formatting checks
 3. **prettier-check** - Markdown formatting checks
-4. **pyright** - Type checking
+4. **ty** - Type checking
 5. **test** - Pytest test suite
 
 ## Iteration Process
@@ -303,7 +303,7 @@ If you get stuck, report clearly:
 
 I was unable to resolve the following issue after N attempts:
 
-**Check**: [lint/format/prettier/pyright/test]
+**Check**: [lint/format/prettier/ty/test]
 
 **Error**:
 [Exact error message]
@@ -369,7 +369,7 @@ Iteration 2:
 Iteration 3:
 
 - Run make all-ci
-- Found: 2 pyright errors in switch.py:45 and switch.py:67
+- Found: 2 ty errors in switch.py:45 and switch.py:67
 - Fix: Add type annotations
 - Result: All checks pass
 

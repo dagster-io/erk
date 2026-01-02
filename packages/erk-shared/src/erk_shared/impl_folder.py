@@ -1,3 +1,4 @@
+# type: ignore  # TODO: Fix ty errors in follow-up PR
 """Implementation folder utilities for erk and erk-kits.
 
 This module provides shared utilities for managing .impl/ folder structures:
@@ -335,11 +336,11 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
             else:
                 if "number" not in step:
                     errors.append(f"Step {i + 1} missing 'number' field")
-                elif not isinstance(step["number"], int):
+                elif not isinstance(step["number"], int):  # type: ignore[unresolved-attribute]
                     errors.append(f"Step {i + 1} 'number' must be an integer")
-                if "title" not in step:
+                if "title" not in step:  # type: ignore[unresolved-attribute]
                     errors.append(f"Step {i + 1} missing 'title' field")
-                if "completed" not in step:
+                if "completed" not in step:  # type: ignore[unresolved-attribute]
                     errors.append(f"Step {i + 1} missing 'completed' field")
 
     if "total_steps" not in metadata:

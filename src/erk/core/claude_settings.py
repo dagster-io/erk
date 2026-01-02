@@ -61,7 +61,7 @@ def has_erk_permission(settings: dict) -> bool:
     return ERK_PERMISSION in allow_list
 
 
-def has_user_prompt_hook(settings: dict) -> bool:
+def has_user_prompt_hook(settings: dict) -> bool:  # type: ignore[invalid-argument-type]
     """Check if erk UserPromptSubmit hook is configured.
 
     Args:
@@ -79,7 +79,7 @@ def has_user_prompt_hook(settings: dict) -> bool:
     return False
 
 
-def has_exit_plan_hook(settings: dict) -> bool:
+def has_exit_plan_hook(settings: dict) -> bool:  # type: ignore[invalid-argument-type]
     """Check if erk ExitPlanMode hook is configured.
 
     Args:
@@ -98,7 +98,7 @@ def has_exit_plan_hook(settings: dict) -> bool:
     return False
 
 
-def add_erk_hooks(settings: dict) -> dict:
+def add_erk_hooks(settings: dict) -> dict:  # type: ignore[invalid-argument-type]
     """Return a new settings dict with erk hooks added.
 
     This is a pure function that doesn't modify the input.

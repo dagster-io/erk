@@ -194,7 +194,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 - Common fixtures (tmp_path, CliRunner, etc.)
 - Common test patterns (code snippets)
 - Example tests to reference
-- Useful commands (pytest, pyright, etc.)
+- Useful commands (pytest, ty, etc.)
 - Quick checklist for adding gateway methods
 
 ## Quick Navigation by Task

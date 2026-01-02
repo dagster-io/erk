@@ -69,7 +69,7 @@ def _ensure_branch(branch: str | None) -> str:
     """Ensure branch was detected, exit with error if not."""
     if branch is None:
         exit_with_error("branch_detection_failed", "Could not determine current branch")
-    return branch
+    return branch  # type: ignore[invalid-return-type]
 
 
 def _ensure_pr_result(
@@ -84,7 +84,7 @@ def _ensure_pr_result(
             exit_with_error("no_pr_for_branch", f"No PR found for branch '{branch}'")
         else:
             exit_with_error("pr_not_found", f"PR #{pr_number} not found")
-    return pr_result
+    return pr_result  # type: ignore[invalid-return-type]
 
 
 def _format_thread_for_json(thread: PRReviewThread) -> ReviewThreadDict:

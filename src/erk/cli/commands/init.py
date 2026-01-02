@@ -324,7 +324,7 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
         settings = {}
         user_output(f"\nNo .claude/settings.json found. Will create: {settings_path}")
 
-    if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):
+    if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):  # type: ignore[invalid-argument-type]
         user_output(click.style("✓", fg="green") + " Hooks already configured")
         return
 
@@ -335,7 +335,7 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
         user_output("Skipped. You can add hooks later with: erk init --hooks")
         return
 
-    new_settings = add_erk_hooks(settings)
+    new_settings = add_erk_hooks(settings)  # type: ignore[invalid-argument-type]
     write_claude_settings(settings_path, new_settings)
     user_output(click.style("✓", fg="green") + " Added erk hooks")
 

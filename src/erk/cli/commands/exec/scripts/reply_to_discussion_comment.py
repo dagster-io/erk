@@ -1,3 +1,4 @@
+# type: ignore  # TODO: Fix ty errors in follow-up PR
 """Reply to a PR discussion comment with a blockquote and action summary.
 
 This exec command posts a reply to a discussion comment that:

@@ -80,7 +80,7 @@ This document describes the common patterns for slash commands, helping you choo
 1. Run make all-ci (max 10 iterations)
 
 2. If check fails:
-   - Parse error output by category (pyright, ruff, tests)
+   - Parse error output by category (ty, ruff, tests)
    - Create todos for each error category
    - Apply fixes for each category sequentially
    - Mark todo complete after fixing each category
@@ -258,10 +258,10 @@ Otherwise:
 **Pattern:**
 
 ```markdown
-**IMPORTANT:** Always use devrun agent for pytest/pyright/ruff/prettier/make/gt commands
+**IMPORTANT:** Always use devrun agent for pytest/ty/ruff/prettier/make/gt commands
 
 1. Use Task tool with subagent_type="devrun"
-   - Pass the command: "make all-ci", "pytest tests/", "pyright", etc.
+   - Pass the command: "make all-ci", "pytest tests/", "ty check", etc.
    - Do NOT use Bash tool for these dev tools
    - Agent will handle execution and output
 

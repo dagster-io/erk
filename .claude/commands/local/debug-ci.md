@@ -93,7 +93,7 @@ Present the failure information clearly:
 **Error**: Markdown files need formatting
 **Fix**: Run `make prettier` then commit
 
-### pyright
+### ty
 
 **Error**: Type checking failures
 **Fix**: Read the file and fix type annotations

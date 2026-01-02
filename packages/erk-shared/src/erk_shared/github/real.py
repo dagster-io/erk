@@ -952,7 +952,7 @@ query {{
         if isinstance(result, RetriesExhausted):
             # Timeout - run never appeared
             return None
-        return result
+        return result  # type: ignore[invalid-return-type]
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.

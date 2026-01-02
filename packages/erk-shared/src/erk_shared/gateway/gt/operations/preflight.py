@@ -254,9 +254,9 @@ def _execute_submit_only(
         )
         return
 
-    yield ProgressEvent(f"PR info retrieved (PR #{pr_result.number})", style="success")
-    pr_number = pr_result.number
-    pr_url = pr_result.url
+    yield ProgressEvent(f"PR info retrieved (PR #{pr_result.number})", style="success")  # type: ignore[possibly-missing-attribute]
+    pr_number = pr_result.number  # type: ignore[possibly-missing-attribute]
+    pr_url = pr_result.url  # type: ignore[possibly-missing-attribute]
     # Get Graphite URL by parsing repo identity from git remote URL (no API call)
     remote_url = ops.git.get_remote_url(repo_root, "origin")
     owner, repo_name = parse_git_remote_url(remote_url)
@@ -322,7 +322,7 @@ def execute_preflight(
     submit_elapsed = int(time.time() - submit_start)
     yield ProgressEvent(f"Branch submitted ({submit_elapsed}s)", style="success")
 
-    pr_number, pr_url, graphite_url, branch_name = submit_result
+    pr_number, pr_url, graphite_url, branch_name = submit_result  # type: ignore[not-iterable]
 
     # Step 3: Get PR diff from GitHub API
     repo_root = ops.git.get_repository_root(cwd)
@@ -375,6 +375,6 @@ def execute_preflight(
             parent_branch=parent_branch,
             issue_number=issue_number,
             message=f"Preflight complete for branch: {branch_name}\nPR #{pr_number}: {pr_url}",
-            commit_messages=pre_result.commit_messages,
+            commit_messages=pre_result.commit_messages,  # type: ignore[unresolved-attribute]
         )
     )

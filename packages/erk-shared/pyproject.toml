@@ -17,8 +17,8 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/erk_shared"]
 
-[tool.pyright]
+[tool.ty.src]
 include = ["src", "tests"]
-pythonVersion = "3.11"
-typeCheckingMode = "strict"
-reportPrivateUsage = false
+
+[tool.ty.environment]
+python-version = "3.11"

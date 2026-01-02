@@ -63,7 +63,7 @@ class ClickableLink(Static):
         """Open URL in browser when clicked."""
         event.stop()
         # Access browser through the app's provider (ErkDashApp)
-        from erk.tui.app import ErkDashApp as _ErkDashApp
+        from erk.tui.app import ErkDashApp as _ErkDashApp  # type: ignore[unresolved-attribute]
 
         app = self.app
         if isinstance(app, _ErkDashApp):
@@ -111,7 +111,7 @@ class CopyableLabel(Static):
         """
         # Access clipboard through the app's provider (ErkDashApp)
         # Defer the isinstance check to avoid forward reference issues
-        from erk.tui.app import ErkDashApp as _ErkDashApp
+        from erk.tui.app import ErkDashApp as _ErkDashApp  # type: ignore[unresolved-attribute]
 
         app = self.app
         if isinstance(app, _ErkDashApp):

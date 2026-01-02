@@ -127,8 +127,8 @@ def _validate_tripwires(
             errors.append(f"Field 'tripwires[{i}]' must be an object")
             continue
 
-        action = item.get("action")
-        warning = item.get("warning")
+        action = item.get("action")  # type: ignore[invalid-argument-type]
+        warning = item.get("warning")  # type: ignore[invalid-argument-type]
 
         if not action:
             errors.append(f"Field 'tripwires[{i}].action' is required")
@@ -196,7 +196,7 @@ def validate_agent_doc_frontmatter(
     assert isinstance(read_when, list)
     return AgentDocFrontmatter(
         title=title,
-        read_when=read_when,
+        read_when=read_when,  # type: ignore[invalid-argument-type]
         tripwires=tripwires,
     ), []
 

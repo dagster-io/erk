@@ -46,7 +46,7 @@ erk/
 - `dignified-python`: Python coding standards (LBYL, frozen dataclasses, modern types)
 - `fake-driven-testing`: 5-layer test architecture with comprehensive fakes
 - `gt-graphite`: Worktree stack mental model
-- `devrun`: READ-ONLY agent for running pytest/pyright/ruff/make
+- `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
 
 **Documentation Index**: See [docs/learned/index.md](docs/learned/index.md) for complete document registry with "read when..." conditions.
 
@@ -72,7 +72,7 @@ erk/
 
 - **Python code** → `dignified-python` skill (LBYL, modern types, ABC interfaces)
 - **Test code** → `fake-driven-testing` skill (5-layer architecture, test placement)
-- **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/pyright/ruff/prettier/make/gt)
+- **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/ty/ruff/prettier/make/gt)
 
 ## Skill Loading Behavior
 
@@ -104,7 +104,7 @@ Load when the context applies:
 
 Use agents instead of direct Bash:
 
-- **pytest, pyright, ruff, prettier, make, gt** → Use `devrun` agent (Task tool)
+- **pytest, ty, ruff, prettier, make, gt** → Use `devrun` agent (Task tool)
 
 #### devrun Agent - Prompt Restrictions
 

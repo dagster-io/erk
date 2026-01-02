@@ -45,7 +45,7 @@ dev = [
     "pytest-xdist>=3.8.0",
     "pytest-asyncio>=0.23.0",
     "libcst>=1.8.6",
-    "pyright>=1.1.407",
+    "ty>=0.0.1a7",
 ]
 
 [build-system]
@@ -92,14 +92,13 @@ select = [
 [tool.ruff.lint.isort]
 known-first-party = ["erk", "erk_dev", "erk_shared", "erk_statusline"]
 
-[tool.pyright]
-pythonVersion = "3.11"
-typeCheckingMode = "standard"
+[tool.ty.src]
 include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]
 exclude = [".claude/skills/"]
-venvPath = "."
-venv = ".venv"
-reportMissingImports = "warning"
+
+[tool.ty.environment]
+python-version = "3.11"
+python = ".venv"
 
 [tool.pytest.ini_options]
 addopts = "-q"

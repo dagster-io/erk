@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check pyright upgrade-pyright test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -18,11 +18,11 @@ lint:
 fix:
 	uv run ruff check --fix --unsafe-fixes
 
-pyright:
-	uv run pyright
+ty:
+	uv run ty check
 
-upgrade-pyright:
-	uv remove pyright --group dev && uv add --dev pyright
+upgrade-ty:
+	uv remove ty --group dev && uv add --dev ty
 
 # === Package-specific test targets ===
 
@@ -77,7 +77,7 @@ py-fast-ci:
 	exit_code=0; \
 	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
+	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
@@ -91,7 +91,7 @@ fast-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
-	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
+	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
@@ -105,7 +105,7 @@ all-ci:
 	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
 	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
 	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
-	echo "\n--- Pyright ---" && uv run pyright || exit_code=1; \
+	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \

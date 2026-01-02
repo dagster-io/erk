@@ -365,9 +365,9 @@ pytest tests/unit/
 # Run only integration tests
 pytest tests/integration/
 
-# Type check (if using mypy or pyright)
+# Type check (if using mypy or ty)
 mypy src/
-pyright
+ty check
 
 # Format code
 black src/ tests/

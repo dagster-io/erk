@@ -189,7 +189,7 @@ If the user wants to test:
 
 **Common patterns to remember:**
 
-- Use devrun agent for `pytest`, `pyright`, `ruff`, `prettier`, `make`, `gt` commands
+- Use devrun agent for `pytest`, `ty`, `ruff`, `prettier`, `make`, `gt` commands
 - Use Task tool for specialized agents (implementation-planner, plan-executors)
 - Check for specific files first (e.g., `.PLAN.md`) before proceeding
 - Mark todos complete immediately, not in batches

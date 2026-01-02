@@ -18,7 +18,7 @@ The `make all-ci` target runs these checks in order:
 2. **format-check** - Ruff code formatting checks
 3. **prettier-check** - Markdown formatting checks
 4. **md-check** - AGENTS.md standard compliance validation
-5. **pyright** - Type checking
+5. **ty** - Type checking
 6. **test-all** - Pytest test suite (unit + integration tests)
 7. **check** - Artifact synchronization validation
 
@@ -32,7 +32,7 @@ Start by using the Task tool with the devrun agent to run `make all-ci` from the
 
 **Remember**:
 
-- NEVER run pytest/pyright/ruff/prettier/make/gt directly via Bash
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
 - Always use the Task tool with subagent_type: devrun
-- Covered tools: pytest, pyright, ruff, prettier, make, gt
+- Covered tools: pytest, ty, ruff, prettier, make, gt
 - Always ensure make commands execute from the repository root directory

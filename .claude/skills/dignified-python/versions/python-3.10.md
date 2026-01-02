@@ -439,18 +439,18 @@ def fetch_user(id: str) -> ApiResponse[dict[str, str]]:
 ### Running Type Checker
 
 ```bash
-uv run pyright
+uv run ty check
 ```
 
 All code should pass type checking without errors.
 
 ### Type Checking Configuration
 
-Use strict mode in `pyproject.toml`:
+Configure ty in `pyproject.toml`:
 
 ```toml
-[tool.pyright]
-strict = true
+[tool.ty.environment]
+python-version = "3.10"
 ```
 
 ## Common Patterns

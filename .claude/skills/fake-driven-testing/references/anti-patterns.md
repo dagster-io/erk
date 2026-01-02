@@ -247,7 +247,7 @@ class DryRunDatabaseAdapter(DatabaseAdapter):
 - [ ] Update integration tests of real
 - [ ] Update business logic tests that use the method
 
-**Tool**: Run `mypy` or `pyright` to catch signature mismatches.
+**Tool**: Run `mypy` or `ty check` to catch signature mismatches.
 
 ### Why This Is Wrong
 

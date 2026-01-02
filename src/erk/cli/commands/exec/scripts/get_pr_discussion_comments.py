@@ -78,7 +78,7 @@ def get_pr_discussion_comments(ctx: click.Context, pr: int | None) -> None:
             exit_with_error(branch_result.error_type, branch_result.message)
         branch = branch_result
 
-        pr_result = GitHubChecks.pr_for_branch(github, repo_root, branch)
+        pr_result = GitHubChecks.pr_for_branch(github, repo_root, branch)  # type: ignore[invalid-argument-type]
         if isinstance(pr_result, NoPRForBranch):
             exit_with_error(pr_result.error_type, pr_result.message)
         pr_details = pr_result
@@ -89,27 +89,27 @@ def get_pr_discussion_comments(ctx: click.Context, pr: int | None) -> None:
         pr_details = pr_result
 
     # Fetch discussion comments (exits on failure)
-    comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number)
+    comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number)  # type: ignore[possibly-missing-attribute]
     if isinstance(comments_result, GitHubAPIFailed):
         exit_with_error(comments_result.error_type, comments_result.message)
     comments = comments_result
 
     # Format comments for JSON output
-    formatted_comments: list[DiscussionCommentDict] = [
+    formatted_comments: list[DiscussionCommentDict] = [  # type: ignore[invalid-assignment]
         {
             "id": comment.id,
             "author": comment.author,
             "body": comment.body,
             "url": comment.url,
         }
-        for comment in comments
+        for comment in comments  # type: ignore[not-iterable]
     ]
 
     result = {
         "success": True,
-        "pr_number": pr_details.number,
-        "pr_url": pr_details.url,
-        "pr_title": pr_details.title,
+        "pr_number": pr_details.number,  # type: ignore[possibly-missing-attribute]
+        "pr_url": pr_details.url,  # type: ignore[possibly-missing-attribute]
+        "pr_title": pr_details.title,  # type: ignore[possibly-missing-attribute]
         "comments": formatted_comments,
     }
     click.echo(json.dumps(result, indent=2))

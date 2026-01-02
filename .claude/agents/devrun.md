@@ -1,6 +1,6 @@
 ---
 name: devrun
-description: Execute development CLI tools (pytest, pyright, ruff, prettier, make, gt) and parse results. READ-ONLY - never modifies files.
+description: Execute development CLI tools (pytest, ty, ruff, prettier, make, gt) and parse results. READ-ONLY - never modifies files.
 model: sonnet
 color: green
 tools: Read, Bash, Grep, Glob, Task
@@ -76,25 +76,29 @@ Extract: test name, file:line, error type, message
 
 ---
 
-### pyright
+### ty
 
-**Detect:** `pyright`, `uv run pyright`
+**Detect:** `ty`, `ty check`, `uv run ty`, `uv run ty check`
 
 **Success pattern:**
 
 ```
-0 errors, 0 warnings, 0 informations
+All checks passed!
 ```
 
 **Error pattern:**
 
 ```
-/path/file.py:42:15 - error: Type "str" cannot be assigned to type "int" (reportAssignmentType)
+error[rule-name]: error message
+  --> /path/file.py:42:15
+   |
+42 |     code here
+   |     ^^^^^^^^^ explanation
 ```
 
 Extract: file:line:col, error message, rule code
 
-**Summary line:** `X errors, Y warnings, Z informations`
+**Summary line:** `Found N diagnostics` or `All checks passed!`
 
 ---
 
@@ -170,7 +174,7 @@ make: *** [target] Error N
 | Tool     | 0          | 1                | 2+         |
 | -------- | ---------- | ---------------- | ---------- |
 | pytest   | all passed | failures         | error      |
-| pyright  | no errors  | errors found     | -          |
+| ty       | no errors  | errors found     | -          |
 | ruff     | clean      | violations       | error      |
 | prettier | formatted  | needs formatting | error      |
 | make     | success    | recipe failed    | make error |

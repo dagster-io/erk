@@ -187,7 +187,7 @@ fi
 Be explicit about which tools to use.
 
 ```markdown
-**Use the devrun agent for pytest/pyright/ruff/prettier/make/gt commands:**
+**Use the devrun agent for pytest/ty/ruff/prettier/make/gt commands:**
 
 Use Task tool with subagent_type="devrun" to run:
 \`\`\`bash
@@ -372,7 +372,7 @@ Otherwise (changes are contained):
 ```markdown
 ### Running Make Commands
 
-**ALWAYS use devrun agent for pytest/pyright/ruff/prettier/make/gt commands**
+**ALWAYS use devrun agent for pytest/ty/ruff/prettier/make/gt commands**
 
 Use Task tool with subagent_type="devrun":
 

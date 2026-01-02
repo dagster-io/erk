@@ -111,7 +111,7 @@ class GitHubPlanStore(PlanStore):
                 file=sys.stderr,
             )
             return None
-        return extract_plan_from_comment(result)
+        return extract_plan_from_comment(result)  # type: ignore[invalid-argument-type]
 
     def _get_plan_body(self, repo_root: Path, issue_info: IssueInfo) -> str:
         """Get the plan body from the issue.

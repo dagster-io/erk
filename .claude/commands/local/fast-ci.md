@@ -19,7 +19,7 @@ The `make fast-ci` target runs these checks in order:
 3. **prettier-check** - Markdown formatting checks
 4. **md-check** - AGENTS.md standard compliance validation
 5. **docs-validate** - Agent documentation frontmatter validation
-6. **pyright** - Type checking
+6. **ty** - Type checking
 7. **test** - Pytest unit tests only (fast feedback loop)
 8. **check** - Artifact synchronization validation
 
@@ -33,7 +33,7 @@ Start by using the Task tool with the devrun agent to run `make fast-ci` from th
 
 **Remember**:
 
-- NEVER run pytest/pyright/ruff/prettier/make/gt directly via Bash
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
 - Always use the Task tool with subagent_type: devrun
-- Covered tools: pytest, pyright, ruff, prettier, make, gt
+- Covered tools: pytest, ty, ruff, prettier, make, gt
 - Always ensure make commands execute from the repository root directory

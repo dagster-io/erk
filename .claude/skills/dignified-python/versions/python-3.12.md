@@ -572,18 +572,18 @@ sum_val = reduce_list(numbers, lambda acc, x: acc + x, 0)  # int
 ### Running Type Checker
 
 ```bash
-uv run pyright
+uv run ty check
 ```
 
 All code should pass type checking without errors.
 
 ### Type Checking Configuration
 
-Use strict mode in `pyproject.toml`:
+Configure ty in `pyproject.toml`:
 
 ```toml
-[tool.pyright]
-strict = true
+[tool.ty.environment]
+python-version = "3.12"
 ```
 
 ## Common Patterns

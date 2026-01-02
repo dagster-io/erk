@@ -39,8 +39,8 @@ def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
         if isinstance(event, CompletionEvent):
             squash_result = event.result
     squash_result = Ensure.not_none(squash_result, "Squash operation produced no result")
-    Ensure.invariant(not isinstance(squash_result, SquashError), squash_result.message)
-    user_output(click.style("✓", fg="green") + f" {squash_result.message}")
+    Ensure.invariant(not isinstance(squash_result, SquashError), squash_result.message)  # type: ignore[unresolved-attribute]
+    user_output(click.style("✓", fg="green") + f" {squash_result.message}")  # type: ignore[unresolved-attribute]
 
 
 def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:
