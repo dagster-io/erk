@@ -20,7 +20,6 @@ from erk.core.claude_settings import (
     has_erk_permission,
     has_erk_statusline,
     has_exit_plan_hook,
-    has_statusline_configured,
     has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,

@@ -487,7 +487,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
         global_config_ops = FakeConfigStore(config=global_config)
 
         test_ctx = env.build_context(
@@ -497,7 +497,8 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
         )
 
         # Decline .env, accept .erk/scratch/ and .impl/, decline hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\n")
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -552,7 +553,7 @@ def test_init_preserves_gitignore_formatting() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
         global_config_ops = FakeConfigStore(config=global_config)
 
         test_ctx = env.build_context(
@@ -562,7 +563,8 @@ def test_init_preserves_gitignore_formatting() -> None:
         )
 
         # Accept .env, decline .erk/scratch/, .impl/, and hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\n")
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -1467,7 +1469,8 @@ def test_init_main_flow_syncs_hooks_automatically() -> None:
         )
 
         # Decline permission (n) - hooks should already be synced via artifact sync
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
 
         assert result.exit_code == 0, result.output
         # Permission prompt should appear
