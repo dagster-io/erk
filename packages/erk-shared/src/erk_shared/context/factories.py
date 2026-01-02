@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from erk_shared.github.types import RepoInfo
 
 
-def get_repo_info(git: "Git", repo_root: Path) -> "RepoInfo | None":
+def get_repo_info(git: Git, repo_root: Path) -> RepoInfo | None:
     """Detect repository info from git remote URL.
 
     Parses the origin remote URL to extract owner/name for GitHub API calls.
@@ -46,7 +46,7 @@ def get_repo_info(git: "Git", repo_root: Path) -> "RepoInfo | None":
         return None
 
 
-def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> "ErkContext":
+def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContext:
     """Create production context with real implementations for erk-kits.
 
     This factory creates a minimal context suitable for erk-kits commands.

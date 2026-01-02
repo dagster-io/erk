@@ -28,7 +28,7 @@ class BranchActivity:
     last_commit_author: str | None
 
     @staticmethod
-    def empty() -> "BranchActivity":
+    def empty() -> BranchActivity:
         """Create empty activity (no commits on branch)."""
         return BranchActivity(last_commit_at=None, last_commit_author=None)
 
@@ -44,11 +44,11 @@ class SortState:
     key: SortKey
 
     @staticmethod
-    def initial() -> "SortState":
+    def initial() -> SortState:
         """Create initial state with default sort (by issue number)."""
         return SortState(key=SortKey.ISSUE_NUMBER)
 
-    def toggle(self) -> "SortState":
+    def toggle(self) -> SortState:
         """Toggle between sort keys.
 
         Returns:

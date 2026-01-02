@@ -19,7 +19,7 @@ class MainListCommandProvider(Provider):
     """
 
     @property
-    def _app(self) -> "ErkDashApp":
+    def _app(self) -> ErkDashApp:
         """Get the ErkDashApp instance.
 
         Returns:
@@ -99,7 +99,7 @@ class PlanCommandProvider(Provider):
     """
 
     @property
-    def _detail_screen(self) -> "PlanDetailScreen":
+    def _detail_screen(self) -> PlanDetailScreen:
         """Get the PlanDetailScreen from current screen context.
 
         Returns:

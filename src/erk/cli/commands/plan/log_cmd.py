@@ -3,7 +3,7 @@
 import json
 from collections.abc import Callable
 from datetime import datetime
-from typing import Literal, TypeAlias, TypedDict
+from typing import Literal, TypedDict
 
 import click
 
@@ -14,7 +14,7 @@ from erk_shared.github.metadata import parse_metadata_blocks
 from erk_shared.output.output import user_output
 
 # Event type literals
-EventType: TypeAlias = Literal[
+type EventType = Literal[
     "plan_created",
     "submission_queued",
     "workflow_started",
@@ -74,7 +74,7 @@ class WorktreeCreatedMetadata(TypedDict, total=False):
 
 
 # Union type for all metadata types
-EventMetadata: TypeAlias = (
+type EventMetadata = (
     PlanCreatedMetadata
     | SubmissionQueuedMetadata
     | WorkflowStartedMetadata
@@ -93,7 +93,7 @@ class Event(TypedDict):
 
 
 # Type alias for event extractor functions
-EventExtractor: TypeAlias = Callable[[dict], Event | None]
+type EventExtractor = Callable[[dict], Event | None]
 
 
 @click.command("log")

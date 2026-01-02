@@ -287,7 +287,7 @@ class FakeGtKitOps:
 
     # Declarative setup methods
 
-    def with_branch(self, branch: str, parent: str = "main") -> "FakeGtKitOps":
+    def with_branch(self, branch: str, parent: str = "main") -> FakeGtKitOps:
         """Set current branch and its parent.
 
         Args:
@@ -325,7 +325,7 @@ class FakeGtKitOps:
 
         return self
 
-    def with_uncommitted_files(self, files: list[str]) -> "FakeGtKitOps":
+    def with_uncommitted_files(self, files: list[str]) -> FakeGtKitOps:
         """Set uncommitted files.
 
         Args:
@@ -343,7 +343,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_repo_root(self, repo_root: str) -> "FakeGtKitOps":
+    def with_repo_root(self, repo_root: str) -> FakeGtKitOps:
         """Set the repository root path.
 
         Args:
@@ -358,7 +358,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_commits(self, count: int) -> "FakeGtKitOps":
+    def with_commits(self, count: int) -> FakeGtKitOps:
         """Add a number of commits.
 
         Args:
@@ -389,7 +389,7 @@ class FakeGtKitOps:
         state: str = "OPEN",
         title: str | None = None,
         body: str | None = None,
-    ) -> "FakeGtKitOps":
+    ) -> FakeGtKitOps:
         """Set PR for current branch.
 
         Args:
@@ -432,7 +432,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_pr_base(self, pr_number: int, base_branch: str) -> "FakeGtKitOps":
+    def with_pr_base(self, pr_number: int, base_branch: str) -> FakeGtKitOps:
         """Set the GitHub PR base branch (may differ from local Graphite parent).
 
         This simulates the scenario where the GitHub PR's base branch has diverged
@@ -449,7 +449,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_pr_base_unavailable(self, pr_number: int) -> "FakeGtKitOps":
+    def with_pr_base_unavailable(self, pr_number: int) -> FakeGtKitOps:
         """Configure get_pr_base_branch to return None for a PR.
 
         This simulates a GitHub API failure when querying the PR base branch,
@@ -466,7 +466,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_children(self, children: list[str]) -> "FakeGtKitOps":
+    def with_children(self, children: list[str]) -> FakeGtKitOps:
         """Set child branches for current branch.
 
         Args:
@@ -484,7 +484,7 @@ class FakeGtKitOps:
 
         return self
 
-    def with_submit_failure(self, stderr: str = "") -> "FakeGtKitOps":
+    def with_submit_failure(self, stderr: str = "") -> FakeGtKitOps:
         """Configure submit_stack to fail via main_graphite.
 
         Args:
@@ -504,7 +504,7 @@ class FakeGtKitOps:
         )
         return self
 
-    def with_restack_failure(self, stdout: str = "", stderr: str = "") -> "FakeGtKitOps":
+    def with_restack_failure(self, stdout: str = "", stderr: str = "") -> FakeGtKitOps:
         """Configure restack to fail.
 
         Args:
@@ -529,7 +529,7 @@ class FakeGtKitOps:
         )
         return self
 
-    def with_merge_failure(self) -> "FakeGtKitOps":
+    def with_merge_failure(self) -> FakeGtKitOps:
         """Configure PR merge to fail.
 
         Returns:
@@ -540,7 +540,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_squash_failure(self, stdout: str = "", stderr: str = "") -> "FakeGtKitOps":
+    def with_squash_failure(self, stdout: str = "", stderr: str = "") -> FakeGtKitOps:
         """Configure squash_branch to fail via main_graphite.
 
         Args:
@@ -565,7 +565,7 @@ class FakeGtKitOps:
         )
         return self
 
-    def with_add_failure(self) -> "FakeGtKitOps":
+    def with_add_failure(self) -> FakeGtKitOps:
         """Configure git add to fail.
 
         Returns:
@@ -578,7 +578,7 @@ class FakeGtKitOps:
         self._git_instance = None  # Reset cache
         return self
 
-    def with_pr_update_failure(self) -> "FakeGtKitOps":
+    def with_pr_update_failure(self) -> FakeGtKitOps:
         """Configure PR metadata update to fail.
 
         Returns:
@@ -589,7 +589,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_submit_success_but_nothing_submitted(self) -> "FakeGtKitOps":
+    def with_submit_success_but_nothing_submitted(self) -> FakeGtKitOps:
         """Configure submit_stack to fail with 'Nothing to submit!' error.
 
         Simulates the case where a parent branch is empty/already merged.
@@ -613,7 +613,7 @@ class FakeGtKitOps:
         )
         return self
 
-    def with_gt_unauthenticated(self) -> "FakeGtKitOps":
+    def with_gt_unauthenticated(self) -> FakeGtKitOps:
         """Configure Graphite as not authenticated.
 
         Returns:
@@ -631,7 +631,7 @@ class FakeGtKitOps:
         )
         return self
 
-    def with_gh_unauthenticated(self) -> "FakeGtKitOps":
+    def with_gh_unauthenticated(self) -> FakeGtKitOps:
         """Configure GitHub as not authenticated.
 
         Returns:
@@ -644,7 +644,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_pr_conflicts(self, pr_number: int) -> "FakeGtKitOps":
+    def with_pr_conflicts(self, pr_number: int) -> FakeGtKitOps:
         """Configure PR to have merge conflicts.
 
         Args:
@@ -660,7 +660,7 @@ class FakeGtKitOps:
 
     def with_pr_mergeability(
         self, pr_number: int, mergeable: str, merge_state: str
-    ) -> "FakeGtKitOps":
+    ) -> FakeGtKitOps:
         """Configure PR mergeability status.
 
         Args:
@@ -676,7 +676,7 @@ class FakeGtKitOps:
         self._github_instance = None
         return self
 
-    def with_restack_conflict(self) -> "FakeGtKitOps":
+    def with_restack_conflict(self) -> FakeGtKitOps:
         """Configure restack to fail with conflicts.
 
         Returns:
@@ -686,7 +686,7 @@ class FakeGtKitOps:
             stderr="error: merge conflict in file.py\nCONFLICT (content): Merge conflict in file.py"
         )
 
-    def with_squash_conflict(self) -> "FakeGtKitOps":
+    def with_squash_conflict(self) -> FakeGtKitOps:
         """Configure squash to fail with conflicts.
 
         Returns:
@@ -696,7 +696,7 @@ class FakeGtKitOps:
             stderr="error: merge conflict in file.py\nCONFLICT (content): Merge conflict in file.py"
         )
 
-    def with_no_branch(self) -> "FakeGtKitOps":
+    def with_no_branch(self) -> FakeGtKitOps:
         """Configure state where current branch is empty/not determinable.
 
         Returns:
@@ -707,7 +707,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_orphan_branch(self, branch: str) -> "FakeGtKitOps":
+    def with_orphan_branch(self, branch: str) -> FakeGtKitOps:
         """Configure an orphan branch (no parent tracking in Graphite).
 
         Args:
@@ -724,7 +724,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_merge_conflict(self, base_branch: str, head_branch: str) -> "FakeGtKitOps":
+    def with_merge_conflict(self, base_branch: str, head_branch: str) -> FakeGtKitOps:
         """Configure git to simulate merge conflicts between branches.
 
         Args:
@@ -738,7 +738,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_trunk_branch(self, trunk: str) -> "FakeGtKitOps":
+    def with_trunk_branch(self, trunk: str) -> FakeGtKitOps:
         """Set the trunk branch name (e.g., 'master' instead of 'main').
 
         Args:
@@ -752,7 +752,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_remote_url(self, url: str, remote: str = "origin") -> "FakeGtKitOps":
+    def with_remote_url(self, url: str, remote: str = "origin") -> FakeGtKitOps:
         """Set the URL for a git remote.
 
         Args:
@@ -767,7 +767,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_conflicts(self, files: list[str]) -> "FakeGtKitOps":
+    def with_conflicts(self, files: list[str]) -> FakeGtKitOps:
         """Set conflicted files from git status.
 
         Args:
@@ -781,7 +781,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_rebase_in_progress(self, in_progress: bool = True) -> "FakeGtKitOps":
+    def with_rebase_in_progress(self, in_progress: bool = True) -> FakeGtKitOps:
         """Set whether a rebase is in progress.
 
         Args:
@@ -794,7 +794,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_continue_restack_failure(self, stderr: str = "") -> "FakeGtKitOps":
+    def with_continue_restack_failure(self, stderr: str = "") -> FakeGtKitOps:
         """Configure continue_restack to fail.
 
         Args:
@@ -814,7 +814,7 @@ class FakeGtKitOps:
         )
         return self
 
-    def with_clean_working_tree(self) -> "FakeGtKitOps":
+    def with_clean_working_tree(self) -> FakeGtKitOps:
         """Configure a clean working tree (no uncommitted changes).
 
         Returns:
@@ -827,7 +827,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_staged_changes(self) -> "FakeGtKitOps":
+    def with_staged_changes(self) -> FakeGtKitOps:
         """Configure repository to have staged changes.
 
         This makes has_staged_changes() return True.
@@ -840,7 +840,7 @@ class FakeGtKitOps:
         self._git_instance = None
         return self
 
-    def with_transient_dirty_state(self) -> "FakeGtKitOps":
+    def with_transient_dirty_state(self) -> FakeGtKitOps:
         """Configure a worktree that starts dirty but becomes clean after time.sleep().
 
         This simulates transient files (like graphite metadata or git rebase temp files)

@@ -60,7 +60,7 @@ def _format_issue_ref(issue_number: int, plans_repo: str | None) -> str:
 
 
 @contextmanager
-def branch_rollback(ctx: "ErkContext", repo_root: Path, original_branch: str) -> Iterator[None]:
+def branch_rollback(ctx: ErkContext, repo_root: Path, original_branch: str) -> Iterator[None]:
     """Context manager that restores original branch on exception.
 
     On success, does nothing (caller handles cleanup).

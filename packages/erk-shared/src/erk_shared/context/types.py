@@ -83,7 +83,7 @@ class GlobalConfig:
         github_planning: bool = True,
         auto_restack_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
-    ) -> "GlobalConfig":
+    ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
         return GlobalConfig(
             erk_root=erk_root,

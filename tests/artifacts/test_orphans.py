@@ -31,7 +31,7 @@ def test_find_orphaned_artifacts_in_erk_repo(tmp_path: Path) -> None:
 
 
 def test_find_orphaned_artifacts_no_bundled_dir(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test orphan detection when bundled .claude/ not found."""
     # Create .claude/ directory
@@ -50,7 +50,7 @@ def test_find_orphaned_artifacts_no_bundled_dir(
 
 
 def test_find_orphaned_artifacts_no_orphans(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test orphan detection when no orphaned files exist."""
     # Create a mock bundled directory
@@ -76,7 +76,7 @@ def test_find_orphaned_artifacts_no_orphans(
 
 
 def test_find_orphaned_artifacts_orphaned_command(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test orphaned command file is detected."""
     # Create a mock bundled directory with one command
@@ -103,7 +103,7 @@ def test_find_orphaned_artifacts_orphaned_command(
 
 
 def test_find_orphaned_artifacts_orphaned_skill(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test orphaned skill file is detected."""
     # Create a mock bundled directory with a skill
@@ -130,7 +130,7 @@ def test_find_orphaned_artifacts_orphaned_skill(
 
 
 def test_find_orphaned_artifacts_orphaned_agent(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test orphaned agent file is detected."""
     # Create a mock bundled directory with an agent
@@ -157,7 +157,7 @@ def test_find_orphaned_artifacts_orphaned_agent(
 
 
 def test_find_orphaned_artifacts_detects_init_py(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that __init__.py files are detected as orphans in commands/erk/."""
     # Create a mock bundled directory
@@ -184,7 +184,7 @@ def test_find_orphaned_artifacts_detects_init_py(
 
 
 def test_find_orphaned_artifacts_user_created_folders_not_checked(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that user-created folders (e.g., local/) are not checked."""
     # Create a mock bundled directory with one command
@@ -219,7 +219,7 @@ def test_find_orphaned_artifacts_user_created_folders_not_checked(
 
 
 def test_find_orphaned_workflows_not_detected_when_bundled_exists(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that workflow orphans are not detected when bundled workflow exists."""
     # Create a mock bundled .claude/ directory
@@ -255,7 +255,7 @@ def test_find_orphaned_workflows_not_detected_when_bundled_exists(
 
 
 def test_find_orphaned_workflows_detected_when_bundled_missing(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that workflow orphans are detected when bundled workflow is removed."""
     # Create a mock bundled .claude/ directory
@@ -292,7 +292,7 @@ def test_find_orphaned_workflows_detected_when_bundled_missing(
 
 
 def test_find_orphaned_workflows_ignores_user_workflows(
-    tmp_path: Path, monkeypatch: "pytest.MonkeyPatch"
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that user-created workflows are not flagged as orphans."""
     # Create a mock bundled .claude/ directory

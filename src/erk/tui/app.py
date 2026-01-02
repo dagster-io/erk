@@ -379,8 +379,8 @@ class PlanDetailScreen(ModalScreen):
     def __init__(
         self,
         row: PlanRowData,
-        clipboard: "Clipboard | None" = None,
-        browser: "BrowserLauncher | None" = None,
+        clipboard: Clipboard | None = None,
+        browser: BrowserLauncher | None = None,
         executor: CommandExecutor | None = None,
         repo_root: Path | None = None,
         auto_open_palette: bool = False,

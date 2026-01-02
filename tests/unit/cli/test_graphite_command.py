@@ -105,7 +105,7 @@ def test_is_graphite_available_returns_false_when_ctx_obj_has_disabled_graphite(
 
 
 def test_is_graphite_available_falls_back_to_config_when_ctx_obj_is_none(
-    monkeypatch: "MonkeyPatch",
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """_is_graphite_available reads config from disk when ctx.obj is None.
 
@@ -143,7 +143,7 @@ def test_is_graphite_available_falls_back_to_config_when_ctx_obj_is_none(
 
 
 def test_is_graphite_available_returns_false_when_config_disabled_and_ctx_obj_none(
-    monkeypatch: "MonkeyPatch",
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """_is_graphite_available returns False when config has use_graphite=False."""
     mock_config = GlobalConfig(
@@ -170,7 +170,7 @@ def test_is_graphite_available_returns_false_when_config_disabled_and_ctx_obj_no
 
 
 def test_is_graphite_available_returns_false_when_gt_not_installed_and_ctx_obj_none(
-    monkeypatch: "MonkeyPatch",
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """_is_graphite_available returns False when use_graphite=True but gt not installed."""
     mock_config = GlobalConfig(
@@ -199,7 +199,7 @@ def test_is_graphite_available_returns_false_when_gt_not_installed_and_ctx_obj_n
 
 
 def test_is_graphite_available_returns_false_when_no_config_and_ctx_obj_none(
-    monkeypatch: "MonkeyPatch",
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """_is_graphite_available returns False when no config exists and ctx.obj is None."""
 
@@ -564,7 +564,7 @@ def test_graphite_commands_shown_in_hidden_section_when_show_hidden_enabled() ->
 
 
 def test_graphite_command_visible_when_help_shown_without_ctx_obj(
-    monkeypatch: "MonkeyPatch",
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Graphite commands visible in help even when ctx.obj is None.
 
@@ -621,7 +621,7 @@ def test_graphite_command_visible_when_help_shown_without_ctx_obj(
 
 
 def test_graphite_command_hidden_when_help_shown_without_ctx_obj_and_config_disabled(
-    monkeypatch: "MonkeyPatch",
+    monkeypatch: MonkeyPatch,
 ) -> None:
     """Graphite commands hidden in help when use_graphite=False and ctx.obj is None."""
     mock_config = GlobalConfig(

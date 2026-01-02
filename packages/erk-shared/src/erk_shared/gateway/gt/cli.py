@@ -39,8 +39,8 @@ def _style_text(text: str, style_key: str) -> str:
     )
 
 
-def render_events(
-    events: Generator[ProgressEvent | CompletionEvent[T], None, None],
+def render_events[T](
+    events: Generator[ProgressEvent | CompletionEvent[T]],
 ) -> T:
     """Consume event stream, render progress to stderr, return result.
 

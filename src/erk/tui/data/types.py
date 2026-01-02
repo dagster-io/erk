@@ -89,7 +89,7 @@ class PlanFilters:
     creator: str | None = None
 
     @staticmethod
-    def default() -> "PlanFilters":
+    def default() -> PlanFilters:
         """Create default filters (open erk-plan issues)."""
         return PlanFilters(
             labels=("erk-plan",),

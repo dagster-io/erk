@@ -137,7 +137,7 @@ class ErkContext:
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
-    ) -> "ErkContext":
+    ) -> ErkContext:
         """Create test context with optional pre-configured implementations.
 
         Provides full control over all context parameters with sensible test defaults
