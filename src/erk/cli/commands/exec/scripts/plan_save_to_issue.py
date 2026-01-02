@@ -43,16 +43,16 @@ from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def _create_plan_saved_signal(session_id: str, repo_root: Path) -> None:
-    """Create signal file to indicate plan was saved to GitHub.
+def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
+    """Create marker file to indicate plan was saved to GitHub.
 
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
     """
-    signal_dir = get_scratch_dir(session_id, repo_root=repo_root)
-    signal_file = signal_dir / "exit-plan-mode-hook.plan-saved.signal"
-    signal_file.write_text(
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+    marker_file.write_text(
         "Created by: exit-plan-mode-hook (via /erk:plan-save)\n"
         "Trigger: Plan was successfully saved to GitHub\n"
         "Effect: Next ExitPlanMode call will be BLOCKED (remain in plan mode, session complete)\n"
@@ -201,10 +201,10 @@ def plan_save_to_issue(
     session_context_chunks = 0
     session_ids: list[str] = []
 
-    # Step 9: Create signal file to indicate plan was saved
+    # Step 9: Create marker file to indicate plan was saved
     snapshot_result = None
     if effective_session_id:
-        _create_plan_saved_signal(effective_session_id, repo_root)
+        _create_plan_saved_marker(effective_session_id, repo_root)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
         # Determine plan file path
