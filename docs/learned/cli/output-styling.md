@@ -4,6 +4,9 @@ read_when:
   - "styling CLI output"
   - "using colors in CLI"
   - "formatting terminal output"
+tripwires:
+  - action: "using click.confirm() after user_output()"
+    warning: "Use user_confirm() from erk_shared.output instead. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
 ---
 
 # CLI Output Styling Guide

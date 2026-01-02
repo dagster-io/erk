@@ -35,7 +35,7 @@ from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.metadata import extract_plan_header_objective_issue
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 
 class ParsedArgument(NamedTuple):
@@ -132,7 +132,7 @@ def check_unresolved_comments(
             click.style("⚠ ", fg="yellow")
             + f"PR #{pr_number} has {len(threads)} unresolved review comment(s)."
         )
-        if not click.confirm("Continue anyway?", default=False):
+        if not user_confirm("Continue anyway?"):
             raise SystemExit(0)
 
 

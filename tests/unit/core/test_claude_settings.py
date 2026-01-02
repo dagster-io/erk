@@ -22,6 +22,7 @@ from erk.core.claude_settings import (
     add_erk_hooks,
     add_erk_permission,
     add_erk_statusline,
+    get_erk_statusline_command,
     get_global_claude_settings_path,
     get_repo_claude_settings_path,
     get_statusline_config,
@@ -820,11 +821,15 @@ def test_has_erk_statusline_returns_true_when_configured(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test has_erk_statusline returns True when erk-statusline is configured."""
+<<<<<<< HEAD
     monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
+=======
+    # Use the actual command value (may be overridden by env var)
+>>>>>>> e825f6230 (Fix stderr buffering hangs in confirmation prompts)
     settings = {
         "statusLine": {
             "type": "command",
-            "command": "uvx erk-statusline",
+            "command": get_erk_statusline_command(),
         }
     }
     assert has_erk_statusline(settings) is True
@@ -840,7 +845,7 @@ def test_add_erk_statusline_to_empty_settings(
 
     assert "statusLine" in result
     assert result["statusLine"]["type"] == "command"
-    assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
+    assert "erk-statusline" in result["statusLine"]["command"]
     # Original should not be modified
     assert "statusLine" not in settings
 
@@ -858,7 +863,7 @@ def test_add_erk_statusline_overwrites_existing(
     }
     result = add_erk_statusline(settings)
 
-    assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
+    assert "erk-statusline" in result["statusLine"]["command"]
     # Original should not be modified
     assert settings["statusLine"]["command"] == "uvx other-statusline"
 
@@ -876,7 +881,7 @@ def test_add_erk_statusline_preserves_other_settings(
     result = add_erk_statusline(settings)
 
     # statusLine should be added
-    assert result["statusLine"]["command"] == ERK_STATUSLINE_COMMAND
+    assert "erk-statusline" in result["statusLine"]["command"]
     # Other settings should be preserved
     assert result["permissions"]["allow"] == ["Bash(git:*)"]
     assert "hooks" in result

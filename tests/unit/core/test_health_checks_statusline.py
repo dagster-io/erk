@@ -8,8 +8,12 @@ import json
 from pathlib import Path
 from unittest import mock
 
+<<<<<<< HEAD
 import pytest
 
+=======
+from erk.core.claude_settings import get_erk_statusline_command
+>>>>>>> e825f6230 (Fix stderr buffering hangs in confirmation prompts)
 from erk.core.health_checks import check_statusline_configured
 
 
@@ -44,7 +48,7 @@ def test_returns_configured_when_erk_statusline_present(
             {
                 "statusLine": {
                     "type": "command",
-                    "command": "uvx erk-statusline",
+                    "command": get_erk_statusline_command(),
                 }
             }
         ),

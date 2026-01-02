@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.stack.split_old.plan import SplitPlan
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 
 def display_stack_preview(
@@ -83,7 +83,7 @@ def confirm_split(force: bool, dry_run: bool) -> None:
     """
     if not force and not dry_run:
         user_output("")
-        if not click.confirm("Proceed with creating worktrees?"):
+        if not user_confirm("Proceed with creating worktrees?"):
             user_output(click.style("⭕ Aborted", fg="yellow"))
             raise SystemExit(1)
 

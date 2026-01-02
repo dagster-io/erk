@@ -1,5 +1,6 @@
 """Output utilities for CLI commands with clear intent."""
 
+import sys
 from typing import Any
 
 import click
@@ -41,6 +42,22 @@ def machine_output(
             will remove color if the output does not look like an interactive terminal.
     """
     click.echo(message, nl=nl, err=False, color=color)
+
+
+def user_confirm(prompt: str) -> bool:
+    """Prompt user for confirmation with proper stderr flushing.
+
+    Always flush stderr before prompting to ensure any preceding
+    user_output() messages are visible.
+
+    Args:
+        prompt: The confirmation prompt to display.
+
+    Returns:
+        True if the user confirmed, False otherwise.
+    """
+    sys.stderr.flush()
+    return click.confirm(prompt, default=False, err=True)
 
 
 def format_duration(seconds: float) -> str:

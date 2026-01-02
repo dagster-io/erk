@@ -22,7 +22,7 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.metadata import extract_plan_header_worktree_name
 from erk_shared.github.types import PRNotFound
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 from erk_shared.plan_store.types import PlanQuery, PlanState
 
 
@@ -306,8 +306,8 @@ def _confirm_operations(force: bool, dry_run: bool) -> bool:
     if force or dry_run:
         return True
 
-    prompt_text = click.style("Proceed with these operations?", fg="yellow", bold=True)
-    if not click.confirm(f"\n{prompt_text}", default=True, err=True):
+    user_output()
+    if not user_confirm("Proceed with these operations?"):
         user_output(click.style("⭕ Aborted.", fg="red", bold=True))
         return False
 

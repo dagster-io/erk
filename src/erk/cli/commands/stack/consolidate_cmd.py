@@ -12,7 +12,7 @@ from erk.cli.help_formatter import script_option
 from erk.core.consolidation_utils import calculate_stack_range, create_consolidation_plan
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 
 def _format_section_header(text: str, separator_length: int = 59) -> str:
@@ -348,10 +348,7 @@ def consolidate_stack(
     # Get confirmation unless --force or --script
     if not force and not script:
         user_output()
-        if not click.confirm(
-            click.style("All worktrees are clean. Proceed with removal?", fg="yellow", bold=True),
-            default=False,
-        ):
+        if not user_confirm("All worktrees are clean. Proceed with removal?"):
             user_output(click.style("⭕ Aborted", fg="red", bold=True))
             return
 
