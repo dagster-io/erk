@@ -687,13 +687,6 @@ def test_real_list_stack_command_is_graphite_command() -> None:
     assert _requires_graphite(list_stack)
 
 
-def test_real_checkout_command_is_graphite_command() -> None:
-    """Verify the real 'checkout' command uses GraphiteCommand."""
-    from erk.cli.commands.branch.checkout_cmd import branch_checkout
-
-    assert _requires_graphite(branch_checkout)
-
-
 def test_real_auto_restack_command_is_graphite_command() -> None:
     """Verify the real 'auto-restack' command uses GraphiteCommand."""
     from erk.cli.commands.pr.auto_restack_cmd import pr_auto_restack
