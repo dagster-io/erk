@@ -106,6 +106,41 @@ def _get_bigquery_sample(sql_client, table_name):
         return sql_client.run_query(f"SELECT * FROM {table_name} ORDER BY RAND()...")
 ```
 
+> **The test for "no alternative exists"**: Can you validate or check the condition BEFORE calling the API? If yes (even using a different function/method), use LBYL. The exception only applies when the API provides NO way to determine success a priori—you literally must attempt the operation to know if it will work.
+
+#### What Does NOT Qualify as Third-Party API Compatibility
+
+Standard library functions with known LBYL alternatives do NOT qualify:
+
+```python
+# ❌ WRONG: int() has LBYL alternative (str.isdigit)
+try:
+    port = int(user_input)
+except ValueError:
+    port = 80
+
+# ✅ CORRECT: Check before calling
+if user_input.lstrip('-+').isdigit():
+    port = int(user_input)
+else:
+    port = 80
+
+# ❌ WRONG: datetime.fromisoformat() can be validated first
+try:
+    dt = datetime.fromisoformat(timestamp_str)
+except ValueError:
+    dt = None
+
+# ✅ CORRECT: Validate format before parsing
+def _is_iso_format(s: str) -> bool:
+    return len(s) >= 10 and s[4] == "-" and s[7] == "-"
+
+if _is_iso_format(timestamp_str):
+    dt = datetime.fromisoformat(timestamp_str)
+else:
+    dt = None
+```
+
 #### 3. Adding Context Before Re-raising
 
 ```python
@@ -899,7 +934,7 @@ Benefits:
 - [ ] Is this at an error boundary? (CLI/API level)
 - [ ] Can I check the condition proactively? (LBYL)
 - [ ] Am I adding meaningful context, or just hiding?
-- [ ] Is third-party API forcing me to use exceptions?
+- [ ] Is third-party API forcing me to use exceptions? (No LBYL check exists—not even format validation)
 - [ ] Have I encapsulated the violation?
 - [ ] Am I catching specific exceptions, not broad?
 - [ ] If catching at error boundary, am I logging/warning? (Never silently swallow)
