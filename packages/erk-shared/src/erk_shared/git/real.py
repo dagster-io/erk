@@ -10,7 +10,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -953,3 +953,29 @@ class RealGit(Git):
 
         is_diverged = ahead > 0 and behind > 0
         return BranchDivergence(is_diverged=is_diverged, ahead=ahead, behind=behind)
+
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Rebase the current branch onto a target ref."""
+        result = subprocess.run(
+            ["git", "rebase", target_ref],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+            env={**os.environ, "GIT_EDITOR": "true"},  # Auto-accept commit messages
+        )
+
+        if result.returncode == 0:
+            return RebaseResult(success=True, conflict_files=())
+
+        # Rebase failed - get conflict files
+        conflict_files = self.get_conflicted_files(cwd)
+        return RebaseResult(success=False, conflict_files=tuple(conflict_files))
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """Abort an in-progress rebase operation."""
+        run_subprocess_with_context(
+            ["git", "rebase", "--abort"],
+            operation_context="abort rebase",
+            cwd=cwd,
+        )

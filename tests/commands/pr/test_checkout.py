@@ -5,7 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
-from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.abc import RebaseResult, WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
@@ -362,3 +362,109 @@ def test_pr_checkout_non_script_mode_shows_manual_instructions() -> None:
         assert "Created worktree for PR #666" in result.output
         assert "Shell integration not detected" in result.output
         assert "source <(erk pr checkout 666 --script)" in result.output
+
+
+def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
+    """Test that checking out a stacked PR rebases onto base branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        # PR-B is based on PR-A (not trunk)
+        pr_details = _make_pr_details(
+            number=777,
+            head_ref_name="feature-b",
+            is_cross_repository=False,
+            state="OPEN",
+            base_ref_name="feature-a",  # Not trunk - this is a stacked PR
+        )
+        github = FakeGitHub(pr_details={777: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-b"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-a", "origin/feature-b"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["checkout", "777"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created worktree for PR #777" in result.output
+        # Verify base branch was fetched
+        assert ("origin", "feature-a") in git.fetched_branches
+        # Verify rebase was called
+        assert len(git.rebase_onto_calls) == 1
+        _cwd, target_ref = git.rebase_onto_calls[0]
+        assert target_ref == "origin/feature-a"
+
+
+def test_pr_checkout_stacked_pr_with_conflicts_warns_user() -> None:
+    """Test that stacked PR checkout with rebase conflicts warns user."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=888,
+            head_ref_name="feature-conflict",
+            is_cross_repository=False,
+            state="OPEN",
+            base_ref_name="feature-base",  # Stacked PR
+        )
+        github = FakeGitHub(pr_details={888: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-conflict"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-base"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+            rebase_onto_result=RebaseResult(
+                success=False,
+                conflict_files=("file1.py", "file2.py"),
+            ),
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["checkout", "888"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Worktree should still be created
+        assert "Created worktree for PR #888" in result.output
+        # Warning about conflicts (prefixed with "Warning:")
+        assert "Warning: Rebase had conflicts" in result.output
+        assert "git rebase origin/feature-base" in result.output
+        # Verify rebase was aborted
+        assert len(git.rebase_abort_calls) == 1
+
+
+def test_pr_checkout_trunk_pr_skips_rebase() -> None:
+    """Test that PRs targeting trunk don't trigger a rebase."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        # This PR targets trunk (main), not another branch
+        pr_details = _make_pr_details(
+            number=999,
+            head_ref_name="trunk-feature",
+            is_cross_repository=False,
+            state="OPEN",
+            base_ref_name="main",  # Targets trunk - not a stacked PR
+        )
+        github = FakeGitHub(pr_details={999: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "trunk-feature"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["checkout", "999"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created worktree for PR #999" in result.output
+        # No rebase should have been called
+        assert len(git.rebase_onto_calls) == 0

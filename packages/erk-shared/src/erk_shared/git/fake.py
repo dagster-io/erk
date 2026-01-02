@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import NamedTuple
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
 
 
 class PushedBranch(NamedTuple):
@@ -121,6 +121,8 @@ class FakeGit(Git):
         push_to_remote_raises: Exception | None = None,
         existing_tags: set[str] | None = None,
         branch_divergence: dict[tuple[Path, str, str], BranchDivergence] | None = None,
+        rebase_onto_result: RebaseResult | None = None,
+        rebase_abort_raises: Exception | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -168,6 +170,8 @@ class FakeGit(Git):
             existing_tags: Set of tag names that exist in the repository
             branch_divergence: Mapping of (cwd, branch, remote) -> BranchDivergence
                 for is_branch_diverged_from_remote()
+            rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
+            rebase_abort_raises: Exception to raise when rebase_abort() is called
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -208,6 +212,8 @@ class FakeGit(Git):
         self._push_to_remote_raises = push_to_remote_raises
         self._existing_tags: set[str] = existing_tags or set()
         self._branch_divergence = branch_divergence or {}
+        self._rebase_onto_result = rebase_onto_result
+        self._rebase_abort_raises = rebase_abort_raises
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -227,6 +233,8 @@ class FakeGit(Git):
         self._config_settings: list[tuple[str, str, str]] = []  # (key, value, scope)
         self._created_tags: list[tuple[str, str]] = []  # (tag_name, message)
         self._pushed_tags: list[tuple[str, str]] = []  # (remote, tag_name)
+        self._rebase_onto_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
+        self._rebase_abort_calls: list[Path] = []
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.
@@ -1039,3 +1047,40 @@ class FakeGit(Git):
         if key in self._branch_divergence:
             return self._branch_divergence[key]
         return BranchDivergence(is_diverged=False, ahead=0, behind=0)
+
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """Rebase the current branch onto a target ref.
+
+        Returns the configured rebase_onto_result if set, otherwise returns success.
+        Tracks call for test assertions.
+        """
+        self._rebase_onto_calls.append((cwd, target_ref))
+        if self._rebase_onto_result is not None:
+            return self._rebase_onto_result
+        return RebaseResult(success=True, conflict_files=())
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """Abort an in-progress rebase operation.
+
+        Tracks call for test assertions. Raises configured exception if set.
+        """
+        self._rebase_abort_calls.append(cwd)
+        if self._rebase_abort_raises is not None:
+            raise self._rebase_abort_raises
+
+    @property
+    def rebase_onto_calls(self) -> list[tuple[Path, str]]:
+        """Get list of rebase_onto calls for test assertions.
+
+        Returns list of (cwd, target_ref) tuples.
+        This property is for test assertions only.
+        """
+        return list(self._rebase_onto_calls)
+
+    @property
+    def rebase_abort_calls(self) -> list[Path]:
+        """Get list of rebase_abort calls for test assertions.
+
+        This property is for test assertions only.
+        """
+        return list(self._rebase_abort_calls)

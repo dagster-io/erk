@@ -6,7 +6,7 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
 from erk_shared.output.output import user_output
 
 # ============================================================================
@@ -322,3 +322,11 @@ class DryRunGit(Git):
     ) -> BranchDivergence:
         """Check branch divergence (read-only, delegates to wrapped)."""
         return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
+
+    def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
+        """No-op for rebase in dry-run mode. Returns success."""
+        return RebaseResult(success=True, conflict_files=())
+
+    def rebase_abort(self, cwd: Path) -> None:
+        """No-op for rebase abort in dry-run mode."""
+        pass

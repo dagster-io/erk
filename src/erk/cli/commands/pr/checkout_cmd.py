@@ -125,6 +125,24 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
         create_branch=False,
     )
 
+    # For stacked PRs (base is not trunk), rebase onto base branch
+    # This ensures git history includes the base branch as an ancestor,
+    # which `gt track` requires for proper stacking
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
+        ctx.feedback.info(f"Fetching base branch '{pr.base_ref_name}'...")
+        ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)
+
+        ctx.feedback.info("Rebasing onto base branch...")
+        rebase_result = ctx.git.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
+
+        if not rebase_result.success:
+            ctx.git.rebase_abort(worktree_path)
+            ctx.feedback.info(
+                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+                f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
+            )
+
     # Output based on mode
     if script:
         activation_script = render_activation_script(
