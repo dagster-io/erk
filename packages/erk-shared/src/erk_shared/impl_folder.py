@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 import re
 import shutil
+import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -176,8 +177,6 @@ def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) 
     Raises:
         RuntimeError: If LLM execution fails or returns invalid response
     """
-    import sys
-
     prompt = _STEP_EXTRACTION_PROMPT.format(plan_content=plan_content)
     result = prompt_executor.execute_prompt(prompt, model="sonnet")
 
