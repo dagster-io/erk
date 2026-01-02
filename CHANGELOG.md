@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of `5a95af155`
+
+### Major Changes
+
+- **dignified-review**: Added AI-assisted code review as an optionally installed GitHub Action. Ensures compliance with dignified-python standards during code review by leaving comments on PRs. Comments are designed to be resolved via `/erk:pr-address`. (61e51e565)
+
+- **Top-level `erk land` command**: Promoted land from `erk pr land` to `erk land`. Now accepts PR numbers, URLs, or branch names. Includes shell aliases `br land` and `branch land`. Landing PRs is a high-frequency operation that deserves top-level access. (49a1fdbbe)
+
+- **Cross-repo plan storage**: Plans can now be stored in a separate repository. Configure via `.erk/config.toml` with `[plans] repo = "owner/repo"`. This avoids polluting the main codebase with plan issues, particularly valuable for open source repos like dagster where we don't want erk-specific artifacts. (b60ccf6da)
+
+- **erk-statusline**: Added the erk statusline. Optionally installable via `erk init --statusline`. Displays current branch, worktree, GitHub checks status, PR info, and more. Provides at-a-glance visibility into your development state without running commands. (906035ca7)
+
+- **Graphite opt-in**: Graphite is now optional. Not everyone uses Graphite, so although you don't get stacking features, Graphite-less operation is now a fully supported workflow. Commands gracefully degrade to standard git operations. (98d624603)
+
+### Added
+
+- Add command logging for CLI audit trail (1d663e40e)
+- Add step-based progress tracking with GitHub metadata sync (973b51c26)
+- Add per-artifact version and hash tracking for health monitoring (1fd523ff7)
+- Add dynamic tripwire enforcement system (47d3acb30)
+- Add erk-statusline configuration to init and health checks (f5e5b8251)
+- Add copy-pasteable commands section to plan issues (d27cd9a97)
+
+### Changed
+
+- Restructure init command with stepped flow and status line setup (6b0885273)
+
+### Fixed
+
+- Fix `erk pr checkout` for stacked PRs (46d59c4a0)
+- Fix dignified-python skill LBYL vs try/except guidance (4f9ee21b2)
+- Fix `erk wt delete --all` to show accurate PR/plan status in planning phase (85178be5b)
+- Fix confirmation prompt output to stderr for consistency (2cc4b578a)
+- Fix pr-address skill handling of outdated review threads (6556b208f)
+
 ## [0.3.1] - 2025-12-31 15:52 PT
 
 ### Fixed

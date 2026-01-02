@@ -86,6 +86,24 @@ Use the commit details from the JSON output (subject, body, files_changed) to ca
 - CLI command reorganization or removal
 - Features that warrant special attention in release notes
 
+**Major Change Entry Requirements:**
+
+When writing a Major Change entry, always include:
+
+1. **What it does** - Brief description of the feature/change
+2. **Motivation/purpose** - Why we built it, the problem it solves
+3. **Value to user** - What benefit users get from this
+
+**Merge related commits:** Roll up all related commits (fixes, aliases, extensions) into a single Major Change entry with explanatory prose. Don't list implementation details or internal commits separately.
+
+**Never expose implementation details** like function names, internal checks, or architecture patterns. Focus on user-visible behavior and benefits.
+
+Example format:
+
+```markdown
+- **Feature name**: Brief description of what it does. Motivation explaining why we built it. Value statement about user benefit. (primary_commit_hash)
+```
+
 **Added** (new features):
 
 - Commits with "add", "new", "implement", "create" in message
