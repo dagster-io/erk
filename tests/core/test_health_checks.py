@@ -567,20 +567,46 @@ def test_check_managed_artifacts_no_claude_dir(tmp_path: Path) -> None:
     assert "No .claude/ directory" in result.message
 
 
-def test_check_managed_artifacts_in_erk_repo(tmp_path: Path) -> None:
-    """Test managed artifacts check in erk repo → skipped."""
+def test_check_managed_artifacts_in_erk_repo(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test managed artifacts check in erk repo → shows counts from source."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
     # Create pyproject.toml that makes it look like erk repo
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('name = "erk"\nversion = "1.0.0"', encoding="utf-8")
-    # Create .claude dir
-    claude_dir = tmp_path / ".claude"
-    claude_dir.mkdir()
+
+    # Create bundled dir with command
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+
+    # Create project dir WITH the command and hooks
+    project_claude = tmp_path / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
 
     result = check_managed_artifacts(tmp_path)
 
     assert result.name == "managed-artifacts"
     assert result.passed is True
-    assert "Skipped: running in erk repo" in result.message
+    assert "from source" in result.message
+    # Should show artifact type summary in details
+    assert result.details is not None
+    assert "commands" in result.details or "hooks" in result.details
 
 
 def test_check_managed_artifacts_produces_type_summary(

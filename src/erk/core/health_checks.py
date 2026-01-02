@@ -904,6 +904,33 @@ def _status_description(status: ArtifactStatusType, count: int) -> str:
     return ""
 
 
+def _build_erk_repo_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
+    """Build CheckResult for erk repo case (all artifacts from source)."""
+    # Group artifacts by type (count only, all healthy)
+    by_type: dict[str, int] = {}
+    for artifact in result.artifacts:
+        artifact_type = _extract_artifact_type(artifact.name)
+        by_type[artifact_type] = by_type.get(artifact_type, 0) + 1
+
+    # Build per-type summary (all ✅)
+    type_summaries: list[str] = []
+    type_order = ["skills", "commands", "agents", "workflows", "actions", "hooks"]
+    for artifact_type in type_order:
+        if artifact_type not in by_type:
+            continue
+        count = by_type[artifact_type]
+        type_summaries.append(f"   ✅ {artifact_type} ({count})")
+
+    details = "\n".join(type_summaries)
+
+    return CheckResult(
+        name="managed-artifacts",
+        passed=True,
+        message="Managed artifacts (from source)",
+        details=details,
+    )
+
+
 def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
     """Build CheckResult from ArtifactHealthResult."""
     # Group artifacts by type
@@ -994,13 +1021,7 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult with artifact health status
     """
-    # Skip check in erk repo
-    if is_in_erk_repo(repo_root):
-        return CheckResult(
-            name="managed-artifacts",
-            passed=True,
-            message="Skipped: running in erk repo",
-        )
+    in_erk_repo = is_in_erk_repo(repo_root)
 
     # Check for .claude/ directory
     claude_dir = repo_root / ".claude"
@@ -1040,6 +1061,10 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
             passed=True,
             message="No managed artifacts found",
         )
+
+    # In erk repo, show counts without status comparison (all from source)
+    if in_erk_repo:
+        return _build_erk_repo_artifacts_result(result)
 
     return _build_managed_artifacts_result(result)
 
