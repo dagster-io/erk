@@ -4,7 +4,7 @@ Usage:
     erk exec objective-save-to-issue [OPTIONS]
 
 This command extracts a plan and creates a GitHub issue with:
-- erk-objective label (not erk-plan)
+- erk-plan + erk-objective labels (like extraction has erk-plan + erk-extraction)
 - No title suffix
 - Plan content directly in body (no metadata block)
 - No commands section
@@ -30,7 +30,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.github.plan_issues import create_objective_issue
 
 
 @click.command(name="objective-save-to-issue")
@@ -50,7 +50,7 @@ from erk_shared.github.plan_issues import create_plan_issue
 def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: str | None) -> None:
     """Save plan as objective GitHub issue.
 
-    Creates a GitHub issue with erk-objective label and plan content in body.
+    Creates a GitHub issue with erk-plan + erk-objective labels and plan content in body.
     """
     # Get dependencies from context
     github = require_github_issues(ctx)
@@ -73,18 +73,12 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
         raise SystemExit(1)
 
     # Create objective issue
-    result = create_plan_issue(
+    result = create_objective_issue(
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan,
         title=None,
-        plan_type="objective",
         extra_labels=None,
-        title_suffix="",
-        source_plan_issues=None,
-        extraction_session_ids=None,
-        source_repo=None,
-        objective_issue=None,
     )
 
     if not result.success:
@@ -96,7 +90,7 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
 
     # Guard for type narrowing
     if result.issue_number is None:
-        raise RuntimeError("Unexpected: issue_number is None after successful create_plan_issue")
+        raise RuntimeError("Unexpected: issue_number is None after success")
 
     if output_format == "display":
         click.echo(f"Objective saved to GitHub issue #{result.issue_number}")

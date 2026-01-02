@@ -117,12 +117,9 @@ def create_plan_issue(
         title = extract_title_from_plan(plan_content)
 
     # Step 3: Determine labels based on plan_type
-    if plan_type == "objective":
-        labels = [_LABEL_ERK_OBJECTIVE]
-    else:
-        labels = [_LABEL_ERK_PLAN]
-        if plan_type == "extraction":
-            labels.append(_LABEL_ERK_EXTRACTION)
+    labels = [_LABEL_ERK_PLAN]
+    if plan_type == "extraction":
+        labels.append(_LABEL_ERK_EXTRACTION)
 
     # Add any extra labels
     if extra_labels:
@@ -143,49 +140,13 @@ def create_plan_issue(
 
     # Step 4: Determine title suffix
     if title_suffix is None:
-        if plan_type == "objective":
-            title_suffix = ""
-        elif plan_type == "extraction":
+        if plan_type == "extraction":
             title_suffix = "[erk-extraction]"
         else:
             title_suffix = "[erk-plan]"
 
-    # Build issue title - only add suffix if non-empty
-    if title_suffix:
-        issue_title = f"{title} {title_suffix}"
-    else:
-        issue_title = title
-
-    # For objectives: plan content goes directly in body (no metadata, no comment)
-    # For regular plans: use metadata body + plan content in comment
-    if plan_type == "objective":
-        issue_body = plan_content.strip()
-
-        # Create issue with plan content directly in body
-        try:
-            result = github_issues.create_issue(
-                repo_root=repo_root,
-                title=issue_title,
-                body=issue_body,
-                labels=labels,
-            )
-        except RuntimeError as e:
-            return CreatePlanIssueResult(
-                success=False,
-                issue_number=None,
-                issue_url=None,
-                title=title,
-                error=f"Failed to create GitHub issue: {e}",
-            )
-
-        # No comment, no commands section for objectives
-        return CreatePlanIssueResult(
-            success=True,
-            issue_number=result.number,
-            issue_url=result.url,
-            title=title,
-            error=None,
-        )
+    # Build issue title
+    issue_title = f"{title} {title_suffix}"
 
     # Standard and extraction plans: metadata body + plan content in comment
     created_at = datetime.now(UTC).isoformat()
@@ -250,6 +211,97 @@ def create_plan_issue(
 
     github_issues.update_issue_body(repo_root, result.number, updated_body)
 
+    return CreatePlanIssueResult(
+        success=True,
+        issue_number=result.number,
+        issue_url=result.url,
+        title=title,
+        error=None,
+    )
+
+
+def create_objective_issue(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    plan_content: str,
+    *,
+    title: str | None,
+    extra_labels: list[str] | None,
+) -> CreatePlanIssueResult:
+    """Create objective issue with erk-plan + erk-objective labels.
+
+    Objectives are roadmaps, not implementation plans. They have:
+    - Labels: erk-plan + erk-objective (like extraction has erk-plan + erk-extraction)
+    - Plan content directly in body (no metadata block)
+    - No comment (content is in body)
+    - No title suffix
+    - No commands section
+
+    Args:
+        github_issues: GitHubIssues interface (real, fake, or dry-run)
+        repo_root: Repository root directory
+        plan_content: The full plan markdown content
+        title: Optional title (extracted from H1 if None)
+        extra_labels: Additional labels beyond erk-plan and erk-objective
+
+    Returns:
+        CreatePlanIssueResult with success status and details
+
+    Note:
+        Does NOT raise exceptions. All errors returned in result.
+    """
+    # Step 1: Validate authentication (username not used in objective body but validates gh CLI)
+    if github_issues.get_current_username() is None:
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=None,
+            issue_url=None,
+            title="",
+            error="Could not get GitHub username (gh CLI not authenticated?)",
+        )
+
+    # Step 2: Extract or use provided title
+    if title is None:
+        title = extract_title_from_plan(plan_content)
+
+    # Step 3: Build labels - objectives use erk-plan + erk-objective (like extraction)
+    labels = [_LABEL_ERK_PLAN, _LABEL_ERK_OBJECTIVE]
+
+    # Add any extra labels
+    if extra_labels:
+        for label in extra_labels:
+            if label not in labels:
+                labels.append(label)
+
+    # Ensure labels exist
+    label_errors = _ensure_labels_exist(github_issues, repo_root, labels, None)
+    if label_errors:
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=None,
+            issue_url=None,
+            title=title,
+            error=label_errors,
+        )
+
+    # Step 4: Create issue with plan content directly in body (no metadata)
+    try:
+        result = github_issues.create_issue(
+            repo_root=repo_root,
+            title=title,  # No suffix for objectives
+            body=plan_content.strip(),
+            labels=labels,
+        )
+    except RuntimeError as e:
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=None,
+            issue_url=None,
+            title=title,
+            error=f"Failed to create GitHub issue: {e}",
+        )
+
+    # No comment, no commands section for objectives
     return CreatePlanIssueResult(
         success=True,
         issue_number=result.number,

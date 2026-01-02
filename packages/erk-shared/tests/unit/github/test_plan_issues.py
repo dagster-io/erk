@@ -5,7 +5,11 @@ from pathlib import Path
 import pytest
 
 from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.plan_issues import CreatePlanIssueResult, create_plan_issue
+from erk_shared.github.plan_issues import (
+    CreatePlanIssueResult,
+    create_objective_issue,
+    create_plan_issue,
+)
 
 
 class TestCreatePlanIssueSuccess:
@@ -26,6 +30,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -63,6 +68,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=["session-abc", "session-def"],
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -93,6 +99,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -116,6 +123,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix="[custom-suffix]",
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -138,6 +146,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -160,6 +169,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=[123, 456],
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -177,7 +187,14 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
             source_repo="owner/impl-repo",
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -197,7 +214,14 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
-            # No source_repo provided
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -226,6 +250,7 @@ class TestCreatePlanIssueTitleExtraction:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -246,6 +271,7 @@ class TestCreatePlanIssueTitleExtraction:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -266,6 +292,7 @@ class TestCreatePlanIssueTitleExtraction:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -290,12 +317,14 @@ class TestCreatePlanIssueErrors:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
         assert result.success is False
         assert result.issue_number is None
         assert result.issue_url is None
+        assert result.error is not None
         assert "not authenticated" in result.error.lower()
 
     def test_fails_on_label_creation_error(self, tmp_path: Path) -> None:
@@ -320,11 +349,13 @@ class TestCreatePlanIssueErrors:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
         assert result.success is False
         assert result.issue_number is None
+        assert result.error is not None
         assert "Failed to ensure labels exist" in result.error
 
     def test_fails_on_issue_creation_error(self, tmp_path: Path) -> None:
@@ -347,11 +378,13 @@ class TestCreatePlanIssueErrors:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
         assert result.success is False
         assert result.issue_number is None
+        assert result.error is not None
         assert "Failed to create GitHub issue" in result.error
 
 
@@ -362,7 +395,7 @@ class TestCreatePlanIssuePartialSuccess:
         """Report partial success when issue created but comment fails."""
 
         class FailingCommentGitHubIssues(FakeGitHubIssues):
-            def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
                 # Issue 1 exists because create_issue was called
                 raise RuntimeError("Comment too large")
 
@@ -379,6 +412,7 @@ class TestCreatePlanIssuePartialSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -386,13 +420,14 @@ class TestCreatePlanIssuePartialSuccess:
         assert result.success is False
         assert result.issue_number == 1  # Issue was created
         assert result.issue_url is not None
+        assert result.error is not None
         assert "created but failed to add plan comment" in result.error
 
     def test_partial_success_preserves_title(self, tmp_path: Path) -> None:
         """Preserve extracted title even on partial success."""
 
         class FailingCommentGitHubIssues(FakeGitHubIssues):
-            def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
                 raise RuntimeError("Network error")
 
         fake_gh = FailingCommentGitHubIssues(username="testuser")
@@ -408,6 +443,7 @@ class TestCreatePlanIssuePartialSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -433,6 +469,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -459,6 +496,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=["abc"],
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -484,6 +522,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -506,6 +545,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -550,37 +590,31 @@ class TestCreatePlanIssueResultDataclass:
 
 
 class TestCreateObjectiveIssue:
-    """Test objective issue creation (plan_type='objective')."""
+    """Test objective issue creation using create_objective_issue()."""
 
-    def test_creates_objective_issue_with_correct_label(self, tmp_path: Path) -> None:
-        """Objective issues use erk-objective label, not erk-plan."""
+    def test_creates_objective_issue_with_correct_labels(self, tmp_path: Path) -> None:
+        """Objective issues use erk-plan + erk-objective labels (like extraction)."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild a feature..."
 
-        result = create_plan_issue(
+        result = create_objective_issue(
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="objective",
             extra_labels=None,
-            title_suffix=None,
-            source_plan_issues=None,
-            extraction_session_ids=None,
-            source_repo=None,
-            objective_issue=None,
         )
 
         assert result.success is True
         assert result.issue_number == 1
         assert result.title == "My Objective"
 
-        # Verify label is erk-objective, not erk-plan
+        # Verify labels include both erk-plan and erk-objective (like extraction)
         _, body, labels = fake_gh.created_issues[0]
-        assert labels == ["erk-objective"]
-        assert "erk-plan" not in labels
+        assert labels == ["erk-plan", "erk-objective"]
 
-        # Verify erk-objective label was created
+        # Verify both labels were created
+        assert "erk-plan" in fake_gh.labels
         assert "erk-objective" in fake_gh.labels
 
     def test_objective_has_no_title_suffix(self, tmp_path: Path) -> None:
@@ -588,18 +622,12 @@ class TestCreateObjectiveIssue:
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\nContent..."
 
-        result = create_plan_issue(
+        result = create_objective_issue(
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="objective",
             extra_labels=None,
-            title_suffix=None,
-            source_plan_issues=None,
-            extraction_session_ids=None,
-            source_repo=None,
-            objective_issue=None,
         )
 
         assert result.success is True
@@ -615,18 +643,12 @@ class TestCreateObjectiveIssue:
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild something great."
 
-        result = create_plan_issue(
+        result = create_objective_issue(
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="objective",
             extra_labels=None,
-            title_suffix=None,
-            source_plan_issues=None,
-            extraction_session_ids=None,
-            source_repo=None,
-            objective_issue=None,
         )
 
         assert result.success is True
@@ -646,18 +668,12 @@ class TestCreateObjectiveIssue:
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\nContent..."
 
-        result = create_plan_issue(
+        result = create_objective_issue(
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="objective",
             extra_labels=None,
-            title_suffix=None,
-            source_plan_issues=None,
-            extraction_session_ids=None,
-            source_repo=None,
-            objective_issue=None,
         )
 
         assert result.success is True
@@ -670,18 +686,12 @@ class TestCreateObjectiveIssue:
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\nContent..."
 
-        result = create_plan_issue(
+        result = create_objective_issue(
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="objective",
             extra_labels=None,
-            title_suffix=None,
-            source_plan_issues=None,
-            extraction_session_ids=None,
-            source_repo=None,
-            objective_issue=None,
         )
 
         assert result.success is True
@@ -694,23 +704,18 @@ class TestCreateObjectiveIssue:
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\nContent..."
 
-        result = create_plan_issue(
+        result = create_objective_issue(
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="objective",
             extra_labels=["priority-high"],
-            title_suffix=None,
-            source_plan_issues=None,
-            extraction_session_ids=None,
-            source_repo=None,
-            objective_issue=None,
         )
 
         assert result.success is True
 
         _, _, labels = fake_gh.created_issues[0]
+        assert "erk-plan" in labels
         assert "erk-objective" in labels
         assert "priority-high" in labels
 
@@ -733,6 +738,7 @@ class TestCreatePlanIssueCommandsSection:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -765,6 +771,7 @@ class TestCreatePlanIssueCommandsSection:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=["session-abc"],
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -795,6 +802,7 @@ class TestCreatePlanIssueCommandsSection:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
