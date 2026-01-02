@@ -29,7 +29,7 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before adding a new method to Graphite ABC** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py.
 
-**CRITICAL: Before adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test*real*\*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
+**CRITICAL: Before adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file** → Read [Gateway ABC Implementation Checklist](architecture/gateway-abc-implementation.md) first. Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior.
 
 **CRITICAL: Before using gh issue create in production code** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. Use REST API via `gh api repos/{owner}/{repo}/issues -X POST` instead. `gh issue create` uses GraphQL which has separate (often exhausted) rate limits.
 
