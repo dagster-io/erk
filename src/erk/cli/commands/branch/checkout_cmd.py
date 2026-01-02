@@ -102,7 +102,8 @@ def _ensure_graphite_tracking(
 
     # Prompt user for confirmation
     if not user_confirm(
-        f"Branch '{branch}' is not tracked by Graphite. Track it with parent '{trunk_branch}'?"
+        f"Branch '{branch}' is not tracked by Graphite. Track it with parent '{trunk_branch}'?",
+        default=False,
     ):
         return
 

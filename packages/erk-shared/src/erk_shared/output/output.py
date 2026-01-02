@@ -44,7 +44,7 @@ def machine_output(
     click.echo(message, nl=nl, err=False, color=color)
 
 
-def user_confirm(prompt: str) -> bool:
+def user_confirm(prompt: str, *, default: bool | None) -> bool:
     """Prompt user for confirmation with proper stderr flushing.
 
     Always flush stderr before prompting to ensure any preceding
@@ -52,12 +52,14 @@ def user_confirm(prompt: str) -> bool:
 
     Args:
         prompt: The confirmation prompt to display.
+        default: Default response when user just presses enter.
+                 True for [Y/n], False for [y/N], None to have no default.
 
     Returns:
         True if the user confirmed, False otherwise.
     """
     sys.stderr.flush()
-    return click.confirm(prompt, default=False, err=True)
+    return click.confirm(prompt, default=default, err=True)
 
 
 def format_duration(seconds: float) -> str:

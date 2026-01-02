@@ -162,7 +162,7 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     if is_running_via_uvx():
         user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message(command_name))
         user_output("")  # Blank line for readability
-        if not user_confirm("Continue anyway?"):
+        if not user_confirm("Continue anyway?", default=False):
             return ShellIntegrationResult(passthrough=False, script=None, exit_code=1)
 
     # Clean up stale scripts before running (opportunistic cleanup)

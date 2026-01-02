@@ -83,7 +83,7 @@ def confirm_split(force: bool, dry_run: bool) -> None:
     """
     if not force and not dry_run:
         user_output("")
-        if not user_confirm("Proceed with creating worktrees?"):
+        if not user_confirm("Proceed with creating worktrees?", default=False):
             user_output(click.style("⭕ Aborted", fg="yellow"))
             raise SystemExit(1)
 

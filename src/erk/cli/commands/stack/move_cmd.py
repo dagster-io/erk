@@ -196,7 +196,7 @@ def execute_swap(
         user_output("This will swap branches between worktrees:")
         user_output(f"  '{source_wt.name}': '{source_branch}' → '{target_branch}'")
         user_output(f"  '{target_wt.name}': '{target_branch}' → '{source_branch}'")
-        if not user_confirm("Continue?"):
+        if not user_confirm("Continue?", default=False):
             user_output("Swap cancelled")
             raise SystemExit(0)
 

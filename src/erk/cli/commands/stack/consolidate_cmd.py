@@ -348,7 +348,7 @@ def consolidate_stack(
     # Get confirmation unless --force or --script
     if not force and not script:
         user_output()
-        if not user_confirm("All worktrees are clean. Proceed with removal?"):
+        if not user_confirm("All worktrees are clean. Proceed with removal?", default=False):
             user_output(click.style("⭕ Aborted", fg="red", bold=True))
             return
 

@@ -637,7 +637,7 @@ def _handle_force_delete(
 
     # Prompt for confirmation
     if not dry_run:
-        if not user_confirm("Proceed with deletion?"):
+        if not user_confirm("Proceed with deletion?", default=False):
             user_output(click.style("⭕ Aborted.", fg="red", bold=True))
             raise SystemExit(1) from None
 

@@ -91,7 +91,7 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str, fo
                 + f"Pull request for branch '{branch}' is still open.\n"
                 + f"{pr_details.url}"
             )
-            if not user_confirm("Delete branch anyway?"):
+            if not user_confirm("Delete branch anyway?", default=False):
                 raise SystemExit(1)
             return  # User confirmed, allow deletion
 
