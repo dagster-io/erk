@@ -4,15 +4,14 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import click
-import pytest
 from click.testing import CliRunner
 
+from erk.cli import help_formatter as help_formatter_module
 from erk.cli.graphite_command import (
     GraphiteCommand,
     GraphiteCommandWithHiddenOptions,
     GraphiteGroup,
 )
-from erk.cli import help_formatter as help_formatter_module
 from erk.cli.help_formatter import (
     ErkCommandGroup,
     _is_graphite_available,
