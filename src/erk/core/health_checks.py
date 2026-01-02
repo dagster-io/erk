@@ -8,7 +8,14 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk.artifacts.artifact_health import find_missing_artifacts, find_orphaned_artifacts
+from erk.artifacts.artifact_health import (
+    ArtifactHealthResult,
+    ArtifactStatusType,
+    get_artifact_health,
+)
+from erk.artifacts.detection import is_in_erk_repo
+from erk.artifacts.models import ArtifactFileState
+from erk.artifacts.state import load_artifact_state
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     StatuslineNotConfigured,
@@ -843,137 +850,223 @@ def check_hook_health(repo_root: Path) -> CheckResult:
     )
 
 
-def check_orphaned_artifacts(repo_root: Path) -> CheckResult:
-    """Check for orphaned files in erk-managed artifact directories.
+def _worst_status(statuses: list[ArtifactStatusType]) -> ArtifactStatusType:
+    """Determine worst status from a list of statuses.
 
-    Delegates to find_orphaned_artifacts() and converts the result
-    to the CheckResult format used by erk doctor.
-
-    Args:
-        repo_root: Path to the repository root
-
-    Returns:
-        CheckResult with orphan status (warning if found, pass otherwise)
+    Priority: not-installed > locally-modified > changed-upstream > up-to-date
     """
-    result = find_orphaned_artifacts(repo_root)
+    if "not-installed" in statuses:
+        return "not-installed"
+    if "locally-modified" in statuses:
+        return "locally-modified"
+    if "changed-upstream" in statuses:
+        return "changed-upstream"
+    return "up-to-date"
 
-    # Handle skipped cases
-    if result.skipped_reason == "erk-repo":
-        return CheckResult(
-            name="orphaned-artifacts",
-            passed=True,
-            message="Skipped: running in erk repo",
-        )
 
-    if result.skipped_reason == "no-claude-dir":
-        return CheckResult(
-            name="orphaned-artifacts",
-            passed=True,
-            message="No .claude/ directory (nothing to check)",
-        )
+def _extract_artifact_type(name: str) -> str:
+    """Extract artifact type from artifact name.
 
-    if result.skipped_reason == "no-bundled-dir":
-        return CheckResult(
-            name="orphaned-artifacts",
-            passed=True,
-            message="Bundled .claude/ not found (skipping check)",
-        )
+    Examples:
+        skills/dignified-python → skills
+        commands/erk/plan-implement.md → commands
+        agents/devrun → agents
+        workflows/erk-impl.yml → workflows
+        actions/setup-claude-erk → actions
+        hooks/user-prompt-hook → hooks
+    """
+    return name.split("/")[0]
 
-    # No orphans found
-    if not result.orphans:
-        return CheckResult(
-            name="orphaned-artifacts",
-            passed=True,
-            message="No orphaned artifacts in .claude/",
-        )
 
-    # Build details with orphaned files and remediation commands
-    total_orphans = sum(len(files) for files in result.orphans.values())
-    details_lines: list[str] = ["Orphaned files (not in current erk package):"]
+def _status_icon(status: ArtifactStatusType) -> str:
+    """Get status icon for artifact status."""
+    if status == "up-to-date":
+        return "✅"
+    if status == "locally-modified" or status == "changed-upstream":
+        return "⚠️"
+    return "❌"
 
-    for folder, files in sorted(result.orphans.items()):
-        details_lines.append(f"  {folder}/:")
-        for filename in sorted(files):
-            details_lines.append(f"    - {filename}")
 
-    details_lines.append("")
-    details_lines.append("To remove:")
-    for folder, files in sorted(result.orphans.items()):
-        for filename in sorted(files):
-            details_lines.append(f"  rm .claude/{folder}/{filename}")
+def _status_description(status: ArtifactStatusType, count: int) -> str:
+    """Get human-readable status description."""
+    if status == "not-installed":
+        if count == 1:
+            return "not installed"
+        return f"{count} not installed"
+    if status == "locally-modified":
+        if count == 1:
+            return "locally modified"
+        return f"{count} locally modified"
+    if status == "changed-upstream":
+        if count == 1:
+            return "changed upstream"
+        return f"{count} changed upstream"
+    return ""
+
+
+def _build_erk_repo_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
+    """Build CheckResult for erk repo case (all artifacts from source)."""
+    # Group artifacts by type (count only, all healthy)
+    by_type: dict[str, int] = {}
+    for artifact in result.artifacts:
+        artifact_type = _extract_artifact_type(artifact.name)
+        by_type[artifact_type] = by_type.get(artifact_type, 0) + 1
+
+    # Build per-type summary (all ✅)
+    type_summaries: list[str] = []
+    type_order = ["skills", "commands", "agents", "workflows", "actions", "hooks"]
+    for artifact_type in type_order:
+        if artifact_type not in by_type:
+            continue
+        count = by_type[artifact_type]
+        type_summaries.append(f"   ✅ {artifact_type} ({count})")
+
+    details = "\n".join(type_summaries)
 
     return CheckResult(
-        name="orphaned-artifacts",
+        name="managed-artifacts",
         passed=True,
-        warning=True,
-        message=f"Found {total_orphans} orphaned artifact(s) in .claude/",
-        details="\n".join(details_lines),
+        message="Managed artifacts (from source)",
+        details=details,
     )
 
 
-def check_missing_artifacts(repo_root: Path) -> CheckResult:
-    """Check for bundled artifacts missing from local installation.
+def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
+    """Build CheckResult from ArtifactHealthResult."""
+    # Group artifacts by type
+    by_type: dict[str, list[ArtifactStatusType]] = {}
+    for artifact in result.artifacts:
+        artifact_type = _extract_artifact_type(artifact.name)
+        if artifact_type not in by_type:
+            by_type[artifact_type] = []
+        by_type[artifact_type].append(artifact.status)
 
-    Detects incomplete artifact syncs by comparing bundled package
-    files against local .claude/ directory.
+    # Build per-type summary
+    type_summaries: list[str] = []
+    overall_worst: ArtifactStatusType = "up-to-date"
+    has_issues = False
+
+    # Consistent type ordering
+    type_order = ["skills", "commands", "agents", "workflows", "actions", "hooks"]
+    for artifact_type in type_order:
+        if artifact_type not in by_type:
+            continue
+
+        statuses = by_type[artifact_type]
+        count = len(statuses)
+        worst = _worst_status(statuses)
+
+        # Track overall worst for header
+        if overall_worst == "up-to-date":
+            overall_worst = worst
+        elif worst == "not-installed":
+            overall_worst = "not-installed"
+        elif worst in ("locally-modified", "changed-upstream") and overall_worst not in (
+            "not-installed",
+        ):
+            overall_worst = worst
+
+        icon = _status_icon(worst)
+        line = f"   {icon} {artifact_type} ({count})"
+
+        # Add issue description if not up-to-date
+        if worst != "up-to-date":
+            has_issues = True
+            issue_count = sum(1 for s in statuses if s == worst)
+            desc = _status_description(worst, issue_count)
+            line += f" - {desc}"
+
+        type_summaries.append(line)
+
+    details = "\n".join(type_summaries)
+
+    # Add remediation hint if there are issues
+    if overall_worst == "not-installed":
+        details += "\n\n   Run 'erk artifact sync' to restore missing artifacts"
+
+    # Determine overall result
+    if overall_worst == "not-installed":
+        return CheckResult(
+            name="managed-artifacts",
+            passed=False,
+            message="Managed artifacts have issues",
+            details=details,
+        )
+    elif has_issues:
+        return CheckResult(
+            name="managed-artifacts",
+            passed=True,
+            warning=True,
+            message="Managed artifacts have issues",
+            details=details,
+        )
+    else:
+        return CheckResult(
+            name="managed-artifacts",
+            passed=True,
+            message="Managed artifacts healthy",
+            details=details,
+        )
+
+
+def check_managed_artifacts(repo_root: Path) -> CheckResult:
+    """Check status of erk-managed artifacts.
+
+    Shows a summary of artifact status by type (skills, commands, agents, etc.)
+    with per-type counts and status indicators.
 
     Args:
         repo_root: Path to the repository root
 
     Returns:
-        CheckResult with missing artifact status (error if found)
+        CheckResult with artifact health status
     """
-    result = find_missing_artifacts(repo_root)
+    in_erk_repo = is_in_erk_repo(repo_root)
 
-    # Handle skipped cases
-    if result.skipped_reason == "erk-repo":
+    # Check for .claude/ directory
+    claude_dir = repo_root / ".claude"
+    if not claude_dir.exists():
         return CheckResult(
-            name="missing-artifacts",
+            name="managed-artifacts",
             passed=True,
-            message="Skipped: running in erk repo",
+            message="No .claude/ directory (nothing to check)",
         )
 
+    # Load saved artifact state
+    state = load_artifact_state(repo_root)
+    saved_files: dict[str, ArtifactFileState] = dict(state.files) if state else {}
+
+    # Get artifact health
+    result = get_artifact_health(repo_root, saved_files)
+
+    # Handle skipped cases from get_artifact_health
     if result.skipped_reason == "no-claude-dir":
         return CheckResult(
-            name="missing-artifacts",
+            name="managed-artifacts",
             passed=True,
             message="No .claude/ directory (nothing to check)",
         )
 
     if result.skipped_reason == "no-bundled-dir":
         return CheckResult(
-            name="missing-artifacts",
+            name="managed-artifacts",
             passed=True,
             message="Bundled .claude/ not found (skipping check)",
         )
 
-    # No missing artifacts
-    if not result.missing:
+    # No artifacts to check
+    if not result.artifacts:
         return CheckResult(
-            name="missing-artifacts",
+            name="managed-artifacts",
             passed=True,
-            message="All bundled artifacts present",
+            message="No managed artifacts found",
         )
 
-    # Build warning message with missing files and remediation
-    total_missing = sum(len(files) for files in result.missing.values())
-    details_lines: list[str] = ["Missing bundled artifacts:"]
+    # In erk repo, show counts without status comparison (all from source)
+    if in_erk_repo:
+        return _build_erk_repo_artifacts_result(result)
 
-    for folder, files in sorted(result.missing.items()):
-        details_lines.append(f"  {folder}/:")
-        for filename in sorted(files):
-            details_lines.append(f"    - {filename}")
-
-    details_lines.append("")
-    details_lines.append("To restore:")
-    details_lines.append("  erk artifact sync")
-
-    return CheckResult(
-        name="missing-artifacts",
-        passed=False,
-        message=f"Found {total_missing} missing artifact(s)",
-        details="\n".join(details_lines),
-    )
+    return _build_managed_artifacts_result(result)
 
 
 def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
@@ -1020,10 +1113,8 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)
         results.append(check_workflow_permissions(ctx, repo_root, admin))
-        # Orphaned artifacts check
-        results.append(check_orphaned_artifacts(repo_root))
-        # Missing artifacts check
-        results.append(check_missing_artifacts(repo_root))
+        # Managed artifacts check (consolidated from orphaned + missing)
+        results.append(check_managed_artifacts(repo_root))
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 
