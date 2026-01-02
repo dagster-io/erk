@@ -21,7 +21,7 @@ class TestParseChangelogMarker:
 
 ## [Unreleased]
 
-As of af8fa25c9
+As of `af8fa25c9`
 
 ### Added
 
@@ -35,7 +35,7 @@ As of af8fa25c9
 
     def test_finds_short_hash(self, tmp_path: Path) -> None:
         changelog = tmp_path / "CHANGELOG.md"
-        changelog.write_text("As of b5e949b\n", encoding="utf-8")
+        changelog.write_text("As of `b5e949b`\n", encoding="utf-8")
         result = parse_changelog_marker(changelog)
         assert result == "b5e949b"
 
@@ -43,7 +43,7 @@ As of af8fa25c9
         changelog = tmp_path / "CHANGELOG.md"
         # Full git SHA-1 hash is exactly 40 characters
         full_hash = "b5e949b45c6d7a8e9f0a1b2c3d4e5f67890abcde"
-        changelog.write_text(f"As of {full_hash}\n", encoding="utf-8")
+        changelog.write_text(f"As of `{full_hash}`\n", encoding="utf-8")
         result = parse_changelog_marker(changelog)
         assert result == full_hash
 
