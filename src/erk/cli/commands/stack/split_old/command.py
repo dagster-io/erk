@@ -179,7 +179,6 @@ def split_cmd(
     """
     # 1. Validate input flags
     validate_flags(up, down)
-    # Note: Graphite availability is checked by GraphiteCommand
 
     # 2. Gather repository context
     current_worktree = ctx.cwd

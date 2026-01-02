@@ -146,8 +146,6 @@ def consolidate_stack(
     if dry_run:
         script = False
 
-    # Note: Graphite availability is checked by GraphiteCommandWithHiddenOptions
-
     # Validate that --down and BRANCH are not used together
     if down and branch is not None:
         user_output(click.style("❌ Error: Cannot use --down with BRANCH argument", fg="red"))

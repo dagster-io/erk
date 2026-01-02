@@ -50,7 +50,6 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     Requires Graphite to be enabled: 'erk config set use_graphite true'
     """
     # Validate preconditions upfront (LBYL)
-    # Note: Graphite availability is checked by GraphiteCommandWithHiddenOptions
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)

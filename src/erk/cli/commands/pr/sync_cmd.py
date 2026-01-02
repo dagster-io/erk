@@ -93,7 +93,6 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # dangerous flag is required to indicate acknowledgment
     _ = dangerous
     # Step 1: Validate preconditions
-    # Note: Graphite availability is checked by GraphiteCommand
     Ensure.gh_authenticated(ctx)
     Ensure.gt_authenticated(ctx)
     Ensure.invariant(

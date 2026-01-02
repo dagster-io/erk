@@ -58,7 +58,6 @@ def pr_auto_restack(ctx: ErkContext, *, dangerous: bool) -> None:
                 "Missing option '--dangerous'.\n"
                 "To disable: erk config set auto_restack_require_dangerous_flag false"
             )
-    # Note: Graphite availability is checked by GraphiteCommand
     cwd = ctx.cwd
 
     # Phase 1: Try fast path (preflight: squash + attempt restack)

@@ -9,7 +9,6 @@ from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
-from erk.cli.ensure import Ensure
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option
@@ -276,8 +275,6 @@ def branch_checkout(ctx: ErkContext, branch: str, script: bool) -> None:
 
     If multiple worktrees contain the branch, all options are shown.
     """
-    # Note: Graphite availability is checked by GraphiteCommandWithHiddenOptions
-
     # Use existing repo from context if available (for tests), otherwise discover
     if isinstance(ctx.repo, RepoContext):
         repo = ctx.repo
