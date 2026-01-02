@@ -3,37 +3,17 @@
 Provides access to the command audit trail stored in ~/.erk/command_history.jsonl.
 """
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 import click
 
-from erk.core.command_log import CommandLogEntry, read_log_entries
-
-
-def _is_numeric_string(s: str) -> bool:
-    """Check if string represents an integer (possibly negative)."""
-    if not s:
-        return False
-    if s[0] in "+-":
-        return s[1:].isdigit() if len(s) > 1 else False
-    return s.isdigit()
-
-
-def _is_iso_datetime_format(s: str) -> bool:
-    """Check if string looks like an ISO datetime format.
-
-    Validates basic structure: YYYY-MM-DDTHH:MM:SS with optional timezone.
-    """
-    # Basic length check (minimum: 2024-01-01 = 10 chars)
-    if len(s) < 10:
-        return False
-    # Check date part structure
-    if len(s) >= 10 and not (s[4] == "-" and s[7] == "-"):
-        return False
-    # Check year/month/day are digits
-    if not (s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit()):
-        return False
-    return True
+from erk.core.command_log import (
+    CommandLogEntry,
+    format_relative_time,
+    is_iso_datetime_format,
+    parse_relative_time,
+    read_log_entries,
+)
 
 
 def _parse_since(value: str | None) -> datetime | None:
@@ -46,65 +26,34 @@ def _parse_since(value: str | None) -> datetime | None:
     if value is None:
         return None
 
-    value = value.strip().lower()
+    value_lower = value.strip().lower()
 
     # Try relative time parsing
-    if value.endswith(" ago"):
-        parts = value[:-4].strip().split()
-        if len(parts) == 2:
-            amount_str = parts[0]
-            if not _is_numeric_string(amount_str):
-                raise click.BadParameter(f"Invalid time amount: {amount_str}")
-
-            amount = int(amount_str)
-            unit = parts[1].rstrip("s")  # "hours" -> "hour"
-            now = datetime.now(UTC)
-
-            if unit == "minute":
-                return now - timedelta(minutes=amount)
-            elif unit == "hour":
-                return now - timedelta(hours=amount)
-            elif unit == "day":
-                return now - timedelta(days=amount)
-            elif unit == "week":
-                return now - timedelta(weeks=amount)
-            else:
-                raise click.BadParameter(f"Unknown time unit: {unit}")
+    delta = parse_relative_time(value_lower)
+    if delta is not None:
+        return datetime.now(UTC) - delta
 
     # Try ISO format
-    if not _is_iso_datetime_format(value):
+    if not is_iso_datetime_format(value_lower):
         raise click.BadParameter(
             f"Invalid time format: {value}. Use 'N unit ago' (e.g., '1 hour ago') "
             "or ISO format (e.g., '2024-01-01T00:00:00')"
         )
-    return datetime.fromisoformat(value)
+    return datetime.fromisoformat(value_lower)
 
 
 def _format_entry_line(entry: CommandLogEntry, show_cwd: bool, show_full: bool) -> str:
     """Format a single log entry for display."""
-
-    # Parse timestamp for display
-    try:
-        dt = datetime.fromisoformat(entry.timestamp)
-        if show_full:
+    # Get time display
+    if show_full:
+        # For full mode, parse and format as full timestamp
+        if is_iso_datetime_format(entry.timestamp):
+            dt = datetime.fromisoformat(entry.timestamp)
             time_str = dt.strftime("%Y-%m-%d %H:%M:%S")
         else:
-            # Show relative time for recent entries
-            now = datetime.now(UTC)
-            delta = now - dt
-            if delta < timedelta(minutes=1):
-                time_str = "just now"
-            elif delta < timedelta(hours=1):
-                mins = int(delta.total_seconds() / 60)
-                time_str = f"{mins}m ago"
-            elif delta < timedelta(days=1):
-                hours = int(delta.total_seconds() / 3600)
-                time_str = f"{hours}h ago"
-            else:
-                days = delta.days
-                time_str = f"{days}d ago"
-    except ValueError:
-        time_str = entry.timestamp[:19]
+            time_str = entry.timestamp[:19]
+    else:
+        time_str = format_relative_time(entry.timestamp)
 
     # Build command display
     cmd_display = entry.command

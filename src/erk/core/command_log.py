@@ -8,12 +8,13 @@ Log location: ~/.erk/command_history.jsonl
 Format: One JSON object per line (JSONL) for easy parsing and appending.
 """
 
+import atexit
 import fcntl
 import json
 import os
 import sys
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import cache
 from pathlib import Path
 
@@ -281,3 +282,115 @@ def read_log_entries(
 def get_cli_args() -> list[str]:
     """Get CLI arguments for logging, skipping the program name."""
     return sys.argv[1:]
+
+
+def register_exit_handler(entry_id: str | None) -> None:
+    """Register an atexit handler to log command completion.
+
+    This ensures logging even on exceptions or SystemExit.
+
+    Args:
+        entry_id: Entry ID from log_command_start (timestamp)
+    """
+
+    def _log_exit() -> None:
+        exc_info = sys.exc_info()
+        exc = exc_info[1]
+        if isinstance(exc, SystemExit):
+            exit_code = exc.code if isinstance(exc.code, int) else 1
+        elif exc is not None:
+            exit_code = 1
+        else:
+            exit_code = 0
+        log_command_end(entry_id, exit_code)
+
+    atexit.register(_log_exit)
+
+
+def is_numeric_string(s: str) -> bool:
+    """Check if string represents an integer (possibly negative)."""
+    if not s:
+        return False
+    if s[0] in "+-":
+        return s[1:].isdigit() if len(s) > 1 else False
+    return s.isdigit()
+
+
+def is_iso_datetime_format(s: str) -> bool:
+    """Check if string looks like an ISO datetime format.
+
+    Validates basic structure: YYYY-MM-DDTHH:MM:SS with optional timezone.
+    """
+    # Basic length check (minimum: 2024-01-01 = 10 chars)
+    if len(s) < 10:
+        return False
+    # Check date part structure
+    if len(s) >= 10 and not (s[4] == "-" and s[7] == "-"):
+        return False
+    # Check year/month/day are digits
+    if not (s[:4].isdigit() and s[5:7].isdigit() and s[8:10].isdigit()):
+        return False
+    return True
+
+
+def parse_relative_time(value: str) -> timedelta | None:
+    """Parse relative time string like '1 hour ago' into a timedelta.
+
+    Args:
+        value: String like "1 hour ago", "2 days ago", "30 minutes ago"
+
+    Returns:
+        timedelta if valid, None if invalid format
+    """
+    value = value.strip().lower()
+    if not value.endswith(" ago"):
+        return None
+
+    parts = value[:-4].strip().split()
+    if len(parts) != 2:
+        return None
+
+    amount_str = parts[0]
+    if not is_numeric_string(amount_str):
+        return None
+
+    amount = int(amount_str)
+    unit = parts[1].rstrip("s")  # "hours" -> "hour"
+
+    if unit == "minute":
+        return timedelta(minutes=amount)
+    elif unit == "hour":
+        return timedelta(hours=amount)
+    elif unit == "day":
+        return timedelta(days=amount)
+    elif unit == "week":
+        return timedelta(weeks=amount)
+    return None
+
+
+def format_relative_time(timestamp_str: str) -> str:
+    """Format an ISO timestamp as relative time (e.g., '5m ago').
+
+    Args:
+        timestamp_str: ISO format timestamp
+
+    Returns:
+        Relative time string, or truncated timestamp if parsing fails
+    """
+    if not is_iso_datetime_format(timestamp_str):
+        return timestamp_str[:19]
+
+    dt = datetime.fromisoformat(timestamp_str)
+    now = datetime.now(UTC)
+    delta = now - dt
+
+    if delta < timedelta(minutes=1):
+        return "just now"
+    elif delta < timedelta(hours=1):
+        mins = int(delta.total_seconds() / 60)
+        return f"{mins}m ago"
+    elif delta < timedelta(days=1):
+        hours = int(delta.total_seconds() / 3600)
+        return f"{hours}h ago"
+    else:
+        return f"{delta.days}d ago"
