@@ -17,6 +17,7 @@ from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata import (
+    format_plan_commands_section,
     format_plan_content_comment,
     format_plan_header_body,
     update_plan_header_comment_id,
@@ -181,6 +182,12 @@ def create_plan_issue(
 
     # Step 6: Update issue body with plan_comment_id for direct lookup
     updated_body = update_plan_header_comment_id(issue_body, comment_id)
+
+    # Step 7: Add commands section for standard plans only (not extraction)
+    if plan_type != "extraction":
+        commands_section = format_plan_commands_section(result.number)
+        updated_body = updated_body + "\n\n" + commands_section
+
     github_issues.update_issue_body(repo_root, result.number, updated_body)
 
     return CreatePlanIssueResult(

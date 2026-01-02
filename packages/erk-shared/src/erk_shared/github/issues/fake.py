@@ -62,6 +62,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._created_labels: list[tuple[str, str, str]] = []
         self._closed_issues: list[int] = []
         self._added_reactions: list[tuple[int, str]] = []
+        self._updated_bodies: list[tuple[int, str]] = []
         self._next_comment_id = 1000  # Start at 1000 to distinguish from issue numbers
 
     @property
@@ -111,6 +112,14 @@ class FakeGitHubIssues(GitHubIssues):
         Returns list of (comment_id, reaction) tuples.
         """
         return self._added_reactions
+
+    @property
+    def updated_bodies(self) -> list[tuple[int, str]]:
+        """Read-only access to updated issue bodies for test assertions.
+
+        Returns list of (issue_number, body) tuples.
+        """
+        return self._updated_bodies
 
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]
@@ -167,7 +176,7 @@ class FakeGitHubIssues(GitHubIssues):
         return comment_id
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
-        """Update issue body in fake storage.
+        """Update issue body in fake storage and track mutation.
 
         Raises:
             RuntimeError: If issue number not found (simulates gh CLI error)
@@ -175,6 +184,9 @@ class FakeGitHubIssues(GitHubIssues):
         if number not in self._issues:
             msg = f"Issue #{number} not found"
             raise RuntimeError(msg)
+
+        # Track the update for test assertions
+        self._updated_bodies.append((number, body))
 
         # Update the issue body in-place (creates new IssueInfo with updated body)
         old_issue = self._issues[number]

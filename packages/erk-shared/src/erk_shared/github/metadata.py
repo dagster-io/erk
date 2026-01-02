@@ -902,6 +902,24 @@ def format_execution_commands(issue_number: int) -> str:
     return format_next_steps_markdown(issue_number)
 
 
+def format_plan_commands_section(issue_number: int) -> str:
+    """Format copy-pasteable commands section for plan issues.
+
+    Args:
+        issue_number: GitHub issue number
+
+    Returns:
+        Formatted markdown with copy-pasteable commands for the issue body
+    """
+    return f"""## Commands
+
+```bash
+erk implement {issue_number}
+erk implement {issue_number} --dangerous
+erk plan submit {issue_number}
+```"""
+
+
 def format_plan_issue_body_simple(plan_content: str) -> str:
     """Format issue body with plan in collapsible block, no execution commands.
 

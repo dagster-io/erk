@@ -392,3 +392,77 @@ class TestCreatePlanIssueResultDataclass:
         assert result.issue_url == "https://github.com/test/repo/issues/42"
         assert result.title == "My Title"
         assert result.error == "Something went wrong"
+
+
+class TestCreatePlanIssueCommandsSection:
+    """Test that commands section is added correctly."""
+
+    def test_standard_plan_includes_commands_section(self, tmp_path: Path) -> None:
+        """Standard plans should include commands section with correct issue number."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Feature Plan\n\nImplementation steps..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+        )
+
+        assert result.success is True
+        assert result.issue_number == 1
+
+        # Verify issue body was updated with commands section
+        assert len(fake_gh.updated_bodies) == 1
+        issue_num, updated_body = fake_gh.updated_bodies[0]
+        assert issue_num == 1
+
+        # Check for commands section with correct issue number
+        assert "## Commands" in updated_body
+        assert "erk implement 1" in updated_body
+        assert "erk implement 1 --dangerous" in updated_body
+        assert "erk plan submit 1" in updated_body
+
+    def test_extraction_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
+        """Extraction plans should NOT include commands section."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# Extraction Plan\n\nAnalysis..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            plan_type="extraction",
+            extraction_session_ids=["session-abc"],
+        )
+
+        assert result.success is True
+        assert result.issue_number == 1
+
+        # Verify issue body was updated but without commands section
+        assert len(fake_gh.updated_bodies) == 1
+        issue_num, updated_body = fake_gh.updated_bodies[0]
+        assert issue_num == 1
+
+        # Commands section should NOT be present
+        assert "## Commands" not in updated_body
+        assert "erk implement" not in updated_body
+
+    def test_commands_section_uses_correct_issue_number(self, tmp_path: Path) -> None:
+        """Commands section should reference the actual issue number."""
+        fake_gh = FakeGitHubIssues(username="testuser", next_issue_number=42)
+        plan_content = "# My Plan\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+        )
+
+        assert result.success is True
+        assert result.issue_number == 42
+
+        # Verify commands reference issue 42, not 1
+        _, updated_body = fake_gh.updated_bodies[0]
+        assert "erk implement 42" in updated_body
+        assert "erk implement 42 --dangerous" in updated_body
+        assert "erk plan submit 42" in updated_body
