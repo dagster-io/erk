@@ -15,9 +15,9 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 T = TypeVar("T")
 
 
-def _create_event_generator(
+def _create_event_generator[T](
     events: list[ProgressEvent | CompletionEvent[T]],
-) -> Generator[ProgressEvent | CompletionEvent[T], None, None]:
+) -> Generator[ProgressEvent | CompletionEvent[T]]:
     """Helper to create a generator from a list of events."""
     yield from events
 

@@ -370,7 +370,7 @@ class ForceDeleteOptions:
     branch: bool = False
 
     @classmethod
-    def from_force_flag(cls, force: bool) -> "ForceDeleteOptions":
+    def from_force_flag(cls, force: bool) -> ForceDeleteOptions:
         """Create options from --force flag value."""
         return cls(worktree=force, branch=force)
 

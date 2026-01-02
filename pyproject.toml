@@ -75,7 +75,7 @@ packages = ["src/erk"]
 ".github/prompts/dignified-python-review.md" = "erk/data/github/prompts/dignified-python-review.md"
 
 [tool.ruff]
-target-version = "py311"
+target-version = "py314"
 line-length = 100
 src = ["src"]
 # exclude = [".claude/skills/"]
@@ -97,7 +97,7 @@ include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/e
 exclude = [".claude/skills/"]
 
 [tool.ty.environment]
-python-version = "3.11"
+python-version = "3.14"
 python = ".venv"
 
 [tool.pytest.ini_options]

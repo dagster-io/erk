@@ -24,19 +24,19 @@ class FilterState:
     query: str = ""
 
     @staticmethod
-    def initial() -> "FilterState":
+    def initial() -> FilterState:
         """Create initial inactive state."""
         return FilterState(mode=FilterMode.INACTIVE, query="")
 
-    def activate(self) -> "FilterState":
+    def activate(self) -> FilterState:
         """Activate filter mode."""
         return FilterState(mode=FilterMode.ACTIVE, query=self.query)
 
-    def with_query(self, query: str) -> "FilterState":
+    def with_query(self, query: str) -> FilterState:
         """Update query text."""
         return FilterState(mode=self.mode, query=query)
 
-    def handle_escape(self) -> "FilterState":
+    def handle_escape(self) -> FilterState:
         """Handle escape key with progressive behavior.
 
         Progressive escape:

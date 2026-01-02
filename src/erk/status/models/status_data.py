@@ -18,7 +18,7 @@ class WorktreeDisplayInfo:
     is_root: bool
 
     @staticmethod
-    def root(path: Path, branch: str = "main", name: str = "root") -> "WorktreeDisplayInfo":
+    def root(path: Path, branch: str = "main", name: str = "root") -> WorktreeDisplayInfo:
         """Create root worktree for test display.
 
         Args:
@@ -41,7 +41,7 @@ class WorktreeDisplayInfo:
         return WorktreeDisplayInfo(path=path, branch=branch, is_root=True, name=name)
 
     @staticmethod
-    def feature(path: Path, branch: str, name: str | None = None) -> "WorktreeDisplayInfo":
+    def feature(path: Path, branch: str, name: str | None = None) -> WorktreeDisplayInfo:
         """Create feature worktree for test display.
 
         Args:
@@ -80,7 +80,7 @@ class CommitInfo:
         message: str = "Test commit",
         author: str = "Test User",
         date: str = "1 hour ago",
-    ) -> "CommitInfo":
+    ) -> CommitInfo:
         """Create a commit for tests with sensible defaults.
 
         Args:
@@ -119,7 +119,7 @@ class GitStatus:
     recent_commits: list[CommitInfo]
 
     @staticmethod
-    def clean_status(branch: str, ahead: int = 0, behind: int = 0) -> "GitStatus":
+    def clean_status(branch: str, ahead: int = 0, behind: int = 0) -> GitStatus:
         """Create clean status (no changes) for tests.
 
         Args:
@@ -166,7 +166,7 @@ class GitStatus:
         untracked: list[str] | None = None,
         ahead: int = 0,
         behind: int = 0,
-    ) -> "GitStatus":
+    ) -> GitStatus:
         """Create dirty status (with changes) for tests.
 
         Args:
@@ -208,7 +208,7 @@ class GitStatus:
         )
 
     @staticmethod
-    def with_commits(branch: str, commits: list[CommitInfo], clean: bool = True) -> "GitStatus":
+    def with_commits(branch: str, commits: list[CommitInfo], clean: bool = True) -> GitStatus:
         """Create status with commit history for tests.
 
         Args:
@@ -321,7 +321,7 @@ class StatusData:
     related_worktrees: list[WorktreeDisplayInfo]
 
     @staticmethod
-    def minimal(worktree_info: WorktreeDisplayInfo) -> "StatusData":
+    def minimal(worktree_info: WorktreeDisplayInfo) -> StatusData:
         """Create minimal status data (all optional fields None) for tests.
 
         Args:
@@ -361,7 +361,7 @@ class StatusData:
         )
 
     @staticmethod
-    def with_git_status(worktree_info: WorktreeDisplayInfo, git_status: GitStatus) -> "StatusData":
+    def with_git_status(worktree_info: WorktreeDisplayInfo, git_status: GitStatus) -> StatusData:
         """Create status data with git status populated.
 
         Args:

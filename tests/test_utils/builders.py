@@ -72,7 +72,7 @@ class GraphiteCacheBuilder:
         self._branches: list[tuple[str, dict[str, Any]]] = []
         self._trunk_branches: set[str] = set()
 
-    def add_trunk(self, name: str, children: list[str] | None = None) -> "GraphiteCacheBuilder":
+    def add_trunk(self, name: str, children: list[str] | None = None) -> GraphiteCacheBuilder:
         """Add a trunk branch (main, master, develop).
 
         Args:
@@ -96,7 +96,7 @@ class GraphiteCacheBuilder:
 
     def add_branch(
         self, name: str, parent: str, children: list[str] | None = None
-    ) -> "GraphiteCacheBuilder":
+    ) -> GraphiteCacheBuilder:
         """Add a feature branch with parent.
 
         Args:
@@ -174,7 +174,7 @@ class PullRequestInfoBuilder:
         self.has_conflicts: bool | None = None
         self.will_close_target: bool = False
 
-    def with_passing_checks(self) -> "PullRequestInfoBuilder":
+    def with_passing_checks(self) -> PullRequestInfoBuilder:
         """Configure PR with passing checks.
 
         Returns:
@@ -183,7 +183,7 @@ class PullRequestInfoBuilder:
         self.checks_passing = True
         return self
 
-    def with_failing_checks(self) -> "PullRequestInfoBuilder":
+    def with_failing_checks(self) -> PullRequestInfoBuilder:
         """Configure PR with failing checks.
 
         Returns:
@@ -192,7 +192,7 @@ class PullRequestInfoBuilder:
         self.checks_passing = False
         return self
 
-    def as_draft(self) -> "PullRequestInfoBuilder":
+    def as_draft(self) -> PullRequestInfoBuilder:
         """Configure PR as draft.
 
         Returns:
@@ -201,7 +201,7 @@ class PullRequestInfoBuilder:
         self.is_draft = True
         return self
 
-    def as_merged(self) -> "PullRequestInfoBuilder":
+    def as_merged(self) -> PullRequestInfoBuilder:
         """Configure PR as merged.
 
         Returns:
@@ -210,7 +210,7 @@ class PullRequestInfoBuilder:
         self.state = "MERGED"
         return self
 
-    def as_closed(self) -> "PullRequestInfoBuilder":
+    def as_closed(self) -> PullRequestInfoBuilder:
         """Configure PR as closed (not merged).
 
         Returns:
@@ -219,7 +219,7 @@ class PullRequestInfoBuilder:
         self.state = "CLOSED"
         return self
 
-    def with_conflicts(self) -> "PullRequestInfoBuilder":
+    def with_conflicts(self) -> PullRequestInfoBuilder:
         """Configure PR as having merge conflicts.
 
         Returns:
@@ -228,7 +228,7 @@ class PullRequestInfoBuilder:
         self.has_conflicts = True
         return self
 
-    def as_closing(self) -> "PullRequestInfoBuilder":
+    def as_closing(self) -> PullRequestInfoBuilder:
         """Configure PR as one that will close the linked issue when merged.
 
         Returns:
@@ -308,7 +308,7 @@ class WorktreeScenario:
         self._use_graphite = False
         self._show_pr_info = False
 
-    def with_main_branch(self, name: str = "main") -> "WorktreeScenario":
+    def with_main_branch(self, name: str = "main") -> WorktreeScenario:
         """Add main/root worktree.
 
         Args:
@@ -327,7 +327,7 @@ class WorktreeScenario:
         self._current_branches[self.repo_root] = name
         return self
 
-    def with_feature_branch(self, name: str, parent: str = "main") -> "WorktreeScenario":
+    def with_feature_branch(self, name: str, parent: str = "main") -> WorktreeScenario:
         """Add feature branch worktree.
 
         Args:
@@ -355,7 +355,7 @@ class WorktreeScenario:
         checks_passing: bool | None = None,
         is_draft: bool = False,
         state: str = "OPEN",
-    ) -> "WorktreeScenario":
+    ) -> WorktreeScenario:
         """Add PR for a branch.
 
         Args:
@@ -376,7 +376,7 @@ class WorktreeScenario:
         self._prs[branch] = builder.build()
         return self
 
-    def with_graphite_stack(self, branches: list[str]) -> "WorktreeScenario":
+    def with_graphite_stack(self, branches: list[str]) -> WorktreeScenario:
         """Add worktree stack for a branch (last branch is current).
 
         Args:
@@ -390,7 +390,7 @@ class WorktreeScenario:
         self._graphite_stacks[current_branch] = branches
         return self
 
-    def build(self) -> "WorktreeScenario":
+    def build(self) -> WorktreeScenario:
         """Build the scenario and create fakes.
 
         Returns:
@@ -474,7 +474,7 @@ class BranchStackBuilder:
         self._branches: dict[str, BranchMetadata] = {}
         self._commit_shas: dict[str, str] = {}
 
-    def add_linear_stack(self, *branches: str) -> "BranchStackBuilder":
+    def add_linear_stack(self, *branches: str) -> BranchStackBuilder:
         """Add branches in linear parent→child order.
 
         Creates chain: trunk → branch[0] → branch[1] → ... → branch[N]
@@ -511,7 +511,7 @@ class BranchStackBuilder:
         parent: str,
         children: list[str] | None = None,
         commit_sha: str | None = None,
-    ) -> "BranchStackBuilder":
+    ) -> BranchStackBuilder:
         """Add a single branch with explicit parent and children.
 
         Args:
@@ -535,7 +535,7 @@ class BranchStackBuilder:
 
         return self
 
-    def with_commit_sha(self, branch: str, sha: str) -> "BranchStackBuilder":
+    def with_commit_sha(self, branch: str, sha: str) -> BranchStackBuilder:
         """Set commit SHA for a branch.
 
         Args:

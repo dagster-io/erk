@@ -23,7 +23,7 @@ class BranchMetadata:
         *,
         children: list[str] | None = None,
         commit_sha: str | None = None,
-    ) -> "BranchMetadata":
+    ) -> BranchMetadata:
         """Create a trunk branch (main/master/develop).
 
         Args:
@@ -49,7 +49,7 @@ class BranchMetadata:
         *,
         children: list[str] | None = None,
         commit_sha: str | None = None,
-    ) -> "BranchMetadata":
+    ) -> BranchMetadata:
         """Create a regular feature branch.
 
         Args:

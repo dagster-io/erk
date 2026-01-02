@@ -333,7 +333,7 @@ class Graphite(ABC):
 
     def squash_branch_idempotent(
         self, repo_root: Path, *, quiet: bool = True
-    ) -> "SquashSuccess | SquashError":
+    ) -> SquashSuccess | SquashError:
         """Squash commits idempotently - succeeds even if already single commit.
 
         This is a convenience method that wraps squash_branch() and handles the

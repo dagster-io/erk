@@ -108,7 +108,7 @@ class Ensure:
 
     @staticmethod
     def path_exists(
-        ctx: "ErkContext",
+        ctx: ErkContext,
         path: Path,
         error_message: str | None = None,
     ) -> None:
@@ -164,7 +164,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def git_worktree_exists(ctx: "ErkContext", wt_path: Path, name: str | None = None) -> None:
+    def git_worktree_exists(ctx: ErkContext, wt_path: Path, name: str | None = None) -> None:
         """Ensure worktree exists at path, otherwise output styled error and exit.
 
         Args:
@@ -186,7 +186,7 @@ class Ensure:
         Ensure.path_exists(ctx, wt_path, error_message)
 
     @staticmethod
-    def git_branch_exists(ctx: "ErkContext", repo_root: Path, branch: str) -> None:
+    def git_branch_exists(ctx: ErkContext, repo_root: Path, branch: str) -> None:
         """Ensure git branch exists, otherwise output styled error and exit.
 
         Args:
@@ -209,7 +209,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def in_git_worktree(ctx: "ErkContext", current_path: Path | None) -> None:
+    def in_git_worktree(ctx: ErkContext, current_path: Path | None) -> None:
         """Ensure currently in a git worktree, otherwise output styled error and exit.
 
         Args:
@@ -302,7 +302,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def path_is_dir(ctx: "ErkContext", path: Path, error_message: str | None = None) -> None:
+    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -> None:
         """Ensure path exists and is a directory, otherwise output styled error and exit.
 
         Args:
@@ -324,7 +324,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def path_not_exists(ctx: "ErkContext", path: Path, error_message: str) -> None:
+    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -> None:
         """Ensure path does NOT exist, otherwise output styled error and exit.
 
         Inverse of path_exists - used when creating new resources that must not collide.
@@ -398,7 +398,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def graphite_available(ctx: "ErkContext") -> None:
+    def graphite_available(ctx: ErkContext) -> None:
         """Ensure Graphite integration is available (enabled and installed).
 
         Checks if ctx.graphite is a GraphiteDisabled sentinel, and if so,
@@ -448,7 +448,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def gt_authenticated(ctx: "ErkContext") -> None:
+    def gt_authenticated(ctx: ErkContext) -> None:
         """Ensure Graphite CLI (gt) is authenticated.
 
         Uses LBYL pattern to check gt authentication status before operations
@@ -477,7 +477,7 @@ class Ensure:
             raise SystemExit(1)
 
     @staticmethod
-    def gh_authenticated(ctx: "ErkContext") -> None:
+    def gh_authenticated(ctx: ErkContext) -> None:
         """Ensure GitHub CLI (gh) is installed and authenticated.
 
         Uses LBYL pattern to check gh installation and authentication status

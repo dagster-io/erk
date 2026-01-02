@@ -44,7 +44,7 @@ class RetriesExhausted:
     reason: str
 
 
-def with_retries(
+def with_retries[T](
     time: Time,
     operation_name: str,
     fn: Callable[[], T | RetryRequested],

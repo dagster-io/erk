@@ -72,7 +72,7 @@ def _format_resolution_comment(comment: str) -> str:
     return f"{comment}\n\n_Addressed via `/erk:pr-address` at {timestamp}_"
 
 
-def _ensure_not_error(result: T | ResolveThreadError) -> T:
+def _ensure_not_error[T](result: T | ResolveThreadError) -> T:
     """Ensure result is not an error, otherwise output JSON and exit.
 
     Provides type narrowing: takes `T | ResolveThreadError` and returns `T`.
@@ -93,7 +93,7 @@ def _ensure_not_error(result: T | ResolveThreadError) -> T:
 
 
 def _add_comment_if_provided(
-    github: "GitHub",
+    github: GitHub,
     repo_root: Path,
     thread_id: str,
     comment: str | None,

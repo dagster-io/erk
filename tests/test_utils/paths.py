@@ -51,7 +51,7 @@ class SentinelPath(type(Path())):
         """
         return str(self) in SentinelPath._file_storage
 
-    def resolve(self, strict: bool = False) -> "SentinelPath":
+    def resolve(self, strict: bool = False) -> SentinelPath:
         """Return self without resolving (no-op for sentinel paths).
 
         In production, .resolve() canonicalizes paths and resolves symlinks.
@@ -60,7 +60,7 @@ class SentinelPath(type(Path())):
         """
         return self
 
-    def expanduser(self) -> "SentinelPath":
+    def expanduser(self) -> SentinelPath:
         """Expand ~ in path, returning SentinelPath to maintain sentinel behavior.
 
         In production, .expanduser() expands ~ to the home directory.
