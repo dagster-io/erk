@@ -31,7 +31,7 @@ Signal Files:
         Lifecycle: Deleted after being read by next hook invocation
 
     incremental-plan.signal
-        Created by: /local:incremental-plan command (via agent creating signal file)
+        Created by: /local:incremental-plan-mode command (via agent creating signal file)
         Effect: Next ExitPlanMode call is ALLOWED, skipping the save prompt entirely
         Lifecycle: Deleted after being read by next hook invocation
         Purpose: Streamlines "plan → implement → submit" loop for PR iteration
@@ -184,7 +184,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             delete_implement_now_signal=True,
         )
 
-    # Incremental-plan signal present (session started via /local:incremental-plan)
+    # Incremental-plan signal present (session started via /local:incremental-plan-mode)
     # Skip the "save as GitHub issue?" prompt and proceed directly to implementation
     if hook_input.incremental_plan_signal_exists:
         return HookOutput(
