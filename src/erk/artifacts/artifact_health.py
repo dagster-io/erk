@@ -11,7 +11,12 @@ from erk.artifacts.discovery import (
     _compute_file_hash,
     _compute_hook_hash,
 )
-from erk.artifacts.models import ArtifactFileState, CompletenessCheckResult, OrphanCheckResult
+from erk.artifacts.models import (
+    ArtifactFileState,
+    CompletenessCheckResult,
+    InstalledArtifact,
+    OrphanCheckResult,
+)
 from erk.artifacts.sync import get_bundled_claude_dir, get_bundled_github_dir
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
@@ -33,6 +38,28 @@ BUNDLED_AGENTS = frozenset({"devrun"})
 BUNDLED_WORKFLOWS = frozenset({"erk-impl.yml"})
 # Hook configurations that erk adds to settings.json
 BUNDLED_HOOKS = frozenset({"user-prompt-hook", "exit-plan-mode-hook"})
+
+
+def is_erk_managed(artifact: InstalledArtifact) -> bool:
+    """Check if artifact is managed by erk (bundled with erk package).
+
+    Args:
+        artifact: The artifact to check
+
+    Returns:
+        True if the artifact is bundled with erk, False if it's project-specific
+    """
+    if artifact.artifact_type == "command":
+        return artifact.name.startswith("erk:")
+    if artifact.artifact_type == "skill":
+        return artifact.name in BUNDLED_SKILLS
+    if artifact.artifact_type == "agent":
+        return artifact.name in BUNDLED_AGENTS
+    if artifact.artifact_type == "workflow":
+        return f"{artifact.name}.yml" in BUNDLED_WORKFLOWS
+    if artifact.artifact_type == "hook":
+        return artifact.name in BUNDLED_HOOKS
+    return False
 
 
 # Status types for per-artifact version tracking

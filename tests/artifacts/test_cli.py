@@ -5,9 +5,10 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
+from erk.artifacts.artifact_health import is_erk_managed
 from erk.artifacts.models import InstalledArtifact
 from erk.cli.commands.artifact.check import check_cmd
-from erk.cli.commands.artifact.list_cmd import _is_erk_managed, list_cmd
+from erk.cli.commands.artifact.list_cmd import list_cmd
 from erk.cli.commands.artifact.show import show_cmd
 from erk.cli.commands.artifact.sync_cmd import sync_cmd
 
@@ -135,7 +136,7 @@ class TestListCommand:
 
 
 class TestIsErkManaged:
-    """Tests for _is_erk_managed helper function."""
+    """Tests for is_erk_managed helper function."""
 
     def test_erk_command_is_managed(self) -> None:
         """Commands with erk: prefix are erk-managed."""
@@ -145,7 +146,7 @@ class TestIsErkManaged:
             path=Path(".claude/commands/erk/plan-implement.md"),
             content_hash=None,
         )
-        assert _is_erk_managed(artifact) is True
+        assert is_erk_managed(artifact) is True
 
     def test_local_command_not_managed(self) -> None:
         """Commands with local: prefix are not erk-managed."""
@@ -155,7 +156,7 @@ class TestIsErkManaged:
             path=Path(".claude/commands/local/my-cmd.md"),
             content_hash=None,
         )
-        assert _is_erk_managed(artifact) is False
+        assert is_erk_managed(artifact) is False
 
     def test_bundled_skill_is_managed(self) -> None:
         """Skills in BUNDLED_SKILLS are erk-managed."""
@@ -165,7 +166,7 @@ class TestIsErkManaged:
             path=Path(".claude/skills/dignified-python"),
             content_hash=None,
         )
-        assert _is_erk_managed(artifact) is True
+        assert is_erk_managed(artifact) is True
 
     def test_custom_skill_not_managed(self) -> None:
         """Skills not in BUNDLED_SKILLS are not erk-managed."""
@@ -175,7 +176,7 @@ class TestIsErkManaged:
             path=Path(".claude/skills/my-custom-skill"),
             content_hash=None,
         )
-        assert _is_erk_managed(artifact) is False
+        assert is_erk_managed(artifact) is False
 
     def test_bundled_agent_is_managed(self) -> None:
         """Agents in BUNDLED_AGENTS are erk-managed."""
@@ -185,7 +186,7 @@ class TestIsErkManaged:
             path=Path(".claude/agents/devrun"),
             content_hash=None,
         )
-        assert _is_erk_managed(artifact) is True
+        assert is_erk_managed(artifact) is True
 
     def test_custom_agent_not_managed(self) -> None:
         """Agents not in BUNDLED_AGENTS are not erk-managed."""
@@ -195,7 +196,7 @@ class TestIsErkManaged:
             path=Path(".claude/agents/my-agent"),
             content_hash=None,
         )
-        assert _is_erk_managed(artifact) is False
+        assert is_erk_managed(artifact) is False
 
 
 class TestShowCommand:
@@ -546,3 +547,135 @@ class TestCheckCommandShowsActualArtifacts:
         assert "skills/dignified-python" in result.output
         # Should NOT show agents/devrun - it doesn't exist in .claude/
         assert "agents/devrun" not in result.output
+
+
+class TestCheckVerboseShowsBothArtifactTypes:
+    """Tests for verbose mode showing both erk-managed and project artifacts."""
+
+    def test_verbose_shows_erk_managed_and_project_artifacts(self, tmp_path: Path) -> None:
+        """Verbose mode shows both erk-managed artifacts with status and project artifacts.
+
+        Note: Exit code may be non-zero due to missing bundled artifacts (skills, hooks).
+        This test verifies the output format, not sync status.
+        """
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Set up version as up-to-date
+            state_file = Path(".erk/state.toml")
+            state_file.parent.mkdir(parents=True)
+            state_file.write_text(
+                '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
+
+            # Create bundled directory with one command
+            bundled_dir = tmp_path / "bundled" / ".claude"
+            bundled_commands = bundled_dir / "commands" / "erk"
+            bundled_commands.mkdir(parents=True)
+            (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            # Create .claude/ with both erk-managed and project artifacts
+            project_claude = Path(".claude")
+            project_commands_erk = project_claude / "commands" / "erk"
+            project_commands_erk.mkdir(parents=True)
+            (project_commands_erk / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            # Project-specific artifacts (local commands)
+            project_commands_local = project_claude / "commands" / "local"
+            project_commands_local.mkdir(parents=True)
+            (project_commands_local / "my-command.md").write_text("# Local", encoding="utf-8")
+
+            # Project-specific skill
+            skill_dir = project_claude / "skills" / "my-custom-skill"
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text("# Custom", encoding="utf-8")
+
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
+            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+                with patch(
+                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    return_value=bundled_dir,
+                ):
+                    with patch(
+                        "erk.artifacts.artifact_health.get_bundled_github_dir",
+                        return_value=bundled_github,
+                    ):
+                        result = runner.invoke(check_cmd, ["-v"])
+
+        # Verify verbose output has both sections
+        assert "Erk-managed artifacts:" in result.output
+        assert "Project artifacts:" in result.output
+        # Should show project artifacts
+        assert "commands/local/my-command.md" in result.output
+        assert "skills/my-custom-skill" in result.output
+
+    def test_verbose_without_project_artifacts_omits_section(self, tmp_path: Path) -> None:
+        """Verbose mode omits Project artifacts section when none exist."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Set up version as up-to-date
+            state_file = Path(".erk/state.toml")
+            state_file.parent.mkdir(parents=True)
+            state_file.write_text(
+                '[artifacts]\nversion = "1.0.0"\n\n[artifacts.files]\n', encoding="utf-8"
+            )
+
+            # Create bundled directory with one command
+            bundled_dir = tmp_path / "bundled" / ".claude"
+            bundled_commands = bundled_dir / "commands" / "erk"
+            bundled_commands.mkdir(parents=True)
+            (bundled_commands / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            # Only erk-managed artifacts, no project-specific ones
+            project_claude = Path(".claude")
+            project_commands_erk = project_claude / "commands" / "erk"
+            project_commands_erk.mkdir(parents=True)
+            (project_commands_erk / "plan-implement.md").write_text("# Command", encoding="utf-8")
+
+            # Create bundled github dir (empty, no workflows)
+            bundled_github = tmp_path / "bundled" / ".github"
+            bundled_github.mkdir(parents=True)
+
+            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+                with patch(
+                    "erk.artifacts.artifact_health.get_bundled_claude_dir",
+                    return_value=bundled_dir,
+                ):
+                    with patch(
+                        "erk.artifacts.artifact_health.get_bundled_github_dir",
+                        return_value=bundled_github,
+                    ):
+                        result = runner.invoke(check_cmd, ["-v"])
+
+        assert "Erk-managed artifacts:" in result.output
+        # Project artifacts section should be omitted when no project artifacts exist
+        assert "Project artifacts:" not in result.output
+
+    def test_verbose_dev_mode_shows_both_sections(self, tmp_path: Path) -> None:
+        """Verbose mode in dev repo shows both erk-managed and project artifacts."""
+        runner = CliRunner()
+        with runner.isolated_filesystem(temp_dir=tmp_path):
+            # Create pyproject.toml with erk name (triggers dev mode)
+            Path("pyproject.toml").write_text('[project]\nname = "erk"\n', encoding="utf-8")
+
+            # Create .claude/ with bundled skill
+            skill_dir = Path(".claude/skills/dignified-python")
+            skill_dir.mkdir(parents=True)
+            (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
+
+            # Project-specific command
+            cmd_dir = Path(".claude/commands/local")
+            cmd_dir.mkdir(parents=True)
+            (cmd_dir / "my-local-cmd.md").write_text("# Local", encoding="utf-8")
+
+            with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
+                result = runner.invoke(check_cmd, ["-v"])
+
+        # Dev mode always succeeds
+        assert result.exit_code == 0
+        assert "Development mode" in result.output
+        assert "Erk-managed artifacts:" in result.output
+        assert "Project artifacts:" in result.output
+        assert "commands/local/my-local-cmd.md" in result.output

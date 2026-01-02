@@ -4,29 +4,9 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.artifact_health import (
-    BUNDLED_AGENTS,
-    BUNDLED_HOOKS,
-    BUNDLED_SKILLS,
-    BUNDLED_WORKFLOWS,
-)
+from erk.artifacts.artifact_health import is_erk_managed
 from erk.artifacts.discovery import discover_artifacts
-from erk.artifacts.models import ArtifactType, InstalledArtifact
-
-
-def _is_erk_managed(artifact: InstalledArtifact) -> bool:
-    """Check if artifact is managed by erk."""
-    if artifact.artifact_type == "command":
-        return artifact.name.startswith("erk:")
-    if artifact.artifact_type == "skill":
-        return artifact.name in BUNDLED_SKILLS
-    if artifact.artifact_type == "agent":
-        return artifact.name in BUNDLED_AGENTS
-    if artifact.artifact_type == "workflow":
-        return f"{artifact.name}.yml" in BUNDLED_WORKFLOWS
-    if artifact.artifact_type == "hook":
-        return artifact.name in BUNDLED_HOOKS
-    return False
+from erk.artifacts.models import ArtifactType
 
 
 @click.command("list")
@@ -92,7 +72,7 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
             click.echo(click.style(header, bold=True))
 
         # Format badge based on management status
-        is_managed = _is_erk_managed(artifact)
+        is_managed = is_erk_managed(artifact)
         if is_managed:
             badge = click.style(" [erk]", fg="cyan")
         else:
