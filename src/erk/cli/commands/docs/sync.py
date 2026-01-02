@@ -3,12 +3,12 @@
 This command generates index.md files for docs/learned/ from frontmatter metadata.
 """
 
-import subprocess
 from pathlib import Path
 
 import click
 
 from erk.agent_docs.operations import sync_agent_docs
+from erk.cli.subprocess_utils import run_with_error_reporting
 
 
 @click.command(name="sync")
@@ -39,11 +39,10 @@ def sync_command(*, dry_run: bool, check: bool) -> None:
     effective_dry_run = dry_run or check
 
     # Find repository root
-    result = subprocess.run(
+    result = run_with_error_reporting(
         ["git", "rev-parse", "--show-toplevel"],
-        check=True,
-        capture_output=True,
-        text=True,
+        error_prefix="Failed to find repository root",
+        troubleshooting=["Ensure you're running from within a git repository"],
     )
     project_root = Path(result.stdout.strip())
 

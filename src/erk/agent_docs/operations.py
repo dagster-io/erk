@@ -5,7 +5,6 @@ files with frontmatter metadata.
 """
 
 import re
-import subprocess
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -20,6 +19,7 @@ from erk.agent_docs.models import (
     SyncResult,
     Tripwire,
 )
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
 AGENT_DOCS_DIR = "docs/learned"
 FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
@@ -502,12 +502,10 @@ def _format_with_prettier(content: str, file_path: Path) -> str:
     Returns:
         Formatted content.
     """
-    result = subprocess.run(
+    result = run_subprocess_with_context(
         ["prettier", "--stdin-filepath", str(file_path)],
+        operation_context="format markdown with prettier",
         input=content,
-        capture_output=True,
-        text=True,
-        check=True,
     )
     return result.stdout
 
