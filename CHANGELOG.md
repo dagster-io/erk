@@ -7,49 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of `f018f17f2`
+## [0.3.2] - 2026-01-02 12:30 PT
 
 ### Major Changes
 
-- **dignified-review**: Added AI-assisted code review as an optionally installed GitHub Action. Ensures compliance with dignified-python standards during code review by leaving comments on PRs. Comments are designed to be resolved via `/erk:pr-address`. (61e51e565)
+- **dignified-review**: Added AI-assisted code review as an optionally installed GitHub Action. Ensures compliance with dignified-python standards during code review by leaving comments on PRs. Comments are designed to be resolved via `/erk:pr-address`.
 
-- **Top-level `erk land` command**: Promoted land from `erk pr land` to `erk land`. Now accepts PR numbers, URLs, or branch names. Includes shell aliases `br land` and `branch land`. Landing PRs is a high-frequency operation that deserves top-level access. (49a1fdbbe)
+- **Top-level `erk land` command**: Promoted land from `erk pr land` to `erk land`. Now accepts PR numbers, URLs, or branch names. Includes shell aliases `br land` and `branch land`. Landing PRs is a high-frequency operation that deserves top-level access.
 
-- **Cross-repo plan storage**: Plans can now be stored in a separate repository. Configure via `.erk/config.toml` with `[plans] repo = "owner/repo"`. This avoids polluting the main codebase with plan issues, particularly valuable for open source repos like dagster where we don't want erk-specific artifacts. (b60ccf6da)
+- **Cross-repo plan storage**: Plans can now be stored in a separate repository. Configure via `.erk/config.toml` with `[plans] repo = "owner/repo"`. This avoids polluting the main codebase with plan issues, particularly valuable for open source repos like dagster where we don't want erk-specific artifacts.
 
-- **erk-statusline**: Added the erk statusline. Optionally installable via `erk init --statusline`. Displays current branch, worktree, GitHub checks status, PR info, and more. Provides at-a-glance visibility into your development state without running commands. (906035ca7)
+- **erk-statusline**: Added the erk statusline. Optionally installable via `erk init --statusline`. Displays current branch, worktree, GitHub checks status, PR info, and more. Provides at-a-glance visibility into your development state without running commands.
 
-- **Graphite opt-in**: Graphite is now optional. Not everyone uses Graphite, so although you don't get stacking features, Graphite-less operation is now a fully supported workflow. Commands gracefully degrade to standard git operations. (98d624603)
+- **Graphite opt-in**: Graphite is now optional. Not everyone uses Graphite, so although you don't get stacking features, Graphite-less operation is now a fully supported workflow. Commands gracefully degrade to standard git operations.
 
 ### Added
 
-- Add command logging for CLI audit trail (1d663e40e)
-- Add step-based progress tracking with GitHub metadata sync (973b51c26)
-- Add per-artifact version and hash tracking for health monitoring (1fd523ff7)
-- Add dynamic tripwire enforcement system (47d3acb30)
-- Add erk-statusline configuration to init and health checks (f5e5b8251)
-- Add copy-pasteable commands section to plan issues (d27cd9a97)
-- Add auto-rebase when local branch is behind remote before push (a05b100dd)
-- Add `--session-id` flag to marker CLI commands for explicit session ID (3a6cff2c6)
-- Add configurable `default` parameter to `user_confirm` function (207dde0a8)
+- Add command logging for CLI audit trail
+- Add step-based progress tracking with GitHub metadata sync
+- Add per-artifact version and hash tracking for health monitoring
+- Add dynamic tripwire enforcement system
+- Add erk-statusline configuration to init and health checks
+- Add copy-pasteable commands section to plan issues
+- Add auto-rebase when local branch is behind remote before push
+- Add `--session-id` flag to marker CLI commands for explicit session ID
+- Add configurable `default` parameter to `user_confirm` function
 
 ### Changed
 
-- Restructure init command with stepped flow and status line setup (6b0885273)
-- Standardize GitHub Actions workflow naming to kebab-case (43284a061)
+- Restructure init command with stepped flow and status line setup
+- Standardize GitHub Actions workflow naming to kebab-case
 
 ### Fixed
 
-- Fix `erk pr checkout` for stacked PRs (46d59c4a0)
-- Fix dignified-python skill LBYL vs try/except guidance (4f9ee21b2)
-- Fix `erk wt delete --all` to show accurate PR/plan status in planning phase (85178be5b)
-- Fix confirmation prompt output to stderr for consistency (2cc4b578a)
-- Fix pr-address skill handling of outdated review threads (6556b208f)
-- Fix changelog commit hash marker parsing to expect backtick formatting (f018f17f2)
-- Fix frontmatter deprecation warning cluttering test output (b8533f923)
-- Fix GitHub Actions shell specification in review workflows (03ede9320)
-- Fix Claude Code installation path in Docker image (a638315e8)
-- Fix status comparison: compare against `StatusData.loading()` not `is None` (5a00d16ca)
+- Fix `erk pr checkout` for stacked PRs
+- Fix dignified-python skill LBYL vs try/except guidance
+- Fix `erk wt delete --all` to show accurate PR/plan status in planning phase
+- Fix confirmation prompt output to stderr for consistency
+- Fix pr-address skill handling of outdated review threads
+- Fix changelog commit hash marker parsing to expect backtick formatting
+- Fix frontmatter deprecation warning cluttering test output
+- Fix GitHub Actions shell specification in review workflows
+- Fix Claude Code installation path in Docker image
+- Fix status comparison: compare against `StatusData.loading()` not `is None`
 
 ## [0.3.1] - 2025-12-31 15:52 PT
 
