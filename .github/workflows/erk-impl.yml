@@ -59,7 +59,7 @@ jobs:
           curl -fsSL https://claude.ai/install.sh | bash
           npm install -g prettier
           cd $GITHUB_WORKSPACE
-          uv tool install --from . --with ./packages/erk-shared erk
+          uv tool install -e . --with-editable ./packages/erk-shared
 
       - name: Configure git
         env:
