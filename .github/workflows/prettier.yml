@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   check-submission:
@@ -34,5 +34,10 @@ jobs:
           node-version: "20"
       - name: Install prettier
         run: npm install -g prettier@3.6.0
-      - name: Check markdown formatting
-        run: make prettier-check
+      - name: Format markdown files
+        run: make prettier
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format markdown with prettier"
+          file_pattern: "*.md **/*.md"
