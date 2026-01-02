@@ -549,6 +549,172 @@ class TestCreatePlanIssueResultDataclass:
         assert result.error == "Something went wrong"
 
 
+class TestCreateObjectiveIssue:
+    """Test objective issue creation (plan_type='objective')."""
+
+    def test_creates_objective_issue_with_correct_label(self, tmp_path: Path) -> None:
+        """Objective issues use erk-objective label, not erk-plan."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\n## Goal\n\nBuild a feature..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            plan_type="objective",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
+        )
+
+        assert result.success is True
+        assert result.issue_number == 1
+        assert result.title == "My Objective"
+
+        # Verify label is erk-objective, not erk-plan
+        _, body, labels = fake_gh.created_issues[0]
+        assert labels == ["erk-objective"]
+        assert "erk-plan" not in labels
+
+        # Verify erk-objective label was created
+        assert "erk-objective" in fake_gh.labels
+
+    def test_objective_has_no_title_suffix(self, tmp_path: Path) -> None:
+        """Objective issues have no title suffix."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            plan_type="objective",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
+        )
+
+        assert result.success is True
+
+        # Title should be just the extracted title, no suffix
+        title, _, _ = fake_gh.created_issues[0]
+        assert title == "My Objective"
+        assert "[erk-plan]" not in title
+        assert "[erk-objective]" not in title
+
+    def test_objective_has_plan_content_in_body(self, tmp_path: Path) -> None:
+        """Objective issues have plan content directly in body, no metadata."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\n## Goal\n\nBuild something great."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            plan_type="objective",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
+        )
+
+        assert result.success is True
+
+        # Body should contain the plan content directly
+        _, body, _ = fake_gh.created_issues[0]
+        assert "# My Objective" in body
+        assert "## Goal" in body
+        assert "Build something great." in body
+
+        # Body should NOT have metadata block
+        assert "schema_version:" not in body
+        assert "created_at:" not in body
+
+    def test_objective_has_no_comment(self, tmp_path: Path) -> None:
+        """Objective issues have no comment (content is in body)."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            plan_type="objective",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
+        )
+
+        assert result.success is True
+
+        # No comments should be added
+        assert len(fake_gh.added_comments) == 0
+
+    def test_objective_has_no_commands_section(self, tmp_path: Path) -> None:
+        """Objective issues have no commands section."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            plan_type="objective",
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
+        )
+
+        assert result.success is True
+
+        # Body should not have been updated (no commands section added)
+        assert len(fake_gh.updated_bodies) == 0
+
+    def test_objective_with_extra_labels(self, tmp_path: Path) -> None:
+        """Objective issues can have extra labels."""
+        fake_gh = FakeGitHubIssues(username="testuser")
+        plan_content = "# My Objective\n\nContent..."
+
+        result = create_plan_issue(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            plan_content=plan_content,
+            title=None,
+            plan_type="objective",
+            extra_labels=["priority-high"],
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,
+            objective_issue=None,
+        )
+
+        assert result.success is True
+
+        _, _, labels = fake_gh.created_issues[0]
+        assert "erk-objective" in labels
+        assert "priority-high" in labels
+
+
 class TestCreatePlanIssueCommandsSection:
     """Test that commands section is added correctly."""
 

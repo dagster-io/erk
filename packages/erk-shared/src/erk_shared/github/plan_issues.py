@@ -33,6 +33,10 @@ _LABEL_ERK_EXTRACTION = "erk-extraction"
 _LABEL_ERK_EXTRACTION_DESC = "Documentation extraction plan"
 _LABEL_ERK_EXTRACTION_COLOR = "D93F0B"
 
+_LABEL_ERK_OBJECTIVE = "erk-objective"
+_LABEL_ERK_OBJECTIVE_DESC = "Multi-phase objective with roadmap"
+_LABEL_ERK_OBJECTIVE_COLOR = "5319E7"
+
 
 @dataclass(frozen=True)
 class CreatePlanIssueResult:
@@ -113,9 +117,12 @@ def create_plan_issue(
         title = extract_title_from_plan(plan_content)
 
     # Step 3: Determine labels based on plan_type
-    labels = [_LABEL_ERK_PLAN]
-    if plan_type == "extraction":
-        labels.append(_LABEL_ERK_EXTRACTION)
+    if plan_type == "objective":
+        labels = [_LABEL_ERK_OBJECTIVE]
+    else:
+        labels = [_LABEL_ERK_PLAN]
+        if plan_type == "extraction":
+            labels.append(_LABEL_ERK_EXTRACTION)
 
     # Add any extra labels
     if extra_labels:
@@ -136,14 +143,51 @@ def create_plan_issue(
 
     # Step 4: Determine title suffix
     if title_suffix is None:
-        if plan_type == "extraction":
+        if plan_type == "objective":
+            title_suffix = ""
+        elif plan_type == "extraction":
             title_suffix = "[erk-extraction]"
         else:
             title_suffix = "[erk-plan]"
 
-    issue_title = f"{title} {title_suffix}"
+    # Build issue title - only add suffix if non-empty
+    if title_suffix:
+        issue_title = f"{title} {title_suffix}"
+    else:
+        issue_title = title
 
-    # Prepare metadata body
+    # For objectives: plan content goes directly in body (no metadata, no comment)
+    # For regular plans: use metadata body + plan content in comment
+    if plan_type == "objective":
+        issue_body = plan_content.strip()
+
+        # Create issue with plan content directly in body
+        try:
+            result = github_issues.create_issue(
+                repo_root=repo_root,
+                title=issue_title,
+                body=issue_body,
+                labels=labels,
+            )
+        except RuntimeError as e:
+            return CreatePlanIssueResult(
+                success=False,
+                issue_number=None,
+                issue_url=None,
+                title=title,
+                error=f"Failed to create GitHub issue: {e}",
+            )
+
+        # No comment, no commands section for objectives
+        return CreatePlanIssueResult(
+            success=True,
+            issue_number=result.number,
+            issue_url=result.url,
+            title=title,
+            error=None,
+        )
+
+    # Standard and extraction plans: metadata body + plan content in comment
     created_at = datetime.now(UTC).isoformat()
     issue_body = format_plan_header_body(
         created_at=created_at,
@@ -247,6 +291,13 @@ def _ensure_labels_exist(
                     label=_LABEL_ERK_EXTRACTION,
                     description=_LABEL_ERK_EXTRACTION_DESC,
                     color=_LABEL_ERK_EXTRACTION_COLOR,
+                )
+            elif label == _LABEL_ERK_OBJECTIVE:
+                github_issues.ensure_label_exists(
+                    repo_root=repo_root,
+                    label=_LABEL_ERK_OBJECTIVE,
+                    description=_LABEL_ERK_OBJECTIVE_DESC,
+                    color=_LABEL_ERK_OBJECTIVE_COLOR,
                 )
             # Extra labels are assumed to already exist
     except RuntimeError as e:
