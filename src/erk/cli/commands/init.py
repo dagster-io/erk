@@ -8,12 +8,12 @@ from erk.artifacts.sync import sync_artifacts, sync_feature
 from erk.cli.core import discover_repo_context
 from erk.core.claude_settings import (
     ERK_PERMISSION,
-    ERK_STATUSLINE_COMMAND,
     NoBackupCreated,
     StatuslineNotConfigured,
     add_erk_hooks,
     add_erk_permission,
     add_erk_statusline,
+    get_erk_statusline_command,
     get_global_claude_settings_path,
     get_repo_claude_settings_path,
     get_statusline_config,
@@ -385,7 +385,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     # Different statusline configured - warn and prompt
     if not isinstance(current_config, StatuslineNotConfigured):
         user_output(f"\n  Existing statusLine found: {current_config.command}")
-        if not click.confirm(f"  Replace with {ERK_STATUSLINE_COMMAND}?", default=False):
+        if not click.confirm(f"  Replace with {get_erk_statusline_command()}?", default=False):
             user_output("  Skipped. Keeping existing statusLine configuration.")
             return False
 

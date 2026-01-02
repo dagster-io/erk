@@ -5,6 +5,7 @@ specifically for managing permissions in the repo's .claude/settings.json.
 """
 
 import json
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,15 +13,21 @@ from pathlib import Path
 # The permission pattern that allows Claude to run erk commands without prompting
 ERK_PERMISSION = "Bash(erk:*)"
 
-# Status line configuration for erk-statusline integration
-ERK_STATUSLINE_COMMAND = "erk-statusline"
-
 # Hook commands for erk integration
 ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
 ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
 
-# Statusline configuration
-ERK_STATUSLINE_COMMAND = "erk-statusline"
+# Statusline command - can be overridden via ERK_STATUSLINE_COMMAND env var for dev mode
+ERK_STATUSLINE_COMMAND = "uvx erk-statusline"
+
+
+def get_erk_statusline_command() -> str:
+    """Get the statusline command, checking env var for dev mode override.
+
+    Returns:
+        ERK_STATUSLINE_COMMAND env var if set, otherwise "uvx erk-statusline".
+    """
+    return os.environ.get("ERK_STATUSLINE_COMMAND", ERK_STATUSLINE_COMMAND)
 
 
 @dataclass(frozen=True)
@@ -291,7 +298,7 @@ def has_erk_statusline(settings: dict) -> bool:
     config = get_statusline_config(settings)
     if isinstance(config, StatuslineNotConfigured):
         return False
-    return config.command == ERK_STATUSLINE_COMMAND
+    return config.command == get_erk_statusline_command()
 
 
 def add_erk_statusline(settings: dict) -> dict:
@@ -310,7 +317,7 @@ def add_erk_statusline(settings: dict) -> dict:
 
     new_settings["statusLine"] = {
         "type": "command",
-        "command": ERK_STATUSLINE_COMMAND,
+        "command": get_erk_statusline_command(),
     }
 
     return new_settings
