@@ -1,5 +1,6 @@
 """Custom Click help formatter for organized command display."""
 
+import shutil
 from collections.abc import Callable
 from typing import TypeVar
 
@@ -43,6 +44,24 @@ def _get_show_hidden_from_context(ctx: click.Context) -> bool:
     store = RealConfigStore()
     if store.exists():
         return store.load().show_hidden_commands
+    return False
+
+
+def _is_graphite_available(ctx: click.Context) -> bool:
+    """Check if Graphite is available for command visibility.
+
+    Checks ctx.obj.graphite if available (tests or after callback),
+    otherwise loads config from disk and checks gt binary (help before callback).
+    """
+    if ctx.obj is not None:
+        return not isinstance(ctx.obj.graphite, GraphiteDisabled)
+    # Fallback to loading from disk (for help before callback runs)
+    store = RealConfigStore()
+    if store.exists():
+        config = store.load()
+        if config.use_graphite:
+            # Config says use Graphite - check if gt is installed
+            return shutil.which("gt") is not None
     return False
 
 
@@ -162,9 +181,7 @@ class ErkCommandGroup(click.Group):
         show_hidden = getattr(ctx, "show_hidden", False)
 
         # Check if Graphite is available (for hiding Graphite-dependent commands)
-        graphite_available = ctx.obj is not None and not isinstance(
-            ctx.obj.graphite, GraphiteDisabled
-        )
+        graphite_available = _is_graphite_available(ctx)
 
         commands = []
         hidden_commands = []
