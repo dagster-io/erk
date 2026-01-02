@@ -1,4 +1,4 @@
-name: Documentation Check
+name: docs-check
 
 on:
   push:

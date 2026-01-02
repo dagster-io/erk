@@ -1,4 +1,4 @@
-name: Tripwires Review
+name: tripwires-review
 
 on:
   pull_request:

@@ -1,4 +1,4 @@
-name: Auto-Restack PR
+name: auto-restack
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: Markdown Format Check
+name: markdown-format
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Dignified Python Review
+name: dignified-python-review
 
 on:
   pull_request:

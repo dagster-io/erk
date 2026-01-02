@@ -5,7 +5,7 @@
 # Without this setting, PR creation will fail with:
 # "GitHub Actions is not permitted to create or approve pull requests"
 
-name: Implement Extraction Plan
+name: extraction-dispatch
 run-name: "Implement Extraction: #${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}"
 
 on:

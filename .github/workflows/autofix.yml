@@ -1,8 +1,8 @@
-name: Autofix
+name: autofix
 
 on:
   workflow_run:
-    workflows: ["Python Format Check", "Lint", "Documentation Check"]
+    workflows: ["python-format", "lint", "docs-check", "markdown-format"]
     types: [completed]
   workflow_dispatch:
 
