@@ -31,6 +31,7 @@ jobs:
         uses: ./.github/actions/setup-claude-erk
 
       - name: Prepare prompt
+        shell: bash
         run: |
           # Read prompt file and substitute variables
           PROMPT=$(cat .github/prompts/dignified-python-review.md)
