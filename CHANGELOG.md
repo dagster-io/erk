@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-01-02 13:44 PT
+
+### Changed
+
+- Move erk-statusline from dev to core dependencies
+
+### Fixed
+
+- Fix BranchMetadata forward reference
+
 ## [0.3.2] - 2026-01-02 12:30 PT
 
 ### Major Changes
