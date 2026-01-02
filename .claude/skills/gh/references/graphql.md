@@ -33,18 +33,20 @@ Can the task be done with gh porcelain commands?
 
 ### Quick Reference: CLI vs GraphQL
 
-| Capability                  | gh CLI Command    | GraphQL Required?       |
-| --------------------------- | ----------------- | ----------------------- |
-| Create PR                   | `gh pr create`    | ❌ No                   |
-| List PRs with basic filters | `gh pr list`      | ❌ No                   |
-| View PR with reviews        | `gh pr view`      | ❌ No                   |
-| Create issue                | `gh issue create` | ❌ No                   |
-| Manage Projects V2          | N/A               | ✅ Yes                  |
-| Query Discussions           | N/A               | ✅ Yes                  |
-| Batch query repos           | N/A               | ✅ Yes                  |
-| Advanced issue search       | N/A               | ✅ Yes                  |
-| Complex nested queries      | Limited           | ✅ Yes (more efficient) |
-| Custom field queries        | Limited           | ✅ Yes (more flexible)  |
+| Capability                  | gh CLI Command    | GraphQL Required?                    |
+| --------------------------- | ----------------- | ------------------------------------ |
+| Create PR                   | `gh pr create`    | ❌ No (but uses GraphQL internally!) |
+| List PRs with basic filters | `gh pr list`      | ❌ No                                |
+| View PR with reviews        | `gh pr view`      | ❌ No                                |
+| Create issue                | `gh issue create` | ❌ No (but uses GraphQL internally!) |
+| Manage Projects V2          | N/A               | ✅ Yes                               |
+| Query Discussions           | N/A               | ✅ Yes                               |
+| Batch query repos           | N/A               | ✅ Yes                               |
+| Advanced issue search       | N/A               | ✅ Yes                               |
+| Complex nested queries      | Limited           | ✅ Yes (more efficient)              |
+| Custom field queries        | Limited           | ✅ Yes (more flexible)               |
+
+> **Warning for automation**: Many `gh` porcelain commands (`gh issue create`, `gh pr create`) use **GraphQL internally**, which means they consume GraphQL rate limit quota. For programmatic use in erk, always use `gh api` with REST endpoints instead. See [GitHub API Rate Limits](../../../docs/learned/architecture/github-api-rate-limits.md) for details.
 
 ---
 

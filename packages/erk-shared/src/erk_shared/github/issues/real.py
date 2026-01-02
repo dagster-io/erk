@@ -59,23 +59,39 @@ class RealGitHubIssues(GitHubIssues):
     def create_issue(
         self, repo_root: Path, title: str, body: str, labels: list[str]
     ) -> CreateIssueResult:
-        """Create a new GitHub issue using gh CLI.
+        """Create a new GitHub issue using gh CLI REST API.
+
+        Uses REST API instead of GraphQL (`gh issue create`) to avoid hitting
+        GraphQL rate limits. GraphQL and REST have separate quotas.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, etc.).
         """
-        base_cmd = ["gh", "issue", "create", "--title", title, "--body", body]
+        base_cmd = [
+            "gh",
+            "api",
+            "repos/{owner}/{repo}/issues",
+            "-X",
+            "POST",
+            "-f",
+            f"title={title}",
+            "-f",
+            f"body={body}",
+            "--jq",
+            r'"\(.number) \(.html_url)"',
+        ]
         for label in labels:
-            base_cmd.extend(["--label", label])
+            base_cmd.extend(["-f", f"labels[]={label}"])
 
         cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
-        # gh issue create returns a URL like: https://github.com/owner/repo/issues/123
-        url = stdout.strip()
-        issue_number_str = url.rstrip("/").split("/")[-1]
+        # REST API returns JSON, --jq extracts "number url" format
+        parts = stdout.strip().split(" ", 1)
+        number = int(parts[0])
+        url = parts[1]
 
         return CreateIssueResult(
-            number=int(issue_number_str),
+            number=number,
             url=url,
         )
 
