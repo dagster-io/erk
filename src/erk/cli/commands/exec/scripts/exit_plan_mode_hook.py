@@ -207,7 +207,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             "No plan file found for this session, allowing exit",
         )
 
-    # Plan exists, no implement-now signal - block and instruct
+    # Plan exists, no implement-now marker - block and instruct
     return HookOutput(
         ExitAction.BLOCK,
         build_blocking_message(
