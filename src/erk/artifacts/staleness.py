@@ -20,12 +20,14 @@ def check_staleness(project_dir: Path) -> StalenessResult:
     current_version = get_current_version()
 
     # In erk repo, artifacts are read from source - always up to date
+    # Still load state.toml to dogfood the state loading path
     if is_in_erk_repo(project_dir):
+        state = load_artifact_state(project_dir)
         return StalenessResult(
             is_stale=False,
             reason="erk-repo",
             current_version=current_version,
-            installed_version=None,
+            installed_version=state.version if state else None,
         )
 
     state = load_artifact_state(project_dir)
