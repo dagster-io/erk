@@ -122,7 +122,7 @@ def delete_branch_and_worktree(
     # Use main_repo_root (not repo.root) to ensure we escape to a directory that
     # still exists after worktree removal. repo.root equals the worktree path when
     # running from inside a worktree.
-    # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
+    # main_repo_root is always set by RepoContext.__post_init__, but ty doesn't know
     main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Escape the worktree if we're inside it (prevents FileNotFoundError after removal)

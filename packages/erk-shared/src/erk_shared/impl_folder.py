@@ -359,7 +359,7 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
         completed_steps = metadata["completed_steps"]
         current_step = metadata["current_step"]
 
-        # Type assertions for pyright (narrows types after YAML loading)
+        # Type assertions for ty (narrows types after YAML loading)
         assert isinstance(steps, list)
         assert isinstance(total_steps, int)
         assert isinstance(completed_steps, int)

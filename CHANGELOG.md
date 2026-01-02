@@ -72,7 +72,7 @@ erk now maintains a set of **bundled artifacts** that it syncs to target project
 
 - **Skills**: `dignified-python`, `learned-docs`, `erk-diff-analysis`
 - **Commands**: All `/erk:*` namespace commands (`/erk:plan-implement`, `/erk:pr-submit`, etc.)
-- **Agents**: `devrun` (for running pytest/pyright/ruff/make)
+- **Agents**: `devrun` (for running pytest/ty/ruff/make)
 - **Workflows**: `erk-impl.yml` (for remote plan implementation via GitHub Actions)
 - **Hooks**: `user-prompt-hook` and `exit-plan-mode-hook` (session management and plan tracking)
 

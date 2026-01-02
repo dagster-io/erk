@@ -1558,7 +1558,7 @@ All matched files use Prettier code style!
 
 Comprehensive guide for executing ty commands and parsing type checking results.
 
-ty is Astral's Rust-based Python type checker, designed for speed (10-100x faster than pyright).
+ty is Astral's Rust-based Python type checker, designed for speed (10-100x faster than traditional type checkers).
 
 ### Command Detection
 

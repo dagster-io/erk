@@ -14,7 +14,7 @@ This document captures API quirks discovered while building the erk dash TUI wit
 
 ### cursor_type Must Be Set via `__init__`
 
-**Problem**: `cursor_type` is a `Reactive[CursorType]`, not a plain attribute. Setting it as a class attribute causes pyright errors:
+**Problem**: `cursor_type` is a `Reactive[CursorType]`, not a plain attribute. Setting it as a class attribute causes type errors:
 
 ```python
 # WRONG - causes type error
@@ -33,7 +33,7 @@ class MyTable(DataTable):
 
 ### Avoid `_filters` Attribute Name
 
-**Problem**: DataTable has an internal `_filters` attribute of type `list[LineFilter]`. Naming your own attribute `_filters` causes type conflicts when pyright analyzes the code.
+**Problem**: DataTable has an internal `_filters` attribute of type `list[LineFilter]`. Naming your own attribute `_filters` causes type conflicts when the type checker analyzes the code.
 
 **Solution**: Use a different name like `_plan_filters` or `_my_filters`.
 

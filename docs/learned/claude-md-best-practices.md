@@ -235,7 +235,7 @@ tripwires:
 **Tier 3: Tool Routing** (use agents instead of direct commands)
 
 - Delegation patterns
-- Example: Use `devrun` agent for pytest/pyright/ruff
+- Example: Use `devrun` agent for pytest/ty/ruff
 
 **Tier 4: Documentation Lookup** (reference when needed)
 

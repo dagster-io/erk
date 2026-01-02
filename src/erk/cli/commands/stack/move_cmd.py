@@ -284,7 +284,7 @@ def move_stack(
     # Resolve target worktree path
     # Special case: "root" refers to the main repository root (not current worktree)
     if target == "root":
-        # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
+        # main_repo_root is always set by RepoContext.__post_init__, but ty doesn't know
         target_wt = repo.main_repo_root if repo.main_repo_root else repo.root
     else:
         target_wt = worktree_path_for(repo.worktrees_dir, target)

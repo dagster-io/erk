@@ -212,13 +212,13 @@
 
 - [ ] Verify all error messages use red "Error: " prefix
 - [ ] Verify all Ensure method docstrings are complete
-- [ ] Verify all type narrowing methods work with pyright
+- [ ] Verify all type narrowing methods work with ty
 - [ ] Update any developer documentation
 
 #### Task 3.3: Final validation
 
 - [ ] Run full test suite: `uv run pytest`
-- [ ] Run type checker: `uv run pyright`
+- [ ] Run type checker: `uv run ty`
 - [ ] Verify no regressions in any tests
 - [ ] Mark project as COMPLETED
 

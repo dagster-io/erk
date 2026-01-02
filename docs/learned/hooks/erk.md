@@ -53,10 +53,10 @@ This repository includes 4 hooks:
 **Output**:
 
 ```
-🔴 CRITICAL: For pytest/pyright/ruff/prettier/make/gt → MUST use devrun agent
+🔴 CRITICAL: For pytest/ty/ruff/prettier/make/gt → MUST use devrun agent
 (Task tool with subagent_type="devrun"), NOT direct Bash
 
-This includes uv run variants: uv run pytest, uv run pyright, uv run ruff, etc.
+This includes uv run variants: uv run pytest, uv run ty, uv run ruff, etc.
 
 WHY: Specialized parsing & cost efficiency
 ```

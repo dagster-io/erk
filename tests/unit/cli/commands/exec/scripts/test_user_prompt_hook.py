@@ -68,7 +68,7 @@ def test_build_coding_standards_reminder_mentions_forbidden_tools() -> None:
     """Reminder lists tools that require devrun agent."""
     result = build_coding_standards_reminder()
     assert "pytest" in result
-    assert "pyright" in result
+    assert "ty" in result
     assert "ruff" in result
 
 

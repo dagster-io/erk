@@ -39,7 +39,7 @@ def build_coding_standards_reminder() -> str:
 
     Pure function - returns static string.
     """
-    return """No direct Bash for: pytest/pyright/ruff/prettier/make/gt
+    return """No direct Bash for: pytest/ty/ruff/prettier/make/gt
 Use Task(subagent_type='devrun') instead.
 dignified-python: CRITICAL RULES (examples - full skill has more):
 NO try/except for control flow (use LBYL - check conditions first)

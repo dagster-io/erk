@@ -43,7 +43,7 @@ Parent session receives:
   "Agent completed. Found 3 type errors in src/cli.py, fixed all."
 
 NOT the full subprocess output:
-  [10KB of pyright output]
+  [10KB of ty output]
   [5KB of file reads]
   [3KB of edits]
 ```

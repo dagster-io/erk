@@ -187,7 +187,7 @@ def split_cmd(
     trunk_branch = ctx.trunk_branch
     validate_trunk_branch(trunk_branch)
     # After validation, trunk_branch is guaranteed to be non-None
-    assert trunk_branch is not None  # Type narrowing for mypy/pyright
+    assert trunk_branch is not None  # Type narrowing for mypy/ty
 
     # 3. Get stack branches
     stack_branches = get_stack_branches(ctx, repo.root, current_branch, trunk_branch)

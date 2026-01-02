@@ -212,7 +212,7 @@ Analyze the output to identify which check(s) failed. Common failure patterns:
 - **Ruff lint failures**: Look for "ruff check" errors
 - **Format failures**: Look for "ruff format --check" or files that would be reformatted
 - **Prettier failures**: Look for markdown files that need formatting
-- **Pyright failures**: Look for type errors with file paths and line numbers
+- **Type check failures**: Look for type errors with file paths and line numbers
 - **Test failures**: Look for pytest failures with test names and assertion errors
 
 ### 3. Apply Targeted Fixes
@@ -237,7 +237,7 @@ make format # Runs: uv run ruff format
 make prettier # Runs: prettier --write '\*_/_.md'
 \`\`\`
 
-#### Pyright Type Errors
+#### Type Check Errors
 
 - Use Read tool to examine the file at the reported line number
 - Use Edit tool to fix type annotations, add type hints, or fix type mismatches

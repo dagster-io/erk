@@ -24,7 +24,7 @@ def submit_branch_command() -> None:
 
 # ❌ WRONG - Generic name 'command' won't be found by cli.py
 @click.command(name="submit-branch")
-def command() -> None:  # pyright will report: "submit_branch_command" is unknown import symbol
+def command() -> None:  # Type checker will report: "submit_branch_command" is unknown import symbol
     """Command implementation."""
     pass
 ```

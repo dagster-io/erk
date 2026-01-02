@@ -502,7 +502,7 @@ Each `script.py` is a complete, runnable program:
 # ///
 """Deploy application to AWS."""
 
-# pyright: reportMissingImports=false
+# type: ignore[import-untyped]
 
 import subprocess
 from pathlib import Path
@@ -606,7 +606,7 @@ def command(region: str, dry_run: bool) -> None:
 # ///
 """AWS deployment implementation."""
 
-# pyright: reportMissingImports=false
+# type: ignore[import-untyped]
 
 # Complete implementation here
 # No imports from parent package

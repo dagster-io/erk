@@ -32,7 +32,7 @@ Topics to explore in agentic programming articles.
 
 - **Ctrl-G is your friend** - How using Ctrl-G to interrupt and redirect agents mid-execution prevents wasted tokens, enables course correction, and creates a more collaborative development flow
 
-- **Devrun for diagnostic tools to swallow context** - Using specialized agents to run diagnostic tools (pytest, pyright, ruff) while keeping large outputs isolated from the main conversation context
+- **Devrun for diagnostic tools to swallow context** - Using specialized agents to run diagnostic tools (pytest, ty, ruff) while keeping large outputs isolated from the main conversation context
 
 - **Everything's a multi-agent workflow - planning is essential** - Why breaking down complex tasks into specialized agent workflows is fundamental to successful agentic programming
 

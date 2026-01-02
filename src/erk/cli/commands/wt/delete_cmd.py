@@ -455,7 +455,7 @@ def _delete_worktree(
     # Check for pending extraction marker
     check_pending_extraction_marker(wt_path, force)
 
-    # main_repo_root is always set by RepoContext.__post_init__, but pyright doesn't know
+    # main_repo_root is always set by RepoContext.__post_init__, but ty doesn't know
     main_repo = repo.main_repo_root if repo.main_repo_root else repo.root
     ctx = _escape_worktree_if_inside(ctx, main_repo, wt_path, dry_run)
 

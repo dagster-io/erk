@@ -78,7 +78,7 @@ Does command orchestrate 3+ steps?
 
 **Characteristics:**
 
-- Agent wraps a single category of tools (pytest, pyright, ruff, etc.)
+- Agent wraps a single category of tools (pytest, ty, ruff, etc.)
 - Provides specialized output parsing
 - Formats results consistently
 - Commands share agent but may pass different parameters
@@ -94,7 +94,7 @@ description: Run fast CI checks iteratively
 
 # /fast-ci
 
-Run fast CI checks iteratively (unit tests + pyright) until all pass.
+Run fast CI checks iteratively (unit tests + ty) until all pass.
 
 ## Implementation
 
@@ -103,7 +103,7 @@ Delegates to the devrun agent:
 Task(
 subagent_type="devrun",
 description="Run fast CI checks",
-prompt="Run unit tests with pytest, then run pyright. Fix any failures iteratively."
+prompt="Run unit tests with pytest, then run ty. Fix any failures iteratively."
 )
 ```
 

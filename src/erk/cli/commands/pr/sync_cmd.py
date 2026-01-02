@@ -99,7 +99,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
         not isinstance(ctx.repo, NoRepoSentinel),
         "Not in a git repository",
     )
-    assert not isinstance(ctx.repo, NoRepoSentinel)  # Type narrowing for pyright
+    assert not isinstance(ctx.repo, NoRepoSentinel)  # Type narrowing for ty
     repo: RepoContext = ctx.repo
 
     # Check we're on a branch (not detached HEAD)

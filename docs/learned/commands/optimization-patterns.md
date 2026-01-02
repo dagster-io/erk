@@ -59,13 +59,13 @@ description: Run fast CI checks iteratively
 
 # /fast-ci
 
-Run fast CI checks iteratively (unit tests + pyright).
+Run fast CI checks iteratively (unit tests + ty).
 
 @.claude/skills/ci-iteration/SKILL.md
 
 ## Implementation
 
-Delegate to devrun agent with: "Run pytest tests/ && pyright"
+Delegate to devrun agent with: "Run pytest tests/ && ty"
 ```
 
 **Referenced skill** (`ci-iteration` skill):

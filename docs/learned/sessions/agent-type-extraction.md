@@ -77,7 +77,7 @@ The `toolUseResult.agentId` is **explicit structured metadata** - no text parsin
 | ------------------- | ------------------------------------------ |
 | `"Plan"`            | Planning agents for implementation design  |
 | `"Explore"`         | Codebase exploration agents                |
-| `"devrun"`          | Dev tool execution (pytest, pyright, etc.) |
+| `"devrun"`          | Dev tool execution (pytest, ty, etc.)      |
 | `"general-purpose"` | General multi-step task agents             |
 
 ## Edge Cases
