@@ -10,12 +10,10 @@ from erk.artifacts.sync import (
     _sync_actions,
     _sync_commands,
     _sync_directory_artifacts,
-    _sync_feature_workflows,
     _sync_hooks,
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
-    sync_feature,
 )
 
 
@@ -510,65 +508,6 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
     # Verify synced artifact has correct key
     assert len(synced) == 1
     assert synced[0].key == "actions/setup-claude-erk"
-
-
-def test_sync_feature_workflows_copies_specified_workflows(tmp_path: Path) -> None:
-    """_sync_feature_workflows copies only specified workflow files."""
-    source_dir = tmp_path / "source"
-    workflows_dir = source_dir / "workflows"
-    workflows_dir.mkdir(parents=True)
-
-    # Create workflows
-    (workflows_dir / "dignified-python-review.yml").write_text("name: Review", encoding="utf-8")
-    (workflows_dir / "other-workflow.yml").write_text("name: Other", encoding="utf-8")
-
-    target_dir = tmp_path / "target" / "workflows"
-
-    # Only sync dignified-python-review.yml
-    workflow_names = frozenset({"dignified-python-review.yml"})
-    copied, synced = _sync_feature_workflows(source_dir, target_dir, workflow_names)
-
-    assert copied == 1
-    assert (target_dir / "dignified-python-review.yml").exists()
-    assert not (target_dir / "other-workflow.yml").exists()
-
-    assert len(synced) == 1
-    assert synced[0].key == "workflows/dignified-python-review.yml"
-
-
-def test_sync_feature_installs_dignified_review(tmp_path: Path) -> None:
-    """sync_feature installs dignified-review feature artifacts."""
-    # Create bundled .github/ with feature artifacts
-    bundled_github = tmp_path / "bundled_github"
-    bundled_workflows = bundled_github / "workflows"
-    bundled_workflows.mkdir(parents=True)
-    (bundled_workflows / "dignified-python-review.yml").write_text("name: Review", encoding="utf-8")
-
-    # Create target directory
-    target_dir = tmp_path / "project"
-    target_dir.mkdir()
-
-    with (
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_feature(target_dir, "dignified-review")
-
-    assert result.success is True
-    assert result.feature_name == "dignified-review"
-    assert result.artifacts_installed == 1  # 1 workflow only (prompts via exec command)
-
-    # Verify workflow was copied
-    assert (target_dir / ".github" / "workflows" / "dignified-python-review.yml").exists()
-
-
-def test_sync_feature_unknown_feature_fails(tmp_path: Path) -> None:
-    """sync_feature returns failure for unknown feature names."""
-    result = sync_feature(tmp_path, "unknown-feature")
-
-    assert result.success is False
-    assert "Unknown feature" in result.message
-    assert result.feature_name == "unknown-feature"
 
 
 def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
