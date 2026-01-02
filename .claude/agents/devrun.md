@@ -1,7 +1,7 @@
 ---
 name: devrun
 description: Execute development CLI tools (pytest, ty, ruff, prettier, make, gt) and parse results. READ-ONLY - never modifies files.
-model: sonnet
+model: haiku
 color: green
 tools: Read, Bash, Grep, Glob, Task
 ---
