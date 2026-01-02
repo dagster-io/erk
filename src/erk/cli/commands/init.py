@@ -340,7 +340,7 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
     user_output(click.style("✓", fg="green") + " Added erk hooks")
 
 
-def perform_statusline_setup(settings_path: Path | None = None) -> bool:
+def perform_statusline_setup(settings_path: Path | None) -> bool:
     """Configure erk-statusline in global Claude Code settings.
 
     Reads ~/.claude/settings.json, adds statusLine configuration if not present
@@ -700,6 +700,6 @@ def init_cmd(
 
     # 3c. Status line configuration
     if interactive:
-        perform_statusline_setup()
+        perform_statusline_setup(settings_path=None)
 
     user_output(click.style("\n✓", fg="green") + " Initialization complete!")
