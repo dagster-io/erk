@@ -18,20 +18,28 @@ Run after landing a PR:
 
 ## Agent Instructions
 
-### Step 1: Get Current Branch and Parse Issue Number
+### Step 1: Get Current Branch and Find Parent Objective
 
 ```bash
 git branch --show-current
 ```
 
-Parse the issue number from the branch name pattern `P<number>-...`
+Parse the plan issue number from the branch name pattern `P<number>-...`
 
-Example: `P3679-phase-1b-implement-fakes` -> Issue #3679
+Example: `P3679-phase-1b-implement-fakes` -> Plan Issue #3679
+
+**Important:** The branch pattern `P<number>-...` points to an **erk-plan** issue, not the objective. After getting the plan issue number:
+
+1. Read the plan issue: `gh issue view <plan-number>`
+2. Find the parent objective reference (look for "Objective: #XXXX" or "[#XXXX]" link in the body)
+3. Use the objective issue number for all subsequent steps
 
 If the branch doesn't match the pattern:
 
 1. Ask the user for the objective issue number
 2. Use AskUserQuestion tool with options like "#3679", "#3680", or "Other"
+
+If the plan issue has no objective reference, ask the user which objective to update.
 
 ### Step 2: Load Objective Skill
 
@@ -90,11 +98,11 @@ Post an action comment using the objective skill template.
 - Step X.Y: pending -> done
 ```
 
-**Important:**
+**Inferring content (DO NOT ask the user):**
 
-- Ask the user what was done if not obvious from PR title/description
-- Ask for lessons learned - this is mandatory for objectives
-- Be concrete, not vague
+- **What Was Done:** Infer from PR title, PR description, and commit messages. The plan issue body contains the implementation plan with specific steps - use this to understand what was accomplished.
+- **Lessons Learned:** Infer from implementation patterns, architectural decisions made, or any non-obvious approaches taken. If the implementation was straightforward with no surprises, note what pattern worked well.
+- Be concrete and specific based on available context
 
 Use:
 
@@ -159,6 +167,7 @@ Report the update is done and what the next focus should be.
 - **After action comment:** "Posted action comment to #<number>"
 - **After body update:** "Updated objective body - marked step X.Y as done"
 - **End:** Either "Objective #<number> closed" or "Objective updated. Next focus: [next action]"
+- **Always:** Display the objective URL: `https://github.com/<owner>/<repo>/issues/<number>`
 
 ---
 
@@ -167,6 +176,7 @@ Report the update is done and what the next focus should be.
 | Scenario                           | Action                                       |
 | ---------------------------------- | -------------------------------------------- |
 | Branch doesn't match pattern       | Ask user for issue number                    |
+| Plan has no objective reference    | Ask user which objective to update           |
 | No merged PR found                 | Ask if user wants to specify a PR number     |
 | Issue not found                    | Report error and exit                        |
 | Issue has no `erk-objective` label | Warn user this may not be an objective issue |
