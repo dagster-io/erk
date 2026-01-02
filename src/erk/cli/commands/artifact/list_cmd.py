@@ -76,12 +76,12 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
         if is_managed:
             badge = click.style(" [erk]", fg="cyan")
         else:
-            badge = click.style(" [local]", fg="yellow")
+            badge = click.style(" [unmanaged]", fg="yellow")
 
         if verbose:
             click.echo(f"    {artifact.name}{badge}")
             click.echo(click.style(f"      Path: {artifact.path}", dim=True))
-            if artifact.content_hash:
+            if is_managed and artifact.content_hash:
                 click.echo(click.style(f"      Hash: {artifact.content_hash}", dim=True))
         else:
             click.echo(f"    {artifact.name}{badge}")
