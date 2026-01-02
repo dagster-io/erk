@@ -1,4 +1,4 @@
-name: Implementation Dispatch
+name: erk-impl
 run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
 
 on:

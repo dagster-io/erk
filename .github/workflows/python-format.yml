@@ -1,4 +1,4 @@
-name: Python Format Check
+name: python-format
 
 on:
   push:

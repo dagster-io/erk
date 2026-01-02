@@ -7,6 +7,17 @@ ERK_PLAN_LABEL = "erk-plan"
 DISPATCH_WORKFLOW_NAME = "erk-impl.yml"
 DISPATCH_WORKFLOW_METADATA_NAME = "erk-impl"
 
+# Workflow names that trigger the autofix workflow
+# Must match the `name:` field in each .yml file (which should match filename without .yml)
+AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
+    {
+        "python-format",
+        "lint",
+        "docs-check",
+        "markdown-format",
+    }
+)
+
 # Documentation extraction tracking label
 DOCS_EXTRACTED_LABEL = "docs-extracted"
 DOCS_EXTRACTED_LABEL_DESCRIPTION = "Session logs analyzed for documentation improvements"
