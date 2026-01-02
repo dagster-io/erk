@@ -70,8 +70,15 @@ def create_impl_folder(
     plan_file = impl_folder / "plan.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    # Extract steps using regex (deterministic, no LLM needed)
-    steps = extract_steps_from_plan_regex(plan_content)
+    # Extract steps (frontmatter first, then regex fallback)
+    steps = extract_steps_from_plan_with_fallback(plan_content)
+
+    if not steps:
+        print(
+            "⚠️  No steps found in plan. Step tracking disabled.",
+            file=sys.stderr,
+        )
+
     progress_content = generate_progress_content(steps)
 
     progress_file = impl_folder / "progress.md"
@@ -142,6 +149,62 @@ def extract_steps_from_plan_regex(plan_content: str) -> list[str]:
     pattern = r"^## Step \d+[:\s]+(.+)$"
     matches = re.findall(pattern, plan_content, re.MULTILINE)
     return [match.strip() for match in matches]
+
+
+def extract_steps_from_frontmatter(plan_content: str) -> list[str] | None:
+    """Extract steps from plan YAML frontmatter.
+
+    Looks for a `steps:` array in the frontmatter and returns it if valid.
+    Returns None if frontmatter is missing, invalid, or has no steps key.
+
+    Args:
+        plan_content: Full plan markdown content
+
+    Returns:
+        List of step descriptions if frontmatter has valid steps, None otherwise
+
+    Examples:
+        >>> extract_steps_from_frontmatter("---\\nsteps:\\n  - First\\n  - Second\\n---\\n# Plan")
+        ['First', 'Second']
+        >>> extract_steps_from_frontmatter("# No frontmatter")
+        None
+    """
+    # Gracefully handle YAML parsing errors (third-party API exception handling)
+    try:
+        post = frontmatter.loads(plan_content)
+    except yaml.YAMLError:
+        return None
+
+    if "steps" not in post.metadata:
+        return None
+
+    steps = post.metadata["steps"]
+    if not isinstance(steps, list):
+        return None
+
+    # Convert all items to strings (handle any YAML types)
+    return [str(s) for s in steps]
+
+
+def extract_steps_from_plan_with_fallback(plan_content: str) -> list[str]:
+    """Extract steps from plan frontmatter, with regex fallback.
+
+    Primary source: YAML frontmatter `steps:` array (authoritative if present)
+    Fallback: Regex extraction from `## Step N:` headers (backwards compatibility)
+
+    Args:
+        plan_content: Full plan markdown content
+
+    Returns:
+        List of step descriptions
+    """
+    # Frontmatter is authoritative if present
+    frontmatter_steps = extract_steps_from_frontmatter(plan_content)
+    if frontmatter_steps is not None:
+        return frontmatter_steps
+
+    # Fallback to regex for backwards compatibility
+    return extract_steps_from_plan_regex(plan_content)
 
 
 # Legacy LLM-based extraction - kept for backward compatibility during transition

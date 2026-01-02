@@ -13,8 +13,10 @@ from erk_shared.github.metadata_blocks import (
 from erk_shared.impl_folder import (
     add_worktree_creation_comment,
     create_impl_folder,
+    extract_steps_from_frontmatter,
     extract_steps_from_plan,
     extract_steps_from_plan_regex,
+    extract_steps_from_plan_with_fallback,
     get_impl_path,
     get_progress_path,
     has_issue_reference,
@@ -111,6 +113,202 @@ def test_extract_steps_from_plan_regex_non_sequential() -> None:
 """
     steps = extract_steps_from_plan_regex(plan_content)
     assert steps == ["First", "Fifth", "Tenth"]
+
+
+# =============================================================================
+# Frontmatter-Based Step Extraction Tests
+# =============================================================================
+
+
+def test_extract_steps_from_frontmatter_basic() -> None:
+    """Test basic step extraction from YAML frontmatter."""
+    plan_content = """---
+steps:
+  - "First step"
+  - "Second step"
+  - "Third step"
+---
+
+# Implementation Plan
+
+Content here...
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps == ["First step", "Second step", "Third step"]
+
+
+def test_extract_steps_from_frontmatter_no_frontmatter() -> None:
+    """Test returns None when no frontmatter present."""
+    plan_content = """# Plan
+
+No frontmatter here.
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps is None
+
+
+def test_extract_steps_from_frontmatter_no_steps_key() -> None:
+    """Test returns None when frontmatter exists but no steps key."""
+    plan_content = """---
+title: "My Plan"
+author: "Test"
+---
+
+# Plan
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps is None
+
+
+def test_extract_steps_from_frontmatter_steps_not_list() -> None:
+    """Test returns None when steps is not a list."""
+    plan_content = """---
+steps: "not a list"
+---
+
+# Plan
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps is None
+
+
+def test_extract_steps_from_frontmatter_empty_steps() -> None:
+    """Test returns empty list when steps array is empty."""
+    plan_content = """---
+steps: []
+---
+
+# Plan
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps == []
+
+
+def test_extract_steps_from_frontmatter_invalid_yaml() -> None:
+    """Test returns None for invalid YAML."""
+    plan_content = """---
+steps: [invalid yaml
+---
+
+# Plan
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps is None
+
+
+def test_extract_steps_from_frontmatter_converts_to_strings() -> None:
+    """Test that non-string values are converted to strings."""
+    plan_content = """---
+steps:
+  - 123
+  - true
+  - "Normal string"
+---
+
+# Plan
+"""
+    steps = extract_steps_from_frontmatter(plan_content)
+    assert steps == ["123", "True", "Normal string"]
+
+
+# =============================================================================
+# Frontmatter-First Extraction with Fallback Tests
+# =============================================================================
+
+
+def test_extract_steps_with_fallback_uses_frontmatter_when_present() -> None:
+    """Test frontmatter is used when present."""
+    plan_content = """---
+steps:
+  - "From frontmatter"
+---
+
+## Step 1: From regex
+
+Should ignore regex when frontmatter exists.
+"""
+    steps = extract_steps_from_plan_with_fallback(plan_content)
+    assert steps == ["From frontmatter"]
+
+
+def test_extract_steps_with_fallback_uses_regex_without_frontmatter() -> None:
+    """Test regex fallback when no frontmatter steps."""
+    plan_content = """# Plan
+
+## Step 1: First from regex
+## Step 2: Second from regex
+"""
+    steps = extract_steps_from_plan_with_fallback(plan_content)
+    assert steps == ["First from regex", "Second from regex"]
+
+
+def test_extract_steps_with_fallback_uses_regex_when_no_steps_key() -> None:
+    """Test regex fallback when frontmatter exists but no steps key."""
+    plan_content = """---
+title: "My Plan"
+---
+
+## Step 1: From regex
+"""
+    steps = extract_steps_from_plan_with_fallback(plan_content)
+    assert steps == ["From regex"]
+
+
+def test_extract_steps_with_fallback_returns_empty_for_empty_frontmatter_steps() -> None:
+    """Test empty frontmatter steps returns empty (doesn't fallback)."""
+    plan_content = """---
+steps: []
+---
+
+## Step 1: From regex
+
+This regex match should be ignored because frontmatter steps exists (even if empty).
+"""
+    steps = extract_steps_from_plan_with_fallback(plan_content)
+    # Empty list from frontmatter is authoritative, doesn't fallback to regex
+    assert steps == []
+
+
+# =============================================================================
+# create_impl_folder with Frontmatter Tests
+# =============================================================================
+
+
+def test_create_impl_folder_with_frontmatter_steps(tmp_path: Path) -> None:
+    """Test create_impl_folder uses frontmatter steps."""
+    plan_content = """---
+steps:
+  - "Frontmatter step one"
+  - "Frontmatter step two"
+---
+
+# Plan
+
+## Step 1: Regex step should be ignored
+
+Content...
+"""
+    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
+    progress_file = plan_folder / "progress.md"
+    progress_content = progress_file.read_text(encoding="utf-8")
+
+    # Should use frontmatter steps, not regex
+    assert "- [ ] Frontmatter step one" in progress_content
+    assert "- [ ] Frontmatter step two" in progress_content
+    assert "Regex step" not in progress_content
+    assert "total_steps: 2" in progress_content
+
+
+def test_create_impl_folder_warns_on_no_steps(tmp_path: Path, capsys) -> None:
+    """Test create_impl_folder warns when no steps found."""
+    plan_content = """# Plan with no extractable steps
+
+No frontmatter, and no ## Step N: headers.
+"""
+    create_impl_folder(tmp_path, plan_content, None, overwrite=False)
+
+    captured = capsys.readouterr()
+    assert "No steps found in plan. Step tracking disabled." in captured.err
 
 
 def test_create_impl_folder_basic(tmp_path: Path) -> None:

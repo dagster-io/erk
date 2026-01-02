@@ -17,6 +17,31 @@ This separation keeps machine-readable metadata in the body while the human-read
 
 ## Agent Instructions
 
+### Step 0: Ensure Plan Has Frontmatter Steps
+
+Before saving, verify the plan file has a `steps:` array in YAML frontmatter:
+
+```markdown
+---
+steps:
+  - "First implementation step"
+  - "Second implementation step"
+---
+
+# Plan Title
+
+...
+```
+
+If the plan is missing frontmatter steps:
+
+1. Read the plan file
+2. Extract the logical implementation steps from the content
+3. Add them to YAML frontmatter at the top of the file
+4. Save the updated plan file
+
+The frontmatter is required for step tracking during implementation.
+
 ### Step 1: Extract Session ID
 
 Get the session ID from the `SESSION_CONTEXT` reminder in your conversation context.

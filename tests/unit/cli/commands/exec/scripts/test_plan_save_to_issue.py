@@ -3,10 +3,13 @@
 import json
 from pathlib import Path
 
+import click
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
+    validate_plan_frontmatter,
 )
 from erk_shared.context import ErkContext
 from erk_shared.extraction.claude_code_session_store import (
@@ -21,7 +24,16 @@ from erk_shared.github.issues import FakeGitHubIssues
 def test_plan_save_to_issue_success() -> None:
     """Test successful plan extraction and issue creation."""
     fake_gh = FakeGitHubIssues()
-    plan_content = "# My Feature\n\n- Step 1\n- Step 2"
+    plan_content = """---
+steps:
+  - "Step 1"
+  - "Step 2"
+---
+
+# My Feature
+
+- Step 1
+- Step 2"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"test-plan": plan_content},
     )
@@ -47,7 +59,16 @@ def test_plan_save_to_issue_success() -> None:
 def test_plan_save_to_issue_enriched_plan() -> None:
     """Test detection of enriched plan."""
     fake_gh = FakeGitHubIssues()
-    plan_content = "# My Feature\n\n## Enrichment Details\n\nContext here"
+    plan_content = """---
+steps:
+  - "Implement feature"
+---
+
+# My Feature
+
+## Enrichment Details
+
+Context here"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"enriched-plan": plan_content},
     )
@@ -93,7 +114,14 @@ def test_plan_save_to_issue_format() -> None:
     """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = "# Test Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Test Plan
+
+- Step 1"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"format-test": plan_content},
     )
@@ -127,7 +155,14 @@ def test_plan_save_to_issue_format() -> None:
 def test_plan_save_to_issue_display_format() -> None:
     """Test display output format."""
     fake_gh = FakeGitHubIssues()
-    plan_content = "# Test Feature\n\n- Implementation step"
+    plan_content = """---
+steps:
+  - "Implementation step"
+---
+
+# Test Feature
+
+- Implementation step"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"display-test": plan_content},
     )
@@ -160,7 +195,14 @@ def test_plan_save_to_issue_display_format() -> None:
 def test_plan_save_to_issue_label_created() -> None:
     """Test that erk-plan label is created."""
     fake_gh = FakeGitHubIssues()
-    plan_content = "# Feature\n\nSteps here"
+    plan_content = """---
+steps:
+  - "Implement feature"
+---
+
+# Feature
+
+Steps here"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"label-test": plan_content},
     )
@@ -198,7 +240,14 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}}\n'
     )
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
     fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
@@ -245,7 +294,14 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     """Test session context is skipped when no session ID provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
     # Session store with no sessions but has a plan
     fake_store = FakeClaudeCodeSessionStore(
         plans={"no-session-test": plan_content},
@@ -277,7 +333,14 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     """Test JSON output includes session_context_chunks and session_ids fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = "# Feature\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature
+
+- Step 1"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"metadata-test": plan_content},
     )
@@ -313,7 +376,14 @@ def test_plan_save_to_issue_session_id_still_creates_marker(tmp_path: Path) -> N
     )
 
     test_session_id = "test-session-12345"
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
 
     fake_store = FakeClaudeCodeSessionStore(
         plans={"session-id-test": plan_content},
@@ -362,7 +432,14 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
     )
 
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
     fake_store = FakeClaudeCodeSessionStore(
         projects={
             tmp_path: FakeProject(
@@ -406,7 +483,14 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
     )
 
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
 
     # Session store has sessions but no session ID is passed via CLI
     fake_store = FakeClaudeCodeSessionStore(
@@ -460,7 +544,14 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
 
     flag_session_id = "flag-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
 
     # Session store has the session that matches the flag
     fake_store = FakeClaudeCodeSessionStore(
@@ -505,7 +596,14 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     test_session_id = "marker-test-session-id"
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
     fake_store = FakeClaudeCodeSessionStore(
         plans={"marker-test": plan_content},
     )
@@ -545,7 +643,14 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
     """Test marker file is not created when no session ID is provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = "# Feature Plan\n\n- Step 1"
+    plan_content = """---
+steps:
+  - "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
     # Session store has plan but no session ID will be passed
     fake_store = FakeClaudeCodeSessionStore(
         plans={"no-marker-test": plan_content},
@@ -569,3 +674,149 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
             # Should be empty or only contain current-session-id file (not directories)
             for item in subdirs:
                 assert not item.is_dir(), f"Unexpected directory: {item}"
+
+
+# =============================================================================
+# validate_plan_frontmatter Tests
+# =============================================================================
+
+
+def test_validate_plan_frontmatter_valid() -> None:
+    """Test validation passes for valid frontmatter with steps."""
+    plan_content = """---
+steps:
+  - "First step"
+  - "Second step"
+---
+
+# Plan
+
+Content here.
+"""
+    # Should not raise
+    validate_plan_frontmatter(plan_content)
+
+
+def test_validate_plan_frontmatter_missing_steps() -> None:
+    """Test validation fails when steps key is missing."""
+    plan_content = """---
+title: "My Plan"
+---
+
+# Plan
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "Plan missing required 'steps' in frontmatter" in exc_info.value.message
+
+
+def test_validate_plan_frontmatter_no_frontmatter() -> None:
+    """Test validation fails when no frontmatter present."""
+    plan_content = """# Plan
+
+No frontmatter.
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "Plan missing required 'steps' in frontmatter" in exc_info.value.message
+
+
+def test_validate_plan_frontmatter_steps_not_list() -> None:
+    """Test validation fails when steps is not a list."""
+    plan_content = """---
+steps: "not a list"
+---
+
+# Plan
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "'steps' must be a list" in exc_info.value.message
+
+
+def test_validate_plan_frontmatter_empty_steps() -> None:
+    """Test validation fails when steps array is empty."""
+    plan_content = """---
+steps: []
+---
+
+# Plan
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "Plan has empty 'steps' array" in exc_info.value.message
+
+
+def test_validate_plan_frontmatter_invalid_yaml() -> None:
+    """Test validation fails for invalid YAML."""
+    plan_content = """---
+steps: [invalid yaml
+---
+
+# Plan
+"""
+    with pytest.raises(click.ClickException) as exc_info:
+        validate_plan_frontmatter(plan_content)
+
+    assert "Invalid YAML frontmatter" in exc_info.value.message
+
+
+def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
+    """Test command rejects plan without frontmatter steps."""
+    fake_gh = FakeGitHubIssues()
+    # Plan without frontmatter steps
+    plan_content = "# My Feature\n\n- Step 1\n- Step 2"
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"no-frontmatter": plan_content},
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "Plan missing required 'steps' in frontmatter" in output["error"]
+
+
+def test_plan_save_to_issue_accepts_plan_with_frontmatter() -> None:
+    """Test command accepts plan with valid frontmatter steps."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = """---
+steps:
+  - "First step"
+  - "Second step"
+---
+
+# My Feature
+
+Details here.
+"""
+    fake_store = FakeClaudeCodeSessionStore(
+        plans={"with-frontmatter": plan_content},
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            session_store=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True

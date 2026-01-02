@@ -1175,7 +1175,10 @@ def test_create_with_json_and_plan_file() -> None:
 
         # Create a plan file - name will be derived from filename
         plan_file = env.cwd / "test-feature-plan.md"
-        plan_file.write_text("# Implementation Plan\n\nTest plan content", encoding="utf-8")
+        plan_file.write_text(
+            "---\nsteps:\n  - 'First step'\n---\n\n# Implementation Plan\n\nTest plan content",
+            encoding="utf-8",
+        )
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
