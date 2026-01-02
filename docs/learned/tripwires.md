@@ -53,4 +53,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
+**CRITICAL: Before creating test plan content without ## Step N: format** → Read [Step Extraction Format](planning/step-extraction-format.md) first. Use '## Step N: Title' format. Regex extraction pattern is `^## Step \d+[:\s]+(.+)$`. Other formats (1. Step, - Step) will result in empty steps array.
+
 **CRITICAL: Before working with session-specific data** → Read [Parallel Session Awareness](sessions/parallel-session-awareness.md) first. Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.
+
+**CRITICAL: Before using monkeypatch.chdir() in exec script tests** → Read [Exec Script Testing Patterns](testing/exec-script-testing.md) first. Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors.

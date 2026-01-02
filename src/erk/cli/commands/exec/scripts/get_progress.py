@@ -45,6 +45,8 @@ from typing import Any, NoReturn
 import click
 import frontmatter
 
+from erk_shared.context.helpers import require_cwd
+
 
 def _error(msg: str) -> NoReturn:
     """Output error message and exit with code 1."""
@@ -52,8 +54,11 @@ def _error(msg: str) -> NoReturn:
     raise SystemExit(1)
 
 
-def _validate_progress_file() -> Path:
+def _validate_progress_file(cwd: Path) -> Path:
     """Validate .impl/progress.md exists.
+
+    Args:
+        cwd: Current working directory
 
     Returns:
         Path to progress.md
@@ -61,7 +66,7 @@ def _validate_progress_file() -> Path:
     Raises:
         SystemExit: If validation fails
     """
-    progress_file = Path.cwd() / ".impl" / "progress.md"
+    progress_file = cwd / ".impl" / "progress.md"
 
     if not progress_file.exists():
         _error("No progress.md found in .impl/ folder")
@@ -140,20 +145,37 @@ def _render_human_output(metadata: dict[str, Any]) -> str:
 
     for step in steps:
         checkbox = "[x]" if step["completed"] else "[ ]"
-        lines.append(f"- {checkbox} {step['text']}")
+        lines.append(f"- {checkbox} {step['title']}")
 
     return "\n".join(lines)
 
 
+def _format_steps_for_json(steps: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Format steps for JSON output with 'text' field for backward compatibility.
+
+    The internal schema uses {number, title, completed}, but the JSON API
+    returns {text, completed} for backward compatibility.
+
+    Args:
+        steps: List of step dicts with number, title, completed
+
+    Returns:
+        List of step dicts with text, completed for JSON output
+    """
+    return [{"text": step["title"], "completed": step["completed"]} for step in steps]
+
+
 @click.command(name="get-progress")
 @click.option("--json", "output_json", is_flag=True, help="Output JSON format")
-def get_progress(output_json: bool) -> None:
+@click.pass_context
+def get_progress(ctx: click.Context, output_json: bool) -> None:
     """Query progress information from progress.md.
 
     Reads the YAML frontmatter and returns progress data including
     completed steps count, total steps, percentage, and steps array.
     """
-    progress_file = _validate_progress_file()
+    cwd = require_cwd(ctx)
+    progress_file = _validate_progress_file(cwd)
     metadata = _parse_progress_file(progress_file)
 
     if output_json:
@@ -165,7 +187,7 @@ def get_progress(output_json: bool) -> None:
             "completed_steps": completed,
             "total_steps": total,
             "percentage": percentage,
-            "steps": metadata["steps"],
+            "steps": _format_steps_for_json(metadata["steps"]),
         }
         click.echo(json.dumps(result, indent=2))
     else:
