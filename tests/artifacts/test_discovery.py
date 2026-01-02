@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+from erk.artifacts.artifact_health import is_erk_managed
 from erk.artifacts.discovery import (
     discover_artifacts,
     get_artifact_by_name,
@@ -49,7 +50,7 @@ def test_discover_artifacts_finds_commands(tmp_path: Path) -> None:
     assert result[0].path == cmd_file
 
 
-def test_discover_artifacts_finds_agents(tmp_path: Path) -> None:
+def test_discover_artifacts_finds_directory_agents(tmp_path: Path) -> None:
     """Discovers agents from agents/<name>/<name>.md pattern."""
     agent_dir = tmp_path / ".claude" / "agents" / "my-agent"
     agent_dir.mkdir(parents=True)
@@ -62,6 +63,63 @@ def test_discover_artifacts_finds_agents(tmp_path: Path) -> None:
     assert result[0].name == "my-agent"
     assert result[0].artifact_type == "agent"
     assert result[0].path == agent_file
+
+
+def test_discover_artifacts_finds_single_file_agents(tmp_path: Path) -> None:
+    """Discovers agents from agents/<name>.md pattern (single-file agents)."""
+    agents_dir = tmp_path / ".claude" / "agents"
+    agents_dir.mkdir(parents=True)
+    agent_file = agents_dir / "devrun.md"
+    agent_file.write_text("# Devrun Agent", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    assert len(result) == 1
+    assert result[0].name == "devrun"
+    assert result[0].artifact_type == "agent"
+    assert result[0].path == agent_file
+
+
+def test_discover_artifacts_directory_agent_takes_precedence(tmp_path: Path) -> None:
+    """Directory-based agent takes precedence over single-file with same name."""
+    agents_dir = tmp_path / ".claude" / "agents"
+    agents_dir.mkdir(parents=True)
+
+    # Create both single-file and directory-based agent with same name
+    single_file = agents_dir / "devrun.md"
+    single_file.write_text("# Single-file devrun", encoding="utf-8")
+
+    dir_agent = agents_dir / "devrun"
+    dir_agent.mkdir()
+    dir_agent_file = dir_agent / "devrun.md"
+    dir_agent_file.write_text("# Directory-based devrun", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    # Should only find one agent (directory-based takes precedence)
+    assert len(result) == 1
+    assert result[0].name == "devrun"
+    assert result[0].path == dir_agent_file  # Directory entry point, not single-file
+
+
+def test_discover_artifacts_finds_mixed_agents(tmp_path: Path) -> None:
+    """Discovers both directory-based and single-file agents."""
+    agents_dir = tmp_path / ".claude" / "agents"
+    agents_dir.mkdir(parents=True)
+
+    # Single-file agent
+    (agents_dir / "simple-agent.md").write_text("# Simple", encoding="utf-8")
+
+    # Directory-based agent
+    complex_dir = agents_dir / "complex-agent"
+    complex_dir.mkdir()
+    (complex_dir / "complex-agent.md").write_text("# Complex", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    agent_names = {a.name for a in result}
+    assert agent_names == {"simple-agent", "complex-agent"}
+    assert all(a.artifact_type == "agent" for a in result)
 
 
 def test_discover_artifacts_sorted_by_type_and_name(tmp_path: Path) -> None:
@@ -252,8 +310,6 @@ def test_discover_workflows_handles_empty_directory(tmp_path: Path) -> None:
 
 def test_is_erk_managed_workflow_badge_logic(tmp_path: Path) -> None:
     """Verifies badge logic correctly identifies erk-managed workflows."""
-    from erk.cli.commands.artifact.list_cmd import _is_erk_managed
-
     workflows_dir = tmp_path / ".github" / "workflows"
     workflows_dir.mkdir(parents=True)
 
@@ -269,11 +325,11 @@ def test_is_erk_managed_workflow_badge_logic(tmp_path: Path) -> None:
 
     # Find erk-managed workflow
     erk_artifact = next(a for a in artifacts if a.name == "erk-impl")
-    assert _is_erk_managed(erk_artifact) is True
+    assert is_erk_managed(erk_artifact) is True
 
     # Find user workflow
     user_artifact = next(a for a in artifacts if a.name == "user-ci")
-    assert _is_erk_managed(user_artifact) is False
+    assert is_erk_managed(user_artifact) is False
 
 
 def test_discover_hooks_from_settings_json(tmp_path: Path) -> None:
@@ -346,8 +402,6 @@ def test_discover_hooks_partial_configuration(tmp_path: Path) -> None:
 
 def test_is_erk_managed_hook_badge_logic(tmp_path: Path) -> None:
     """Verifies badge logic correctly identifies erk-managed hooks."""
-    from erk.cli.commands.artifact.list_cmd import _is_erk_managed
-
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
 
@@ -367,7 +421,7 @@ def test_is_erk_managed_hook_badge_logic(tmp_path: Path) -> None:
     hook_artifact = next(a for a in artifacts if a.artifact_type == "hook")
 
     # user-prompt-hook is in BUNDLED_HOOKS
-    assert _is_erk_managed(hook_artifact) is True
+    assert is_erk_managed(hook_artifact) is True
 
 
 def test_discover_hooks_finds_local_hooks(tmp_path: Path) -> None:
@@ -425,8 +479,6 @@ def test_discover_hooks_mixed_erk_and_local(tmp_path: Path) -> None:
 
 def test_is_erk_managed_local_hook_badge_logic(tmp_path: Path) -> None:
     """Verifies badge logic correctly identifies local hooks as NOT erk-managed."""
-    from erk.cli.commands.artifact.list_cmd import _is_erk_managed
-
     claude_dir = tmp_path / ".claude"
     claude_dir.mkdir(parents=True)
 
@@ -446,4 +498,4 @@ def test_is_erk_managed_local_hook_badge_logic(tmp_path: Path) -> None:
     hook_artifact = next(a for a in artifacts if a.artifact_type == "hook")
 
     # my-local-hook is NOT in BUNDLED_HOOKS
-    assert _is_erk_managed(hook_artifact) is False
+    assert is_erk_managed(hook_artifact) is False

@@ -184,15 +184,28 @@ def get_artifact_health(
 
     artifacts: list[ArtifactStatus] = []
 
-    # Check directory-based artifacts (skills, agents)
-    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
-        for name in names:
-            key = f"{prefix}/{name}"
-            path = project_claude_dir / prefix / name
-            installed_hash = _compute_path_hash(path, is_directory=True)
-            artifacts.append(
-                _build_artifact_status(key, installed_hash, saved_files, current_version)
-            )
+    # Check skills (always directory-based)
+    for name in BUNDLED_SKILLS:
+        key = f"skills/{name}"
+        path = project_claude_dir / "skills" / name
+        installed_hash = _compute_path_hash(path, is_directory=True)
+        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
+
+    # Check agents (can be directory-based or single-file)
+    for name in BUNDLED_AGENTS:
+        key = f"agents/{name}"
+        dir_path = project_claude_dir / "agents" / name
+        file_path = project_claude_dir / "agents" / f"{name}.md"
+
+        # Directory-based takes precedence, then single-file
+        if dir_path.exists() and dir_path.is_dir():
+            installed_hash = _compute_path_hash(dir_path, is_directory=True)
+        elif file_path.exists() and file_path.is_file():
+            installed_hash = _compute_path_hash(file_path, is_directory=False)
+        else:
+            installed_hash = None
+
+        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check commands (enumerate erk commands from bundled source)
     bundled_erk_commands = bundled_claude_dir / "commands" / "erk"

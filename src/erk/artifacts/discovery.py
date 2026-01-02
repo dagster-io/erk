@@ -123,31 +123,49 @@ def _discover_commands(claude_dir: Path) -> list[InstalledArtifact]:
 def _discover_agents(claude_dir: Path) -> list[InstalledArtifact]:
     """Discover agents in .claude/agents/ directory.
 
-    Pattern: agents/<agent-name>/<agent-name>.md
+    Supports two patterns:
+    1. Directory-based: agents/<name>/<name>.md (hash computed over entire directory)
+    2. Single-file: agents/<name>.md (hash computed over single file)
 
-    Content hash is computed over the entire agent directory (all files),
-    not just the entry point file.
+    Directory-based agents take precedence if both exist.
     """
     agents_dir = claude_dir / "agents"
     if not agents_dir.exists():
         return []
 
     artifacts: list[InstalledArtifact] = []
-    for agent_dir in agents_dir.iterdir():
-        if not agent_dir.is_dir():
-            continue
-        # Agent file has same name as directory
-        agent_file = agent_dir / f"{agent_dir.name}.md"
-        if agent_file.exists():
-            artifacts.append(
-                InstalledArtifact(
-                    name=agent_dir.name,
-                    artifact_type="agent",
-                    path=agent_file,
-                    # Hash the entire agent directory, not just entry point
-                    content_hash=_compute_directory_hash(agent_dir),
+
+    # First, discover directory-based agents: agents/<name>/<name>.md
+    for item in agents_dir.iterdir():
+        if item.is_dir():
+            agent_file = item / f"{item.name}.md"
+            if agent_file.exists():
+                artifacts.append(
+                    InstalledArtifact(
+                        name=item.name,
+                        artifact_type="agent",
+                        path=agent_file,
+                        content_hash=_compute_directory_hash(item),
+                    )
                 )
-            )
+
+    # Track discovered names to avoid duplicates
+    discovered_names = {a.name for a in artifacts}
+
+    # Second, discover single-file agents: agents/<name>.md
+    for item in agents_dir.iterdir():
+        if item.is_file() and item.suffix == ".md":
+            name = item.stem
+            if name not in discovered_names:
+                artifacts.append(
+                    InstalledArtifact(
+                        name=name,
+                        artifact_type="agent",
+                        path=item,
+                        content_hash=_compute_file_hash(item),
+                    )
+                )
+
     return artifacts
 
 
