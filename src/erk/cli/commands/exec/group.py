@@ -69,6 +69,7 @@ from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
 from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
 from erk.cli.commands.exec.scripts.mark_step import mark_step
 from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
+from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk.cli.commands.exec.scripts.post_extraction_comment import (
     post_extraction_comment,
 )
@@ -154,6 +155,7 @@ exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
 exec_group.add_command(mark_impl_started, name="mark-impl-started")
 exec_group.add_command(mark_step, name="mark-step")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
+exec_group.add_command(plan_update_issue, name="plan-update-issue")
 exec_group.add_command(post_extraction_comment, name="post-extraction-comment")
 exec_group.add_command(post_plan_comment, name="post-plan-comment")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")

@@ -1,11 +1,19 @@
-"""Tests for plan_issues.py - Schema v2 plan issue creation."""
+"""Tests for plan_issues.py - Schema v2 plan issue creation and update."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.plan_issues import CreatePlanIssueResult, create_plan_issue
+from erk_shared.github.issues.types import IssueComment, IssueInfo
+from erk_shared.github.metadata import format_plan_header_body
+from erk_shared.github.plan_issues import (
+    CreatePlanIssueResult,
+    UpdatePlanResult,
+    create_plan_issue,
+    update_plan_issue_content,
+)
 
 
 class TestCreatePlanIssueSuccess:
@@ -26,6 +34,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -63,6 +72,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=["session-abc", "session-def"],
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -93,6 +103,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -116,6 +127,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix="[custom-suffix]",
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -138,6 +150,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -160,6 +173,7 @@ class TestCreatePlanIssueSuccess:
             title_suffix=None,
             source_plan_issues=[123, 456],
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -177,7 +191,14 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
             source_repo="owner/impl-repo",
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -197,7 +218,14 @@ class TestCreatePlanIssueSuccess:
             github_issues=fake_gh,
             repo_root=tmp_path,
             plan_content=plan_content,
-            # No source_repo provided
+            title=None,
+            plan_type=None,
+            extra_labels=None,
+            title_suffix=None,
+            source_plan_issues=None,
+            extraction_session_ids=None,
+            source_repo=None,  # No source_repo provided
+            objective_issue=None,
         )
 
         assert result.success is True
@@ -226,6 +254,7 @@ class TestCreatePlanIssueTitleExtraction:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -246,6 +275,7 @@ class TestCreatePlanIssueTitleExtraction:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -266,6 +296,7 @@ class TestCreatePlanIssueTitleExtraction:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -290,12 +321,14 @@ class TestCreatePlanIssueErrors:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
         assert result.success is False
         assert result.issue_number is None
         assert result.issue_url is None
+        assert result.error is not None
         assert "not authenticated" in result.error.lower()
 
     def test_fails_on_label_creation_error(self, tmp_path: Path) -> None:
@@ -320,11 +353,13 @@ class TestCreatePlanIssueErrors:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
         assert result.success is False
         assert result.issue_number is None
+        assert result.error is not None
         assert "Failed to ensure labels exist" in result.error
 
     def test_fails_on_issue_creation_error(self, tmp_path: Path) -> None:
@@ -347,11 +382,13 @@ class TestCreatePlanIssueErrors:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
         assert result.success is False
         assert result.issue_number is None
+        assert result.error is not None
         assert "Failed to create GitHub issue" in result.error
 
 
@@ -362,7 +399,7 @@ class TestCreatePlanIssuePartialSuccess:
         """Report partial success when issue created but comment fails."""
 
         class FailingCommentGitHubIssues(FakeGitHubIssues):
-            def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
                 # Issue 1 exists because create_issue was called
                 raise RuntimeError("Comment too large")
 
@@ -379,6 +416,7 @@ class TestCreatePlanIssuePartialSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -386,13 +424,14 @@ class TestCreatePlanIssuePartialSuccess:
         assert result.success is False
         assert result.issue_number == 1  # Issue was created
         assert result.issue_url is not None
+        assert result.error is not None
         assert "created but failed to add plan comment" in result.error
 
     def test_partial_success_preserves_title(self, tmp_path: Path) -> None:
         """Preserve extracted title even on partial success."""
 
         class FailingCommentGitHubIssues(FakeGitHubIssues):
-            def add_comment(self, repo_root: Path, number: int, body: str) -> None:
+            def add_comment(self, repo_root: Path, number: int, body: str) -> int:
                 raise RuntimeError("Network error")
 
         fake_gh = FailingCommentGitHubIssues(username="testuser")
@@ -408,6 +447,7 @@ class TestCreatePlanIssuePartialSuccess:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -433,6 +473,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -459,6 +500,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=["abc"],
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -484,6 +526,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -506,6 +549,7 @@ class TestCreatePlanIssueLabelManagement:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -567,6 +611,7 @@ class TestCreatePlanIssueCommandsSection:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -599,6 +644,7 @@ class TestCreatePlanIssueCommandsSection:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=["session-abc"],
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -629,6 +675,7 @@ class TestCreatePlanIssueCommandsSection:
             title_suffix=None,
             source_plan_issues=None,
             extraction_session_ids=None,
+            source_repo=None,
             objective_issue=None,
         )
 
@@ -640,3 +687,275 @@ class TestCreatePlanIssueCommandsSection:
         assert "erk implement 42" in updated_body
         assert "erk implement 42 --dangerous" in updated_body
         assert "erk plan submit 42" in updated_body
+
+
+class TestUpdatePlanIssueContent:
+    """Tests for update_plan_issue_content function."""
+
+    def test_updates_plan_content_successfully(self, tmp_path: Path) -> None:
+        """Update plan content in existing issue."""
+        # Create an issue body with plan-header containing plan_comment_id
+        issue_body = format_plan_header_body(
+            created_at="2025-01-01T00:00:00Z",
+            created_by="testuser",
+            plan_comment_id=1000,  # Comment ID to update
+        )
+        now = datetime.now(UTC)
+
+        # Set up fake with pre-configured issue and comment
+        fake_gh = FakeGitHubIssues(
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Plan [erk-plan]",
+                    body=issue_body,
+                    state="OPEN",
+                    url="https://github.com/test/repo/issues/42",
+                    labels=["erk-plan"],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                    author="testuser",
+                )
+            },
+            comments_with_urls={
+                42: [
+                    IssueComment(
+                        body="Original plan content",
+                        url="https://github.com/test/repo/issues/42#issuecomment-1000",
+                        id=1000,
+                        author="testuser",
+                    )
+                ]
+            },
+        )
+
+        result = update_plan_issue_content(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            issue_number=42,
+            new_plan_content="# Updated Plan\n\n- Step 1\n- Step 2",
+        )
+
+        assert result.success is True
+        assert result.issue_number == 42
+        assert result.comment_id == 1000
+        assert result.error is None
+
+        # Verify comment was updated
+        assert len(fake_gh.updated_comments) == 1
+        comment_id, new_body = fake_gh.updated_comments[0]
+        assert comment_id == 1000
+        assert "Updated Plan" in new_body
+        assert "Step 1" in new_body
+
+    def test_fails_when_issue_not_found(self, tmp_path: Path) -> None:
+        """Return error when issue doesn't exist."""
+        fake_gh = FakeGitHubIssues()
+
+        result = update_plan_issue_content(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            issue_number=999,
+            new_plan_content="# New Plan",
+        )
+
+        assert result.success is False
+        assert result.issue_number == 999
+        assert result.comment_id is None
+        assert result.error is not None
+        assert "Failed to get issue #999" in result.error
+
+    def test_fails_when_issue_has_no_plan_comment_id(self, tmp_path: Path) -> None:
+        """Return error when issue has no plan_comment_id in plan-header."""
+        # Create an issue body with plan-header but NO plan_comment_id
+        issue_body = format_plan_header_body(
+            created_at="2025-01-01T00:00:00Z",
+            created_by="testuser",
+            plan_comment_id=None,  # No comment ID
+        )
+        now = datetime.now(UTC)
+
+        fake_gh = FakeGitHubIssues(
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Plan [erk-plan]",
+                    body=issue_body,
+                    state="OPEN",
+                    url="https://github.com/test/repo/issues/42",
+                    labels=["erk-plan"],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                    author="testuser",
+                )
+            }
+        )
+
+        result = update_plan_issue_content(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            issue_number=42,
+            new_plan_content="# New Plan",
+        )
+
+        assert result.success is False
+        assert result.issue_number == 42
+        assert result.comment_id is None
+        assert result.error is not None
+        assert "does not have a plan_comment_id" in result.error
+
+    def test_fails_when_issue_has_no_plan_header(self, tmp_path: Path) -> None:
+        """Return error when issue has no plan-header block at all."""
+        now = datetime.now(UTC)
+
+        fake_gh = FakeGitHubIssues(
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Random Issue",
+                    body="This is just a regular issue body without metadata.",
+                    state="OPEN",
+                    url="https://github.com/test/repo/issues/42",
+                    labels=[],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                    author="testuser",
+                )
+            }
+        )
+
+        result = update_plan_issue_content(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            issue_number=42,
+            new_plan_content="# New Plan",
+        )
+
+        assert result.success is False
+        assert result.issue_number == 42
+        assert result.error is not None
+        assert "does not have a plan_comment_id" in result.error
+
+    def test_fails_when_comment_update_fails(self, tmp_path: Path) -> None:
+        """Return error when comment update fails."""
+        issue_body = format_plan_header_body(
+            created_at="2025-01-01T00:00:00Z",
+            created_by="testuser",
+            plan_comment_id=1000,
+        )
+        now = datetime.now(UTC)
+
+        # Comment ID 1000 is not in comments_with_urls or added_comments,
+        # so update_comment will raise RuntimeError
+        fake_gh = FakeGitHubIssues(
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Plan [erk-plan]",
+                    body=issue_body,
+                    state="OPEN",
+                    url="https://github.com/test/repo/issues/42",
+                    labels=["erk-plan"],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                    author="testuser",
+                )
+            },
+            # No comments configured - comment 1000 doesn't exist
+        )
+
+        result = update_plan_issue_content(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            issue_number=42,
+            new_plan_content="# New Plan",
+        )
+
+        assert result.success is False
+        assert result.issue_number == 42
+        assert result.comment_id == 1000
+        assert result.error is not None
+        assert "Failed to update comment #1000" in result.error
+
+    def test_strips_whitespace_from_plan_content(self, tmp_path: Path) -> None:
+        """Strips leading/trailing whitespace from plan content."""
+        issue_body = format_plan_header_body(
+            created_at="2025-01-01T00:00:00Z",
+            created_by="testuser",
+            plan_comment_id=1000,
+        )
+        now = datetime.now(UTC)
+
+        fake_gh = FakeGitHubIssues(
+            issues={
+                42: IssueInfo(
+                    number=42,
+                    title="Test Plan [erk-plan]",
+                    body=issue_body,
+                    state="OPEN",
+                    url="https://github.com/test/repo/issues/42",
+                    labels=["erk-plan"],
+                    assignees=[],
+                    created_at=now,
+                    updated_at=now,
+                    author="testuser",
+                )
+            },
+            comments_with_urls={
+                42: [
+                    IssueComment(
+                        body="Original",
+                        url="https://github.com/test/repo/issues/42#issuecomment-1000",
+                        id=1000,
+                        author="testuser",
+                    )
+                ]
+            },
+        )
+
+        result = update_plan_issue_content(
+            github_issues=fake_gh,
+            repo_root=tmp_path,
+            issue_number=42,
+            new_plan_content="\n\n  # Trimmed Plan  \n\n",
+        )
+
+        assert result.success is True
+        # Verify the content was stripped
+        _, new_body = fake_gh.updated_comments[0]
+        # The plan-body block should contain the trimmed content
+        assert "# Trimmed Plan" in new_body
+
+
+class TestUpdatePlanResultDataclass:
+    """Test UpdatePlanResult dataclass."""
+
+    def test_result_is_frozen(self) -> None:
+        """Verify result is immutable."""
+        result = UpdatePlanResult(
+            success=True,
+            issue_number=42,
+            comment_id=1000,
+            error=None,
+        )
+
+        with pytest.raises(AttributeError):
+            result.success = False  # type: ignore[misc]
+
+    def test_result_fields(self) -> None:
+        """Verify all fields are accessible."""
+        result = UpdatePlanResult(
+            success=False,
+            issue_number=42,
+            comment_id=1000,
+            error="Something went wrong",
+        )
+
+        assert result.success is False
+        assert result.issue_number == 42
+        assert result.comment_id == 1000
+        assert result.error == "Something went wrong"

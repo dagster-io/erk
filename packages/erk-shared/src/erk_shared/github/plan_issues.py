@@ -17,6 +17,7 @@ from pathlib import Path
 
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata import (
+    extract_plan_header_comment_id,
     format_plan_commands_section,
     format_plan_content_comment,
     format_plan_header_body,
@@ -51,6 +52,23 @@ class CreatePlanIssueResult:
     issue_number: int | None
     issue_url: str | None
     title: str
+    error: str | None
+
+
+@dataclass(frozen=True)
+class UpdatePlanResult:
+    """Result of updating a plan issue's content.
+
+    Attributes:
+        success: Whether the update completed successfully
+        issue_number: The issue number that was updated
+        comment_id: The comment ID that was updated (if successful)
+        error: Error message if failed, None if success
+    """
+
+    success: bool
+    issue_number: int
+    comment_id: int | None
     error: str | None
 
 
@@ -253,3 +271,72 @@ def _ensure_labels_exist(
         return f"Failed to ensure labels exist: {e}"
 
     return None
+
+
+def update_plan_issue_content(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    issue_number: int,
+    new_plan_content: str,
+) -> UpdatePlanResult:
+    """Update plan content in an existing issue's first comment.
+
+    This function:
+    1. Reads the issue body to get the plan_comment_id from plan-header
+    2. Renders the new plan content into a plan-body metadata block
+    3. Updates the comment via GitHub API
+
+    Args:
+        github_issues: GitHubIssues interface (real, fake, or dry-run)
+        repo_root: Repository root directory
+        issue_number: The GitHub issue number to update
+        new_plan_content: The new plan markdown content
+
+    Returns:
+        UpdatePlanResult with success status and details
+
+    Note:
+        Does NOT raise exceptions. All errors returned in result.
+    """
+    # Step 1: Read issue body to get plan_comment_id
+    try:
+        issue = github_issues.get_issue(repo_root, issue_number)
+    except RuntimeError as e:
+        return UpdatePlanResult(
+            success=False,
+            issue_number=issue_number,
+            comment_id=None,
+            error=f"Failed to get issue #{issue_number}: {e}",
+        )
+
+    # Step 2: Extract plan_comment_id from plan-header
+    comment_id = extract_plan_header_comment_id(issue.body)
+    if comment_id is None:
+        return UpdatePlanResult(
+            success=False,
+            issue_number=issue_number,
+            comment_id=None,
+            error=f"Issue #{issue_number} does not have a plan_comment_id in its plan-header. "
+            "This may not be a valid erk plan issue.",
+        )
+
+    # Step 3: Render new content into plan-body block
+    new_comment_body = format_plan_content_comment(new_plan_content.strip())
+
+    # Step 4: Update the comment via API
+    try:
+        github_issues.update_comment(repo_root, comment_id, new_comment_body)
+    except RuntimeError as e:
+        return UpdatePlanResult(
+            success=False,
+            issue_number=issue_number,
+            comment_id=comment_id,
+            error=f"Failed to update comment #{comment_id}: {e}",
+        )
+
+    return UpdatePlanResult(
+        success=True,
+        issue_number=issue_number,
+        comment_id=comment_id,
+        error=None,
+    )
