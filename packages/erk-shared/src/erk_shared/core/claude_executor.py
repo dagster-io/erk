@@ -177,6 +177,7 @@ class ClaudeExecutor(ABC):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
+        model: str | None = None,
     ) -> Iterator[ClaudeEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
 
@@ -186,6 +187,7 @@ class ClaudeExecutor(ABC):
             dangerous: Whether to skip permission prompts
             verbose: Whether to show raw output (True) or filtered output (False)
             debug: Whether to emit debug output for stream parsing
+            model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
         Yields:
             ClaudeEvent objects as they occur during execution
@@ -209,6 +211,7 @@ class ClaudeExecutor(ABC):
         worktree_path: Path,
         dangerous: bool,
         verbose: bool = False,
+        model: str | None = None,
     ) -> CommandResult:
         """Execute Claude CLI command and return final result (non-streaming).
 
@@ -221,6 +224,7 @@ class ClaudeExecutor(ABC):
             worktree_path: Path to worktree directory to run command in
             dangerous: Whether to skip permission prompts
             verbose: Whether to show raw output (True) or filtered output (False)
+            model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
         Returns:
             CommandResult containing success status, PR URL, duration, and messages
@@ -244,7 +248,9 @@ class ClaudeExecutor(ABC):
         error_message: str | None = None
         success = True
 
-        for event in self.execute_command_streaming(command, worktree_path, dangerous, verbose):
+        for event in self.execute_command_streaming(
+            command, worktree_path, dangerous, verbose, model=model
+        ):
             match event:
                 case TextEvent(content=text):
                     filtered_messages.append(text)
@@ -292,6 +298,7 @@ class ClaudeExecutor(ABC):
         dangerous: bool,
         command: str,
         target_subpath: Path | None,
+        model: str | None = None,
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -303,6 +310,7 @@ class ClaudeExecutor(ABC):
                 If provided and exists, Claude will start in that subdirectory
                 instead of the worktree root. This preserves the user's relative
                 directory position when switching worktrees.
+            model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
         Raises:
             RuntimeError: If Claude CLI is not available

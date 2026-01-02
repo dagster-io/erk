@@ -40,6 +40,39 @@ from erk_shared.naming import (
 )
 from erk_shared.output.output import user_output
 
+# Valid model names and their aliases
+_MODEL_ALIASES: dict[str, str] = {
+    "h": "haiku",
+    "s": "sonnet",
+    "o": "opus",
+}
+_VALID_MODELS = {"haiku", "sonnet", "opus"}
+
+
+def _normalize_model_name(model: str | None) -> str | None:
+    """Normalize model name, expanding aliases and validating.
+
+    Args:
+        model: User-provided model name or alias (haiku, sonnet, opus, h, s, o, or None)
+
+    Returns:
+        Normalized full model name (haiku, sonnet, opus) or None if not provided
+
+    Raises:
+        click.ClickException: If model name is invalid
+    """
+    if model is None:
+        return None
+
+    # Expand alias if present
+    normalized = _MODEL_ALIASES.get(model.lower(), model.lower())
+
+    if normalized not in _VALID_MODELS:
+        valid_options = ", ".join(sorted(_VALID_MODELS | set(_MODEL_ALIASES.keys())))
+        raise click.ClickException(f"Invalid model: '{model}'\nValid options: {valid_options}")
+
+    return normalized
+
 
 def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
     """Determine the base branch for new worktree creation.
@@ -67,12 +100,13 @@ def _determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
     return trunk_branch
 
 
-def _build_claude_command(slash_command: str, dangerous: bool) -> str:
+def _build_claude_command(slash_command: str, dangerous: bool, model: str | None) -> str:
     """Build a Claude CLI invocation for interactive mode.
 
     Args:
         slash_command: The slash command to execute (e.g., "/erk:plan-implement")
         dangerous: Whether to skip permission prompts
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
     Returns:
         Complete Claude CLI command string
@@ -80,6 +114,8 @@ def _build_claude_command(slash_command: str, dangerous: bool) -> str:
     cmd = "claude --permission-mode acceptEdits"
     if dangerous:
         cmd += " --dangerously-skip-permissions"
+    if model is not None:
+        cmd += f" --model {model}"
     cmd += f' "{slash_command}"'
     return cmd
 
@@ -127,12 +163,13 @@ def _build_command_sequence(submit: bool) -> list[str]:
     return commands
 
 
-def _build_claude_args(slash_command: str, dangerous: bool) -> list[str]:
+def _build_claude_args(slash_command: str, dangerous: bool, model: str | None) -> list[str]:
     """Build Claude command argument list for interactive script mode.
 
     Args:
         slash_command: The slash command to execute
         dangerous: Whether to skip permission prompts
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
     Returns:
         List of command arguments suitable for subprocess
@@ -140,6 +177,8 @@ def _build_claude_args(slash_command: str, dangerous: bool) -> list[str]:
     args = ["claude", "--permission-mode", "acceptEdits"]
     if dangerous:
         args.append("--dangerously-skip-permissions")
+    if model is not None:
+        args.extend(["--model", model])
     args.append(slash_command)
     return args
 
@@ -149,6 +188,7 @@ def _execute_interactive_mode(
     repo_root: Path,
     worktree_path: Path,
     dangerous: bool,
+    model: str | None,
     executor: ClaudeExecutor,
 ) -> None:
     """Execute implementation in interactive mode using executor.
@@ -158,6 +198,7 @@ def _execute_interactive_mode(
         repo_root: Path to repository root for listing worktrees
         worktree_path: Path to worktree directory
         dangerous: Whether to skip permission prompts
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for process replacement
 
     Raises:
@@ -173,6 +214,7 @@ def _execute_interactive_mode(
             dangerous,
             "/erk:plan-implement",
             compute_relative_path_in_worktree(ctx.git.list_worktrees(repo_root), ctx.cwd),
+            model=model,
         )
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e
@@ -183,6 +225,7 @@ def _execute_non_interactive_mode(
     commands: list[str],
     dangerous: bool,
     verbose: bool,
+    model: str | None,
     executor: ClaudeExecutor,
 ) -> None:
     """Execute commands via Claude CLI executor with rich output formatting.
@@ -192,6 +235,7 @@ def _execute_non_interactive_mode(
         commands: List of slash commands to execute
         dangerous: Whether to skip permission prompts
         verbose: Whether to show raw output (True) or filtered output (False)
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for command execution
 
     Raises:
@@ -218,7 +262,9 @@ def _execute_non_interactive_mode(
         if verbose:
             # Verbose mode - simple output, no spinner
             click.echo(f"Running {cmd}...", err=True)
-            result = executor.execute_command(cmd, worktree_path, dangerous, verbose=True)
+            result = executor.execute_command(
+                cmd, worktree_path, dangerous, verbose=True, model=model
+            )
         else:
             # Filtered mode - streaming with live print-based feedback
             result = stream_command_with_feedback(
@@ -226,6 +272,7 @@ def _execute_non_interactive_mode(
                 command=cmd,
                 worktree_path=worktree_path,
                 dangerous=dangerous,
+                model=model,
                 console=console,
             )
 
@@ -247,7 +294,7 @@ def _execute_non_interactive_mode(
 
 
 def _build_activation_script_with_commands(
-    worktree_path: Path, commands: list[str], dangerous: bool
+    worktree_path: Path, commands: list[str], dangerous: bool, model: str | None
 ) -> str:
     """Build activation script with Claude commands.
 
@@ -255,6 +302,7 @@ def _build_activation_script_with_commands(
         worktree_path: Path to worktree
         commands: List of slash commands to include
         dangerous: Whether to skip permission prompts
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
     Returns:
         Complete activation script with commands
@@ -271,7 +319,7 @@ def _build_activation_script_with_commands(
     # Add Claude commands
     shell_commands = []
     for cmd in commands:
-        cmd_args = _build_claude_args(cmd, dangerous)
+        cmd_args = _build_claude_args(cmd, dangerous, model)
         # Build shell command string
         shell_cmd = " ".join(shlex.quote(arg) for arg in cmd_args)
         shell_commands.append(shell_cmd)
@@ -652,6 +700,7 @@ def _create_worktree_with_plan_content(
     no_interactive: bool,
     linked_branch_name: str | None = None,
     base_branch: str,
+    model: str | None = None,
     force_delete: ForceDeleteOptions | None = None,
 ) -> WorktreeCreationResult | None:
     """Create worktree with plan content.
@@ -667,6 +716,7 @@ def _create_worktree_with_plan_content(
         linked_branch_name: Optional branch name for issue-based worktrees
                            (when provided, use this branch instead of creating new)
         base_branch: Base branch to use as ref for worktree creation
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         force_delete: Options for force-deleting existing worktree/branch
 
     Returns:
@@ -753,7 +803,7 @@ def _create_worktree_with_plan_content(
         commands = _build_command_sequence(submit)
         user_output("\nCommand sequence:")
         for i, cmd in enumerate(commands, 1):
-            cmd_args = _build_claude_args(cmd, dangerous)
+            cmd_args = _build_claude_args(cmd, dangerous, model)
             user_output(f"  {i}. {' '.join(cmd_args)}")
 
         return None
@@ -820,6 +870,7 @@ def _output_activation_instructions(
     script: bool,
     submit: bool,
     dangerous: bool,
+    model: str | None,
     target_description: str,
 ) -> None:
     """Output activation script or manual instructions.
@@ -834,6 +885,7 @@ def _output_activation_instructions(
         script: Whether to output activation script
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         target_description: Description of target for user messages
     """
     if script:
@@ -841,7 +893,7 @@ def _output_activation_instructions(
         commands = _build_command_sequence(submit)
 
         # Generate activation script with commands
-        full_script = _build_activation_script_with_commands(wt_path, commands, dangerous)
+        full_script = _build_activation_script_with_commands(wt_path, commands, dangerous, model)
 
         comment_suffix = "implement, CI, and submit" if submit else "implement"
         result = ctx.script_writer.write_activation_script(
@@ -857,11 +909,11 @@ def _output_activation_instructions(
         user_output(f"  1. Change to worktree:  erk br co {branch}")
         if submit:
             user_output("  2. Run implementation, CI, and submit PR:")
-            user_output(f"     {_build_claude_command('/erk:plan-implement', dangerous)}")
-            user_output(f"     {_build_claude_command('/fast-ci', dangerous)}")
-            user_output(f"     {_build_claude_command('/gt:pr-submit', dangerous)}")
+            user_output(f"     {_build_claude_command('/erk:plan-implement', dangerous, model)}")
+            user_output(f"     {_build_claude_command('/fast-ci', dangerous, model)}")
+            user_output(f"     {_build_claude_command('/gt:pr-submit', dangerous, model)}")
         else:
-            claude_cmd = _build_claude_command("/erk:plan-implement", dangerous)
+            claude_cmd = _build_claude_command("/erk:plan-implement", dangerous, model)
             user_output(f"  2. Run implementation:  {claude_cmd}")
         user_output("\n" + click.style("Shell integration not detected.", fg="yellow"))
         user_output("To activate environment and run commands, use:")
@@ -880,6 +932,7 @@ def _implement_from_issue(
     script: bool,
     no_interactive: bool,
     verbose: bool,
+    model: str | None,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from GitHub issue.
@@ -894,6 +947,7 @@ def _implement_from_issue(
         script: Whether to output activation script
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for command execution
     """
     # Discover repo context for issue fetch
@@ -919,6 +973,7 @@ def _implement_from_issue(
         no_interactive=no_interactive,
         linked_branch_name=issue_plan_source.branch_name,
         base_branch=base_branch,
+        model=model,
     )
 
     # Early return for dry-run mode
@@ -947,15 +1002,16 @@ def _implement_from_issue(
             script=script,
             submit=submit,
             dangerous=dangerous,
+            model=model,
             target_description=target_description,
         )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = _build_command_sequence(submit)
-        _execute_non_interactive_mode(wt_path, commands, dangerous, verbose, executor)
+        _execute_non_interactive_mode(wt_path, commands, dangerous, verbose, model, executor)
     else:
         # Interactive mode - hand off to Claude (never returns)
-        _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, executor)
+        _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
 
 
 def _implement_from_file(
@@ -969,6 +1025,7 @@ def _implement_from_file(
     script: bool,
     no_interactive: bool,
     verbose: bool,
+    model: str | None,
     force_delete: ForceDeleteOptions,
     executor: ClaudeExecutor,
 ) -> None:
@@ -984,6 +1041,7 @@ def _implement_from_file(
         script: Whether to output activation script
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         force_delete: Options for force-deleting existing worktree/branch
         executor: Claude CLI executor for command execution
     """
@@ -1006,6 +1064,7 @@ def _implement_from_file(
         dangerous=dangerous,
         no_interactive=no_interactive,
         base_branch=base_branch,
+        model=model,
         force_delete=force_delete,
     )
 
@@ -1033,15 +1092,16 @@ def _implement_from_file(
             script=script,
             submit=submit,
             dangerous=dangerous,
+            model=model,
             target_description=target_description,
         )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = _build_command_sequence(submit)
-        _execute_non_interactive_mode(wt_path, commands, dangerous, verbose, executor)
+        _execute_non_interactive_mode(wt_path, commands, dangerous, verbose, model, executor)
     else:
         # Interactive mode - hand off to Claude (never returns)
-        _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, executor)
+        _execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
 
 
 @alias("impl")
@@ -1095,6 +1155,13 @@ def _implement_from_file(
     default=False,
     help="Delete existing branch/worktree with same name after confirmation.",
 )
+@click.option(
+    "-m",
+    "--model",
+    type=str,
+    default=None,
+    help="Model to use for Claude (haiku/h, sonnet/s, opus/o)",
+)
 @click.pass_obj
 def implement(
     ctx: ErkContext,
@@ -1108,6 +1175,7 @@ def implement(
     yolo: bool,
     verbose: bool,
     force: bool,
+    model: str | None,
 ) -> None:
     """Create worktree from GitHub issue or plan file and execute implementation.
 
@@ -1160,6 +1228,9 @@ def implement(
         submit = True
         no_interactive = True
 
+    # Normalize model name (validates and expands aliases)
+    model = _normalize_model_name(model)
+
     # Validate flag combinations
     _validate_flags(submit, no_interactive, script)
 
@@ -1193,6 +1264,7 @@ def implement(
             script=script,
             no_interactive=no_interactive,
             verbose=verbose,
+            model=model,
             executor=ctx.claude_executor,
         )
     else:
@@ -1208,6 +1280,7 @@ def implement(
             script=script,
             no_interactive=no_interactive,
             verbose=verbose,
+            model=model,
             force_delete=force_delete,
             executor=ctx.claude_executor,
         )

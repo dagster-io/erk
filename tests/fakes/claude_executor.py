@@ -114,8 +114,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_prompt_output = simulated_prompt_output
         self._simulated_prompt_error = simulated_prompt_error
         self._simulated_no_work_events = simulated_no_work_events
-        self._executed_commands: list[tuple[str, Path, bool, bool]] = []
-        self._interactive_calls: list[tuple[Path, bool, str, Path | None]] = []
+        self._executed_commands: list[tuple[str, Path, bool, bool, str | None]] = []
+        self._interactive_calls: list[tuple[Path, bool, str, Path | None, str | None]] = []
         self._prompt_calls: list[str] = []
 
     def is_claude_available(self) -> bool:
@@ -129,6 +129,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
+        model: str | None = None,
     ) -> Iterator[ClaudeEvent]:
         """Track command execution and yield simulated typed events.
 
@@ -141,6 +142,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
             dangerous: Whether to skip permission prompts
             verbose: Whether to show raw output or filtered output
             debug: Whether to emit debug output for stream parsing
+            model: Optional model name (haiku, sonnet, opus) - recorded but not used
 
         Yields:
             ClaudeEvent objects simulating command execution
@@ -148,7 +150,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         Raises:
             RuntimeError: If command_should_fail was set to True
         """
-        self._executed_commands.append((command, worktree_path, dangerous, verbose))
+        self._executed_commands.append((command, worktree_path, dangerous, verbose, model))
 
         # Process error takes precedence (simulates Popen failure)
         if self._simulated_process_error is not None:
@@ -254,6 +256,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         command: str,
         target_subpath: Path | None,
+        model: str | None = None,
     ) -> None:
         """Track interactive execution without replacing process.
 
@@ -267,23 +270,23 @@ class FakeClaudeExecutor(ClaudeExecutor):
         if not self._claude_available:
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
-        self._interactive_calls.append((worktree_path, dangerous, command, target_subpath))
+        self._interactive_calls.append((worktree_path, dangerous, command, target_subpath, model))
 
     @property
-    def executed_commands(self) -> list[tuple[str, Path, bool, bool]]:
+    def executed_commands(self) -> list[tuple[str, Path, bool, bool, str | None]]:
         """Get the list of execute_command() calls that were made.
 
-        Returns list of (command, worktree_path, dangerous, verbose) tuples.
+        Returns list of (command, worktree_path, dangerous, verbose, model) tuples.
 
         This property is for test assertions only.
         """
         return self._executed_commands.copy()
 
     @property
-    def interactive_calls(self) -> list[tuple[Path, bool, str, Path | None]]:
+    def interactive_calls(self) -> list[tuple[Path, bool, str, Path | None, str | None]]:
         """Get the list of execute_interactive() calls that were made.
 
-        Returns list of (worktree_path, dangerous, command, target_subpath) tuples.
+        Returns list of (worktree_path, dangerous, command, target_subpath, model) tuples.
 
         This property is for test assertions only.
         """

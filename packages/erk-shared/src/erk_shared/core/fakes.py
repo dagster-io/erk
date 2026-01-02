@@ -27,7 +27,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
     Attributes:
         is_available: Whether Claude CLI should appear available
-        interactive_calls: List of (worktree_path, dangerous, command, target_subpath) tuples
+        interactive_calls: List of (worktree_path, dangerous, command, target_subpath, model) tuples
         prompt_calls: List of (prompt, model, tools, cwd) tuples
         prompt_results: Queue of PromptResult to return from execute_prompt
         streaming_events: Events to yield from execute_command_streaming
@@ -41,7 +41,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         streaming_events: list[ClaudeEvent] | None = None,
     ) -> None:
         self.is_available_value = is_available
-        self.interactive_calls: list[tuple[Path, bool, str, Path | None]] = []
+        self.interactive_calls: list[tuple[Path, bool, str, Path | None, str | None]] = []
         self.prompt_calls: list[tuple[str, str, list[str] | None, Path | None]] = []
         self.prompt_results = list(prompt_results) if prompt_results else []
         self.streaming_events = list(streaming_events) if streaming_events else []
@@ -57,6 +57,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         verbose: bool = False,
         debug: bool = False,
+        model: str | None = None,
     ) -> Iterator[ClaudeEvent]:
         yield from self.streaming_events
 
@@ -66,8 +67,9 @@ class FakeClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         command: str,
         target_subpath: Path | None,
+        model: str | None = None,
     ) -> None:
-        self.interactive_calls.append((worktree_path, dangerous, command, target_subpath))
+        self.interactive_calls.append((worktree_path, dangerous, command, target_subpath, model))
 
     def execute_prompt(
         self,
