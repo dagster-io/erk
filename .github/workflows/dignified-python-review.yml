@@ -1,3 +1,5 @@
+# Claude Code Docker CI workflow
+# See docs/learned/ci/claude-code-docker.md for container configuration details
 name: dignified-python-review
 
 on:
@@ -26,6 +28,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Fix Actions temp directory permissions
+        run: sudo chmod -R 777 /__w/_temp
 
       - name: Setup Claude Code and Erk
         uses: ./.github/actions/setup-claude-erk
