@@ -1,13 +1,13 @@
 [artifacts]
 version = "0.3.1"
 
-[artifacts.files."skills/erk-diff-analysis"]
-version = "0.3.1"
-hash = "47524d8b839031d0"
-
 [artifacts.files."skills/dignified-python"]
 version = "0.3.1"
 hash = "7bba89938d33f2b7"
+
+[artifacts.files."skills/erk-diff-analysis"]
+version = "0.3.1"
+hash = "47524d8b839031d0"
 
 [artifacts.files."skills/learned-docs"]
 version = "0.3.1"
@@ -17,6 +17,22 @@ hash = "a0f0a1e27f928a90"
 version = "0.3.1"
 hash = "ef8f76c10172f003"
 
+[artifacts.files."commands/erk/auto-restack.md"]
+version = "0.3.1"
+hash = "87e3097760957a48"
+
+[artifacts.files."commands/erk/create-extraction-plan.md"]
+version = "0.3.1"
+hash = "7e56fc18c4ec50d3"
+
+[artifacts.files."commands/erk/git-pr-push.md"]
+version = "0.3.1"
+hash = "ce70ba799c3c28dd"
+
+[artifacts.files."commands/erk/merge-conflicts-fix.md"]
+version = "0.3.1"
+hash = "f12800e228480c27"
+
 [artifacts.files."commands/erk/plan-implement.md"]
 version = "0.3.1"
 hash = "b7e9a90550e89d9d"
@@ -25,9 +41,9 @@ hash = "b7e9a90550e89d9d"
 version = "0.3.1"
 hash = "77713cf37d865a00"
 
-[artifacts.files."commands/erk/git-pr-push.md"]
+[artifacts.files."commands/erk/plan-submit.md"]
 version = "0.3.1"
-hash = "ce70ba799c3c28dd"
+hash = "50ddbf34293ca251"
 
 [artifacts.files."commands/erk/pr-address.md"]
 version = "0.3.1"
@@ -36,22 +52,6 @@ hash = "ed68348c79949c00"
 [artifacts.files."commands/erk/pr-submit.md"]
 version = "0.3.1"
 hash = "4bcb22da46b0ed65"
-
-[artifacts.files."commands/erk/auto-restack.md"]
-version = "0.3.1"
-hash = "87e3097760957a48"
-
-[artifacts.files."commands/erk/merge-conflicts-fix.md"]
-version = "0.3.1"
-hash = "f12800e228480c27"
-
-[artifacts.files."commands/erk/plan-submit.md"]
-version = "0.3.1"
-hash = "50ddbf34293ca251"
-
-[artifacts.files."commands/erk/create-extraction-plan.md"]
-version = "0.3.1"
-hash = "7e56fc18c4ec50d3"
 
 [artifacts.files."workflows/erk-impl.yml"]
 version = "0.3.1"

@@ -129,7 +129,7 @@ def _sync_directory_artifacts(
 
     copied = 0
     synced: list[SyncedArtifact] = []
-    for name in names:
+    for name in sorted(names):
         source = source_dir / name
         if source.exists():
             target = target_dir / name
@@ -161,7 +161,7 @@ def _sync_agent_artifacts(
 
     copied = 0
     synced: list[SyncedArtifact] = []
-    for name in names:
+    for name in sorted(names):
         source_dir_path = source_dir / name
         source_file_path = source_dir / f"{name}.md"
 
@@ -242,7 +242,7 @@ def _sync_workflows(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for workflow_name in BUNDLED_WORKFLOWS:
+    for workflow_name in sorted(BUNDLED_WORKFLOWS):
         source_path = source_workflows_dir / workflow_name
         if source_path.exists():
             target_workflows_dir.mkdir(parents=True, exist_ok=True)
@@ -320,7 +320,7 @@ def _hash_directory_artifacts(
         return []
 
     artifacts: list[SyncedArtifact] = []
-    for name in names:
+    for name in sorted(names):
         artifact_dir = parent_dir / name
         if artifact_dir.exists():
             artifacts.append(
@@ -344,7 +344,7 @@ def _hash_agent_artifacts(agents_dir: Path, names: frozenset[str]) -> list[Synce
         return []
 
     artifacts: list[SyncedArtifact] = []
-    for name in names:
+    for name in sorted(names):
         dir_path = agents_dir / name
         file_path = agents_dir / f"{name}.md"
 
@@ -388,7 +388,7 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     # Hash commands from source
     commands_dir = bundled_claude_dir / "commands" / "erk"
     if commands_dir.exists():
-        for cmd_file in commands_dir.glob("*.md"):
+        for cmd_file in sorted(commands_dir.glob("*.md")):
             artifacts.append(
                 SyncedArtifact(
                     key=f"commands/erk/{cmd_file.name}",
@@ -400,7 +400,7 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     # Hash workflows from source
     workflows_dir = bundled_github_dir / "workflows"
     if workflows_dir.exists():
-        for workflow_name in BUNDLED_WORKFLOWS:
+        for workflow_name in sorted(BUNDLED_WORKFLOWS):
             workflow_file = workflows_dir / workflow_name
             if workflow_file.exists():
                 artifacts.append(
