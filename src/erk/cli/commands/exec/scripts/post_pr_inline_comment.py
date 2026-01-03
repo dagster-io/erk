@@ -53,7 +53,9 @@ class InlineCommentError:
 def _get_pr_head_sha(repo_root: Path, pr_number: int) -> str:
     """Get the head commit SHA for a PR.
 
-    Uses gh CLI to fetch the PR head ref OID.
+    Uses gh CLI REST API to fetch the PR head ref SHA.
+    Uses REST API instead of GraphQL (`gh pr view`) to avoid hitting
+    GraphQL rate limits. GraphQL and REST have separate quotas.
 
     Args:
         repo_root: Repository root directory
@@ -65,16 +67,13 @@ def _get_pr_head_sha(repo_root: Path, pr_number: int) -> str:
     Raises:
         RuntimeError: If gh command fails
     """
-    # GH-API-AUDIT: GraphQL - gh pr view uses GraphQL internally
+    # GH-API-AUDIT: REST - GET pulls/{number}
     cmd = [
         "gh",
-        "pr",
-        "view",
-        str(pr_number),
-        "--json",
-        "headRefOid",
-        "-q",
-        ".headRefOid",
+        "api",
+        f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
+        "--jq",
+        ".head.sha",
     ]
     stdout = execute_gh_command(cmd, repo_root)
     return stdout.strip()
