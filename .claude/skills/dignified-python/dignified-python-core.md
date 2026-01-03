@@ -685,9 +685,11 @@ cast(dict[str, Any], doc)["key"] = value  # If doc isn't a dict-like, silent fai
 
 ### When to Skip Runtime Verification
 
-Skip the assertion only when you have **documented proof** that the cast is always valid:
+**Default: Always add the assertion when cost is trivial (O(1) checks like `in`, `isinstance`).**
 
-1. **Immediately after a type guard**: The check was just performed
+Skip the assertion only in these narrow cases:
+
+1. **Immediately after a type guard**: The check was just performed and would be redundant
 
    ```python
    if isinstance(value, str):
@@ -695,21 +697,18 @@ Skip the assertion only when you have **documented proof** that the cast is alwa
        result = cast(str, value).upper()
    ```
 
-2. **API contract guarantee**: The library documentation guarantees the type
-
-   ```python
-   # tomlkit.document() always returns TOMLDocument which is a MutableMapping
-   # (documented in tomlkit's API, verified by their test suite)
-   ```
-
-3. **Performance-critical hot path**: Add a comment explaining why
+2. **Performance-critical hot path**: Add a comment explaining the measured overhead
    ```python
    # Skip assertion: called 10M times/sec, isinstance adds 15% overhead
    # Type invariant maintained by _validate_input() at entry point
    cast(int, cached_value)
    ```
 
-In cases 2 and 3, add a comment explaining why the assertion is omitted.
+**What is NOT a valid reason to skip:**
+
+- "Click validates the choice set" - Add assertion anyway; cost is trivial
+- "The library guarantees the type" - Add assertion anyway; defense in depth
+- "It's obvious from context" - Add assertion anyway; future readers benefit
 
 ### Why This Matters
 
@@ -1046,10 +1045,11 @@ Benefits:
 ### Before using `typing.cast()`:
 
 - [ ] Have I added a runtime assertion to verify the cast?
-- [ ] If skipping the assertion, is there documented proof the cast is always valid?
+- [ ] Is the assertion cost trivial (O(1))? If yes, always add it.
+- [ ] If skipping, is it because I just performed an isinstance check (redundant)?
 - [ ] If skipping for performance, have I documented the measured overhead?
 
-**Default: Always add runtime assertion before cast**
+**Default: Always add runtime assertion before cast when cost is trivial**
 
 ### Before preserving backwards compatibility:
 

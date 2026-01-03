@@ -42,6 +42,7 @@ def show_cmd(name: str, artifact_type: str | None) -> None:
 
     type_filter: ArtifactType | None = None
     if artifact_type is not None:
+        assert artifact_type in ("skill", "command", "agent", "workflow")
         type_filter = cast(ArtifactType, artifact_type)
 
     artifact = get_artifact_by_name(project_dir, name, type_filter)
