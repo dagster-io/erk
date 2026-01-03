@@ -16,7 +16,6 @@ from erk_shared.core.fakes import (
     FakePlannerRegistry,
     FakeScriptWriter,
 )
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
