@@ -21,7 +21,6 @@ from erk_shared.debug import debug_log
 from erk_shared.gateway.time.abc import Time
 from erk_shared.github.abc import GitHub
 from erk_shared.github.graphql_queries import (
-    ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
     GET_PR_REVIEW_THREADS_QUERY,
     GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
@@ -1721,29 +1720,28 @@ query {{
     def add_review_thread_reply(
         self,
         repo_root: Path,
-        thread_id: str,
+        pr_number: int,
+        comment_id: int,
         body: str,
     ) -> bool:
-        """Add a reply comment to a PR review thread via GraphQL mutation.
+        """Add a reply to a PR review comment via REST API.
 
         Args:
             repo_root: Repository root (for gh CLI context)
-            thread_id: GraphQL node ID of the thread
+            pr_number: Pull request number
+            comment_id: Database ID of the comment to reply to
             body: Comment body text
 
         Returns:
             True if comment added successfully
         """
-        # GH-API-AUDIT: GraphQL - addPullRequestReviewThreadReply mutation
-        # WHY GRAPHQL: REST requires interface change (PR number + comment ID vs thread node ID)
+        # GH-API-AUDIT: REST - POST pulls/{number}/comments/{id}/replies
         cmd = [
             "gh",
             "api",
-            "graphql",
-            "-f",
-            f"query={ADD_REVIEW_THREAD_REPLY_MUTATION}",
-            "-f",
-            f"threadId={thread_id}",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/comments/{comment_id}/replies",
             "-f",
             f"body={body}",
         ]
@@ -1751,11 +1749,8 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         response = json.loads(stdout)
 
-        # Check if the comment was added
-        comment_data = (
-            response.get("data", {}).get("addPullRequestReviewThreadReply", {}).get("comment")
-        )
-        return comment_data is not None
+        # Check if the reply was created (it will have an id)
+        return response.get("id") is not None
 
     def create_pr_review_comment(
         self,

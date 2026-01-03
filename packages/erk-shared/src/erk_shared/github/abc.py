@@ -534,14 +534,18 @@ class GitHub(ABC):
     def add_review_thread_reply(
         self,
         repo_root: Path,
-        thread_id: str,
+        pr_number: int,
+        comment_id: int,
         body: str,
     ) -> bool:
-        """Add a reply comment to a PR review thread.
+        """Add a reply to a PR review comment via REST API.
+
+        Uses: POST /repos/{owner}/{repo}/pulls/{pr_number}/comments/{comment_id}/replies
 
         Args:
             repo_root: Repository root (for owner/repo context)
-            thread_id: GraphQL node ID of the thread
+            pr_number: Pull request number
+            comment_id: Database ID of the comment to reply to
             body: Comment body text
 
         Returns:

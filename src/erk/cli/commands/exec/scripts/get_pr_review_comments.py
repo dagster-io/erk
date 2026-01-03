@@ -39,6 +39,7 @@ from erk_shared.github.types import PRDetails, PRNotFound, PRReviewThread
 class ReviewCommentDict(TypedDict):
     """Typed dict for a single review comment in JSON output."""
 
+    id: int
     author: str
     body: str
     created_at: str
@@ -95,6 +96,7 @@ def _format_thread_for_json(thread: PRReviewThread) -> ReviewThreadDict:
     for comment in thread.comments:
         comments.append(
             {
+                "id": comment.id,
                 "author": comment.author,
                 "body": comment.body,
                 "created_at": comment.created_at,

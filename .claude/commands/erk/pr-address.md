@@ -44,6 +44,7 @@ erk exec get-pr-discussion-comments
       "is_outdated": false,
       "comments": [
         {
+          "id": 123456789,
           "author": "reviewer",
           "body": "This should use LBYL pattern instead of try/except",
           "created_at": "2024-01-01T10:00:00Z"
@@ -209,13 +210,13 @@ After committing, resolve each review thread and mark each discussion comment:
 **For Review Threads:**
 
 ```bash
-erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --pr-number 123 --comment-id 123456789 --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
 ```
 
 **Resolving already-fixed outdated threads:**
 
 ```bash
-erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Already addressed in current code - this outdated thread can be resolved."
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --pr-number 123 --comment-id 123456789 --comment "Already addressed in current code - this outdated thread can be resolved."
 ```
 
 **For Discussion Comments:**

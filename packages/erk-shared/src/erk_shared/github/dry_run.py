@@ -235,7 +235,8 @@ class DryRunGitHub(GitHub):
     def add_review_thread_reply(
         self,
         repo_root: Path,
-        thread_id: str,
+        pr_number: int,
+        comment_id: int,
         body: str,
     ) -> bool:
         """No-op for adding reply to review thread in dry-run mode.

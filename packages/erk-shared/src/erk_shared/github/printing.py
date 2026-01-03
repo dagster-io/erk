@@ -252,10 +252,16 @@ class PrintingGitHub(PrintingBase, GitHub):
         self._emit(self._format_command(f"gh api graphql (resolve thread {thread_id})"))
         return self._wrapped.resolve_review_thread(repo_root, thread_id)
 
-    def add_review_thread_reply(self, repo_root: Path, thread_id: str, body: str) -> bool:
+    def add_review_thread_reply(
+        self, repo_root: Path, pr_number: int, comment_id: int, body: str
+    ) -> bool:
         """Add a reply to a PR review thread with printed output."""
-        self._emit(self._format_command(f"gh api graphql (add reply to thread {thread_id})"))
-        return self._wrapped.add_review_thread_reply(repo_root, thread_id, body)
+        self._emit(
+            self._format_command(
+                f"gh api POST repos/.../pulls/{pr_number}/comments/{comment_id}/replies"
+            )
+        )
+        return self._wrapped.add_review_thread_reply(repo_root, pr_number, comment_id, body)
 
     def create_pr_review_comment(
         self,

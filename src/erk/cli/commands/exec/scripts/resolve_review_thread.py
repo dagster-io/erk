@@ -5,7 +5,8 @@ JSON with the result. Optionally adds a reply comment before resolving.
 
 Usage:
     erk exec resolve-review-thread --thread-id "PRRT_xxxx"
-    erk exec resolve-review-thread --thread-id "PRRT_xxxx" --comment "Resolved via ..."
+    erk exec resolve-review-thread --thread-id "PRRT_xxxx" \\
+        --pr-number 123 --comment-id 456789 --comment "Resolved via ..."
 
 Output:
     JSON with success status
@@ -18,7 +19,8 @@ Examples:
     $ erk exec resolve-review-thread --thread-id "PRRT_abc123"
     {"success": true, "thread_id": "PRRT_abc123"}
 
-    $ erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed"
+    $ erk exec resolve-review-thread --thread-id "PRRT_abc123" \\
+        --pr-number 123 --comment-id 456789 --comment "Fixed"
     {"success": true, "thread_id": "PRRT_abc123", "comment_added": true}
 
     $ erk exec resolve-review-thread --thread-id "invalid"
@@ -97,10 +99,13 @@ def _ensure_not_error[T](result: T | ResolveThreadError) -> T:
 def _add_comment_if_provided(
     github: GitHub,
     repo_root: Path,
-    thread_id: str,
+    pr_number: int | None,
+    comment_id: int | None,
     comment: str | None,
 ) -> bool | ResolveThreadError:
     """Add a comment to the thread if provided.
+
+    Requires both pr_number and comment_id when comment is provided.
 
     Returns:
         True/False for comment_added status, or ResolveThreadError on failure
@@ -108,9 +113,19 @@ def _add_comment_if_provided(
     if comment is None:
         return False
 
+    # Validate that pr_number and comment_id are provided when comment is specified
+    if pr_number is None or comment_id is None:
+        return ResolveThreadError(
+            success=False,
+            error_type="missing_parameters",
+            message="--pr-number and --comment-id are required when --comment is provided",
+        )
+
     formatted_comment = _format_resolution_comment(comment)
     try:
-        return github.add_review_thread_reply(repo_root, thread_id, formatted_comment)
+        return github.add_review_thread_reply(
+            repo_root, pr_number, comment_id, formatted_comment
+        )
     except RuntimeError as e:
         return ResolveThreadError(
             success=False,
@@ -121,13 +136,24 @@ def _add_comment_if_provided(
 
 @click.command(name="resolve-review-thread")
 @click.option("--thread-id", required=True, help="GraphQL node ID of the thread to resolve")
-@click.option("--comment", default=None, help="Optional comment to add before resolving")
+@click.option("--pr-number", type=int, help="PR number (required when using --comment)")
+@click.option("--comment-id", type=int, help="Comment database ID (required when using --comment)")
+@click.option("--comment", help="Optional comment to add before resolving")
 @click.pass_context
-def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | None) -> None:
+def resolve_review_thread(
+    ctx: click.Context,
+    thread_id: str,
+    pr_number: int | None,
+    comment_id: int | None,
+    comment: str | None,
+) -> None:
     """Resolve a PR review thread.
 
     Takes a GraphQL node ID (from get-pr-review-comments output) and
     marks the thread as resolved. Optionally adds a reply comment first.
+
+    When adding a comment, --pr-number and --comment-id are required.
+    These values come from the get-pr-review-comments JSON output.
 
     THREAD_ID: GraphQL node ID of the review thread
     """
@@ -137,7 +163,7 @@ def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | Non
 
     # Add comment first if provided
     comment_added = _ensure_not_error(
-        _add_comment_if_provided(github, repo_root, thread_id, comment)
+        _add_comment_if_provided(github, repo_root, pr_number, comment_id, comment)
     )
 
     # Attempt to resolve the thread

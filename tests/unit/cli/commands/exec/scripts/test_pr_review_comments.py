@@ -336,8 +336,9 @@ def test_get_pr_review_comments_json_structure(tmp_path: Path) -> None:
     assert "is_outdated" in thread_data
     assert "comments" in thread_data
 
-    # Verify comment structure
+    # Verify comment structure includes id
     comment_data = thread_data["comments"][0]
+    assert "id" in comment_data
     assert "author" in comment_data
     assert "body" in comment_data
     assert "created_at" in comment_data
@@ -382,7 +383,16 @@ def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
 
         result = runner.invoke(
             resolve_review_thread,
-            ["--thread-id", "PRRT_abc123", "--comment", "Resolved via automation"],
+            [
+                "--thread-id",
+                "PRRT_abc123",
+                "--pr-number",
+                "123",
+                "--comment-id",
+                "456789",
+                "--comment",
+                "Resolved via automation",
+            ],
             obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
@@ -394,8 +404,9 @@ def test_resolve_review_thread_with_comment(tmp_path: Path) -> None:
 
     # Verify both reply and resolution were tracked
     assert len(fake_github.thread_replies) == 1
-    thread_id, comment_body = fake_github.thread_replies[0]
-    assert thread_id == "PRRT_abc123"
+    pr_number, comment_id, comment_body = fake_github.thread_replies[0]
+    assert pr_number == 123
+    assert comment_id == 456789
     assert comment_body.startswith("Resolved via automation\n\n")
     assert "_Addressed via `/erk:pr-address` at" in comment_body
     assert "PRRT_abc123" in fake_github.resolved_thread_ids
@@ -437,7 +448,16 @@ def test_resolve_review_thread_json_structure_with_comment(tmp_path: Path) -> No
 
         result = runner.invoke(
             resolve_review_thread,
-            ["--thread-id", "PRRT_test", "--comment", "Test comment"],
+            [
+                "--thread-id",
+                "PRRT_test",
+                "--pr-number",
+                "123",
+                "--comment-id",
+                "456789",
+                "--comment",
+                "Test comment",
+            ],
             obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
         )
 
@@ -449,3 +469,26 @@ def test_resolve_review_thread_json_structure_with_comment(tmp_path: Path) -> No
     assert output["thread_id"] == "PRRT_test"
     assert "comment_added" in output
     assert output["comment_added"] is True
+
+
+def test_resolve_review_thread_comment_without_pr_number_fails(tmp_path: Path) -> None:
+    """Test that --comment without --pr-number fails with error."""
+    fake_github = FakeGitHub()
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            resolve_review_thread,
+            ["--thread-id", "PRRT_abc123", "--comment", "Test comment"],
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+        )
+
+    assert result.exit_code == 0  # Graceful degradation
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert output["error_type"] == "missing_parameters"
+    assert "--pr-number" in output["message"]
+    assert "--comment-id" in output["message"]

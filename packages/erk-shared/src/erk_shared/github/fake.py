@@ -110,7 +110,7 @@ class FakeGitHub(GitHub):
         self._added_labels: list[tuple[int, str]] = []
         self._pr_review_threads = pr_review_threads or {}
         self._resolved_thread_ids: set[str] = set()
-        self._thread_replies: list[tuple[str, str]] = []
+        self._thread_replies: list[tuple[int, int, str]] = []
         self._pr_review_comments: list[tuple[int, str, str, str, int]] = []
         self._pr_comments: list[tuple[int, str]] = []
         self._pr_comment_updates: list[tuple[int, str]] = []
@@ -697,21 +697,22 @@ class FakeGitHub(GitHub):
     def add_review_thread_reply(
         self,
         repo_root: Path,
-        thread_id: str,
+        pr_number: int,
+        comment_id: int,
         body: str,
     ) -> bool:
         """Record thread reply in mutation tracking list.
 
         Always returns True to simulate successful comment addition.
         """
-        self._thread_replies.append((thread_id, body))
+        self._thread_replies.append((pr_number, comment_id, body))
         return True
 
     @property
-    def thread_replies(self) -> list[tuple[str, str]]:
+    def thread_replies(self) -> list[tuple[int, int, str]]:
         """Read-only access to tracked thread replies for test assertions.
 
-        Returns list of (thread_id, body) tuples.
+        Returns list of (pr_number, comment_id, body) tuples.
         """
         return self._thread_replies
 
