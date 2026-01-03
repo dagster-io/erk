@@ -13,6 +13,8 @@ Domain-Specific Methods:
 - External tool validations (gh CLI installed)
 """
 
+from __future__ import annotations
+
 import shutil
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeVar

@@ -1,5 +1,7 @@
 """Decorators for hook commands."""
 
+from __future__ import annotations
+
 import functools
 import inspect
 import io

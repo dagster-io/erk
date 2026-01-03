@@ -1,5 +1,7 @@
 """Main Textual application for erk dash interactive mode."""
 
+from __future__ import annotations
+
 import asyncio
 import subprocess
 import time

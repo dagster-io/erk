@@ -4,6 +4,8 @@ This module provides factory functions for creating production contexts
 with real implementations. Used by CLI entry points.
 """
 
+from __future__ import annotations
+
 import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING
