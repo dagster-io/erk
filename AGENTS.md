@@ -5,7 +5,7 @@
 
 ## What is Erk?
 
-**Erk** is a CLI tool for plan-oriented agentic engineering: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
+**Erk** is a CLI tool for plan-oriented agentic engineering: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.    
 
 **Status**: Unreleased, completely private software. We can break backwards compatibility at will based on developer preferences.
 
