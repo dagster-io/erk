@@ -1,7 +1,7 @@
 """Integration tests for ClaudeCodeSessionStore with real JSONL fixtures.
 
 Layer 5: Integration tests using realistic persisted .jsonl files.
-Tests the RealClaudeCodeSessionStore against fixture files that represent
+Tests the RealClaudeInstallation against fixture files that represent
 actual Claude Code session log structure.
 
 Fixture layout:
@@ -21,8 +21,8 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.extraction.claude_code_session_store.real import (
-    RealClaudeCodeSessionStore,
+from erk_shared.extraction.claude_installation.real import (
+    RealClaudeInstallation,
 )
 
 # Path to fixture session logs
@@ -70,8 +70,14 @@ class TestFindSessionsSingleProject:
         """Test finding a single session in project_alpha."""
         install_fixture(mock_claude_home, "project_alpha", "/test/alpha")
 
-        store = RealClaudeCodeSessionStore()
-        sessions = store.find_sessions(Path("/test/alpha"), limit=100)
+        store = RealClaudeInstallation()
+        sessions = store.find_sessions(
+            Path("/test/alpha"),
+            current_session_id=None,
+            min_size=0,
+            limit=100,
+            include_agents=False,
+        )
 
         assert len(sessions) == 1
         assert sessions[0].session_id == "session-aaa11111-2222-3333-4444-555555555555"
@@ -81,8 +87,14 @@ class TestFindSessionsSingleProject:
         """Test finding multiple sessions in project_beta."""
         install_fixture(mock_claude_home, "project_beta", "/test/beta")
 
-        store = RealClaudeCodeSessionStore()
-        sessions = store.find_sessions(Path("/test/beta"), limit=100)
+        store = RealClaudeInstallation()
+        sessions = store.find_sessions(
+            Path("/test/beta"),
+            current_session_id=None,
+            min_size=0,
+            limit=100,
+            include_agents=False,
+        )
 
         session_ids = [s.session_id for s in sessions]
         assert "session-bbb11111-2222-3333-4444-555555555555" in session_ids
@@ -97,8 +109,14 @@ class TestFindSessionsAgentFiltering:
         """Test that agent sessions are excluded by default."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
-        sessions = store.find_sessions(Path("/test/epsilon"), limit=100)
+        store = RealClaudeInstallation()
+        sessions = store.find_sessions(
+            Path("/test/epsilon"),
+            current_session_id=None,
+            min_size=0,
+            limit=100,
+            include_agents=False,
+        )
 
         session_ids = [s.session_id for s in sessions]
 
@@ -113,11 +131,13 @@ class TestFindSessionsAgentFiltering:
         """Test that agent sessions are included when include_agents=True."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         sessions = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
+            min_size=0,
             limit=100,
+            include_agents=True,
         )
 
         session_ids = [s.session_id for s in sessions]
@@ -133,11 +153,13 @@ class TestFindSessionsAgentFiltering:
         """Test that agent sessions have parent_session_id extracted from JSONL."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         sessions = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
+            min_size=0,
             limit=100,
+            include_agents=True,
         )
 
         # Find agent sessions
@@ -157,11 +179,13 @@ class TestFindSessionsAgentFiltering:
         """Test that main sessions have parent_session_id=None."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         sessions = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
+            min_size=0,
             limit=100,
+            include_agents=True,
         )
 
         main_session = next(
@@ -178,10 +202,22 @@ class TestFindSessionsLimitAndSize:
         """Test that limit parameter restricts number of results."""
         install_fixture(mock_claude_home, "project_beta", "/test/beta")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
 
-        sessions_limited = store.find_sessions(Path("/test/beta"), limit=1)
-        sessions_unlimited = store.find_sessions(Path("/test/beta"), limit=100)
+        sessions_limited = store.find_sessions(
+            Path("/test/beta"),
+            current_session_id=None,
+            min_size=0,
+            limit=1,
+            include_agents=False,
+        )
+        sessions_unlimited = store.find_sessions(
+            Path("/test/beta"),
+            current_session_id=None,
+            min_size=0,
+            limit=100,
+            include_agents=False,
+        )
 
         assert len(sessions_limited) == 1
         assert len(sessions_unlimited) == 2
@@ -190,21 +226,23 @@ class TestFindSessionsLimitAndSize:
         """Test that min_size parameter filters small sessions."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
 
         all_sessions = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
             min_size=0,
             limit=100,
+            include_agents=True,
         )
 
         # Warmup agent is tiny, filter it out with min_size
         large_only = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
             min_size=200,
             limit=100,
+            include_agents=True,
         )
 
         assert len(large_only) < len(all_sessions)
@@ -217,10 +255,11 @@ class TestReadSessionContent:
         """Test reading main session JSONL content."""
         install_fixture(mock_claude_home, "project_alpha", "/test/alpha")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/alpha"),
             "session-aaa11111-2222-3333-4444-555555555555",
+            include_agents=False,
         )
 
         assert content is not None
@@ -231,10 +270,11 @@ class TestReadSessionContent:
         """Test reading session that has multiple plan slugs."""
         install_fixture(mock_claude_home, "project_gamma", "/test/gamma")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/gamma"),
             "session-ddd11111-2222-3333-4444-555555555555",
+            include_agents=False,
         )
 
         assert content is not None
@@ -245,10 +285,11 @@ class TestReadSessionContent:
         """Test reading session that has no plan mode (no slugs)."""
         install_fixture(mock_claude_home, "project_delta", "/test/delta")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/delta"),
             "session-eee11111-2222-3333-4444-555555555555",
+            include_agents=False,
         )
 
         assert content is not None
@@ -258,7 +299,7 @@ class TestReadSessionContent:
         """Test that agent logs are included when include_agents=True."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/epsilon"),
             "session-fff11111-2222-3333-4444-555555555555",
@@ -276,7 +317,7 @@ class TestReadSessionContent:
         """Test that agent logs are excluded when include_agents=False."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/epsilon"),
             "session-fff11111-2222-3333-4444-555555555555",
@@ -290,10 +331,11 @@ class TestReadSessionContent:
         """Test that nonexistent session returns None."""
         install_fixture(mock_claude_home, "project_alpha", "/test/alpha")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/alpha"),
             "nonexistent-session-id",
+            include_agents=False,
         )
 
         assert content is None
@@ -306,11 +348,13 @@ class TestWarmupAgentCharacteristics:
         """Test that warmup agents have characteristically small file sizes."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         sessions = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
+            min_size=0,
             limit=100,
+            include_agents=True,
         )
 
         warmup = next(
@@ -325,7 +369,7 @@ class TestWarmupAgentCharacteristics:
         """Test that warmup agent content contains 'Warmup' in first user message."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         content = store.read_session(
             Path("/test/epsilon"),
             "session-fff11111-2222-3333-4444-555555555555",
@@ -346,11 +390,13 @@ class TestWarmupAgentCharacteristics:
         """Test that real work agents are larger than warmup agents."""
         install_fixture(mock_claude_home, "project_epsilon", "/test/epsilon")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         sessions = store.find_sessions(
             Path("/test/epsilon"),
-            include_agents=True,
+            current_session_id=None,
+            min_size=0,
             limit=100,
+            include_agents=True,
         )
 
         warmup = next(s for s in sessions if s.session_id == "agent-warmup01")
@@ -366,19 +412,19 @@ class TestHasProject:
         """Test that has_project returns True for existing project."""
         install_fixture(mock_claude_home, "project_alpha", "/test/alpha")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         assert store.has_project(Path("/test/alpha")) is True
 
     def test_returns_false_for_nonexistent_project(self, mock_claude_home: Path) -> None:
         """Test that has_project returns False for nonexistent project."""
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
         assert store.has_project(Path("/nonexistent/path")) is False
 
     def test_walks_up_directory_tree(self, mock_claude_home: Path) -> None:
         """Test that has_project walks up to find parent projects."""
         install_fixture(mock_claude_home, "project_alpha", "/test/alpha")
 
-        store = RealClaudeCodeSessionStore()
+        store = RealClaudeInstallation()
 
         # /test/alpha/subdir should find /test/alpha project
         assert store.has_project(Path("/test/alpha/subdir/deep")) is True
