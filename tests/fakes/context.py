@@ -76,7 +76,7 @@ def create_test_context(
         >>> ctx = create_test_context(git=git)
 
         # With pre-configured global config
-        >>> from erk.core.config_store import GlobalConfig
+        >>> from erk_shared.context.types import GlobalConfig
         >>> config = GlobalConfig.test(Path("/tmp/erks"))
         >>> ctx = create_test_context(global_config=config)
 

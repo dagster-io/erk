@@ -85,10 +85,10 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext, context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import Git, WorktreeInfo

@@ -9,13 +9,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from erk_shared.context.types import GlobalConfig
 from erk_shared.core.claude_executor import (
     ClaudeEvent,
     ClaudeExecutor,
     PromptResult,
 )
-from erk_shared.core.config_store import ConfigStore
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry, RegisteredPlanner
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
@@ -85,30 +83,6 @@ class FakeClaudeExecutor(ClaudeExecutor):
             self._prompt_result_index += 1
             return result
         return PromptResult(success=True, output="", error=None)
-
-
-class FakeConfigStore(ConfigStore):
-    """Fake ConfigStore for testing.
-
-    Stores config in memory without touching filesystem.
-    """
-
-    def __init__(self, config: GlobalConfig | None = None) -> None:
-        self._config = config
-
-    def exists(self) -> bool:
-        return self._config is not None
-
-    def load(self) -> GlobalConfig:
-        if self._config is None:
-            raise FileNotFoundError(f"Global config not found at {self.path()}")
-        return self._config
-
-    def save(self, config: GlobalConfig) -> None:
-        self._config = config
-
-    def path(self) -> Path:
-        return Path("/fake/erk/config.toml")
 
 
 class FakeScriptWriter(ScriptWriter):

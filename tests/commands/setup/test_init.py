@@ -11,9 +11,9 @@ This file uses minimal mocking for external boundaries:
    - Cannot be replaced with fakes (environment variable is external boundary)
 
 2. Global config operations:
-   - Uses FakeConfigStore for dependency injection
+   - Uses FakeErkInstallation for dependency injection
    - No mocking required - proper abstraction via ConfigStore interface
-   - Tests inject FakeConfigStore with desired initial state
+   - Tests inject FakeErkInstallation with desired initial state
 """
 
 import json
@@ -26,7 +26,8 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.init import perform_statusline_setup
-from erk.core.config_store import FakeConfigStore, GlobalConfig
+from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -45,11 +46,11 @@ def test_init_creates_global_config_first_time() -> None:
             existing_paths={env.cwd, env.git_dir},
         )
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
         )
 
@@ -61,8 +62,8 @@ def test_init_creates_global_config_first_time() -> None:
         assert "Global config not found" in result.output
         assert "Created global config" in result.output
         # Verify config was saved to in-memory ops
-        assert global_config_ops.exists()
-        loaded = global_config_ops.load()
+        assert erk_installation.config_exists()
+        loaded = erk_installation.load_config()
         assert loaded.erk_root == erk_root.resolve()
 
 
@@ -74,11 +75,11 @@ def test_init_prompts_for_erk_root() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
         )
 
@@ -88,7 +89,7 @@ def test_init_prompts_for_erk_root() -> None:
         assert result.exit_code == 0, result.output
         assert ".erk folder" in result.output
         # Verify config was saved correctly to in-memory ops
-        loaded_config = global_config_ops.load()
+        loaded_config = erk_installation.load_config()
         assert loaded_config.erk_root == erk_root.resolve()
 
 
@@ -100,12 +101,12 @@ def test_init_detects_graphite_installed() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         shell_ops = FakeShell(installed_tools={"gt": "/usr/local/bin/gt"})
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
         )
 
@@ -115,7 +116,7 @@ def test_init_detects_graphite_installed() -> None:
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) detected" in result.output
         # Verify config was saved with graphite enabled
-        loaded_config = global_config_ops.load()
+        loaded_config = erk_installation.load_config()
         assert loaded_config.use_graphite
 
 
@@ -126,11 +127,11 @@ def test_init_detects_graphite_not_installed() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
         )
 
@@ -140,7 +141,7 @@ def test_init_detects_graphite_not_installed() -> None:
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) not detected" in result.output
         # Verify config was saved with graphite disabled
-        loaded_config = global_config_ops.load()
+        loaded_config = erk_installation.load_config()
         assert not loaded_config.use_graphite
 
 
@@ -157,11 +158,11 @@ def test_init_auto_preset_detects_dagster() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -186,11 +187,11 @@ def test_init_auto_preset_uses_generic_fallback() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -211,11 +212,11 @@ def test_init_explicit_preset_dagster() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -238,11 +239,11 @@ def test_init_explicit_preset_generic() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -265,11 +266,11 @@ def test_init_list_presets_displays_available() -> None:
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
         )
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -290,11 +291,11 @@ def test_init_invalid_preset_fails() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -313,11 +314,11 @@ def test_init_creates_config_at_erk_dir() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -349,11 +350,11 @@ def test_init_force_overwrites_existing_config() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -386,11 +387,11 @@ def test_init_skips_silently_when_already_erkified() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -421,16 +422,16 @@ def test_init_adds_env_to_gitignore() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
-        # Accept prompt for .env, decline .erk/scratch/, .impl/, and hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\n")
+        # Accept prompt for .env, decline .erk/scratch/, .impl/, hooks, and statusline
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -454,16 +455,16 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
-        # Decline all three prompts (.env, .erk/scratch/, .impl/) and hooks
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\n")
+        # Decline all prompts (.env, .erk/scratch/, .impl/, hooks, statusline)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -489,11 +490,11 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -523,11 +524,11 @@ def test_init_handles_missing_gitignore() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -555,11 +556,11 @@ def test_init_preserves_gitignore_formatting() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -585,11 +586,11 @@ def test_init_first_time_offers_shell_setup() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -616,11 +617,11 @@ def test_init_shell_flag_only_setup() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -648,11 +649,11 @@ def test_init_detects_bash_shell() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -682,11 +683,11 @@ def test_init_detects_zsh_shell() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -716,11 +717,11 @@ def test_init_detects_fish_shell() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -749,11 +750,11 @@ def test_init_skips_unknown_shell() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
         )
 
@@ -774,11 +775,11 @@ def test_init_prints_completion_instructions() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -811,11 +812,11 @@ def test_init_prints_wrapper_instructions() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -848,11 +849,11 @@ def test_init_skips_shell_if_declined() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             github=FakeGitHub(),
             graphite=FakeGraphite(),
@@ -890,11 +891,11 @@ def test_init_not_in_git_repo_fails() -> None:
             env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
         )
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -914,11 +915,11 @@ def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
@@ -931,7 +932,7 @@ def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
         assert "Shell integration instructions shown above" in result.output
         assert "Run 'erk init --shell' to save this preference" in result.output
         # Config should NOT have been updated
-        loaded = global_config_ops.load()
+        loaded = erk_installation.load_config()
         assert loaded.shell_setup_complete is False
 
 
@@ -945,11 +946,11 @@ def test_shell_setup_confirmation_accepted_with_shell_flag() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
@@ -961,7 +962,7 @@ def test_shell_setup_confirmation_accepted_with_shell_flag() -> None:
         assert result.exit_code == 0, result.output
         assert "✓ Global config updated" in result.output
         # Config should have been updated
-        loaded = global_config_ops.load()
+        loaded = erk_installation.load_config()
         assert loaded.shell_setup_complete is True
 
 
@@ -974,11 +975,11 @@ def test_shell_setup_confirmation_declined_first_init() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet (first-time init)
-        global_config_ops = FakeConfigStore(config=None)
+        erk_installation = FakeErkInstallation(config=None)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
@@ -990,9 +991,9 @@ def test_shell_setup_confirmation_declined_first_init() -> None:
         assert result.exit_code == 0, result.output
         assert "Shell integration instructions shown above" in result.output
         # Config should exist (created by first-time init)
-        assert global_config_ops.exists()
+        assert erk_installation.config_exists()
         # But shell_setup_complete should be False (user declined)
-        loaded = global_config_ops.load()
+        loaded = erk_installation.load_config()
         assert loaded.shell_setup_complete is False
 
 
@@ -1006,22 +1007,22 @@ def test_shell_setup_permission_error_with_shell_flag() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
 
-        # Create a ConfigStore that raises PermissionError on save
-        class PermissionErrorConfigStore(FakeConfigStore):
-            def save(self, config: GlobalConfig) -> None:
+        # Create an ErkInstallation that raises PermissionError on save
+        class PermissionErrorErkInstallation(FakeErkInstallation):
+            def save_config(self, config: GlobalConfig) -> None:
                 raise PermissionError(
-                    f"Cannot write to file: {self.path()}\n"
+                    f"Cannot write to file: {self.config_path()}\n"
                     "The file exists but is not writable.\n\n"
                     "To fix this manually:\n"
-                    "  1. Make it writable: chmod 644 {self.path()}\n"
+                    f"  1. Make it writable: chmod 644 {self.config_path()}\n"
                     "  2. Run erk init --shell again"
                 )
 
-        global_config_ops = PermissionErrorConfigStore(config=global_config)
+        erk_installation = PermissionErrorErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
@@ -1046,29 +1047,29 @@ def test_shell_setup_permission_error_first_init() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
 
-        # Create a ConfigStore that allows first save but fails on second
-        class ConditionalPermissionErrorOps(FakeConfigStore):
+        # Create an ErkInstallation that allows first save but fails on second
+        class ConditionalPermissionErrorErkInstallation(FakeErkInstallation):
             def __init__(self) -> None:
                 super().__init__(config=None)
                 self.save_count = 0
 
-            def save(self, config: GlobalConfig) -> None:
+            def save_config(self, config: GlobalConfig) -> None:
                 self.save_count += 1
                 if self.save_count == 1:
                     # First save (creating global config) succeeds
-                    super().save(config)
+                    super().save_config(config)
                 else:
                     # Second save (shell setup update) fails
                     raise PermissionError(
-                        f"Cannot write to file: {self.path()}\n"
+                        f"Cannot write to file: {self.config_path()}\n"
                         "Permission denied during write operation."
                     )
 
-        global_config_ops = ConditionalPermissionErrorOps()
+        erk_installation = ConditionalPermissionErrorErkInstallation()
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=None,
             shell=FakeShell(detected_shell=("bash", bashrc)),
         )
@@ -1083,7 +1084,7 @@ def test_shell_setup_permission_error_first_init() -> None:
         assert "Cannot write to file" in result.output
         assert "Shell integration instructions shown above" in result.output
         # First save succeeded, second failed
-        assert global_config_ops.save_count == 2
+        assert erk_installation.save_count == 2
 
 
 def test_init_offers_claude_permission_when_missing() -> None:
@@ -1103,11 +1104,11 @@ def test_init_offers_claude_permission_when_missing() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1140,11 +1141,11 @@ def test_init_skips_claude_permission_when_already_configured() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1166,11 +1167,11 @@ def test_init_skips_claude_permission_when_no_settings() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1196,11 +1197,11 @@ def test_init_handles_declined_claude_permission() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1229,11 +1230,11 @@ def test_init_handles_declined_write_confirmation() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1265,11 +1266,11 @@ def test_init_hooks_flag_adds_hooks_to_empty_settings() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1331,11 +1332,11 @@ def test_init_hooks_flag_skips_when_already_configured() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1360,11 +1361,11 @@ def test_init_hooks_flag_handles_declined() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1392,11 +1393,11 @@ def test_init_hooks_flag_creates_settings_if_missing() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1421,11 +1422,11 @@ def test_init_hooks_flag_only_does_hook_setup() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1461,11 +1462,11 @@ def test_init_main_flow_syncs_hooks_automatically() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1493,11 +1494,11 @@ def test_init_syncs_artifacts_successfully() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1527,11 +1528,11 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1692,11 +1693,11 @@ def test_init_statusline_flag_recognized() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1724,11 +1725,11 @@ def test_init_stepped_flow_shows_three_steps() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1757,11 +1758,11 @@ def test_init_skips_project_setup_when_already_erkified() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1790,11 +1791,11 @@ def test_init_force_overwrites_when_already_erkified() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 
@@ -1815,11 +1816,11 @@ def test_init_step1_shows_repo_name() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        global_config_ops = FakeConfigStore(config=global_config)
+        erk_installation = FakeErkInstallation(config=global_config)
 
         test_ctx = env.build_context(
             git=git_ops,
-            config_store=global_config_ops,
+            erk_installation=erk_installation,
             global_config=global_config,
         )
 

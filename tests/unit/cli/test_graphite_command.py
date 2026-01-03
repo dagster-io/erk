@@ -122,15 +122,15 @@ def test_is_graphite_available_falls_back_to_config_when_ctx_obj_is_none(
         github_planning=True,
     )
 
-    class MockConfigStore:
-        def exists(self) -> bool:
+    class MockErkInstallation:
+        def config_exists(self) -> bool:
             return True
 
-        def load(self) -> GlobalConfig:
+        def load_config(self) -> GlobalConfig:
             return mock_config
 
-    # Monkeypatch RealConfigStore to return our mock
-    monkeypatch.setattr(help_formatter_module, "RealConfigStore", MockConfigStore)
+    # Monkeypatch RealErkInstallation to return our mock
+    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
 
     # Monkeypatch shutil.which to simulate gt being installed
     monkeypatch.setattr(help_formatter_module.shutil, "which", lambda cmd: "/usr/bin/gt")
@@ -154,14 +154,14 @@ def test_is_graphite_available_returns_false_when_config_disabled_and_ctx_obj_no
         github_planning=True,
     )
 
-    class MockConfigStore:
-        def exists(self) -> bool:
+    class MockErkInstallation:
+        def config_exists(self) -> bool:
             return True
 
-        def load(self) -> GlobalConfig:
+        def load_config(self) -> GlobalConfig:
             return mock_config
 
-    monkeypatch.setattr(help_formatter_module, "RealConfigStore", MockConfigStore)
+    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
 
     click_ctx = click.Context(click.Command("test"))
     click_ctx.obj = None
@@ -181,14 +181,14 @@ def test_is_graphite_available_returns_false_when_gt_not_installed_and_ctx_obj_n
         github_planning=True,
     )
 
-    class MockConfigStore:
-        def exists(self) -> bool:
+    class MockErkInstallation:
+        def config_exists(self) -> bool:
             return True
 
-        def load(self) -> GlobalConfig:
+        def load_config(self) -> GlobalConfig:
             return mock_config
 
-    monkeypatch.setattr(help_formatter_module, "RealConfigStore", MockConfigStore)
+    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
     # gt is not installed
     monkeypatch.setattr(help_formatter_module.shutil, "which", lambda cmd: None)
 
@@ -203,14 +203,14 @@ def test_is_graphite_available_returns_false_when_no_config_and_ctx_obj_none(
 ) -> None:
     """_is_graphite_available returns False when no config exists and ctx.obj is None."""
 
-    class MockConfigStore:
-        def exists(self) -> bool:
+    class MockMissingErkInstallation:
+        def config_exists(self) -> bool:
             return False
 
-        def load(self) -> GlobalConfig:
+        def load_config(self) -> GlobalConfig:
             raise FileNotFoundError("No config")
 
-    monkeypatch.setattr(help_formatter_module, "RealConfigStore", MockConfigStore)
+    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockMissingErkInstallation)
 
     click_ctx = click.Context(click.Command("test"))
     click_ctx.obj = None
@@ -584,15 +584,15 @@ def test_graphite_command_visible_when_help_shown_without_ctx_obj(
         github_planning=True,
     )
 
-    class MockConfigStore:
-        def exists(self) -> bool:
+    class MockErkInstallation:
+        def config_exists(self) -> bool:
             return True
 
-        def load(self) -> GlobalConfig:
+        def load_config(self) -> GlobalConfig:
             return mock_config
 
     # Monkeypatch at the module level where it's used
-    monkeypatch.setattr(help_formatter_module, "RealConfigStore", MockConfigStore)
+    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
     monkeypatch.setattr(help_formatter_module.shutil, "which", lambda cmd: "/usr/bin/gt")
 
     @click.group("cli", cls=ErkCommandGroup, grouped=False)
@@ -632,14 +632,14 @@ def test_graphite_command_hidden_when_help_shown_without_ctx_obj_and_config_disa
         github_planning=True,
     )
 
-    class MockConfigStore:
-        def exists(self) -> bool:
+    class MockErkInstallation:
+        def config_exists(self) -> bool:
             return True
 
-        def load(self) -> GlobalConfig:
+        def load_config(self) -> GlobalConfig:
             return mock_config
 
-    monkeypatch.setattr(help_formatter_module, "RealConfigStore", MockConfigStore)
+    monkeypatch.setattr(help_formatter_module, "RealErkInstallation", MockErkInstallation)
 
     @click.group("cli", cls=ErkCommandGroup, grouped=False)
     def cli() -> None:

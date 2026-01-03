@@ -6,9 +6,11 @@ import pytest
 from erk.cli.commands.init import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
-from erk.core.config_store import FakeConfigStore, GlobalConfig, RealConfigStore
 from erk.core.context import context_for_test
 from erk.core.init_utils import discover_presets
+from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from tests.fakes.shell import FakeShell
 
 
@@ -104,9 +106,9 @@ def test_load_global_config_missing_erk_root(
     erk_dir.mkdir()
     (erk_dir / "config.toml").write_text("use_graphite = true\n", encoding="utf-8")
 
-    ops = RealConfigStore()
+    installation = RealErkInstallation()
     with pytest.raises(ValueError, match="Missing 'erk_root'"):
-        ops.load()
+        installation.load_config()
 
 
 def test_real_config_store_roundtrip_show_hidden_commands(
@@ -120,7 +122,7 @@ def test_real_config_store_roundtrip_show_hidden_commands(
     erk_dir = tmp_path / ".erk"
     erk_dir.mkdir()
 
-    store = RealConfigStore()
+    installation = RealErkInstallation()
 
     # Create and save config with show_hidden_commands=True
     config = GlobalConfig(
@@ -131,10 +133,10 @@ def test_real_config_store_roundtrip_show_hidden_commands(
         github_planning=True,
         show_hidden_commands=True,
     )
-    store.save(config)
+    installation.save_config(config)
 
     # Load and verify
-    loaded = store.load()
+    loaded = installation.load_config()
     assert loaded.show_hidden_commands is True
 
     # Verify the field is in the saved file
@@ -161,8 +163,8 @@ shell_setup_complete = true
         encoding="utf-8",
     )
 
-    store = RealConfigStore()
-    loaded = store.load()
+    installation = RealErkInstallation()
+    loaded = installation.load_config()
 
     # Should default to False
     assert loaded.show_hidden_commands is False
@@ -173,24 +175,21 @@ def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
     config_file = tmp_path / ".erk" / "config.toml"
     assert not config_file.parent.exists()
 
-    # Create test context with FakeConfigStore
-    global_config_ops = FakeConfigStore(config=None)
+    # Create test context with FakeErkInstallation
+    erk_installation = FakeErkInstallation(config=None)
     ctx = context_for_test(
         shell=FakeShell(),
-        config_store=global_config_ops,
+        erk_installation=erk_installation,
         global_config=None,
         cwd=tmp_path,
     )
 
-    with (
-        mock.patch("erk.cli.commands.init.detect_graphite", return_value=False),
-        mock.patch("erk.core.config_store.Path.home", return_value=tmp_path),
-    ):
+    with mock.patch("erk.cli.commands.init.detect_graphite", return_value=False):
         create_and_save_global_config(ctx, Path("/tmp/erks"), shell_setup_complete=False)
 
-    # Verify config was saved to in-memory ops
-    assert global_config_ops.exists()
-    loaded = global_config_ops.load()
+    # Verify config was saved to in-memory installation
+    assert erk_installation.config_exists()
+    loaded = erk_installation.load_config()
     assert loaded.erk_root == Path("/tmp/erks")
 
 

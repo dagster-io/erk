@@ -22,8 +22,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.status import status_cmd
-from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
+from erk_shared.context.types import GlobalConfig
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context

@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 
 from erk.cli.graphite import find_worktrees_containing_branch
-from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.git.abc import WorktreeInfo, find_worktree_for_branch
 from erk_shared.git.fake import FakeGit

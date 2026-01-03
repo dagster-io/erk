@@ -153,7 +153,7 @@ def config_get(ctx: ErkContext, key: str) -> None:
     # Handle global config keys
     if parts[0] in get_global_config_keys():
         global_config = Ensure.not_none(
-            ctx.global_config, f"Global config not found at {ctx.config_store.path()}"
+            ctx.global_config, f"Global config not found at {ctx.erk_installation.config_path()}"
         )
         value = getattr(global_config, parts[0])
         machine_output(_format_config_value(value))
@@ -211,9 +211,10 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
 
     # Handle global config keys
     if parts[0] in get_global_config_keys():
+        config_path = ctx.erk_installation.config_path()
         global_config = Ensure.not_none(
             ctx.global_config,
-            f"Global config not found at {ctx.config_store.path()}. Run 'erk init' to create it.",
+            f"Global config not found at {config_path}. Run 'erk init' to create it.",
         )
 
         # Get current value's type and parse new value
@@ -223,7 +224,7 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
         # Create new config with updated value using dataclasses.replace
         new_config = replace(global_config, **{parts[0]: parsed_value})
 
-        ctx.config_store.save(new_config)
+        ctx.erk_installation.save_config(new_config)
         user_output(f"Set {key}={value}")
         return
 

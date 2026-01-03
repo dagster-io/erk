@@ -12,11 +12,11 @@ from typing import TYPE_CHECKING
 
 from erk_shared.core.fakes import (
     FakeClaudeExecutor,
-    FakeConfigStore,
     FakePlanListService,
     FakePlannerRegistry,
     FakeScriptWriter,
 )
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
@@ -139,7 +139,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         completion=FakeCompletion(),
         feedback=SuppressedFeedback(),
         claude_executor=FakeClaudeExecutor(),
-        config_store=FakeConfigStore(),
+        erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
         plan_list_service=FakePlanListService(),

@@ -5,8 +5,8 @@ from typing import Any
 
 import pytest
 
-from erk.core.config_store import GlobalConfig
 from erk.status.collectors.github import GitHubPRCollector
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub

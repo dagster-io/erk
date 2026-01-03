@@ -7,7 +7,7 @@ from typing import Any, TypeVar, cast
 import click
 
 from erk.cli.alias import get_aliases
-from erk.core.config_store import RealConfigStore
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 
 F = TypeVar("F", bound=Callable[..., object])
@@ -41,9 +41,9 @@ def _get_show_hidden_from_context(ctx: click.Context) -> bool:
         if config is not None:
             return bool(getattr(config, "show_hidden_commands", False))
     # Fallback to loading from disk
-    store = RealConfigStore()
-    if store.exists():
-        return store.load().show_hidden_commands
+    installation = RealErkInstallation()
+    if installation.config_exists():
+        return installation.load_config().show_hidden_commands
     return False
 
 
@@ -75,9 +75,9 @@ def _is_graphite_available(ctx: click.Context) -> bool:
     if ctx.obj is not None:
         return not isinstance(ctx.obj.graphite, GraphiteDisabled)
     # Fallback to loading from disk (for help before callback runs)
-    store = RealConfigStore()
-    if store.exists():
-        config = store.load()
+    installation = RealErkInstallation()
+    if installation.config_exists():
+        config = installation.load_config()
         if config.use_graphite:
             # Config says use Graphite - check if gt is installed
             return shutil.which("gt") is not None
@@ -186,9 +186,9 @@ class ErkCommandGroup(click.Group):
             return
 
         # Otherwise try to load config directly from disk
-        store = RealConfigStore()
-        if store.exists():
-            config = store.load()
+        installation = RealErkInstallation()
+        if installation.config_exists():
+            config = installation.load_config()
             if config.show_hidden_commands:
                 _set_ctx_show_hidden(ctx, value=True)
 

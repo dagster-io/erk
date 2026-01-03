@@ -10,12 +10,12 @@ from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, RepoContext
 from erk_shared.core.fakes import (
     FakeClaudeExecutor,
-    FakeConfigStore,
     FakePlanListService,
     FakePlannerRegistry,
     FakeScriptWriter,
 )
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.wt_stack.wt_stack import WtStack
 from erk_shared.git.abc import Git
@@ -128,7 +128,7 @@ def context_for_test(
         completion=FakeCompletion(),
         feedback=FakeUserFeedback(),
         claude_executor=FakeClaudeExecutor(),
-        config_store=FakeConfigStore(),
+        erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
         plan_list_service=FakePlanListService(),

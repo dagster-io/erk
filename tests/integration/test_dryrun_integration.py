@@ -11,8 +11,8 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test, create_context
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo

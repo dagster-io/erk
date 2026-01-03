@@ -9,8 +9,8 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.core.config_store import FakeConfigStore, GlobalConfig
 from erk.core.context import context_for_test
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -158,12 +158,12 @@ def test_current_handles_missing_git_gracefully(tmp_path: Path) -> None:
 
     # Create global config
     global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-    global_config_ops = FakeConfigStore(config=global_config)
+    global_config_ops = FakeErkInstallation(config=global_config)
 
     ctx = context_for_test(
         cwd=non_git_dir,
         git=git_ops,
-        config_store=global_config_ops,
+        erk_installation=global_config_ops,
         global_config=global_config,
         repo=None,
     )
@@ -206,12 +206,12 @@ def test_current_handles_nested_worktrees(tmp_path: Path) -> None:
 
     # Create global config
     global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
-    global_config_ops = FakeConfigStore(config=global_config)
+    global_config_ops = FakeErkInstallation(config=global_config)
 
     ctx = context_for_test(
         cwd=target_dir,
         git=git_ops,
-        config_store=global_config_ops,
+        erk_installation=global_config_ops,
         global_config=global_config,
     )
 

@@ -31,8 +31,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo

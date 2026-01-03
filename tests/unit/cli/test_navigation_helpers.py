@@ -9,9 +9,9 @@ import pytest
 
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
 from erk.cli.commands.navigation_helpers import activate_root_repo, delete_branch_and_worktree
-from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
+from erk_shared.context.types import GlobalConfig
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.fakes.script_writer import FakeScriptWriter

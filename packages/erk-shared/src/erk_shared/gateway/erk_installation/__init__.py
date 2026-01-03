@@ -1,7 +1,5 @@
-"""ErkInstallation gateway for ~/.erk/ access.
+"""ErkInstallation gateway - abstraction for ~/.erk/ filesystem access.
 
-Import from submodules:
-- abc: ErkInstallation
-- real: RealErkInstallation
-- fake: FakeErkInstallation
+This module provides the ErkInstallation ABC and its implementations for
+managing the global erk installation directory (~/.erk/).
 """

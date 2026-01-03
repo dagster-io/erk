@@ -16,7 +16,6 @@ import tomlkit
 from erk.cli.config import load_config
 from erk.core.claude_executor import RealClaudeExecutor
 from erk.core.completion import RealCompletion
-from erk.core.config_store import RealConfigStore
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
 from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
@@ -37,7 +36,6 @@ from erk_shared.context.types import RepoContext as RepoContext
 # Import ABCs and fakes from erk_shared.core
 from erk_shared.core import (
     ClaudeExecutor,
-    ConfigStore,
     FakePlanListService,
     PlanListService,
     PlannerRegistry,
@@ -49,6 +47,9 @@ from erk_shared.gateway.claude_settings.real import RealClaudeSettingsStore
 
 # Import erk-specific integrations
 from erk_shared.gateway.completion import Completion
+from erk_shared.gateway.erk_installation.abc import ErkInstallation
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import (
@@ -99,7 +100,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.claude_executor import FakeClaudeExecutor
     from tests.fakes.script_writer import FakeScriptWriter
 
-    from erk.core.config_store import FakeConfigStore
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
@@ -131,7 +131,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
-        config_store=FakeConfigStore(config=None),
         script_writer=FakeScriptWriter(),
         feedback=FakeUserFeedback(),
         plan_list_service=FakePlanListService(),
@@ -163,7 +162,7 @@ def context_for_test(
     claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
     time: Time | None = None,
-    config_store: ConfigStore | None = None,
+    erk_installation: ErkInstallation | None = None,
     script_writer: ScriptWriter | None = None,
     feedback: UserFeedback | None = None,
     plan_list_service: PlanListService | None = None,
@@ -194,8 +193,8 @@ def context_for_test(
         shell: Optional Shell implementation. If None, creates empty FakeShell.
         completion: Optional Completion implementation.
                        If None, creates empty FakeCompletion.
-        config_store: Optional ConfigStore implementation.
-                          If None, creates FakeConfigStore with test config.
+        erk_installation: Optional ErkInstallation implementation.
+                          If None, creates FakeErkInstallation with test config.
         script_writer: Optional ScriptWriter implementation.
                       If None, creates empty FakeScriptWriter.
         feedback: Optional UserFeedback implementation.
@@ -216,7 +215,6 @@ def context_for_test(
     from tests.fakes.script_writer import FakeScriptWriter
     from tests.test_utils.paths import sentinel_path
 
-    from erk.core.config_store import FakeConfigStore
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
@@ -297,8 +295,8 @@ def context_for_test(
             github_planning=True,
         )
 
-    if config_store is None:
-        config_store = FakeConfigStore(config=global_config)
+    if erk_installation is None:
+        erk_installation = FakeErkInstallation(config=global_config)
 
     if local_config is None:
         local_config = LoadedConfig(
@@ -332,8 +330,7 @@ def context_for_test(
         claude_executor=claude_executor,
         completion=completion,
         time=time,
-        erk_installation=FakeErkInstallation(),
-        config_store=config_store,
+        erk_installation=erk_installation,
         script_writer=script_writer,
         feedback=feedback,
         plan_list_service=plan_list_service,
@@ -453,13 +450,13 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     cwd = cwd_result
 
-    # 2. Create global config store
-    config_store = RealConfigStore()
+    # 2. Create erk installation gateway
+    erk_installation = RealErkInstallation()
 
     # 3. Load global config (no deps) - None if not exists (for init command)
     global_config: GlobalConfig | None
-    if config_store.exists():
-        global_config = config_store.load()
+    if erk_installation.config_exists():
+        global_config = erk_installation.load_config()
     else:
         # For init command only: config doesn't exist yet
         global_config = None
@@ -557,8 +554,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         claude_executor=RealClaudeExecutor(),
         completion=RealCompletion(),
         time=time,
-        erk_installation=RealErkInstallation(),
-        config_store=RealConfigStore(),
+        erk_installation=erk_installation,
         script_writer=RealScriptWriter(),
         feedback=feedback,
         plan_list_service=plan_list_service,

@@ -6,9 +6,9 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
-from erk.core.config_store import GlobalConfig
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -587,7 +587,7 @@ def test_config_set_github_planning() -> None:
         assert "Set github_planning=false" in result.output
 
         # Verify it was saved to the config store
-        saved_config = test_ctx.config_store.load()
+        saved_config = test_ctx.erk_installation.load_config()
         assert saved_config.github_planning is False
 
 

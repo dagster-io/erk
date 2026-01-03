@@ -22,11 +22,9 @@ from erk_shared.core.claude_executor import PrUrlEvent as PrUrlEvent
 from erk_shared.core.claude_executor import SpinnerUpdateEvent as SpinnerUpdateEvent
 from erk_shared.core.claude_executor import TextEvent as TextEvent
 from erk_shared.core.claude_executor import ToolEvent as ToolEvent
-from erk_shared.core.config_store import ConfigStore as ConfigStore
 
 # Fakes for testing and minimal contexts
 from erk_shared.core.fakes import FakeClaudeExecutor as FakeClaudeExecutor
-from erk_shared.core.fakes import FakeConfigStore as FakeConfigStore
 from erk_shared.core.fakes import FakePlanListService as FakePlanListService
 from erk_shared.core.fakes import FakePlannerRegistry as FakePlannerRegistry
 from erk_shared.core.fakes import FakeScriptWriter as FakeScriptWriter

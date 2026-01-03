@@ -24,7 +24,6 @@ from erk.core.claude_settings import (
     read_claude_settings,
     write_claude_settings,
 )
-from erk.core.config_store import GlobalConfig
 from erk.core.context import ErkContext
 from erk.core.init_utils import (
     add_gitignore_entry,
@@ -41,6 +40,7 @@ from erk.core.repo_discovery import (
     ensure_erk_metadata_dir,
 )
 from erk.core.shell import Shell
+from erk_shared.context.types import GlobalConfig
 from erk_shared.git.real import RealGit
 from erk_shared.output.output import user_confirm, user_output
 
@@ -64,7 +64,7 @@ def create_and_save_global_config(
         show_pr_info=True,
         github_planning=True,
     )
-    ctx.config_store.save(config)
+    ctx.erk_installation.save_config(config)
     return config
 
 
@@ -478,7 +478,7 @@ def init_cmd(
     # Handle --shell flag: only do shell setup (doesn't require repo)
     if shell:
         if ctx.global_config is None:
-            config_path = ctx.config_store.path()
+            config_path = ctx.erk_installation.config_path()
             user_output(f"Global config not found at {config_path}")
             user_output("Run 'erk init' without --shell to create global config first.")
             raise SystemExit(1)
@@ -486,7 +486,7 @@ def init_cmd(
         setup_complete = perform_shell_setup(ctx.shell)
         if setup_complete:
             # Show what we're about to write
-            config_path = ctx.config_store.path()
+            config_path = ctx.erk_installation.config_path()
             user_output("\nTo remember that shell setup is complete, erk needs to update:")
             user_output(f"  {config_path}")
 
@@ -504,7 +504,7 @@ def init_cmd(
                 github_planning=ctx.global_config.github_planning,
             )
             try:
-                ctx.config_store.save(new_config)
+                ctx.erk_installation.save_config(new_config)
                 user_output(click.style("✓", fg="green") + " Global config updated")
             except PermissionError as e:
                 user_output(click.style("\n❌ Error: ", fg="red") + "Could not save global config")
@@ -560,8 +560,8 @@ def init_cmd(
         user_output(click.style("✓", fg="green") + " Repository already configured for erk")
     else:
         # Check for global config first
-        if not ctx.config_store.exists():
-            config_path = ctx.config_store.path()
+        if not ctx.erk_installation.config_exists():
+            config_path = ctx.erk_installation.config_path()
             user_output(f"  Global config not found at {config_path}")
             user_output("  Please provide the path for your .erk folder.")
             user_output("  (This directory will contain worktrees for each repository)")
@@ -660,8 +660,9 @@ def init_cmd(
     # 3b. Shell integration
     if interactive:
         # Only check if global config exists
-        if ctx.global_config is not None or ctx.config_store.exists():
-            fresh_config = ctx.config_store.load() if ctx.config_store.exists() else None
+        if ctx.global_config is not None or ctx.erk_installation.config_exists():
+            config_exists = ctx.erk_installation.config_exists()
+            fresh_config = ctx.erk_installation.load_config() if config_exists else None
             if fresh_config is not None and not fresh_config.shell_setup_complete:
                 # Check if shell integration is already in the RC file
                 shell_info = ctx.shell.detect_shell()
@@ -681,13 +682,13 @@ def init_cmd(
                             show_pr_info=fresh_config.show_pr_info,
                             github_planning=fresh_config.github_planning,
                         )
-                        ctx.config_store.save(new_config)
+                        ctx.erk_installation.save_config(new_config)
 
                 if not already_in_rc:
                     setup_complete = perform_shell_setup(ctx.shell)
                     if setup_complete:
                         # Show what we're about to write
-                        config_path = ctx.config_store.path()
+                        config_path = ctx.erk_installation.config_path()
                         shell_msg = "To remember that shell setup is complete, erk needs to update:"
                         user_output(f"\n  {shell_msg}")
                         user_output(f"    {config_path}")
@@ -706,7 +707,7 @@ def init_cmd(
                                 github_planning=fresh_config.github_planning,
                             )
                             try:
-                                ctx.config_store.save(new_config)
+                                ctx.erk_installation.save_config(new_config)
                                 msg = click.style("  ✓", fg="green") + " Global config updated"
                                 user_output(msg)
                             except PermissionError as e:

@@ -15,9 +15,10 @@ import os
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from functools import cache
 from pathlib import Path
 
+from erk_shared.gateway.erk_installation.abc import ErkInstallation
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.git.real import RealGit
 
 # Environment variable to disable command logging
@@ -41,10 +42,16 @@ class CommandLogEntry:
     pid: int
 
 
-@cache
-def _get_log_file_path() -> Path:
-    """Return path to command history log file (cached after first call)."""
-    return Path.home() / ".erk" / "command_history.jsonl"
+def _get_log_file_path(installation: ErkInstallation | None = None) -> Path:
+    """Return path to command history log file.
+
+    Args:
+        installation: ErkInstallation instance. If None, uses RealErkInstallation.
+                     Passing None is for CLI entry points before context exists.
+    """
+    if installation is None:
+        installation = RealErkInstallation()
+    return installation.get_command_log_path()
 
 
 def _is_logging_disabled() -> bool:
