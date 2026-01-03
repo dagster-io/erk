@@ -4,6 +4,7 @@ For user_output, machine_output, format_duration - import from erk_shared.output
 This module provides format_implement_summary and stream_command_with_feedback.
 """
 
+import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -156,6 +157,11 @@ def stream_command_with_feedback(
     # Create console with force_terminal to ensure immediate output
     if console is None:
         console = Console(force_terminal=True)
+
+    # Flush stderr to ensure previous user_output() messages are visible
+    # before Rich console (stdout) starts printing. This prevents buffering
+    # issues where stderr output appears after stdout in mixed output scenarios.
+    sys.stderr.flush()
 
     # Print start marker
     console.print(f"--- {command} ---", style="bold")

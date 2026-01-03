@@ -72,13 +72,16 @@ def test_prompt_objective_update_run_now_option_success() -> None:
     executor = FakeClaudeExecutor()  # Defaults to success
     ctx = context_for_test(claude_executor=executor)
 
+    captured_output = StringIO()
     # Mock Console to prevent output pollution in tests
     mock_console = MagicMock()
     with (
-        patch("erk.cli.commands.land_cmd.user_output"),
+        patch("erk.cli.commands.land_cmd.user_output") as mock_output,
         patch("click.prompt", return_value="2"),  # User chooses "2" to run now
         patch("erk.cli.output.Console", return_value=mock_console),
     ):
+        mock_output.side_effect = lambda msg: captured_output.write(msg + "\n")
+
         _prompt_objective_update(
             ctx=ctx,
             repo_root=Path("/repo"),
@@ -86,6 +89,12 @@ def test_prompt_objective_update_run_now_option_success() -> None:
             pr_number=123,
             force=False,
         )
+
+    output = captured_output.getvalue()
+
+    # Should show feedback before and after streaming
+    assert "Starting objective update..." in output
+    assert "Objective updated successfully" in output
 
     # Should have called claude executor streaming with correct command
     # Streaming API records: (command, path, dangerous, verbose, model)
@@ -121,7 +130,8 @@ def test_prompt_objective_update_run_now_option_failure() -> None:
 
     output = captured_output.getvalue()
 
-    # Should show failure message with manual retry command
+    # Should show starting feedback and failure message with manual retry command
+    assert "Starting objective update..." in output
     assert "failed" in output.lower()
     assert "/objective:update-landed-pr" in output
     assert "manually" in output.lower()

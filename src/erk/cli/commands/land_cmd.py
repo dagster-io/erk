@@ -195,14 +195,22 @@ def _prompt_objective_update(
         user_output("Skipped. To update later, run:")
         user_output("  /objective:update-landed-pr")
     else:
-        # Use streaming for live feedback (shows "--- /command ---" and "--- Done ---")
+        # Add feedback BEFORE streaming starts (important for visibility)
+        user_output("")
+        user_output("Starting objective update...")
+
         result = stream_command_with_feedback(
             executor=ctx.claude_executor,
             command="/objective:update-landed-pr",
             worktree_path=repo_root,
             dangerous=True,
         )
-        if not result.success:
+
+        # Add feedback AFTER streaming completes
+        if result.success:
+            user_output("")
+            user_output(click.style("✓", fg="green") + " Objective updated successfully")
+        else:
             user_output("")
             user_output(
                 click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
