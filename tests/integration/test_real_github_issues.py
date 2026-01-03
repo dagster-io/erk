@@ -701,7 +701,7 @@ def test_get_current_username_strips_whitespace(monkeypatch: MonkeyPatch) -> Non
 
 
 def test_update_issue_body_success(monkeypatch: MonkeyPatch) -> None:
-    """Test update_issue_body calls gh CLI with correct command structure."""
+    """Test update_issue_body calls gh CLI REST API with correct command structure."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -709,7 +709,7 @@ def test_update_issue_body_success(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="{}",  # REST API returns JSON
             stderr="",
         )
 
@@ -717,14 +717,16 @@ def test_update_issue_body_success(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None)
         issues.update_issue_body(Path("/repo"), 42, "Updated body content")
 
-        # Verify command structure
+        # Verify command structure (REST API)
         cmd = created_commands[0]
         assert cmd[0] == "gh"
-        assert cmd[1] == "issue"
-        assert cmd[2] == "edit"
-        assert cmd[3] == "42"
-        assert "--body" in cmd
-        assert "Updated body content" in cmd
+        assert cmd[1] == "api"
+        assert "--method" in cmd
+        assert "PATCH" in cmd
+        # Endpoint comes after --method PATCH
+        assert any("repos/{owner}/{repo}/issues/42" in arg for arg in cmd)
+        assert "-f" in cmd
+        assert "body=Updated body content" in cmd
 
 
 def test_update_issue_body_multiline(monkeypatch: MonkeyPatch) -> None:
@@ -736,7 +738,7 @@ def test_update_issue_body_multiline(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="{}",  # REST API returns JSON
             stderr="",
         )
 
@@ -751,7 +753,8 @@ Paragraph with **bold** text.
         issues.update_issue_body(Path("/repo"), 10, multiline_body)
 
         cmd = created_commands[0]
-        assert multiline_body in cmd
+        # REST API passes body as -f parameter
+        assert f"body={multiline_body}" in cmd
 
 
 def test_update_issue_body_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -944,8 +947,8 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         created_commands.append(cmd)
-        # First call: label list (returns empty - label doesn't exist)
-        if "label" in cmd and "list" in cmd:
+        # First call: REST API label check (returns empty - label doesn't exist)
+        if "api" in cmd and "repos/{owner}/{repo}/labels" in cmd:
             return subprocess.CompletedProcess(
                 args=cmd,
                 returncode=0,
@@ -969,8 +972,14 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
             color="0E8A16",
         )
 
-        # Should have made 2 calls: list then create
+        # Should have made 2 calls: REST API check then create
         assert len(created_commands) == 2
+
+        # Verify first command is REST API labels check
+        check_cmd = created_commands[0]
+        assert check_cmd[0] == "gh"
+        assert check_cmd[1] == "api"
+        assert "repos/{owner}/{repo}/labels" in check_cmd
 
         # Verify create command structure
         create_cmd = created_commands[1]
@@ -990,7 +999,7 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         created_commands.append(cmd)
-        # Label already exists
+        # Label already exists (REST API returns label name via --jq)
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
@@ -1007,9 +1016,12 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
             color="0E8A16",
         )
 
-        # Should have made only 1 call: list (no create needed)
+        # Should have made only 1 call: REST API labels check (no create needed)
         assert len(created_commands) == 1
-        assert "list" in created_commands[0]
+        cmd = created_commands[0]
+        assert cmd[0] == "gh"
+        assert cmd[1] == "api"
+        assert "repos/{owner}/{repo}/labels" in cmd
 
 
 def test_ensure_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -1031,7 +1043,7 @@ def test_ensure_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
-    """Test ensure_label_on_issue calls gh CLI with correct command structure."""
+    """Test ensure_label_on_issue calls gh CLI REST API with correct command structure."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -1039,7 +1051,7 @@ def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="[]",  # REST API returns JSON array of labels
             stderr="",
         )
 
@@ -1049,11 +1061,13 @@ def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
-        assert cmd[1] == "issue"
-        assert cmd[2] == "edit"
-        assert cmd[3] == "42"
-        assert "--add-label" in cmd
-        assert "erk-plan" in cmd
+        assert cmd[1] == "api"
+        assert "--method" in cmd
+        assert "POST" in cmd
+        # Endpoint comes after --method POST
+        assert any("repos/{owner}/{repo}/issues/42/labels" in arg for arg in cmd)
+        assert "-f" in cmd
+        assert "labels[]=erk-plan" in cmd
 
 
 def test_ensure_label_on_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -1075,7 +1089,7 @@ def test_ensure_label_on_issue_command_failure(monkeypatch: MonkeyPatch) -> None
 
 
 def test_remove_label_from_issue_success(monkeypatch: MonkeyPatch) -> None:
-    """Test remove_label_from_issue calls gh CLI with correct command structure."""
+    """Test remove_label_from_issue calls gh CLI REST API with correct command structure."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -1083,7 +1097,7 @@ def test_remove_label_from_issue_success(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="",  # DELETE returns empty on success
             stderr="",
         )
 
@@ -1093,11 +1107,11 @@ def test_remove_label_from_issue_success(monkeypatch: MonkeyPatch) -> None:
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
-        assert cmd[1] == "issue"
-        assert cmd[2] == "edit"
-        assert cmd[3] == "42"
-        assert "--remove-label" in cmd
-        assert "bug" in cmd
+        assert cmd[1] == "api"
+        assert "--method" in cmd
+        assert "DELETE" in cmd
+        # Endpoint comes after --method DELETE
+        assert any("repos/{owner}/{repo}/issues/42/labels/bug" in arg for arg in cmd)
 
 
 def test_remove_label_from_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
@@ -1119,7 +1133,7 @@ def test_remove_label_from_issue_command_failure(monkeypatch: MonkeyPatch) -> No
 
 
 def test_close_issue_success(monkeypatch: MonkeyPatch) -> None:
-    """Test close_issue calls gh CLI with correct command structure."""
+    """Test close_issue calls gh CLI REST API with correct command structure."""
     created_commands = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -1127,7 +1141,7 @@ def test_close_issue_success(monkeypatch: MonkeyPatch) -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout="",
+            stdout="{}",  # REST API returns JSON
             stderr="",
         )
 
@@ -1137,9 +1151,13 @@ def test_close_issue_success(monkeypatch: MonkeyPatch) -> None:
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
-        assert cmd[1] == "issue"
-        assert cmd[2] == "close"
-        assert cmd[3] == "42"
+        assert cmd[1] == "api"
+        assert "--method" in cmd
+        assert "PATCH" in cmd
+        # Endpoint comes after --method PATCH
+        assert any("repos/{owner}/{repo}/issues/42" in arg for arg in cmd)
+        assert "-f" in cmd
+        assert "state=closed" in cmd
 
 
 def test_close_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
