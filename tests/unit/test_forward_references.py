@@ -136,10 +136,11 @@ def test_files_with_type_checking_have_future_annotations() -> None:
         violation = check_file(filepath)
 
         if violation is not None:
-            # Make path relative for cleaner output
-            try:
-                relative = filepath.relative_to(Path.cwd())
-            except ValueError:
+            # Make path relative for cleaner output (LBYL pattern)
+            cwd = Path.cwd()
+            if filepath.is_relative_to(cwd):
+                relative = filepath.relative_to(cwd)
+            else:
                 relative = filepath
             violations.append(str(relative))
 

@@ -114,6 +114,7 @@ def import_module_safely(module_name: str) -> tuple[bool, str | None]:
         # We only care about NameError (forward reference issues)
         return (True, None)
     except Exception:
-        # Other errors are not forward reference issues
-        # but we report them for transparency
+        # Other errors (circular imports, missing native deps, etc.) are not
+        # forward reference issues. They'll surface elsewhere in the test suite
+        # or when the module is actually used. We only care about NameError here.
         return (True, None)
