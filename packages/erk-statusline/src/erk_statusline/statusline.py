@@ -17,16 +17,10 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
-from erk_statusline.context import StatuslineContext, create_context
-
-if TYPE_CHECKING:
-    from erk_statusline.context import StatuslineContext
-
-if TYPE_CHECKING:
-    from erk_statusline.context import StatuslineContext
+from erk_statusline.context import StatuslineContext
 
 # Cache configuration
 CACHE_DIR = Path("/tmp/erk-statusline-cache")
