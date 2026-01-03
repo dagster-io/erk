@@ -187,7 +187,7 @@ def _prompt_objective_update(
     user_output(click.style("  [1]", fg="cyan") + skip_msg)
     user_output(click.style("  [2]", fg="cyan") + " Update now (runs Claude agent)")
     user_output("")
-    prompt_label = click.style("→", fg="cyan") + " Choice"
+    prompt_label = click.style("Enter choice", fg="cyan")
     choice = click.prompt(prompt_label, type=click.Choice(["1", "2"]), default="1")
 
     if choice == "1":
