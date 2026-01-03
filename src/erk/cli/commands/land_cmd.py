@@ -156,6 +156,58 @@ def _get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> 
     return extract_plan_header_objective_issue(issue.body)
 
 
+def _prompt_objective_update(
+    ctx: ErkContext,
+    repo_root: Path,
+    objective_number: int,
+    pr_number: int,
+    force: bool,
+) -> None:
+    """Prompt user to update objective after landing.
+
+    Args:
+        ctx: ErkContext with claude_executor
+        repo_root: Repository root path for Claude execution
+        objective_number: The linked objective issue number
+        pr_number: The PR number that was just landed
+        force: If True, skip prompt (print command to run later)
+    """
+    user_output(f"   Linked to Objective #{objective_number}")
+
+    if force:
+        # --force skips all prompts, print command for later
+        user_output("   Run '/objective:update-landed-pr' to update objective")
+        return
+
+    # Present options
+    user_output("")
+    user_output("Would you like to update the objective now?")
+    user_output("  1. Skip - update later with: /objective:update-landed-pr")
+    user_output("  2. Update now (runs Claude agent)")
+
+    choice = click.prompt("Choice", type=click.Choice(["1", "2"]), default="1")
+
+    if choice == "1":
+        user_output("")
+        user_output("Skipped. To update later, run:")
+        user_output("  /objective:update-landed-pr")
+    else:
+        user_output("")
+        user_output("Running objective update...")
+        result = ctx.claude_executor.execute_command(
+            "/objective:update-landed-pr",
+            repo_root,
+            dangerous=True,
+        )
+        if result.success:
+            user_output(click.style("✓", fg="green") + " Objective updated")
+        else:
+            user_output(
+                click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+            )
+            user_output("  Run '/objective:update-landed-pr' manually to retry")
+
+
 def _cleanup_and_navigate(
     ctx: ErkContext,
     repo: RepoContext,
@@ -423,11 +475,13 @@ def _land_current_branch(
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Check for linked objective
+    # Check for linked objective and offer to update
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
     objective_number = _get_objective_for_branch(ctx, main_repo_root, current_branch)
     if objective_number is not None:
-        user_output(f"   Linked to Objective #{objective_number}")
+        _prompt_objective_update(
+            ctx, main_repo_root, objective_number, success_result.pr_number, force
+        )
 
     # Step 2: Cleanup and navigate
     _cleanup_and_navigate(
@@ -522,10 +576,10 @@ def _land_specific_pr(
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
 
-    # Check for linked objective
+    # Check for linked objective and offer to update
     objective_number = _get_objective_for_branch(ctx, main_repo_root, branch)
     if objective_number is not None:
-        user_output(f"   Linked to Objective #{objective_number}")
+        _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, force)
 
     # Cleanup and navigate
     _cleanup_and_navigate(
@@ -612,6 +666,11 @@ def _land_by_branch(
         raise SystemExit(1)
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
+
+    # Check for linked objective and offer to update
+    objective_number = _get_objective_for_branch(ctx, main_repo_root, branch_name)
+    if objective_number is not None:
+        _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, force)
 
     # Cleanup and navigate (uses shared function)
     _cleanup_and_navigate(
