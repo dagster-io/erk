@@ -395,16 +395,17 @@ def get_github_repo_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tupl
         return None
 
 
-def get_pr_info_from_graphite(
+def get_pr_info_via_branch_manager(
     ctx: StatuslineContext, repo_root: Path, branch: str
 ) -> tuple[int, str, bool] | None:
-    """Get PR info from Graphite's local cache.
+    """Get PR info via BranchManager.
 
-    Uses Graphite's .graphite_pr_info cache file for fast PR lookup without
-    network calls. Falls back to None if no PR found.
+    Uses BranchManager abstraction which automatically selects between
+    Graphite cache (fast, local) or GitHub API (slower, network) based
+    on whether Graphite is enabled.
 
     Args:
-        ctx: StatuslineContext with graphite gateway
+        ctx: StatuslineContext with branch_manager
         repo_root: Repository root path
         branch: Current branch name
 
@@ -412,11 +413,10 @@ def get_pr_info_from_graphite(
         Tuple of (pr_number, pr_state, is_draft) or None if no PR found.
         pr_state is one of "OPEN", "MERGED", "CLOSED".
     """
-    prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo_root)
-    if branch not in prs:
+    pr_info = ctx.branch_manager.get_pr_for_branch(repo_root, branch)
+    if pr_info is None:
         return None
 
-    pr_info = prs[branch]
     return (pr_info.number, pr_info.state, pr_info.is_draft)
 
 
@@ -518,8 +518,8 @@ def fetch_github_data_via_gateway(
         return None
     owner, repo = repo_info
 
-    # Try Graphite cache first for PR info
-    pr_info = get_pr_info_from_graphite(ctx, repo_root, branch)
+    # Get PR info via BranchManager (Graphite cache or GitHub API)
+    pr_info = get_pr_info_via_branch_manager(ctx, repo_root, branch)
 
     if pr_info is None:
         # No PR for this branch

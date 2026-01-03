@@ -8,11 +8,12 @@ import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from erk_shared.branch_manager.fake import FakeBranchManager
+from erk_shared.branch_manager.types import PrInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.types import PullRequestInfo
 from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
     CACHE_TTL_SECONDS,
@@ -36,7 +37,7 @@ from erk_statusline.statusline import (
     get_github_repo_via_gateway,
     get_issue_number,
     get_plan_progress,
-    get_pr_info_from_graphite,
+    get_pr_info_via_branch_manager,
     get_repo_info,
     get_worktree_info_via_gateway,
 )
@@ -926,7 +927,11 @@ class TestGetGitRootViaGateway:
         repo_root = Path("/fake/repo")
         fake_git = FakeGit(repository_roots={repo_root: repo_root})
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         result = get_git_root_via_gateway(ctx)
@@ -945,7 +950,11 @@ class TestGetGitStatusViaGateway:
             file_statuses={repo_root: (["staged.txt"], [], [])},
         )
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         branch, is_dirty = get_git_status_via_gateway(ctx)
@@ -958,7 +967,11 @@ class TestGetGitStatusViaGateway:
         repo_root = Path("/fake/repo")
         fake_git = FakeGit(current_branches={repo_root: None})
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         branch, is_dirty = get_git_status_via_gateway(ctx)
@@ -981,7 +994,11 @@ class TestGetWorktreeInfoViaGateway:
             }
         )
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         is_linked, wt_name = get_worktree_info_via_gateway(ctx, repo_root)
@@ -1003,7 +1020,11 @@ class TestGetWorktreeInfoViaGateway:
         )
         # Context cwd is the linked worktree
         ctx = StatuslineContext(
-            cwd=linked_wt, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=linked_wt,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         is_linked, wt_name = get_worktree_info_via_gateway(ctx, linked_wt)
@@ -1020,7 +1041,11 @@ class TestGetGitHubRepoViaGateway:
         repo_root = Path("/fake/repo")
         fake_git = FakeGit(remote_urls={(repo_root, "origin"): "git@github.com:owner/testrepo.git"})
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         result = get_github_repo_via_gateway(ctx, repo_root)
@@ -1032,7 +1057,11 @@ class TestGetGitHubRepoViaGateway:
         repo_root = Path("/fake/repo")
         fake_git = FakeGit()  # No remotes configured
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         result = get_github_repo_via_gateway(ctx, repo_root)
@@ -1040,32 +1069,30 @@ class TestGetGitHubRepoViaGateway:
         assert result is None
 
 
-class TestGetPrInfoFromGraphite:
-    """Test PR info lookup from Graphite cache."""
+class TestGetPrInfoViaBranchManager:
+    """Test PR info lookup via BranchManager."""
 
     def test_returns_pr_info_when_found(self) -> None:
         """Should return PR info when branch has a PR."""
         repo_root = Path("/fake/repo")
-        fake_git = FakeGit()
-        fake_graphite = FakeGraphite(
+        fake_branch_manager = FakeBranchManager(
             pr_info={
-                "feature-branch": PullRequestInfo(
+                "feature-branch": PrInfo(
                     number=123,
                     state="OPEN",
-                    url="https://github.com/owner/repo/pull/123",
                     is_draft=True,
-                    title="Add feature",
-                    checks_passing=True,
-                    owner="owner",
-                    repo="repo",
                 )
             }
         )
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+            cwd=repo_root,
+            git=FakeGit(),
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=fake_branch_manager,
         )
 
-        result = get_pr_info_from_graphite(ctx, repo_root, "feature-branch")
+        result = get_pr_info_via_branch_manager(ctx, repo_root, "feature-branch")
 
         assert result is not None
         assert result == (123, "OPEN", True)
@@ -1073,13 +1100,16 @@ class TestGetPrInfoFromGraphite:
     def test_returns_none_when_no_pr(self) -> None:
         """Should return None when branch has no PR."""
         repo_root = Path("/fake/repo")
-        fake_git = FakeGit()
-        fake_graphite = FakeGraphite(pr_info={})
+        fake_branch_manager = FakeBranchManager(pr_info={})
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+            cwd=repo_root,
+            git=FakeGit(),
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=fake_branch_manager,
         )
 
-        result = get_pr_info_from_graphite(ctx, repo_root, "no-pr-branch")
+        result = get_pr_info_via_branch_manager(ctx, repo_root, "no-pr-branch")
 
         assert result is None
 
@@ -1092,7 +1122,11 @@ class TestFetchGitHubDataViaGateway:
         repo_root = Path("/fake/repo")
         fake_git = FakeGit()  # No remotes configured
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=FakeBranchManager(),
         )
 
         result = fetch_github_data_via_gateway(ctx, repo_root, "feature")
@@ -1103,9 +1137,13 @@ class TestFetchGitHubDataViaGateway:
         """Should return GitHubData with pr_number=0 when no PR exists."""
         repo_root = Path("/fake/repo")
         fake_git = FakeGit(remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"})
-        fake_graphite = FakeGraphite(pr_info={})  # No PRs
+        fake_branch_manager = FakeBranchManager(pr_info={})  # No PRs
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=fake_branch_manager,
         )
 
         result = fetch_github_data_via_gateway(ctx, repo_root, "no-pr-branch")
@@ -1127,22 +1165,21 @@ class TestFetchGitHubDataViaGateway:
             remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"},
             branch_heads={"feature-branch": "abc123"},
         )
-        fake_graphite = FakeGraphite(
+        fake_branch_manager = FakeBranchManager(
             pr_info={
-                "feature-branch": PullRequestInfo(
+                "feature-branch": PrInfo(
                     number=456,
                     state="OPEN",
-                    url="https://github.com/owner/repo/pull/456",
                     is_draft=False,
-                    title="Add feature",
-                    checks_passing=True,
-                    owner="owner",
-                    repo="repo",
                 )
             }
         )
         ctx = StatuslineContext(
-            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+            cwd=repo_root,
+            git=fake_git,
+            graphite=FakeGraphite(),
+            github=FakeGitHub(),
+            branch_manager=fake_branch_manager,
         )
 
         # Mock the REST API calls for checks and mergeable status
