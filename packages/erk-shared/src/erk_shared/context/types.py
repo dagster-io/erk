@@ -7,6 +7,8 @@ This module provides the core data types used by ErkContext:
 - LoadedConfig: Repository-level configuration
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 

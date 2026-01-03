@@ -18,4 +18,4 @@ runs:
       run: pip install uv
     - name: Install dependencies
       shell: bash
-      run: uv sync
+      run: uv sync --python ${{ inputs.python-version }}
