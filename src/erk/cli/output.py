@@ -156,6 +156,11 @@ def stream_command_with_feedback(
     # stderr output appears after stdout in mixed output scenarios.
     sys.stderr.flush()
 
+    # Flush stderr to ensure previous user_output() messages are visible
+    # before Rich console (stdout) starts printing. This prevents buffering
+    # issues where stderr output appears after stdout in mixed output scenarios.
+    sys.stderr.flush()
+
     # Print start marker
     click.echo(click.style(f"--- {command} ---", bold=True))
 
