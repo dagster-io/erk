@@ -180,6 +180,12 @@ def execute_land_pr(
 
     yield ProgressEvent(f"PR #{pr_number} merged successfully", style="success")
 
+    # Delete remote branch after successful merge
+    # Note: We do this separately instead of using `gh pr merge --delete-branch`
+    # because --delete-branch attempts local branch operations that fail from worktrees
+    yield ProgressEvent(f"Deleting remote branch '{branch_name}'...")
+    ops.github.delete_remote_branch(repo_root, branch_name)
+
     # Build success message with child info (navigation handled by CLI layer)
     if len(children) == 0:
         message = f"Successfully merged PR #{pr_number} for branch {branch_name}"

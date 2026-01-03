@@ -58,10 +58,15 @@ from erk_shared.subprocess_utils import run_subprocess_with_context
 # When False: Use gh CLI commands (gh pr) - uses GraphQL quota internally
 USE_REST_API_FOR_PR_MUTATIONS = True
 
-# Feature flag for merge operations to use gh pr merge with --delete-branch.
-# When True: Use gh pr merge (supports --delete-branch for atomic remote branch cleanup)
-# When False: Use REST API for merge (no --delete-branch support)
+# Feature flag for merge operations to use gh pr merge.
+# When True: Use gh pr merge (simpler CLI-based merge)
+# When False: Use REST API for merge
 # This takes precedence over USE_REST_API_FOR_PR_MUTATIONS for merge_pr() only.
+#
+# Note: We intentionally do NOT use --delete-branch with gh pr merge because
+# it attempts local branch operations that fail when running from a git worktree
+# (error: "master already used by worktree"). Instead, we delete the remote
+# branch separately via REST API after the merge succeeds.
 USE_GH_PR_MERGE_FOR_LANDING = True
 
 
@@ -195,15 +200,18 @@ class RealGitHub(GitHub):
     ) -> bool | str:
         """Merge a pull request on GitHub.
 
-        When USE_GH_PR_MERGE_FOR_LANDING is True, uses gh pr merge with --delete-branch
-        for atomic merge and remote branch deletion.
+        When USE_GH_PR_MERGE_FOR_LANDING is True, uses gh pr merge.
+        Note: Does NOT use --delete-branch because it attempts local branch
+        operations that fail from git worktrees. Callers should use
+        delete_remote_branch() separately after merge succeeds.
 
         When USE_REST_API_FOR_PR_MUTATIONS is True, uses REST API to preserve
         GraphQL quota. Otherwise uses gh pr merge (GraphQL internally).
         """
         if USE_GH_PR_MERGE_FOR_LANDING:
-            # Build gh pr merge command with --delete-branch for atomic cleanup
-            cmd = ["gh", "pr", "merge", str(pr_number), "--delete-branch"]
+            # Build gh pr merge command WITHOUT --delete-branch
+            # (--delete-branch fails from worktrees with "master already used by worktree")
+            cmd = ["gh", "pr", "merge", str(pr_number)]
             if squash:
                 cmd.append("--squash")
             if subject is not None:
@@ -1866,3 +1874,36 @@ query {{
         stdout = execute_gh_command(cmd, repo_root)
         response = json.loads(stdout)
         return response["id"]
+
+    def delete_remote_branch(self, repo_root: Path, branch: str) -> bool:
+        """Delete a remote branch via REST API.
+
+        Uses DELETE /repos/{owner}/{repo}/git/refs/heads/{branch} endpoint.
+
+        Returns True if the branch was deleted or didn't exist.
+        Returns False if deletion failed (e.g., protected branch).
+        """
+        # GH-API-AUDIT: REST - DELETE git/refs/heads/{branch}
+        cmd = [
+            "gh",
+            "api",
+            "--method",
+            "DELETE",
+            f"repos/{{owner}}/{{repo}}/git/refs/heads/{branch}",
+        ]
+
+        try:
+            run_subprocess_with_context(
+                cmd,
+                operation_context=f"delete remote branch '{branch}'",
+                cwd=repo_root,
+            )
+            return True
+        except RuntimeError as e:
+            # Check if it's a 404 (branch doesn't exist) - that's fine
+            error_str = str(e)
+            if "404" in error_str or "Reference does not exist" in error_str:
+                return True
+            # Log other errors but don't fail - best effort deletion
+            debug_log(f"delete_remote_branch failed: {e}")
+            return False

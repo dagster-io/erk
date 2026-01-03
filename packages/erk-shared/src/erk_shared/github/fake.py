@@ -115,6 +115,7 @@ class FakeGitHub(GitHub):
         self._pr_comments: list[tuple[int, str]] = []
         self._pr_comment_updates: list[tuple[int, str]] = []
         self._next_comment_id = 1000000
+        self._deleted_remote_branches: list[str] = []
 
     @property
     def merged_prs(self) -> list[int]:
@@ -796,3 +797,19 @@ class FakeGitHub(GitHub):
         Returns list of (pr_number, body) tuples.
         """
         return self._pr_comments
+
+    def delete_remote_branch(self, repo_root: Path, branch: str) -> bool:
+        """Record remote branch deletion in mutation tracking list.
+
+        Always returns True to simulate successful deletion.
+        """
+        self._deleted_remote_branches.append(branch)
+        return True
+
+    @property
+    def deleted_remote_branches(self) -> list[str]:
+        """Read-only access to tracked remote branch deletions for test assertions.
+
+        Returns list of branch names that were deleted.
+        """
+        return self._deleted_remote_branches

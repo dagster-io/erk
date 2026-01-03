@@ -302,3 +302,8 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Create PR comment with printed output."""
         self._emit(self._format_command(f"gh pr comment {pr_number}"))
         return self._wrapped.create_pr_comment(repo_root, pr_number, body)
+
+    def delete_remote_branch(self, repo_root: Path, branch: str) -> bool:
+        """Delete remote branch with printed output."""
+        self._emit(self._format_command(f"gh api DELETE .../git/refs/heads/{branch}"))
+        return self._wrapped.delete_remote_branch(repo_root, branch)

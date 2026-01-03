@@ -288,3 +288,10 @@ class DryRunGitHub(GitHub):
         Returns a fake comment ID to allow dry-run workflows to continue.
         """
         return 1234567890
+
+    def delete_remote_branch(self, repo_root: Path, branch: str) -> bool:
+        """No-op for deleting remote branch in dry-run mode.
+
+        Returns True to indicate success without actually deleting.
+        """
+        return True

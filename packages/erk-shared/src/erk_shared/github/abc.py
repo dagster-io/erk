@@ -639,3 +639,21 @@ class GitHub(ABC):
             Database ID of the created comment
         """
         ...
+
+    @abstractmethod
+    def delete_remote_branch(self, repo_root: Path, branch: str) -> bool:
+        """Delete a remote branch via REST API.
+
+        This method is used to delete the remote branch after a PR merge,
+        avoiding the use of `gh pr merge --delete-branch` which attempts
+        local branch operations that fail from git worktrees.
+
+        Args:
+            repo_root: Repository root directory (for gh CLI context)
+            branch: Name of the branch to delete (without 'refs/heads/' prefix)
+
+        Returns:
+            True if the branch was deleted or didn't exist,
+            False if deletion failed (e.g., protected branch)
+        """
+        ...

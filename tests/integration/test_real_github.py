@@ -152,15 +152,16 @@ def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_merge_pr_with_squash() -> None:
-    """Test merge_pr uses gh pr merge with --delete-branch and --squash."""
+    """Test merge_pr uses gh pr merge with --squash (no --delete-branch)."""
     repo_root = Path("/repo")
     pr_number = 123
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify gh pr merge command format with --delete-branch
+        # Verify gh pr merge command format WITHOUT --delete-branch
+        # (--delete-branch fails from worktrees with "master already used by worktree")
         assert cmd[0:3] == ["gh", "pr", "merge"]
         assert "123" in cmd
-        assert "--delete-branch" in cmd
+        assert "--delete-branch" not in cmd  # Important: no --delete-branch
         assert "--squash" in cmd
         assert kwargs["cwd"] == repo_root
         assert kwargs["capture_output"] is True
@@ -187,15 +188,15 @@ def test_merge_pr_with_squash() -> None:
 
 
 def test_merge_pr_without_squash() -> None:
-    """Test merge_pr uses gh pr merge with --delete-branch but no --squash."""
+    """Test merge_pr uses gh pr merge without --squash (no --delete-branch)."""
     repo_root = Path("/repo")
     pr_number = 456
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify gh pr merge command format with --delete-branch
+        # Verify gh pr merge command format WITHOUT --delete-branch
         assert cmd[0:3] == ["gh", "pr", "merge"]
         assert "456" in cmd
-        assert "--delete-branch" in cmd
+        assert "--delete-branch" not in cmd  # Important: no --delete-branch
         # Verify --squash is NOT included when squash=False
         assert "--squash" not in cmd
 
@@ -893,5 +894,70 @@ def test_has_pr_label_returns_false_when_label_not_present(monkeypatch: MonkeyPa
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
         result = ops.has_pr_label(Path("/repo"), 101, "urgent")
+
+        assert result is False
+
+
+# ============================================================================
+# delete_remote_branch() Tests
+# ============================================================================
+
+
+def test_delete_remote_branch_success(monkeypatch: MonkeyPatch) -> None:
+    """Test delete_remote_branch uses correct REST API endpoint."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        # DELETE returns empty response on success
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        result = ops.delete_remote_branch(Path("/repo"), "feature-branch")
+
+        assert result is True
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        # Verify REST API format: gh api --method DELETE repos/{owner}/{repo}/git/refs/heads/{branch}
+        assert cmd[0:4] == ["gh", "api", "--method", "DELETE"]
+        assert "repos/{owner}/{repo}/git/refs/heads/feature-branch" in cmd[4]
+
+
+def test_delete_remote_branch_not_found_returns_true(monkeypatch: MonkeyPatch) -> None:
+    """Test delete_remote_branch returns True when branch doesn't exist (404)."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        # Simulate 404 error from GitHub API
+        raise subprocess.CalledProcessError(
+            1, cmd, stderr="Reference does not exist"
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        # Should return True even for 404 (branch already deleted)
+        result = ops.delete_remote_branch(Path("/repo"), "nonexistent-branch")
+
+        assert result is True
+
+
+def test_delete_remote_branch_other_error_returns_false(monkeypatch: MonkeyPatch) -> None:
+    """Test delete_remote_branch returns False on other errors (e.g., protected branch)."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        # Simulate error from protected branch or auth failure
+        raise subprocess.CalledProcessError(
+            1, cmd, stderr="Cannot delete protected branch"
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub(FakeTime())
+        # Should return False for errors other than 404
+        result = ops.delete_remote_branch(Path("/repo"), "protected-branch")
 
         assert result is False
