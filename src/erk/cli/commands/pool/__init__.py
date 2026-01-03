@@ -4,7 +4,6 @@ import click
 
 from erk.cli.alias import register_with_aliases
 from erk.cli.commands.pool.assign_cmd import pool_assign
-from erk.cli.commands.pool.checkout_cmd import pool_checkout
 from erk.cli.commands.pool.list_cmd import pool_list
 from erk.cli.commands.pool.unassign_cmd import pool_unassign
 from erk.cli.help_formatter import ErkCommandGroup
@@ -19,5 +18,4 @@ def pool_group() -> None:
 # Register subcommands
 pool_group.add_command(pool_assign)
 pool_group.add_command(pool_unassign)
-register_with_aliases(pool_group, pool_checkout)
 register_with_aliases(pool_group, pool_list)
