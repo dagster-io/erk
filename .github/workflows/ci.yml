@@ -280,7 +280,7 @@ jobs:
             --dangerously-skip-permissions \
             --verbose \
             --allowedTools 'Read(*),Bash(uv run:*),Bash(prettier:*),Bash(make:*),Bash(git:*)' \
-            "/ci:autofix"
+            < .claude/commands/ci/autofix.md
 
           # Check if autofix pushed changes
           if git log origin/${{ github.head_ref }}..HEAD --oneline | grep -q .; then
