@@ -361,6 +361,6 @@ def test_land_fork_pr() -> None:
         assert "Merged PR #789 [pr/789]" in result.output
 
         # The fork PR's branch doesn't exist locally (never checked out),
-        # so we skip deletion and inform the user
-        assert "Branch 'pr/789' not found locally" in result.output
+        # so we skip deletion silently (no confusing message)
+        assert "Branch 'pr/789' not found locally" not in result.output
         assert "pr/789" not in git_ops.deleted_branches

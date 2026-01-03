@@ -264,9 +264,7 @@ def _cleanup_and_navigate(
         if branch in local_branches:
             ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
             user_output(click.style("✓", fg="green") + f" Deleted branch '{branch}'")
-        else:
-            # Branch doesn't exist locally (fork PR case)
-            user_output(click.style("ℹ", fg="cyan") + f" Branch '{branch}' not found locally")
+        # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
 
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
