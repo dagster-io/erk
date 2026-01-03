@@ -22,6 +22,7 @@ from erk.cli.commands.init import init_cmd
 from erk.cli.commands.land_cmd import land
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
+from erk.cli.commands.objective import objective_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.planner import planner_group
@@ -184,6 +185,7 @@ cli.add_command(plan_group)
 cli.add_command(planner_group)
 cli.add_command(pr_group)
 cli.add_command(info_group)
+cli.add_command(objective_group)
 cli.add_command(project_group)
 cli.add_command(run_group)
 cli.add_command(stack_group)
