@@ -17,12 +17,10 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple
+from typing import NamedTuple
 
 from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
-
-if TYPE_CHECKING:
-    from erk_statusline.context import StatuslineContext
+from erk_statusline.context import StatuslineContext
 
 # Cache configuration
 CACHE_DIR = Path("/tmp/erk-statusline-cache")
@@ -100,36 +98,6 @@ class GitHubData(NamedTuple):
     check_contexts: list[dict[str, str]]  # List of check contexts from statusCheckRollup
 
 
-def run_git(cmd: list[str], cwd: str) -> str:
-    """Run a git command and return output.
-
-    DEPRECATED: Use StatuslineContext.git gateway methods instead.
-    Kept for backwards compatibility with functions not yet migrated.
-    """
-    try:
-        result = subprocess.run(
-            ["git"] + cmd,
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-        return result.stdout.strip() if result.returncode == 0 else ""
-    except (subprocess.TimeoutExpired, subprocess.SubprocessError):
-        return ""
-
-
-def get_git_root(cwd: str) -> str:
-    """Get git repository root directory.
-
-    DEPRECATED: Use StatuslineContext.git.get_repository_root() instead.
-
-    Returns:
-        Absolute path to git root, or empty string if not in git repo.
-    """
-    return run_git(["rev-parse", "--show-toplevel"], cwd)
-
-
 def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
     """Get git repository root directory using gateway.
 
@@ -143,24 +111,6 @@ def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
         return ctx.git.get_repository_root(ctx.cwd)
     except (ValueError, OSError):
         return None
-
-
-def get_git_status(cwd: str) -> tuple[str, bool]:
-    """Get git branch and dirty status.
-
-    DEPRECATED: Use get_git_status_via_gateway() instead.
-
-    Returns:
-        (branch_name, is_dirty)
-    """
-    branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
-    if not branch:
-        return "", False
-
-    status = run_git(["status", "--porcelain"], cwd)
-    is_dirty = bool(status)
-
-    return branch, is_dirty
 
 
 def get_git_status_via_gateway(ctx: StatuslineContext) -> tuple[str, bool]:
@@ -178,51 +128,6 @@ def get_git_status_via_gateway(ctx: StatuslineContext) -> tuple[str, bool]:
 
     is_dirty = ctx.git.has_uncommitted_changes(ctx.cwd)
     return branch, is_dirty
-
-
-def get_worktree_info(cwd: str) -> tuple[bool, str]:
-    """Detect if in a linked worktree and get worktree name.
-
-    DEPRECATED: Use get_worktree_info_via_gateway() instead.
-
-    Returns:
-        (is_linked_worktree, worktree_name)
-        - is_linked_worktree: False for main worktree, True for linked worktrees
-        - worktree_name: Directory basename of the worktree
-    """
-    # Get list of all worktrees
-    output = run_git(["worktree", "list", "--porcelain"], cwd)
-    if not output:
-        return False, ""
-
-    # Parse worktree list to find current worktree
-    worktrees = []
-    current_wt = {}
-
-    for line in output.split("\n"):
-        if line.startswith("worktree "):
-            if current_wt:
-                worktrees.append(current_wt)
-            current_wt = {"path": line.split(" ", 1)[1]}
-        elif line.startswith("branch "):
-            current_wt["branch"] = line.split(" ", 1)[1]
-
-    if current_wt:
-        worktrees.append(current_wt)
-
-    # Find which worktree we're in
-    git_root = get_git_root(cwd)
-    if not git_root:
-        return False, ""
-
-    for idx, wt in enumerate(worktrees):
-        if wt["path"] == git_root:
-            # First worktree is always the main worktree
-            is_linked = idx > 0
-            wt_name = Path(wt["path"]).name
-            return is_linked, wt_name
-
-    return False, ""
 
 
 def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tuple[bool, str]:
@@ -436,27 +341,6 @@ def get_dir_name(cwd: str) -> str:
     return Path(cwd).name if cwd else ""
 
 
-def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
-    """Parse GitHub owner and repo from git remote URL.
-
-    DEPRECATED: Use _parse_github_repo_from_url() with ctx.git.get_remote_url() instead.
-
-    Args:
-        cwd: Current working directory
-
-    Returns:
-        (owner, repo) tuple, or None if unable to parse.
-        Supports both SSH and HTTPS GitHub URLs:
-        - git@github.com:owner/repo.git
-        - https://github.com/owner/repo.git
-    """
-    remote_url = run_git(["remote", "get-url", "origin"], cwd)
-    if not remote_url:
-        return None
-
-    return _parse_github_repo_from_url(remote_url)
-
-
 def _parse_github_repo_from_url(remote_url: str) -> tuple[str, str] | None:
     """Parse GitHub owner and repo from a remote URL string.
 
@@ -536,56 +420,6 @@ def get_pr_info_from_graphite(
     return (pr_info.number, pr_info.state, pr_info.is_draft)
 
 
-def _fetch_pr_list(
-    owner: str, repo: str, branch: str, cwd: str, timeout: float
-) -> tuple[int, str, str, bool] | None:
-    """Fetch PR list for a branch.
-
-    Returns:
-        Tuple of (pr_number, head_sha, pr_state, is_draft) or None if failed.
-        pr_number is 0 if no PR exists.
-    """
-    try:
-        result = subprocess.run(
-            [
-                "gh",
-                "api",
-                f"repos/{owner}/{repo}/pulls",
-                "-X",
-                "GET",
-                "-f",
-                f"head={owner}:{branch}",
-                "-f",
-                "state=all",
-            ],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
-
-        if result.returncode != 0:
-            return None
-
-        prs = json.loads(result.stdout)
-
-        # No PR for this branch
-        if not prs:
-            return (0, "", "", False)
-
-        # Take first PR (REST API returns OPEN PRs first with state=all)
-        pr = prs[0]
-        pr_number = pr.get("number", 0)
-        pr_state = pr.get("state", "").upper()  # REST returns lowercase
-        is_draft = pr.get("draft", False)
-        head_sha = pr.get("head", {}).get("sha", "")
-
-        return (pr_number, head_sha, pr_state, is_draft)
-
-    except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
-        return None
-
-
 def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: float) -> str:
     """Fetch PR details for mergeable status.
 
@@ -660,86 +494,6 @@ def _fetch_check_runs(
 
     except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
         return []
-
-
-def _fetch_github_data_rest(cwd: str) -> GitHubData | None:
-    """Fetch repository, PR, and checks data via REST API.
-
-    Uses caching for PR list and parallelizes PR details + check runs calls.
-
-    Timeout strategy:
-    - PR list (cache miss): 1.5s
-    - PR details + check runs (parallel): 1.5s each, 2s combined max
-    - Total worst case: ~3.5s (cache miss) or ~2s (cache hit)
-
-    Returns:
-        GitHubData with all GitHub information, or None if any call fails.
-    """
-    # Get current branch
-    branch = run_git(["rev-parse", "--abbrev-ref", "HEAD"], cwd)
-    if not branch:
-        return None
-
-    # Parse owner/repo from git remote URL
-    repo_info = _parse_github_repo_from_remote(cwd)
-    if not repo_info:
-        return None
-
-    owner, repo = repo_info
-
-    # Try cache first for PR info
-    cached = _get_cached_pr_info(owner, repo, branch)
-    if cached:
-        pr_number, head_sha = cached
-        pr_state = "OPEN"  # Cached PRs are always OPEN (we only cache PRs)
-        is_draft = False  # Cached: we don't store draft status
-    else:
-        # Cache miss: fetch PR list (1.5s timeout)
-        pr_result = _fetch_pr_list(owner, repo, branch, cwd, 1.5)
-        if pr_result is None:
-            return None  # API failure
-
-        pr_number, head_sha, pr_state, is_draft = pr_result
-
-        # Cache if we found a PR
-        if pr_number > 0:
-            _set_cached_pr_info(owner, repo, branch, pr_number, head_sha)
-
-    # No PR for this branch
-    if pr_number == 0:
-        return GitHubData(
-            owner=owner,
-            repo=repo,
-            pr_number=0,
-            pr_state="",
-            is_draft=False,
-            mergeable="",
-            check_contexts=[],
-        )
-
-    # Fetch PR details and check runs in parallel (1.5s timeout each, 2s combined)
-    try:
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            pr_future = executor.submit(_fetch_pr_details, owner, repo, pr_number, cwd, 1.5)
-            checks_future = executor.submit(_fetch_check_runs, owner, repo, head_sha, cwd, 1.5)
-
-            # Wait for both with combined timeout
-            mergeable = pr_future.result(timeout=2)
-            check_contexts = checks_future.result(timeout=2)
-    except TimeoutError:
-        # If parallel execution times out, use defaults
-        mergeable = "UNKNOWN"
-        check_contexts = []
-
-    return GitHubData(
-        owner=owner,
-        repo=repo,
-        pr_number=pr_number,
-        pr_state=pr_state,
-        is_draft=is_draft,
-        mergeable=mergeable,
-        check_contexts=check_contexts,
-    )
 
 
 def fetch_github_data_via_gateway(
@@ -1145,7 +899,6 @@ def main():
                     plan_progress = get_plan_progress(git_root)
                     new_plan_file = find_new_plan_file(git_root)
                     issue_number = get_issue_number(git_root)
-
                     # Fetch GitHub data using gateway for Graphite PR cache
                     github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
 
