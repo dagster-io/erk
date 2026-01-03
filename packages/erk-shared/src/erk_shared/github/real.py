@@ -80,6 +80,7 @@ class RealGitHub(GitHub):
         and authentication status a priori without duplicating gh's logic.
         """
         try:
+            # GH-API-AUDIT: REST - GET pulls/{number}
             cmd = [
                 "gh",
                 "api",
@@ -108,6 +109,7 @@ class RealGitHub(GitHub):
         caught by precondition checks in the caller.
         """
         try:
+            # GH-API-AUDIT: REST - PATCH pulls/{number}
             cmd = [
                 "gh",
                 "api",
@@ -138,6 +140,7 @@ class RealGitHub(GitHub):
         caught by precondition checks in the caller.
         """
         try:
+            # GH-API-AUDIT: REST - PATCH pulls/{number}
             cmd = [
                 "gh",
                 "api",
@@ -164,6 +167,7 @@ class RealGitHub(GitHub):
         Returns:
             Parsed JSON response
         """
+        # GH-API-AUDIT: GraphQL - explicit graphql query
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
         stdout = execute_gh_command(cmd, repo_root)
         return json.loads(stdout)
@@ -182,6 +186,7 @@ class RealGitHub(GitHub):
 
         Uses REST API to preserve GraphQL quota.
         """
+        # GH-API-AUDIT: REST - PUT pulls/{number}/merge
         cmd = [
             "gh",
             "api",
@@ -252,6 +257,7 @@ class RealGitHub(GitHub):
         distinct_id = self._generate_distinct_id()
         debug_log(f"trigger_workflow: workflow={workflow}, distinct_id={distinct_id}, ref={ref}")
 
+        # GH-API-AUDIT: REST - POST workflows/{id}/dispatches
         cmd = ["gh", "workflow", "run", workflow]
 
         # Add --ref flag if specified
@@ -281,6 +287,7 @@ class RealGitHub(GitHub):
         for attempt in range(max_attempts):
             debug_log(f"trigger_workflow: polling attempt {attempt + 1}/{max_attempts}")
 
+            # GH-API-AUDIT: REST - GET actions/runs
             runs_cmd = [
                 "gh",
                 "run",
@@ -398,6 +405,7 @@ class RealGitHub(GitHub):
         Returns:
             PR number
         """
+        # GH-API-AUDIT: REST - POST pulls
         cmd = [
             "gh",
             "api",
@@ -435,6 +443,7 @@ class RealGitHub(GitHub):
 
         Uses REST API to preserve GraphQL quota.
         """
+        # GH-API-AUDIT: REST - PATCH pulls/{number} state=closed
         cmd = [
             "gh",
             "api",
@@ -450,6 +459,7 @@ class RealGitHub(GitHub):
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
         """List workflow runs for a specific workflow."""
+        # GH-API-AUDIT: REST - GET actions/runs
         cmd = [
             "gh",
             "run",
@@ -507,7 +517,7 @@ class RealGitHub(GitHub):
         and authentication status a priori without duplicating gh's logic.
         """
         try:
-            # Use REST API - {owner}/{repo} placeholders are auto-filled by gh
+            # GH-API-AUDIT: REST - GET actions/runs/{id}
             cmd = [
                 "gh",
                 "api",
@@ -540,6 +550,7 @@ class RealGitHub(GitHub):
 
     def get_run_logs(self, repo_root: Path, run_id: str) -> str:
         """Get logs for a workflow run using gh CLI."""
+        # GH-API-AUDIT: REST - gh run view uses REST
         result = run_subprocess_with_context(
             ["gh", "run", "view", run_id, "--log"],
             operation_context=f"fetch logs for run {run_id}",
@@ -823,7 +834,7 @@ query {{
 
         def _fetch_and_find_run() -> str | RetryRequested:
             """Fetch runs and find matching run, or return RetryRequested if not found."""
-            # Query for recent runs with branch info
+            # GH-API-AUDIT: REST - GET actions/runs
             runs_cmd = [
                 "gh",
                 "run",
@@ -901,6 +912,7 @@ query {{
         Returns:
             Tuple of (is_authenticated, username, hostname)
         """
+        # GH-API-AUDIT: REST - auth validation
         result = run_subprocess_with_context(
             ["gh", "auth", "status"],
             operation_context="check GitHub authentication status",
@@ -930,7 +942,7 @@ query {{
         if not node_ids:
             return {}
 
-        # Use parameterized query with array elements passed individually
+        # GH-API-AUDIT: GraphQL - nodes query by IDs
         # CRITICAL: gh api graphql requires arrays to be passed as -f key[]=val1 -f key[]=val2
         # Using -f key=json.dumps([...]) passes the array as a literal string, not an array
         cmd = [
@@ -1039,6 +1051,7 @@ query {{
 
         Uses the REST API endpoint to get workflow run details including node_id.
         """
+        # GH-API-AUDIT: REST - GET actions/runs/{id}
         cmd = [
             "gh",
             "api",
@@ -1069,7 +1082,7 @@ query {{
         states = [state.upper()] if state else ["OPEN"]
         effective_limit = limit if limit is not None else 30
 
-        # Build command with parameterized query and variables
+        # GH-API-AUDIT: GraphQL - issues with timeline
         # IMPORTANT: gh api graphql requires special syntax for arrays and objects:
         # - Arrays: use key[]=value1 -f key[]=value2 (NOT -F key=["value1"])
         # - Objects: use key[subkey]=value (NOT -F key={"subkey": "value"})
@@ -1277,6 +1290,7 @@ query {{
         assert self._repo_info is not None, "repo_info required for get_pr"
         endpoint = f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls/{pr_number}"
 
+        # GH-API-AUDIT: REST - GET pulls/{number}
         cmd = ["gh", "api", endpoint]
         try:
             stdout = execute_gh_command(cmd, repo_root)
@@ -1302,6 +1316,7 @@ query {{
             f"?head={self._repo_info.owner}:{branch}&state=all"
         )
 
+        # GH-API-AUDIT: REST - GET pulls (filtered by head)
         cmd = ["gh", "api", endpoint]
         stdout = execute_gh_command(cmd, repo_root)
         data = json.loads(stdout)
@@ -1379,6 +1394,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
+        # GH-API-AUDIT: REST - GET pulls/{number} (.title)
         cmd = [
             "gh",
             "api",
@@ -1401,6 +1417,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
+        # GH-API-AUDIT: REST - GET pulls/{number} (.body)
         cmd = [
             "gh",
             "api",
@@ -1422,6 +1439,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
+        # GH-API-AUDIT: REST - PATCH pulls/{number}
         cmd = [
             "gh",
             "api",
@@ -1443,6 +1461,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
+        # GH-API-AUDIT: REST - PATCH pulls/{number} draft=false
         cmd = [
             "gh",
             "api",
@@ -1460,6 +1479,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails
         """
+        # GH-API-AUDIT: REST - gh pr diff uses REST Accept header
         result = run_subprocess_with_context(
             ["gh", "pr", "diff", str(pr_number)],
             operation_context=f"get diff for PR #{pr_number}",
@@ -1476,6 +1496,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
+        # GH-API-AUDIT: REST - GET pulls/{number} (mergeability)
         cmd = [
             "gh",
             "api",
@@ -1504,6 +1525,7 @@ query {{
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
         """
+        # GH-API-AUDIT: REST - POST issues/{number}/labels
         cmd = [
             "gh",
             "api",
@@ -1523,6 +1545,7 @@ query {{
         Returns:
             True if the PR has the label, False otherwise.
         """
+        # GH-API-AUDIT: REST - GET pulls/{number} (.labels)
         cmd = [
             "gh",
             "api",
@@ -1548,7 +1571,7 @@ query {{
         """
         assert self._repo_info is not None, "repo_info required for get_pr_review_threads"
 
-        # Pass variables individually: -f for strings, -F for typed values (int)
+        # GH-API-AUDIT: GraphQL - reviewThreads query
         cmd = [
             "gh",
             "api",
@@ -1643,7 +1666,7 @@ query {{
         Returns:
             True if resolved successfully
         """
-        # Pass variables individually with -f for strings
+        # GH-API-AUDIT: GraphQL - resolveReviewThread mutation
         cmd = [
             "gh",
             "api",
@@ -1680,7 +1703,7 @@ query {{
         Returns:
             True if comment added successfully
         """
-        # Pass variables individually with -f for strings
+        # GH-API-AUDIT: GraphQL - addPullRequestReviewThreadReply mutation
         cmd = [
             "gh",
             "api",
@@ -1715,6 +1738,7 @@ query {{
 
         Uses GitHub REST API to create a pull request review comment.
         """
+        # GH-API-AUDIT: REST - POST pulls/{number}/comments
         cmd = [
             "gh",
             "api",
@@ -1748,6 +1772,7 @@ query {{
         Fetches all comments as JSON and searches in Python to avoid
         shell escaping issues with special characters in markers.
         """
+        # GH-API-AUDIT: REST - GET issues/{number}/comments
         cmd = [
             "gh",
             "api",
@@ -1781,6 +1806,7 @@ query {{
 
         Uses GitHub REST API via gh api command.
         """
+        # GH-API-AUDIT: REST - PATCH issues/comments/{id}
         cmd = [
             "gh",
             "api",
@@ -1803,6 +1829,7 @@ query {{
         Uses GitHub REST API to create the comment and returns the ID.
         PRs are issues in GitHub's data model, so we use the issues endpoint.
         """
+        # GH-API-AUDIT: REST - POST issues/{number}/comments
         cmd = [
             "gh",
             "api",

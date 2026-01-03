@@ -67,6 +67,7 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
         claude_command = "claude --allow-dangerously-skip-permissions --verbose"
         remote_command = f"bash -l -c '{setup_commands} && {claude_command}'"
 
+        # GH-API-AUDIT: REST - codespace SSH connection
         os.execvp(
             "gh",
             [
@@ -91,4 +92,5 @@ def connect_planner(ctx: ErkContext, name: str | None, ssh: bool) -> None:
             err=True,
         )
 
+        # GH-API-AUDIT: REST - codespace VS Code connection
         os.execvp("gh", ["gh", "codespace", "code", "-c", planner.gh_name])

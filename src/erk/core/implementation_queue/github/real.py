@@ -30,6 +30,7 @@ class RealGitHubAdmin(GitHubAdmin):
             RuntimeError: If gh CLI command fails
         """
         repo_id = location.repo_id
+        # GH-API-AUDIT: REST - GET actions/permissions/workflow
         cmd = [
             "gh",
             "api",
@@ -62,6 +63,7 @@ class RealGitHubAdmin(GitHubAdmin):
         # - default_workflow_permissions: Keep as "read" (workflows declare their own)
         # - can_approve_pull_request_reviews: This enables PR creation
         repo_id = location.repo_id
+        # GH-API-AUDIT: REST - PUT actions/permissions/workflow
         cmd = [
             "gh",
             "api",
@@ -87,6 +89,7 @@ class RealGitHubAdmin(GitHubAdmin):
     def check_auth_status(self) -> AuthStatus:
         """Check GitHub CLI authentication status using gh auth status."""
         try:
+            # GH-API-AUDIT: REST - auth validation
             result = subprocess.run(
                 ["gh", "auth", "status"],
                 capture_output=True,

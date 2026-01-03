@@ -67,6 +67,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, etc.).
         """
+        # GH-API-AUDIT: REST - POST issues
         base_cmd = [
             "gh",
             "api",
@@ -104,6 +105,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
+        # GH-API-AUDIT: REST - GET issues/{number}
         base_cmd = [
             "gh",
             "api",
@@ -137,7 +139,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        # Use REST API to get back the comment ID
+        # GH-API-AUDIT: REST - POST issues/{number}/comments
         base_cmd = [
             "gh",
             "api",
@@ -159,6 +161,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
+        # GH-API-AUDIT: GraphQL - gh issue edit uses GraphQL internally
         base_cmd = ["gh", "issue", "edit", str(number), "--body", body]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
@@ -195,6 +198,7 @@ class RealGitHubIssues(GitHubIssues):
         if params:
             endpoint += "?" + "&".join(params)
 
+        # GH-API-AUDIT: REST - GET issues (with filters)
         base_cmd = ["gh", "api", endpoint]
         cmd = self._build_gh_command(base_cmd)
         stdout = execute_gh_command(cmd, repo_root)
@@ -227,6 +231,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
+        # GH-API-AUDIT: REST - GET issues/{number}/comments
         base_cmd = [
             "gh",
             "api",
@@ -250,6 +255,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, comment not found).
         """
+        # GH-API-AUDIT: REST - GET issues/comments/{id}
         base_cmd = [
             "gh",
             "api",
@@ -270,6 +276,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
+        # GH-API-AUDIT: REST - GET issues/{number}/comments
         base_cmd = [
             "gh",
             "api",
@@ -312,7 +319,7 @@ class RealGitHubIssues(GitHubIssues):
         if self._label_cache.has(label):
             return
 
-        # Check if label exists via API
+        # GH-API-AUDIT: GraphQL - gh label list uses GraphQL internally
         base_check_cmd = [
             "gh",
             "label",
@@ -330,7 +337,7 @@ class RealGitHubIssues(GitHubIssues):
             self._label_cache.add(label)
             return
 
-        # Create label
+        # GH-API-AUDIT: REST - gh label create uses REST
         base_create_cmd = [
             "gh",
             "label",
@@ -354,6 +361,7 @@ class RealGitHubIssues(GitHubIssues):
         on failures (not installed, not authenticated, issue not found).
         The gh CLI --add-label operation is idempotent.
         """
+        # GH-API-AUDIT: GraphQL - gh issue edit uses GraphQL internally
         base_cmd = ["gh", "issue", "edit", str(issue_number), "--add-label", label]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
@@ -365,6 +373,7 @@ class RealGitHubIssues(GitHubIssues):
         on failures (not installed, not authenticated, issue not found).
         If the label doesn't exist on the issue, gh CLI handles gracefully.
         """
+        # GH-API-AUDIT: GraphQL - gh issue edit uses GraphQL internally
         base_cmd = ["gh", "issue", "edit", str(issue_number), "--remove-label", label]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
@@ -375,6 +384,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
+        # GH-API-AUDIT: GraphQL - gh issue close uses GraphQL internally
         base_cmd = ["gh", "issue", "close", str(number)]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
@@ -385,6 +395,7 @@ class RealGitHubIssues(GitHubIssues):
         Returns:
             GitHub username if authenticated, None otherwise
         """
+        # GH-API-AUDIT: REST - GET user
         result = subprocess.run(
             ["gh", "api", "user", "--jq", ".login"],
             capture_output=True,
@@ -404,6 +415,7 @@ class RealGitHubIssues(GitHubIssues):
 
         Uses the timeline endpoint to find cross-referenced PRs.
         """
+        # GH-API-AUDIT: REST - GET issues/{number}/timeline
         base_cmd = [
             "gh",
             "api",
@@ -443,6 +455,7 @@ class RealGitHubIssues(GitHubIssues):
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, comment not found).
         """
+        # GH-API-AUDIT: REST - POST issues/comments/{id}/reactions
         base_cmd = [
             "gh",
             "api",

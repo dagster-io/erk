@@ -65,6 +65,7 @@ def _get_pr_head_sha(repo_root: Path, pr_number: int) -> str:
     Raises:
         RuntimeError: If gh command fails
     """
+    # GH-API-AUDIT: GraphQL - gh pr view uses GraphQL internally
     cmd = [
         "gh",
         "pr",

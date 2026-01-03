@@ -16,6 +16,7 @@ def _list_codespaces() -> list[dict]:
     Returns:
         List of codespace dicts with name, repository, displayName fields
     """
+    # GH-API-AUDIT: REST - GET user/codespaces
     result = subprocess.run(
         ["gh", "codespace", "list", "--json", "name,repository,displayName"],
         capture_output=True,
