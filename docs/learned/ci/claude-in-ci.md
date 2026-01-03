@@ -36,14 +36,14 @@ When running Claude in CI with `--print` mode, use these flags:
 
 ### Flag Reference
 
-| Flag                           | Purpose                                      |
-| ------------------------------ | -------------------------------------------- |
-| `--print`                      | Non-interactive mode, outputs to stdout      |
-| `--model`                      | Specify model (sonnet, opus, etc.)           |
-| `--output-format stream-json`  | Stream JSON output for CI logging            |
-| `--dangerously-skip-permissions` | Skip permission prompts (required for CI)  |
-| `--verbose`                    | Detailed logging                             |
-| `--allowedTools`               | Restrict available tools (optional)          |
+| Flag                             | Purpose                                   |
+| -------------------------------- | ----------------------------------------- |
+| `--print`                        | Non-interactive mode, outputs to stdout   |
+| `--model`                        | Specify model (sonnet, opus, etc.)        |
+| `--output-format stream-json`    | Stream JSON output for CI logging         |
+| `--dangerously-skip-permissions` | Skip permission prompts (required for CI) |
+| `--verbose`                      | Detailed logging                          |
+| `--allowedTools`                 | Restrict available tools (optional)       |
 
 ## Authentication
 
