@@ -179,6 +179,7 @@ class RealGitHub(GitHub):
             Parsed JSON response
         """
         # GH-API-AUDIT: GraphQL - explicit graphql query
+        # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
         stdout = execute_gh_command(cmd, repo_root)
         return json.loads(stdout)
@@ -969,6 +970,7 @@ query {{
             return {}
 
         # GH-API-AUDIT: GraphQL - nodes query by IDs
+        # WHY GRAPHQL: Batch fetch O(1) vs REST O(N) individual calls
         # CRITICAL: gh api graphql requires arrays to be passed as -f key[]=val1 -f key[]=val2
         # Using -f key=json.dumps([...]) passes the array as a literal string, not an array
         cmd = [
@@ -1109,6 +1111,7 @@ query {{
         effective_limit = limit if limit is not None else 30
 
         # GH-API-AUDIT: GraphQL - issues with timeline
+        # WHY GRAPHQL: Complex nested query (issues + timeline + PR status) for erk dash
         # IMPORTANT: gh api graphql requires special syntax for arrays and objects:
         # - Arrays: use key[]=value1 -f key[]=value2 (NOT -F key=["value1"])
         # - Objects: use key[subkey]=value (NOT -F key={"subkey": "value"})
@@ -1598,6 +1601,7 @@ query {{
         assert self._repo_info is not None, "repo_info required for get_pr_review_threads"
 
         # GH-API-AUDIT: GraphQL - reviewThreads query
+        # WHY GRAPHQL: REST API does not expose isResolved field
         cmd = [
             "gh",
             "api",
@@ -1693,6 +1697,7 @@ query {{
             True if resolved successfully
         """
         # GH-API-AUDIT: GraphQL - resolveReviewThread mutation
+        # WHY GRAPHQL: No REST endpoint exists for resolving review threads
         cmd = [
             "gh",
             "api",
@@ -1730,6 +1735,7 @@ query {{
             True if comment added successfully
         """
         # GH-API-AUDIT: GraphQL - addPullRequestReviewThreadReply mutation
+        # WHY GRAPHQL: REST requires interface change (PR number + comment ID vs thread node ID)
         cmd = [
             "gh",
             "api",
