@@ -273,6 +273,9 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          # Save original HEAD before Claude runs
+          original_head=$(git rev-parse HEAD)
+
           set +e
           claude --print \
             --model claude-sonnet-4-20250514 \
@@ -282,10 +285,13 @@ jobs:
             --allowedTools 'Read(*),Bash(uv run:*),Bash(prettier:*),Bash(make:*),Bash(git:*)' \
             < .claude/commands/ci/autofix.md
 
-          # Check if autofix pushed changes
-          if git log origin/${{ github.head_ref }}..HEAD --oneline | grep -q .; then
+          # Check if autofix created new commits (compare current HEAD to original)
+          current_head=$(git rev-parse HEAD)
+          if [ "$original_head" != "$current_head" ]; then
+            echo "Claude created new commits, triggering CI re-run"
             echo "pushed=true" >> $GITHUB_OUTPUT
           else
+            echo "No new commits created"
             echo "pushed=false" >> $GITHUB_OUTPUT
           fi
 
