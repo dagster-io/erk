@@ -1,4 +1,4 @@
-"""Unit tests for pool list command."""
+"""Unit tests for pooled list command."""
 
 from click.testing import CliRunner
 
@@ -9,8 +9,8 @@ from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_pool_list_empty() -> None:
-    """Test that pool list shows all slots as available when empty."""
+def test_pooled_list_empty() -> None:
+    """Test that pooled list shows all slots as available when empty."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -31,7 +31,7 @@ def test_pool_list_empty() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pool", "list"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "list"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         # All 4 slots should be shown
@@ -43,8 +43,8 @@ def test_pool_list_empty() -> None:
         assert "(available)" in result.output
 
 
-def test_pool_list_with_assignments() -> None:
-    """Test that pool list shows assigned branches."""
+def test_pooled_list_with_assignments() -> None:
+    """Test that pooled list shows assigned branches."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -80,7 +80,7 @@ def test_pool_list_with_assignments() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pool", "list"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "list"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         # Slot 1 should show assignment
@@ -89,8 +89,8 @@ def test_pool_list_with_assignments() -> None:
         assert "erk-managed-wt-02" in result.output
 
 
-def test_pool_list_alias_ls() -> None:
-    """Test that pool ls alias works."""
+def test_pooled_list_alias_ls() -> None:
+    """Test that pooled ls alias works."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -111,7 +111,7 @@ def test_pool_list_alias_ls() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pool", "ls"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "ls"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "erk-managed-wt-01" in result.output

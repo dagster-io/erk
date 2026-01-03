@@ -1,4 +1,4 @@
-"""Pool unassign command - remove a branch assignment from a pool slot."""
+"""Pooled unassign command - remove a branch assignment from a pool slot."""
 
 from pathlib import Path
 
@@ -54,7 +54,7 @@ def _find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | Non
 @click.command("unassign")
 @click.argument("slot_or_branch", metavar="SLOT_OR_BRANCH", required=False)
 @click.pass_obj
-def pool_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
+def pooled_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
     """Remove a branch assignment from a pool slot.
 
     SLOT_OR_BRANCH can be either a slot name (e.g., erk-managed-wt-01) or a branch name.
@@ -65,16 +65,16 @@ def pool_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
     The worktree directory is kept for reuse with future assignments.
 
     Examples:
-        erk pool unassign erk-managed-wt-01    # Unassign by slot name
-        erk pool unassign feature-branch       # Unassign by branch name
-        erk pool unassign                      # Unassign current slot (from within pool worktree)
+        erk pooled unassign erk-managed-wt-01    # Unassign by slot name
+        erk pooled unassign feature-branch       # Unassign by branch name
+        erk pooled unassign                      # Unassign current slot (from within pool worktree)
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Load pool state
     state = load_pool_state(repo.pool_json_path)
     if state is None:
-        user_output("Error: No pool configured. Run `erk pool assign` first.")
+        user_output("Error: No pool configured. Run `erk pooled create` first.")
         raise SystemExit(1) from None
 
     # Find the assignment to remove
@@ -86,7 +86,7 @@ def pool_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
         if assignment is None:
             user_output(
                 f"Error: No assignment found for '{slot_or_branch}'.\n"
-                "Run `erk pool list` to see current assignments."
+                "Run `erk pooled list` to see current assignments."
             )
             raise SystemExit(1) from None
     else:
@@ -95,7 +95,7 @@ def pool_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
         if assignment is None:
             user_output(
                 "Error: Not inside a pool slot. Specify slot or branch name.\n"
-                "Usage: erk pool unassign SLOT_OR_BRANCH"
+                "Usage: erk pooled unassign SLOT_OR_BRANCH"
             )
             raise SystemExit(1) from None
 

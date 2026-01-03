@@ -1,36 +1,21 @@
-"""Pool list command - display worktree pool status."""
+"""Pooled list command - display worktree pool status."""
 
 import click
 from rich.console import Console
 from rich.table import Table
 
 from erk.cli.alias import alias
+from erk.cli.commands.pooled.common import DEFAULT_POOL_SIZE, generate_slot_name
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk.core.worktree_pool import PoolState, load_pool_state
 
-# Default pool configuration (must match assign_cmd.py)
-DEFAULT_POOL_SIZE = 4
-SLOT_NAME_PREFIX = "erk-managed-wt"
-
-
-def _generate_slot_name(slot_number: int) -> str:
-    """Generate a slot name from a slot number.
-
-    Args:
-        slot_number: 1-based slot number
-
-    Returns:
-        Formatted slot name like "erk-managed-wt-01"
-    """
-    return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
-
 
 @alias("ls")
 @click.command("list")
 @click.pass_obj
-def pool_list(ctx: ErkContext) -> None:
+def pooled_list(ctx: ErkContext) -> None:
     """List all pool slots and their assignments.
 
     Shows a table with:
@@ -63,7 +48,7 @@ def pool_list(ctx: ErkContext) -> None:
 
     # Add rows for all slots
     for slot_num in range(1, state.pool_size + 1):
-        slot_name = _generate_slot_name(slot_num)
+        slot_name = generate_slot_name(slot_num)
 
         if slot_name in assignments_by_slot:
             branch_name, assigned_time = assignments_by_slot[slot_name]

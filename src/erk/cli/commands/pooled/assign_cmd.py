@@ -1,9 +1,15 @@
-"""Pool assign command - assign a branch to a worktree slot."""
+"""Pooled assign command - assign an existing branch to a worktree slot."""
 
 from datetime import UTC, datetime
 
 import click
 
+from erk.cli.commands.pooled.common import (
+    DEFAULT_POOL_SIZE,
+    find_branch_assignment,
+    find_next_available_slot,
+    generate_slot_name,
+)
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -16,71 +22,23 @@ from erk.core.worktree_pool import (
 )
 from erk_shared.output.output import user_output
 
-# Default pool configuration
-DEFAULT_POOL_SIZE = 4
-SLOT_NAME_PREFIX = "erk-managed-wt"
-
-
-def _generate_slot_name(slot_number: int) -> str:
-    """Generate a slot name from a slot number.
-
-    Args:
-        slot_number: 1-based slot number
-
-    Returns:
-        Formatted slot name like "erk-managed-wt-01"
-    """
-    return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
-
-
-def _find_next_available_slot(state: PoolState) -> int | None:
-    """Find the next available slot number.
-
-    Args:
-        state: Current pool state
-
-    Returns:
-        1-based slot number if available, None if pool is full
-    """
-    assigned_slots = {a.slot_name for a in state.assignments}
-
-    for slot_num in range(1, state.pool_size + 1):
-        slot_name = _generate_slot_name(slot_num)
-        if slot_name not in assigned_slots:
-            return slot_num
-
-    return None
-
-
-def _find_branch_assignment(state: PoolState, branch_name: str) -> SlotAssignment | None:
-    """Find if a branch is already assigned to a slot.
-
-    Args:
-        state: Current pool state
-        branch_name: Branch to search for
-
-    Returns:
-        SlotAssignment if found, None otherwise
-    """
-    for assignment in state.assignments:
-        if assignment.branch_name == branch_name:
-            return assignment
-    return None
-
 
 @click.command("assign")
 @click.argument("branch_name", metavar="BRANCH")
 @click.pass_obj
-def pool_assign(ctx: ErkContext, branch_name: str) -> None:
-    """Assign a branch to an available pool slot.
+def pooled_assign(ctx: ErkContext, branch_name: str) -> None:
+    """Assign an EXISTING branch to an available pool slot.
 
-    BRANCH is the name of the git branch to assign to the pool.
+    BRANCH is the name of an existing git branch to assign to the pool.
 
     The command will:
-    1. Find the next available slot in the pool
-    2. Create a worktree for that slot if needed
-    3. Assign the branch to the slot
-    4. Persist the assignment to pool.json
+    1. Verify the branch EXISTS (fails if it doesn't)
+    2. Find the next available slot in the pool
+    3. Create a worktree for that slot if needed
+    4. Assign the branch to the slot
+    5. Persist the assignment to pool.json
+
+    Use `erk pooled create` to create a NEW branch and assign it.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -95,37 +53,36 @@ def pool_assign(ctx: ErkContext, branch_name: str) -> None:
         )
 
     # Check if branch is already assigned
-    existing = _find_branch_assignment(state, branch_name)
+    existing = find_branch_assignment(state, branch_name)
     if existing is not None:
         user_output(f"Error: Branch '{branch_name}' already assigned to {existing.slot_name}")
         raise SystemExit(1) from None
 
-    # Find next available slot
-    slot_num = _find_next_available_slot(state)
-    if slot_num is None:
+    # Check if branch exists - assign command requires EXISTING branch
+    local_branches = ctx.git.list_local_branches(repo.root)
+    if branch_name not in local_branches:
         user_output(
-            f"Error: Pool is full ({state.pool_size} slots). "
-            "Run `erk pool list` to see assignments."
+            f"Error: Branch '{branch_name}' does not exist.\n"
+            "Use `erk pooled create` to create a new branch."
         )
         raise SystemExit(1) from None
 
-    slot_name = _generate_slot_name(slot_num)
+    # Find next available slot
+    slot_num = find_next_available_slot(state)
+    if slot_num is None:
+        user_output(
+            f"Error: Pool is full ({state.pool_size} slots). "
+            "Run `erk pooled list` to see assignments."
+        )
+        raise SystemExit(1) from None
+
+    slot_name = generate_slot_name(slot_num)
     worktree_path = repo.worktrees_dir / slot_name
 
     # Create worktree if it doesn't exist
     if not ctx.git.path_exists(worktree_path):
         # Create directory for worktree
         worktree_path.mkdir(parents=True, exist_ok=True)
-
-        # Create the worktree with the branch
-        trunk = ctx.git.detect_trunk_branch(repo.root)
-
-        # Check if branch exists
-        local_branches = ctx.git.list_local_branches(repo.root)
-        if branch_name not in local_branches:
-            # Branch doesn't exist - create it from trunk
-            ctx.git.create_branch(repo.root, branch_name, trunk)
-            user_output(f"Created branch: {branch_name}")
 
         # Add worktree
         ctx.git.add_worktree(
