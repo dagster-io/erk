@@ -59,6 +59,9 @@ class RealErkInstallation(ErkInstallation):
             auto_restack_require_dangerous_flag=bool(
                 data.get("auto_restack_require_dangerous_flag", True)
             ),
+            fix_conflicts_require_dangerous_flag=bool(
+                data.get("fix_conflicts_require_dangerous_flag", True)
+            ),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
         )
 
@@ -116,6 +119,7 @@ shell_setup_complete = {str(config.shell_setup_complete).lower()}
 show_pr_info = {str(config.show_pr_info).lower()}
 github_planning = {str(config.github_planning).lower()}
 auto_restack_require_dangerous_flag = {str(config.auto_restack_require_dangerous_flag).lower()}
+fix_conflicts_require_dangerous_flag = {str(config.fix_conflicts_require_dangerous_flag).lower()}
 show_hidden_commands = {str(config.show_hidden_commands).lower()}
 """
 

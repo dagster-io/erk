@@ -25,6 +25,7 @@ def get_global_config_keys() -> dict[str, str]:
         "show_pr_info": "Show PR status in branch listings",
         "github_planning": "Enable GitHub issues integration for planning",
         "auto_restack_require_dangerous_flag": "Require --dangerous flag for auto-restack",
+        "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",
     }
 
