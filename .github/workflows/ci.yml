@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write # Needed for autofix to push
+  contents: write  # Needed for autofix to push
+  actions: write   # Needed for gh workflow run to re-trigger CI
 
 jobs:
   check-submission:
