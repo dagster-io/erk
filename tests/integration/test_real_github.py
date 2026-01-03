@@ -152,16 +152,16 @@ def test_update_pr_base_branch_file_not_found(monkeypatch: MonkeyPatch) -> None:
 
 
 def test_merge_pr_with_squash() -> None:
-    """Test merge_pr uses REST API with squash merge method."""
+    """Test merge_pr uses gh pr merge with --delete-branch and --squash."""
     repo_root = Path("/repo")
     pr_number = 123
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify REST API command format
-        assert cmd[0:4] == ["gh", "api", "--method", "PUT"]
-        assert "repos/{owner}/{repo}/pulls/123/merge" in cmd[4]
-        assert "-f" in cmd
-        assert "merge_method=squash" in cmd
+        # Verify gh pr merge command format with --delete-branch
+        assert cmd[0:3] == ["gh", "pr", "merge"]
+        assert "123" in cmd
+        assert "--delete-branch" in cmd
+        assert "--squash" in cmd
         assert kwargs["cwd"] == repo_root
         assert kwargs["capture_output"] is True
         assert kwargs["text"] is True
@@ -171,7 +171,7 @@ def test_merge_pr_with_squash() -> None:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout='{"merged": true}\n',
+            stdout="✓ Squashed and merged pull request #123\n",
             stderr="",
         )
 
@@ -187,21 +187,22 @@ def test_merge_pr_with_squash() -> None:
 
 
 def test_merge_pr_without_squash() -> None:
-    """Test merge_pr uses REST API without squash merge method."""
+    """Test merge_pr uses gh pr merge with --delete-branch but no --squash."""
     repo_root = Path("/repo")
     pr_number = 456
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        # Verify REST API command format
-        assert cmd[0:4] == ["gh", "api", "--method", "PUT"]
-        assert "repos/{owner}/{repo}/pulls/456/merge" in cmd[4]
-        # Verify squash merge_method is NOT included when squash=False
-        assert "merge_method=squash" not in cmd
+        # Verify gh pr merge command format with --delete-branch
+        assert cmd[0:3] == ["gh", "pr", "merge"]
+        assert "456" in cmd
+        assert "--delete-branch" in cmd
+        # Verify --squash is NOT included when squash=False
+        assert "--squash" not in cmd
 
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,
-            stdout='{"merged": true}\n',
+            stdout="✓ Merged pull request #456\n",
             stderr="",
         )
 
