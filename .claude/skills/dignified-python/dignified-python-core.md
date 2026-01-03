@@ -776,6 +776,14 @@ from myapp.core import main_command  # Only import what this module uses
 
 **Shim modules:** When a module must exist as an entry point (e.g., for plugin systems or CLI registration), import only the minimum symbols needed for that purpose. Document that other symbols should be imported from the canonical location.
 
+**CI Review Behavior:**
+
+- New `__all__` usage → Always flagged
+- Modifications to existing `__all__` (adding exports) → Flagged
+- Pre-existing `__all__` in file only moved/refactored (unchanged) → Skipped
+
+The principle: If you're actively modifying a file, fix its violations. If you're just moving it, don't force unrelated cleanup.
+
 **When re-exports ARE required:** Some systems (like plugin entry points) require a module to exist at a specific path and expose a specific symbol. In these cases, use the explicit `import X as X` syntax to signal intentional re-export:
 
 ```python

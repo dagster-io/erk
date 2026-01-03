@@ -31,6 +31,20 @@ gh pr diff {{ github.event.pull_request.number }} --name-only | grep '\.py$'
 gh pr diff {{ github.event.pull_request.number }}
 ```
 
+## Step 3b: Identify Changed Lines
+
+For each Python file, determine which lines were actually modified (not just context):
+
+- Lines starting with `+` in the diff are additions/modifications
+- Lines starting with ` ` (space) are unchanged context
+
+For the `__all__` / re-export rule specifically:
+
+- If `__all__` appears on a `+` line → Flag as violation (actively being modified)
+- If `__all__` only appears in context lines → Skip (pre-existing, not being modified)
+
+This allows file moves/refactors to pass while catching active modifications.
+
 ## Step 4: Analyze Code
 
 Check each Python file against dignified-python rules:
@@ -42,6 +56,11 @@ Check each Python file against dignified-python rules:
 - No default parameter values
 - Dependency injection with ABC
 - Frozen dataclasses
+
+**For `__all__` / re-exports:**
+
+- Only flag if `__all__` appears in the **changed lines** (Step 3b analysis)
+- Skip if `__all__` is pre-existing and unchanged in this PR
 
 ## Step 5: Post Inline Comments
 
