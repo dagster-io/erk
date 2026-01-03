@@ -182,7 +182,7 @@ def _prompt_objective_update(
 
     # Ask y/n prompt
     user_output("")
-    if not user_confirm("Update objective now? (runs Claude agent)", default=False):
+    if not user_confirm("Update objective now? (runs Claude agent)", default=True):
         user_output("")
         user_output("Skipped. To update later, run:")
         user_output("  /objective:update-landed-pr")
