@@ -273,7 +273,6 @@ def _execute_non_interactive_mode(
                 worktree_path=worktree_path,
                 dangerous=dangerous,
                 model=model,
-                console=console,
             )
 
         all_results.append(result)

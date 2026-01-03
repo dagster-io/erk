@@ -2,7 +2,7 @@
 
 from io import StringIO
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from erk.cli.commands.land_cmd import _prompt_objective_update
 from erk.core.context import context_for_test
@@ -73,12 +73,10 @@ def test_prompt_objective_update_run_now_option_success() -> None:
     ctx = context_for_test(claude_executor=executor)
 
     captured_output = StringIO()
-    # Mock Console to prevent output pollution in tests
-    mock_console = MagicMock()
     with (
         patch("erk.cli.commands.land_cmd.user_output") as mock_output,
         patch("click.prompt", return_value="2"),  # User chooses "2" to run now
-        patch("erk.cli.output.Console", return_value=mock_console),
+        patch("click.echo"),  # Suppress streaming output in tests
     ):
         mock_output.side_effect = lambda msg: captured_output.write(msg + "\n")
 
@@ -111,12 +109,10 @@ def test_prompt_objective_update_run_now_option_failure() -> None:
     ctx = context_for_test(claude_executor=executor)
 
     captured_output = StringIO()
-    # Mock Console to prevent output pollution in tests
-    mock_console = MagicMock()
     with (
         patch("erk.cli.commands.land_cmd.user_output") as mock_output,
         patch("click.prompt", return_value="2"),  # User chooses "2" to run now
-        patch("erk.cli.output.Console", return_value=mock_console),
+        patch("click.echo"),  # Suppress streaming output in tests
     ):
         mock_output.side_effect = lambda msg: captured_output.write(msg + "\n")
 

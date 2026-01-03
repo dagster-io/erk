@@ -10,7 +10,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import click
-from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
 
@@ -125,7 +124,6 @@ def stream_command_with_feedback(
     worktree_path: Path,
     dangerous: bool,
     model: str | None = None,
-    console: Console | None = None,
     debug: bool = False,
 ) -> CommandResult:
     """Stream Claude command execution with live print-based feedback.
@@ -148,23 +146,18 @@ def stream_command_with_feedback(
         worktree_path: Path to worktree directory to run command in
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        console: Rich Console for output (if None, creates one with force_terminal=True)
         debug: Whether to show debug output for stream parsing
 
     Returns:
         CommandResult with success status, PR URL, duration, and messages
     """
-    # Create console with force_terminal to ensure immediate output
-    if console is None:
-        console = Console(force_terminal=True)
-
     # Flush stderr to ensure previous user_output() messages are visible
-    # before Rich console (stdout) starts printing. This prevents buffering
-    # issues where stderr output appears after stdout in mixed output scenarios.
+    # before stdout starts printing. This prevents buffering issues where
+    # stderr output appears after stdout in mixed output scenarios.
     sys.stderr.flush()
 
     # Print start marker
-    console.print(f"--- {command} ---", style="bold")
+    click.echo(click.style(f"--- {command} ---", bold=True))
 
     start_time = time.time()
     filtered_messages: list[str] = []
@@ -182,25 +175,24 @@ def stream_command_with_feedback(
         command, worktree_path, dangerous, verbose=False, debug=debug, model=model
     )
     if debug:
-        console.print("[DEBUG] Starting event stream...", style="yellow")
+        click.echo(click.style("[DEBUG] Starting event stream...", fg="yellow"))
     for event in event_stream:
         event_count += 1
         if debug:
-            console.print(
-                f"[DEBUG] Event #{event_count}: {type(event).__name__}",
-                style="yellow",
+            click.echo(
+                click.style(f"[DEBUG] Event #{event_count}: {type(event).__name__}", fg="yellow")
             )
         match event:
             case TextEvent(content=content):
-                console.print(content)
+                click.echo(content)
                 filtered_messages.append(content)
             case ToolEvent(summary=summary):
-                console.print(f"  > {summary}", style="dim")
+                click.echo(click.style(f"  > {summary}", dim=True))
                 filtered_messages.append(summary)
             case SpinnerUpdateEvent(status=status):
                 # Deduplicate spinner updates - only print when status changes
                 if status != last_spinner_update:
-                    console.print(f"  ... {status}", style="dim")
+                    click.echo(click.style(f"  ... {status}", dim=True))
                     last_spinner_update = status
             case PrUrlEvent(url=url):
                 pr_url = url
@@ -211,33 +203,34 @@ def stream_command_with_feedback(
             case IssueNumberEvent(number=num):
                 issue_number = num  # Already int, no conversion needed
             case ErrorEvent(message=msg):
-                console.print(f"  ! {msg}", style="red")
+                click.echo(click.style(f"  ! {msg}", fg="red"))
                 error_message = msg
                 success = False
             case NoOutputEvent(diagnostic=diag):
-                console.print(f"  ⚠️ {diag}", style="yellow")
+                click.echo(click.style(f"  ⚠️ {diag}", fg="yellow"))
                 error_message = diag
                 success = False
             case NoTurnsEvent(diagnostic=diag):
-                console.print(f"  ⚠️ {diag}", style="yellow")
+                click.echo(click.style(f"  ⚠️ {diag}", fg="yellow"))
                 error_message = diag
                 success = False
             case ProcessErrorEvent(message=msg):
-                console.print(f"  ❌ {msg}", style="red")
+                click.echo(click.style(f"  ❌ {msg}", fg="red"))
                 error_message = msg
                 success = False
 
     if debug:
-        console.print(f"[DEBUG] Event stream complete. Total events: {event_count}", style="yellow")
+        msg = f"[DEBUG] Event stream complete. Total events: {event_count}"
+        click.echo(click.style(msg, fg="yellow"))
 
     duration = time.time() - start_time
     duration_str = format_duration(duration)
 
     # Print end marker
     if success:
-        console.print(f"--- Done ({duration_str}) ---", style="green")
+        click.echo(click.style(f"--- Done ({duration_str}) ---", fg="green", bold=True))
     else:
-        console.print(f"--- Failed ({duration_str}) ---", style="red")
+        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
 
     return CommandResult(
         success=success,
