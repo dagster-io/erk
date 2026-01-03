@@ -45,7 +45,6 @@ State Transitions:
 
 import subprocess
 import sys
-import tomllib
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -224,19 +223,6 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
 # ============================================================================
 
 
-def _is_github_planning_enabled() -> bool:
-    """Check if github_planning is enabled in ~/.erk/config.toml.
-
-    Returns True (enabled) if config doesn't exist or flag is missing.
-    """
-    config_path = Path.home() / ".erk" / "config.toml"
-    if not config_path.exists():
-        return True  # Default enabled
-
-    data = tomllib.loads(config_path.read_text(encoding="utf-8"))
-    return bool(data.get("github_planning", True))
-
-
 def _get_implement_now_marker_path(session_id: str, repo_root: Path) -> Path:
     """Get implement-now marker path in .erk/scratch/sessions/<session_id>/.
 
@@ -333,12 +319,15 @@ def _get_current_branch_within_hook() -> str | None:
 # ============================================================================
 
 
-def _gather_inputs(session_id: str | None, repo_root: Path) -> HookInput:
+def _gather_inputs(
+    session_id: str | None, repo_root: Path, github_planning_enabled: bool
+) -> HookInput:
     """Gather all inputs from environment. All I/O happens here.
 
     Args:
         session_id: Claude session ID from hook_ctx, or None if not available.
         repo_root: Path to the git repository root.
+        github_planning_enabled: Whether github_planning is enabled in config.
 
     Returns:
         HookInput with all gathered state.
@@ -372,7 +361,7 @@ def _gather_inputs(session_id: str | None, repo_root: Path) -> HookInput:
 
     return HookInput(
         session_id=session_id,
-        github_planning_enabled=_is_github_planning_enabled(),
+        github_planning_enabled=github_planning_enabled,
         implement_now_marker_exists=implement_now_marker_exists,
         plan_saved_marker_exists=plan_saved_marker_exists,
         incremental_plan_marker_exists=incremental_plan_marker_exists,
@@ -425,8 +414,12 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     if not hook_ctx.is_erk_project:
         return
 
+    # Get github_planning from injected context (defaults to True if not configured)
+    global_config = ctx.obj.global_config
+    github_planning_enabled = global_config.github_planning if global_config is not None else True
+
     # Gather all inputs (I/O layer)
-    hook_input = _gather_inputs(hook_ctx.session_id, hook_ctx.repo_root)
+    hook_input = _gather_inputs(hook_ctx.session_id, hook_ctx.repo_root, github_planning_enabled)
 
     # Pure decision logic (no I/O)
     result = determine_exit_action(hook_input)
