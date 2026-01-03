@@ -124,6 +124,7 @@ erk exec plan-save-to-issue --session-id=$CLAUDE_CODE_SESSION_ID \
 Replace `<objective-number>` with the objective issue number from Step 2.
 
 This will:
+
 - Create a GitHub issue with the erk-plan label
 - Link it to the parent objective (stored in metadata)
 - Enable objective-aware landing via `/erk:land`
@@ -160,13 +161,13 @@ Or simply close the incorrectly-created issue and re-run Step 8 with the correct
 
 ## Error Cases
 
-| Scenario                | Action                                     |
-| ----------------------- | ------------------------------------------ |
-| Issue not found         | Report error and exit                      |
-| Issue is erk-plan       | Redirect to `/erk:plan-implement`          |
-| No pending steps        | Report all steps complete, suggest closing |
-| Invalid argument format | Prompt for valid issue number              |
-| Roadmap not parseable   | Ask user to specify which step to plan     |
+| Scenario                                | Action                                          |
+| --------------------------------------- | ----------------------------------------------- |
+| Issue not found                         | Report error and exit                           |
+| Issue is erk-plan                       | Redirect to `/erk:plan-implement`               |
+| No pending steps                        | Report all steps complete, suggest closing      |
+| Invalid argument format                 | Prompt for valid issue number                   |
+| Roadmap not parseable                   | Ask user to specify which step to plan          |
 | Verification fails (no objective_issue) | Fix issue body or recreate with correct command |
 
 ---
