@@ -13,7 +13,6 @@ from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
-
 from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
     CACHE_TTL_SECONDS,
@@ -1451,9 +1450,7 @@ class TestGetGitHubRepoViaGateway:
     def test_returns_owner_and_repo(self) -> None:
         """Should return owner and repo from remote URL."""
         repo_root = Path("/fake/repo")
-        fake_git = FakeGit(
-            remote_urls={(repo_root, "origin"): "git@github.com:owner/testrepo.git"}
-        )
+        fake_git = FakeGit(remote_urls={(repo_root, "origin"): "git@github.com:owner/testrepo.git"})
         ctx = StatuslineContext(
             cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
         )
@@ -1537,9 +1534,7 @@ class TestFetchGitHubDataViaGateway:
     def test_no_pr_returns_github_data_with_zero_pr(self) -> None:
         """Should return GitHubData with pr_number=0 when no PR exists."""
         repo_root = Path("/fake/repo")
-        fake_git = FakeGit(
-            remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"}
-        )
+        fake_git = FakeGit(remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"})
         fake_graphite = FakeGraphite(pr_info={})  # No PRs
         ctx = StatuslineContext(
             cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
