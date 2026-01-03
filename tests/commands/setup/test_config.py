@@ -26,6 +26,7 @@ def test_config_list_displays_global_config() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -65,6 +66,7 @@ def test_config_list_displays_repo_config() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -95,6 +97,7 @@ def test_config_list_handles_missing_repo_config() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -149,6 +152,7 @@ def test_config_get_erk_root() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -173,6 +177,7 @@ def test_config_get_use_graphite() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -224,6 +229,7 @@ def test_config_get_env_key() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -260,6 +266,7 @@ def test_config_get_post_create_shell() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -296,6 +303,7 @@ def test_config_get_post_create_commands() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -333,6 +341,7 @@ def test_config_get_env_key_not_found() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -360,6 +369,7 @@ def test_config_get_invalid_key_format() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -387,6 +397,7 @@ def test_config_get_invalid_key() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -414,6 +425,7 @@ def test_config_key_with_multiple_dots() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -449,6 +461,7 @@ def test_config_get_post_create_shell_not_found() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -485,6 +498,7 @@ def test_config_get_post_create_invalid_subkey() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -514,6 +528,7 @@ def test_config_get_post_create_invalid_key_format() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -541,6 +556,7 @@ def test_config_list_displays_github_planning() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(

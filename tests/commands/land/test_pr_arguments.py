@@ -86,6 +86,7 @@ def test_land_by_number() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -175,6 +176,7 @@ def test_land_by_url() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -264,6 +266,7 @@ def test_land_by_branch_name() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -341,6 +344,7 @@ def test_land_fork_pr() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(

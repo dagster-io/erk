@@ -48,6 +48,7 @@ def test_land_pr_not_found() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -92,6 +93,7 @@ def test_land_branch_no_pr_found() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -170,6 +172,7 @@ def test_land_branch_pr_not_open() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -251,6 +254,7 @@ def test_land_branch_pr_base_not_trunk() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(

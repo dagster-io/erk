@@ -33,6 +33,7 @@ def test_checkout_succeeds_when_graphite_not_enabled() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         # Graphite is NOT enabled - use GraphiteDisabled sentinel
@@ -77,6 +78,7 @@ def test_checkout_succeeds_when_graphite_not_installed() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         # Graphite not installed - use GraphiteDisabled with NOT_INSTALLED reason

@@ -97,6 +97,7 @@ def test_create_with_plan_file() -> None:
             repo_name=env.root_worktree.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -143,6 +144,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             repo_name=env.root_worktree.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -341,6 +343,7 @@ def test_create_runs_post_create_commands() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -375,6 +378,7 @@ def test_create_sets_env_variables() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -423,6 +427,7 @@ def test_create_uses_graphite_when_enabled() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -465,6 +470,7 @@ def test_create_blocks_when_staged_changes_present_with_graphite_enabled() -> No
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -764,6 +770,7 @@ def test_create_with_keep_plan_file_flag() -> None:
             repo_name=env.root_worktree.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -868,6 +875,7 @@ def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -1190,6 +1198,7 @@ def test_create_with_json_and_plan_file() -> None:
             repo_name=env.root_worktree.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -1333,6 +1342,7 @@ def test_create_with_stay_and_plan_file() -> None:
             repo_name=env.root_worktree.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)
@@ -1516,6 +1526,7 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
             repo_name=env.root_worktree.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, local_config=local_config, repo=repo)

@@ -89,6 +89,7 @@ def test_land_with_up_navigates_to_child_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -180,6 +181,7 @@ def test_land_with_up_no_children_fails_before_merge() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -270,6 +272,7 @@ def test_land_with_up_multiple_children_fails_before_merge() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
         test_ctx = env.build_context(
@@ -379,6 +382,7 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
             main_repo_root=env.cwd,  # Main repo root (stays valid)
         )
 

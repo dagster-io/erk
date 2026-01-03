@@ -74,6 +74,7 @@ def test_ensure_worktree_returns_existing_worktree() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -110,6 +111,7 @@ def test_ensure_worktree_creates_worktree_for_local_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -148,6 +150,7 @@ def test_ensure_worktree_creates_tracking_branch_from_remote() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -193,6 +196,7 @@ def test_ensure_worktree_fails_for_nonexistent_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -234,6 +238,7 @@ def test_ensure_worktree_handles_tracking_branch_failure() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -278,6 +283,7 @@ def test_ensure_worktree_creates_env_file_from_config() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
@@ -331,6 +337,7 @@ def test_ensure_worktree_skips_env_when_no_template() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
@@ -381,6 +388,7 @@ def test_ensure_worktree_runs_post_create_commands() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
@@ -417,6 +425,7 @@ def test_ensure_worktree_works_without_local_config() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         # Build context with local_config=None
@@ -462,6 +471,7 @@ def test_ensure_worktree_generates_unique_name_on_collision() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -500,6 +510,7 @@ def test_ensure_worktree_returns_was_created_flag() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
@@ -537,6 +548,7 @@ def test_ensure_worktree_detached_head_error_message() -> None:
             repo_name=env.cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir,
+            pool_json_path=repo_dir / "pool.json",
         )
 
         ctx = env.build_context(git=git_ops, repo=repo)
