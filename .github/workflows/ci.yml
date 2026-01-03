@@ -252,11 +252,26 @@ jobs:
           git config user.name "erk-bot"
           git config user.email "erk-bot@users.noreply.github.com"
 
-      - name: Run Claude autofix
+      - name: Check if already autofixed
+        id: autofix_check
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        run: |
+          # Skip if last commit was from autofix (prevent infinite loops)
+          last_author=$(git log -1 --format='%an')
+          if [ "$last_author" = "erk-bot" ]; then
+            echo "Last commit was from erk-bot, skipping autofix"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Claude autofix
+        id: autofix
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.autofix_check.outputs.skip != 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          set +e
           claude --print \
             --model claude-sonnet-4-20250514 \
             --output-format stream-json \
@@ -264,3 +279,18 @@ jobs:
             --verbose \
             --allowedTools 'Read(*),Bash(uv run:*),Bash(prettier:*),Bash(make:*),Bash(git:*)' \
             "/ci-autofix"
+
+          # Check if autofix pushed changes
+          if git log origin/${{ github.head_ref }}..HEAD --oneline | grep -q .; then
+            echo "pushed=true" >> $GITHUB_OUTPUT
+          else
+            echo "pushed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Re-trigger CI
+        if: steps.autofix.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Trigger a new CI run on the updated branch
+          gh workflow run ci.yml --ref ${{ github.head_ref }}
