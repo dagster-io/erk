@@ -450,19 +450,23 @@ class TestFetchGitHubDataRest:
         result = _fetch_github_data_rest("/fake/cwd")
         assert result is None
 
-    @patch("erk_statusline.statusline.subprocess.run")
+    @patch("erk_statusline.statusline._fetch_pr_list")
+    @patch("erk_statusline.statusline._get_cached_pr_info")
     @patch("erk_statusline.statusline.run_git")
     def test_no_pr_for_branch_returns_data_with_zero_pr(
-        self, mock_run_git: MagicMock, mock_subprocess: MagicMock
+        self,
+        mock_run_git: MagicMock,
+        mock_get_cache: MagicMock,
+        mock_fetch_pr_list: MagicMock,
     ) -> None:
         """No PR for branch should return GitHubData with pr_number=0."""
         mock_run_git.side_effect = [
             "feature-branch",
             "git@github.com:owner/repo.git",
         ]
-
-        # REST API returns empty array when no PRs
-        mock_subprocess.return_value = MagicMock(returncode=0, stdout="[]")
+        mock_get_cache.return_value = None
+        # _fetch_pr_list returns (0, "", "", False) for no PR
+        mock_fetch_pr_list.return_value = (0, "", "", False)
 
         result = _fetch_github_data_rest("/fake/cwd")
         assert result is not None
