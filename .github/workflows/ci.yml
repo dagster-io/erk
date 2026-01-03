@@ -252,87 +252,12 @@ jobs:
           git config user.name "erk-bot"
           git config user.email "erk-bot@users.noreply.github.com"
 
-      - name: Collect failure context
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
-        id: failures
-        run: |
-          # Collect all job outcomes for Claude's context
-          echo "format_result=${{ needs.format.result }}" >> $GITHUB_OUTPUT
-          echo "lint_result=${{ needs.lint.result }}" >> $GITHUB_OUTPUT
-          echo "prettier_result=${{ needs.prettier.result }}" >> $GITHUB_OUTPUT
-          echo "docs_result=${{ needs.docs-check.result }}" >> $GITHUB_OUTPUT
-          echo "ty_result=${{ needs.ty.result }}" >> $GITHUB_OUTPUT
-          echo "unit_tests_result=${{ needs.unit-tests.result }}" >> $GITHUB_OUTPUT
-          echo "integration_tests_result=${{ needs.integration-tests.result }}" >> $GITHUB_OUTPUT
-
-      - name: Collect actual errors
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
-        id: errors
-        run: |
-          errors=""
-
-          if [ "${{ needs.format.result }}" = "failure" ]; then
-            errors+="=== RUFF FORMAT ERRORS ===\n"
-            errors+="$(uv run ruff format --check . 2>&1 || true)\n\n"
-          fi
-
-          if [ "${{ needs.lint.result }}" = "failure" ]; then
-            errors+="=== RUFF LINT ERRORS ===\n"
-            errors+="$(uv run ruff check . 2>&1 || true)\n\n"
-          fi
-
-          if [ "${{ needs.prettier.result }}" = "failure" ]; then
-            errors+="=== PRETTIER ERRORS ===\n"
-            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2>&1 || true)\n\n"
-          fi
-
-          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
-            errors+="=== DOCS CHECK ERRORS ===\n"
-            errors+="$(make md-check 2>&1 || true)\n"
-            errors+="$(make docs-validate 2>&1 || true)\n"
-            errors+="$(make docs-sync-check 2>&1 || true)\n\n"
-          fi
-
-          # Save to file to avoid escaping issues
-          echo -e "$errors" > /tmp/errors.txt
-
       - name: Run Claude autofix
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          cat > /tmp/prompt.md << 'PROMPT_EOF'
-          # Autofix CI Errors
-
-          Fix the style/formatting errors. You have full context of all CI job results.
-
-          ## Job Results
-          - format: ${{ needs.format.result }}
-          - lint: ${{ needs.lint.result }}
-          - prettier: ${{ needs.prettier.result }}
-          - docs-check: ${{ needs.docs-check.result }}
-          - ty: ${{ needs.ty.result }} (NOT auto-fixable)
-          - unit-tests: ${{ needs.unit-tests.result }} (NOT auto-fixable)
-          - integration-tests: ${{ needs.integration-tests.result }} (NOT auto-fixable)
-
-          ## Errors to Fix
-          PROMPT_EOF
-
-          cat /tmp/errors.txt >> /tmp/prompt.md
-
-          cat >> /tmp/prompt.md << 'PROMPT_EOF'
-
-          ## Rules
-          - For ruff format errors: run `uv run ruff format <file>` on each file
-          - For ruff lint errors: run `uv run ruff check --fix <file>` for auto-fixable errors
-          - For prettier errors: run `prettier --write <file>` for each markdown file
-          - For docs errors: run `make docs-sync` if generated docs are out of sync
-          - DO NOT attempt to fix ty or test failures - those require human intervention
-          - Commit with message: "style: auto-fix CI errors"
-          - Push the commit
-          PROMPT_EOF
-
           claude --print \
             --model claude-sonnet-4-20250514 \
-            --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)' \
-            "$(cat /tmp/prompt.md)"
+            --allowedTools 'Read(*),Bash(uv run:*),Bash(prettier:*),Bash(make:*),Bash(git:*)' \
+            /ci-autofix
