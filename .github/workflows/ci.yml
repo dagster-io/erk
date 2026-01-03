@@ -260,4 +260,4 @@ jobs:
           claude --print \
             --model claude-sonnet-4-20250514 \
             --allowedTools 'Read(*),Bash(uv run:*),Bash(prettier:*),Bash(make:*),Bash(git:*)' \
-            /ci-autofix
+            < .claude/commands/ci-autofix.md
