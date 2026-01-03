@@ -119,8 +119,10 @@ jobs:
     needs: [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
     if: |
       always() &&
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.draft != true &&
+      github.ref_name != 'master' &&
+      github.ref_name != 'main' &&
+      (github.event_name == 'pull_request' || github.event_name == 'push') &&
+      (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
        needs.prettier.result == 'failure' ||
@@ -128,13 +130,43 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Discover PR
+        id: discover-pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "pr_number=${{ github.event.pull_request.number }}" >> $GITHUB_OUTPUT
+            echo "has_pr=true" >> $GITHUB_OUTPUT
+          else
+            # Push event - check for open PR on this branch
+            pr_number=$(gh api repos/${{ github.repository }}/pulls \
+              --jq ".[] | select(.head.ref == \"${{ github.ref_name }}\" and .state == \"open\") | .number" \
+              | head -1)
+            if [ -n "$pr_number" ]; then
+              echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
+              echo "has_pr=true" >> $GITHUB_OUTPUT
+              echo "Found open PR #$pr_number for branch ${{ github.ref_name }}"
+            else
+              echo "has_pr=false" >> $GITHUB_OUTPUT
+              echo "No open PR found for branch ${{ github.ref_name }}"
+            fi
+          fi
+
+      - name: Skip if no PR
+        if: steps.discover-pr.outputs.has_pr != 'true'
+        run: |
+          echo "No open PR for this branch, skipping autofix"
+          exit 0
+
       - name: Get PR info
         id: pr
+        if: steps.discover-pr.outputs.has_pr == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Get PR details
-          pr_data=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} --jq '{head_repo: .head.repo.full_name, base_repo: .base.repo.full_name}')
+          pr_data=$(gh api repos/${{ github.repository }}/pulls/${{ steps.discover-pr.outputs.pr_number }} --jq '{head_repo: .head.repo.full_name, base_repo: .base.repo.full_name}')
 
           # Security: Skip fork PRs to avoid executing untrusted code
           head_repo=$(echo "$pr_data" | jq -r '.head_repo')
@@ -156,13 +188,13 @@ jobs:
       # Security: Fork PRs are blocked above before reaching this checkout.
       # Only same-repo PRs can trigger code execution in this privileged workflow.
       - uses: actions/checkout@v4
-        if: steps.pr.outputs.skip != 'true'
+        if: steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
           fetch-depth: 0
 
       - name: Check for submission folder
-        if: steps.pr.outputs.skip != 'true'
+        if: steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         id: check
         run: |
           if [ -d ".impl" ]; then
@@ -173,35 +205,35 @@ jobs:
           fi
 
       - uses: actions/setup-python@v5
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         with:
           python-version: "3.12"
 
       - name: Install uv
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: pip install uv
 
       # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
       # about executing untrusted code from checkout in privileged workflow
       - name: Install erk
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: uv tool install --from . --with ./packages/erk-shared erk
 
       - uses: actions/setup-node@v4
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         with:
           node-version: "20"
 
       - name: Install prettier
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: npm install -g prettier@3.6.0
 
       - name: Setup Claude Code
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         uses: ./.github/actions/setup-claude-code
 
       - name: Collect failure context
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         id: failures
         run: |
           # Collect all job outcomes for Claude's context
@@ -214,7 +246,7 @@ jobs:
           echo "integration_tests_result=${{ needs.integration-tests.result }}" >> $GITHUB_OUTPUT
 
       - name: Collect actual errors
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         id: errors
         run: |
           errors=""
@@ -245,7 +277,7 @@ jobs:
           echo -e "$errors" > /tmp/errors.txt
 
       - name: Run Claude autofix
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
