@@ -7,6 +7,7 @@ files with frontmatter metadata.
 import re
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any, cast
 
 import yaml
 
@@ -127,8 +128,10 @@ def _validate_tripwires(
             errors.append(f"Field 'tripwires[{i}]' must be an object")
             continue
 
-        action = item.get("action")  # type: ignore[invalid-argument-type]
-        warning = item.get("warning")  # type: ignore[invalid-argument-type]
+        # Type narrowing: item is dict after isinstance check, cast for .get() typing
+        item_dict = cast(dict[str, Any], item)
+        action = item_dict.get("action")
+        warning = item_dict.get("warning")
 
         if not action:
             errors.append(f"Field 'tripwires[{i}].action' is required")
@@ -193,10 +196,10 @@ def validate_agent_doc_frontmatter(
 
     # At this point, validation has ensured title is str and read_when is list[str]
     assert isinstance(title, str)
-    assert isinstance(read_when, list)
+    assert isinstance(read_when, list) and all(isinstance(x, str) for x in read_when)
     return AgentDocFrontmatter(
         title=title,
-        read_when=read_when,  # type: ignore[invalid-argument-type]
+        read_when=cast(list[str], read_when),
         tripwires=tripwires,
     ), []
 

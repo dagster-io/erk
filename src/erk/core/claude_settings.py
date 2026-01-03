@@ -7,8 +7,10 @@ specifically for managing permissions in the repo's .claude/settings.json.
 import json
 import os
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 # The permission pattern that allows Claude to run erk commands without prompting
 ERK_PERMISSION = "Bash(erk:*)"
@@ -61,7 +63,7 @@ def has_erk_permission(settings: dict) -> bool:
     return ERK_PERMISSION in allow_list
 
 
-def has_user_prompt_hook(settings: dict) -> bool:  # type: ignore[invalid-argument-type]
+def has_user_prompt_hook(settings: Mapping[str, Any]) -> bool:
     """Check if erk UserPromptSubmit hook is configured.
 
     Args:
@@ -79,7 +81,7 @@ def has_user_prompt_hook(settings: dict) -> bool:  # type: ignore[invalid-argume
     return False
 
 
-def has_exit_plan_hook(settings: dict) -> bool:  # type: ignore[invalid-argument-type]
+def has_exit_plan_hook(settings: Mapping[str, Any]) -> bool:
     """Check if erk ExitPlanMode hook is configured.
 
     Args:
@@ -98,7 +100,7 @@ def has_exit_plan_hook(settings: dict) -> bool:  # type: ignore[invalid-argument
     return False
 
 
-def add_erk_hooks(settings: dict) -> dict:  # type: ignore[invalid-argument-type]
+def add_erk_hooks(settings: Mapping[str, Any]) -> dict[str, Any]:
     """Return a new settings dict with erk hooks added.
 
     This is a pure function that doesn't modify the input.

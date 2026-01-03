@@ -69,14 +69,15 @@ def _ensure_branch(branch: str | None) -> str:
     """Ensure branch was detected, exit with error if not."""
     if branch is None:
         exit_with_error("branch_detection_failed", "Could not determine current branch")
-    return branch  # type: ignore[invalid-return-type]
+    assert branch is not None  # Type narrowing after NoReturn
+    return branch
 
 
 def _ensure_pr_result(
     pr_result: PRDetails | PRNotFound,
     *,
-    branch: str | None = None,
-    pr_number: int | None = None,
+    branch: str | None,
+    pr_number: int | None,
 ) -> PRDetails:
     """Ensure PR lookup succeeded, exit with appropriate error if not."""
     if isinstance(pr_result, PRNotFound):
@@ -84,7 +85,8 @@ def _ensure_pr_result(
             exit_with_error("no_pr_for_branch", f"No PR found for branch '{branch}'")
         else:
             exit_with_error("pr_not_found", f"PR #{pr_number} not found")
-    return pr_result  # type: ignore[invalid-return-type]
+    assert not isinstance(pr_result, PRNotFound)  # Type narrowing after NoReturn
+    return pr_result
 
 
 def _format_thread_for_json(thread: PRReviewThread) -> ReviewThreadDict:
@@ -128,9 +130,11 @@ def get_pr_review_comments(ctx: click.Context, pr: int | None, include_resolved:
     # Get PR details - either from current branch or specified PR number
     if pr is None:
         branch = _ensure_branch(get_current_branch(ctx))
-        pr_result = _ensure_pr_result(github.get_pr_for_branch(repo_root, branch), branch=branch)
+        pr_result = _ensure_pr_result(
+            github.get_pr_for_branch(repo_root, branch), branch=branch, pr_number=None
+        )
     else:
-        pr_result = _ensure_pr_result(github.get_pr(repo_root, pr), pr_number=pr)
+        pr_result = _ensure_pr_result(github.get_pr(repo_root, pr), branch=None, pr_number=pr)
 
     # Fetch review threads
     try:

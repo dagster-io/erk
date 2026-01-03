@@ -1,6 +1,7 @@
 """List artifacts installed in the project."""
 
 from pathlib import Path
+from typing import cast
 
 import click
 
@@ -44,7 +45,8 @@ def list_cmd(artifact_type: str | None, verbose: bool) -> None:
 
     # Filter by type if specified
     if artifact_type is not None:
-        typed_filter: ArtifactType = artifact_type  # type: ignore[assignment]
+        assert artifact_type in ("skill", "command", "agent", "workflow", "hook")
+        typed_filter = cast(ArtifactType, artifact_type)
         artifacts = [a for a in artifacts if a.artifact_type == typed_filter]
 
     if not artifacts:
