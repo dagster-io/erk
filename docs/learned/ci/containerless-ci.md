@@ -1,6 +1,6 @@
 ---
 title: Container-less CI with Native Tool Installation
-read_when:                        
+read_when:
   - Setting up Claude Code in GitHub Actions without containers
   - Comparing container vs container-less CI approaches
   - Choosing between container and container-less CI approaches
