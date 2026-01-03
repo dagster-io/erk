@@ -27,9 +27,7 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Install Claude Code
-        run: |
-          curl -fsSL https://claude.ai/install.sh | bash
-          echo "$HOME/.claude/local/bin" >> $GITHUB_PATH
+        uses: ./.github/actions/setup-claude-code
 
       - name: Install erk
         run: uv tool install --from . --with ./packages/erk-shared erk
