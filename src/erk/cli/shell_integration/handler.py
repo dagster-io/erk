@@ -55,9 +55,6 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "br co": ["branch", "checkout"],
     "branch land": ["branch", "land"],
     "br land": ["branch", "land"],
-    # Pool subcommands
-    "pool checkout": ["pool", "checkout"],
-    "pool co": ["pool", "checkout"],
 }
 
 
