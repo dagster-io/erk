@@ -11,6 +11,7 @@ from erk.core.planner.types import RegisteredPlanner
 
 def _find_codespace_by_display_name(display_name: str) -> dict | None:
     """Find a codespace by its display name."""
+    # GH-API-AUDIT: REST - GET user/codespaces
     result = subprocess.run(
         ["gh", "codespace", "list", "--json", "name,repository,displayName"],
         capture_output=True,
@@ -79,7 +80,7 @@ def create_planner(
         click.echo(f"Error: A planner named '{name}' already exists.", err=True)
         raise SystemExit(1)
 
-    # Build the gh command
+    # GH-API-AUDIT: REST - POST user/codespaces
     cmd = ["gh", "codespace", "create"]
 
     if repo:
