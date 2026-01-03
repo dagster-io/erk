@@ -2,7 +2,7 @@
 
 import shutil
 from collections.abc import Callable
-from typing import TypeVar
+from typing import Any, TypeVar, cast
 
 import click
 
@@ -166,7 +166,7 @@ class ErkCommandGroup(click.Group):
         if ctx.obj is not None:
             config = getattr(ctx.obj, "global_config", None)
             if config is not None and getattr(config, "show_hidden_commands", False):
-                ctx.show_hidden = True  # type: ignore[attr-defined]
+                cast(Any, ctx).show_hidden = True
             return
 
         # Otherwise try to load config directly from disk

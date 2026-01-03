@@ -6,7 +6,9 @@ re-exported here for backwards compatibility.
 """
 
 import shutil
+from collections.abc import MutableMapping
 from pathlib import Path
+from typing import Any, cast
 
 import click
 import tomlkit
@@ -367,7 +369,8 @@ def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None
 
     # Ensure [tool] section exists
     if "tool" not in doc:
-        doc["tool"] = tomlkit.table()  # type: ignore[index]
+        assert isinstance(doc, MutableMapping), f"Expected MutableMapping, got {type(doc)}"
+        cast(dict[str, Any], doc)["tool"] = tomlkit.table()
 
     # Ensure [tool.erk] section exists
     if "erk" not in doc["tool"]:  # type: ignore[operator]

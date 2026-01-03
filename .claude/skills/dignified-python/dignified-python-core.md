@@ -653,6 +653,72 @@ def __len__(self) -> int:
 
 ---
 
+## Using `typing.cast()`
+
+### Core Rule
+
+**ALWAYS verify `cast()` with a runtime assertion, unless there's a documented reason not to.**
+
+`typing.cast()` is a compile-time only construct—it tells the type checker to trust you but performs no runtime verification. If your assumption is wrong, you'll get silent misbehavior instead of a clear error.
+
+### Required Pattern
+
+```python
+from collections.abc import MutableMapping
+from typing import Any, cast
+
+# ✅ CORRECT: Runtime assertion before cast
+assert isinstance(doc, MutableMapping), f"Expected MutableMapping, got {type(doc)}"
+cast(dict[str, Any], doc)["key"] = value
+
+# ✅ CORRECT: Alternative with hasattr for duck typing
+assert hasattr(obj, '__setitem__'), f"Expected subscriptable, got {type(obj)}"
+cast(dict[str, Any], obj)["key"] = value
+```
+
+### Anti-Pattern
+
+```python
+# ❌ WRONG: Cast without runtime verification
+cast(dict[str, Any], doc)["key"] = value  # If doc isn't a dict-like, silent failure
+```
+
+### When to Skip Runtime Verification
+
+Skip the assertion only when you have **documented proof** that the cast is always valid:
+
+1. **Immediately after a type guard**: The check was just performed
+
+   ```python
+   if isinstance(value, str):
+       # No assertion needed - we just checked
+       result = cast(str, value).upper()
+   ```
+
+2. **API contract guarantee**: The library documentation guarantees the type
+
+   ```python
+   # tomlkit.document() always returns TOMLDocument which is a MutableMapping
+   # (documented in tomlkit's API, verified by their test suite)
+   ```
+
+3. **Performance-critical hot path**: Add a comment explaining why
+   ```python
+   # Skip assertion: called 10M times/sec, isinstance adds 15% overhead
+   # Type invariant maintained by _validate_input() at entry point
+   cast(int, cached_value)
+   ```
+
+In cases 2 and 3, add a comment explaining why the assertion is omitted.
+
+### Why This Matters
+
+- **Silent bugs are worse than loud bugs**: An assertion failure gives you a stack trace and clear error message
+- **Documentation**: The assertion documents your assumption for future readers
+- **Defense in depth**: Third-party libraries can change behavior between versions
+
+---
+
 ## Anti-Patterns
 
 ### Preserving Unnecessary Backwards Compatibility
@@ -976,6 +1042,14 @@ Benefits:
 - [ ] Did I check `.exists()` before `.is_relative_to()`?
 - [ ] Am I using `pathlib.Path`, not `os.path`?
 - [ ] Did I specify `encoding="utf-8"`?
+
+### Before using `typing.cast()`:
+
+- [ ] Have I added a runtime assertion to verify the cast?
+- [ ] If skipping the assertion, is there documented proof the cast is always valid?
+- [ ] If skipping for performance, have I documented the measured overhead?
+
+**Default: Always add runtime assertion before cast**
 
 ### Before preserving backwards compatibility:
 
