@@ -86,6 +86,7 @@ def discover_repo_or_sentinel(
     repo_name = main_repo_root.name
     repo_dir = erk_root / "repos" / repo_name
     worktrees_dir = repo_dir / "worktrees"
+    pool_json_path = repo_dir / "pool.json"
 
     # Extract GitHub identity from remote URL
     repo_id: GitHubRepoId | None = None
@@ -103,6 +104,7 @@ def discover_repo_or_sentinel(
         repo_name=repo_name,
         repo_dir=repo_dir,
         worktrees_dir=worktrees_dir,
+        pool_json_path=pool_json_path,
         github=repo_id,
     )
 

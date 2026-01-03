@@ -127,11 +127,13 @@ class ErkIsolatedFsEnv:
         self.erk_root = erk_root
         self.script_writer = RealScriptWriter()
         self._linked_worktrees: dict[str, Path] = {}  # Track branch -> worktree path
+        repo_dir = erk_root / root_worktree.name
         self._repo = RepoContext(
             root=root_worktree,
             repo_name=root_worktree.name,
-            repo_dir=erk_root / root_worktree.name,
-            worktrees_dir=erk_root / root_worktree.name / "worktrees",
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
             github=GitHubRepoId(owner="owner", repo="repo"),
         )
 
@@ -680,6 +682,7 @@ class ErkInMemEnv:
             repo_name=cwd.name,
             repo_dir=repo_dir,
             worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
             github=GitHubRepoId(owner="owner", repo="repo"),
         )
 

@@ -30,6 +30,7 @@ def test_rename_successful() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
         test_ctx = env.build_context(
             git=git_ops,
@@ -79,6 +80,7 @@ def test_rename_new_name_already_exists() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
         test_ctx = env.build_context(
             git=git_ops,
@@ -110,6 +112,7 @@ def test_rename_with_graphite_enabled() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
         test_ctx = env.build_context(
             use_graphite=True,
@@ -143,6 +146,7 @@ def test_rename_dry_run() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
         test_ctx = env.build_context(
             git=git_ops,

@@ -32,12 +32,14 @@ def make_test_repo_context(
     """
     main_repo = main_repo_root if main_repo_root is not None else repo_root
     erk = erk_root if erk_root is not None else repo_root.parent / "erks"
+    repo_dir = erk / "repos" / "test-repo"
     return RepoContext(
         root=repo_root,
         main_repo_root=main_repo,
         repo_name="test-repo",
-        repo_dir=erk / "repos" / "test-repo",
-        worktrees_dir=erk / "repos" / "test-repo" / "worktrees",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
     )
 
 

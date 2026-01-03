@@ -107,11 +107,13 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     else:
         repo_root = Path(result.stdout.strip())
         repo_info = get_repo_info(git, repo_root)
+        repo_dir = Path.home() / ".erk" / "repos" / repo_root.name
         repo = RepoContext(
             root=repo_root,
             repo_name=repo_root.name,
-            repo_dir=Path.home() / ".erk" / "repos" / repo_root.name,
-            worktrees_dir=Path.home() / ".erk" / "repos" / repo_root.name / "worktrees",
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
         )
 
     # Use fake implementations for erk-specific services that erk-kits doesn't need

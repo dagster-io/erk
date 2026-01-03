@@ -39,6 +39,7 @@ def test_checkout_succeeds_without_graphite() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # use_graphite=False is the default
@@ -86,6 +87,7 @@ def test_checkout_does_not_call_ensure_graphite_tracking() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=False)
@@ -125,6 +127,7 @@ def test_checkout_auto_creates_worktree_without_graphite() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=False)
@@ -166,6 +169,7 @@ def test_checkout_no_graphite_errors_in_output() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=False)
@@ -208,6 +212,7 @@ def test_checkout_alias_works_without_graphite() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=False)

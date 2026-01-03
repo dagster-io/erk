@@ -96,11 +96,13 @@ def context_for_test(
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
+    repo_dir = Path("/fake/erk/repos") / resolved_repo_root.name
     repo = RepoContext(
         root=resolved_repo_root,
         repo_name=resolved_repo_root.name,
-        repo_dir=Path("/fake/erk/repos") / resolved_repo_root.name,
-        worktrees_dir=Path("/fake/erk/repos") / resolved_repo_root.name / "worktrees",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
     )
 
     fake_time = FakeTime()

@@ -140,6 +140,7 @@ def test_for_test_factory_accepts_trunk_branch() -> None:
             repo_name="repo",
             repo_dir=Path("/repo/.erks"),
             worktrees_dir=Path("/repo/.erks") / "worktrees",
+            pool_json_path=Path("/repo/.erks") / "pool.json",
         ),
     )
 

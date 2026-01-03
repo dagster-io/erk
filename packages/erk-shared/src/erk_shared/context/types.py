@@ -37,6 +37,7 @@ class RepoContext:
     repo_name: str
     repo_dir: Path  # ~/.erk/repos/<repo-name>
     worktrees_dir: Path  # ~/.erk/repos/<repo-name>/worktrees
+    pool_json_path: Path  # ~/.erk/repos/<repo-name>/pool.json
     main_repo_root: Path | None = None  # Defaults to root for backwards compatibility
     github: GitHubRepoId | None = None  # None if not a GitHub repo or no remote
 

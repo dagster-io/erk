@@ -45,6 +45,7 @@ def test_checkout_to_branch_in_single_worktree() -> None:
             repo_name="repo",
             repo_dir=env.erk_root / "repo",
             worktrees_dir=env.erk_root / "repo" / "worktrees",
+            pool_json_path=env.erk_root / "repo" / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -96,6 +97,7 @@ def test_checkout_to_branch_not_found() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -135,6 +137,7 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -204,6 +207,7 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -252,6 +256,7 @@ def test_checkout_works_without_graphite() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # Graphite is NOT enabled - checkout should still work
@@ -301,6 +306,7 @@ def test_checkout_already_on_target_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # CRITICAL: Set cwd to feature_wt to simulate already being in target location
@@ -362,6 +368,7 @@ def test_checkout_succeeds_when_branch_exactly_checked_out() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -414,6 +421,7 @@ def test_checkout_with_multiple_worktrees_same_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -457,6 +465,7 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -521,6 +530,7 @@ def test_checkout_fails_when_branch_not_on_origin() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -571,6 +581,7 @@ def test_checkout_message_when_switching_worktrees() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir.parent,
             worktrees_dir=work_dir,
+            pool_json_path=work_dir.parent / "pool.json",
         )
 
         # Build context with cwd=env.cwd (root worktree)
@@ -642,6 +653,7 @@ def test_checkout_trunk_with_dirty_root_errors() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -692,6 +704,7 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # use_graphite=True is required for Graphite tracking behavior
@@ -751,6 +764,7 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # use_graphite=True is required for Graphite tracking prompt
@@ -806,6 +820,7 @@ def test_checkout_skips_tracking_in_script_mode() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # use_graphite=True to test that script mode skips tracking prompt
@@ -870,6 +885,7 @@ def test_checkout_does_not_track_already_tracked_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo)
@@ -924,6 +940,7 @@ def test_checkout_does_not_track_trunk_branch() -> None:
             repo_name=env.cwd.name,
             repo_dir=work_dir,
             worktrees_dir=work_dir / "worktrees",
+            pool_json_path=work_dir / "pool.json",
         )
 
         # Set cwd to feature_wt to simulate being in that worktree
