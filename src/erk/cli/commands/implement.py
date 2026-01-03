@@ -479,10 +479,6 @@ def _prepare_plan_source_from_issue(
     for warning in setup.warnings:
         user_output(click.style("Warning: ", fg="yellow") + warning)
 
-    # Create branch directly via git
-    ctx.git.create_branch(repo_root, setup.branch_name, base_branch)
-    ctx.feedback.info(f"Created branch: {setup.branch_name}")
-
     dry_run_desc = f"Would create worktree from issue #{issue_number}\n  Title: {plan.title}"
 
     plan_source = PlanSource(
@@ -491,10 +487,14 @@ def _prepare_plan_source_from_issue(
         dry_run_description=dry_run_desc,
     )
 
+    # Check if the branch already exists locally
+    local_branches = ctx.git.list_local_branches(repo_root)
+    branch_already_exists = setup.branch_name in local_branches
+
     return IssuePlanSource(
         plan_source=plan_source,
         branch_name=setup.branch_name,
-        already_existed=False,  # Always new branch since we create it directly
+        already_existed=branch_already_exists,
     )
 
 
@@ -752,12 +752,16 @@ def _create_worktree_with_plan_content(
     # Calculate worktree path
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 
-    # For linked branches, we use the existing branch; for others, validate it doesn't exist
-    use_existing_branch = linked_branch_name is not None
+    # Check if linked branch already exists locally
+    # (for issue-based worktrees, the branch may or may not exist yet)
+    local_branches = ctx.git.list_local_branches(repo_root)
+    if linked_branch_name:
+        use_existing_branch = linked_branch_name in local_branches
+    else:
+        use_existing_branch = False
 
     if not use_existing_branch:
         # Check for existing worktree and branch
-        local_branches = ctx.git.list_local_branches(repo_root)
         branch_exists = branch in local_branches
         wt_exists = ctx.git.path_exists(wt_path)
 
