@@ -378,7 +378,7 @@ def stream_fix_conflicts(
 ) -> FixConflictsResult:
     """Stream fix-conflicts command via Claude executor with live feedback.
 
-    Handles the /erk:merge-conflicts-fix command execution with:
+    Handles the /erk:fix-conflicts command execution with:
     - Live output streaming with visual feedback
     - Semantic conflict detection (AskUserQuestion)
     - Deduped spinner updates
@@ -398,11 +398,11 @@ def stream_fix_conflicts(
     start_time = time.time()
 
     # Print start marker with bold styling
-    click.echo(click.style("--- /erk:merge-conflicts-fix ---", bold=True))
+    click.echo(click.style("--- /erk:fix-conflicts ---", bold=True))
     click.echo("")
 
     for event in executor.execute_command_streaming(
-        command="/erk:merge-conflicts-fix",
+        command="/erk:fix-conflicts",
         worktree_path=worktree_path,
         dangerous=True,  # Conflict resolution modifies git state
     ):
@@ -426,7 +426,7 @@ def stream_fix_conflicts(
                     click.echo("Claude needs your input to resolve this conflict.")
                     click.echo("Run conflict resolution interactively:")
                     click.echo("")
-                    click.echo(click.style("    claude /erk:merge-conflicts-fix", fg="cyan"))
+                    click.echo(click.style("    claude /erk:fix-conflicts", fg="cyan"))
                     click.echo("")
                     return FixConflictsResult(
                         success=False,
@@ -462,7 +462,7 @@ def stream_fix_conflicts(
         success = False
         error_message = (
             "Claude completed without producing any output - "
-            "check hooks or run 'claude /erk:merge-conflicts-fix' directly to debug"
+            "check hooks or run 'claude /erk:fix-conflicts' directly to debug"
         )
         click.echo(click.style(f"   ⚠️  {error_message}", fg="yellow"))
 

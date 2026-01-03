@@ -1,7 +1,7 @@
 """Fix merge conflicts with AI-powered resolution.
 
 Uses Claude to resolve merge conflicts on the current branch without
-any Graphite stack manipulation. Invokes the /erk:merge-conflicts-fix
+any Graphite stack manipulation. Invokes the /erk:fix-conflicts
 Claude slash command.
 """
 

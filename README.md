@@ -137,7 +137,7 @@ Or from Claude Code: `/erk:auto-restack`
 To fix merge conflicts during a rebase:
 
 ```
-/erk:merge-conflicts-fix
+/erk:fix-conflicts
 ```
 
 ## Common Workflows
@@ -149,7 +149,7 @@ When working with stacked PRs, rebasing is a frequent operation. `erk pr auto-re
 **What it does:**
 
 1. Runs `gt restack` to rebase your stack onto the latest trunk
-2. If conflicts occur, launches Claude Code with the `/erk:merge-conflicts-fix` command
+2. If conflicts occur, launches Claude Code with the `/erk:fix-conflicts` command
 3. After resolution, automatically continues the restack process
 4. Repeats until the entire stack is cleanly rebased
 

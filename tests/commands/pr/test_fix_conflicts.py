@@ -35,7 +35,7 @@ def test_pr_fix_conflicts_success() -> None:
         # Claude should be invoked for conflict resolution
         assert len(claude_executor.executed_commands) == 1
         command, _, dangerous_flag, _, _ = claude_executor.executed_commands[0]
-        assert command == "/erk:merge-conflicts-fix"
+        assert command == "/erk:fix-conflicts"
         assert dangerous_flag is True
 
 
@@ -180,7 +180,7 @@ def test_pr_fix_conflicts_aborts_on_semantic_conflict() -> None:
         assert result.exit_code != 0
         assert "Semantic conflict detected" in result.output
         assert "interactive resolution" in result.output
-        assert "claude /erk:merge-conflicts-fix" in result.output
+        assert "claude /erk:fix-conflicts" in result.output
 
 
 def test_pr_fix_conflicts_fails_on_command_error() -> None:
