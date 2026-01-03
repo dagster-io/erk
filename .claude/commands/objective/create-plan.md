@@ -110,20 +110,42 @@ Enter plan mode to create the implementation plan:
 - Files to modify
 - Test requirements
 
-### Step 8: Guide to Save Plan
+### Step 8: Save Plan with Objective Link
 
-After the plan is approved in plan mode, remind the user:
+**CRITICAL**: When the `exit-plan-mode-hook` blocks and asks about saving, it will suggest using `/erk:plan-save`. **IGNORE that generic instruction.** This workflow requires the objective-aware save command below.
 
+After the plan is approved in plan mode, save it with the objective link:
+
+```bash
+erk exec plan-save-to-issue --session-id=$CLAUDE_CODE_SESSION_ID \
+  --objective-issue=<objective-number> --format=display
 ```
-Plan ready! To save this as an erk-plan issue for implementation:
 
-  /erk:plan-save
+Replace `<objective-number>` with the objective issue number from Step 2.
 
 This will:
+
 - Create a GitHub issue with the erk-plan label
-- Link it to the parent objective
-- Generate a plan branch for implementation
+- Link it to the parent objective (stored in metadata)
+- Enable objective-aware landing via `/erk:land`
+
+### Step 9: Verify Objective Link
+
+After saving, verify the issue has the objective link:
+
+```bash
+gh issue view <new-issue-number> --json body | grep -q "objective_issue"
 ```
+
+**If verification fails** (objective_issue not found in body):
+
+The plan was saved without the objective link. Fix it by updating the issue body:
+
+1. Get current body: `gh issue view <issue-number> --json body -q '.body'`
+2. Add `objective_issue: <objective-number>` to the YAML metadata block
+3. Update: `gh issue edit <issue-number> --body "..."`
+
+Or simply close the incorrectly-created issue and re-run Step 8 with the correct command.
 
 ---
 
@@ -139,13 +161,14 @@ This will:
 
 ## Error Cases
 
-| Scenario                | Action                                     |
-| ----------------------- | ------------------------------------------ |
-| Issue not found         | Report error and exit                      |
-| Issue is erk-plan       | Redirect to `/erk:plan-implement`          |
-| No pending steps        | Report all steps complete, suggest closing |
-| Invalid argument format | Prompt for valid issue number              |
-| Roadmap not parseable   | Ask user to specify which step to plan     |
+| Scenario                                | Action                                          |
+| --------------------------------------- | ----------------------------------------------- |
+| Issue not found                         | Report error and exit                           |
+| Issue is erk-plan                       | Redirect to `/erk:plan-implement`               |
+| No pending steps                        | Report all steps complete, suggest closing      |
+| Invalid argument format                 | Prompt for valid issue number                   |
+| Roadmap not parseable                   | Ask user to specify which step to plan          |
+| Verification fails (no objective_issue) | Fix issue body or recreate with correct command |
 
 ---
 

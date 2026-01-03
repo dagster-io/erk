@@ -33,6 +33,10 @@ _LABEL_ERK_EXTRACTION = "erk-extraction"
 _LABEL_ERK_EXTRACTION_DESC = "Documentation extraction plan"
 _LABEL_ERK_EXTRACTION_COLOR = "D93F0B"
 
+_LABEL_ERK_OBJECTIVE = "erk-objective"
+_LABEL_ERK_OBJECTIVE_DESC = "Multi-phase objective with roadmap"
+_LABEL_ERK_OBJECTIVE_COLOR = "5319E7"
+
 
 @dataclass(frozen=True)
 class CreatePlanIssueResult:
@@ -141,9 +145,10 @@ def create_plan_issue(
         else:
             title_suffix = "[erk-plan]"
 
+    # Build issue title
     issue_title = f"{title} {title_suffix}"
 
-    # Prepare metadata body
+    # Standard and extraction plans: metadata body + plan content in comment
     created_at = datetime.now(UTC).isoformat()
     issue_body = format_plan_header_body(
         created_at=created_at,
@@ -215,6 +220,97 @@ def create_plan_issue(
     )
 
 
+def create_objective_issue(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    plan_content: str,
+    *,
+    title: str | None,
+    extra_labels: list[str] | None,
+) -> CreatePlanIssueResult:
+    """Create objective issue with erk-plan + erk-objective labels.
+
+    Objectives are roadmaps, not implementation plans. They have:
+    - Labels: erk-plan + erk-objective (like extraction has erk-plan + erk-extraction)
+    - Plan content directly in body (no metadata block)
+    - No comment (content is in body)
+    - No title suffix
+    - No commands section
+
+    Args:
+        github_issues: GitHubIssues interface (real, fake, or dry-run)
+        repo_root: Repository root directory
+        plan_content: The full plan markdown content
+        title: Optional title (extracted from H1 if None)
+        extra_labels: Additional labels beyond erk-plan and erk-objective
+
+    Returns:
+        CreatePlanIssueResult with success status and details
+
+    Note:
+        Does NOT raise exceptions. All errors returned in result.
+    """
+    # Step 1: Validate authentication (username not used in objective body but validates gh CLI)
+    if github_issues.get_current_username() is None:
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=None,
+            issue_url=None,
+            title="",
+            error="Could not get GitHub username (gh CLI not authenticated?)",
+        )
+
+    # Step 2: Extract or use provided title
+    if title is None:
+        title = extract_title_from_plan(plan_content)
+
+    # Step 3: Build labels - objectives use erk-plan + erk-objective (like extraction)
+    labels = [_LABEL_ERK_PLAN, _LABEL_ERK_OBJECTIVE]
+
+    # Add any extra labels
+    if extra_labels:
+        for label in extra_labels:
+            if label not in labels:
+                labels.append(label)
+
+    # Ensure labels exist
+    label_errors = _ensure_labels_exist(github_issues, repo_root, labels, None)
+    if label_errors:
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=None,
+            issue_url=None,
+            title=title,
+            error=label_errors,
+        )
+
+    # Step 4: Create issue with plan content directly in body (no metadata)
+    try:
+        result = github_issues.create_issue(
+            repo_root=repo_root,
+            title=title,  # No suffix for objectives
+            body=plan_content.strip(),
+            labels=labels,
+        )
+    except RuntimeError as e:
+        return CreatePlanIssueResult(
+            success=False,
+            issue_number=None,
+            issue_url=None,
+            title=title,
+            error=f"Failed to create GitHub issue: {e}",
+        )
+
+    # No comment, no commands section for objectives
+    return CreatePlanIssueResult(
+        success=True,
+        issue_number=result.number,
+        issue_url=result.url,
+        title=title,
+        error=None,
+    )
+
+
 def _ensure_labels_exist(
     github_issues: GitHubIssues,
     repo_root: Path,
@@ -247,6 +343,13 @@ def _ensure_labels_exist(
                     label=_LABEL_ERK_EXTRACTION,
                     description=_LABEL_ERK_EXTRACTION_DESC,
                     color=_LABEL_ERK_EXTRACTION_COLOR,
+                )
+            elif label == _LABEL_ERK_OBJECTIVE:
+                github_issues.ensure_label_exists(
+                    repo_root=repo_root,
+                    label=_LABEL_ERK_OBJECTIVE,
+                    description=_LABEL_ERK_OBJECTIVE_DESC,
+                    color=_LABEL_ERK_OBJECTIVE_COLOR,
                 )
             # Extra labels are assumed to already exist
     except RuntimeError as e:
