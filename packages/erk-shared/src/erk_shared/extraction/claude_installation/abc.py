@@ -180,3 +180,109 @@ class ClaudeInstallation(ABC):
             Parsed JSON as dict, or empty dict if file doesn't exist or is invalid
         """
         ...
+
+    # --- Plans directory operations ---
+
+    @abstractmethod
+    def get_plans_dir_path(self) -> Path:
+        """Return path to Claude plans directory (~/.claude/plans/)."""
+        ...
+
+    @abstractmethod
+    def plans_dir_exists(self) -> bool:
+        """Check if plans directory exists."""
+        ...
+
+    @abstractmethod
+    def find_plan_by_slug(self, slug: str) -> Path | None:
+        """Find a plan file by its slug (filename without .md extension).
+
+        Args:
+            slug: Plan slug (filename without .md extension)
+
+        Returns:
+            Path to plan file if found, None otherwise
+        """
+        ...
+
+    @abstractmethod
+    def list_plan_files(self) -> list[tuple[Path, float]]:
+        """List all plan files with their mtimes, sorted newest-first.
+
+        Returns:
+            List of (path, mtime) tuples sorted by mtime descending
+        """
+        ...
+
+    # --- Session-to-slug correlation ---
+
+    @abstractmethod
+    def extract_slugs_from_session(self, session_id: str, cwd_hint: Path | None) -> list[str]:
+        """Extract plan slugs from session log entries.
+
+        Searches session logs for entries with the given session ID
+        and collects any slug fields found. Slugs indicate plan mode
+        was entered and correspond to plan filenames.
+
+        Args:
+            session_id: The session ID to search for
+            cwd_hint: Optional working directory for faster lookup
+
+        Returns:
+            List of slugs in occurrence order (last = most recent)
+        """
+        ...
+
+    @abstractmethod
+    def extract_planning_agent_ids(self, session_id: str, cwd_hint: Path | None) -> list[str]:
+        """Extract agent IDs for Task invocations with subagent_type='Plan'.
+
+        Searches session logs for Task tool invocations where subagent_type is "Plan",
+        then correlates with tool_result entries to extract the agentId.
+
+        Args:
+            session_id: The session ID to search for
+            cwd_hint: Optional working directory for faster lookup
+
+        Returns:
+            List of agent IDs in format ["agent-<id>", ...]
+        """
+        ...
+
+    # --- Projects directory operations ---
+
+    @abstractmethod
+    def get_projects_dir_path(self) -> Path:
+        """Return path to Claude projects directory (~/.claude/projects/)."""
+        ...
+
+    @abstractmethod
+    def projects_dir_exists(self) -> bool:
+        """Check if projects directory exists."""
+        ...
+
+    @abstractmethod
+    def encode_path_to_project_folder(self, path: Path) -> str:
+        """Encode filesystem path to Claude project folder name.
+
+        Applies deterministic encoding: replace '/' and '.' with '-'.
+
+        Args:
+            path: Absolute filesystem path
+
+        Returns:
+            Encoded project folder name
+        """
+        ...
+
+    @abstractmethod
+    def find_project_info(self, path: Path) -> tuple[Path, list[str], str | None] | None:
+        """Find project directory, session logs, and latest session ID for a path.
+
+        Args:
+            path: Filesystem path to find project for
+
+        Returns:
+            (project_dir, session_log_names, latest_session_id) or None if not found
+        """
+        ...

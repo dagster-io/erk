@@ -61,6 +61,8 @@ from pathlib import Path
 
 import click
 
+from erk_shared.context.helpers import require_claude_installation
+
 
 @dataclass(frozen=True)
 class ProjectInfo:
@@ -84,96 +86,6 @@ class ProjectError:
     context: dict[str, str]
 
 
-def encode_path_to_project_folder(path: Path) -> str:
-    """Encode filesystem path to Claude Code project folder name.
-
-    Claude Code uses a simple encoding scheme:
-    - Replace "/" with "-"
-    - Replace "." with "-"
-
-    This creates deterministic folder names in ~/.claude/projects/.
-
-    Args:
-        path: Filesystem path to encode
-
-    Returns:
-        Encoded path suitable for project folder name
-
-    Examples:
-        >>> encode_path_to_project_folder(Path("/Users/foo/bar"))
-        '-Users-foo-bar'
-        >>> encode_path_to_project_folder(Path("/Users/foo/.config"))
-        '-Users-foo--config'
-    """
-    return str(path).replace("/", "-").replace(".", "-")
-
-
-def find_project_info(path: Path) -> ProjectInfo | ProjectError:
-    """Find Claude Code project directory and metadata for given path.
-
-    Args:
-        path: Filesystem path to find project for
-
-    Returns:
-        ProjectInfo on success, ProjectError if not found
-    """
-    projects_dir = Path.home() / ".claude" / "projects"
-    if not projects_dir.exists():
-        return ProjectError(
-            success=False,
-            error="Claude Code projects directory not found",
-            help="~/.claude/projects/ does not exist. Is Claude Code installed?",
-            context={
-                "path": str(path),
-                "projects_dir": str(projects_dir),
-            },
-        )
-
-    # Encode path and find project directory
-    encoded_path = encode_path_to_project_folder(path)
-    project_dir = projects_dir / encoded_path
-
-    if not project_dir.exists():
-        return ProjectError(
-            success=False,
-            error="Project directory not found",
-            help=f"No Claude Code project found for {path}",
-            context={
-                "path": str(path),
-                "encoded_path": encoded_path,
-                "expected_dir": str(project_dir),
-            },
-        )
-
-    # Find all session logs (main sessions and agent logs)
-    session_logs = []
-    latest_session: tuple[str, float] | None = None
-
-    for log_file in project_dir.iterdir():
-        if log_file.is_file() and log_file.suffix == ".jsonl":
-            session_logs.append(log_file.name)
-
-            # Track latest main session (not agent logs)
-            if not log_file.name.startswith("agent-"):
-                mtime = log_file.stat().st_mtime
-                if latest_session is None or mtime > latest_session[1]:
-                    # Extract session ID (filename without .jsonl)
-                    session_id = log_file.stem
-                    latest_session = (session_id, mtime)
-
-    # Sort logs for consistent output
-    session_logs.sort()
-
-    return ProjectInfo(
-        success=True,
-        project_dir=str(project_dir),
-        cwd=str(path),
-        encoded_path=encoded_path,
-        session_logs=session_logs,
-        latest_session_id=latest_session[0] if latest_session else None,
-    )
-
-
 @click.command(name="find-project-dir")
 @click.option(
     "--path",
@@ -186,22 +98,61 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     is_flag=True,
     help="Output in JSON format",
 )
-def find_project_dir(path: Path | None, json_output: bool) -> None:
+@click.pass_context
+def find_project_dir(ctx: click.Context, path: Path | None, json_output: bool) -> None:
     """Find Claude Code project directory for a filesystem path.
 
     This command maps filesystem paths to Claude Code project directories
     in ~/.claude/projects/ using deterministic encoding rules.
     """
+    claude_installation = require_claude_installation(ctx)
+
     # Default to current directory if no path specified
     if path is None:
         path = Path(os.getcwd())
 
-    # Find project information
-    result = find_project_info(path)
+    # Check if projects directory exists
+    projects_dir = claude_installation.get_projects_dir_path()
+    if not claude_installation.projects_dir_exists():
+        result = ProjectError(
+            success=False,
+            error="Claude Code projects directory not found",
+            help="~/.claude/projects/ does not exist. Is Claude Code installed?",
+            context={
+                "path": str(path),
+                "projects_dir": str(projects_dir),
+            },
+        )
+        click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(1)
+
+    # Use gateway to find project info
+    project_info = claude_installation.find_project_info(path)
+
+    if project_info is None:
+        encoded_path = claude_installation.encode_path_to_project_folder(path)
+        result = ProjectError(
+            success=False,
+            error="Project directory not found",
+            help=f"No Claude Code project found for {path}",
+            context={
+                "path": str(path),
+                "encoded_path": encoded_path,
+                "expected_dir": str(projects_dir / encoded_path),
+            },
+        )
+        click.echo(json.dumps(asdict(result), indent=2))
+        raise SystemExit(1)
+
+    project_dir, session_logs, latest_session_id = project_info
+    result = ProjectInfo(
+        success=True,
+        project_dir=str(project_dir),
+        cwd=str(path),
+        encoded_path=claude_installation.encode_path_to_project_folder(path),
+        session_logs=session_logs,
+        latest_session_id=latest_session_id,
+    )
 
     # Always output JSON (the --json flag is for future extensibility)
     click.echo(json.dumps(asdict(result), indent=2))
-
-    # Exit with error code if not found
-    if isinstance(result, ProjectError):
-        raise SystemExit(1)

@@ -1,5 +1,6 @@
 """In-memory fake implementation of ClaudeInstallation for testing."""
 
+import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -257,3 +258,118 @@ class FakeClaudeInstallation(ClaudeInstallation):
         if self._settings is None:
             return {}
         return dict(self._settings)  # Return copy
+
+    # --- Plans directory operations ---
+
+    def get_plans_dir_path(self) -> Path:
+        """Return fake path to Claude plans directory."""
+        return Path("/fake/.claude/plans")
+
+    def plans_dir_exists(self) -> bool:
+        """Check if plans directory exists (True if any plans configured)."""
+        return len(self._plans) > 0
+
+    def find_plan_by_slug(self, slug: str) -> Path | None:
+        """Find a plan file by its slug from fake data."""
+        if slug not in self._plans:
+            return None
+        # Return synthetic path for testing
+        return self.get_plans_dir_path() / f"{slug}.md"
+
+    def list_plan_files(self) -> list[tuple[Path, float]]:
+        """List all plan files with synthetic mtimes.
+
+        Returns plans in insertion order with synthetic mtimes.
+        """
+        plans_dir = self.get_plans_dir_path()
+        # Assign synthetic mtimes (first plan = oldest, last = newest)
+        plan_list: list[tuple[Path, float]] = []
+        for i, slug in enumerate(self._plans.keys()):
+            plan_list.append((plans_dir / f"{slug}.md", float(i)))
+        # Reverse to return newest-first (like real implementation)
+        plan_list.reverse()
+        return plan_list
+
+    # --- Session-to-slug correlation ---
+
+    def extract_slugs_from_session(self, session_id: str, cwd_hint: Path | None) -> list[str]:
+        """Extract plan slugs from fake session data.
+
+        In fake implementation, returns empty list unless slug data was
+        embedded in the session JSONL content.
+        """
+        _ = cwd_hint  # Not used in fake
+        # Search through all projects for this session and extract slugs
+        for project in self._projects.values():
+            if session_id not in project.sessions:
+                continue
+            # Parse JSONL content to find slug entries
+            session_data = project.sessions[session_id]
+            slugs: list[str] = []
+            seen_slugs: set[str] = set()
+            for line in session_data.content.split("\n"):
+                stripped = line.strip()
+                if not stripped or not stripped.startswith("{"):
+                    continue
+                # Parse JSON and look for slug field
+                entry = json.loads(stripped)
+                if entry.get("sessionId") == session_id:
+                    slug = entry.get("slug")
+                    if slug and slug not in seen_slugs:
+                        slugs.append(slug)
+                        seen_slugs.add(slug)
+            return slugs
+        return []
+
+    def extract_planning_agent_ids(self, session_id: str, cwd_hint: Path | None) -> list[str]:
+        """Extract planning agent IDs from fake session data.
+
+        Returns empty list in fake implementation - tests that need
+        this should provide appropriate session content.
+        """
+        _ = session_id
+        _ = cwd_hint
+        return []
+
+    # --- Projects directory operations ---
+
+    def get_projects_dir_path(self) -> Path:
+        """Return fake path to Claude projects directory."""
+        return Path("/fake/.claude/projects")
+
+    def projects_dir_exists(self) -> bool:
+        """Check if projects directory exists (True if any projects configured)."""
+        return len(self._projects) > 0
+
+    def encode_path_to_project_folder(self, path: Path) -> str:
+        """Encode filesystem path to Claude project folder name."""
+        return str(path).replace("/", "-").replace(".", "-")
+
+    def find_project_info(self, path: Path) -> tuple[Path, list[str], str | None] | None:
+        """Find project info from fake data."""
+        if path not in self._projects:
+            return None
+
+        project = self._projects[path]
+
+        # Build session log names
+        session_logs: list[str] = []
+        latest_session: tuple[str, float] | None = None
+
+        for session_id, data in project.sessions.items():
+            log_name = f"{session_id}.jsonl"
+            session_logs.append(log_name)
+
+            # Track latest main session (not agent logs)
+            if not session_id.startswith("agent-"):
+                if latest_session is None or data.modified_at > latest_session[1]:
+                    latest_session = (session_id, data.modified_at)
+
+        session_logs.sort()
+        latest_session_id = latest_session[0] if latest_session else None
+
+        # Return synthetic project dir path
+        encoded = self.encode_path_to_project_folder(path)
+        project_dir = self.get_projects_dir_path() / encoded
+
+        return (project_dir, session_logs, latest_session_id)

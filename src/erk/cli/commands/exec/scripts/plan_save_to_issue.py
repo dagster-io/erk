@@ -38,7 +38,6 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.extraction.local_plans import extract_slugs_from_session, get_plans_dir
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
@@ -284,10 +283,10 @@ def plan_save_to_issue(
         if plan_file:
             snapshot_path = plan_file
         else:
-            # Look up slug from session to find plan file
-            slugs = extract_slugs_from_session(effective_session_id, cwd_hint=str(cwd))
+            # Look up slug from session to find plan file using gateway
+            slugs = claude_installation.extract_slugs_from_session(effective_session_id, cwd)
             if slugs:
-                snapshot_path = get_plans_dir() / f"{slugs[-1]}.md"
+                snapshot_path = claude_installation.find_plan_by_slug(slugs[-1])
             else:
                 snapshot_path = None
 
@@ -297,6 +296,7 @@ def plan_save_to_issue(
                 plan_file_path=snapshot_path,
                 cwd_hint=str(cwd),
                 repo_root=repo_root,
+                claude_installation=claude_installation,
             )
 
     # Step 10: Output success

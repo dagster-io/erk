@@ -52,7 +52,7 @@ from pathlib import Path
 import click
 
 from erk.hooks.decorators import HookContext, hook_command
-from erk_shared.extraction.local_plans import extract_slugs_from_session
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 
@@ -271,32 +271,29 @@ def _get_incremental_plan_marker_path(session_id: str, repo_root: Path) -> Path:
     return get_scratch_dir(session_id, repo_root=repo_root) / "incremental-plan.marker"
 
 
-def _find_session_plan(session_id: str, repo_root: Path) -> Path | None:
+def _find_session_plan(
+    session_id: str, repo_root: Path, claude_installation: ClaudeInstallation
+) -> Path | None:
     """Find plan file for the given session using slug lookup.
 
     Args:
         session_id: The session ID to search for
         repo_root: Path to the git repository root
+        claude_installation: ClaudeInstallation for accessing plans
 
     Returns:
         Path to plan file if found, None otherwise
     """
-    plans_dir = Path.home() / ".claude" / "plans"
-    if not plans_dir.exists():
+    if not claude_installation.plans_dir_exists():
         return None
 
-    slugs = extract_slugs_from_session(session_id, cwd_hint=str(repo_root))
+    slugs = claude_installation.extract_slugs_from_session(session_id, cwd_hint=repo_root)
     if not slugs:
         return None
 
     # Use most recent slug (last in list)
     slug = slugs[-1]
-    plan_file = plans_dir / f"{slug}.md"
-
-    if plan_file.exists() and plan_file.is_file():
-        return plan_file
-
-    return None
+    return claude_installation.find_plan_by_slug(slug)
 
 
 def _get_current_branch_within_hook() -> str | None:
@@ -320,7 +317,10 @@ def _get_current_branch_within_hook() -> str | None:
 
 
 def _gather_inputs(
-    session_id: str | None, repo_root: Path, github_planning_enabled: bool
+    session_id: str | None,
+    repo_root: Path,
+    github_planning_enabled: bool,
+    claude_installation: ClaudeInstallation,
 ) -> HookInput:
     """Gather all inputs from environment. All I/O happens here.
 
@@ -328,6 +328,7 @@ def _gather_inputs(
         session_id: Claude session ID from hook_ctx, or None if not available.
         repo_root: Path to the git repository root.
         github_planning_enabled: Whether github_planning is enabled in config.
+        claude_installation: ClaudeInstallation for accessing plans.
 
     Returns:
         HookInput with all gathered state.
@@ -345,7 +346,7 @@ def _gather_inputs(
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
     if session_id is not None:
-        plan_file_path = _find_session_plan(session_id, repo_root)
+        plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
 
     # Get current branch (only if we need to show the blocking message)
     current_branch = None
@@ -370,7 +371,12 @@ def _gather_inputs(
     )
 
 
-def _execute_result(result: HookOutput, hook_input: HookInput, repo_root: Path) -> None:
+def _execute_result(
+    result: HookOutput,
+    hook_input: HookInput,
+    repo_root: Path,
+    claude_installation: ClaudeInstallation,
+) -> None:
     """Execute the decision result. All I/O happens here."""
     session_id = hook_input.session_id
 
@@ -391,6 +397,8 @@ def _execute_result(result: HookOutput, hook_input: HookInput, repo_root: Path) 
             session_id=session_id,
             plan_file_path=hook_input.plan_file_path,
             cwd_hint=str(repo_root),
+            repo_root=repo_root,
+            claude_installation=claude_installation,
         )
 
     if result.message:
@@ -418,14 +426,19 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     global_config = ctx.obj.global_config
     github_planning_enabled = global_config.github_planning if global_config is not None else True
 
+    # Get claude_installation from context
+    claude_installation = ctx.obj.claude_installation
+
     # Gather all inputs (I/O layer)
-    hook_input = _gather_inputs(hook_ctx.session_id, hook_ctx.repo_root, github_planning_enabled)
+    hook_input = _gather_inputs(
+        hook_ctx.session_id, hook_ctx.repo_root, github_planning_enabled, claude_installation
+    )
 
     # Pure decision logic (no I/O)
     result = determine_exit_action(hook_input)
 
     # Execute result (I/O layer)
-    _execute_result(result, hook_input, hook_ctx.repo_root)
+    _execute_result(result, hook_input, hook_ctx.repo_root, claude_installation)
 
 
 if __name__ == "__main__":

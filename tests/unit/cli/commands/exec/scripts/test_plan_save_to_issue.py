@@ -7,7 +7,6 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts import plan_save_to_issue as plan_save_to_issue_module
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
     validate_plan_frontmatter,
@@ -397,7 +396,7 @@ steps:
 
 
 def test_plan_save_to_issue_session_id_still_creates_marker(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path,
 ) -> None:
     """Test that --session-id argument still creates marker file even with context disabled."""
     fake_gh = FakeGitHubIssues()
@@ -406,12 +405,8 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
         trunk_branches={tmp_path: "main"},
     )
 
-    # Patch to avoid reading real ~/.claude/projects/
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "extract_slugs_from_session",
-        lambda *args, **kwargs: [],
-    )
+    # FakeClaudeInstallation will return empty slugs by default when no matching
+    # session data is found, so no patching needed
 
     test_session_id = "test-session-12345"
     plan_content = """---
