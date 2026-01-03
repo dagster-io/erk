@@ -101,6 +101,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
@@ -126,6 +127,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
         time=fake_time,
+        erk_installation=FakeErkInstallation(),
         config_store=FakeConfigStore(config=None),
         script_writer=FakeScriptWriter(),
         feedback=FakeUserFeedback(),
@@ -214,6 +216,7 @@ def context_for_test(
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -324,6 +327,7 @@ def context_for_test(
         claude_executor=claude_executor,
         completion=completion,
         time=time,
+        erk_installation=FakeErkInstallation(),
         config_store=config_store,
         script_writer=script_writer,
         feedback=feedback,
@@ -527,6 +531,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # 12. Create session store and prompt executor
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
+    from erk_shared.gateway.erk_installation.real import RealErkInstallation
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
@@ -544,6 +549,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         claude_executor=RealClaudeExecutor(),
         completion=RealCompletion(),
         time=time,
+        erk_installation=RealErkInstallation(),
         config_store=RealConfigStore(),
         script_writer=RealScriptWriter(),
         feedback=feedback,

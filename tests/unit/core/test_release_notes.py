@@ -9,6 +9,7 @@ from erk.core.release_notes import (
     check_for_version_change,
     parse_changelog,
 )
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 
 SAMPLE_CHANGELOG = """\
 # Changelog
@@ -192,66 +193,57 @@ def test_is_upgrade_returns_false_for_downgrade() -> None:
     assert _is_upgrade("0.9.9", "1.0.0") is False
 
 
-@patch("erk.core.release_notes.update_last_seen_version")
-@patch("erk.core.release_notes.get_last_seen_version")
 @patch("erk.core.release_notes.get_current_version")
 def test_check_for_version_change_downgrade_preserves_max_version(
     mock_current: patch,
-    mock_last_seen: patch,
-    mock_update: patch,
 ) -> None:
     """Test that downgrades don't update tracking (preserves max version seen)."""
     mock_current.return_value = "0.2.3"
-    mock_last_seen.return_value = "0.2.4"
+    fake_installation = FakeErkInstallation(last_seen_version="0.2.4")
 
-    changed, releases = check_for_version_change()
+    changed, releases = check_for_version_change(fake_installation)
 
     assert changed is False
     assert releases == []
-    mock_update.assert_not_called()
+    # Verify version was NOT updated (downgrade should preserve max)
+    assert fake_installation.version_updates == []
 
 
-@patch("erk.core.release_notes.update_last_seen_version")
-@patch("erk.core.release_notes.get_last_seen_version")
 @patch("erk.core.release_notes.get_current_version")
 def test_check_for_version_change_same_version_no_update(
     mock_current: patch,
-    mock_last_seen: patch,
-    mock_update: patch,
 ) -> None:
     """Test that same version doesn't update tracking file."""
     mock_current.return_value = "0.2.4"
-    mock_last_seen.return_value = "0.2.4"
+    fake_installation = FakeErkInstallation(last_seen_version="0.2.4")
 
-    changed, releases = check_for_version_change()
+    changed, releases = check_for_version_change(fake_installation)
 
     assert changed is False
     assert releases == []
-    mock_update.assert_not_called()
+    # Verify version was NOT updated (same version)
+    assert fake_installation.version_updates == []
 
 
 @patch("erk.core.release_notes.get_releases")
-@patch("erk.core.release_notes.update_last_seen_version")
-@patch("erk.core.release_notes.get_last_seen_version")
 @patch("erk.core.release_notes.get_current_version")
 def test_check_for_version_change_upgrade_shows_banner(
     mock_current: patch,
-    mock_last_seen: patch,
-    mock_update: patch,
     mock_releases: patch,
 ) -> None:
     """Test that upgrades show banner and update tracking."""
     mock_current.return_value = "0.2.4"
-    mock_last_seen.return_value = "0.2.3"
     mock_releases.return_value = [
         ReleaseEntry(version="Unreleased", date=None, content=""),
         ReleaseEntry(version="0.2.4", date="2025-12-12", content="New feature"),
         ReleaseEntry(version="0.2.3", date="2025-12-11", content="Old feature"),
     ]
+    fake_installation = FakeErkInstallation(last_seen_version="0.2.3")
 
-    changed, releases = check_for_version_change()
+    changed, releases = check_for_version_change(fake_installation)
 
     assert changed is True
     assert len(releases) == 1
     assert releases[0].version == "0.2.4"
-    mock_update.assert_called_once_with("0.2.4")
+    # Verify version was updated via the fake
+    assert fake_installation.version_updates == ["0.2.4"]

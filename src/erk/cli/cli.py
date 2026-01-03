@@ -43,6 +43,7 @@ from erk.core.version_check import (
     get_required_version,
     is_version_mismatch,
 )
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.git.real import RealGit
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
@@ -56,7 +57,8 @@ def _show_version_change_banner() -> None:
     exceptions are logged but don't break the CLI.
     """
     try:
-        changed, releases = check_for_version_change()
+        erk_installation = RealErkInstallation()
+        changed, releases = check_for_version_change(erk_installation)
         if not changed or not releases:
             return
 

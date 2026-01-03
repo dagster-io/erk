@@ -12,6 +12,8 @@ from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 
+from erk_shared.gateway.erk_installation.abc import ErkInstallation
+
 
 @dataclass
 class ReleaseEntry:
@@ -50,16 +52,6 @@ def _changelog_path() -> Path | None:
     return None
 
 
-@cache
-def _last_seen_version_path() -> Path:
-    """Get the path to the last seen version file.
-
-    Returns:
-        Path to ~/.erk/last_seen_version
-    """
-    return Path.home() / ".erk" / "last_seen_version"
-
-
 def get_current_version() -> str:
     """Get the currently installed version of erk.
 
@@ -94,27 +86,26 @@ def _is_upgrade(current: str, last_seen: str) -> bool:
     return _parse_version(current) > _parse_version(last_seen)
 
 
-def get_last_seen_version() -> str | None:
+def get_last_seen_version(erk_installation: ErkInstallation) -> str | None:
     """Get the last version the user was notified about.
+
+    Args:
+        erk_installation: ErkInstallation gateway for accessing ~/.erk/
 
     Returns:
         Version string if tracking file exists, None otherwise
     """
-    path = _last_seen_version_path()
-    if not path.exists():
-        return None
-    return path.read_text(encoding="utf-8").strip()
+    return erk_installation.get_last_seen_version()
 
 
-def update_last_seen_version(version: str) -> None:
+def update_last_seen_version(erk_installation: ErkInstallation, version: str) -> None:
     """Update the last seen version tracking file.
 
     Args:
+        erk_installation: ErkInstallation gateway for accessing ~/.erk/
         version: Version string to record
     """
-    path = _last_seen_version_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(version, encoding="utf-8")
+    erk_installation.update_last_seen_version(version)
 
 
 def parse_changelog(content: str) -> list[ReleaseEntry]:
@@ -221,19 +212,24 @@ def get_release_for_version(version: str) -> ReleaseEntry | None:
     return None
 
 
-def check_for_version_change() -> tuple[bool, list[ReleaseEntry]]:
+def check_for_version_change(
+    erk_installation: ErkInstallation,
+) -> tuple[bool, list[ReleaseEntry]]:
     """Check if the version has changed since last run.
+
+    Args:
+        erk_installation: ErkInstallation gateway for accessing ~/.erk/
 
     Returns:
         Tuple of (changed: bool, new_releases: list[ReleaseEntry])
         where new_releases contains all releases newer than last seen
     """
     current = get_current_version()
-    last_seen = get_last_seen_version()
+    last_seen = get_last_seen_version(erk_installation)
 
     # First run - no notification needed, just update tracking
     if last_seen is None:
-        update_last_seen_version(current)
+        update_last_seen_version(erk_installation, current)
         return (False, [])
 
     # No change
@@ -262,6 +258,6 @@ def check_for_version_change() -> tuple[bool, list[ReleaseEntry]]:
         new_releases.append(release)
 
     # Update tracking file
-    update_last_seen_version(current)
+    update_last_seen_version(erk_installation, current)
 
     return (True, new_releases)

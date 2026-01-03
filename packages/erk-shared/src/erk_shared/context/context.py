@@ -24,6 +24,7 @@ from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
 from erk_shared.gateway.completion import Completion
+from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.shell import Shell
@@ -66,6 +67,7 @@ class ErkContext:
     graphite: Graphite
     wt_stack: WtStack  # Unified worktree+stack operations (Graphite optional)
     time: Time
+    erk_installation: ErkInstallation  # ~/.erk/ installation data
     session_store: ClaudeCodeSessionStore
     plan_store: PlanStore
     prompt_executor: PromptExecutor  # From DotAgentContext

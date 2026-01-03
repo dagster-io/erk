@@ -68,6 +68,7 @@ def context_for_test(
     """
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
@@ -119,6 +120,7 @@ def context_for_test(
         graphite=resolved_graphite,
         wt_stack=resolved_wt_stack,
         time=fake_time,
+        erk_installation=FakeErkInstallation(),
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
