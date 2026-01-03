@@ -1,0 +1,12 @@
+name: "Setup Prettier"
+description: "Install Node.js and Prettier"
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Install prettier
+      shell: bash
+      run: npm install -g prettier@3.6.0

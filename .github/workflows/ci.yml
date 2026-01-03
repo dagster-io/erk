@@ -30,13 +30,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install uv
-        run: pip install uv
-      - name: Install dependencies
-        run: uv sync
+      - uses: ./.github/actions/setup-python-uv
       - name: Check Python formatting
         run: make format-check
 
@@ -47,13 +41,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install uv
-        run: pip install uv
-      - name: Install dependencies
-        run: uv sync
+      - uses: ./.github/actions/setup-python-uv
       - name: Run ruff linting
         run: make lint
 
@@ -64,11 +52,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: Install prettier
-        run: npm install -g prettier@3.6.0
+      - uses: ./.github/actions/setup-prettier
       - name: Check markdown formatting
         run: prettier --check '**/*.md' --ignore-path .gitignore
 
@@ -79,18 +63,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-      - name: Install prettier
-        run: npm install -g prettier@3.6.0
-      - name: Install uv
-        run: pip install uv
-      - name: Install dependencies
-        run: uv sync
+      - uses: ./.github/actions/setup-python-uv
+      - uses: ./.github/actions/setup-prettier
       - name: Check AGENTS.md standard compliance
         run: make md-check
       - name: Validate agent documentation frontmatter
@@ -106,13 +80,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install uv
-        run: pip install uv
-      - name: Install dependencies
-        run: uv sync
+      - uses: ./.github/actions/setup-python-uv
       - name: Run ty
         run: make ty
 
@@ -127,15 +95,10 @@ jobs:
       fail-fast: false
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: ./.github/actions/setup-python-uv
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install uv
-        run: pip install uv
-      - name: Install dependencies
-        run: uv sync
-      - name: Install Graphite CLI
-        run: npm install -g @withgraphite/graphite-cli
+      - uses: ./.github/actions/setup-graphite
       - name: Run unit tests
         run: make test
 
@@ -146,15 +109,8 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - name: Install uv
-        run: pip install uv
-      - name: Install dependencies
-        run: uv sync
-      - name: Install Graphite CLI
-        run: npm install -g @withgraphite/graphite-cli
+      - uses: ./.github/actions/setup-python-uv
+      - uses: ./.github/actions/setup-graphite
       - name: Run integration tests
         run: make test-integration
 

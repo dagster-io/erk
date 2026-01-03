@@ -1,0 +1,9 @@
+name: "Setup Graphite CLI"
+description: "Install Graphite CLI for stack management"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Graphite CLI
+      shell: bash
+      run: npm install -g @withgraphite/graphite-cli
