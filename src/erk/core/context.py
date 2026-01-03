@@ -48,7 +48,6 @@ from erk_shared.gateway.claude_settings.real import RealClaudeSettingsStore
 # Import erk-specific integrations
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
