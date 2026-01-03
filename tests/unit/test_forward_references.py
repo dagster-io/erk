@@ -12,44 +12,36 @@ The pattern we're preventing:
 
 Without the future import, Python evaluates annotations at runtime, causing
 NameError for TYPE_CHECKING-only imports.
+
+## Due Diligence: Why Custom Tests?
+
+We investigated ruff and ty for existing rules - they don't cover this case.
+See `erk_dev.forward_refs` module docstring for full rationale.
+
+## Testing the Tests
+
+The detection logic is tested separately in `test_forward_reference_detection.py`
+with known good/bad inputs. This file uses those utilities to scan the actual
+erk codebase.
 """
 
 from __future__ import annotations
 
-import ast
-import importlib
-import pkgutil
 from pathlib import Path
 
 import pytest
 
+from erk_dev.forward_refs.detection import check_file
+from erk_dev.forward_refs.discovery import (
+    discover_package_modules,
+    discover_python_files,
+    import_module_safely,
+)
 
-def _discover_package_modules(package_name: str) -> list[str]:
-    """Discover all modules in a package recursively.
-
-    Args:
-        package_name: Name of the package to discover (e.g., "erk", "erk_shared")
-
-    Returns:
-        List of fully qualified module names
-    """
-    modules: list[str] = []
-
-    try:
-        package = importlib.import_module(package_name)
-    except ImportError:
-        return modules
-
-    if not hasattr(package, "__path__"):
-        # Not a package, just a module
-        return [package_name]
-
-    for _importer, modname, _ispkg in pkgutil.walk_packages(
-        package.__path__, prefix=f"{package_name}."
-    ):
-        modules.append(modname)
-
-    return modules
+# Minimum expected counts to guard against silent discovery failures
+# These should be updated if the project structure changes significantly
+MIN_EXPECTED_FILES = 50  # We have way more than 50 Python files
+MIN_EXPECTED_MODULES = 20  # We have way more than 20 modules
 
 
 def _get_package_source_paths() -> list[Path]:
@@ -72,59 +64,30 @@ def _get_package_source_paths() -> list[Path]:
     return [p for p in paths if p.exists()]
 
 
-def _discover_python_files() -> list[Path]:
-    """Discover all Python files in erk and erk_shared packages."""
-    files: list[Path] = []
+def test_file_discovery_finds_expected_minimum() -> None:
+    """Verify file discovery actually finds files (guards against silent failures)."""
+    paths = _get_package_source_paths()
+    result = discover_python_files(paths)
 
-    for package_path in _get_package_source_paths():
-        for py_file in package_path.rglob("*.py"):
-            files.append(py_file)
-
-    return files
-
-
-def _has_type_checking_block(tree: ast.AST) -> bool:
-    """Check if AST has an `if TYPE_CHECKING:` block with imports."""
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.If):
-            continue
-
-        # Check for `if TYPE_CHECKING:` pattern
-        test = node.test
-
-        # Direct name: `if TYPE_CHECKING:`
-        if isinstance(test, ast.Name) and test.id == "TYPE_CHECKING":
-            # Check if body has any import statements
-            for stmt in node.body:
-                if isinstance(stmt, (ast.Import, ast.ImportFrom)):
-                    return True
-
-        # Attribute access: `if typing.TYPE_CHECKING:`
-        if (
-            isinstance(test, ast.Attribute)
-            and test.attr == "TYPE_CHECKING"
-            and isinstance(test.value, ast.Name)
-            and test.value.id == "typing"
-        ):
-            for stmt in node.body:
-                if isinstance(stmt, (ast.Import, ast.ImportFrom)):
-                    return True
-
-    return False
+    assert len(result.items) >= MIN_EXPECTED_FILES, (
+        f"Expected at least {MIN_EXPECTED_FILES} Python files, "
+        f"found {len(result.items)}. "
+        "This may indicate a discovery bug or project restructure."
+    )
 
 
-def _has_future_annotations(tree: ast.AST) -> bool:
-    """Check if AST has `from __future__ import annotations`."""
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.ImportFrom):
-            continue
+def test_module_discovery_finds_expected_minimum() -> None:
+    """Verify module discovery actually finds modules (guards against silent failures)."""
+    erk_result = discover_package_modules("erk")
+    erk_shared_result = discover_package_modules("erk_shared")
 
-        if node.module == "__future__":
-            for alias in node.names:
-                if alias.name == "annotations":
-                    return True
+    total_modules = len(erk_result.items) + len(erk_shared_result.items)
 
-    return False
+    assert total_modules >= MIN_EXPECTED_MODULES, (
+        f"Expected at least {MIN_EXPECTED_MODULES} modules, "
+        f"found {total_modules}. "
+        "This may indicate a discovery bug or project restructure."
+    )
 
 
 def test_all_modules_import_successfully() -> None:
@@ -135,17 +98,21 @@ def test_all_modules_import_successfully() -> None:
     """
     packages = ["erk", "erk_shared"]
     import_errors: list[str] = []
+    modules_checked = 0
 
     for package_name in packages:
-        for module_name in _discover_package_modules(package_name):
-            try:
-                importlib.import_module(module_name)
-            except NameError as e:
-                import_errors.append(f"{module_name}: NameError - {e}")
-            except ImportError:
-                # ImportError is expected for some optional dependencies
-                # We only care about NameError (forward reference issues)
-                pass
+        result = discover_package_modules(package_name)
+        for module_name in result.items:
+            modules_checked += 1
+            success, error_message = import_module_safely(module_name)
+            if not success and error_message is not None:
+                import_errors.append(error_message)
+
+    # Guard: Ensure we actually checked some modules
+    assert modules_checked >= MIN_EXPECTED_MODULES, (
+        f"Expected to check at least {MIN_EXPECTED_MODULES} modules, "
+        f"only checked {modules_checked}. Discovery may be broken."
+    )
 
     if import_errors:
         pytest.fail(
@@ -161,22 +128,26 @@ def test_files_with_type_checking_have_future_annotations() -> None:
     to prevent forward reference errors. This test catches the pattern proactively.
     """
     violations: list[str] = []
+    files_checked = 0
 
-    for filepath in _discover_python_files():
-        try:
-            source = filepath.read_text(encoding="utf-8")
-            tree = ast.parse(source, filename=str(filepath))
-        except SyntaxError:
-            # Skip files with syntax errors (they'll fail elsewhere)
-            continue
+    for filepath_str in discover_python_files(_get_package_source_paths()).items:
+        files_checked += 1
+        filepath = Path(filepath_str)
+        violation = check_file(filepath)
 
-        if _has_type_checking_block(tree) and not _has_future_annotations(tree):
+        if violation is not None:
             # Make path relative for cleaner output
             try:
                 relative = filepath.relative_to(Path.cwd())
             except ValueError:
                 relative = filepath
             violations.append(str(relative))
+
+    # Guard: Ensure we actually checked some files
+    assert files_checked >= MIN_EXPECTED_FILES, (
+        f"Expected to check at least {MIN_EXPECTED_FILES} files, "
+        f"only checked {files_checked}. Discovery may be broken."
+    )
 
     if violations:
         pytest.fail(
