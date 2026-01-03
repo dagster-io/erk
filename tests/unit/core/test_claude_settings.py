@@ -185,7 +185,7 @@ def test_has_user_prompt_hook_returns_true_when_configured() -> None:
         "hooks": {
             "UserPromptSubmit": [
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
                 }
             ]
@@ -200,7 +200,7 @@ def test_has_user_prompt_hook_returns_false_for_different_command() -> None:
         "hooks": {
             "UserPromptSubmit": [
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [{"type": "command", "command": "other-command"}],
                 }
             ]
@@ -401,7 +401,7 @@ def test_hook_detection_detects_user_prompt_hook() -> None:
         "hooks": {
             "UserPromptSubmit": [
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [
                         {
                             "type": "command",
@@ -443,7 +443,7 @@ def test_hook_detection_detects_both_hooks() -> None:
         "hooks": {
             "UserPromptSubmit": [
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [
                         {
                             "type": "command",
@@ -521,7 +521,7 @@ def test_hook_detection_finds_hook_among_multiple_entries() -> None:
                     "hooks": [{"type": "command", "command": "other-hook"}],
                 },
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [
                         {"type": "command", "command": "another-hook"},
                         {"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND},
@@ -546,7 +546,7 @@ def test_add_erk_hooks_adds_both_hooks_to_empty_settings() -> None:
     # Verify UserPromptSubmit hook structure
     user_prompt_hooks = result["hooks"]["UserPromptSubmit"]
     assert len(user_prompt_hooks) == 1
-    assert user_prompt_hooks[0]["matcher"] == ""
+    assert user_prompt_hooks[0]["matcher"] == "*"
     assert user_prompt_hooks[0]["hooks"][0]["command"] == ERK_USER_PROMPT_HOOK_COMMAND
 
     # Verify PreToolUse hook structure
@@ -584,7 +584,7 @@ def test_add_erk_hooks_adds_missing_pre_tool_hook() -> None:
         "hooks": {
             "UserPromptSubmit": [
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
                 }
             ]
@@ -631,7 +631,7 @@ def test_add_erk_hooks_does_not_duplicate_hooks() -> None:
         "hooks": {
             "UserPromptSubmit": [
                 {
-                    "matcher": "",
+                    "matcher": "*",
                     "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
                 }
             ],

@@ -122,7 +122,7 @@ def add_erk_hooks(settings: Mapping[str, Any]) -> dict[str, Any]:
     if not has_user_prompt_hook(settings):
         hooks["UserPromptSubmit"].append(
             {
-                "matcher": "",
+                "matcher": "*",
                 "hooks": [
                     {
                         "type": "command",
