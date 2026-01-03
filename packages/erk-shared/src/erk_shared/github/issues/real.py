@@ -156,13 +156,24 @@ class RealGitHubIssues(GitHubIssues):
         return int(stdout.strip())
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
-        """Update issue body using gh CLI.
+        """Update issue body using gh CLI REST API.
+
+        Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
+        GraphQL rate limits. GraphQL and REST have separate quotas.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        # GH-API-AUDIT: GraphQL - gh issue edit uses GraphQL internally
-        base_cmd = ["gh", "issue", "edit", str(number), "--body", body]
+        # GH-API-AUDIT: REST - PATCH issues/{number}
+        base_cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/issues/{number}",
+            "-f",
+            f"body={body}",
+        ]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
@@ -319,13 +330,11 @@ class RealGitHubIssues(GitHubIssues):
         if self._label_cache.has(label):
             return
 
-        # GH-API-AUDIT: GraphQL - gh label list uses GraphQL internally
+        # GH-API-AUDIT: REST - GET labels
         base_check_cmd = [
             "gh",
-            "label",
-            "list",
-            "--json",
-            "name",
+            "api",
+            "repos/{owner}/{repo}/labels",
             "--jq",
             f'.[] | select(.name == "{label}") | .name',
         ]
@@ -355,37 +364,68 @@ class RealGitHubIssues(GitHubIssues):
         self._label_cache.add(label)
 
     def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
-        """Ensure label is present on issue using gh CLI (idempotent).
+        """Ensure label is present on issue using gh CLI REST API (idempotent).
+
+        Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
+        GraphQL rate limits. GraphQL and REST have separate quotas.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
-        The gh CLI --add-label operation is idempotent.
+        The REST API POST labels operation is idempotent.
         """
-        # GH-API-AUDIT: GraphQL - gh issue edit uses GraphQL internally
-        base_cmd = ["gh", "issue", "edit", str(issue_number), "--add-label", label]
+        # GH-API-AUDIT: REST - POST issues/{number}/labels
+        base_cmd = [
+            "gh",
+            "api",
+            "--method",
+            "POST",
+            f"repos/{{owner}}/{{repo}}/issues/{issue_number}/labels",
+            "-f",
+            f"labels[]={label}",
+        ]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
     def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
-        """Remove label from issue using gh CLI.
+        """Remove label from issue using gh CLI REST API.
+
+        Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
+        GraphQL rate limits. GraphQL and REST have separate quotas.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
-        If the label doesn't exist on the issue, gh CLI handles gracefully.
+        If the label doesn't exist on the issue, the API returns 404.
         """
-        # GH-API-AUDIT: GraphQL - gh issue edit uses GraphQL internally
-        base_cmd = ["gh", "issue", "edit", str(issue_number), "--remove-label", label]
+        # GH-API-AUDIT: REST - DELETE issues/{number}/labels/{name}
+        base_cmd = [
+            "gh",
+            "api",
+            "--method",
+            "DELETE",
+            f"repos/{{owner}}/{{repo}}/issues/{issue_number}/labels/{label}",
+        ]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
     def close_issue(self, repo_root: Path, number: int) -> None:
-        """Close issue using gh CLI.
+        """Close issue using gh CLI REST API.
+
+        Uses REST API instead of GraphQL (`gh issue close`) to avoid hitting
+        GraphQL rate limits. GraphQL and REST have separate quotas.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
         on failures (not installed, not authenticated, issue not found).
         """
-        # GH-API-AUDIT: GraphQL - gh issue close uses GraphQL internally
-        base_cmd = ["gh", "issue", "close", str(number)]
+        # GH-API-AUDIT: REST - PATCH issues/{number}
+        base_cmd = [
+            "gh",
+            "api",
+            "--method",
+            "PATCH",
+            f"repos/{{owner}}/{{repo}}/issues/{number}",
+            "-f",
+            "state=closed",
+        ]
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command(cmd, repo_root)
 
