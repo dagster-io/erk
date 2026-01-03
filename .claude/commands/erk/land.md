@@ -130,7 +130,7 @@ Options:
 
 **If user selects "Yes":**
 
-Run the `/objective:update-landed-pr` workflow inline:
+Run the `/objective:update-with-landed-pr` workflow inline:
 
 1. Post an action comment to the objective issue with:
    - What was done (infer from PR title/description)
