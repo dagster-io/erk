@@ -15,6 +15,7 @@ from erk_shared.core.fakes import (
     FakeScriptWriter,
 )
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
