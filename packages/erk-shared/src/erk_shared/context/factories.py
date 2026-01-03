@@ -80,7 +80,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.shell import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
-    from erk_shared.gateway.wt_stack.wt_stack import WtStack
     from erk_shared.git.real import RealGit
     from erk_shared.github.issues import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
@@ -117,7 +116,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
 
     # Use fake implementations for erk-specific services that erk-kits doesn't need
     fake_graphite = FakeGraphite()
-    wt_stack_repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else resolved_cwd
     github_issues = RealGitHubIssues(target_repo=None)
     time = RealTime()
     fake_time = FakeTime()
@@ -129,7 +127,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         session_store=RealClaudeCodeSessionStore(),
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,
-        wt_stack=WtStack(git, wt_stack_repo_root, fake_graphite),
         time=fake_time,
         erk_installation=RealErkInstallation(),
         plan_store=GitHubPlanStore(github_issues, fake_time),

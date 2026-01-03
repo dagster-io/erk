@@ -32,6 +32,33 @@ GitHub issue operations.
 
 **Fake Features**: In-memory issue storage, comment tracking, state management.
 
+## Higher-Level Abstractions
+
+Located in `packages/erk-shared/src/erk_shared/`:
+
+### BranchManager (`branch_manager/`)
+
+Dual-mode abstraction for branch operations that works transparently regardless of Graphite availability.
+
+**Purpose**: Provides consistent interface for operations that behave differently depending on whether Graphite is installed/enabled.
+
+**Key Methods**:
+
+- `get_pr_for_branch()`: Uses Graphite cache (fast) or GitHub API (fallback)
+- `create_branch()`: Uses `gt create` (Graphite) or `git branch` (Git)
+- `is_graphite_managed()`: Check which mode is active
+
+**Implementations**:
+
+- `GraphiteBranchManager`: Uses Graphite gateway for stack-aware operations
+- `GitBranchManager`: Uses Git + GitHub gateways as fallback
+
+**Factory**: Use `create_branch_manager(git, github, graphite)` to get the appropriate implementation.
+
+**Fake Features**: `FakeBranchManager` provides in-memory PR tracking and branch creation recording.
+
+**Related**: [Gateway Hierarchy](gateway-hierarchy.md) for architecture overview.
+
 ## Domain Gateways
 
 Located in `packages/erk-shared/src/erk_shared/gateway/`:
