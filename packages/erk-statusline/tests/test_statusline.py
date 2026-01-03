@@ -1,11 +1,20 @@
 """Tests for statusline.py GitHub integration."""
 
+from __future__ import annotations
+
 import json
 import tempfile
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.git.abc import WorktreeInfo
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import PullRequestInfo
+
+from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
     CACHE_TTL_SECONDS,
     GitHubData,
@@ -18,15 +27,22 @@ from erk_statusline.statusline import (
     _get_cache_path,
     _get_cached_pr_info,
     _parse_github_repo_from_remote,
+    _parse_github_repo_from_url,
     _set_cached_pr_info,
     build_gh_label,
     build_new_plan_label,
     build_plan_label,
+    fetch_github_data_via_gateway,
     find_new_plan_file,
     get_checks_status,
+    get_git_root_via_gateway,
+    get_git_status_via_gateway,
+    get_github_repo_via_gateway,
     get_issue_number,
     get_plan_progress,
+    get_pr_info_from_graphite,
     get_repo_info,
+    get_worktree_info_via_gateway,
 )
 
 
@@ -1299,3 +1315,291 @@ class TestParallelFetch:
         assert result.pr_state == ""
         # Should NOT cache when there's no PR
         mock_set_cache.assert_not_called()
+
+
+class TestParseGitHubRepoFromUrl:
+    """Test URL parsing helper function."""
+
+    def test_ssh_format_with_dot_git(self) -> None:
+        """Should parse SSH format with .git suffix."""
+        result = _parse_github_repo_from_url("git@github.com:owner/repo.git")
+        assert result == ("owner", "repo")
+
+    def test_ssh_format_without_dot_git(self) -> None:
+        """Should parse SSH format without .git suffix."""
+        result = _parse_github_repo_from_url("git@github.com:owner/repo")
+        assert result == ("owner", "repo")
+
+    def test_https_format_with_dot_git(self) -> None:
+        """Should parse HTTPS format with .git suffix."""
+        result = _parse_github_repo_from_url("https://github.com/owner/repo.git")
+        assert result == ("owner", "repo")
+
+    def test_https_format_without_dot_git(self) -> None:
+        """Should parse HTTPS format without .git suffix."""
+        result = _parse_github_repo_from_url("https://github.com/owner/repo")
+        assert result == ("owner", "repo")
+
+    def test_empty_url_returns_none(self) -> None:
+        """Empty URL should return None."""
+        result = _parse_github_repo_from_url("")
+        assert result is None
+
+    def test_non_github_url_returns_none(self) -> None:
+        """Non-GitHub URL should return None."""
+        result = _parse_github_repo_from_url("https://gitlab.com/owner/repo")
+        assert result is None
+
+
+class TestGetGitRootViaGateway:
+    """Test git root lookup via gateway."""
+
+    def test_returns_repository_root(self) -> None:
+        """Should return repository root path."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(repository_roots={repo_root: repo_root})
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        result = get_git_root_via_gateway(ctx)
+
+        assert result == repo_root
+
+
+class TestGetGitStatusViaGateway:
+    """Test git status lookup via gateway."""
+
+    def test_returns_branch_and_dirty_status(self) -> None:
+        """Should return current branch and dirty status."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(
+            current_branches={repo_root: "feature-branch"},
+            file_statuses={repo_root: (["staged.txt"], [], [])},
+        )
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        branch, is_dirty = get_git_status_via_gateway(ctx)
+
+        assert branch == "feature-branch"
+        assert is_dirty is True
+
+    def test_no_branch_returns_empty(self) -> None:
+        """Should return empty branch when not on a branch."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(current_branches={repo_root: None})
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        branch, is_dirty = get_git_status_via_gateway(ctx)
+
+        assert branch == ""
+        assert is_dirty is False
+
+
+class TestGetWorktreeInfoViaGateway:
+    """Test worktree info lookup via gateway."""
+
+    def test_root_worktree_returns_not_linked(self) -> None:
+        """Root worktree should have is_linked=False."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            }
+        )
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        is_linked, wt_name = get_worktree_info_via_gateway(ctx, repo_root)
+
+        assert is_linked is False
+        assert wt_name == "repo"
+
+    def test_linked_worktree_returns_is_linked(self) -> None:
+        """Linked worktree should have is_linked=True."""
+        repo_root = Path("/fake/repo")
+        linked_wt = Path("/fake/worktrees/feature")
+        fake_git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                    WorktreeInfo(path=linked_wt, branch="feature", is_root=False),
+                ]
+            }
+        )
+        # Context cwd is the linked worktree
+        ctx = StatuslineContext(
+            cwd=linked_wt, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        is_linked, wt_name = get_worktree_info_via_gateway(ctx, linked_wt)
+
+        assert is_linked is True
+        assert wt_name == "feature"
+
+
+class TestGetGitHubRepoViaGateway:
+    """Test GitHub repo lookup via gateway."""
+
+    def test_returns_owner_and_repo(self) -> None:
+        """Should return owner and repo from remote URL."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(
+            remote_urls={(repo_root, "origin"): "git@github.com:owner/testrepo.git"}
+        )
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        result = get_github_repo_via_gateway(ctx, repo_root)
+
+        assert result == ("owner", "testrepo")
+
+    def test_no_remote_returns_none(self) -> None:
+        """Should return None when no remote exists."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit()  # No remotes configured
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        result = get_github_repo_via_gateway(ctx, repo_root)
+
+        assert result is None
+
+
+class TestGetPrInfoFromGraphite:
+    """Test PR info lookup from Graphite cache."""
+
+    def test_returns_pr_info_when_found(self) -> None:
+        """Should return PR info when branch has a PR."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit()
+        fake_graphite = FakeGraphite(
+            pr_info={
+                "feature-branch": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=True,
+                    title="Add feature",
+                    checks_passing=True,
+                    owner="owner",
+                    repo="repo",
+                )
+            }
+        )
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+        )
+
+        result = get_pr_info_from_graphite(ctx, repo_root, "feature-branch")
+
+        assert result is not None
+        assert result == (123, "OPEN", True)
+
+    def test_returns_none_when_no_pr(self) -> None:
+        """Should return None when branch has no PR."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit()
+        fake_graphite = FakeGraphite(pr_info={})
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+        )
+
+        result = get_pr_info_from_graphite(ctx, repo_root, "no-pr-branch")
+
+        assert result is None
+
+
+class TestFetchGitHubDataViaGateway:
+    """Test full GitHub data fetch via gateways."""
+
+    def test_no_remote_returns_none(self) -> None:
+        """Should return None when no GitHub remote configured."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit()  # No remotes configured
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=FakeGraphite(), github=FakeGitHub()
+        )
+
+        result = fetch_github_data_via_gateway(ctx, repo_root, "feature")
+
+        assert result is None
+
+    def test_no_pr_returns_github_data_with_zero_pr(self) -> None:
+        """Should return GitHubData with pr_number=0 when no PR exists."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(
+            remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"}
+        )
+        fake_graphite = FakeGraphite(pr_info={})  # No PRs
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+        )
+
+        result = fetch_github_data_via_gateway(ctx, repo_root, "no-pr-branch")
+
+        assert result is not None
+        assert result.owner == "owner"
+        assert result.repo == "repo"
+        assert result.pr_number == 0
+        assert result.pr_state == ""
+
+    @patch("erk_statusline.statusline._fetch_check_runs")
+    @patch("erk_statusline.statusline._fetch_pr_details")
+    def test_with_pr_returns_github_data(
+        self, mock_fetch_details: MagicMock, mock_fetch_checks: MagicMock
+    ) -> None:
+        """Should return full GitHubData when PR exists."""
+        repo_root = Path("/fake/repo")
+        fake_git = FakeGit(
+            remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"},
+            branch_heads={"feature-branch": "abc123"},
+        )
+        fake_graphite = FakeGraphite(
+            pr_info={
+                "feature-branch": PullRequestInfo(
+                    number=456,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/456",
+                    is_draft=False,
+                    title="Add feature",
+                    checks_passing=True,
+                    owner="owner",
+                    repo="repo",
+                )
+            }
+        )
+        ctx = StatuslineContext(
+            cwd=repo_root, git=fake_git, graphite=fake_graphite, github=FakeGitHub()
+        )
+
+        # Mock the REST API calls for checks and mergeable status
+        mock_fetch_details.return_value = "MERGEABLE"
+        mock_fetch_checks.return_value = [
+            {
+                "__typename": "CheckRun",
+                "conclusion": "SUCCESS",
+                "status": "COMPLETED",
+                "name": "test",
+            }
+        ]
+
+        result = fetch_github_data_via_gateway(ctx, repo_root, "feature-branch")
+
+        assert result is not None
+        assert result.owner == "owner"
+        assert result.repo == "repo"
+        assert result.pr_number == 456
+        assert result.pr_state == "OPEN"
+        assert result.is_draft is False
+        assert result.mergeable == "MERGEABLE"
+        assert len(result.check_contexts) == 1

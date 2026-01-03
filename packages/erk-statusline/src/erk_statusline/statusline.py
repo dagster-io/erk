@@ -17,9 +17,12 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
 from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
+
+if TYPE_CHECKING:
+    from erk_statusline.context import StatuslineContext
 
 # Cache configuration
 CACHE_DIR = Path("/tmp/erk-statusline-cache")
@@ -98,7 +101,11 @@ class GitHubData(NamedTuple):
 
 
 def run_git(cmd: list[str], cwd: str) -> str:
-    """Run a git command and return output."""
+    """Run a git command and return output.
+
+    DEPRECATED: Use StatuslineContext.git gateway methods instead.
+    Kept for backwards compatibility with functions not yet migrated.
+    """
     try:
         result = subprocess.run(
             ["git"] + cmd,
@@ -115,14 +122,33 @@ def run_git(cmd: list[str], cwd: str) -> str:
 def get_git_root(cwd: str) -> str:
     """Get git repository root directory.
 
+    DEPRECATED: Use StatuslineContext.git.get_repository_root() instead.
+
     Returns:
         Absolute path to git root, or empty string if not in git repo.
     """
     return run_git(["rev-parse", "--show-toplevel"], cwd)
 
 
+def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
+    """Get git repository root directory using gateway.
+
+    Args:
+        ctx: StatuslineContext with git gateway
+
+    Returns:
+        Path to git root, or None if not in git repo.
+    """
+    try:
+        return ctx.git.get_repository_root(ctx.cwd)
+    except (ValueError, OSError):
+        return None
+
+
 def get_git_status(cwd: str) -> tuple[str, bool]:
     """Get git branch and dirty status.
+
+    DEPRECATED: Use get_git_status_via_gateway() instead.
 
     Returns:
         (branch_name, is_dirty)
@@ -137,8 +163,27 @@ def get_git_status(cwd: str) -> tuple[str, bool]:
     return branch, is_dirty
 
 
+def get_git_status_via_gateway(ctx: StatuslineContext) -> tuple[str, bool]:
+    """Get git branch and dirty status using gateway.
+
+    Args:
+        ctx: StatuslineContext with git gateway
+
+    Returns:
+        (branch_name, is_dirty)
+    """
+    branch = ctx.git.get_current_branch(ctx.cwd)
+    if branch is None:
+        return "", False
+
+    is_dirty = ctx.git.has_uncommitted_changes(ctx.cwd)
+    return branch, is_dirty
+
+
 def get_worktree_info(cwd: str) -> tuple[bool, str]:
     """Detect if in a linked worktree and get worktree name.
+
+    DEPRECATED: Use get_worktree_info_via_gateway() instead.
 
     Returns:
         (is_linked_worktree, worktree_name)
@@ -175,6 +220,33 @@ def get_worktree_info(cwd: str) -> tuple[bool, str]:
             # First worktree is always the main worktree
             is_linked = idx > 0
             wt_name = Path(wt["path"]).name
+            return is_linked, wt_name
+
+    return False, ""
+
+
+def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tuple[bool, str]:
+    """Detect if in a linked worktree and get worktree name using gateway.
+
+    Args:
+        ctx: StatuslineContext with git gateway
+        repo_root: Repository root path
+
+    Returns:
+        (is_linked_worktree, worktree_name)
+        - is_linked_worktree: False for root worktree, True for linked worktrees
+        - worktree_name: Directory basename of the worktree
+    """
+    worktrees = ctx.git.list_worktrees(repo_root)
+    if not worktrees:
+        return False, ""
+
+    # Find which worktree we're in
+    for wt in worktrees:
+        if wt.path == repo_root:
+            # Use is_root flag from WorktreeInfo
+            is_linked = not wt.is_root
+            wt_name = wt.path.name
             return is_linked, wt_name
 
     return False, ""
@@ -367,6 +439,8 @@ def get_dir_name(cwd: str) -> str:
 def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
     """Parse GitHub owner and repo from git remote URL.
 
+    DEPRECATED: Use _parse_github_repo_from_url() with ctx.git.get_remote_url() instead.
+
     Args:
         cwd: Current working directory
 
@@ -377,6 +451,24 @@ def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
         - https://github.com/owner/repo.git
     """
     remote_url = run_git(["remote", "get-url", "origin"], cwd)
+    if not remote_url:
+        return None
+
+    return _parse_github_repo_from_url(remote_url)
+
+
+def _parse_github_repo_from_url(remote_url: str) -> tuple[str, str] | None:
+    """Parse GitHub owner and repo from a remote URL string.
+
+    Args:
+        remote_url: Git remote URL string
+
+    Returns:
+        (owner, repo) tuple, or None if unable to parse.
+        Supports both SSH and HTTPS GitHub URLs:
+        - git@github.com:owner/repo.git
+        - https://github.com/owner/repo.git
+    """
     if not remote_url:
         return None
 
@@ -400,6 +492,48 @@ def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
                 return owner, repo
 
     return None
+
+
+def get_github_repo_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tuple[str, str] | None:
+    """Get GitHub owner and repo using gateway.
+
+    Args:
+        ctx: StatuslineContext with git gateway
+        repo_root: Repository root path
+
+    Returns:
+        (owner, repo) tuple, or None if unable to parse.
+    """
+    try:
+        remote_url = ctx.git.get_remote_url(repo_root, "origin")
+        return _parse_github_repo_from_url(remote_url)
+    except ValueError:
+        return None
+
+
+def get_pr_info_from_graphite(
+    ctx: StatuslineContext, repo_root: Path, branch: str
+) -> tuple[int, str, bool] | None:
+    """Get PR info from Graphite's local cache.
+
+    Uses Graphite's .graphite_pr_info cache file for fast PR lookup without
+    network calls. Falls back to None if no PR found.
+
+    Args:
+        ctx: StatuslineContext with graphite gateway
+        repo_root: Repository root path
+        branch: Current branch name
+
+    Returns:
+        Tuple of (pr_number, pr_state, is_draft) or None if no PR found.
+        pr_state is one of "OPEN", "MERGED", "CLOSED".
+    """
+    prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo_root)
+    if branch not in prs:
+        return None
+
+    pr_info = prs[branch]
+    return (pr_info.number, pr_info.state, pr_info.is_draft)
 
 
 def _fetch_pr_list(
@@ -584,6 +718,76 @@ def _fetch_github_data_rest(cwd: str) -> GitHubData | None:
         )
 
     # Fetch PR details and check runs in parallel (1.5s timeout each, 2s combined)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            pr_future = executor.submit(_fetch_pr_details, owner, repo, pr_number, cwd, 1.5)
+            checks_future = executor.submit(_fetch_check_runs, owner, repo, head_sha, cwd, 1.5)
+
+            # Wait for both with combined timeout
+            mergeable = pr_future.result(timeout=2)
+            check_contexts = checks_future.result(timeout=2)
+    except TimeoutError:
+        # If parallel execution times out, use defaults
+        mergeable = "UNKNOWN"
+        check_contexts = []
+
+    return GitHubData(
+        owner=owner,
+        repo=repo,
+        pr_number=pr_number,
+        pr_state=pr_state,
+        is_draft=is_draft,
+        mergeable=mergeable,
+        check_contexts=check_contexts,
+    )
+
+
+def fetch_github_data_via_gateway(
+    ctx: StatuslineContext, repo_root: Path, branch: str
+) -> GitHubData | None:
+    """Fetch GitHub data using gateways for PR info, with REST for checks/mergeable.
+
+    Uses Graphite cache for fast PR info, then fetches check runs and mergeable
+    status from GitHub API (not in Graphite cache).
+
+    Args:
+        ctx: StatuslineContext with gateways
+        repo_root: Repository root path
+        branch: Current branch name
+
+    Returns:
+        GitHubData with PR info and checks, or None if unable to fetch.
+    """
+    # Get owner/repo from git remote
+    repo_info = get_github_repo_via_gateway(ctx, repo_root)
+    if repo_info is None:
+        return None
+    owner, repo = repo_info
+
+    # Try Graphite cache first for PR info
+    pr_info = get_pr_info_from_graphite(ctx, repo_root, branch)
+
+    if pr_info is None:
+        # No PR for this branch
+        return GitHubData(
+            owner=owner,
+            repo=repo,
+            pr_number=0,
+            pr_state="",
+            is_draft=False,
+            mergeable="",
+            check_contexts=[],
+        )
+
+    pr_number, pr_state, is_draft = pr_info
+
+    # Get head SHA for check runs - need to use git gateway
+    head_sha = ctx.git.get_branch_head(repo_root, branch)
+    if head_sha is None:
+        head_sha = ""
+
+    # Fetch PR details and check runs in parallel (still using REST for these)
+    cwd = str(ctx.cwd)
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
             pr_future = executor.submit(_fetch_pr_details, owner, repo, pr_number, cwd, 1.5)
@@ -905,6 +1109,8 @@ def build_gh_label(
 
 def main():
     """Main entry point."""
+    from erk_statusline.context import create_context
+
     try:
         data = json.load(sys.stdin)
         cwd = data.get("workspace", {}).get("current_dir", "")
@@ -920,18 +1126,28 @@ def main():
         new_plan_file = None
         git_root = ""
         issue_number = None
+        github_data = None
 
         if cwd:
-            branch, is_dirty = get_git_status(cwd)
+            # Create context with real gateways
+            ctx = create_context(cwd)
+
+            branch, is_dirty = get_git_status_via_gateway(ctx)
             if branch:
-                # Get git root and worktree info
-                git_root = get_git_root(cwd)
-                if git_root:
-                    is_linked_worktree, worktree_name = get_worktree_info(cwd)
+                # Get git root and worktree info using gateways
+                repo_root = get_git_root_via_gateway(ctx)
+                if repo_root is not None:
+                    git_root = str(repo_root)
+                    is_linked_worktree, worktree_name = get_worktree_info_via_gateway(
+                        ctx, repo_root
+                    )
                     relative_cwd = get_relative_cwd(cwd, git_root)
                     plan_progress = get_plan_progress(git_root)
                     new_plan_file = find_new_plan_file(git_root)
                     issue_number = get_issue_number(git_root)
+
+                    # Fetch GitHub data using gateway for Graphite PR cache
+                    github_data = fetch_github_data_via_gateway(ctx, repo_root, branch)
 
         # Get model code
         model = data.get("model", {}).get("display_name", "")
@@ -944,9 +1160,6 @@ def main():
             model_code = "O"
         else:
             model_code = model[:1].upper() if model else "?"
-
-        # Fetch GitHub data via REST API
-        github_data = _fetch_github_data_rest(cwd) if cwd else None
 
         # Get repo info from GitHub data
         repo_info = get_repo_info(github_data)

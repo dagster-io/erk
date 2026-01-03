@@ -4,7 +4,9 @@ version = "0.2.0"
 description = "Custom status line for Claude Code with robbyrussell theme style"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "erk-shared",
+]
 
 [project.scripts]
 erk-statusline = "erk_statusline.statusline:main"

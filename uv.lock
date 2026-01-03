@@ -384,6 +384,12 @@ requires-dist = [
 name = "erk-statusline"
 version = "0.2.0"
 source = { editable = "packages/erk-statusline" }
+dependencies = [
+    { name = "erk-shared" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "erk-shared", editable = "packages/erk-shared" }]
 
 [[package]]
 name = "execnet"
