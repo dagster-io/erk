@@ -162,6 +162,7 @@ def _prompt_objective_update(
     repo_root: Path,
     objective_number: int,
     pr_number: int,
+    branch: str,
     force: bool,
 ) -> None:
     """Prompt user to update objective after landing.
@@ -175,9 +176,15 @@ def _prompt_objective_update(
     """
     user_output(f"   Linked to Objective #{objective_number}")
 
+    # Build the command with all arguments for context-free execution
+    cmd = (
+        f"/objective:update-landed-pr "
+        f"--pr {pr_number} --objective {objective_number} --branch {branch}"
+    )
+
     if force:
         # --force skips all prompts, print command for later
-        user_output("   Run '/objective:update-landed-pr' to update objective")
+        user_output(f"   Run '{cmd}' to update objective")
         return
 
     # Ask y/n prompt
@@ -185,7 +192,7 @@ def _prompt_objective_update(
     if not user_confirm("Update objective now? (runs Claude agent)", default=True):
         user_output("")
         user_output("Skipped. To update later, run:")
-        user_output("  /objective:update-landed-pr")
+        user_output(f"  {cmd}")
     else:
         # Add feedback BEFORE streaming starts (important for visibility)
         user_output("")
@@ -193,7 +200,7 @@ def _prompt_objective_update(
 
         result = stream_command_with_feedback(
             executor=ctx.claude_executor,
-            command="/objective:update-landed-pr",
+            command=cmd,
             worktree_path=repo_root,
             dangerous=True,
         )
@@ -480,7 +487,7 @@ def _land_current_branch(
     objective_number = _get_objective_for_branch(ctx, main_repo_root, current_branch)
     if objective_number is not None:
         _prompt_objective_update(
-            ctx, main_repo_root, objective_number, success_result.pr_number, force
+            ctx, main_repo_root, objective_number, success_result.pr_number, current_branch, force
         )
 
     # Step 2: Cleanup and navigate
@@ -579,7 +586,7 @@ def _land_specific_pr(
     # Check for linked objective and offer to update
     objective_number = _get_objective_for_branch(ctx, main_repo_root, branch)
     if objective_number is not None:
-        _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, force)
+        _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, branch, force)
 
     # Cleanup and navigate
     _cleanup_and_navigate(
@@ -670,7 +677,9 @@ def _land_by_branch(
     # Check for linked objective and offer to update
     objective_number = _get_objective_for_branch(ctx, main_repo_root, branch_name)
     if objective_number is not None:
-        _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, force)
+        _prompt_objective_update(
+            ctx, main_repo_root, objective_number, pr_number, branch_name, force
+        )
 
     # Cleanup and navigate (uses shared function)
     _cleanup_and_navigate(
