@@ -4,4 +4,5 @@
 # Ci Documentation
 
 - **[claude-code-docker.md](claude-code-docker.md)** — Running Claude Code in GitHub Actions containers, Debugging permission errors in CI Docker containers, Choosing between container and container-less CI approaches
+- **[claude-in-ci.md](claude-in-ci.md)** — Setting up Claude Code in CI workflows, Using claude --print in GitHub Actions, Automating tasks with Claude in CI
 - **[containerless-ci.md](containerless-ci.md)** — Setting up Claude Code in GitHub Actions without containers, Comparing container vs container-less CI approaches, Choosing between container and container-less CI approaches
