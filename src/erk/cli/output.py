@@ -391,8 +391,6 @@ def stream_fix_conflicts(
     Returns:
         FixConflictsResult with success status and error details
     """
-    import time
-
     error_message: str | None = None
     success = True
     has_work_events = False
