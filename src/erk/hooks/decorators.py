@@ -14,7 +14,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, cast
 
 if TYPE_CHECKING:
     import click
@@ -275,7 +275,8 @@ def logged_hook[F: Callable[..., None]](func: F) -> F:
         if exit_code != 0:
             raise SystemExit(exit_code)
 
-    return wrapper  # type: ignore[return-value]
+    # Cast wrapper to F - functools.wraps preserves the signature semantics
+    return cast(F, wrapper)
 
 
 def hook_command(name: str | None = None) -> Callable[[Callable[..., None]], click.Command]:
