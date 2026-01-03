@@ -78,6 +78,27 @@ Hook stdout becomes system reminders in Claude's context. Use this to:
 - Provide contextual instructions
 - Block or allow tool calls (via exit codes)
 
+### Example: Exit Plan Mode Hook
+
+The `exit-plan-mode-hook` demonstrates how hooks modify Claude's behavior via a **PreToolUse** interceptor on the `ExitPlanMode` tool.
+
+**State machine using marker files:**
+
+1. **No markers + plan exists** → BLOCK (exit code 2), prompt user to "Save plan" or "Implement now"
+2. **implement-now marker exists** → ALLOW (exit code 0), proceed to implementation
+3. **plan-saved marker exists** → BLOCK with "session complete" message
+4. **incremental-plan marker exists** → ALLOW, skip save prompt entirely
+
+**Key pattern:** The hook outputs instructions containing the **actual session ID** (not a shell variable), so Claude can create markers correctly:
+
+```
+If user chooses 'Implement now':
+  1. Create marker: erk exec marker create --session-id abc123 exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+```
+
+This allows Claude to modify the hook's future behavior by creating/removing marker files.
+
 ---
 
 # Erk Coding Standards
