@@ -21,7 +21,6 @@ The `make fast-ci` target runs these checks in order:
 5. **docs-validate** - Agent documentation frontmatter validation
 6. **ty** - Type checking
 7. **test** - Pytest unit tests only (fast feedback loop)
-8. **check** - Artifact synchronization validation
 
 ## Iteration Process
 
@@ -38,7 +37,7 @@ This ensures that common issues (linting/formatting and type errors) are caught 
 
 ## Begin Now
 
-Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with the remaining checks (`make format-check prettier-check md-check docs-validate test check`). Track your progress with TodoWrite and report your final status clearly.
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with the remaining checks (`make format-check prettier-check md-check docs-validate test`). Track your progress with TodoWrite and report your final status clearly.
 
 **Remember**:
 

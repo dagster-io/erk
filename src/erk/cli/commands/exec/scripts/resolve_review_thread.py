@@ -123,9 +123,7 @@ def _add_comment_if_provided(
 
     formatted_comment = _format_resolution_comment(comment)
     try:
-        return github.add_review_thread_reply(
-            repo_root, pr_number, comment_id, formatted_comment
-        )
+        return github.add_review_thread_reply(repo_root, pr_number, comment_id, formatted_comment)
     except RuntimeError as e:
         return ResolveThreadError(
             success=False,

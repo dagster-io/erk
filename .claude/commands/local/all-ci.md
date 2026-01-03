@@ -18,9 +18,9 @@ The `make all-ci` target runs these checks in order:
 2. **format-check** - Ruff code formatting checks
 3. **prettier-check** - Markdown formatting checks
 4. **md-check** - AGENTS.md standard compliance validation
-5. **ty** - Type checking
-6. **test-all** - Pytest test suite (unit + integration tests)
-7. **check** - Artifact synchronization validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test-all** - Pytest test suite (unit + integration tests)
 
 ## Iteration Process
 
