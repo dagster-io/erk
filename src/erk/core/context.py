@@ -535,7 +535,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # 12. Create session store, prompt executor, and claude settings store
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
-    from erk_shared.gateway.erk_installation.real import RealErkInstallation
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)

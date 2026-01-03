@@ -139,7 +139,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         completion=FakeCompletion(),
         feedback=SuppressedFeedback(),
         claude_executor=FakeClaudeExecutor(),
-        erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
         plan_list_service=FakePlanListService(),
