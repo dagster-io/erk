@@ -18,7 +18,21 @@ Run after landing a PR:
 
 ## Agent Instructions
 
+### Step 0: Parse Arguments (if provided)
+
+Check `$ARGUMENTS` for pre-provided context:
+
+- `--pr <number>`: PR number that was just landed
+- `--objective <number>`: Objective issue number to update
+- `--branch <name>`: Original branch name (contains plan issue number in `P<number>-...` pattern)
+
+**If all arguments are provided:** Use them directly. Parse the plan issue number from the branch name pattern to get implementation details. Skip Steps 1 and 4 (discovery steps).
+
+**If arguments are not provided:** Continue with Steps 1 and 4 to discover from git state (manual invocation case).
+
 ### Step 1: Get Current Branch and Find Parent Objective
+
+**Skip this step if `--objective` was provided in arguments.**
 
 ```bash
 git branch --show-current
@@ -59,6 +73,8 @@ Analyze the objective to identify:
 - What "Current Focus" says
 
 ### Step 4: Get PR Information
+
+**Skip this step if `--pr` was provided in arguments.**
 
 Find the most recently merged PR for this branch:
 
