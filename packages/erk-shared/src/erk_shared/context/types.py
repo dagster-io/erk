@@ -73,6 +73,7 @@ class GlobalConfig:
     show_pr_info: bool
     github_planning: bool
     auto_restack_require_dangerous_flag: bool = True
+    fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
 
     @staticmethod
@@ -84,6 +85,7 @@ class GlobalConfig:
         show_pr_info: bool = True,
         github_planning: bool = True,
         auto_restack_require_dangerous_flag: bool = True,
+        fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
@@ -94,6 +96,7 @@ class GlobalConfig:
             show_pr_info=show_pr_info,
             github_planning=github_planning,
             auto_restack_require_dangerous_flag=auto_restack_require_dangerous_flag,
+            fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,
         )
 
