@@ -31,7 +31,7 @@ When running Claude in CI with `--print` mode, use these flags:
       --output-format stream-json \
       --dangerously-skip-permissions \
       --verbose \
-      "/your-command"
+      < .claude/commands/your-command.md
 ```
 
 ### Flag Reference
@@ -60,15 +60,15 @@ env:
 
 ## Invoking Commands
 
-Pass slash commands as quoted arguments:
+Use stdin redirection to pass command file content:
 
 ```yaml
-claude --print ... "/your-command"
-claude --print ... "/erk:plan-implement"
-claude --print ... "/ci-autofix"
+claude --print ... < .claude/commands/ci/autofix.md
 ```
 
-Commands must exist in `.claude/commands/` directory.
+Commands should be markdown files in `.claude/commands/` directory. The file content becomes the prompt.
+
+**Note**: Slash command syntax (`"/ci:autofix"`) does NOT work in `--print` mode. Always use stdin redirection.
 
 ## Restricting Tools
 
@@ -122,12 +122,12 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/ci-autofix"
+            < .claude/commands/ci/autofix.md
 ```
 
 ## Common Mistakes
 
 1. **Missing `--output-format stream-json`** - CI logs won't show streaming output
 2. **Missing `--dangerously-skip-permissions`** - Claude will hang waiting for permission
-3. **Using stdin instead of command argument** - Pass commands as quoted args, not via `<`
+3. **Using slash command syntax** - `"/ci:autofix"` doesn't work in `--print` mode; use stdin redirection
 4. **Forgetting `$GITHUB_PATH`** - Claude binary won't be in PATH for subsequent steps
