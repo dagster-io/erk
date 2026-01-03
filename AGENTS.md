@@ -50,6 +50,34 @@ erk/
 
 **Documentation Index**: See [docs/learned/index.md](docs/learned/index.md) for complete document registry with "read when..." conditions.
 
+## Claude Environment Manipulation
+
+Erk hooks interact with Claude Code to control agent behavior. Understanding these patterns prevents common mistakes.
+
+### Session ID Injection
+
+Hooks receive the session ID via **stdin JSON** from Claude Code, NOT from environment variables.
+
+**Key rule:** When generating instructions for Claude to run commands, **interpolate the actual session ID value**:
+
+```python
+# CORRECT - Claude receives the actual value
+f"erk exec marker create --session-id {session_id} ..."
+
+# WRONG - Claude can't expand this variable
+"erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID ..."
+```
+
+**Why:** `$CLAUDE_CODE_SESSION_ID` is available to hooks (via stdin JSON), but NOT in Claude's bash environment. Claude cannot expand shell variables it doesn't have.
+
+### Hook → Claude Communication
+
+Hook stdout becomes system reminders in Claude's context. Use this to:
+
+- Inject session IDs (see above)
+- Provide contextual instructions
+- Block or allow tool calls (via exit codes)
+
 ---
 
 # Erk Coding Standards
