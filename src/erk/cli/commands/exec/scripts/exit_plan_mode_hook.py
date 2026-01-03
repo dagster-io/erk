@@ -143,7 +143,7 @@ def build_blocking_message(
             "",
             "If user chooses 'Implement now':",
             "  1. Create implement-now marker:",
-            "     erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID \\",
+            f"     erk exec marker create --session-id {session_id} \\",
             "       exit-plan-mode-hook.implement-now",
             "  2. Call ExitPlanMode",
         ]

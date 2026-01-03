@@ -50,6 +50,44 @@ erk/
 
 **Documentation Index**: See [docs/learned/index.md](docs/learned/index.md) for complete document registry with "read when..." conditions.
 
+## Claude Environment Manipulation
+
+Erk hooks interact with Claude Code to control agent behavior. Understanding these patterns prevents common mistakes.
+
+### Session ID Injection
+
+Hooks receive the session ID via **stdin JSON** from Claude Code, NOT from environment variables.
+
+**Key rule:** When generating instructions for Claude to run commands, **interpolate the actual session ID value**:
+
+```python
+# CORRECT - Claude receives the actual value
+f"erk exec marker create --session-id {session_id} ..."
+
+# WRONG - Claude can't expand this variable
+"erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID ..."
+```
+
+**Why:** `$CLAUDE_CODE_SESSION_ID` is available to hooks (via stdin JSON), but NOT in Claude's bash environment. Claude cannot expand shell variables it doesn't have.
+
+### Hook → Claude Communication
+
+Hook stdout becomes system reminders in Claude's context. Use this to:
+
+- Inject session IDs (see above)
+- Provide contextual instructions
+- Block or allow tool calls (via exit codes)
+
+### Modified Plan Mode Behavior
+
+Erk modifies Claude Code's default plan mode workflow to add a save-or-implement decision point. When Claude tries to exit plan mode after writing a plan:
+
+1. **Claude is prompted** to ask the user: "Save the plan to GitHub, or implement now?"
+2. **If "Save"**: Claude runs `/erk:plan-save` to create a GitHub issue, then stops (stays in plan mode)
+3. **If "Implement now"**: Claude proceeds to implementation in the current worktree
+
+This ensures plans aren't lost—they either become tracked GitHub issues or get implemented immediately. The hook provides Claude with the session ID needed to signal its choice back to the system.
+
 ---
 
 # Erk Coding Standards
