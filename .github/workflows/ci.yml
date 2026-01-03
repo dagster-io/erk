@@ -314,5 +314,8 @@ jobs:
 
           claude --print \
             --model claude-sonnet-4-20250514 \
+            --output-format stream-json \
+            --dangerously-skip-permissions \
+            --verbose \
             --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)' \
             "$(cat /tmp/prompt.md)"
