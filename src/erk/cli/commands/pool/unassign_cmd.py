@@ -15,9 +15,7 @@ from erk.core.worktree_pool import (
 from erk_shared.output.output import user_output
 
 
-def _find_assignment(
-    state: PoolState, slot_or_branch: str
-) -> SlotAssignment | None:
+def _find_assignment(state: PoolState, slot_or_branch: str) -> SlotAssignment | None:
     """Find an assignment by slot name or branch name.
 
     Args:
@@ -102,9 +100,7 @@ def pool_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
             raise SystemExit(1) from None
 
     # Remove assignment from state (immutable update)
-    new_assignments = tuple(
-        a for a in state.assignments if a.slot_name != assignment.slot_name
-    )
+    new_assignments = tuple(a for a in state.assignments if a.slot_name != assignment.slot_name)
     new_state = PoolState(
         version=state.version,
         pool_size=state.pool_size,

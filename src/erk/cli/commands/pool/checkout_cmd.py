@@ -59,8 +59,7 @@ def pool_checkout(ctx: ErkContext, branch_name: str, script: bool) -> None:
     state = load_pool_state(repo.pool_json_path)
     if state is None:
         user_output(
-            click.style("Error: ", fg="red")
-            + "No pool configured. Run `erk pool assign` first."
+            click.style("Error: ", fg="red") + "No pool configured. Run `erk pool assign` first."
         )
         raise SystemExit(1)
 
