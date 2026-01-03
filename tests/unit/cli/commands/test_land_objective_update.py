@@ -38,14 +38,14 @@ def test_prompt_objective_update_force_skips_prompt() -> None:
 
 
 def test_prompt_objective_update_skip_option() -> None:
-    """Test that user choosing option 1 skips update and shows command."""
+    """Test that user declining prompt skips update and shows command."""
     executor = FakeClaudeExecutor()
     ctx = context_for_test(claude_executor=executor)
 
     captured_output = StringIO()
     with (
         patch("erk.cli.commands.land_cmd.user_output") as mock_output,
-        patch("click.prompt", return_value="1"),  # User chooses "1" to skip
+        patch("erk.cli.commands.land_cmd.user_confirm", return_value=False),  # User declines
     ):
         mock_output.side_effect = lambda msg: captured_output.write(msg + "\n")
 
@@ -68,14 +68,14 @@ def test_prompt_objective_update_skip_option() -> None:
 
 
 def test_prompt_objective_update_run_now_option_success() -> None:
-    """Test that user choosing option 2 runs Claude streaming and succeeds."""
+    """Test that user confirming prompt runs Claude streaming and succeeds."""
     executor = FakeClaudeExecutor()  # Defaults to success
     ctx = context_for_test(claude_executor=executor)
 
     captured_output = StringIO()
     with (
         patch("erk.cli.commands.land_cmd.user_output") as mock_output,
-        patch("click.prompt", return_value="2"),  # User chooses "2" to run now
+        patch("erk.cli.commands.land_cmd.user_confirm", return_value=True),  # User confirms
         patch("click.echo"),  # Suppress streaming output in tests
     ):
         mock_output.side_effect = lambda msg: captured_output.write(msg + "\n")
@@ -111,7 +111,7 @@ def test_prompt_objective_update_run_now_option_failure() -> None:
     captured_output = StringIO()
     with (
         patch("erk.cli.commands.land_cmd.user_output") as mock_output,
-        patch("click.prompt", return_value="2"),  # User chooses "2" to run now
+        patch("erk.cli.commands.land_cmd.user_confirm", return_value=True),  # User confirms
         patch("click.echo"),  # Suppress streaming output in tests
     ):
         mock_output.side_effect = lambda msg: captured_output.write(msg + "\n")

@@ -180,17 +180,9 @@ def _prompt_objective_update(
         user_output("   Run '/objective:update-landed-pr' to update objective")
         return
 
-    # Present options with styled menu
+    # Ask y/n prompt
     user_output("")
-    user_output(click.style("Would you like to update the objective now?", bold=True))
-    skip_msg = " Skip - update later with: /objective:update-landed-pr"
-    user_output(click.style("  [1]", fg="cyan") + skip_msg)
-    user_output(click.style("  [2]", fg="cyan") + " Update now (runs Claude agent)")
-    user_output("")
-    prompt_label = click.style("Enter choice", fg="cyan")
-    choice = click.prompt(prompt_label, type=click.Choice(["1", "2"]), default="1")
-
-    if choice == "1":
+    if not user_confirm("Update objective now? (runs Claude agent)", default=False):
         user_output("")
         user_output("Skipped. To update later, run:")
         user_output("  /objective:update-landed-pr")

@@ -156,8 +156,8 @@ def stream_command_with_feedback(
     # stderr output appears after stdout in mixed output scenarios.
     sys.stderr.flush()
 
-    # Print start marker
-    click.echo(click.style(f"--- {command} ---", bold=True))
+    # Print start marker (stderr so shell integration can capture stdout)
+    click.echo(click.style(f"--- {command} ---", bold=True), err=True)
 
     start_time = time.time()
     filtered_messages: list[str] = []
@@ -175,24 +175,25 @@ def stream_command_with_feedback(
         command, worktree_path, dangerous, verbose=False, debug=debug, model=model
     )
     if debug:
-        click.echo(click.style("[DEBUG] Starting event stream...", fg="yellow"))
+        click.echo(click.style("[DEBUG] Starting event stream...", fg="yellow"), err=True)
     for event in event_stream:
         event_count += 1
         if debug:
             click.echo(
-                click.style(f"[DEBUG] Event #{event_count}: {type(event).__name__}", fg="yellow")
+                click.style(f"[DEBUG] Event #{event_count}: {type(event).__name__}", fg="yellow"),
+                err=True,
             )
         match event:
             case TextEvent(content=content):
-                click.echo(content)
+                click.echo(content, err=True)
                 filtered_messages.append(content)
             case ToolEvent(summary=summary):
-                click.echo(click.style(f"  > {summary}", dim=True))
+                click.echo(click.style(f"  > {summary}", dim=True), err=True)
                 filtered_messages.append(summary)
             case SpinnerUpdateEvent(status=status):
                 # Deduplicate spinner updates - only print when status changes
                 if status != last_spinner_update:
-                    click.echo(click.style(f"  ... {status}", dim=True))
+                    click.echo(click.style(f"  ... {status}", dim=True), err=True)
                     last_spinner_update = status
             case PrUrlEvent(url=url):
                 pr_url = url
@@ -203,34 +204,34 @@ def stream_command_with_feedback(
             case IssueNumberEvent(number=num):
                 issue_number = num  # Already int, no conversion needed
             case ErrorEvent(message=msg):
-                click.echo(click.style(f"  ! {msg}", fg="red"))
+                click.echo(click.style(f"  ! {msg}", fg="red"), err=True)
                 error_message = msg
                 success = False
             case NoOutputEvent(diagnostic=diag):
-                click.echo(click.style(f"  ⚠️ {diag}", fg="yellow"))
+                click.echo(click.style(f"  ⚠️ {diag}", fg="yellow"), err=True)
                 error_message = diag
                 success = False
             case NoTurnsEvent(diagnostic=diag):
-                click.echo(click.style(f"  ⚠️ {diag}", fg="yellow"))
+                click.echo(click.style(f"  ⚠️ {diag}", fg="yellow"), err=True)
                 error_message = diag
                 success = False
             case ProcessErrorEvent(message=msg):
-                click.echo(click.style(f"  ❌ {msg}", fg="red"))
+                click.echo(click.style(f"  ❌ {msg}", fg="red"), err=True)
                 error_message = msg
                 success = False
 
     if debug:
         msg = f"[DEBUG] Event stream complete. Total events: {event_count}"
-        click.echo(click.style(msg, fg="yellow"))
+        click.echo(click.style(msg, fg="yellow"), err=True)
 
     duration = time.time() - start_time
     duration_str = format_duration(duration)
 
-    # Print end marker
+    # Print end marker (stderr so shell integration can capture stdout)
     if success:
-        click.echo(click.style(f"--- Done ({duration_str}) ---", fg="green", bold=True))
+        click.echo(click.style(f"--- Done ({duration_str}) ---", fg="green", bold=True), err=True)
     else:
-        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True))
+        click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True), err=True)
 
     return CommandResult(
         success=success,
