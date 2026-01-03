@@ -11,6 +11,7 @@ from erk_dev.commands.bump_version.command import (
     update_changelog_header,
     update_kit_registry_md,
     update_kits_toml,
+    update_python_version,
     update_toml_version,
     update_yaml_version,
 )
@@ -111,6 +112,33 @@ class TestUpdateYamlVersion:
         assert ok is True
         assert old == "1.0.0"
         assert yaml_file.read_text(encoding="utf-8") == "version: 1.0.0\n"
+
+
+class TestUpdatePythonVersion:
+    """Tests for update_python_version function."""
+
+    def test_updates_version_in_python(self, tmp_path: Path) -> None:
+        py_file = tmp_path / "__init__.py"
+        py_file.write_text('"""Module."""\n\n__version__ = "1.0.0"\n', encoding="utf-8")
+        ok, old = update_python_version(py_file, "2.0.0", dry_run=False)
+        assert ok is True
+        assert old == "1.0.0"
+        assert '__version__ = "2.0.0"' in py_file.read_text(encoding="utf-8")
+
+    def test_dry_run_does_not_modify(self, tmp_path: Path) -> None:
+        py_file = tmp_path / "__init__.py"
+        py_file.write_text('__version__ = "1.0.0"\n', encoding="utf-8")
+        ok, old = update_python_version(py_file, "2.0.0", dry_run=True)
+        assert ok is True
+        assert old == "1.0.0"
+        assert py_file.read_text(encoding="utf-8") == '__version__ = "1.0.0"\n'
+
+    def test_returns_false_when_no_version(self, tmp_path: Path) -> None:
+        py_file = tmp_path / "__init__.py"
+        py_file.write_text('"""Module without version."""\n', encoding="utf-8")
+        ok, old = update_python_version(py_file, "2.0.0", dry_run=False)
+        assert ok is False
+        assert old is None
 
 
 class TestUpdateKitsToml:

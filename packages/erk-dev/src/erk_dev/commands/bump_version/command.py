@@ -79,6 +79,23 @@ def update_yaml_version(path: Path, new_version: str, dry_run: bool) -> tuple[bo
     return True, old_version
 
 
+def update_python_version(path: Path, new_version: str, dry_run: bool) -> tuple[bool, str | None]:
+    """Update __version__ = "X.Y.Z" in a Python file. Returns (success, old_version)."""
+    content = path.read_text(encoding="utf-8")
+    pattern = r'(__version__\s*=\s*")([^"]+)(")'
+
+    match = re.search(pattern, content)
+    if match is None:
+        return False, None
+
+    old_version = match.group(2)
+    new_content = re.sub(pattern, rf"\g<1>{new_version}\3", content, count=1)
+
+    if not dry_run:
+        path.write_text(new_content, encoding="utf-8")
+    return True, old_version
+
+
 def update_kits_toml(path: Path, new_version: str, dry_run: bool) -> int:
     """Update all kit versions in kits.toml. Returns count of updates."""
     content = path.read_text(encoding="utf-8")
@@ -231,6 +248,7 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
         "pyproject.toml",
         "packages/erk-dev/pyproject.toml",
         "packages/erk-shared/pyproject.toml",
+        "packages/erk-statusline/pyproject.toml",
     ]:
         path = repo_root / rel_path
         if path.exists():
@@ -238,7 +256,15 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
             status = f"{old} -> {version}" if ok else "not found"
             click.echo(f"  {rel_path}: {status}")
 
-    # 2. kit.yaml files
+    # 2. Python __version__ variables
+    click.echo("\nPython __version__ files:")
+    statusline_init = repo_root / "packages/erk-statusline/src/erk_statusline/__init__.py"
+    if statusline_init.exists():
+        ok, old = update_python_version(statusline_init, version, dry_run)
+        status = f"{old} -> {version}" if ok else "no __version__ found"
+        click.echo(f"  erk-statusline/__init__.py: {status}")
+
+    # 3. kit.yaml files
     click.echo("\nBundled kits:")
     kits_dir = repo_root / "packages/erk-kits/src/erk_kits/data/kits"
     if kits_dir.exists():
@@ -247,21 +273,21 @@ def bump_version_command(version: str | None, dry_run: bool) -> None:
             status = f"{old} -> {version}" if ok else "not found"
             click.echo(f"  {kit_yaml.parent.name}: {status}")
 
-    # 3. kits.toml
+    # 4. kits.toml
     click.echo("\nInstalled kit registries:")
     kits_toml = repo_root / ".erk" / "kits.toml"
     if kits_toml.exists():
         count = update_kits_toml(kits_toml, version, dry_run)
         click.echo(f"  .erk/kits.toml: {count} kits")
 
-    # 4. kit-registry.md
+    # 5. kit-registry.md
     click.echo("\nDocumentation registry:")
     registry = repo_root / ".erk/kits/kit-registry.md"
     if registry.exists():
         count = update_kit_registry_md(registry, version, dry_run)
         click.echo(f"  .erk/kits/kit-registry.md: {count} entries")
 
-    # 5. CHANGELOG.md
+    # 6. CHANGELOG.md
     click.echo("\nChangelog:")
     changelog = repo_root / "CHANGELOG.md"
     if changelog.exists():
