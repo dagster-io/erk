@@ -924,7 +924,7 @@ def test_delete_remote_branch_success(monkeypatch: MonkeyPatch) -> None:
         assert result is True
         assert len(called_with) == 1
         cmd = called_with[0]
-        # Verify REST API format: gh api --method DELETE repos/{owner}/{repo}/git/refs/heads/{branch}
+        # Verify REST API: gh api --method DELETE repos/.../git/refs/heads/{branch}
         assert cmd[0:4] == ["gh", "api", "--method", "DELETE"]
         assert "repos/{owner}/{repo}/git/refs/heads/feature-branch" in cmd[4]
 
@@ -934,9 +934,7 @@ def test_delete_remote_branch_not_found_returns_true(monkeypatch: MonkeyPatch) -
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         # Simulate 404 error from GitHub API
-        raise subprocess.CalledProcessError(
-            1, cmd, stderr="Reference does not exist"
-        )
+        raise subprocess.CalledProcessError(1, cmd, stderr="Reference does not exist")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
@@ -951,9 +949,7 @@ def test_delete_remote_branch_other_error_returns_false(monkeypatch: MonkeyPatch
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
         # Simulate error from protected branch or auth failure
-        raise subprocess.CalledProcessError(
-            1, cmd, stderr="Cannot delete protected branch"
-        )
+        raise subprocess.CalledProcessError(1, cmd, stderr="Cannot delete protected branch")
 
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
