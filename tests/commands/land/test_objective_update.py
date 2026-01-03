@@ -347,7 +347,9 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         # Should have called claude executor streaming with correct command
         assert len(executor.executed_commands) == 1
         cmd, path, dangerous, verbose, model = executor.executed_commands[0]
-        expected = "/objective:update-with-landed-pr --pr 123 --objective 100 --branch P42-test-feature"
+        expected = (
+            "/objective:update-with-landed-pr --pr 123 --objective 100 --branch P42-test-feature"
+        )
         assert cmd == expected
         assert dangerous is True
 
