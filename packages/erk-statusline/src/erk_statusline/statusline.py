@@ -8,13 +8,70 @@ Matches the robbyrussell Oh My Zsh theme format:
 With added Claude-specific info on the right.
 """
 
+from __future__ import annotations
+
+import hashlib
 import json
 import subprocess
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import NamedTuple
 
 from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
+
+# Cache configuration
+CACHE_DIR = Path("/tmp/erk-statusline-cache")
+CACHE_TTL_SECONDS = 30
+
+
+def _get_cache_path(owner: str, repo: str, branch: str) -> Path:
+    """Get path to cache file for a specific branch.
+
+    Uses hash of branch name to avoid filesystem issues with special characters.
+    """
+    branch_hash = hashlib.sha256(branch.encode("utf-8")).hexdigest()[:16]
+    return CACHE_DIR / f"{owner}-{repo}-{branch_hash}.json"
+
+
+def _get_cached_pr_info(owner: str, repo: str, branch: str) -> tuple[int, str] | None:
+    """Get cached PR info if valid.
+
+    Returns:
+        Tuple of (pr_number, head_sha) if cache is valid, None otherwise.
+    """
+    cache_path = _get_cache_path(owner, repo, branch)
+    if not cache_path.exists():
+        return None
+
+    cache_stat = cache_path.stat()
+    cache_age = time.time() - cache_stat.st_mtime
+    if cache_age > CACHE_TTL_SECONDS:
+        return None
+
+    try:
+        content = cache_path.read_text(encoding="utf-8")
+        data = json.loads(content)
+        pr_number = data.get("pr_number")
+        head_sha = data.get("head_sha")
+        if isinstance(pr_number, int) and isinstance(head_sha, str):
+            return (pr_number, head_sha)
+    except (json.JSONDecodeError, OSError, KeyError):
+        pass
+
+    return None
+
+
+def _set_cached_pr_info(owner: str, repo: str, branch: str, pr_number: int, head_sha: str) -> None:
+    """Cache PR info for a branch."""
+    cache_path = _get_cache_path(owner, repo, branch)
+
+    if not CACHE_DIR.exists():
+        CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    cache_data = {"pr_number": pr_number, "head_sha": head_sha}
+    cache_path.write_text(json.dumps(cache_data), encoding="utf-8")
 
 
 class RepoInfo(NamedTuple):
@@ -345,13 +402,141 @@ def _parse_github_repo_from_remote(cwd: str) -> tuple[str, str] | None:
     return None
 
 
+def _fetch_pr_list(
+    owner: str, repo: str, branch: str, cwd: str, timeout: float
+) -> tuple[int, str, str, bool] | None:
+    """Fetch PR list for a branch.
+
+    Returns:
+        Tuple of (pr_number, head_sha, pr_state, is_draft) or None if failed.
+        pr_number is 0 if no PR exists.
+    """
+    try:
+        result = subprocess.run(
+            [
+                "gh",
+                "api",
+                f"repos/{owner}/{repo}/pulls",
+                "-X",
+                "GET",
+                "-f",
+                f"head={owner}:{branch}",
+                "-f",
+                "state=all",
+            ],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        if result.returncode != 0:
+            return None
+
+        prs = json.loads(result.stdout)
+
+        # No PR for this branch
+        if not prs:
+            return (0, "", "", False)
+
+        # Take first PR (REST API returns OPEN PRs first with state=all)
+        pr = prs[0]
+        pr_number = pr.get("number", 0)
+        pr_state = pr.get("state", "").upper()  # REST returns lowercase
+        is_draft = pr.get("draft", False)
+        head_sha = pr.get("head", {}).get("sha", "")
+
+        return (pr_number, head_sha, pr_state, is_draft)
+
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
+        return None
+
+
+def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: float) -> str:
+    """Fetch PR details for mergeable status.
+
+    Returns:
+        Mergeable status: "MERGEABLE", "CONFLICTING", or "UNKNOWN".
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"repos/{owner}/{repo}/pulls/{pr_number}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        if result.returncode != 0:
+            return "UNKNOWN"
+
+        pr_detail = json.loads(result.stdout)
+        mergeable_value = pr_detail.get("mergeable")
+        mergeable_state = pr_detail.get("mergeable_state", "")
+
+        # Map REST mergeable fields to GraphQL-style values
+        if mergeable_value is True:
+            return "MERGEABLE"
+        elif mergeable_value is False:
+            if mergeable_state == "dirty":
+                return "CONFLICTING"
+            return "UNKNOWN"
+        # mergeable is null (GitHub hasn't computed yet)
+        return "UNKNOWN"
+
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
+        return "UNKNOWN"
+
+
+def _fetch_check_runs(
+    owner: str, repo: str, head_sha: str, cwd: str, timeout: float
+) -> list[dict[str, str]]:
+    """Fetch check runs for a commit.
+
+    Returns:
+        List of check context dicts with __typename, conclusion, status, name.
+    """
+    try:
+        result = subprocess.run(
+            ["gh", "api", f"repos/{owner}/{repo}/commits/{head_sha}/check-runs"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        if result.returncode != 0:
+            return []
+
+        check_runs_data = json.loads(result.stdout)
+        raw_runs = check_runs_data.get("check_runs", [])
+
+        check_contexts: list[dict[str, str]] = []
+        for run in raw_runs:
+            check_contexts.append(
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": (run.get("conclusion") or "").upper(),
+                    "status": (run.get("status") or "").upper(),
+                    "name": run.get("name", ""),
+                }
+            )
+
+        return check_contexts
+
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
+        return []
+
+
 def _fetch_github_data_rest(cwd: str) -> GitHubData | None:
     """Fetch repository, PR, and checks data via REST API.
 
-    Uses 3 API calls:
-    1. List PRs by branch → get PR number, state, draft, head SHA
-    2. Get single PR → get mergeable status
-    3. Get check runs → get CI status
+    Uses caching for PR list and parallelizes PR details + check runs calls.
+
+    Timeout strategy:
+    - PR list (cache miss): 1.5s
+    - PR details + check runs (parallel): 1.5s each, 2s combined max
+    - Total worst case: ~3.5s (cache miss) or ~2s (cache hit)
 
     Returns:
         GitHubData with all GitHub information, or None if any call fails.
@@ -368,122 +553,59 @@ def _fetch_github_data_rest(cwd: str) -> GitHubData | None:
 
     owner, repo = repo_info
 
-    try:
-        # Call 1: List PRs by branch
-        # Using state=all returns OPEN PRs first, which fixes the "wrong PR" bug
-        list_prs_result = subprocess.run(
-            [
-                "gh",
-                "api",
-                f"repos/{owner}/{repo}/pulls",
-                "-X",
-                "GET",
-                "-f",
-                f"head={owner}:{branch}",
-                "-f",
-                "state=all",
-            ],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
+    # Try cache first for PR info
+    cached = _get_cached_pr_info(owner, repo, branch)
+    if cached:
+        pr_number, head_sha = cached
+        pr_state = "OPEN"  # Cached PRs are always OPEN (we only cache PRs)
+        is_draft = False  # Cached: we don't store draft status
+    else:
+        # Cache miss: fetch PR list (1.5s timeout)
+        pr_result = _fetch_pr_list(owner, repo, branch, cwd, 1.5)
+        if pr_result is None:
+            return None  # API failure
 
-        if list_prs_result.returncode != 0:
-            return None
+        pr_number, head_sha, pr_state, is_draft = pr_result
 
-        prs = json.loads(list_prs_result.stdout)
+        # Cache if we found a PR
+        if pr_number > 0:
+            _set_cached_pr_info(owner, repo, branch, pr_number, head_sha)
 
-        # No PR for this branch
-        if not prs:
-            return GitHubData(
-                owner=owner,
-                repo=repo,
-                pr_number=0,
-                pr_state="",
-                is_draft=False,
-                mergeable="",
-                check_contexts=[],
-            )
-
-        # Take first PR (REST API returns OPEN PRs first with state=all)
-        pr = prs[0]
-        pr_number = pr.get("number", 0)
-        pr_state = pr.get("state", "").upper()  # REST returns lowercase
-        is_draft = pr.get("draft", False)
-        head_sha = pr.get("head", {}).get("sha", "")
-
-        # Call 2: Get single PR for mergeable status
-        get_pr_result = subprocess.run(
-            ["gh", "api", f"repos/{owner}/{repo}/pulls/{pr_number}"],
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            timeout=2,
-        )
-
-        mergeable = ""
-        if get_pr_result.returncode == 0:
-            pr_detail = json.loads(get_pr_result.stdout)
-            mergeable_value = pr_detail.get("mergeable")
-            mergeable_state = pr_detail.get("mergeable_state", "")
-
-            # Map REST mergeable fields to GraphQL-style values
-            if mergeable_value is True:
-                mergeable = "MERGEABLE"
-            elif mergeable_value is False:
-                if mergeable_state == "dirty":
-                    mergeable = "CONFLICTING"
-                else:
-                    mergeable = "UNKNOWN"
-            else:
-                # mergeable is null (GitHub hasn't computed yet)
-                mergeable = "UNKNOWN"
-
-        # Call 3: Get check runs for CI status
-        check_contexts: list[dict[str, str]] = []
-        if head_sha:
-            check_runs_result = subprocess.run(
-                ["gh", "api", f"repos/{owner}/{repo}/commits/{head_sha}/check-runs"],
-                cwd=cwd,
-                capture_output=True,
-                text=True,
-                timeout=2,
-            )
-
-            if check_runs_result.returncode == 0:
-                check_runs_data = json.loads(check_runs_result.stdout)
-                raw_runs = check_runs_data.get("check_runs", [])
-
-                # Map REST format to GraphQL-compatible format
-                for run in raw_runs:
-                    check_contexts.append(
-                        {
-                            "__typename": "CheckRun",
-                            "conclusion": (run.get("conclusion") or "").upper(),
-                            "status": (run.get("status") or "").upper(),
-                            "name": run.get("name", ""),
-                        }
-                    )
-
+    # No PR for this branch
+    if pr_number == 0:
         return GitHubData(
             owner=owner,
             repo=repo,
-            pr_number=pr_number,
-            pr_state=pr_state,
-            is_draft=is_draft,
-            mergeable=mergeable,
-            check_contexts=check_contexts,
+            pr_number=0,
+            pr_state="",
+            is_draft=False,
+            mergeable="",
+            check_contexts=[],
         )
 
-    except (
-        subprocess.TimeoutExpired,
-        FileNotFoundError,
-        subprocess.SubprocessError,
-        json.JSONDecodeError,
-        KeyError,
-    ):
-        return None
+    # Fetch PR details and check runs in parallel (1.5s timeout each, 2s combined)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            pr_future = executor.submit(_fetch_pr_details, owner, repo, pr_number, cwd, 1.5)
+            checks_future = executor.submit(_fetch_check_runs, owner, repo, head_sha, cwd, 1.5)
+
+            # Wait for both with combined timeout
+            mergeable = pr_future.result(timeout=2)
+            check_contexts = checks_future.result(timeout=2)
+    except TimeoutError:
+        # If parallel execution times out, use defaults
+        mergeable = "UNKNOWN"
+        check_contexts = []
+
+    return GitHubData(
+        owner=owner,
+        repo=repo,
+        pr_number=pr_number,
+        pr_state=pr_state,
+        is_draft=is_draft,
+        mergeable=mergeable,
+        check_contexts=check_contexts,
+    )
 
 
 def _categorize_check_buckets(check_contexts: list[dict[str, str]]) -> str:
