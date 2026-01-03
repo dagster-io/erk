@@ -53,6 +53,17 @@ from erk_shared.github.types import (
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
+# Feature flag to control whether PR mutations use REST API or gh CLI commands.
+# When True: Use REST API (gh api) - uses REST quota, preserves GraphQL quota
+# When False: Use gh CLI commands (gh pr) - uses GraphQL quota internally
+USE_REST_API_FOR_PR_MUTATIONS = True
+
+# Feature flag for merge operations to use gh pr merge with --delete-branch.
+# When True: Use gh pr merge (supports --delete-branch for atomic remote branch cleanup)
+# When False: Use REST API for merge (no --delete-branch support)
+# This takes precedence over USE_REST_API_FOR_PR_MUTATIONS for merge_pr() only.
+USE_GH_PR_MERGE_FOR_LANDING = True
+
 
 class RealGitHub(GitHub):
     """Production implementation using gh CLI.
@@ -184,28 +195,43 @@ class RealGitHub(GitHub):
     ) -> bool | str:
         """Merge a pull request on GitHub.
 
-        Uses REST API to preserve GraphQL quota.
+        When USE_GH_PR_MERGE_FOR_LANDING is True, uses gh pr merge with --delete-branch
+        for atomic merge and remote branch deletion.
+
+        When USE_REST_API_FOR_PR_MUTATIONS is True, uses REST API to preserve
+        GraphQL quota. Otherwise uses gh pr merge (GraphQL internally).
         """
-        # GH-API-AUDIT: REST - PUT pulls/{number}/merge
-        cmd = [
-            "gh",
-            "api",
-            "--method",
-            "PUT",
-            f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/merge",
-        ]
+        if USE_GH_PR_MERGE_FOR_LANDING:
+            # Build gh pr merge command with --delete-branch for atomic cleanup
+            cmd = ["gh", "pr", "merge", str(pr_number), "--delete-branch"]
+            if squash:
+                cmd.append("--squash")
+            if subject is not None:
+                cmd.extend(["--subject", subject])
+            if body is not None:
+                cmd.extend(["--body", body])
+        else:
+            # Build REST API command
+            # GH-API-AUDIT: REST - PUT pulls/{number}/merge
+            cmd = [
+                "gh",
+                "api",
+                "--method",
+                "PUT",
+                f"repos/{{owner}}/{{repo}}/pulls/{pr_number}/merge",
+            ]
 
-        # Add merge method
-        if squash:
-            cmd.extend(["-f", "merge_method=squash"])
+            # Add merge method
+            if squash:
+                cmd.extend(["-f", "merge_method=squash"])
 
-        # Add commit title (corresponds to --subject)
-        if subject is not None:
-            cmd.extend(["-f", f"commit_title={subject}"])
+            # Add commit title (corresponds to --subject)
+            if subject is not None:
+                cmd.extend(["-f", f"commit_title={subject}"])
 
-        # Add commit message (corresponds to --body)
-        if body is not None:
-            cmd.extend(["-f", f"commit_message={body}"])
+            # Add commit message (corresponds to --body)
+            if body is not None:
+                cmd.extend(["-f", f"commit_message={body}"])
 
         try:
             result = run_subprocess_with_context(
