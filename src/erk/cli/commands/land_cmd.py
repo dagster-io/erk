@@ -27,6 +27,7 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.gt.cli import render_events
@@ -179,29 +180,30 @@ def _prompt_objective_update(
         user_output("   Run '/objective:update-landed-pr' to update objective")
         return
 
-    # Present options
+    # Present options with styled menu
     user_output("")
-    user_output("Would you like to update the objective now?")
-    user_output("  1. Skip - update later with: /objective:update-landed-pr")
-    user_output("  2. Update now (runs Claude agent)")
-
-    choice = click.prompt("Choice", type=click.Choice(["1", "2"]), default="1")
+    user_output(click.style("Would you like to update the objective now?", bold=True))
+    skip_msg = " Skip - update later with: /objective:update-landed-pr"
+    user_output(click.style("  [1]", fg="cyan") + skip_msg)
+    user_output(click.style("  [2]", fg="cyan") + " Update now (runs Claude agent)")
+    user_output("")
+    prompt_label = click.style("→", fg="cyan") + " Choice"
+    choice = click.prompt(prompt_label, type=click.Choice(["1", "2"]), default="1")
 
     if choice == "1":
         user_output("")
         user_output("Skipped. To update later, run:")
         user_output("  /objective:update-landed-pr")
     else:
-        user_output("")
-        user_output("Running objective update...")
-        result = ctx.claude_executor.execute_command(
-            "/objective:update-landed-pr",
-            repo_root,
+        # Use streaming for live feedback (shows "--- /command ---" and "--- Done ---")
+        result = stream_command_with_feedback(
+            executor=ctx.claude_executor,
+            command="/objective:update-landed-pr",
+            worktree_path=repo_root,
             dangerous=True,
         )
-        if result.success:
-            user_output(click.style("✓", fg="green") + " Objective updated")
-        else:
+        if not result.success:
+            user_output("")
             user_output(
                 click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
             )
