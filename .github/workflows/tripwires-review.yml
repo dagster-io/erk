@@ -52,7 +52,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           claude --print \
-            --model claude-haiku-4-5-20250514 \
+            --model claude-haiku-4-5-latest \
             --allowedTools 'Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)' \
             --dangerously-skip-permissions \
             --output-format stream-json \
