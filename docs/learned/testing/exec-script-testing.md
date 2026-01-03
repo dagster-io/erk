@@ -4,9 +4,12 @@ read_when:
   - "testing exec CLI commands"
   - "writing integration tests for scripts"
   - "debugging 'Context not initialized' errors in tests"
+  - "debugging flaky tests in parallel execution"
 tripwires:
   - action: "using monkeypatch.chdir() in exec script tests"
     warning: "Use obj=ErkContext.for_test(cwd=tmp_path) instead. monkeypatch.chdir() doesn't inject context, causing 'Context not initialized' errors."
+  - action: "testing code that reads from Path.home() or ~/.claude/ or ~/.erk/"
+    warning: "Tests that run in parallel must use monkeypatch to isolate from real filesystem state. Functions like _is_github_planning_enabled() and extract_slugs_from_session() cause flakiness when they read from the user's home directory."
 ---
 
 # Exec Script Testing Patterns
