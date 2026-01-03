@@ -1,0 +1,326 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: write # Needed for autofix to push
+
+jobs:
+  check-submission:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      skip: ${{ steps.check.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for submission folder
+        id: check
+        uses: ./.github/actions/check-worker-impl
+
+  # === Style Checks (parallel) ===
+  format:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Check Python formatting
+        run: make format-check
+
+  lint:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Run ruff linting
+        run: make lint
+
+  prettier:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install prettier
+        run: npm install -g prettier@3.6.0
+      - name: Check markdown formatting
+        run: prettier --check '**/*.md' --ignore-path .gitignore
+
+  docs-check:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install prettier
+        run: npm install -g prettier@3.6.0
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Check AGENTS.md standard compliance
+        run: make md-check
+      - name: Validate agent documentation frontmatter
+        run: make docs-validate
+      - name: Check generated docs are in sync
+        run: make docs-sync-check
+
+  # === Type/Test Checks (parallel) ===
+  ty:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Run ty
+        run: make ty
+
+  unit-tests:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Install Graphite CLI
+        run: npm install -g @withgraphite/graphite-cli
+      - name: Run unit tests
+        run: make test
+
+  integration-tests:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install uv
+        run: pip install uv
+      - name: Install dependencies
+        run: uv sync
+      - name: Install Graphite CLI
+        run: npm install -g @withgraphite/graphite-cli
+      - name: Run integration tests
+        run: make test-integration
+
+  # === Autofix (runs after ALL checks) ===
+  autofix:
+    needs: [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
+    if: |
+      always() &&
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.draft != true &&
+      (needs.format.result == 'failure' ||
+       needs.lint.result == 'failure' ||
+       needs.prettier.result == 'failure' ||
+       needs.docs-check.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Get PR info
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get PR details
+          pr_data=$(gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }} --jq '{head_repo: .head.repo.full_name, base_repo: .base.repo.full_name}')
+
+          # Security: Skip fork PRs to avoid executing untrusted code
+          head_repo=$(echo "$pr_data" | jq -r '.head_repo')
+          base_repo=$(echo "$pr_data" | jq -r '.base_repo')
+          if [ "$head_repo" != "$base_repo" ]; then
+            echo "PR is from a fork ($head_repo != $base_repo), skipping for security"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Skip if fork
+        if: steps.pr.outputs.skip == 'true'
+        run: |
+          echo "Skipping autofix for fork PR"
+          exit 0
+
+      # Security: Fork PRs are blocked above before reaching this checkout.
+      # Only same-repo PRs can trigger code execution in this privileged workflow.
+      - uses: actions/checkout@v4
+        if: steps.pr.outputs.skip != 'true'
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Check for submission folder
+        if: steps.pr.outputs.skip != 'true'
+        id: check
+        run: |
+          if [ -d ".impl" ]; then
+            echo "Found .impl folder, skipping autofix"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        run: pip install uv
+
+      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+      # about executing untrusted code from checkout in privileged workflow
+      - name: Install erk
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        run: uv tool install --from . --with ./packages/erk-shared erk
+
+      - uses: actions/setup-node@v4
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        with:
+          node-version: "20"
+
+      - name: Install prettier
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        run: npm install -g prettier@3.6.0
+
+      - name: Collect failure context
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        id: failures
+        run: |
+          # Collect all job outcomes for Claude's context
+          echo "format_result=${{ needs.format.result }}" >> $GITHUB_OUTPUT
+          echo "lint_result=${{ needs.lint.result }}" >> $GITHUB_OUTPUT
+          echo "prettier_result=${{ needs.prettier.result }}" >> $GITHUB_OUTPUT
+          echo "docs_result=${{ needs.docs-check.result }}" >> $GITHUB_OUTPUT
+          echo "ty_result=${{ needs.ty.result }}" >> $GITHUB_OUTPUT
+          echo "unit_tests_result=${{ needs.unit-tests.result }}" >> $GITHUB_OUTPUT
+          echo "integration_tests_result=${{ needs.integration-tests.result }}" >> $GITHUB_OUTPUT
+
+      - name: Collect actual errors
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        id: errors
+        run: |
+          errors=""
+
+          if [ "${{ needs.format.result }}" = "failure" ]; then
+            errors+="=== RUFF FORMAT ERRORS ===\n"
+            errors+="$(uv run ruff format --check . 2>&1 || true)\n\n"
+          fi
+
+          if [ "${{ needs.lint.result }}" = "failure" ]; then
+            errors+="=== RUFF LINT ERRORS ===\n"
+            errors+="$(uv run ruff check . 2>&1 || true)\n\n"
+          fi
+
+          if [ "${{ needs.prettier.result }}" = "failure" ]; then
+            errors+="=== PRETTIER ERRORS ===\n"
+            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2>&1 || true)\n\n"
+          fi
+
+          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+            errors+="=== DOCS CHECK ERRORS ===\n"
+            errors+="$(make md-check 2>&1 || true)\n"
+            errors+="$(make docs-validate 2>&1 || true)\n"
+            errors+="$(make docs-sync-check 2>&1 || true)\n\n"
+          fi
+
+          # Save to file to avoid escaping issues
+          echo -e "$errors" > /tmp/errors.txt
+
+      - name: Run Claude autofix
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          cat > /tmp/prompt.md << 'PROMPT_EOF'
+          # Autofix CI Errors
+
+          Fix the style/formatting errors. You have full context of all CI job results.
+
+          ## Job Results
+          - format: ${{ needs.format.result }}
+          - lint: ${{ needs.lint.result }}
+          - prettier: ${{ needs.prettier.result }}
+          - docs-check: ${{ needs.docs-check.result }}
+          - ty: ${{ needs.ty.result }} (NOT auto-fixable)
+          - unit-tests: ${{ needs.unit-tests.result }} (NOT auto-fixable)
+          - integration-tests: ${{ needs.integration-tests.result }} (NOT auto-fixable)
+
+          ## Errors to Fix
+          PROMPT_EOF
+
+          cat /tmp/errors.txt >> /tmp/prompt.md
+
+          cat >> /tmp/prompt.md << 'PROMPT_EOF'
+
+          ## Rules
+          - For ruff format errors: run `uv run ruff format <file>` on each file
+          - For ruff lint errors: run `uv run ruff check --fix <file>` for auto-fixable errors
+          - For prettier errors: run `prettier --write <file>` for each markdown file
+          - For docs errors: run `make docs-sync` if generated docs are out of sync
+          - DO NOT attempt to fix ty or test failures - those require human intervention
+          - Commit with message: "style: auto-fix CI errors"
+          - Push the commit
+          PROMPT_EOF
+
+          claude --print \
+            --model claude-sonnet-4-20250514 \
+            --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)' \
+            "$(cat /tmp/prompt.md)"
