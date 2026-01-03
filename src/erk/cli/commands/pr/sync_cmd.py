@@ -26,7 +26,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations import execute_squash
-from erk_shared.gateway.gt.types import SquashError
+from erk_shared.gateway.gt.types import SquashError, SquashSuccess
 from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
@@ -39,8 +39,10 @@ def _squash_commits(ctx: ErkContext, repo_root: Path) -> None:
         if isinstance(event, CompletionEvent):
             squash_result = event.result
     squash_result = Ensure.not_none(squash_result, "Squash operation produced no result")
-    Ensure.invariant(not isinstance(squash_result, SquashError), squash_result.message)  # type: ignore[unresolved-attribute]
-    user_output(click.style("✓", fg="green") + f" {squash_result.message}")  # type: ignore[unresolved-attribute]
+    if isinstance(squash_result, SquashError):
+        Ensure.invariant(False, squash_result.message)
+    assert isinstance(squash_result, SquashSuccess)  # Type narrowing after error check
+    user_output(click.style("✓", fg="green") + f" {squash_result.message}")
 
 
 def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: int) -> None:

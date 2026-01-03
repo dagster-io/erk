@@ -37,12 +37,52 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.github.checks import GitHubChecks
+from erk_shared.github.issues.types import IssueComment
+from erk_shared.github.types import PRDetails
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,
     NoPRForBranch,
     PRNotFoundError,
 )
+
+
+def _ensure_branch(branch_result: str | BranchDetectionFailed) -> str:
+    """Ensure branch was detected, exit with error if not."""
+    if isinstance(branch_result, BranchDetectionFailed):
+        exit_with_error(branch_result.error_type, branch_result.message)
+    assert not isinstance(branch_result, BranchDetectionFailed)  # Type narrowing after NoReturn
+    return branch_result
+
+
+def _ensure_pr_result_for_branch(
+    pr_result: PRDetails | NoPRForBranch,
+) -> PRDetails:
+    """Ensure PR lookup by branch succeeded, exit with appropriate error if not."""
+    if isinstance(pr_result, NoPRForBranch):
+        exit_with_error(pr_result.error_type, pr_result.message)
+    assert not isinstance(pr_result, NoPRForBranch)  # Type narrowing after NoReturn
+    return pr_result
+
+
+def _ensure_pr_result_by_number(
+    pr_result: PRDetails | PRNotFoundError,
+) -> PRDetails:
+    """Ensure PR lookup by number succeeded, exit with appropriate error if not."""
+    if isinstance(pr_result, PRNotFoundError):
+        exit_with_error(pr_result.error_type, pr_result.message)
+    assert not isinstance(pr_result, PRNotFoundError)  # Type narrowing after NoReturn
+    return pr_result
+
+
+def _ensure_comments(
+    comments_result: list[IssueComment] | GitHubAPIFailed,
+) -> list[IssueComment]:
+    """Ensure comments fetch succeeded, exit with error if not."""
+    if isinstance(comments_result, GitHubAPIFailed):
+        exit_with_error(comments_result.error_type, comments_result.message)
+    assert not isinstance(comments_result, GitHubAPIFailed)  # Type narrowing after NoReturn
+    return comments_result
 
 
 class DiscussionCommentDict(TypedDict):
@@ -73,43 +113,36 @@ def get_pr_discussion_comments(ctx: click.Context, pr: int | None) -> None:
 
     # Get PR details - either from current branch or specified PR number
     if pr is None:
-        branch_result = GitHubChecks.branch(get_current_branch(ctx))
-        if isinstance(branch_result, BranchDetectionFailed):
-            exit_with_error(branch_result.error_type, branch_result.message)
-        branch = branch_result
-
-        pr_result = GitHubChecks.pr_for_branch(github, repo_root, branch)  # type: ignore[invalid-argument-type]
-        if isinstance(pr_result, NoPRForBranch):
-            exit_with_error(pr_result.error_type, pr_result.message)
-        pr_details = pr_result
+        branch = _ensure_branch(GitHubChecks.branch(get_current_branch(ctx)))
+        pr_details = _ensure_pr_result_for_branch(
+            GitHubChecks.pr_for_branch(github, repo_root, branch)
+        )
     else:
-        pr_result = GitHubChecks.pr_by_number(github, repo_root, pr)
-        if isinstance(pr_result, PRNotFoundError):
-            exit_with_error(pr_result.error_type, pr_result.message)
-        pr_details = pr_result
+        pr_details = _ensure_pr_result_by_number(GitHubChecks.pr_by_number(github, repo_root, pr))
 
     # Fetch discussion comments (exits on failure)
-    comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number)  # type: ignore[possibly-missing-attribute]
-    if isinstance(comments_result, GitHubAPIFailed):
-        exit_with_error(comments_result.error_type, comments_result.message)
-    comments = comments_result
+    comments = _ensure_comments(
+        GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number)
+    )
 
     # Format comments for JSON output
-    formatted_comments: list[DiscussionCommentDict] = [  # type: ignore[invalid-assignment]
-        {
-            "id": comment.id,
-            "author": comment.author,
-            "body": comment.body,
-            "url": comment.url,
-        }
-        for comment in comments  # type: ignore[not-iterable]
-    ]
+    formatted_comments: list[DiscussionCommentDict] = []
+    for comment in comments:
+        assert isinstance(comment, IssueComment)  # Runtime verification for type safety
+        formatted_comments.append(
+            {
+                "id": comment.id,
+                "author": comment.author,
+                "body": comment.body,
+                "url": comment.url,
+            }
+        )
 
     result = {
         "success": True,
-        "pr_number": pr_details.number,  # type: ignore[possibly-missing-attribute]
-        "pr_url": pr_details.url,  # type: ignore[possibly-missing-attribute]
-        "pr_title": pr_details.title,  # type: ignore[possibly-missing-attribute]
+        "pr_number": pr_details.number,
+        "pr_url": pr_details.url,
+        "pr_title": pr_details.title,
         "comments": formatted_comments,
     }
     click.echo(json.dumps(result, indent=2))

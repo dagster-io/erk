@@ -17,6 +17,7 @@ from erk_shared.gateway.gt.operations.pre_analysis import execute_pre_analysis
 from erk_shared.gateway.gt.types import (
     PostAnalysisError,
     PreAnalysisError,
+    PreAnalysisResult,
     PreflightResult,
 )
 from erk_shared.github.parsing import parse_git_remote_url
@@ -254,9 +255,10 @@ def _execute_submit_only(
         )
         return
 
-    yield ProgressEvent(f"PR info retrieved (PR #{pr_result.number})", style="success")  # type: ignore[possibly-missing-attribute]
-    pr_number = pr_result.number  # type: ignore[possibly-missing-attribute]
-    pr_url = pr_result.url  # type: ignore[possibly-missing-attribute]
+    assert isinstance(pr_result, PRDetails)  # Type narrowing after early return
+    yield ProgressEvent(f"PR info retrieved (PR #{pr_result.number})", style="success")
+    pr_number = pr_result.number
+    pr_url = pr_result.url
     # Get Graphite URL by parsing repo identity from git remote URL (no API call)
     remote_url = ops.git.get_remote_url(repo_root, "origin")
     owner, repo_name = parse_git_remote_url(remote_url)
@@ -319,10 +321,15 @@ def execute_preflight(
         if submit_result is not None:
             yield CompletionEvent(submit_result)
         return
+    assert isinstance(submit_result, tuple)  # Type narrowing after early return
     submit_elapsed = int(time.time() - submit_start)
     yield ProgressEvent(f"Branch submitted ({submit_elapsed}s)", style="success")
 
-    pr_number, pr_url, graphite_url, branch_name = submit_result  # type: ignore[not-iterable]
+    # Extract tuple elements with explicit types (ty needs help with tuple unpacking)
+    pr_number = int(submit_result[0])
+    pr_url = str(submit_result[1])
+    graphite_url = str(submit_result[2])
+    branch_name = str(submit_result[3])
 
     # Step 3: Get PR diff from GitHub API
     repo_root = ops.git.get_repository_root(cwd)
@@ -362,6 +369,7 @@ def execute_preflight(
         if issue_ref is not None:
             issue_number = issue_ref.issue_number
 
+    assert isinstance(pre_result, PreAnalysisResult)  # Type narrowing: checked at line 303
     yield CompletionEvent(
         PreflightResult(
             success=True,
@@ -375,6 +383,6 @@ def execute_preflight(
             parent_branch=parent_branch,
             issue_number=issue_number,
             message=f"Preflight complete for branch: {branch_name}\nPR #{pr_number}: {pr_url}",
-            commit_messages=pre_result.commit_messages,  # type: ignore[unresolved-attribute]
+            commit_messages=pre_result.commit_messages,
         )
     )
