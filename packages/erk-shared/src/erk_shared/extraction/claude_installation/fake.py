@@ -1,10 +1,10 @@
-"""In-memory fake implementation of SessionStore for testing."""
+"""In-memory fake implementation of ClaudeInstallation for testing."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store.abc import (
-    ClaudeCodeSessionStore,
+from erk_shared.extraction.claude_installation.abc import (
+    ClaudeInstallation,
     Session,
     SessionContent,
     SessionNotFound,
@@ -29,7 +29,7 @@ class FakeProject:
     sessions: dict[str, FakeSessionData] = field(default_factory=dict)
 
 
-class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
+class FakeClaudeInstallation(ClaudeInstallation):
     """In-memory fake for testing.
 
     Enables fast, deterministic testing without filesystem I/O.
@@ -39,17 +39,23 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
     def __init__(
         self,
         *,
-        projects: dict[Path, FakeProject] | None = None,
-        plans: dict[str, str] | None = None,
+        projects: dict[Path, FakeProject] | None,
+        plans: dict[str, str] | None,
+        settings: dict | None,
+        local_settings: dict | None,
     ) -> None:
-        """Initialize fake store with test data.
+        """Initialize fake installation with test data.
 
         Args:
             projects: Map of project_cwd -> FakeProject with session data
             plans: Map of slug -> plan content for fake plan data
+            settings: Global settings dict, or None if file doesn't exist
+            local_settings: Local settings dict, or None if file doesn't exist
         """
         self._projects = projects or {}
         self._plans = plans or {}
+        self._settings = settings  # None = file doesn't exist
+        self._local_settings = local_settings
 
     def _find_project_for_path(self, project_cwd: Path) -> Path | None:
         """Find project at or above the given path.
@@ -69,6 +75,8 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
 
         return None
 
+    # --- Session operations ---
+
     def has_project(self, project_cwd: Path) -> bool:
         """Check if project exists at or above the given path."""
         return self._find_project_for_path(project_cwd) is not None
@@ -77,10 +85,10 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         *,
-        current_session_id: str | None = None,
-        min_size: int = 0,
-        limit: int = 10,
-        include_agents: bool = False,
+        current_session_id: str | None,
+        min_size: int,
+        limit: int,
+        include_agents: bool,
     ) -> list[Session]:
         """Find sessions from fake project data.
 
@@ -129,7 +137,7 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         project_cwd: Path,
         session_id: str,
         *,
-        include_agents: bool = True,
+        include_agents: bool,
     ) -> SessionContent | None:
         """Read session content from fake data."""
         project_path = self._find_project_for_path(project_cwd)
@@ -157,7 +165,7 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         *,
-        session_id: str | None = None,
+        session_id: str | None,
     ) -> str | None:
         """Return fake plan content.
 
@@ -225,3 +233,27 @@ class FakeClaudeCodeSessionStore(ClaudeCodeSessionStore):
 
         # Return synthetic path for testing
         return project_path / f"{session_id}.jsonl"
+
+    # --- Settings operations ---
+
+    def get_settings_path(self) -> Path:
+        """Return path to global Claude settings file (fake path)."""
+        return Path("/fake/.claude/settings.json")
+
+    def get_local_settings_path(self) -> Path:
+        """Return path to local Claude settings file (fake path)."""
+        return Path("/fake/.claude/settings.local.json")
+
+    def settings_exists(self) -> bool:
+        """Check if global settings file exists."""
+        return self._settings is not None
+
+    def read_settings(self) -> dict:
+        """Read and parse global Claude settings.
+
+        Returns:
+            Parsed JSON as dict, or empty dict if file doesn't exist
+        """
+        if self._settings is None:
+            return {}
+        return dict(self._settings)  # Return copy

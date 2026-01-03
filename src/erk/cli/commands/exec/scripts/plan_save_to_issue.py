@@ -30,10 +30,10 @@ import yaml
 
 from erk_shared.context.helpers import (
     get_repo_identifier,
+    require_claude_installation,
     require_cwd,
     require_local_config,
     require_repo_root,
-    require_session_store,
 )
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
@@ -155,7 +155,7 @@ def plan_save_to_issue(
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
-    session_store = require_session_store(ctx)
+    claude_installation = require_claude_installation(ctx)
 
     # session_id comes from --session-id CLI option (or None if not provided)
     effective_session_id = session_id
@@ -164,7 +164,7 @@ def plan_save_to_issue(
     if plan_file:
         plan = plan_file.read_text(encoding="utf-8")
     else:
-        plan = session_store.get_latest_plan(cwd, session_id=effective_session_id)
+        plan = claude_installation.get_latest_plan(cwd, session_id=effective_session_id)
 
     if not plan:
         if output_format == "display":

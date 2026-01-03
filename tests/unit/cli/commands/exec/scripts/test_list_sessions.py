@@ -1,7 +1,7 @@
 """Unit tests for list_sessions kit CLI command.
 
 Tests session discovery, relative time formatting, branch context detection,
-and summary extraction using FakeClaudeCodeSessionStore.
+and summary extraction using FakeClaudeInstallation.
 """
 
 import json
@@ -18,8 +18,8 @@ from erk.cli.commands.exec.scripts.list_sessions import (
     list_sessions,
 )
 from erk_shared.context import ErkContext
-from erk_shared.extraction.claude_code_session_store import (
-    FakeClaudeCodeSessionStore,
+from erk_shared.extraction.claude_installation import (
+    FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
@@ -186,13 +186,13 @@ def test_extract_summary_content_with_newlines() -> None:
 
 
 # ============================================================================
-# 4. Session Discovery Tests (7 tests) - Using FakeClaudeCodeSessionStore
+# 4. Session Discovery Tests (7 tests) - Using FakeClaudeInstallation
 # ============================================================================
 
 
 def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
     """Test that all sessions are discovered from store."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -213,17 +213,22 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
                     ),
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
-    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=0
+    )
     assert len(sessions) == 3
     assert filtered_count == 0
 
 
 def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     """Test that sessions are sorted by mtime (newest first)."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -239,10 +244,15 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
                     ),
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
-    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=0
+    )
     assert len(sessions) == 2
     assert sessions[0].session_id == "new"  # Newest first
     assert sessions[1].session_id == "old"
@@ -251,7 +261,7 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
 
 def test_list_sessions_respects_limit(tmp_path: Path) -> None:
     """Test that limit parameter is respected."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -263,17 +273,22 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
                     for i in range(20)
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
-    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=5)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=5, min_size=0
+    )
     assert len(sessions) == 5
     assert filtered_count == 0
 
 
 def test_list_sessions_marks_current(tmp_path: Path) -> None:
     """Test that current session is marked correctly."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -290,10 +305,13 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
                 }
             )
         },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, "current123", limit=10
+        fake_store, tmp_path, "current123", limit=10, min_size=0
     )
 
     current = next(s for s in sessions if s.session_id == "current123")
@@ -306,25 +324,36 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
 
 def test_list_sessions_empty_project(tmp_path: Path) -> None:
     """Test handling of project with no sessions."""
-    fake_store = FakeClaudeCodeSessionStore(projects={tmp_path: FakeProject(sessions={})})
+    fake_store = FakeClaudeInstallation(
+        projects={tmp_path: FakeProject(sessions={})},
+        plans=None,
+        settings=None,
+        local_settings=None,
+    )
 
-    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=0
+    )
     assert sessions == []
     assert filtered_count == 0
 
 
 def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
     """Test handling of nonexistent project."""
-    fake_store = FakeClaudeCodeSessionStore()  # No projects
+    fake_store = FakeClaudeInstallation(
+        projects=None, plans=None, settings=None, local_settings=None
+    )  # No projects
 
-    sessions, filtered_count = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    sessions, filtered_count = _list_sessions_from_store(
+        fake_store, tmp_path, None, limit=10, min_size=0
+    )
     assert sessions == []
     assert filtered_count == 0
 
 
 def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
     """Test that summaries are extracted from session content."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -335,10 +364,13 @@ def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
                     )
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
-    sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10)
+    sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10, min_size=0)
     assert len(sessions) == 1
     assert sessions[0].summary == "Hello world"
 
@@ -414,7 +446,7 @@ def test_get_branch_context_empty_repo(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 6. CLI Command Tests (5 tests) - Using FakeClaudeCodeSessionStore
+# 6. CLI Command Tests (5 tests) - Using FakeClaudeInstallation
 # ============================================================================
 
 
@@ -424,7 +456,7 @@ def test_cli_success(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -435,9 +467,12 @@ def test_cli_success(tmp_path: Path) -> None:
                     )
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
-    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, [], obj=context)
@@ -455,9 +490,11 @@ def test_cli_project_not_found(tmp_path: Path) -> None:
         current_branches={tmp_path: "main"},
         trunk_branches={tmp_path: "main"},
     )
-    # Empty session store - no projects
-    fake_store = FakeClaudeCodeSessionStore()
-    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    # Empty installation - no projects
+    fake_store = FakeClaudeInstallation(
+        projects=None, plans=None, settings=None, local_settings=None
+    )
+    context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, [], obj=context)
@@ -474,7 +511,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -485,9 +522,12 @@ def test_cli_output_structure(tmp_path: Path) -> None:
                     )
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
-    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, [], obj=context)
@@ -525,7 +565,7 @@ def test_cli_limit_option(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -537,9 +577,12 @@ def test_cli_limit_option(tmp_path: Path) -> None:
                     for i in range(10)
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
-    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, ["--limit", "3"], obj=context)
@@ -555,7 +598,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -572,8 +615,11 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
                 }
             )
         },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
-    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, ["--session-id", "current-session"], obj=context)
@@ -595,7 +641,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
     """Test that --min-size filters out tiny sessions."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -611,7 +657,10 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
                     ),
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -625,7 +674,7 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
     """Test that min_size=0 (default) does not filter."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -641,7 +690,10 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
                     ),
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -654,7 +706,7 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
 
 def test_list_sessions_all_filtered(tmp_path: Path) -> None:
     """Test when all sessions are filtered by size."""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -670,7 +722,10 @@ def test_list_sessions_all_filtered(tmp_path: Path) -> None:
                     ),
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -687,7 +742,7 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -703,9 +758,12 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
                     ),
                 }
             )
-        }
+        },
+        plans=None,
+        settings=None,
+        local_settings=None,
     )
-    context = ErkContext.for_test(git=git, session_store=fake_store, cwd=tmp_path)
+    context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
     result = runner.invoke(list_sessions, ["--min-size", "100"], obj=context)

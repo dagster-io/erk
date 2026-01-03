@@ -19,7 +19,6 @@ from erk.artifacts.state import load_artifact_state
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     StatuslineNotConfigured,
-    get_global_claude_settings_path,
     get_repo_claude_settings_path,
     get_statusline_config,
     has_erk_permission,
@@ -30,6 +29,7 @@ from erk.core.claude_settings import (
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github_admin.abc import GitHubAdmin
 
@@ -382,32 +382,34 @@ def check_uv_version(shell: Shell) -> CheckResult:
     )
 
 
-def check_hooks_disabled() -> CheckResult:
+def check_hooks_disabled(claude_installation: ClaudeInstallation) -> CheckResult:
     """Check if Claude Code hooks are globally disabled.
 
-    Checks both global settings files for hooks.disabled=true:
-    - ~/.claude/settings.json
-    - ~/.claude/settings.local.json
+    Checks global settings for hooks.disabled=true via the ClaudeInstallation gateway.
+
+    Args:
+        claude_installation: Gateway for accessing Claude settings
 
     Returns a warning (not failure) if hooks are disabled, since the user
     may have intentionally disabled them.
     """
-    home = Path.home()
-    settings_files = [
-        home / ".claude" / "settings.json",
-        home / ".claude" / "settings.local.json",
-    ]
-
     disabled_in: list[str] = []
 
-    for settings_path in settings_files:
-        if not settings_path.exists():
-            continue
-        content = settings_path.read_text(encoding="utf-8")
-        settings = json.loads(content)
+    # Check global settings via gateway
+    settings = claude_installation.read_settings()
+    if settings:
         hooks = settings.get("hooks", {})
         if hooks.get("disabled") is True:
-            disabled_in.append(settings_path.name)
+            disabled_in.append("settings.json")
+
+    # Check local settings file directly (not yet in gateway)
+    local_settings_path = claude_installation.get_local_settings_path()
+    if local_settings_path.exists():
+        content = local_settings_path.read_text(encoding="utf-8")
+        local_settings = json.loads(content)
+        hooks = local_settings.get("hooks", {})
+        if hooks.get("disabled") is True:
+            disabled_in.append("settings.local.json")
 
     if disabled_in:
         return CheckResult(
@@ -425,19 +427,20 @@ def check_hooks_disabled() -> CheckResult:
     )
 
 
-def check_statusline_configured() -> CheckResult:
+def check_statusline_configured(claude_installation: ClaudeInstallation) -> CheckResult:
     """Check if erk-statusline is configured in global Claude settings.
 
     This is an info-level check - it always passes, but informs users
     they can configure the erk statusline feature.
 
+    Args:
+        claude_installation: Gateway for accessing Claude settings
+
     Returns:
         CheckResult with info about statusline status
     """
-    settings_path = get_global_claude_settings_path()
-    settings = read_claude_settings(settings_path)
-
-    if settings is None:
+    # Read settings via gateway
+    if not claude_installation.settings_exists():
         return CheckResult(
             name="statusline",
             passed=True,
@@ -445,6 +448,8 @@ def check_statusline_configured() -> CheckResult:
             details="Run 'erk init --statusline' to enable erk statusline",
             info=True,
         )
+
+    settings = claude_installation.read_settings()
 
     if has_erk_statusline(settings):
         return CheckResult(
@@ -1081,6 +1086,8 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     shell = ctx.shell
     admin = ctx.github_admin
 
+    claude_installation = ctx.claude_installation
+
     results = [
         check_erk_version(),
         check_claude_cli(shell),
@@ -1088,8 +1095,8 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_github_cli(shell),
         check_github_auth(shell, admin),
         check_uv_version(shell),
-        check_hooks_disabled(),
-        check_statusline_configured(),
+        check_hooks_disabled(claude_installation),
+        check_statusline_configured(claude_installation),
     ]
 
     # Add repository check

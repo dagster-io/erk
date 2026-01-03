@@ -45,7 +45,7 @@ def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
     result = create_raw_extraction_plan(
         github_issues=ctx.issues,
         git=ctx.git,
-        session_store=ctx.session_store,
+        claude_installation=ctx.claude_installation,
         repo_root=repo_root,
         cwd=ctx.cwd,
         current_session_id=session_id,

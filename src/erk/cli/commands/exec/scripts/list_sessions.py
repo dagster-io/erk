@@ -37,8 +37,8 @@ from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_git, require_session_store
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore, Session
+from erk_shared.context.helpers import require_claude_installation, require_cwd, require_git
+from erk_shared.extraction.claude_installation import ClaudeInstallation, Session
 from erk_shared.extraction.session_schema import extract_first_user_message_text
 from erk_shared.git.abc import Git
 
@@ -157,16 +157,16 @@ def format_display_time(mtime: float) -> str:
 
 
 def _list_sessions_from_store(
-    session_store: ClaudeCodeSessionStore,
+    claude_installation: ClaudeInstallation,
     cwd: Path,
     current_session_id: str | None,
-    limit: int = 10,
-    min_size: int = 0,
+    limit: int,
+    min_size: int,
 ) -> tuple[list[SessionInfo], int]:
-    """List sessions from session store sorted by modification time.
+    """List sessions from claude installation sorted by modification time.
 
     Args:
-        session_store: Session store to query
+        claude_installation: Claude installation to query
         cwd: Current working directory (project identifier)
         current_session_id: Current session ID (for marking)
         limit: Maximum number of sessions to return
@@ -176,12 +176,16 @@ def _list_sessions_from_store(
         Tuple of (sessions list, count of sessions filtered by min_size)
     """
     # Check if project exists
-    if not session_store.has_project(cwd):
+    if not claude_installation.has_project(cwd):
         return [], 0
 
     # Get all sessions first to count filtered
-    all_sessions = session_store.find_sessions(
-        cwd, current_session_id=current_session_id, min_size=0, limit=1000
+    all_sessions = claude_installation.find_sessions(
+        cwd,
+        current_session_id=current_session_id,
+        min_size=0,
+        limit=1000,
+        include_agents=False,
     )
 
     # Filter by size
@@ -200,7 +204,7 @@ def _list_sessions_from_store(
     session_infos: list[SessionInfo] = []
     for session in limited_sessions:
         # Read session content for summary extraction
-        content = session_store.read_session(cwd, session.session_id, include_agents=False)
+        content = claude_installation.read_session(cwd, session.session_id, include_agents=False)
         summary = ""
         if content is not None:
             summary = extract_first_user_message_text(content.main_content, max_length=60)
@@ -250,11 +254,11 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int, session_id: str
     (timestamps, summaries), and provides branch context.
     """
     git = require_git(ctx)
-    session_store = require_session_store(ctx)
+    claude_installation = require_claude_installation(ctx)
     cwd = require_cwd(ctx)
 
     # Check if project exists
-    if not session_store.has_project(cwd):
+    if not claude_installation.has_project(cwd):
         error = ListSessionsError(
             success=False,
             error=f"No Claude Code project found for: {cwd}",
@@ -268,7 +272,11 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int, session_id: str
 
     # List sessions from store
     sessions, filtered_count = _list_sessions_from_store(
-        session_store, cwd, session_id, limit=limit, min_size=min_size
+        claude_installation,
+        cwd,
+        session_id,
+        limit=limit,
+        min_size=min_size,
     )
 
     # Build result

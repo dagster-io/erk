@@ -41,7 +41,7 @@ from erk_shared.core import (
     PlannerRegistry,
     ScriptWriter,
 )
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
 from erk_shared.gateway.claude_settings.real import RealClaudeSettingsStore
 
@@ -99,7 +99,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
-    from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.extraction.claude_installation import FakeClaudeInstallation
     from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -132,7 +132,9 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         feedback=FakeUserFeedback(),
         plan_list_service=FakePlanListService(),
         planner_registry=FakePlannerRegistry(),
-        session_store=FakeClaudeCodeSessionStore(),
+        claude_installation=FakeClaudeInstallation(
+            projects=None, plans=None, settings=None, local_settings=None
+        ),
         prompt_executor=FakePromptExecutor(),
         claude_settings_store=FakeClaudeSettingsStore(),
         cwd=cwd,
@@ -163,7 +165,7 @@ def context_for_test(
     feedback: UserFeedback | None = None,
     plan_list_service: PlanListService | None = None,
     planner_registry: PlannerRegistry | None = None,
-    session_store: ClaudeCodeSessionStore | None = None,
+    claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
     cwd: Path | None = None,
     global_config: GlobalConfig | None = None,
@@ -212,7 +214,7 @@ def context_for_test(
     from tests.test_utils.paths import sentinel_path
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
-    from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.extraction.claude_installation import FakeClaudeInstallation
     from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -273,8 +275,10 @@ def context_for_test(
     if planner_registry is None:
         planner_registry = FakePlannerRegistry()
 
-    if session_store is None:
-        session_store = FakeClaudeCodeSessionStore()
+    if claude_installation is None:
+        claude_installation = FakeClaudeInstallation(
+            projects=None, plans=None, settings=None, local_settings=None
+        )
 
     if prompt_executor is None:
         prompt_executor = FakePromptExecutor()
@@ -322,7 +326,7 @@ def context_for_test(
         feedback=feedback,
         plan_list_service=plan_list_service,
         planner_registry=planner_registry,
-        session_store=session_store,
+        claude_installation=claude_installation,
         prompt_executor=prompt_executor,
         claude_settings_store=FakeClaudeSettingsStore(),
         cwd=cwd or sentinel_path(),
@@ -516,10 +520,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 11. Create session store and prompt executor
-    from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
+    # 11. Create claude installation, prompt executor, and claude settings store
+    from erk_shared.extraction.claude_installation import RealClaudeInstallation
 
-    session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
+    real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
     claude_settings_store: ClaudeSettingsStore = RealClaudeSettingsStore()
 
@@ -540,7 +544,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         feedback=feedback,
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(),
-        session_store=session_store,
+        claude_installation=real_claude_installation,
         prompt_executor=prompt_executor,
         claude_settings_store=claude_settings_store,
         cwd=cwd,

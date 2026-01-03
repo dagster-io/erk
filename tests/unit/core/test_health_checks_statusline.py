@@ -1,28 +1,23 @@
 """Tests for check_statusline_configured health check.
 
 These tests verify the health check correctly reports statusline configuration
-status from global Claude settings.
+status from global Claude settings via FakeClaudeInstallation.
 """
-
-import json
-from pathlib import Path
-from unittest import mock
 
 import pytest
 
 from erk.core.claude_settings import get_erk_statusline_command
 from erk.core.health_checks import check_statusline_configured
+from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 
 
-def test_returns_info_when_no_settings_file(tmp_path: Path) -> None:
+def test_returns_info_when_no_settings_file() -> None:
     """Test returns info-level result when no global settings file exists."""
-    settings_path = tmp_path / ".claude" / "settings.json"
+    installation = FakeClaudeInstallation(
+        projects=None, plans=None, settings=None, local_settings=None
+    )
 
-    with mock.patch(
-        "erk.core.health_checks.get_global_claude_settings_path",
-        return_value=settings_path,
-    ):
-        result = check_statusline_configured()
+    result = check_statusline_configured(installation)
 
     assert result.passed is True
     assert result.name == "statusline"
@@ -33,30 +28,24 @@ def test_returns_info_when_no_settings_file(tmp_path: Path) -> None:
 
 
 def test_returns_configured_when_erk_statusline_present(
-    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test returns configured status when erk-statusline is set."""
     monkeypatch.delenv("ERK_STATUSLINE_COMMAND", raising=False)
-    settings_path = tmp_path / ".claude" / "settings.json"
-    settings_path.parent.mkdir(parents=True)
-    settings_path.write_text(
-        json.dumps(
-            {
-                "statusLine": {
-                    "type": "command",
-                    "command": get_erk_statusline_command(),
-                }
+
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings={
+            "statusLine": {
+                "type": "command",
+                "command": get_erk_statusline_command(),
             }
-        ),
-        encoding="utf-8",
+        },
+        local_settings=None,
     )
 
-    with mock.patch(
-        "erk.core.health_checks.get_global_claude_settings_path",
-        return_value=settings_path,
-    ):
-        result = check_statusline_configured()
+    result = check_statusline_configured(installation)
 
     assert result.passed is True
     assert result.name == "statusline"
@@ -65,27 +54,21 @@ def test_returns_configured_when_erk_statusline_present(
     assert result.details is None
 
 
-def test_returns_info_when_different_statusline(tmp_path: Path) -> None:
+def test_returns_info_when_different_statusline() -> None:
     """Test returns info-level result when different statusline is configured."""
-    settings_path = tmp_path / ".claude" / "settings.json"
-    settings_path.parent.mkdir(parents=True)
-    settings_path.write_text(
-        json.dumps(
-            {
-                "statusLine": {
-                    "type": "command",
-                    "command": "uvx other-statusline",
-                }
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings={
+            "statusLine": {
+                "type": "command",
+                "command": "uvx other-statusline",
             }
-        ),
-        encoding="utf-8",
+        },
+        local_settings=None,
     )
 
-    with mock.patch(
-        "erk.core.health_checks.get_global_claude_settings_path",
-        return_value=settings_path,
-    ):
-        result = check_statusline_configured()
+    result = check_statusline_configured(installation)
 
     assert result.passed is True
     assert result.name == "statusline"
@@ -97,20 +80,16 @@ def test_returns_info_when_different_statusline(tmp_path: Path) -> None:
     assert "erk init --statusline" in result.details
 
 
-def test_returns_info_when_no_statusline_in_settings(tmp_path: Path) -> None:
+def test_returns_info_when_no_statusline_in_settings() -> None:
     """Test returns info-level result when settings exist but no statusLine."""
-    settings_path = tmp_path / ".claude" / "settings.json"
-    settings_path.parent.mkdir(parents=True)
-    settings_path.write_text(
-        json.dumps({"permissions": {"allow": []}}),
-        encoding="utf-8",
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings={"permissions": {"allow": []}},
+        local_settings=None,
     )
 
-    with mock.patch(
-        "erk.core.health_checks.get_global_claude_settings_path",
-        return_value=settings_path,
-    ):
-        result = check_statusline_configured()
+    result = check_statusline_configured(installation)
 
     assert result.passed is True
     assert result.name == "statusline"

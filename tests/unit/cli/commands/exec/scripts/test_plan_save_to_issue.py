@@ -13,8 +13,8 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     validate_plan_frontmatter,
 )
 from erk_shared.context import ErkContext
-from erk_shared.extraction.claude_code_session_store import (
-    FakeClaudeCodeSessionStore,
+from erk_shared.extraction.claude_installation import (
+    FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
@@ -35,8 +35,11 @@ steps:
 
 - Step 1
 - Step 2"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"test-plan": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -45,7 +48,7 @@ steps:
         ["--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -70,8 +73,11 @@ steps:
 ## Enrichment Details
 
 Context here"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"enriched-plan": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -80,7 +86,7 @@ Context here"""
         ["--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -93,7 +99,12 @@ def test_plan_save_to_issue_no_plan() -> None:
     """Test error when no plan found."""
     fake_gh = FakeGitHubIssues()
     # Empty session store - no plans
-    fake_store = FakeClaudeCodeSessionStore()
+    fake_store = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+    )
     runner = CliRunner()
 
     result = runner.invoke(
@@ -101,7 +112,7 @@ def test_plan_save_to_issue_no_plan() -> None:
         ["--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -123,8 +134,11 @@ steps:
 # Test Plan
 
 - Step 1"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"format-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -134,7 +148,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -164,8 +178,11 @@ steps:
 # Test Feature
 
 - Implementation step"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"display-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -174,7 +191,7 @@ steps:
         ["--format", "display"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -204,8 +221,11 @@ steps:
 # Feature
 
 Steps here"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"label-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -214,7 +234,7 @@ Steps here"""
         [],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -236,7 +256,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
         trunk_branches={tmp_path: "main"},
     )
 
-    # Create session data and plan in FakeClaudeCodeSessionStore
+    # Create session data and plan in FakeClaudeInstallation
     session_content = (
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}}\n'
@@ -249,7 +269,7 @@ steps:
 # Feature Plan
 
 - Step 1"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -262,6 +282,8 @@ steps:
             )
         },
         plans={"session-context-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -272,7 +294,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
             cwd=tmp_path,
             repo_root=tmp_path,
         ),
@@ -304,8 +326,11 @@ steps:
 
 - Step 1"""
     # Session store with no sessions but has a plan
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"no-session-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -316,7 +341,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -342,8 +367,11 @@ steps:
 # Feature
 
 - Step 1"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"metadata-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -354,7 +382,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -395,8 +423,11 @@ steps:
 
 - Step 1"""
 
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"session-id-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -408,7 +439,7 @@ steps:
             obj=ErkContext.for_test(
                 github_issues=fake_gh,
                 git=fake_git,
-                session_store=fake_store,
+                claude_installation=fake_store,
                 cwd=Path(td),
                 repo_root=Path(td),
             ),
@@ -450,7 +481,7 @@ steps:
 # Feature Plan
 
 - Step 1"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -463,6 +494,8 @@ steps:
             )
         },
         plans={"display-session-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -473,7 +506,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
             cwd=tmp_path,
             repo_root=tmp_path,
         ),
@@ -503,7 +536,7 @@ steps:
 - Step 1"""
 
     # Session store has sessions but no session ID is passed via CLI
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -516,6 +549,8 @@ steps:
             )
         },
         plans={"store-session-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -526,7 +561,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
             cwd=tmp_path,
             repo_root=tmp_path,
         ),
@@ -564,7 +599,7 @@ steps:
 - Step 1"""
 
     # Session store has the session that matches the flag
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -577,6 +612,8 @@ steps:
             )
         },
         plans={"session-flag-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
 
     runner = CliRunner()
@@ -587,7 +624,7 @@ steps:
         obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
-            session_store=fake_store,
+            claude_installation=fake_store,
             cwd=tmp_path,
             repo_root=tmp_path,
         ),
@@ -614,8 +651,11 @@ steps:
 # Feature Plan
 
 - Step 1"""
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"marker-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -624,7 +664,10 @@ steps:
             plan_save_to_issue,
             ["--format", "json", "--session-id", test_session_id],
             obj=ErkContext.for_test(
-                github_issues=fake_gh, git=fake_git, session_store=fake_store, repo_root=Path(td)
+                github_issues=fake_gh,
+                git=fake_git,
+                claude_installation=fake_store,
+                repo_root=Path(td),
             ),
         )
 
@@ -662,8 +705,11 @@ steps:
 
 - Step 1"""
     # Session store has plan but no session ID will be passed
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"no-marker-test": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -671,7 +717,9 @@ steps:
         result = runner.invoke(
             plan_save_to_issue,
             ["--format", "json"],  # No --session-id, and store has None
-            obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, session_store=fake_store),
+            obj=ErkContext.for_test(
+                github_issues=fake_gh, git=fake_git, claude_installation=fake_store
+            ),
         )
 
         assert result.exit_code == 0, f"Failed: {result.output}"
@@ -810,8 +858,11 @@ def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
     fake_gh = FakeGitHubIssues()
     # Plan without frontmatter steps
     plan_content = "# My Feature\n\n- Step 1\n- Step 2"
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"no-frontmatter": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -820,7 +871,7 @@ def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
         ["--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 
@@ -843,8 +894,11 @@ steps:
 
 Details here.
 """
-    fake_store = FakeClaudeCodeSessionStore(
+    fake_store = FakeClaudeInstallation(
+        projects=None,
         plans={"with-frontmatter": plan_content},
+        settings=None,
+        local_settings=None,
     )
     runner = CliRunner()
 
@@ -853,7 +907,7 @@ Details here.
         ["--format", "json"],
         obj=ErkContext.for_test(
             github_issues=fake_gh,
-            session_store=fake_store,
+            claude_installation=fake_store,
         ),
     )
 

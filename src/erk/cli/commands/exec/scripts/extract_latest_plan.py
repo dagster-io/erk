@@ -18,7 +18,7 @@ Exit Codes:
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_session_store
+from erk_shared.context.helpers import require_claude_installation, require_cwd
 
 
 @click.command(name="extract-latest-plan")
@@ -34,10 +34,10 @@ def extract_latest_plan(ctx: click.Context, session_id: str | None) -> None:
     """
     # Get dependencies from context
     cwd = require_cwd(ctx)
-    session_store = require_session_store(ctx)
+    claude_installation = require_claude_installation(ctx)
 
     # Extract latest plan
-    plan_text = session_store.get_latest_plan(cwd, session_id=session_id)
+    plan_text = claude_installation.get_latest_plan(cwd, session_id=session_id)
 
     if not plan_text:
         click.echo(

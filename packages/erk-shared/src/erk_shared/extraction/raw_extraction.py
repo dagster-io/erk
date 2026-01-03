@@ -14,7 +14,7 @@ import uuid
 import warnings
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.extraction.llm_distillation import distill_with_haiku
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.extraction.types import RawExtractionResult
@@ -119,11 +119,11 @@ def get_raw_extraction_body(branch_name: str) -> str:
 def create_raw_extraction_plan(
     github_issues: GitHubIssues,
     git: Git,
-    session_store: ClaudeCodeSessionStore,
+    claude_installation: ClaudeInstallation,
     repo_root: Path,
     cwd: Path,
-    current_session_id: str | None = None,
-    min_size: int = 1024,
+    current_session_id: str | None,
+    min_size: int,
 ) -> RawExtractionResult:
     """Create an extraction plan with raw session context.
 
@@ -138,7 +138,7 @@ def create_raw_extraction_plan(
     Args:
         github_issues: GitHub issues interface for creating issues and comments
         git: Git interface for branch operations
-        session_store: SessionStore for session operations
+        claude_installation: ClaudeInstallation for session operations
         repo_root: Path to repository root
         cwd: Current working directory (for project directory lookup)
         current_session_id: Current session ID (passed explicitly from CLI)
@@ -155,7 +155,7 @@ def create_raw_extraction_plan(
     session_result = collect_session_context(
         git=git,
         cwd=cwd,
-        session_store=session_store,
+        claude_installation=claude_installation,
         current_session_id=current_session_id,
         min_size=min_size,
         limit=20,

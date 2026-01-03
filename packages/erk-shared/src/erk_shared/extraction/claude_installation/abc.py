@@ -1,7 +1,7 @@
-"""Domain-driven session storage abstraction.
+"""Domain-driven Claude installation abstraction.
 
-This module provides a storage-agnostic interface for session operations.
-All filesystem details are hidden behind the SessionStore ABC.
+This module provides a storage-agnostic interface for Claude installation operations.
+All filesystem details are hidden behind the ClaudeInstallation ABC.
 """
 
 from abc import ABC, abstractmethod
@@ -16,7 +16,7 @@ class Session:
     """Domain object representing a discovered session.
 
     Unlike SessionInfo, this type does NOT expose the filesystem path.
-    Storage details are hidden behind the SessionStore interface.
+    Storage details are hidden behind the ClaudeInstallation interface.
     """
 
     session_id: str
@@ -37,12 +37,14 @@ class SessionContent:
     agent_logs: list[tuple[str, str]]  # (agent_id, raw JSONL content)
 
 
-class ClaudeCodeSessionStore(ABC):
-    """Domain-driven interface for session storage operations.
+class ClaudeInstallation(ABC):
+    """Domain-driven interface for Claude installation operations.
 
     Hides all storage implementation details. No paths exposed in the public API.
     Projects are identified by working directory context, sessions by ID.
     """
+
+    # --- Session operations ---
 
     @abstractmethod
     def has_project(self, project_cwd: Path) -> bool:
@@ -61,10 +63,10 @@ class ClaudeCodeSessionStore(ABC):
         self,
         project_cwd: Path,
         *,
-        current_session_id: str | None = None,
-        min_size: int = 0,
-        limit: int = 10,
-        include_agents: bool = False,
+        current_session_id: str | None,
+        min_size: int,
+        limit: int,
+        include_agents: bool,
     ) -> list[Session]:
         """Find sessions for a project.
 
@@ -87,7 +89,7 @@ class ClaudeCodeSessionStore(ABC):
         project_cwd: Path,
         session_id: str,
         *,
-        include_agents: bool = True,
+        include_agents: bool,
     ) -> SessionContent | None:
         """Read raw session content.
 
@@ -106,7 +108,7 @@ class ClaudeCodeSessionStore(ABC):
         self,
         project_cwd: Path,
         *,
-        session_id: str | None = None,
+        session_id: str | None,
     ) -> str | None:
         """Get the latest plan from ~/.claude/plans/, optionally session-scoped.
 
@@ -150,5 +152,31 @@ class ClaudeCodeSessionStore(ABC):
 
         Returns:
             Path to the session file if found, None otherwise
+        """
+        ...
+
+    # --- Settings operations ---
+
+    @abstractmethod
+    def get_settings_path(self) -> Path:
+        """Return path to global Claude settings file (~/.claude/settings.json)."""
+        ...
+
+    @abstractmethod
+    def get_local_settings_path(self) -> Path:
+        """Return path to local Claude settings file (~/.claude/settings.local.json)."""
+        ...
+
+    @abstractmethod
+    def settings_exists(self) -> bool:
+        """Check if global settings file exists."""
+        ...
+
+    @abstractmethod
+    def read_settings(self) -> dict:
+        """Read and parse global Claude settings.
+
+        Returns:
+            Parsed JSON as dict, or empty dict if file doesn't exist or is invalid
         """
         ...

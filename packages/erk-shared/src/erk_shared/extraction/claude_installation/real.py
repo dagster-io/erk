@@ -1,10 +1,10 @@
-"""Production implementation of SessionStore using local filesystem."""
+"""Production implementation of ClaudeInstallation using local filesystem."""
 
 import json
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store.abc import (
-    ClaudeCodeSessionStore,
+from erk_shared.extraction.claude_installation.abc import (
+    ClaudeInstallation,
     Session,
     SessionContent,
     SessionNotFound,
@@ -34,10 +34,11 @@ def _extract_parent_session_id(agent_log_path: Path) -> str | None:
     return None
 
 
-class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
+class RealClaudeInstallation(ClaudeInstallation):
     """Production implementation using local filesystem.
 
     Reads sessions from ~/.claude/projects/ directory structure.
+    Reads settings from ~/.claude/settings.json.
     """
 
     def _get_project_dir(self, project_cwd: Path) -> Path | None:
@@ -73,6 +74,8 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
 
         return None
 
+    # --- Session operations ---
+
     def has_project(self, project_cwd: Path) -> bool:
         """Check if a Claude Code project exists for the given working directory."""
         return self._get_project_dir(project_cwd) is not None
@@ -81,10 +84,10 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         *,
-        current_session_id: str | None = None,
-        min_size: int = 0,
-        limit: int = 10,
-        include_agents: bool = False,
+        current_session_id: str | None,
+        min_size: int,
+        limit: int,
+        include_agents: bool,
     ) -> list[Session]:
         """Find sessions for a project.
 
@@ -147,7 +150,7 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         project_cwd: Path,
         session_id: str,
         *,
-        include_agents: bool = True,
+        include_agents: bool,
     ) -> SessionContent | None:
         """Read raw session content.
 
@@ -181,7 +184,7 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
         self,
         project_cwd: Path,
         *,
-        session_id: str | None = None,
+        session_id: str | None,
     ) -> str | None:
         """Get latest plan from ~/.claude/plans/.
 
@@ -249,3 +252,29 @@ class RealClaudeCodeSessionStore(ClaudeCodeSessionStore):
             return None
 
         return session_file
+
+    # --- Settings operations ---
+
+    def get_settings_path(self) -> Path:
+        """Return path to global Claude settings file (~/.claude/settings.json)."""
+        return Path.home() / ".claude" / "settings.json"
+
+    def get_local_settings_path(self) -> Path:
+        """Return path to local Claude settings file (~/.claude/settings.local.json)."""
+        return Path.home() / ".claude" / "settings.local.json"
+
+    def settings_exists(self) -> bool:
+        """Check if global settings file exists."""
+        return self.get_settings_path().exists()
+
+    def read_settings(self) -> dict:
+        """Read and parse global Claude settings.
+
+        Returns:
+            Parsed JSON as dict, or empty dict if file doesn't exist or is invalid
+        """
+        path = self.get_settings_path()
+        if not path.exists():
+            return {}
+        content = path.read_text(encoding="utf-8")
+        return json.loads(content)

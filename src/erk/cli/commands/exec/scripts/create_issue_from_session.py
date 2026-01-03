@@ -25,9 +25,9 @@ import json
 import click
 
 from erk_shared.context.helpers import (
+    require_claude_installation,
     require_cwd,
     require_repo_root,
-    require_session_store,
 )
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
@@ -54,10 +54,10 @@ def create_issue_from_session(ctx: click.Context, session_id: str | None) -> Non
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
-    session_store = require_session_store(ctx)
+    claude_installation = require_claude_installation(ctx)
 
     # Extract latest plan from session
-    plan_text = session_store.get_latest_plan(cwd, session_id=session_id)
+    plan_text = claude_installation.get_latest_plan(cwd, session_id=session_id)
 
     if not plan_text:
         result = {"success": False, "error": "No plan found in Claude session files"}

@@ -23,9 +23,9 @@ import json
 import click
 
 from erk_shared.context.helpers import (
+    require_claude_installation,
     require_cwd,
     require_repo_root,
-    require_session_store,
 )
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
@@ -56,10 +56,10 @@ def objective_save_to_issue(ctx: click.Context, output_format: str, session_id: 
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
-    session_store = require_session_store(ctx)
+    claude_installation = require_claude_installation(ctx)
 
     # Get plan content
-    plan = session_store.get_latest_plan(cwd, session_id=session_id)
+    plan = claude_installation.get_latest_plan(cwd, session_id=session_id)
 
     if not plan:
         if output_format == "display":

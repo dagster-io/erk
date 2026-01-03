@@ -14,7 +14,7 @@ from erk_shared.core.fakes import (
     FakePlannerRegistry,
     FakeScriptWriter,
 )
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -27,7 +27,7 @@ def context_for_test(
     git: Git | None = None,
     github: GitHub | None = None,
     graphite: Graphite | None = None,
-    session_store: ClaudeCodeSessionStore | None = None,
+    claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
@@ -46,7 +46,7 @@ def context_for_test(
         git: Optional Git implementation. If None, creates FakeGit.
         github: Optional GitHub implementation. If None, creates FakeGitHub.
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
-        session_store: Optional SessionStore. If None, creates FakeClaudeCodeSessionStore.
+        claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -62,7 +62,7 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
-    from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.extraction.claude_installation import FakeClaudeInstallation
     from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -85,8 +85,10 @@ def context_for_test(
     resolved_github: GitHub = github if github is not None else FakeGitHub()
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
     resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
-    resolved_session_store: ClaudeCodeSessionStore = (
-        session_store if session_store is not None else FakeClaudeCodeSessionStore()
+    resolved_claude_installation: ClaudeInstallation = (
+        claude_installation
+        if claude_installation is not None
+        else FakeClaudeInstallation(projects=None, plans=None, settings=None, local_settings=None)
     )
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
@@ -107,7 +109,7 @@ def context_for_test(
         github=resolved_github,
         github_admin=FakeGitHubAdmin(),
         issues=resolved_issues,
-        session_store=resolved_session_store,
+        claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
         time=fake_time,

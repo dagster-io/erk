@@ -21,7 +21,7 @@ from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
@@ -66,7 +66,7 @@ class ErkContext:
     graphite: Graphite
     time: Time
     erk_installation: ErkInstallation  # ~/.erk/ installation data
-    session_store: ClaudeCodeSessionStore
+    claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     plan_store: PlanStore
     prompt_executor: PromptExecutor  # From DotAgentContext
     claude_settings_store: ClaudeSettingsStore  # Claude Code settings file operations
@@ -133,7 +133,7 @@ class ErkContext:
         github_issues: GitHubIssues | None = None,
         git: Git | None = None,
         github: GitHub | None = None,
-        session_store: ClaudeCodeSessionStore | None = None,
+        claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
@@ -148,7 +148,7 @@ class ErkContext:
             github_issues: Optional GitHubIssues implementation. If None, creates FakeGitHubIssues.
             git: Optional Git implementation. If None, creates FakeGit.
             github: Optional GitHub implementation. If None, creates FakeGitHub.
-            session_store: Optional SessionStore. If None, creates FakeClaudeCodeSessionStore.
+            claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
@@ -170,7 +170,7 @@ class ErkContext:
             github_issues=github_issues,
             git=git,
             github=github,
-            session_store=session_store,
+            claude_installation=claude_installation,
             prompt_executor=prompt_executor,
             debug=debug,
             repo_root=repo_root,

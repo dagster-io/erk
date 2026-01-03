@@ -9,8 +9,8 @@ import time
 from click.testing import CliRunner
 
 from erk.cli.commands.cc.session.show_cmd import show_session
-from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
-from erk_shared.extraction.claude_code_session_store.fake import (
+from erk_shared.extraction.claude_installation import (
+    FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
@@ -103,7 +103,7 @@ def test_agent_type_extraction_with_real_data_format() -> None:
             ]
         )
 
-        session_store = FakeClaudeCodeSessionStore(
+        session_store = FakeClaudeInstallation(
             projects={
                 env.cwd: FakeProject(
                     sessions={
@@ -126,10 +126,13 @@ def test_agent_type_extraction_with_real_data_format() -> None:
                         ),
                     }
                 )
-            }
+            },
+            plans=None,
+            settings=None,
+            local_settings=None,
         )
 
-        ctx = build_workspace_test_context(env, session_store=session_store)
+        ctx = build_workspace_test_context(env, claude_installation=session_store)
 
         result = runner.invoke(show_session, [parent_session_id], obj=ctx)
 
@@ -170,7 +173,7 @@ def test_agent_type_no_match_without_tool_result() -> None:
             }
         )
 
-        session_store = FakeClaudeCodeSessionStore(
+        session_store = FakeClaudeInstallation(
             projects={
                 env.cwd: FakeProject(
                     sessions={
@@ -187,10 +190,13 @@ def test_agent_type_no_match_without_tool_result() -> None:
                         ),
                     }
                 )
-            }
+            },
+            plans=None,
+            settings=None,
+            local_settings=None,
         )
 
-        ctx = build_workspace_test_context(env, session_store=session_store)
+        ctx = build_workspace_test_context(env, claude_installation=session_store)
 
         result = runner.invoke(show_session, [parent_session_id], obj=ctx)
 
@@ -218,7 +224,7 @@ def test_agent_duration_with_timestamps() -> None:
             base_timestamp=now - 200,
         )
 
-        session_store = FakeClaudeCodeSessionStore(
+        session_store = FakeClaudeInstallation(
             projects={
                 env.cwd: FakeProject(
                     sessions={
@@ -241,10 +247,13 @@ def test_agent_duration_with_timestamps() -> None:
                         ),
                     }
                 )
-            }
+            },
+            plans=None,
+            settings=None,
+            local_settings=None,
         )
 
-        ctx = build_workspace_test_context(env, session_store=session_store)
+        ctx = build_workspace_test_context(env, claude_installation=session_store)
 
         result = runner.invoke(show_session, [parent_session_id], obj=ctx)
 

@@ -17,7 +17,7 @@ from pathlib import Path
 import click
 
 from erk_shared.context.types import LoadedConfig, NoRepoSentinel
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
@@ -211,8 +211,8 @@ def require_cwd(ctx: click.Context) -> Path:
     return ctx.obj.cwd
 
 
-def require_session_store(ctx: click.Context) -> ClaudeCodeSessionStore:
-    """Get SessionStore from context, exiting with error if not initialized.
+def require_claude_installation(ctx: click.Context) -> ClaudeInstallation:
+    """Get ClaudeInstallation from context, exiting with error if not initialized.
 
     Uses LBYL pattern to check context before accessing.
 
@@ -220,7 +220,7 @@ def require_session_store(ctx: click.Context) -> ClaudeCodeSessionStore:
         ctx: Click context (must have ErkContext in ctx.obj)
 
     Returns:
-        SessionStore instance from context
+        ClaudeInstallation instance from context
 
     Raises:
         SystemExit: If context not initialized (exits with code 1)
@@ -229,14 +229,14 @@ def require_session_store(ctx: click.Context) -> ClaudeCodeSessionStore:
         >>> @click.command()
         >>> @click.pass_context
         >>> def my_command(ctx: click.Context) -> None:
-        ...     store = require_session_store(ctx)
-        ...     sessions = store.find_sessions(cwd)
+        ...     installation = require_claude_installation(ctx)
+        ...     sessions = installation.find_sessions(cwd, ...)
     """
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
 
-    return ctx.obj.session_store
+    return ctx.obj.claude_installation
 
 
 def get_current_branch(ctx: click.Context) -> str | None:

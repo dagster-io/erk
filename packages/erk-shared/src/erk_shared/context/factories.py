@@ -71,7 +71,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     """
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
-    from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
+    from erk_shared.extraction.claude_installation import RealClaudeInstallation
     from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
@@ -124,7 +124,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         github=RealGitHub(time=time, repo_info=repo_info),
         github_admin=FakeGitHubAdmin(),
         issues=github_issues,
-        session_store=RealClaudeCodeSessionStore(),
+        claude_installation=RealClaudeInstallation(),
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,
         time=fake_time,

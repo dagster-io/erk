@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from erk.core.context import ErkContext
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.extraction.session_schema import extract_first_user_message_text
 
 
@@ -70,7 +70,7 @@ def format_size(size_bytes: int) -> str:
 
 
 def _list_sessions_impl(
-    session_store: ClaudeCodeSessionStore,
+    claude_installation: ClaudeInstallation,
     cwd: Path,
     limit: int,
     include_agents: bool,
@@ -78,19 +78,23 @@ def _list_sessions_impl(
     """Implementation of session listing logic.
 
     Args:
-        session_store: Session store to query
+        claude_installation: Claude installation to query
         cwd: Current working directory (project identifier)
         limit: Maximum number of sessions to show
         include_agents: Whether to include agent sessions in the listing
     """
     # Check if project exists
-    if not session_store.has_project(cwd):
+    if not claude_installation.has_project(cwd):
         click.echo(f"No Claude Code sessions found for: {cwd}", err=True)
         raise SystemExit(1)
 
     # Get sessions
-    sessions = session_store.find_sessions(
-        cwd, min_size=0, limit=limit, include_agents=include_agents
+    sessions = claude_installation.find_sessions(
+        cwd,
+        current_session_id=None,
+        min_size=0,
+        limit=limit,
+        include_agents=include_agents,
     )
 
     if not sessions:
@@ -108,7 +112,7 @@ def _list_sessions_impl(
 
     for session in sessions:
         # Read session content for summary extraction
-        content = session_store.read_session(cwd, session.session_id, include_agents=False)
+        content = claude_installation.read_session(cwd, session.session_id, include_agents=False)
         summary = ""
         if content is not None:
             summary = extract_first_user_message_text(content.main_content, max_length=50)
@@ -156,7 +160,7 @@ def list_sessions(ctx: ErkContext, limit: int, include_agents: bool) -> None:
     Shows a table with session ID, time, size, and summary (first user message).
     """
     _list_sessions_impl(
-        ctx.session_store,
+        ctx.claude_installation,
         ctx.cwd,
         limit,
         include_agents,

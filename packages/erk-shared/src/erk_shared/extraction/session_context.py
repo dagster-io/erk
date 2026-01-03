@@ -8,7 +8,7 @@ plan-save-to-issue and raw extraction workflows.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.extraction.session_discovery import get_branch_context
 from erk_shared.extraction.session_preprocessing import preprocess_session_content
 from erk_shared.extraction.session_selection import auto_select_sessions
@@ -34,16 +34,16 @@ class SessionContextResult:
 def collect_session_context(
     git: Git,
     cwd: Path,
-    session_store: ClaudeCodeSessionStore,
+    claude_installation: ClaudeInstallation,
     current_session_id: str | None,
-    min_size: int = 1024,
-    limit: int = 20,
+    min_size: int,
+    limit: int,
 ) -> SessionContextResult | None:
     """Discover, select, and preprocess sessions into combined XML.
 
     This is the shared orchestrator for session context collection.
     It handles:
-    1. Checking if project exists via SessionStore
+    1. Checking if project exists via ClaudeInstallation
     2. Getting branch context
     3. Discovering available sessions
     4. Auto-selecting based on branch context
@@ -53,7 +53,7 @@ def collect_session_context(
     Args:
         git: Git interface for branch operations
         cwd: Current working directory (for project directory lookup)
-        session_store: SessionStore for session operations
+        claude_installation: ClaudeInstallation for session operations
         current_session_id: Current session ID (required for session context)
         min_size: Minimum session size in bytes for selection
         limit: Maximum number of sessions to discover
@@ -70,18 +70,19 @@ def collect_session_context(
         return None
 
     # Check if project exists
-    if not session_store.has_project(cwd):
+    if not claude_installation.has_project(cwd):
         return None
 
     # Get branch context
     branch_context = get_branch_context(git, cwd)
 
     # Discover sessions
-    sessions = session_store.find_sessions(
+    sessions = claude_installation.find_sessions(
         cwd,
         current_session_id=current_session_id,
         min_size=min_size,
         limit=limit,
+        include_agents=False,
     )
 
     if not sessions:
@@ -101,7 +102,7 @@ def collect_session_context(
     # Preprocess sessions to XML
     session_xmls: list[tuple[str, str]] = []
     for session in selected_sessions:
-        session_content = session_store.read_session(
+        session_content = claude_installation.read_session(
             cwd,
             session.session_id,
             include_agents=True,

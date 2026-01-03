@@ -11,7 +11,7 @@ from erk.cli.commands.cc.session.list_cmd import (
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
-from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.extraction.session_schema import (
     AgentInfo,
     extract_agent_info_from_jsonl,
@@ -41,14 +41,14 @@ def format_duration(seconds: float) -> str:
 
 
 def _show_session_impl(
-    session_store: ClaudeCodeSessionStore,
+    claude_installation: ClaudeInstallation,
     cwd: Path,
     session_id: str | None,
 ) -> None:
     """Implementation of session show logic.
 
     Args:
-        session_store: Session store to query
+        claude_installation: Claude installation to query
         cwd: Current working directory (project identifier)
         session_id: Session ID to show details for, or None to use most recent
     """
@@ -56,20 +56,26 @@ def _show_session_impl(
 
     # Check if project exists
     Ensure.invariant(
-        session_store.has_project(cwd),
+        claude_installation.has_project(cwd),
         f"No Claude Code sessions found for: {cwd}",
     )
 
     # If no session_id provided, use the most recent session
     inferred = False
     if session_id is None:
-        sessions = session_store.find_sessions(cwd, include_agents=False, limit=1)
+        sessions = claude_installation.find_sessions(
+            cwd,
+            current_session_id=None,
+            min_size=0,
+            include_agents=False,
+            limit=1,
+        )
         Ensure.invariant(len(sessions) > 0, "No sessions found.")
         session_id = sessions[0].session_id
         inferred = True
 
     # Get the session
-    session = Ensure.session(session_store.get_session(cwd, session_id))
+    session = Ensure.session(claude_installation.get_session(cwd, session_id))
 
     # Check if this is an agent session - provide helpful error
     parent_id = session.parent_session_id
@@ -79,10 +85,10 @@ def _show_session_impl(
     )
 
     # Get the session path
-    session_path = session_store.get_session_path(cwd, session_id)
+    session_path = claude_installation.get_session_path(cwd, session_id)
 
     # Read session content for summary and agent info extraction
-    content = session_store.read_session(cwd, session_id, include_agents=False)
+    content = claude_installation.read_session(cwd, session_id, include_agents=False)
     summary = ""
     agent_infos: dict[str, AgentInfo] = {}
     if content is not None:
@@ -105,7 +111,13 @@ def _show_session_impl(
         console.print(f"[bold]Path:[/bold] {session_path}")
 
     # Find and display child agent sessions
-    all_sessions = session_store.find_sessions(cwd, include_agents=True, limit=1000)
+    all_sessions = claude_installation.find_sessions(
+        cwd,
+        current_session_id=None,
+        min_size=0,
+        include_agents=True,
+        limit=1000,
+    )
 
     # Filter to only agent sessions with this parent
     child_agents = [s for s in all_sessions if s.parent_session_id == session_id]
@@ -116,7 +128,7 @@ def _show_session_impl(
 
         for agent in child_agents:
             info = agent_infos.get(agent.session_id)
-            agent_path = session_store.get_session_path(cwd, agent.session_id)
+            agent_path = claude_installation.get_session_path(cwd, agent.session_id)
 
             console.print()
             # Format: type("prompt") or just session_id if no info
@@ -157,7 +169,7 @@ def show_session(ctx: ErkContext, session_id: str | None) -> None:
     If SESSION_ID is not provided, shows the most recent session.
     """
     _show_session_impl(
-        ctx.session_store,
+        ctx.claude_installation,
         ctx.cwd,
         session_id,
     )
