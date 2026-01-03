@@ -168,7 +168,9 @@ jobs:
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
        needs.prettier.result == 'failure' ||
-       needs.docs-check.result == 'failure')
+       needs.docs-check.result == 'failure' ||
+       needs.ty.result == 'failure' ||
+       needs.unit-tests.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
