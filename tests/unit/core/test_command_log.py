@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from erk.core.command_log import (
     CommandLogEntry,
+    _get_current_branch,
     _is_logging_disabled,
     _rotate_log_if_needed,
     log_command_end,
@@ -32,6 +33,19 @@ def test_is_logging_disabled_returns_false_when_env_not_one() -> None:
     """Test logging is enabled when environment variable is not '1'."""
     with patch.dict(os.environ, {"ERK_NO_COMMAND_LOG": "0"}):
         assert _is_logging_disabled() is False
+
+
+def test_get_current_branch_returns_none_outside_git_repo() -> None:
+    """Test _get_current_branch returns None when not in a git repository."""
+    with patch("erk.core.command_log.RealGit") as mock_git_class:
+        mock_git = mock_git_class.return_value
+        mock_git.get_git_common_dir.return_value = None
+
+        result = _get_current_branch(Path("/some/non-git/path"))
+
+        assert result is None
+        mock_git.get_git_common_dir.assert_called_once_with(Path("/some/non-git/path"))
+        mock_git.get_repository_root.assert_not_called()
 
 
 def test_log_command_start_returns_none_when_disabled(tmp_path: Path) -> None:

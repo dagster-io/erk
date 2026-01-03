@@ -55,9 +55,12 @@ def _is_logging_disabled() -> bool:
 def _get_current_branch(cwd: Path) -> str | None:
     """Get current git branch if in a git repository."""
     git = RealGit()
-    repo_root = git.get_repository_root(cwd)
-    if repo_root is None:
+    # get_git_common_dir returns None gracefully when outside a git repo,
+    # whereas get_repository_root raises RuntimeError
+    git_dir = git.get_git_common_dir(cwd)
+    if git_dir is None:
         return None
+    repo_root = git.get_repository_root(cwd)
     return git.get_current_branch(repo_root)
 
 
