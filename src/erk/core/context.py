@@ -44,6 +44,8 @@ from erk_shared.core import (
     ScriptWriter,
 )
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
+from erk_shared.gateway.claude_settings.real import RealClaudeSettingsStore
 
 # Import erk-specific integrations
 from erk_shared.gateway.completion import Completion
@@ -100,6 +102,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk.core.config_store import FakeConfigStore
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -133,6 +136,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         planner_registry=FakePlannerRegistry(),
         session_store=FakeClaudeCodeSessionStore(),
         prompt_executor=FakePromptExecutor(),
+        claude_settings_store=FakeClaudeSettingsStore(),
         cwd=cwd,
         global_config=None,
         local_config=LoadedConfig(
@@ -213,6 +217,7 @@ def context_for_test(
     from erk.core.config_store import FakeConfigStore
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
@@ -331,6 +336,7 @@ def context_for_test(
         planner_registry=planner_registry,
         session_store=session_store,
         prompt_executor=prompt_executor,
+        claude_settings_store=FakeClaudeSettingsStore(),
         cwd=cwd or sentinel_path(),
         global_config=global_config,
         local_config=local_config,
@@ -525,11 +531,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     repo_root = repo.root if not isinstance(repo, NoRepoSentinel) else cwd
     wt_stack = WtStack(git, repo_root, graphite)
 
-    # 12. Create session store and prompt executor
+    # 12. Create session store, prompt executor, and claude settings store
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
 
     session_store: ClaudeCodeSessionStore = RealClaudeCodeSessionStore()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
+    claude_settings_store: ClaudeSettingsStore = RealClaudeSettingsStore()
 
     # 13. Create context with all values
     return ErkContext(
@@ -551,6 +558,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         planner_registry=RealPlannerRegistry(),
         session_store=session_store,
         prompt_executor=prompt_executor,
+        claude_settings_store=claude_settings_store,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,

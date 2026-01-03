@@ -67,6 +67,7 @@ def context_for_test(
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
     from erk_shared.extraction.claude_code_session_store import FakeClaudeCodeSessionStore
+    from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -120,6 +121,7 @@ def context_for_test(
         wt_stack=resolved_wt_stack,
         time=fake_time,
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
+        claude_settings_store=FakeClaudeSettingsStore(),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=FakeUserFeedback(),

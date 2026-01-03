@@ -811,10 +811,32 @@ def test_has_erk_statusline_returns_false_for_different_command() -> None:
     settings = {
         "statusLine": {
             "type": "command",
-            "command": "uvx other-statusline",
+            "command": "uvx other-statusline",  # Different tool entirely
         }
     }
     assert has_erk_statusline(settings) is False
+
+
+def test_has_erk_statusline_accepts_without_uvx_prefix() -> None:
+    """Test has_erk_statusline returns True for bare erk-statusline command."""
+    settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "erk-statusline",  # No uvx prefix
+        }
+    }
+    assert has_erk_statusline(settings) is True
+
+
+def test_has_erk_statusline_accepts_with_uvx_prefix() -> None:
+    """Test has_erk_statusline returns True for uvx erk-statusline command."""
+    settings = {
+        "statusLine": {
+            "type": "command",
+            "command": "uvx erk-statusline",
+        }
+    }
+    assert has_erk_statusline(settings) is True
 
 
 def test_has_erk_statusline_returns_true_when_configured(

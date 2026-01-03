@@ -73,6 +73,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
     from erk_shared.extraction.claude_code_session_store import RealClaudeCodeSessionStore
+    from erk_shared.gateway.claude_settings.fake import FakeClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.feedback import SuppressedFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
@@ -131,6 +132,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         wt_stack=WtStack(git, wt_stack_repo_root, fake_graphite),
         time=fake_time,
         plan_store=GitHubPlanStore(github_issues, fake_time),
+        claude_settings_store=FakeClaudeSettingsStore(),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=SuppressedFeedback(),

@@ -23,6 +23,7 @@ from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.extraction.claude_code_session_store import ClaudeCodeSessionStore
+from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
@@ -69,6 +70,7 @@ class ErkContext:
     session_store: ClaudeCodeSessionStore
     plan_store: PlanStore
     prompt_executor: PromptExecutor  # From DotAgentContext
+    claude_settings_store: ClaudeSettingsStore  # Claude Code settings file operations
 
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell

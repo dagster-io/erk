@@ -293,12 +293,13 @@ def has_erk_statusline(settings: dict) -> bool:
         settings: Parsed Claude settings dictionary
 
     Returns:
-        True if statusLine is configured with erk-statusline command
+        True if statusLine is configured with a command containing "erk-statusline"
     """
     config = get_statusline_config(settings)
     if isinstance(config, StatuslineNotConfigured):
         return False
-    return config.command == get_erk_statusline_command()
+    # Accept any command containing "erk-statusline" (with or without uvx prefix)
+    return "erk-statusline" in config.command
 
 
 def add_erk_statusline(settings: dict) -> dict:
