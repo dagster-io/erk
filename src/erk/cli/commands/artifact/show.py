@@ -1,6 +1,7 @@
 """Show artifact content."""
 
 from pathlib import Path
+from typing import cast
 
 import click
 
@@ -41,7 +42,7 @@ def show_cmd(name: str, artifact_type: str | None) -> None:
 
     type_filter: ArtifactType | None = None
     if artifact_type is not None:
-        type_filter = artifact_type  # type: ignore[assignment]
+        type_filter = cast(ArtifactType, artifact_type)
 
     artifact = get_artifact_by_name(project_dir, name, type_filter)
 

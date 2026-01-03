@@ -47,6 +47,25 @@ def _get_show_hidden_from_context(ctx: click.Context) -> bool:
     return False
 
 
+def _set_param_hidden(param: click.Parameter, hidden: bool) -> None:
+    """Set hidden attribute on Click parameter.
+
+    Click's Option class has a 'hidden' attribute, but Parameter (the base class)
+    doesn't expose it in type stubs. We use cast(Any, ...) since we've already
+    verified via getattr that this parameter has the 'hidden' attribute.
+    """
+    cast(Any, param).hidden = hidden
+
+
+def _set_ctx_show_hidden(ctx: click.Context, value: bool) -> None:
+    """Set show_hidden attribute on Click context.
+
+    Click's Context allows dynamic attributes at runtime (documented API behavior).
+    We use cast(Any, ...) to bypass type stubs that don't include dynamic attrs.
+    """
+    cast(Any, ctx).show_hidden = value
+
+
 def _is_graphite_available(ctx: click.Context) -> bool:
     """Check if Graphite is available for command visibility.
 
@@ -86,9 +105,9 @@ class CommandWithHiddenOptions(click.Command):
             if is_hidden:
                 if show_hidden:
                     # Temporarily unhide to get help record (Click returns None for hidden)
-                    param.hidden = False  # type: ignore[attr-defined]
+                    _set_param_hidden(param, hidden=False)
                     rv = param.get_help_record(ctx)
-                    param.hidden = True  # type: ignore[attr-defined]
+                    _set_param_hidden(param, hidden=True)
                     if rv is not None:
                         hidden_opts.append(rv)
             else:
@@ -138,7 +157,7 @@ class ErkCommandGroup(click.Group):
     """
 
     def __init__(self, grouped: bool = True, **kwargs: object) -> None:
-        super().__init__(**kwargs)  # type: ignore[arg-type]
+        super().__init__(**cast(dict[str, Any], kwargs))
         self.grouped = grouped
 
     def format_help(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
@@ -158,15 +177,12 @@ class ErkCommandGroup(click.Group):
 
         Checks ctx.obj.global_config if available (tests),
         otherwise loads config from disk (direct CLI invocation).
-
-        Note: Click's Context allows dynamic attributes at runtime.
-        We use type: ignore since show_hidden isn't in Context's type stubs.
         """
         # If ctx.obj is provided (tests or already-created context), use its config
         if ctx.obj is not None:
             config = getattr(ctx.obj, "global_config", None)
             if config is not None and getattr(config, "show_hidden_commands", False):
-                cast(Any, ctx).show_hidden = True
+                _set_ctx_show_hidden(ctx, value=True)
             return
 
         # Otherwise try to load config directly from disk
@@ -174,7 +190,7 @@ class ErkCommandGroup(click.Group):
         if store.exists():
             config = store.load()
             if config.show_hidden_commands:
-                ctx.show_hidden = True  # type: ignore[attr-defined]
+                _set_ctx_show_hidden(ctx, value=True)
 
     def format_commands(self, ctx: click.Context, formatter: click.HelpFormatter) -> None:
         """Format commands into organized sections or flat list."""

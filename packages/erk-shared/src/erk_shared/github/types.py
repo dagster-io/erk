@@ -255,7 +255,8 @@ class WorkflowRun:
         value = self._branch
         if isinstance(value, _NotAvailable):
             str(value)  # Trigger the error
-        return value  # type: ignore[return-value]
+        assert not isinstance(value, _NotAvailable)
+        return value
 
     @property
     def head_sha(self) -> str:
@@ -266,7 +267,8 @@ class WorkflowRun:
         value = self._display_title
         if isinstance(value, _NotAvailable):
             str(value)  # Trigger the error
-        return value  # type: ignore[return-value]
+        assert not isinstance(value, _NotAvailable)
+        return value
 
     @property
     def created_at(self) -> datetime | None:

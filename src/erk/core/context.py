@@ -373,11 +373,12 @@ def write_trunk_to_pyproject(repo_root: Path, trunk: str, git: Git | None = None
         cast(dict[str, Any], doc)["tool"] = tomlkit.table()
 
     # Ensure [tool.erk] section exists
-    if "erk" not in doc["tool"]:  # type: ignore[operator]
-        doc["tool"]["erk"] = tomlkit.table()  # type: ignore[index]
+    tool_section = cast(dict[str, Any], doc["tool"])
+    if "erk" not in tool_section:
+        tool_section["erk"] = tomlkit.table()
 
     # Set trunk_branch value
-    doc["tool"]["erk"]["trunk_branch"] = trunk  # type: ignore[index]
+    cast(dict[str, Any], tool_section["erk"])["trunk_branch"] = trunk
 
     # Write back to file
     with pyproject_path.open("w", encoding="utf-8") as f:

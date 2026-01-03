@@ -111,7 +111,9 @@ class GitHubPlanStore(PlanStore):
                 file=sys.stderr,
             )
             return None
-        return extract_plan_from_comment(result)  # type: ignore[invalid-argument-type]
+        # with_retries never returns RetryRequested - it converts to RetriesExhausted
+        assert isinstance(result, str)
+        return extract_plan_from_comment(result)
 
     def _get_plan_body(self, repo_root: Path, issue_info: IssueInfo) -> str:
         """Get the plan body from the issue.
