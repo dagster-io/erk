@@ -105,6 +105,7 @@ def pooled_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
         version=state.version,
         pool_size=state.pool_size,
         assignments=new_assignments,
+        slots=state.slots,
     )
 
     # Save updated state

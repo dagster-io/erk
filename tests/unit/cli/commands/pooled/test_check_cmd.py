@@ -95,6 +95,7 @@ def test_pooled_check_no_issues() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 
@@ -142,6 +143,7 @@ def test_pooled_check_orphan_state() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 
@@ -186,6 +188,7 @@ def test_pooled_check_orphan_dir() -> None:
             version="1.0",
             pool_size=4,
             assignments=(),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 
@@ -233,6 +236,7 @@ def test_pooled_check_missing_branch() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 
@@ -284,6 +288,7 @@ def test_pooled_check_git_registry_mismatch() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 
@@ -324,6 +329,7 @@ def test_pooled_check_empty_pool() -> None:
             version="1.0",
             pool_size=4,
             assignments=(),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 

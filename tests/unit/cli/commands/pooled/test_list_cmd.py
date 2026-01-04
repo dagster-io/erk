@@ -39,8 +39,8 @@ def test_pooled_list_empty() -> None:
         assert "erk-managed-wt-02" in result.output
         assert "erk-managed-wt-03" in result.output
         assert "erk-managed-wt-04" in result.output
-        # All should be available
-        assert "(available)" in result.output
+        # All should be uninitialized (no slots or assignments)
+        assert "uninitialized" in result.output
 
 
 def test_pooled_list_with_assignments() -> None:
@@ -75,6 +75,7 @@ def test_pooled_list_with_assignments() -> None:
                     worktree_path=repo_dir / "worktrees" / "erk-managed-wt-01",
                 ),
             ),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, state)
 

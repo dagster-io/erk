@@ -5,6 +5,7 @@ from pathlib import Path
 from erk.core.worktree_pool import (
     PoolState,
     SlotAssignment,
+    SlotInfo,
     load_pool_state,
     save_pool_state,
 )
@@ -38,12 +39,14 @@ def test_pool_state_creation() -> None:
         version="1.0",
         pool_size=4,
         assignments=(assignment,),
+        slots=(),
     )
 
     assert state.version == "1.0"
     assert state.pool_size == 4
     assert len(state.assignments) == 1
     assert state.assignments[0] == assignment
+    assert len(state.slots) == 0
 
 
 def test_pool_state_empty_assignments() -> None:
@@ -52,11 +55,13 @@ def test_pool_state_empty_assignments() -> None:
         version="1.0",
         pool_size=4,
         assignments=(),
+        slots=(),
     )
 
     assert state.version == "1.0"
     assert state.pool_size == 4
     assert len(state.assignments) == 0
+    assert len(state.slots) == 0
 
 
 def test_load_pool_state_nonexistent_file(tmp_path: Path) -> None:
@@ -76,6 +81,7 @@ def test_save_and_load_pool_state_empty(tmp_path: Path) -> None:
         version="1.0",
         pool_size=4,
         assignments=(),
+        slots=(),
     )
 
     save_pool_state(pool_json, state)
@@ -85,6 +91,7 @@ def test_save_and_load_pool_state_empty(tmp_path: Path) -> None:
     assert loaded.version == "1.0"
     assert loaded.pool_size == 4
     assert len(loaded.assignments) == 0
+    assert len(loaded.slots) == 0
 
 
 def test_save_and_load_pool_state_with_assignments(tmp_path: Path) -> None:
@@ -108,6 +115,7 @@ def test_save_and_load_pool_state_with_assignments(tmp_path: Path) -> None:
         version="1.0",
         pool_size=4,
         assignments=(assignment1, assignment2),
+        slots=(),
     )
 
     save_pool_state(pool_json, state)
@@ -131,6 +139,7 @@ def test_save_pool_state_creates_parent_dirs(tmp_path: Path) -> None:
         version="1.0",
         pool_size=4,
         assignments=(),
+        slots=(),
     )
 
     save_pool_state(pool_json, state)
@@ -139,3 +148,50 @@ def test_save_pool_state_creates_parent_dirs(tmp_path: Path) -> None:
     loaded = load_pool_state(pool_json)
     assert loaded is not None
     assert loaded.pool_size == 4
+
+
+def test_slot_info_creation() -> None:
+    """Test that SlotInfo is created correctly."""
+    slot = SlotInfo(name="erk-managed-wt-01")
+
+    assert slot.name == "erk-managed-wt-01"
+
+
+def test_pool_state_with_slots() -> None:
+    """Test that PoolState works with slots."""
+    slot1 = SlotInfo(name="erk-managed-wt-01")
+    slot2 = SlotInfo(name="erk-managed-wt-02")
+
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        assignments=(),
+        slots=(slot1, slot2),
+    )
+
+    assert len(state.slots) == 2
+    assert state.slots[0].name == "erk-managed-wt-01"
+    assert state.slots[1].name == "erk-managed-wt-02"
+
+
+def test_save_and_load_pool_state_with_slots(tmp_path: Path) -> None:
+    """Test round-trip save and load with slots."""
+    pool_json = tmp_path / "pool.json"
+
+    slot1 = SlotInfo(name="erk-managed-wt-01")
+    slot2 = SlotInfo(name="erk-managed-wt-02")
+
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        assignments=(),
+        slots=(slot1, slot2),
+    )
+
+    save_pool_state(pool_json, state)
+    loaded = load_pool_state(pool_json)
+
+    assert loaded is not None
+    assert len(loaded.slots) == 2
+    assert loaded.slots[0].name == "erk-managed-wt-01"
+    assert loaded.slots[1].name == "erk-managed-wt-02"

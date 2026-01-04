@@ -8,6 +8,7 @@ from erk.cli.commands.pooled.check_cmd import pooled_check
 from erk.cli.commands.pooled.checkout_cmd import pooled_checkout
 from erk.cli.commands.pooled.create_cmd import pooled_create
 from erk.cli.commands.pooled.implement_cmd import pooled_implement
+from erk.cli.commands.pooled.init_slots_cmd import pooled_init_slots
 from erk.cli.commands.pooled.land_cmd import pooled_land
 from erk.cli.commands.pooled.list_cmd import pooled_list
 from erk.cli.commands.pooled.plan_cmd import pooled_plan
@@ -27,6 +28,7 @@ pooled_group.add_command(pooled_assign)
 pooled_group.add_command(pooled_unassign)
 pooled_group.add_command(pooled_checkout)
 pooled_group.add_command(pooled_check)
+pooled_group.add_command(pooled_init_slots)
 pooled_group.add_command(pooled_land)
 pooled_group.add_command(pooled_plan)
 pooled_group.add_command(pooled_implement)

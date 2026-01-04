@@ -12,6 +12,20 @@ from pathlib import Path
 
 
 @dataclass(frozen=True)
+class SlotInfo:
+    """Represents an initialized pool slot.
+
+    A slot is a pre-created worktree with a placeholder branch.
+    Slots can be either inactive (available) or active (has an assignment).
+
+    Attributes:
+        name: The slot identifier (e.g., "erk-managed-wt-01")
+    """
+
+    name: str
+
+
+@dataclass(frozen=True)
 class SlotAssignment:
     """Represents a branch assignment to a worktree slot.
 
@@ -36,11 +50,13 @@ class PoolState:
         version: Schema version for forward compatibility
         pool_size: Maximum number of slots in the pool
         assignments: Tuple of current slot assignments (immutable)
+        slots: Tuple of initialized slots (immutable)
     """
 
     version: str
     pool_size: int
     assignments: tuple[SlotAssignment, ...]
+    slots: tuple[SlotInfo, ...]
 
 
 def load_pool_state(pool_json_path: Path) -> PoolState | None:
@@ -68,10 +84,13 @@ def load_pool_state(pool_json_path: Path) -> PoolState | None:
         for a in data.get("assignments", [])
     )
 
+    slots = tuple(SlotInfo(name=s["name"]) for s in data.get("slots", []))
+
     return PoolState(
         version=data.get("version", "1.0"),
         pool_size=data.get("pool_size", 4),
         assignments=assignments,
+        slots=slots,
     )
 
 
@@ -98,6 +117,7 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
             }
             for a in state.assignments
         ],
+        "slots": [{"name": s.name} for s in state.slots],
     }
 
     pool_json_path.write_text(json.dumps(data, indent=2), encoding="utf-8")

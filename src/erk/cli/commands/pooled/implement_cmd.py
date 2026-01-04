@@ -86,6 +86,7 @@ def _assign_branch_to_slot(
             version="1.0",
             pool_size=pool_size,
             assignments=(),
+            slots=(),
         )
 
     # Check if branch is already assigned
@@ -111,6 +112,7 @@ def _assign_branch_to_slot(
             version=state.version,
             pool_size=state.pool_size,
             assignments=new_assignments,
+            slots=state.slots,
         )
         save_pool_state(pool_json_path, state)
         user_output(
@@ -166,6 +168,7 @@ def _assign_branch_to_slot(
         version=state.version,
         pool_size=state.pool_size,
         assignments=(*state.assignments, new_assignment),
+        slots=state.slots,
     )
 
     # Save state

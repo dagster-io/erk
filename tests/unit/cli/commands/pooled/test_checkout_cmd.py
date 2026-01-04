@@ -55,6 +55,7 @@ def test_pooled_checkout_by_branch_name() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -97,6 +98,7 @@ def test_pooled_checkout_slot_name_not_supported() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -137,6 +139,7 @@ def test_pooled_checkout_no_argument_shows_error() -> None:
             version="1.0",
             pool_size=4,
             assignments=(),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -174,6 +177,7 @@ def test_pooled_checkout_not_found() -> None:
             version="1.0",
             pool_size=4,
             assignments=(),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -252,6 +256,7 @@ def test_pooled_checkout_already_in_slot() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -295,6 +300,7 @@ def test_pooled_checkout_script_mode() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -343,6 +349,7 @@ def test_pooled_checkout_with_entry_scripts() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 

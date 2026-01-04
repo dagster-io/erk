@@ -1,12 +1,16 @@
 """Shared utilities for pooled branch commands."""
 
+import re
+
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment
+from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
 from erk_shared.output.output import user_confirm, user_output
 
 # Default pool configuration
 DEFAULT_POOL_SIZE = 4
 SLOT_NAME_PREFIX = "erk-managed-wt"
+PLACEHOLDER_BRANCH_PREFIX = "__erk-slot"
+PLACEHOLDER_BRANCH_SUFFIX = "placeholder__"
 
 
 def get_pool_size(ctx: ErkContext) -> int:
@@ -33,6 +37,72 @@ def generate_slot_name(slot_number: int) -> str:
         Formatted slot name like "erk-managed-wt-01"
     """
     return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
+
+
+def generate_placeholder_branch_name(slot_number: int) -> str:
+    """Generate a placeholder branch name for a slot.
+
+    Args:
+        slot_number: 1-based slot number
+
+    Returns:
+        Formatted placeholder branch name like "__erk-slot-01-placeholder__"
+    """
+    return f"{PLACEHOLDER_BRANCH_PREFIX}-{slot_number:02d}-{PLACEHOLDER_BRANCH_SUFFIX}"
+
+
+def get_slot_number_from_name(slot_name: str) -> int | None:
+    """Extract the slot number from a slot name.
+
+    Args:
+        slot_name: Slot name like "erk-managed-wt-01"
+
+    Returns:
+        1-based slot number if valid, None otherwise
+    """
+    pattern = re.compile(rf"^{re.escape(SLOT_NAME_PREFIX)}-(\d+)$")
+    match = pattern.match(slot_name)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def is_slot_initialized(state: PoolState, slot_name: str) -> bool:
+    """Check if a slot is in the initialized slots list.
+
+    Args:
+        state: Current pool state
+        slot_name: Slot name to check
+
+    Returns:
+        True if the slot is in the slots list, False otherwise
+    """
+    for slot in state.slots:
+        if slot.name == slot_name:
+            return True
+    return False
+
+
+def find_inactive_slot(state: PoolState) -> SlotInfo | None:
+    """Find an initialized slot that has no current assignment.
+
+    An inactive slot is one that:
+    - Exists in state.slots (has been initialized with a placeholder branch)
+    - Does NOT have a corresponding entry in state.assignments
+
+    Args:
+        state: Current pool state
+
+    Returns:
+        SlotInfo for the first inactive slot, or None if all slots are active
+    """
+    assigned_slot_names = {a.slot_name for a in state.assignments}
+
+    for slot in state.slots:
+        if slot.name not in assigned_slot_names:
+            return slot
+
+    return None
 
 
 def find_next_available_slot(state: PoolState) -> int | None:

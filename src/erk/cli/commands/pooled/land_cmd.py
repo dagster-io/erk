@@ -1,9 +1,10 @@
-"""Pooled land command - merge current branch's PR without cleanup.
+"""Pooled land command - merge current branch's PR with optional auto-recycle.
 
 A simpler, safer alternative to `erk land` for pooled workflows:
 - Merges the current branch's PR via squash merge
 - Offers objective update (same as `erk land`)
-- Does NOT delete the worktree or clean up the branch
+- For initialized slots: auto-recycles to placeholder branch
+- For on-demand slots: preserves branch and worktree
 """
 
 import click
@@ -12,9 +13,16 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
 )
+from erk.cli.commands.pooled.common import (
+    find_branch_assignment,
+    generate_placeholder_branch_name,
+    get_slot_number_from_name,
+    is_slot_initialized,
+)
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_pool import PoolState, load_pool_state, save_pool_state
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_output
 
@@ -23,11 +31,12 @@ from erk_shared.output.output import user_output
 @click.option("-f", "--force", is_flag=True, help="Skip objective update prompt")
 @click.pass_obj
 def pooled_land(ctx: ErkContext, force: bool) -> None:
-    """Land current branch's PR via squash merge.
+    """Land current branch's PR via squash merge with auto-recycle.
 
     This is a simpler alternative to `erk land` for pooled workflows:
     - Merges the PR with squash merge
-    - Does NOT delete the worktree or branch
+    - For initialized slots: auto-recycles to placeholder branch
+    - For on-demand slots: preserves branch and worktree
     - Offers to update linked objective (skipped with --force)
 
     Examples:
@@ -84,7 +93,49 @@ def pooled_land(ctx: ErkContext, force: bool) -> None:
             ctx, main_repo_root, objective_number, pr_number, current_branch, force
         )
 
-    # No cleanup - branch and worktree are preserved
+    # Auto-recycle if this is an initialized slot
+    state = load_pool_state(repo.pool_json_path)
+    if state is not None:
+        assignment = find_branch_assignment(state, current_branch)
+        if assignment is not None and is_slot_initialized(state, assignment.slot_name):
+            # This is an initialized slot - auto-recycle
+            slot_number = get_slot_number_from_name(assignment.slot_name)
+            if slot_number is not None:
+                placeholder_branch = generate_placeholder_branch_name(slot_number)
+
+                # Fetch latest trunk changes
+                trunk = ctx.git.detect_trunk_branch(repo.root)
+                ctx.git.fetch_branch(repo.root, "origin", trunk)
+
+                # Checkout placeholder branch
+                ctx.git.checkout_branch(ctx.cwd, placeholder_branch)
+
+                # Delete the merged feature branch locally (force since it's merged)
+                ctx.git.delete_branch(repo.root, current_branch, force=True)
+
+                # Fast-forward placeholder to latest trunk
+                ctx.git.pull_branch(repo.root, "origin", trunk, ff_only=True)
+
+                # Remove assignment from pool state
+                new_assignments = tuple(
+                    a for a in state.assignments if a.slot_name != assignment.slot_name
+                )
+                new_state = PoolState(
+                    version=state.version,
+                    pool_size=state.pool_size,
+                    assignments=new_assignments,
+                    slots=state.slots,
+                )
+                save_pool_state(repo.pool_json_path, new_state)
+
+                user_output("")
+                user_output(
+                    click.style("✓ ", fg="green")
+                    + f"Recycled slot {click.style(assignment.slot_name, fg='cyan')}"
+                )
+                return
+
+    # On-demand slot or no pool state - branch and worktree are preserved
     user_output("")
     user_output(
         click.style("Note: ", fg="cyan")

@@ -20,6 +20,7 @@ def pooled_list(ctx: ErkContext) -> None:
 
     Shows a table with:
     - Slot: The pool slot name
+    - Status: active (assigned), ready (initialized), uninitialized
     - Branch: Assigned branch or "(available)"
     - Assigned: When the assignment was made
     """
@@ -32,6 +33,7 @@ def pooled_list(ctx: ErkContext) -> None:
             version="1.0",
             pool_size=DEFAULT_POOL_SIZE,
             assignments=(),
+            slots=(),
         )
 
     # Build lookup of slot_name -> assignment
@@ -40,9 +42,13 @@ def pooled_list(ctx: ErkContext) -> None:
         relative_time = format_relative_time(assignment.assigned_at)
         assignments_by_slot[assignment.slot_name] = (assignment.branch_name, relative_time)
 
+    # Build set of initialized slot names
+    initialized_slots: set[str] = {slot.name for slot in state.slots}
+
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("Slot", style="cyan", no_wrap=True)
+    table.add_column("Status", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
     table.add_column("Assigned", no_wrap=True)
 
@@ -51,10 +57,18 @@ def pooled_list(ctx: ErkContext) -> None:
         slot_name = generate_slot_name(slot_num)
 
         if slot_name in assignments_by_slot:
+            # Active: has assignment
             branch_name, assigned_time = assignments_by_slot[slot_name]
-            table.add_row(slot_name, branch_name, assigned_time)
+            status = "[green]active[/green]"
+            table.add_row(slot_name, status, branch_name, assigned_time)
+        elif slot_name in initialized_slots:
+            # Ready: initialized but no assignment
+            status = "[cyan]ready[/cyan]"
+            table.add_row(slot_name, status, "[dim](available)[/dim]", "-")
         else:
-            table.add_row(slot_name, "[dim](available)[/dim]", "-")
+            # Uninitialized: not in slots array
+            status = "[dim]uninitialized[/dim]"
+            table.add_row(slot_name, status, "[dim]-[/dim]", "-")
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)

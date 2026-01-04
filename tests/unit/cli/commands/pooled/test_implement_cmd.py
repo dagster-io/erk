@@ -247,6 +247,7 @@ def test_pooled_implement_force_unassigns_oldest_in_script_mode() -> None:
                     worktree_path=worktree_path,
                 ),
             ),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, full_state)
 
@@ -325,6 +326,7 @@ def test_pooled_implement_pool_full_non_tty_fails() -> None:
                     worktree_path=worktree_path,
                 ),
             ),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, full_state)
 

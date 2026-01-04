@@ -55,6 +55,7 @@ def test_pooled_unassign_by_slot_name() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -104,6 +105,7 @@ def test_pooled_unassign_by_branch_name() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment,),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -149,6 +151,7 @@ def test_pooled_unassign_not_found() -> None:
             version="1.0",
             pool_size=4,
             assignments=(),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -228,6 +231,7 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
             version="1.0",
             pool_size=4,
             assignments=(assignment1, assignment2),
+            slots=(),
         )
         save_pool_state(repo.pool_json_path, initial_state)
 
