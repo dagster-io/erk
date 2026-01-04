@@ -20,23 +20,6 @@ from erk.core.worktree_pool import PoolState, load_pool_state
 SlotStatus = Literal["assigned", "available", "empty"]
 
 
-def _format_path_with_tilde(path: Path, home: Path) -> str:
-    """Format a path with ~ shorthand for home directory.
-
-    Args:
-        path: Absolute path to format (must exist)
-        home: Home directory path
-
-    Returns:
-        Path string with ~ prefix if under home directory
-    """
-    # path is verified to exist by caller (worktree_exists check)
-    # home.exists() is checked before calling this function
-    if path.is_relative_to(home):
-        return f"~/{path.relative_to(home)}"
-    return str(path)
-
-
 def _determine_slot_status(
     slot_name: str,
     worktree_path: Path,
@@ -81,7 +64,6 @@ def slots_list(ctx: ErkContext) -> None:
 
     Shows a table with:
     - Slot: The pool slot name
-    - Path: Filesystem path (with ~ shorthand)
     - Branch: Current git branch (from filesystem, not pool.json)
     - Status: assigned/available/empty
     """
@@ -104,14 +86,9 @@ def slots_list(ctx: ErkContext) -> None:
     for assignment in state.assignments:
         assigned_branches[assignment.slot_name] = assignment.branch_name
 
-    # Get home directory for path formatting (LBYL: check exists before is_relative_to)
-    home = Path.home()
-    home_exists = home.exists()
-
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("Slot", style="cyan", no_wrap=True)
-    table.add_column("Path", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
     table.add_column("Status", no_wrap=True)
 
@@ -129,15 +106,6 @@ def slots_list(ctx: ErkContext) -> None:
 
         # Determine status
         status = _determine_slot_status(slot_name, worktree_path, current_branch, assigned_slots)
-
-        # Format path
-        if worktree_exists:
-            if home_exists:
-                path_display = _format_path_with_tilde(worktree_path, home)
-            else:
-                path_display = str(worktree_path)
-        else:
-            path_display = "[dim](not created)[/dim]"
 
         # Format branch
         if status == "assigned":
@@ -158,7 +126,7 @@ def slots_list(ctx: ErkContext) -> None:
         }
         status_display = status_map[status]
 
-        table.add_row(slot_name, path_display, branch_display, status_display)
+        table.add_row(slot_name, branch_display, status_display)
 
     # Output table to stderr (consistent with user_output convention)
     # Use width=200 to prevent truncation in terminal environments with narrow defaults

@@ -45,8 +45,6 @@ def test_slots_list_empty_pool(monkeypatch: pytest.MonkeyPatch) -> None:
         assert "erk-managed-wt-04" in result.output
         # All should be empty
         assert "empty" in result.output
-        # Should show (not created) for paths
-        assert "(not created)" in result.output
 
 
 def test_slots_list_with_assigned_slot(monkeypatch: pytest.MonkeyPatch) -> None:
