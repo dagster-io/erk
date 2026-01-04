@@ -1120,3 +1120,73 @@ No steps in frontmatter and no --steps provided.
     output = json.loads(result.output)
     assert output["success"] is False
     assert "Plan missing required 'steps' in frontmatter" in output["error"]
+
+
+def test_plan_save_to_issue_deletes_plan_file_after_save(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify Claude plan file is deleted after successful save.
+
+    When a plan is saved to GitHub with a session ID, the original
+    Claude plan file should be deleted to prevent stale content from
+    being re-saved in future invocations.
+    """
+    fake_gh = FakeGitHubIssues()
+    test_session_id = "delete-test-session"
+    test_slug = "test-plan-slug"
+    plan_content = """---
+steps:
+  - name: "Step 1"
+---
+
+# Feature Plan
+
+- Step 1"""
+
+    # Create the plan file at the location that will be discovered
+    plans_dir = tmp_path / ".claude" / "plans"
+    plans_dir.mkdir(parents=True)
+    plan_file = plans_dir / f"{test_slug}.md"
+    plan_file.write_text(plan_content, encoding="utf-8")
+
+    # Mock extract_slugs_from_session to return our test slug
+    monkeypatch.setattr(
+        plan_save_to_issue_module,
+        "extract_slugs_from_session",
+        lambda *args, **kwargs: [test_slug],
+    )
+
+    # Mock get_plans_dir to return our test location
+    monkeypatch.setattr(
+        plan_save_to_issue_module,
+        "get_plans_dir",
+        lambda: plans_dir,
+    )
+
+    fake_store = FakeClaudeInstallation(
+        projects=None,
+        plans={test_slug: plan_content},
+        settings=None,
+        local_settings=None,
+    )
+
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path) as td:
+        result = runner.invoke(
+            plan_save_to_issue,
+            ["--format", "json", "--session-id", test_session_id],
+            obj=ErkContext.for_test(
+                github_issues=fake_gh,
+                claude_installation=fake_store,
+                cwd=Path(td),
+                repo_root=Path(td),
+            ),
+        )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        output = json.loads(result.output)
+        assert output["success"] is True
+
+        # Verify the plan file was deleted
+        assert not plan_file.exists(), "Plan file should be deleted after save"
