@@ -73,7 +73,6 @@ class GlobalConfig:
     shell_setup_complete: bool
     show_pr_info: bool
     github_planning: bool
-    auto_restack_require_dangerous_flag: bool = True
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
 
@@ -85,7 +84,6 @@ class GlobalConfig:
         shell_setup_complete: bool = True,
         show_pr_info: bool = True,
         github_planning: bool = True,
-        auto_restack_require_dangerous_flag: bool = True,
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
     ) -> GlobalConfig:
@@ -96,7 +94,6 @@ class GlobalConfig:
             shell_setup_complete=shell_setup_complete,
             show_pr_info=show_pr_info,
             github_planning=github_planning,
-            auto_restack_require_dangerous_flag=auto_restack_require_dangerous_flag,
             fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,
         )

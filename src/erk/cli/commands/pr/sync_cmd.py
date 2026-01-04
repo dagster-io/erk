@@ -11,7 +11,7 @@ Flow:
 4. Track with Graphite: gt track --branch <current> --parent <base>
 5. Squash commits: gt squash --no-edit --no-interactive
 6. Update local commit message with PR title/body from GitHub
-7. Restack: erk pr auto-restack (AI-powered conflict resolution)
+7. Restack: gt restack (manual conflict resolution if needed)
 8. Submit: gt submit --no-edit --no-interactive (force-push to link with Graphite)
 """
 
@@ -21,7 +21,6 @@ import click
 
 from erk.cli.ensure import Ensure
 from erk.cli.graphite_command import GraphiteCommand
-from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.gt.events import CompletionEvent
@@ -155,16 +154,10 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # Step 6b: Update commit message with PR title/body
     _update_commit_message_from_pr(ctx, repo.root, pr_number)
 
-    # Step 7: Restack with auto-conflict resolution via CLI subprocess
-    # This invokes 'erk pr auto-restack --dangerous' which has a fast-path:
-    # - Fast path: If no conflicts, completes WITHOUT invoking Claude
-    # - Slow path: Only invokes Claude when conflicts exist
-    run_with_error_reporting(
-        ["erk", "pr", "auto-restack", "--dangerous"],
-        cwd=repo.root,
-        error_prefix="Auto-restack failed",
-        show_output=True,
-    )
+    # Step 7: Restack with Graphite (manual conflict resolution if needed)
+    user_output("Restacking branch...")
+    ctx.graphite.restack(repo.root, no_interactive=True, quiet=False)
+    user_output(click.style("✓", fg="green") + " Branch restacked")
 
     # Step 8: Submit to link with Graphite
     # Force push is required because squashing rewrites history, causing divergence from remote

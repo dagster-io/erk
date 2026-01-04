@@ -97,9 +97,6 @@ from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
 )
-from erk.cli.commands.exec.scripts.restack_continue import restack_continue
-from erk.cli.commands.exec.scripts.restack_finalize import restack_finalize
-from erk.cli.commands.exec.scripts.restack_preflight import restack_preflight
 from erk.cli.commands.exec.scripts.session_id_injector_hook import (
     session_id_injector_hook,
 )
@@ -172,10 +169,7 @@ exec_group.add_command(post_workflow_started_comment, name="post-workflow-starte
 exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
-exec_group.add_command(restack_continue, name="restack-continue")
-exec_group.add_command(restack_finalize, name="restack-finalize")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
-exec_group.add_command(restack_preflight, name="restack-preflight")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")

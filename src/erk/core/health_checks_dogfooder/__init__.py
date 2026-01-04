@@ -26,9 +26,6 @@ from erk.core.health_checks_dogfooder.legacy_claude_docs import (
 from erk.core.health_checks_dogfooder.legacy_config_locations import (
     check_legacy_config_locations,
 )
-from erk.core.health_checks_dogfooder.legacy_config_option import (
-    check_legacy_config_option,
-)
 from erk.core.health_checks_dogfooder.legacy_erk_docs_agent import (
     check_legacy_erk_docs_agent,
 )
@@ -53,7 +50,6 @@ EARLY_DOGFOODER_CHECK_NAMES: set[str] = {
     "deprecated-dot-agent-config",
     "legacy-claude-docs",
     "legacy-config",
-    "legacy-config-option",
     "legacy-erk-docs",
     "legacy-erk-kits-folder",
     "legacy-hook-settings",
@@ -80,7 +76,6 @@ def run_early_dogfooder_checks(
         check_deprecated_dot_agent_config(repo_root),
         check_legacy_claude_docs(repo_root),
         check_legacy_config_locations(repo_root, metadata_dir),
-        check_legacy_config_option(repo_root),
         check_legacy_erk_docs_agent(repo_root),
         check_legacy_erk_kits_folder(repo_root),
         check_legacy_hook_settings(repo_root),

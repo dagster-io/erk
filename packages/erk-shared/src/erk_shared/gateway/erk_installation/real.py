@@ -56,9 +56,6 @@ class RealErkInstallation(ErkInstallation):
             shell_setup_complete=bool(data.get("shell_setup_complete", False)),
             show_pr_info=bool(data.get("show_pr_info", True)),
             github_planning=bool(data.get("github_planning", True)),
-            auto_restack_require_dangerous_flag=bool(
-                data.get("auto_restack_require_dangerous_flag", True)
-            ),
             fix_conflicts_require_dangerous_flag=bool(
                 data.get("fix_conflicts_require_dangerous_flag", True)
             ),
@@ -118,7 +115,6 @@ use_graphite = {str(config.use_graphite).lower()}
 shell_setup_complete = {str(config.shell_setup_complete).lower()}
 show_pr_info = {str(config.show_pr_info).lower()}
 github_planning = {str(config.github_planning).lower()}
-auto_restack_require_dangerous_flag = {str(config.auto_restack_require_dangerous_flag).lower()}
 fix_conflicts_require_dangerous_flag = {str(config.fix_conflicts_require_dangerous_flag).lower()}
 show_hidden_commands = {str(config.show_hidden_commands).lower()}
 """

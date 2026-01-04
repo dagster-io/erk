@@ -52,7 +52,7 @@ def test_pr_subcommands_without_script_support_passthrough() -> None:
     they should passthrough to run normally without shell integration.
     """
     # These pr subcommands don't support --script flag
-    subcommands_without_script = ["pr submit", "pr sync", "pr auto-restack"]
+    subcommands_without_script = ["pr submit", "pr sync"]
 
     for cmd in subcommands_without_script:
         assert cmd not in SHELL_INTEGRATION_COMMANDS, (
