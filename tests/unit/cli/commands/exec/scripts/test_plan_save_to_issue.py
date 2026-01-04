@@ -26,16 +26,7 @@ def test_plan_save_to_issue_success() -> None:
 
 - Step 1
 - Step 2"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"test-plan": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"test-plan": plan_content})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -63,16 +54,7 @@ def test_plan_save_to_issue_enriched_plan() -> None:
 ## Enrichment Details
 
 Context here"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"enriched-plan": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"enriched-plan": plan_content})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -93,16 +75,7 @@ def test_plan_save_to_issue_no_plan() -> None:
     """Test error when no plan found."""
     fake_gh = FakeGitHubIssues()
     # Empty session store - no plans
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test()
     runner = CliRunner()
 
     result = runner.invoke(
@@ -127,16 +100,7 @@ def test_plan_save_to_issue_format() -> None:
     plan_content = """# Test Plan
 
 - Step 1"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"format-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"format-test": plan_content})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -170,16 +134,7 @@ def test_plan_save_to_issue_display_format() -> None:
     plan_content = """# Test Feature
 
 - Implementation step"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"display-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"display-test": plan_content})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -212,16 +167,7 @@ def test_plan_save_to_issue_label_created() -> None:
     plan_content = """# Feature
 
 Steps here"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"label-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"label-test": plan_content})
     runner = CliRunner()
 
     result = runner.invoke(
@@ -259,7 +205,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
     plan_content = """# Feature Plan
 
 - Step 1"""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -272,12 +218,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
             )
         },
         plans={"session-context-test": plan_content},
-        settings=None,
-        local_settings=None,
         session_slugs={"test-session-id": ["session-context-test"]},
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -315,16 +256,7 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
 
 - Step 1"""
     # Session store with no sessions but has a plan
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"no-session-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-session-test": plan_content})
 
     runner = CliRunner()
 
@@ -355,16 +287,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     plan_content = """# Feature
 
 - Step 1"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"metadata-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"metadata-test": plan_content})
 
     runner = CliRunner()
 
@@ -404,16 +327,7 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
 
 - Step 1"""
 
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"session-id-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"session-id-test": plan_content})
 
     runner = CliRunner()
 
@@ -461,7 +375,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
     plan_content = """# Feature Plan
 
 - Step 1"""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -474,12 +388,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
             )
         },
         plans={"display-session-test": plan_content},
-        settings=None,
-        local_settings=None,
         session_slugs={"test-session-id": ["display-session-test"]},
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -515,7 +424,7 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
 - Step 1"""
 
     # Session store has sessions but no session ID is passed via CLI
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -528,12 +437,6 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
             )
         },
         plans={"store-session-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -577,7 +480,7 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
 - Step 1"""
 
     # Session store has the session that matches the flag
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -590,12 +493,7 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
             )
         },
         plans={"session-flag-test": plan_content},
-        settings=None,
-        local_settings=None,
         session_slugs={flag_session_id: ["session-flag-test"]},
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -628,16 +526,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     plan_content = """# Feature Plan
 
 - Step 1"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"marker-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"marker-test": plan_content})
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
@@ -681,16 +570,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
 
 - Step 1"""
     # Session store has plan but no session ID will be passed
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"no-marker-test": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(plans={"no-marker-test": plan_content})
     runner = CliRunner()
 
     with runner.isolated_filesystem(temp_dir=tmp_path) as td:
@@ -737,15 +617,10 @@ def test_plan_save_to_issue_preserves_plan_file_after_save(
     plan_file = plans_dir / f"{test_slug}.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    fake_store = FakeClaudeInstallation(
-        projects=None,
+    fake_store = FakeClaudeInstallation.for_test(
         plans={test_slug: plan_content},
-        settings=None,
-        local_settings=None,
         session_slugs={test_session_id: [test_slug]},
-        session_planning_agents=None,
         plans_dir_path=plans_dir,
-        projects_dir_path=None,
     )
 
     runner = CliRunner()

@@ -82,16 +82,7 @@ def test_find_project_info_success(tmp_path: Path) -> None:
     (project_dir / "agent-17cfd3f4.jsonl").write_text("{}", encoding="utf-8")
 
     # Create FakeClaudeInstallation with real projects directory
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     # Test
     result = find_project_info(test_cwd, installation)
@@ -125,16 +116,7 @@ def test_find_project_info_with_hidden_directory(tmp_path: Path) -> None:
     project_dir.mkdir()
     (project_dir / "test123.jsonl").write_text("{}", encoding="utf-8")
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     result = find_project_info(test_cwd, installation)
 
@@ -162,16 +144,7 @@ def test_find_project_info_exact_matching_no_false_positives(tmp_path: Path) -> 
     (projects_dir / encoded1 / "session1.jsonl").write_text("{}", encoding="utf-8")
     (projects_dir / encoded2 / "session2.jsonl").write_text("{}", encoding="utf-8")
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     # Test that each path matches only its own project directory
     result1 = find_project_info(path1, installation)
@@ -209,16 +182,7 @@ def test_find_project_info_latest_session_is_main_not_agent(tmp_path: Path) -> N
     time.sleep(0.01)
     agent_log.touch()
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     result = find_project_info(test_cwd, installation)
 
@@ -239,16 +203,7 @@ def test_find_project_info_project_not_found(tmp_path: Path) -> None:
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     result = find_project_info(tmp_path / "nonexistent", installation)
 
@@ -263,16 +218,7 @@ def test_find_project_info_claude_projects_missing(tmp_path: Path) -> None:
     # projects_dir does not exist
     nonexistent_projects_dir = tmp_path / ".claude" / "projects"
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=nonexistent_projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=nonexistent_projects_dir)
 
     result = find_project_info(tmp_path / "some" / "path", installation)
 
@@ -297,16 +243,7 @@ def test_find_project_info_sorts_session_logs(tmp_path: Path) -> None:
     (project_dir / "aaa.jsonl").write_text("{}", encoding="utf-8")
     (project_dir / "mmm.jsonl").write_text("{}", encoding="utf-8")
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     result = find_project_info(test_cwd, installation)
 
@@ -331,16 +268,7 @@ def test_cli_success(tmp_path: Path) -> None:
     project_dir.mkdir()
     (project_dir / "test.jsonl").write_text("{}", encoding="utf-8")
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -370,16 +298,7 @@ def test_cli_defaults_to_cwd(tmp_path: Path) -> None:
     project_dir.mkdir()
     (project_dir / "test.jsonl").write_text("{}", encoding="utf-8")
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     runner = CliRunner()
     # Run without --path flag (should use cwd)
@@ -411,16 +330,7 @@ def test_cli_project_not_found(tmp_path: Path) -> None:
     test_dir = tmp_path / "nonexistent"
     test_dir.mkdir()
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -447,16 +357,7 @@ def test_cli_json_output_structure(tmp_path: Path) -> None:
     project_dir.mkdir()
     (project_dir / "session123.jsonl").write_text("{}", encoding="utf-8")
 
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=projects_dir,
-    )
+    installation = FakeClaudeInstallation.for_test(projects_dir_path=projects_dir)
 
     runner = CliRunner()
     result = runner.invoke(

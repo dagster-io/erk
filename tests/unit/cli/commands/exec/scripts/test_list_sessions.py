@@ -192,7 +192,7 @@ def test_extract_summary_content_with_newlines() -> None:
 
 def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
     """Test that all sessions are discovered from store."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -213,14 +213,7 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -232,7 +225,7 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
 
 def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     """Test that sessions are sorted by mtime (newest first)."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -248,14 +241,7 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -269,7 +255,7 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
 
 def test_list_sessions_respects_limit(tmp_path: Path) -> None:
     """Test that limit parameter is respected."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -281,14 +267,7 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
                     for i in range(20)
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -300,7 +279,7 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
 
 def test_list_sessions_marks_current(tmp_path: Path) -> None:
     """Test that current session is marked correctly."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -316,14 +295,7 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -340,16 +312,7 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
 
 def test_list_sessions_empty_project(tmp_path: Path) -> None:
     """Test handling of project with no sessions."""
-    fake_store = FakeClaudeInstallation(
-        projects={tmp_path: FakeProject(sessions={})},
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test(projects={tmp_path: FakeProject(sessions={})})
 
     sessions, filtered_count = _list_sessions_from_store(
         fake_store, tmp_path, None, limit=10, min_size=0
@@ -360,16 +323,7 @@ def test_list_sessions_empty_project(tmp_path: Path) -> None:
 
 def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
     """Test handling of nonexistent project."""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )  # No projects
+    fake_store = FakeClaudeInstallation.for_test()  # No projects
 
     sessions, filtered_count = _list_sessions_from_store(
         fake_store, tmp_path, None, limit=10, min_size=0
@@ -380,7 +334,7 @@ def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
 
 def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
     """Test that summaries are extracted from session content."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -391,14 +345,7 @@ def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
                     )
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10, min_size=0)
@@ -487,7 +434,7 @@ def test_cli_success(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -498,14 +445,7 @@ def test_cli_success(tmp_path: Path) -> None:
                     )
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
     context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
@@ -526,16 +466,7 @@ def test_cli_project_not_found(tmp_path: Path) -> None:
         trunk_branches={tmp_path: "main"},
     )
     # Empty installation - no projects
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    fake_store = FakeClaudeInstallation.for_test()
     context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
     runner = CliRunner()
@@ -553,7 +484,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -564,14 +495,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
                     )
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
     context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
@@ -611,7 +535,7 @@ def test_cli_limit_option(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -623,14 +547,7 @@ def test_cli_limit_option(tmp_path: Path) -> None:
                     for i in range(10)
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
     context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
@@ -648,7 +565,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature-branch"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -664,14 +581,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
     context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 
@@ -695,7 +605,7 @@ def test_cli_marks_current_session(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
     """Test that --min-size filters out tiny sessions."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -711,14 +621,7 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -732,7 +635,7 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
 
 def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
     """Test that min_size=0 (default) does not filter."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -748,14 +651,7 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -768,7 +664,7 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
 
 def test_list_sessions_all_filtered(tmp_path: Path) -> None:
     """Test when all sessions are filtered by size."""
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -784,14 +680,7 @@ def test_list_sessions_all_filtered(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
 
     sessions, filtered_count = _list_sessions_from_store(
@@ -808,7 +697,7 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
     )
-    fake_store = FakeClaudeInstallation(
+    fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
                 sessions={
@@ -824,14 +713,7 @@ def test_cli_min_size_option(tmp_path: Path) -> None:
                     ),
                 }
             )
-        },
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
+        }
     )
     context = ErkContext.for_test(git=git, claude_installation=fake_store, cwd=tmp_path)
 

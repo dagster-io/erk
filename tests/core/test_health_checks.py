@@ -317,16 +317,7 @@ def test_check_uv_version_with_build_info() -> None:
 
 def test_check_hooks_disabled_no_files() -> None:
     """Test when no settings files exist."""
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    installation = FakeClaudeInstallation.for_test()
 
     result = check_hooks_disabled(installation)
 
@@ -338,16 +329,7 @@ def test_check_hooks_disabled_no_files() -> None:
 
 def test_check_hooks_disabled_in_settings() -> None:
     """Test when hooks.disabled=true in settings.json."""
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings={"hooks": {"disabled": True}},
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    installation = FakeClaudeInstallation.for_test(settings={"hooks": {"disabled": True}})
 
     result = check_hooks_disabled(installation)
 
@@ -363,16 +345,7 @@ def test_check_hooks_disabled_in_local(tmp_path: Path) -> None:
     Note: local settings file is still checked via filesystem for now,
     so we need to create the file for this test.
     """
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings=None,  # No global settings
-        local_settings={"hooks": {"disabled": True}},  # Not used yet in check
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    installation = FakeClaudeInstallation.for_test(local_settings={"hooks": {"disabled": True}})
 
     # For now, the local settings check still reads from filesystem
     # This test verifies the fake doesn't break when local_settings is set
@@ -386,16 +359,7 @@ def test_check_hooks_disabled_in_local(tmp_path: Path) -> None:
 
 def test_check_hooks_disabled_false() -> None:
     """Test when hooks.disabled=false (explicitly enabled)."""
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings={"hooks": {"disabled": False}},
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    installation = FakeClaudeInstallation.for_test(settings={"hooks": {"disabled": False}})
 
     result = check_hooks_disabled(installation)
 
@@ -406,16 +370,7 @@ def test_check_hooks_disabled_false() -> None:
 
 def test_check_hooks_disabled_no_hooks_key() -> None:
     """Test when settings exist but no hooks key."""
-    installation = FakeClaudeInstallation(
-        projects=None,
-        plans=None,
-        settings={"other_key": "value"},
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-        projects_dir_path=None,
-    )
+    installation = FakeClaudeInstallation.for_test(settings={"other_key": "value"})
 
     result = check_hooks_disabled(installation)
 
