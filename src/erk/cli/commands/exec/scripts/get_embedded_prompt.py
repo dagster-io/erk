@@ -29,6 +29,7 @@ from erk.artifacts.sync import get_bundled_github_dir
 # Available prompts that can be retrieved
 AVAILABLE_PROMPTS = frozenset(
     {
+        "ci-autofix",
         "dignified-python-review",
     }
 )

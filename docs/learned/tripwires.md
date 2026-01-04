@@ -47,6 +47,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](architecture/subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI).
 
+**CRITICAL: Before using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](ci/prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
+
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use user_confirm() from erk_shared.output instead. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
 **CRITICAL: Before adding a command with --script flag** → Read [CLI Script Mode](cli/script-mode.md) first. Must register in SHELL_INTEGRATION_COMMANDS with all alias variants (e.g., br land, branch land).

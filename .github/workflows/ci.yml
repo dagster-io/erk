@@ -281,54 +281,19 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          cat > /tmp/prompt.md << 'PROMPT_EOF'
-          # Autofix CI Errors
+          # Get the embedded prompt and substitute placeholders
+          prompt=$(erk exec get-embedded-prompt ci-autofix)
+          prompt="${prompt//\$\{\{ needs.format.result \}\}/${{ needs.format.result }}}"
+          prompt="${prompt//\$\{\{ needs.lint.result \}\}/${{ needs.lint.result }}}"
+          prompt="${prompt//\$\{\{ needs.prettier.result \}\}/${{ needs.prettier.result }}}"
+          prompt="${prompt//\$\{\{ needs.docs-check.result \}\}/${{ needs.docs-check.result }}}"
+          prompt="${prompt//\$\{\{ needs.ty.result \}\}/${{ needs.ty.result }}}"
+          prompt="${prompt//\$\{\{ needs.unit-tests.result \}\}/${{ needs.unit-tests.result }}}"
+          prompt="${prompt//\$\{\{ needs.integration-tests.result \}\}/${{ needs.integration-tests.result }}}"
 
-          Fix the style/formatting errors. You have full context of all CI job results.
-
-          ## Job Results
-          - format: ${{ needs.format.result }}
-          - lint: ${{ needs.lint.result }}
-          - prettier: ${{ needs.prettier.result }}
-          - docs-check: ${{ needs.docs-check.result }}
-          - ty: ${{ needs.ty.result }} (NOT auto-fixable)
-          - unit-tests: ${{ needs.unit-tests.result }} (NOT auto-fixable)
-          - integration-tests: ${{ needs.integration-tests.result }} (NOT auto-fixable)
-
-          ## Errors to Fix
-          PROMPT_EOF
-
-          cat /tmp/errors.txt >> /tmp/prompt.md
-
-          cat >> /tmp/prompt.md << 'PROMPT_EOF'
-
-          ## Rules
-          - For ruff format errors: run `uv run ruff format <file>` on each file
-          - For ruff lint errors: run `uv run ruff check --fix <file>` for auto-fixable errors
-          - For prettier errors: run `prettier --write <file>` for each markdown file
-          - For docs errors: run `make docs-sync` if generated docs are out of sync
-          - DO NOT attempt to fix ty or test failures - those require human intervention
-          - Commit with a structured message:
-            - Subject line: Brief summary of fixes (e.g., "style: fix ruff format in 2 files")
-            - Blank line
-            - Body explaining:
-              - This was an automated commit by CI
-              - Which check(s) failed (format, lint, prettier, docs)
-              - What was fixed and in which files
-            - Example format:
-              ```
-              style: fix prettier formatting in docs/
-
-              🤖 Automated fix by CI autofix workflow
-
-              Failed checks: prettier
-
-              Fixed:
-              - docs/learned/ci/claude-in-ci.md: markdown formatting
-              - AGENTS.md: trailing whitespace
-              ```
-          - Push the commit
-          PROMPT_EOF
+          # Read errors and substitute into prompt
+          errors=$(cat /tmp/errors.txt)
+          prompt="${prompt//\$ERRORS/$errors}"
 
           claude --print \
             --model claude-sonnet-4-20250514 \
@@ -336,4 +301,4 @@ jobs:
             --dangerously-skip-permissions \
             --verbose \
             --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)' \
-            "$(cat /tmp/prompt.md)"
+            "$prompt"
