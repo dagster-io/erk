@@ -2251,9 +2251,7 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
 # Objective Propagation Tests
 
 
-def _create_plan_with_objective(
-    issue_number: str, objective_issue: int | None
-) -> Plan:
+def _create_plan_with_objective(issue_number: str, objective_issue: int | None) -> Plan:
     """Create a plan issue with optional objective_issue in its metadata."""
     from erk_shared.github.metadata import format_plan_header_body
 
