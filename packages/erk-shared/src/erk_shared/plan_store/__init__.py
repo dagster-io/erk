@@ -6,7 +6,6 @@ plans across different providers (GitHub, GitLab, Linear, Jira, etc.).
 Import from submodules:
 - types: Plan, PlanQuery, PlanState, CreatePlanResult
 - backend: PlanBackend (preferred interface)
-- fake: FakePlanBackend (for testing)
 - store: PlanStore (deprecated, use PlanBackend)
 - github: GitHubPlanStore
 """

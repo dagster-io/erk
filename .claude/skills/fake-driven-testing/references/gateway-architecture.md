@@ -496,6 +496,66 @@ class FakeFileSystem(FileSystemGateway):
 
 **Exception**: Fakes may create real directories when necessary for integration, but should not read/write actual files.
 
+## Gateways vs Backends
+
+**CRITICAL: DI is ONLY at the gateway level.** We do NOT want "DI all the way down" like Java.
+
+### The Distinction
+
+| Aspect | Gateway | Backend |
+|--------|---------|---------|
+| **Purpose** | Thin wrapper around external system | Higher-level abstraction that composes gateways |
+| **Examples** | `GitHubIssues`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubPlanStore`, `PlanBackend` implementations |
+| **Implementations** | 4: ABC, Real, Fake, DryRun | Just ABC + real implementations |
+| **Needs Fake?** | ✅ Yes - provides in-memory simulation | ❌ No - inject fake gateways instead |
+| **Testing** | Use `FakeGitHubIssues` directly | Use `GitHubPlanStore(FakeGitHubIssues())` |
+
+### Backend Architecture
+
+Backends are higher-level abstractions that:
+1. **Compose one or more gateways** via constructor injection
+2. **Transform data** from gateway-specific to domain models
+3. **Implement domain operations** (not raw external operations)
+
+```python
+# Backend takes gateways as constructor arguments
+class GitHubPlanStore(PlanBackend):
+    def __init__(self, github_issues: GitHubIssues, time: Time | None = None):
+        self._github_issues = github_issues  # Injects gateway
+        self._time = time or RealTime()
+
+    def create_plan(self, ...) -> CreatePlanResult:
+        # Uses gateway to implement domain operation
+        result = self._github_issues.create_issue(...)
+        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+```
+
+### Testing Backends
+
+To test code that uses a backend, inject fake gateways into the real backend:
+
+```python
+# ✅ CORRECT: Inject fake gateway into real backend
+def test_create_plan():
+    fake_issues = FakeGitHubIssues()
+    plan_store = GitHubPlanStore(fake_issues)
+
+    result = plan_store.create_plan(...)
+
+    assert fake_issues.created_issues[0][0] == "expected title"
+
+# ❌ WRONG: Creating a fake backend
+class FakePlanBackend(PlanBackend):  # DON'T DO THIS
+    ...
+```
+
+### Why No Fake Backends?
+
+1. **Gateways are the seam** - They're the boundary where we swap real ↔ fake
+2. **Backends contain business logic** - They should be tested with real logic, fake dependencies
+3. **Avoids duplication** - A fake backend duplicates the real backend's logic
+4. **DI boundary** - Only inject dependencies at the gateway level
+
 ## Related Documentation
 
 - `testing-strategy.md` - How to test gateway classes at different layers

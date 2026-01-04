@@ -714,6 +714,101 @@ def test_file_upload():
 
 ---
 
+## ❌ Creating Fake Backends (DI All The Way Down)
+
+**NEVER create fake implementations for backends. DI is ONLY at the gateway level.**
+
+### Understanding the Problem
+
+There's a critical distinction between **gateways** and **backends**:
+
+- **Gateways** = thin wrappers around external systems (GitHubIssues, Git, Graphite)
+  - Need 4 implementations: ABC, Real, Fake, DryRun
+  - Fakes provide in-memory simulation
+
+- **Backends** = higher-level abstractions that COMPOSE gateways (GitHubPlanStore)
+  - Only need ABC + real implementations
+  - **NO fake implementation needed** - inject fake gateways instead
+
+### Wrong Approach
+
+```python
+# ❌ WRONG: Creating a fake backend
+class PlanBackend(ABC):
+    @abstractmethod
+    def create_plan(self, ...) -> CreatePlanResult: ...
+
+class GitHubPlanBackend(PlanBackend):
+    def __init__(self, github_issues: GitHubIssues):
+        self._github_issues = github_issues
+
+    def create_plan(self, ...) -> CreatePlanResult:
+        result = self._github_issues.create_issue(...)
+        return CreatePlanResult(...)
+
+# ❌ WRONG: DON'T DO THIS - fake backend is unnecessary
+class FakePlanBackend(PlanBackend):
+    def __init__(self, *, plans: dict | None = None):
+        self._plans = plans or {}
+
+    def create_plan(self, ...) -> CreatePlanResult:
+        # Duplicates logic that should be tested via real backend + fake gateway
+        ...
+```
+
+**Problems**:
+- **Duplicated logic**: Fake backend duplicates real backend's business logic
+- **Untested real code**: The actual backend logic goes untested
+- **Wrong abstraction**: DI should stop at the gateway level
+- **Java-style over-engineering**: "DI all the way down" leads to test doubles at every layer
+
+### Correct Approach
+
+```python
+# ✅ CORRECT: Backend composes gateways, no fake needed
+class PlanBackend(ABC):
+    @abstractmethod
+    def create_plan(self, ...) -> CreatePlanResult: ...
+
+class GitHubPlanBackend(PlanBackend):
+    def __init__(self, github_issues: GitHubIssues):
+        self._github_issues = github_issues  # Gateway injected here
+
+    def create_plan(self, ...) -> CreatePlanResult:
+        result = self._github_issues.create_issue(...)
+        return CreatePlanResult(plan_id=str(result.number), url=result.url)
+
+# ✅ CORRECT: Test backend with fake gateway
+def test_create_plan():
+    fake_issues = FakeGitHubIssues()  # Fake at gateway level
+    backend = GitHubPlanBackend(fake_issues)  # Real backend
+
+    result = backend.create_plan(...)
+
+    # Assert on gateway mutations
+    assert fake_issues.created_issues[0][0] == "expected title"
+    assert result.plan_id == "1"
+```
+
+### Why This Is Wrong
+
+1. **Gateways are the seam**: They're the boundary where we swap real ↔ fake
+2. **Backends contain business logic**: Should be tested with real logic, fake dependencies
+3. **Avoids duplication**: A fake backend just duplicates the real backend's logic
+4. **DI boundary rule**: Only inject dependencies at the gateway level
+
+### The DI Boundary Rule
+
+```
+CLI → ErkContext (DI container)
+  → GitHubPlanBackend (backend - REAL in tests)
+    → FakeGitHubIssues (gateway - FAKE in tests)  ← DI stops here
+```
+
+**Rule**: DI and fakes apply to **gateways only**. Backends are tested with real implementations that receive fake gateways.
+
+---
+
 ## Summary of Anti-Patterns
 
 | Anti-Pattern                 | Why It's Wrong                    | Correct Approach            |
@@ -727,6 +822,7 @@ def test_file_upload():
 | Testing implementation       | Breaks on refactoring             | Test behavior               |
 | Incomplete gateway tests     | Untested code, potential bugs     | Test all implementations    |
 | Mocking third-party libs     | Fragile, coupled to internals     | Create your own gateways    |
+| Creating fake backends       | Duplicates logic, wrong DI level  | Inject fake gateways        |
 
 ## Related Documentation
 
