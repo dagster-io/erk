@@ -106,6 +106,7 @@ erk exec impl-signal started --session-id="<session-id>" 2>/dev/null || true
 ```
 
 This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
 - The content has been saved to GitHub issue
 - The content has been snapshotted to `.erk/scratch/`
 - Keeping it could cause confusion if the user tries to re-save
