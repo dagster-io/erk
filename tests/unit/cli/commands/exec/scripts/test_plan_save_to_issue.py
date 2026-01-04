@@ -9,6 +9,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts import plan_save_to_issue as plan_save_to_issue_module
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
+    inject_steps_into_plan,
     plan_save_to_issue,
     validate_plan_frontmatter,
 )
@@ -914,3 +915,208 @@ Details here.
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
+
+
+# =============================================================================
+# inject_steps_into_plan Tests
+# =============================================================================
+
+
+def test_inject_steps_into_plan_no_frontmatter() -> None:
+    """Test injecting steps into plan with no existing frontmatter."""
+    plan_content = """# My Feature
+
+Details here.
+"""
+    result = inject_steps_into_plan(plan_content, ("Step 1", "Step 2"))
+
+    assert "steps:" in result
+    assert "name: Step 1" in result
+    assert "name: Step 2" in result
+
+
+def test_inject_steps_into_plan_replaces_existing_steps() -> None:
+    """Test that CLI steps replace existing frontmatter steps."""
+    plan_content = """---
+steps:
+  - name: "Old step 1"
+  - name: "Old step 2"
+---
+
+# My Feature
+
+Details here.
+"""
+    result = inject_steps_into_plan(plan_content, ("New step 1", "New step 2"))
+
+    # New steps should be present
+    assert "name: New step 1" in result
+    assert "name: New step 2" in result
+    # Old steps should be gone
+    assert "Old step 1" not in result
+    assert "Old step 2" not in result
+
+
+def test_inject_steps_into_plan_preserves_other_frontmatter() -> None:
+    """Test that injecting steps preserves other frontmatter fields."""
+    plan_content = """---
+title: My Plan
+author: test-user
+steps:
+  - name: "Old step"
+---
+
+# My Feature
+"""
+    result = inject_steps_into_plan(plan_content, ("New step",))
+
+    # Other fields should be preserved
+    assert "title: My Plan" in result
+    assert "author: test-user" in result
+    # New step should be present
+    assert "name: New step" in result
+
+
+# =============================================================================
+# --steps CLI Option Tests
+# =============================================================================
+
+
+def test_plan_save_to_issue_steps_option_injects_steps() -> None:
+    """Test --steps option injects steps into plan without frontmatter."""
+    fake_gh = FakeGitHubIssues()
+    # Plan without frontmatter steps
+    plan_content = """# My Feature
+
+This plan has no frontmatter steps.
+"""
+    fake_store = FakeClaudeInstallation(
+        projects=None,
+        plans={"no-steps-plan": plan_content},
+        settings=None,
+        local_settings=None,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json", "--steps", "First step", "--steps", "Second step"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify the plan comment contains the injected steps
+    assert len(fake_gh.added_comments) == 1
+    _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
+    assert "First step" in plan_comment
+    assert "Second step" in plan_comment
+
+
+def test_plan_save_to_issue_steps_option_overrides_existing_steps() -> None:
+    """Test --steps option overrides existing frontmatter steps."""
+    fake_gh = FakeGitHubIssues()
+    # Plan with existing frontmatter steps
+    plan_content = """---
+steps:
+  - name: "Old step 1"
+  - name: "Old step 2"
+---
+
+# My Feature
+
+Details here.
+"""
+    fake_store = FakeClaudeInstallation(
+        projects=None,
+        plans={"existing-steps-plan": plan_content},
+        settings=None,
+        local_settings=None,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json", "--steps", "New step 1", "--steps", "New step 2"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify old steps are gone and new steps are present
+    assert len(fake_gh.added_comments) == 1
+    _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
+    assert "New step 1" in plan_comment
+    assert "New step 2" in plan_comment
+    assert "Old step 1" not in plan_comment
+    assert "Old step 2" not in plan_comment
+
+
+def test_plan_save_to_issue_steps_option_single_step() -> None:
+    """Test --steps option works with a single step."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = """# Simple Plan
+
+One step plan.
+"""
+    fake_store = FakeClaudeInstallation(
+        projects=None,
+        plans={"single-step-plan": plan_content},
+        settings=None,
+        local_settings=None,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json", "--steps", "The only step"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+
+def test_plan_save_to_issue_without_steps_option_still_validates() -> None:
+    """Test plan without --steps still requires frontmatter steps."""
+    fake_gh = FakeGitHubIssues()
+    # Plan without steps - should fail
+    plan_content = """# My Feature
+
+No steps in frontmatter and no --steps provided.
+"""
+    fake_store = FakeClaudeInstallation(
+        projects=None,
+        plans={"no-steps-anywhere": plan_content},
+        settings=None,
+        local_settings=None,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "Plan missing required 'steps' in frontmatter" in output["error"]

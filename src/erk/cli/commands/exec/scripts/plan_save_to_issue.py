@@ -96,6 +96,29 @@ def validate_plan_frontmatter(plan_content: str) -> None:
             )
 
 
+def inject_steps_into_plan(plan_content: str, step_names: tuple[str, ...]) -> str:
+    """Inject steps into plan frontmatter, replacing any existing steps.
+
+    Args:
+        plan_content: The plan content to modify.
+        step_names: Tuple of step names to inject.
+
+    Returns:
+        Plan content with steps injected into frontmatter.
+    """
+    # Gracefully handle YAML parsing errors (third-party API exception handling)
+    try:
+        post = frontmatter.loads(plan_content)
+    except yaml.YAMLError:
+        # If existing frontmatter is invalid, create new frontmatter
+        post = frontmatter.Post(plan_content)
+
+    # Replace or add steps in frontmatter
+    post.metadata["steps"] = [{"name": name} for name in step_names]
+
+    return frontmatter.dumps(post)
+
+
 def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     """Create marker file to indicate plan was saved to GitHub.
 
@@ -139,6 +162,11 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     default=None,
     help="Link plan to parent objective issue number",
 )
+@click.option(
+    "--steps",
+    multiple=True,
+    help="Step names to inject into plan frontmatter (repeatable, overrides existing steps)",
+)
 @click.pass_context
 def plan_save_to_issue(
     ctx: click.Context,
@@ -146,6 +174,7 @@ def plan_save_to_issue(
     plan_file: Path | None,
     session_id: str | None,
     objective_issue: int | None,
+    steps: tuple[str, ...],
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
@@ -176,6 +205,10 @@ def plan_save_to_issue(
         else:
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
+
+    # Inject CLI-provided steps if any (overrides existing frontmatter steps)
+    if steps:
+        plan = inject_steps_into_plan(plan, steps)
 
     # Validate frontmatter before saving
     try:
