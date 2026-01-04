@@ -8,7 +8,7 @@ import time
 from collections.abc import Iterator
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rich.markup import escape as escape_markup
 from textual import on, work
@@ -65,11 +65,13 @@ class ClickableLink(Static):
         """Open URL in browser when clicked."""
         event.stop()
         # Access browser through the app's provider (ErkDashApp)
-        from erk.tui.app import ErkDashApp as _ErkDashApp  # type: ignore[unresolved-attribute]
-
-        app = self.app
-        if isinstance(app, _ErkDashApp):
-            app._provider.browser.launch(self._url)
+        # Use getattr to avoid circular import isinstance issues
+        app: Any = self.app
+        provider = getattr(app, "_provider", None)
+        if provider is not None:
+            browser = getattr(provider, "browser", None)
+            if browser is not None:
+                browser.launch(self._url)
 
 
 class CopyableLabel(Static):
@@ -112,12 +114,13 @@ class CopyableLabel(Static):
             True if copy succeeded, False otherwise.
         """
         # Access clipboard through the app's provider (ErkDashApp)
-        # Defer the isinstance check to avoid forward reference issues
-        from erk.tui.app import ErkDashApp as _ErkDashApp  # type: ignore[unresolved-attribute]
-
-        app = self.app
-        if isinstance(app, _ErkDashApp):
-            return app._provider.clipboard.copy(self._text_to_copy)
+        # Use getattr to avoid circular import isinstance issues
+        app: Any = self.app
+        provider = getattr(app, "_provider", None)
+        if provider is not None:
+            clipboard = getattr(provider, "clipboard", None)
+            if clipboard is not None:
+                return clipboard.copy(self._text_to_copy)
         return False
 
 

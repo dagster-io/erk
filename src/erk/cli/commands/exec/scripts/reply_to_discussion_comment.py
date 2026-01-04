@@ -1,4 +1,3 @@
-# type: ignore  # TODO: Fix ty errors in follow-up PR
 """Reply to a PR discussion comment with a blockquote and action summary.
 
 This exec command posts a reply to a discussion comment that:
@@ -104,22 +103,27 @@ def reply_to_discussion_comment(
         branch_result = GitHubChecks.branch(get_current_branch(ctx))
         if isinstance(branch_result, BranchDetectionFailed):
             exit_with_error(branch_result.error_type, branch_result.message)
+        # Type narrowing: exit_with_error returns NoReturn, so branch_result is str
+        assert not isinstance(branch_result, BranchDetectionFailed)
         branch = branch_result
 
         pr_result = GitHubChecks.pr_for_branch(github, repo_root, branch)
         if isinstance(pr_result, NoPRForBranch):
             exit_with_error(pr_result.error_type, pr_result.message)
+        assert not isinstance(pr_result, NoPRForBranch)
         pr_details = pr_result
     else:
         pr_result = GitHubChecks.pr_by_number(github, repo_root, pr)
         if isinstance(pr_result, PRNotFoundError):
             exit_with_error(pr_result.error_type, pr_result.message)
+        assert not isinstance(pr_result, PRNotFoundError)
         pr_details = pr_result
 
     # Fetch all discussion comments to find the one we're replying to
     comments_result = GitHubChecks.issue_comments(github_issues, repo_root, pr_details.number)
     if isinstance(comments_result, GitHubAPIFailed):
         exit_with_error(comments_result.error_type, comments_result.message)
+    assert not isinstance(comments_result, GitHubAPIFailed)
 
     # Find the comment by ID
     target_comment = None
@@ -133,6 +137,8 @@ def reply_to_discussion_comment(
             "comment_not_found",
             f"Comment ID {comment_id} not found in PR #{pr_details.number} discussion",
         )
+    # Type narrowing: target_comment is not None after the check above
+    assert target_comment is not None
 
     # Format the reply
     reply_body = _format_reply(

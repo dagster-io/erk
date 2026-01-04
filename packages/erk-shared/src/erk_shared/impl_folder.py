@@ -1,4 +1,3 @@
-# type: ignore  # TODO: Fix ty errors in follow-up PR
 """Implementation folder utilities for erk and erk-kits.
 
 This module provides shared utilities for managing .impl/ folder structures:
@@ -19,7 +18,7 @@ import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 import frontmatter
 import yaml
@@ -188,7 +187,9 @@ def extract_steps_from_frontmatter(plan_content: str) -> list[str] | None:
     result = []
     for step in steps:
         if isinstance(step, dict) and "name" in step:
-            result.append(str(step["name"]))
+            # Cast after isinstance check - YAML returns object but we've verified it's a dict
+            step_dict = cast(dict[str, Any], step)
+            result.append(str(step_dict["name"]))
         # Skip invalid entries silently
 
     return result
@@ -405,13 +406,15 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
             if not isinstance(step, dict):
                 errors.append(f"Step {i + 1} must be an object")
             else:
-                if "number" not in step:
+                # Cast after isinstance check - YAML returns object but we've verified it's a dict
+                step_dict = cast(dict[str, Any], step)
+                if "number" not in step_dict:
                     errors.append(f"Step {i + 1} missing 'number' field")
-                elif not isinstance(step["number"], int):  # type: ignore[unresolved-attribute]
+                elif not isinstance(step_dict["number"], int):
                     errors.append(f"Step {i + 1} 'number' must be an integer")
-                if "title" not in step:  # type: ignore[unresolved-attribute]
+                if "title" not in step_dict:
                     errors.append(f"Step {i + 1} missing 'title' field")
-                if "completed" not in step:  # type: ignore[unresolved-attribute]
+                if "completed" not in step_dict:
                     errors.append(f"Step {i + 1} missing 'completed' field")
 
     if "total_steps" not in metadata:
@@ -439,7 +442,13 @@ def validate_progress_schema(progress_file: Path) -> list[str]:
         if total_steps != len(steps):
             errors.append(f"total_steps ({total_steps}) != len(steps) ({len(steps)})")
 
-        actual_completed = sum(1 for s in steps if s.get("completed"))
+        # Count completed steps - cast each item to dict after isinstance check
+        actual_completed = 0
+        for s in steps:
+            if isinstance(s, dict):
+                step_item = cast(dict[str, Any], s)
+                if step_item.get("completed"):
+                    actual_completed += 1
         if completed_steps != actual_completed:
             errors.append(
                 f"completed_steps ({completed_steps}) != actual count ({actual_completed})"
@@ -495,7 +504,14 @@ def generate_progress_content(steps: list[str]) -> str:
         body = "\n".join(body_lines)
 
     # Use frontmatter.dumps to create the full content
-    post = frontmatter.Post(body, **metadata)
+    # Pass metadata as explicit keyword args to satisfy type checker
+    post = frontmatter.Post(
+        body,
+        current_step=metadata["current_step"],
+        completed_steps=metadata["completed_steps"],
+        total_steps=metadata["total_steps"],
+        steps=metadata["steps"],
+    )
     return frontmatter.dumps(post)
 
 

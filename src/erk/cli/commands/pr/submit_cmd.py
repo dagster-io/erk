@@ -1,4 +1,3 @@
-# type: ignore  # TODO: Fix ty errors in follow-up PR
 """Submit current branch as a pull request.
 
 Unified PR submission with two-layer architecture:
@@ -42,14 +41,17 @@ from erk_shared.gateway.pr.types import (
 
 def _render_progress(event: ProgressEvent) -> None:
     """Render a progress event to the CLI."""
-    style_map = {
-        "info": {"dim": True},
-        "success": {"fg": "green"},
-        "warning": {"fg": "yellow"},
-        "error": {"fg": "red"},
-    }
-    style = style_map.get(event.style, {})
-    click.echo(click.style(f"   {event.message}", **style))
+    message = f"   {event.message}"
+    if event.style == "info":
+        click.echo(click.style(message, dim=True))
+    elif event.style == "success":
+        click.echo(click.style(message, fg="green"))
+    elif event.style == "warning":
+        click.echo(click.style(message, fg="yellow"))
+    elif event.style == "error":
+        click.echo(click.style(message, fg="red"))
+    else:
+        click.echo(message)
 
 
 @click.command("submit")
