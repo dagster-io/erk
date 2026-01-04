@@ -4,7 +4,11 @@ This module provides interfaces and implementations for storing and retrieving
 plans across different providers (GitHub, GitLab, Linear, Jira, etc.).
 
 Import from submodules:
-- types: Plan, PlanQuery, PlanState
-- store: PlanStore
+- types: Plan, PlanQuery, PlanState, CreatePlanResult
+- store: PlanStore (read-only, deprecated - use backend.PlanBackend)
+- backend: PlanBackend (full read/write interface, composes gateways)
 - github: GitHubPlanStore
+
+Note: PlanBackend is a BACKEND (composes gateways), not a gateway. It has no
+fake implementation. Test by injecting fake gateways into real backends.
 """

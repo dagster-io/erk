@@ -55,3 +55,16 @@ class PlanQuery:
     labels: list[str] | None = None
     state: PlanState | None = None
     limit: int | None = None
+
+
+@dataclass(frozen=True)
+class CreatePlanResult:
+    """Result of creating a plan.
+
+    Fields:
+        plan_id: Provider-specific plan identifier as string
+        url: Web URL to view the created plan
+    """
+
+    plan_id: str
+    url: str

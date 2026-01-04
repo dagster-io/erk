@@ -50,6 +50,9 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 **Adding/changing a gateway interface?**
 → Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
 
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
 **Need to implement a specific pattern (CliRunner, builders, etc.)?**
 → Read `patterns.md`
 
@@ -69,6 +72,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 - Understanding the ABC/Real/Fake/DryRun pattern
 - Need examples of gateway implementations
 - Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
 
 **Contents**:
 
@@ -78,6 +82,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 - When to add/change gateway methods
 - Design principles (keep gateways thin)
 - Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
 
 ### 📖 `testing-strategy.md`
 
@@ -301,6 +306,7 @@ This skill provides a **defense-in-depth testing strategy** with five layers for
 3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
 4. **Test what you're building**: No speculative tests, only active work
 5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
 
 ## Layer Selection Guide
 
