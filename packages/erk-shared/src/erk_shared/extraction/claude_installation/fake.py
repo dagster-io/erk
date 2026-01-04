@@ -1,5 +1,7 @@
 """In-memory fake implementation of ClaudeInstallation for testing."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 
