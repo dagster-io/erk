@@ -347,9 +347,7 @@ def test_slot_repair_shows_branch_mismatch_info() -> None:
         )
 
         # Pool.json says expected-branch but git says actual-branch
-        assignment = _create_test_assignment(
-            "erk-managed-wt-01", "expected-branch", worktree_path
-        )
+        assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -427,9 +425,7 @@ def test_slot_repair_shows_both_repairable_and_informational() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(
-            cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         # Should show both types of issues

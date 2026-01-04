@@ -72,9 +72,7 @@ def find_stale_assignments(
     """
     # Collect the slot names that have auto-repairable issues
     stale_slot_names = {
-        _extract_slot_name(issue)
-        for issue in issues
-        if issue.code in AUTO_REPAIRABLE_CODES
+        _extract_slot_name(issue) for issue in issues if issue.code in AUTO_REPAIRABLE_CODES
     }
 
     # Return the actual assignments that are stale
@@ -120,9 +118,7 @@ def _display_informational_issues(
         return
 
     user_output("")
-    user_output(
-        f"Found {len(informational)} issue(s) requiring manual intervention:"
-    )
+    user_output(f"Found {len(informational)} issue(s) requiring manual intervention:")
     for issue in informational:
         user_output(f"  [{click.style(issue.code, fg='yellow')}] {issue.message}")
         remediation = _format_remediation(issue, worktrees_dir)
