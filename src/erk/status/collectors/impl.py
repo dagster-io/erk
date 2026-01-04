@@ -1,5 +1,7 @@
 """Implementation folder collector."""
 
+import logging
+import time
 from pathlib import Path
 
 import frontmatter
@@ -7,12 +9,68 @@ import frontmatter
 from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
 from erk.status.models.status_data import PlanStatus
+from erk_shared.github.metadata import extract_step_progress
 from erk_shared.impl_folder import (
     get_impl_path,
     get_progress_path,
     parse_progress_frontmatter,
     read_issue_reference,
 )
+from erk_shared.naming import extract_leading_issue_number
+
+logger = logging.getLogger(__name__)
+
+# Cache for GitHub issue data to avoid rate limits
+# Key: (repo_root, issue_number), Value: (timestamp, progress_data)
+_github_progress_cache: dict[tuple[str, int], tuple[float, tuple[int, int] | None]] = {}
+_CACHE_TTL_SECONDS = 30.0
+
+
+def _fetch_github_progress_cached(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+) -> tuple[int, int] | None:
+    """Fetch progress from GitHub issue with caching.
+
+    Returns (current_step, total_steps) or None if not available.
+    Uses 30-second cache to avoid rate limit issues during frequent status updates.
+
+    Args:
+        ctx: Erk context with GitHub access
+        repo_root: Repository root path
+        issue_number: GitHub issue number
+
+    Returns:
+        Tuple of (current_step, total_steps) or None if not found
+    """
+    cache_key = (str(repo_root), issue_number)
+    now = time.time()
+
+    # Check cache first
+    if cache_key in _github_progress_cache:
+        cached_time, cached_data = _github_progress_cache[cache_key]
+        if now - cached_time < _CACHE_TTL_SECONDS:
+            return cached_data
+
+    # Cache miss or expired - fetch from GitHub
+    try:
+        issue_info = ctx.github_issues.get_issue(repo_root, issue_number)
+        progress = extract_step_progress(issue_info.body)
+
+        if progress is not None:
+            result = (progress.current_step, progress.total_steps)
+        else:
+            result = None
+
+        # Update cache
+        _github_progress_cache[cache_key] = (now, result)
+        return result
+    except Exception as e:
+        logger.debug(f"Failed to fetch GitHub progress for issue #{issue_number}: {e}")
+        # Cache the failure to avoid repeated API calls
+        _github_progress_cache[cache_key] = (now, None)
+        return None
 
 
 def detect_enriched_plan(repo_root: Path) -> tuple[Path | None, str | None]:
@@ -88,6 +146,29 @@ class PlanFileCollector(StatusCollector):
         enriched_plan_path, enriched_plan_filename = detect_enriched_plan(repo_root)
 
         if impl_path is None:
+            # Try GitHub-based progress tracking (no .impl/ folder)
+            github_progress = self._try_github_progress(ctx, repo_root)
+            if github_progress is not None:
+                current_step, total_steps, issue_number = github_progress
+                completion_percentage = (
+                    int((current_step / total_steps) * 100) if total_steps > 0 else 0
+                )
+                progress_summary = f"{current_step}/{total_steps} steps completed"
+                return PlanStatus(
+                    exists=False,  # No local .impl/ folder
+                    path=None,
+                    summary=None,
+                    line_count=0,
+                    first_lines=[],
+                    progress_summary=progress_summary,
+                    format="github-only",
+                    completion_percentage=completion_percentage,
+                    enriched_plan_path=enriched_plan_path,
+                    enriched_plan_filename=enriched_plan_filename,
+                    issue_number=issue_number,
+                    issue_url=None,  # Don't fetch full issue URL for status line
+                )
+
             return PlanStatus(
                 exists=False,
                 path=None,
@@ -201,3 +282,38 @@ class PlanFileCollector(StatusCollector):
             return progress_summary, completion_percentage
 
         return None, None
+
+    def _try_github_progress(
+        self,
+        ctx: ErkContext,
+        repo_root: Path,
+    ) -> tuple[int, int, int] | None:
+        """Try to get progress from GitHub via branch name issue number.
+
+        Used when no .impl/ folder exists but the branch follows the P<N>-... pattern.
+        Returns (current_step, total_steps, issue_number) or None if not available.
+
+        Args:
+            ctx: Erk context
+            repo_root: Repository root path
+
+        Returns:
+            Tuple of (current_step, total_steps, issue_number) or None
+        """
+        # Get current branch name
+        branch_name = ctx.git.get_current_branch(repo_root)
+        if branch_name is None:
+            return None
+
+        # Extract issue number from branch name (P<N>-... pattern)
+        issue_number = extract_leading_issue_number(branch_name)
+        if issue_number is None:
+            return None
+
+        # Fetch progress from GitHub (with caching)
+        progress = _fetch_github_progress_cached(ctx, repo_root, issue_number)
+        if progress is None:
+            return None
+
+        current_step, total_steps = progress
+        return (current_step, total_steps, issue_number)

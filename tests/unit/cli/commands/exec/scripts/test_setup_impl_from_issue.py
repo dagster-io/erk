@@ -78,3 +78,35 @@ class TestSetupImplFromIssueValidation:
         # (actual behavior depends on whether we're mocking GitHub or not)
         # For this unit test, we're primarily testing the CLI interface
         assert result.exit_code != 0 or "error" in result.output.lower()
+
+
+class TestSetupImplFromIssueNoImplFlag:
+    """Tests for --no-impl flag in setup-impl-from-issue command."""
+
+    def test_no_impl_flag_is_accepted(self, tmp_path: Path) -> None:
+        """Verify --no-impl flag is accepted by the CLI.
+
+        Note: Full integration testing of --no-impl behavior requires
+        refactoring the command to use DI for GitHubIssues. This test
+        just verifies the flag is accepted without syntax errors.
+        """
+        runner = CliRunner()
+
+        # Create a minimal context
+        ctx = ErkContext.for_test(cwd=tmp_path)
+
+        # The command will fail because it can't reach GitHub,
+        # but we verify the flag is accepted without a click.UsageError
+        result = runner.invoke(
+            setup_impl_from_issue,
+            ["42", "--no-impl"],
+            obj=ctx,
+        )
+
+        # Verify no usage error (flag was accepted)
+        assert "Usage:" not in result.output, "--no-impl flag should be accepted"
+        assert "Error: No such option:" not in result.output, "--no-impl should be a valid option"
+
+        # The command should fail due to GitHub access, not CLI parsing
+        # (exit code 1 is expected when GitHub fails)
+        assert result.exit_code == 1

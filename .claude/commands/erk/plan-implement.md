@@ -102,8 +102,13 @@ Create todo entries for each phase from impl-init output.
 ### Step 7: Signal GitHub Started
 
 ```bash
-erk exec impl-signal started 2>/dev/null || true
+erk exec impl-signal started --session-id="<session-id>" 2>/dev/null || true
 ```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+- The content has been saved to GitHub issue
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
 
 ### Step 8: Execute Each Phase Sequentially
 

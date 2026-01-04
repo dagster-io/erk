@@ -327,9 +327,8 @@ def plan_save_to_issue(
                 claude_installation=claude_installation,
                 repo_root=repo_root,
             )
-            # Delete the Claude plan file to prevent stale content from being re-saved
-            # The content is now safely archived in .erk/scratch/ and on GitHub
-            snapshot_path.unlink()
+            # NOTE: Plan file deletion moved to impl_signal.py on 'started' event
+            # This allows the user to modify and re-save the plan before implementing
 
     # Step 10: Output success
     # Detect enrichment status for informational output

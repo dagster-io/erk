@@ -39,6 +39,7 @@ import click
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
 from erk_shared.env import in_github_actions
+from erk_shared.extraction.local_plans import extract_slugs_from_session, get_plans_dir
 from erk_shared.github.metadata import (
     create_start_status_block,
     render_erk_issue_event,
@@ -83,6 +84,30 @@ def _output_error(event: str, error_type: str, message: str) -> None:
     raise SystemExit(0)
 
 
+def _delete_claude_plan_file(session_id: str, cwd: Path) -> bool:
+    """Delete the Claude plan file for the given session.
+
+    This is called when implementation starts to clean up the plan file.
+    The plan content has already been saved to GitHub and snapshotted.
+
+    Args:
+        session_id: The session ID to look up the plan slug.
+        cwd: Current working directory for hint.
+
+    Returns:
+        True if file was deleted, False if not found or error.
+    """
+    slugs = extract_slugs_from_session(session_id, cwd_hint=str(cwd))
+    if not slugs:
+        return False
+
+    plan_file = get_plans_dir() / f"{slugs[-1]}.md"
+    if plan_file.exists():
+        plan_file.unlink()
+        return True
+    return False
+
+
 def _get_worktree_name() -> str | None:
     """Get current worktree name from git worktree list."""
     try:
@@ -124,7 +149,7 @@ def _get_branch_name() -> str | None:
         return None
 
 
-def _signal_started(ctx: click.Context) -> None:
+def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     """Handle 'started' event - post comment and update metadata."""
     event = "started"
 
@@ -138,6 +163,11 @@ def _signal_started(ctx: click.Context) -> None:
     if issue_ref is None:
         _output_error(event, "no-issue-reference", "No issue reference found in issue.json")
         return
+
+    # Delete Claude plan file if session_id provided
+    # The plan has been saved to GitHub and snapshotted, so it's safe to delete
+    if session_id is not None:
+        _delete_claude_plan_file(session_id, Path.cwd())
 
     # Now get context dependencies (after confirming we need them)
     try:
@@ -332,8 +362,13 @@ def _signal_ended(ctx: click.Context) -> None:
 
 @click.command(name="impl-signal")
 @click.argument("event", type=click.Choice(["started", "ended"]))
+@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for plan file deletion on 'started' event",
+)
 @click.pass_context
-def impl_signal(ctx: click.Context, event: str) -> None:
+def impl_signal(ctx: click.Context, event: str, session_id: str | None) -> None:
     """Signal implementation events to GitHub.
 
     EVENT can be 'started' or 'ended'.
@@ -341,9 +376,12 @@ def impl_signal(ctx: click.Context, event: str) -> None:
     'started' posts a start comment and updates issue metadata.
     'ended' updates issue metadata with ended event.
 
+    When --session-id is provided on 'started', also deletes the Claude plan file
+    (the content has been saved to GitHub and snapshotted).
+
     Always exits with code 0 for graceful degradation (|| true pattern).
     """
     if event == "started":
-        _signal_started(ctx)
+        _signal_started(ctx, session_id)
     else:
         _signal_ended(ctx)

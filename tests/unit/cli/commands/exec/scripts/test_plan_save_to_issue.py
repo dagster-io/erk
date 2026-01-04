@@ -1178,12 +1178,15 @@ No steps in frontmatter and no --steps provided.
     assert "Plan missing required 'steps' in frontmatter" in output["error"]
 
 
-def test_plan_save_to_issue_deletes_plan_file_after_save(tmp_path: Path) -> None:
-    """Verify Claude plan file is deleted after successful save.
+def test_plan_save_to_issue_preserves_plan_file_after_save(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Verify Claude plan file is PRESERVED after save (not deleted).
 
-    When a plan is saved to GitHub with a session ID, the original
-    Claude plan file should be deleted to prevent stale content from
-    being re-saved in future invocations.
+    The plan file is kept after save to allow modifications and re-saving.
+    Deletion now happens at implementation start (via impl-signal started),
+    not at save time. This allows the user to modify and re-save the plan
+    before implementing.
     """
     fake_gh = FakeGitHubIssues()
     test_session_id = "delete-test-session"
@@ -1231,5 +1234,6 @@ steps:
         output = json.loads(result.output)
         assert output["success"] is True
 
-        # Verify the plan file was deleted
-        assert not plan_file.exists(), "Plan file should be deleted after save"
+        # Verify the plan file is STILL present (not deleted)
+        # Deletion now happens at implementation start (impl-signal started)
+        assert plan_file.exists(), "Plan file should be preserved after save"

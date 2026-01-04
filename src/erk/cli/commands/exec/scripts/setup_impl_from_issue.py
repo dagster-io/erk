@@ -55,11 +55,17 @@ def _is_trunk_branch(branch: str) -> bool:
     default=None,
     help="Claude session ID for marker creation",
 )
+@click.option(
+    "--no-impl",
+    is_flag=True,
+    help="Skip .impl/ folder creation (for local execution without file overhead)",
+)
 @click.pass_context
 def setup_impl_from_issue(
     ctx: click.Context,
     issue_number: int,
     session_id: str | None,
+    no_impl: bool,
 ) -> None:
     """Set up .impl/ folder from GitHub issue in current worktree.
 
@@ -125,27 +131,32 @@ def setup_impl_from_issue(
         git.checkout_branch(cwd, branch_name)
         click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
 
-    # Step 3: Create .impl/ folder with plan content
-    impl_path = cwd / ".impl"
+    # Step 3: Create .impl/ folder with plan content (unless --no-impl)
+    impl_path_str: str | None = None
 
-    # Use overwrite=True since we may be re-running after a failed attempt
-    create_impl_folder(
-        worktree_path=cwd,
-        plan_content=plan.body,
-        prompt_executor=prompt_executor,
-        overwrite=True,
-    )
+    if not no_impl:
+        impl_path = cwd / ".impl"
+        impl_path_str = str(impl_path)
 
-    # Step 4: Save issue reference for PR linking
-    save_issue_reference(impl_path, issue_number, plan.url, plan.title)
+        # Use overwrite=True since we may be re-running after a failed attempt
+        create_impl_folder(
+            worktree_path=cwd,
+            plan_content=plan.body,
+            prompt_executor=prompt_executor,
+            overwrite=True,
+        )
+
+        # Step 4: Save issue reference for PR linking
+        save_issue_reference(impl_path, issue_number, plan.url, plan.title)
 
     # Output structured success result
-    output = {
+    output: dict[str, str | int | bool | None] = {
         "success": True,
-        "impl_path": str(impl_path),
+        "impl_path": impl_path_str,
         "issue_number": issue_number,
         "issue_url": plan.url,
         "branch": branch_name,
         "plan_title": plan.title,
+        "no_impl": no_impl,
     }
     click.echo(json.dumps(output))

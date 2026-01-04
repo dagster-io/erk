@@ -57,9 +57,14 @@ from typing import Any, NoReturn
 import click
 import frontmatter
 
-from erk_shared.context.helpers import require_cwd
+from erk_shared.context.helpers import require_cwd, require_repo_root
+from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.github.issues.real import RealGitHubIssues
-from erk_shared.github.metadata import format_progress_update_comment, update_step_progress
+from erk_shared.github.metadata import (
+    extract_step_progress,
+    format_progress_update_comment,
+    update_step_progress,
+)
 from erk_shared.impl_folder import read_issue_reference, validate_progress_schema
 
 
@@ -307,6 +312,118 @@ def _update_github_issue(
         return False
 
 
+def _mark_step_github_only(
+    ctx: click.Context,
+    issue_number: int,
+    step_nums: tuple[int, ...],
+    completed: bool,
+    notes: str | None,
+    output_json: bool,
+) -> None:
+    """Mark steps via GitHub API only, without local .impl/ folder.
+
+    This mode is used for local execution without the .impl/ file overhead.
+    Step progress is read from and written to the GitHub issue directly.
+    """
+    repo_root = require_repo_root(ctx)
+    github_issues = require_github_issues(ctx)
+
+    # Validate step_nums is not empty
+    if len(step_nums) == 0:
+        _error("At least one step number is required")
+
+    # Fetch issue and extract step progress
+    issue_info = github_issues.get_issue(repo_root, issue_number)
+    progress = extract_step_progress(issue_info.body)
+
+    if progress is None:
+        _error(
+            f"Issue #{issue_number} does not have step progress metadata. "
+            "Ensure the issue was created with step tracking enabled."
+        )
+
+    # Type narrowing: progress is guaranteed not None after _error() (NoReturn)
+    assert progress is not None  # for pyright
+
+    # Validate step numbers against total_steps
+    for step_num in step_nums:
+        if step_num < 1 or step_num > progress.total_steps:
+            _error(f"Step number {step_num} out of range (1-{progress.total_steps})")
+
+    # Calculate previous_step (from GitHub's current state)
+    previous_step = progress.current_step
+
+    # Calculate new current_step as highest completed step
+    # For "completed" mode: max of existing current_step and newly completed steps
+    # For "incomplete" mode: recalculate from scratch
+    if completed:
+        new_current_step = max(previous_step, *step_nums)
+    else:
+        # When marking incomplete, current_step becomes highest step BELOW the unmarked ones
+        # that was previously completed
+        remaining_completed = previous_step
+        for step_num in step_nums:
+            if step_num == remaining_completed:
+                remaining_completed = step_num - 1
+        new_current_step = max(0, remaining_completed)
+
+    # Update GitHub issue body with new current_step
+    updated_body = update_step_progress(issue_info.body, new_current_step)
+    github_issues.update_issue_body(repo_root, issue_number, updated_body)
+
+    # Collect step titles for progress comment
+    step_titles = []
+    for step_num in step_nums:
+        # Find the step title from the progress.steps list
+        matching_step = next((s for s in progress.steps if s.number == step_num), None)
+        if matching_step is not None:
+            step_titles.append(matching_step.title)
+        else:
+            step_titles.append(f"Step {step_num}")
+
+    # Post progress comment (only for completed, not incomplete)
+    github_updated = True
+    if completed:
+        timestamp = datetime.now(UTC).isoformat()
+        session_id = _get_session_id()
+        user = _get_user()
+
+        comment_body = format_progress_update_comment(
+            timestamp=timestamp,
+            steps_completed=list(step_nums),
+            step_titles=step_titles,
+            previous_step=previous_step,
+            current_step=new_current_step,
+            total_steps=progress.total_steps,
+            session_id=session_id,
+            user=user,
+            notes=notes,
+        )
+        github_issues.add_comment(repo_root, issue_number, comment_body)
+
+    # Calculate total_completed for output
+    # In GitHub-only mode, we track via current_step (highest completed)
+    total_completed = new_current_step
+
+    # Output result
+    if output_json:
+        result = {
+            "success": True,
+            "step_nums": list(step_nums),
+            "completed": completed,
+            "total_completed": total_completed,
+            "total_steps": progress.total_steps,
+            "github_updated": github_updated,
+            "mode": "github-only",
+        }
+        click.echo(json.dumps(result))
+    else:
+        status_icon = "✓" if completed else "○"
+        for step_num, title in zip(step_nums, step_titles, strict=True):
+            click.echo(f"{status_icon} Step {step_num}: {title}")
+        click.echo(f"Progress: {new_current_step}/{progress.total_steps}")
+
+
 @click.command(name="mark-step")
 @click.argument("step_nums", type=int, nargs=-1)
 @click.option(
@@ -316,6 +433,11 @@ def _update_github_issue(
 )
 @click.option("--notes", type=str, help="Implementation notes to include in progress comment")
 @click.option("--json", "output_json", is_flag=True, help="Output JSON format")
+@click.option(
+    "--issue",
+    type=int,
+    help="GitHub issue number (GitHub-only mode, no local .impl/ required)",
+)
 @click.pass_context
 def mark_step(
     ctx: click.Context,
@@ -323,19 +445,32 @@ def mark_step(
     completed: bool,
     notes: str | None,
     output_json: bool,
+    issue: int | None,
 ) -> None:
-    """Mark one or more steps as completed or incomplete in progress.md.
+    """Mark one or more steps as completed or incomplete.
 
-    Updates the YAML frontmatter to mark STEP_NUMS as completed/incomplete,
-    recalculates the completed_steps count, and regenerates checkboxes.
+    When --issue is provided, operates in GitHub-only mode (no local .impl/ required).
+    Otherwise, updates the YAML frontmatter in .impl/progress.md.
 
-    Also updates GitHub issue metadata and posts a progress comment when
-    issue.json exists (best-effort).
+    Also updates GitHub issue metadata and posts a progress comment.
 
     Supports multiple step numbers to avoid race conditions from parallel execution.
 
     STEP_NUMS: One or more step numbers to mark (1-indexed)
     """
+    # GitHub-only mode: operate entirely via GitHub API
+    if issue is not None:
+        _mark_step_github_only(
+            ctx=ctx,
+            issue_number=issue,
+            step_nums=step_nums,
+            completed=completed,
+            notes=notes,
+            output_json=output_json,
+        )
+        return
+
+    # Local mode: use .impl/progress.md as source of truth
     cwd = require_cwd(ctx)
     progress_file = _validate_progress_file(cwd)
     metadata, _ = _parse_progress_file(progress_file)
