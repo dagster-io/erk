@@ -4,11 +4,28 @@ read_when:
   - "writing tests for erk"
   - "using erk fakes"
   - "running erk test commands"
+tripwires:
+  - action: "modifying business logic in src/ without adding a test"
+    warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
 ---
 
 # Erk Test Reference
 
 **For testing philosophy and patterns**: Load the `fake-driven-testing` skill first. This document covers erk-specific implementations only.
+
+## Test Requirements for Code Changes
+
+All business logic changes in `src/` must include corresponding tests:
+
+- **Bug fixes**: Add a regression test that fails before the fix and passes after
+- **Features**: Add tests covering the new behavior
+
+If existing tests pass after your change, either:
+
+1. The tests weren't covering the changed code path, or
+2. You need to add a new test for the specific scenario
+
+**Anti-pattern:** Fixing a bug without a regression test. This allows the bug to be reintroduced later.
 
 ## Running Tests
 
