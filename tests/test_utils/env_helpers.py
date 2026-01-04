@@ -127,7 +127,8 @@ class ErkIsolatedFsEnv:
         self.erk_root = erk_root
         self.script_writer = RealScriptWriter()
         self._linked_worktrees: dict[str, Path] = {}  # Track branch -> worktree path
-        repo_dir = erk_root / root_worktree.name
+        # Match production path structure: erk_root / "repos" / repo_name
+        repo_dir = erk_root / "repos" / root_worktree.name
         self._repo = RepoContext(
             root=root_worktree,
             repo_name=root_worktree.name,
