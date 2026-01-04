@@ -4,7 +4,9 @@ from pathlib import Path
 
 from erk.cli.commands.pooled.common import (
     DEFAULT_POOL_SIZE,
+    extract_slot_number,
     find_oldest_assignment,
+    get_placeholder_branch_name,
     get_pool_size,
 )
 from erk.cli.config import LoadedConfig
@@ -100,3 +102,32 @@ class TestFindOldestAssignment:
 
         assert result == oldest
         assert result.branch_name == "feature-old"
+
+
+def test_extract_slot_number_valid() -> None:
+    """Extracts slot number from valid slot name."""
+    assert extract_slot_number("erk-managed-wt-01") == "01"
+    assert extract_slot_number("erk-managed-wt-03") == "03"
+    assert extract_slot_number("erk-managed-wt-99") == "99"
+
+
+def test_extract_slot_number_invalid() -> None:
+    """Returns None for invalid slot names."""
+    assert extract_slot_number("invalid-name") is None
+    assert extract_slot_number("erk-managed-wt-1") is None  # Single digit
+    assert extract_slot_number("erk-managed-wt-001") is None  # Three digits
+    assert extract_slot_number("erk-managed-wt-ab") is None  # Non-numeric
+    assert extract_slot_number("") is None
+
+
+def test_get_placeholder_branch_name_valid() -> None:
+    """Returns correct placeholder branch name for valid slot."""
+    assert get_placeholder_branch_name("erk-managed-wt-01") == "__erk-slot-01-placeholder__"
+    assert get_placeholder_branch_name("erk-managed-wt-03") == "__erk-slot-03-placeholder__"
+    assert get_placeholder_branch_name("erk-managed-wt-99") == "__erk-slot-99-placeholder__"
+
+
+def test_get_placeholder_branch_name_invalid() -> None:
+    """Returns None for invalid slot names."""
+    assert get_placeholder_branch_name("invalid-name") is None
+    assert get_placeholder_branch_name("erk-managed-wt-1") is None

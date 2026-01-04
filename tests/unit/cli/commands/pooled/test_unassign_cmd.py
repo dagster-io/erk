@@ -27,16 +27,20 @@ def _create_test_assignment(
 
 
 def test_pooled_unassign_by_slot_name() -> None:
-    """Test unassigning by slot name."""
+    """Test unassigning by slot name checks out placeholder branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", worktree_path: "feature-test"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test"]},
         )
 
         repo = RepoContext(
@@ -48,8 +52,6 @@ def test_pooled_unassign_by_slot_name() -> None:
         )
 
         # Create initial pool state with an assignment
-        worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
-        worktree_path.mkdir(parents=True)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState(
             version="1.0",
@@ -74,18 +76,28 @@ def test_pooled_unassign_by_slot_name() -> None:
         assert state is not None
         assert len(state.assignments) == 0
 
+        # Verify placeholder branch was checked out
+        assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
+
+        # Verify placeholder branch was created from trunk
+        assert (env.cwd, "__erk-slot-01-placeholder__", "main") in git_ops.created_branches
+
 
 def test_pooled_unassign_by_branch_name() -> None:
-    """Test unassigning by branch name."""
+    """Test unassigning by branch name checks out placeholder branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
         )
 
         repo = RepoContext(
@@ -97,8 +109,6 @@ def test_pooled_unassign_by_branch_name() -> None:
         )
 
         # Create initial pool state with an assignment
-        worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
-        worktree_path.mkdir(parents=True)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
         initial_state = PoolState(
             version="1.0",
@@ -121,6 +131,9 @@ def test_pooled_unassign_by_branch_name() -> None:
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
         assert len(state.assignments) == 0
+
+        # Verify placeholder branch was checked out
+        assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
 
 
 def test_pooled_unassign_not_found() -> None:
@@ -201,11 +214,19 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
+        # Create pool state with two assignments
+        wt_path_1 = repo_dir / "worktrees" / "erk-managed-wt-01"
+        wt_path_1.mkdir(parents=True)
+        wt_path_2 = repo_dir / "worktrees" / "erk-managed-wt-02"
+        wt_path_2.mkdir(parents=True)
+
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", wt_path_1: "feature-a", wt_path_2: "feature-b"},
+            git_common_dirs={env.cwd: env.git_dir, wt_path_1: env.git_dir, wt_path_2: env.git_dir},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
         )
 
         repo = RepoContext(
@@ -215,12 +236,6 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
             worktrees_dir=repo_dir / "worktrees",
             pool_json_path=repo_dir / "pool.json",
         )
-
-        # Create pool state with two assignments
-        wt_path_1 = repo.worktrees_dir / "erk-managed-wt-01"
-        wt_path_1.mkdir(parents=True)
-        wt_path_2 = repo.worktrees_dir / "erk-managed-wt-02"
-        wt_path_2.mkdir(parents=True)
 
         assignment1 = _create_test_assignment("erk-managed-wt-01", "feature-a", wt_path_1)
         assignment2 = _create_test_assignment("erk-managed-wt-02", "feature-b", wt_path_2)
@@ -246,3 +261,105 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "feature-b"
         assert state.assignments[0].slot_name == "erk-managed-wt-02"
+
+
+def test_pooled_unassign_fails_with_uncommitted_changes() -> None:
+    """Test unassigning fails when worktree has uncommitted changes."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        git_ops = FakeGit(
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", worktree_path: "feature-test"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test"]},
+            # Simulate uncommitted changes in the worktree
+            file_statuses={worktree_path: ([], ["modified-file.py"], [])},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            assignments=(assignment,),
+        )
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["pooled", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "uncommitted changes" in result.output
+
+        # Verify assignment was NOT removed
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+
+        # Verify no checkout happened
+        assert len(git_ops.checked_out_branches) == 0
+
+
+def test_pooled_unassign_uses_existing_placeholder_branch() -> None:
+    """Test unassigning uses existing placeholder branch without creating new one."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Placeholder branch already exists
+        git_ops = FakeGit(
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", worktree_path: "feature-test"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test", "__erk-slot-01-placeholder__"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            assignments=(assignment,),
+        )
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["pooled", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify placeholder branch was checked out
+        assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
+
+        # Verify NO branch was created (placeholder already existed)
+        assert len(git_ops.created_branches) == 0
