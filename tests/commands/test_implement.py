@@ -8,6 +8,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk.cli.commands.implement_shared import detect_target_type, normalize_model_name
+from erk.cli.config import LoadedConfig
+from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
@@ -1899,3 +1901,68 @@ def test_implement_uses_checkout_when_slot_directory_exists() -> None:
             f"Expected 0 add_worktree calls (dir existed), got {len(git.added_worktrees)}: "
             f"{git.added_worktrees}"
         )
+
+
+# Pool Size Config Override Tests
+
+
+def test_implement_respects_config_pool_size_over_stored_state() -> None:
+    """Test that pool_size from config overrides the stored pool_size in pool.json.
+
+    This is a regression test for a bug where:
+    1. Pool state was created with pool_size=4 (the default)
+    2. User configured pool_size=16 in config.toml
+    3. When pool had 4 assignments, `erk implement` would fail with "Pool is full (4 slots)"
+       even though config allowed 16 slots
+
+    The fix ensures config's pool_size is used when loading existing pool state.
+    """
+    plan_issue = _create_sample_plan_issue("99")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo = env.repo
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"99": plan_issue})
+
+        # Create pool state with pool_size=4 and 4 assignments (full pool at old size)
+        old_pool_size = 4
+        assignments = tuple(
+            SlotAssignment(
+                slot_name=f"erk-managed-wt-{i:02d}",
+                branch_name=f"existing-branch-{i}",
+                assigned_at="2024-01-01T00:00:00+00:00",
+                worktree_path=repo.worktrees_dir / f"erk-managed-wt-{i:02d}",
+            )
+            for i in range(1, old_pool_size + 1)
+        )
+        full_state = PoolState(
+            version="1.0",
+            pool_size=old_pool_size,  # Pool thinks max is 4
+            slots=(),
+            assignments=assignments,
+        )
+        save_pool_state(repo.pool_json_path, full_state)
+
+        # Configure context with pool_size=16 (larger than stored)
+        new_pool_size = 16
+        local_config = LoadedConfig.test(pool_size=new_pool_size)
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, local_config=local_config
+        )
+
+        # Run implement - should succeed by using config's pool_size
+        result = runner.invoke(implement, ["#99", "--script"], obj=ctx)
+
+        # Should succeed, not fail with "Pool is full"
+        assert result.exit_code == 0, f"Expected success but got: {result.output}"
+        assert "Assigned" in result.output
+
+        # Should have assigned to slot 5 (first available after slots 1-4)
+        assert "erk-managed-wt-05" in result.output

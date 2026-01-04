@@ -115,6 +115,14 @@ def _create_worktree_with_plan_content(
             slots=(),
             assignments=(),
         )
+    elif state.pool_size != pool_size:
+        # Update pool_size from config if it changed
+        state = PoolState(
+            version=state.version,
+            pool_size=pool_size,
+            slots=state.slots,
+            assignments=state.assignments,
+        )
 
     # Check if branch is already assigned to a slot
     existing_assignment = find_branch_assignment(state, branch)
