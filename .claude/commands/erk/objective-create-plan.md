@@ -3,16 +3,16 @@ description: Create an implementation plan from an objective step
 argument-hint: <issue-number-or-url>
 ---
 
-# /objective:create-plan
+# /erk:objective-create-plan
 
 Create an implementation plan for a specific step in an objective's roadmap.
 
 ## Usage
 
 ```bash
-/objective:create-plan 3679
-/objective:create-plan https://github.com/owner/repo/issues/3679
-/objective:create-plan  # prompts for issue reference
+/erk:objective-create-plan 3679
+/erk:objective-create-plan https://github.com/owner/repo/issues/3679
+/erk:objective-create-plan  # prompts for issue reference
 ```
 
 ---

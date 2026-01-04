@@ -2,14 +2,14 @@
 description: Create a structured objective through guided conversation
 ---
 
-# /objective:create
+# /erk:objective-create
 
 Create a new objective through an interactive, guided process. You describe what you want to accomplish, and Claude proposes a structured objective for your approval.
 
 ## Usage
 
 ```bash
-/objective:create
+/erk:objective-create
 ```
 
 ---
@@ -65,9 +65,33 @@ Based on the user's description:
 
    This context goes in a dedicated section after the Roadmap (see template below)
 
-### Step 3: Propose Structured Objective
+### Step 3: Ask for Structure Preference
 
-Write a structured objective proposal and show it to the user. Use this template as a guide (sections are flexible based on complexity):
+After understanding the user's goals, present structure options using AskUserQuestion:
+
+```
+How would you like the objective structured?
+```
+
+**Options:**
+
+1. **Steelthread (Recommended)** - Phase 1A is a minimal vertical slice proving the concept works end-to-end, followed by Phase 1B to complete the feature. Best when you can demonstrate value with a partial implementation.
+2. **Linear** - Sequential phases, each building on the previous. Good when infrastructure must exist before any use case works (e.g., database schema before queries).
+3. **Single** - One phase, one PR. For small, focused objectives that don't need phasing.
+4. **Custom** - User describes their preferred structure
+
+**Selection guidelines:**
+
+- **Steelthread**: Default choice. Use when feasible - it de-risks the approach early by proving the concept works.
+- **Linear**: Use when Phase 1A doesn't make sense - e.g., building a new abstraction layer that has no value until complete.
+- **Single**: Use for objectives small enough to implement in one PR (typically 1-2 days of work).
+- **Custom**: Use when the user has a specific structure in mind.
+
+### Step 4: Propose Structured Objective
+
+Write a structured objective proposal and show it to the user. Use the appropriate template based on their structure choice:
+
+#### Steelthread Template (Recommended)
 
 ```markdown
 # Objective: [Clear, Concise Title]
@@ -123,14 +147,92 @@ Fill out remaining functionality.
 
 ## Exploration Notes
 
-[Context gathered during objective creation that implementers will need. Structure flexibly based on what's relevant:]
+[Context gathered during objective creation that implementers will need]
 
-- Inventories/audits with counts and categorization
-- Root cause analysis
-- Codebase findings (files, patterns, constraints)
-- External research (API docs, library behavior)
-- Design decisions and rationale
-- User feedback incorporated
+## Related Documentation
+
+- Skills to load: [relevant skills]
+- Docs to reference: [relevant docs]
+```
+
+#### Linear Template
+
+```markdown
+# Objective: [Clear, Concise Title]
+
+[1-2 sentence summary]
+
+## Goal
+
+[End state description]
+
+## Design Decisions
+
+- **[Decision 1]**: [rationale]
+
+## Roadmap
+
+### Phase 1: [Foundation] (1 PR)
+
+[Description - this phase establishes infrastructure needed by subsequent phases]
+
+| Step | Description | Status  | PR  |
+| ---- | ----------- | ------- | --- |
+| 1.1  | ...         | pending |     |
+
+**Test:** [Verification criteria]
+
+### Phase 2: [Build on Foundation] (1 PR)
+
+[Description - uses Phase 1 infrastructure]
+
+| Step | Description | Status  | PR  |
+| ---- | ----------- | ------- | --- |
+| 2.1  | ...         | pending |     |
+
+**Test:** [Verification criteria]
+
+## Implementation Context
+
+[Context for implementers]
+
+## Exploration Notes
+
+[Gathered context]
+
+## Related Documentation
+
+- Skills to load: [relevant skills]
+- Docs to reference: [relevant docs]
+```
+
+#### Single Template
+
+```markdown
+# Objective: [Clear, Concise Title]
+
+[1-2 sentence summary]
+
+## Goal
+
+[End state description]
+
+## Design Decisions
+
+- **[Decision 1]**: [rationale]
+
+## Implementation
+
+| Step | Description | Status  | PR  |
+| ---- | ----------- | ------- | --- |
+| 1    | ...         | pending |     |
+| 2    | ...         | pending |     |
+
+**Test:** [Acceptance criteria]
+
+## Implementation Context
+
+[Context for implementers]
 
 ## Related Documentation
 
@@ -140,16 +242,14 @@ Fill out remaining functionality.
 
 **Key structuring principles:**
 
-1. **Prefer steelthread**: When tractable, Phase 1A should be a minimal vertical slice that proves the concept works end-to-end. This de-risks the approach early. Sometimes this isn't feasible (e.g., infrastructure must exist before any use case works).
-
-2. **One PR per phase**: Each phase (1A, 1B, 2, etc.) should be a self-contained PR that:
+1. **One PR per phase**: Each phase should be a self-contained PR that:
    - Has a coherent, reviewable scope
    - Includes its own tests (unit + integration as appropriate)
    - Leaves the system in a working state when merged
 
-3. **Always shippable**: After each merged PR, the system must remain functional. Never leave the codebase in a broken state between phases.
+2. **Always shippable**: After each merged PR, the system must remain functional. Never leave the codebase in a broken state between phases.
 
-4. **Test per phase**: Every phase needs a **Test:** section describing acceptance criteria. This becomes the definition of "done" for that PR.
+3. **Test per phase**: Every phase needs a **Test:** section describing acceptance criteria. This becomes the definition of "done" for that PR.
 
 **Section guidelines:**
 
@@ -181,18 +281,18 @@ Does this capture what you're thinking? I can adjust any section, add more detai
 to the roadmap, or restructure the phases.
 ```
 
-### Step 4: Iterate Until Approved
+### Step 5: Iterate Until Approved
 
 The user may:
 
-- **Approve as-is**: Proceed to Step 5
+- **Approve as-is**: Proceed to Step 6
 - **Request changes**: Make the requested adjustments and show again
 - **Add information**: Incorporate new details and show again
 - **Restructure**: Reorganize phases/steps based on feedback
 
 Continue iterating until the user approves.
 
-### Step 5: Write to Plan File and Create Issue
+### Step 6: Write to Plan File and Create Issue
 
 Once approved:
 
@@ -213,7 +313,7 @@ Once approved:
    URL: <issue-url>
 
    Next steps:
-   - Use `/objective:create-plan <number>` to create implementation plans for specific steps
+   - Use /erk:objective-create-plan <number> to create implementation plans for specific steps
    - Track progress by updating step status in the issue
    ```
 
@@ -222,7 +322,8 @@ Once approved:
 ## Output Format
 
 - **Start**: Single prompt asking what they want to accomplish
-- **After description**: Show proposed structured objective
+- **After description**: Ask for structure preference
+- **After structure choice**: Show proposed structured objective
 - **Iteration**: Show updated objective after each change
 - **Success**: Issue number, URL, and next steps
 
@@ -230,7 +331,7 @@ Once approved:
 
 ## Differences from /erk:plan-save
 
-| Feature          | /erk:plan-save      | /objective:create               |
+| Feature          | /erk:plan-save      | /erk:objective-create           |
 | ---------------- | ------------------- | ------------------------------- |
 | Label            | `erk-plan`          | `erk-plan` + `erk-objective`    |
 | Purpose          | Implementation plan | Roadmap or perpetual focus area |

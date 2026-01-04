@@ -2,7 +2,7 @@
 description: Update objective issue after landing a PR
 ---
 
-# /objective:update-with-landed-pr
+# /erk:objective-update-with-landed-pr
 
 Update an objective issue after landing a PR from a plan branch.
 
@@ -11,7 +11,7 @@ Update an objective issue after landing a PR from a plan branch.
 Run after landing a PR:
 
 ```bash
-/objective:update-with-landed-pr
+/erk:objective-update-with-landed-pr
 ```
 
 ---
