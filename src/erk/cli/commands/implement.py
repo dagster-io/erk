@@ -9,7 +9,6 @@ Can be run from any location, including from within pool slots.
 """
 
 import sys
-from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -240,7 +239,7 @@ def _create_worktree_with_plan_content(
     ctx.feedback.success(f"✓ Assigned {branch} to {slot_name}")
 
     # Create slot assignment
-    now = datetime.now(UTC).isoformat()
+    now = ctx.time.now().isoformat()
     new_assignment = SlotAssignment(
         slot_name=slot_name,
         branch_name=branch,
