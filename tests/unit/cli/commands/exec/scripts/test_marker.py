@@ -156,9 +156,7 @@ class TestMarkerCreate:
         assert result.exit_code == 0
 
         # Verify marker file was created and is empty
-        marker_file = (
-            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "some-marker.marker"
-        )
+        marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "some-marker.marker"
         assert marker_file.exists()
         assert marker_file.read_text(encoding="utf-8") == ""
 
