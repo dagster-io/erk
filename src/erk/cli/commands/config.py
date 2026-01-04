@@ -1,10 +1,14 @@
 import subprocess
+from collections.abc import MutableMapping
 from dataclasses import replace
 from functools import cache
 from pathlib import Path
+from typing import Any, cast
 
 import click
+import tomlkit
 
+from erk.cli.commands.pooled.common import DEFAULT_POOL_SIZE
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -63,6 +67,43 @@ def _get_post_create_value(cfg: LoadedConfig, parts: list[str], key: str) -> Non
     Ensure.invariant(False, f"Key not found: {key}")
 
 
+def _write_pool_max_slots(repo_root: Path, max_slots: int) -> None:
+    """Write pool.max_slots to .erk/config.toml.
+
+    Creates or updates the [pool] section with max_slots setting.
+    Preserves existing formatting and comments using tomlkit.
+
+    Args:
+        repo_root: Path to the repository root directory
+        max_slots: Maximum number of pool slots to configure
+    """
+    config_dir = repo_root / ".erk"
+    config_path = config_dir / "config.toml"
+
+    # Ensure .erk directory exists
+    if not config_dir.exists():
+        config_dir.mkdir(parents=True)
+
+    # Load existing file or create new document
+    if config_path.exists():
+        with config_path.open("r", encoding="utf-8") as f:
+            doc = tomlkit.load(f)
+    else:
+        doc = tomlkit.document()
+
+    # Ensure [pool] section exists
+    if "pool" not in doc:
+        assert isinstance(doc, MutableMapping), f"Expected MutableMapping, got {type(doc)}"
+        cast(dict[str, Any], doc)["pool"] = tomlkit.table()
+
+    # Set max_slots value
+    cast(dict[str, Any], doc["pool"])["max_slots"] = max_slots
+
+    # Write back to file
+    with config_path.open("w", encoding="utf-8") as f:
+        tomlkit.dump(doc, f)
+
+
 @click.group("config")
 def config_group() -> None:
     """Manage erk configuration."""
@@ -86,6 +127,7 @@ def config_keys() -> None:
     formatter = click.HelpFormatter()
     repo_keys = [
         ("trunk-branch", "The main/master branch name for the repository"),
+        ("pool.max_slots", "Maximum number of pool slots for worktree pool"),
         ("env.<name>", "Environment variables to set in worktrees"),
         ("post_create.shell", "Shell to use for post-create commands"),
         ("post_create.commands", "Commands to run after creating a worktree"),
@@ -125,6 +167,10 @@ def config_list(ctx: ErkContext) -> None:
         cfg = ctx.local_config
         if trunk_branch:
             user_output(f"  trunk-branch={trunk_branch}")
+        if cfg.pool_size is not None:
+            user_output(f"  pool.max_slots={cfg.pool_size}")
+        else:
+            user_output(f"  pool.max_slots={DEFAULT_POOL_SIZE} (default)")
         if cfg.env:
             for key, value in cfg.env.items():
                 user_output(f"  env.{key}={value}")
@@ -133,14 +179,15 @@ def config_list(ctx: ErkContext) -> None:
         if cfg.post_create_commands:
             user_output(f"  post_create.commands={cfg.post_create_commands}")
 
-        has_no_config = (
+        has_no_custom_config = (
             not trunk_branch
+            and cfg.pool_size is None
             and not cfg.env
             and not cfg.post_create_shell
             and not cfg.post_create_commands
         )
-        if has_no_config:
-            user_output("  (no configuration - run 'erk init' to create)")
+        if has_no_custom_config:
+            user_output("  (no custom configuration - run 'erk init' to create)")
 
 
 @config_group.command("get")
@@ -182,6 +229,13 @@ def config_get(ctx: ErkContext, key: str) -> None:
 
     if parts[0] == "post_create":
         _get_post_create_value(cfg, parts, key)
+        return
+
+    if parts[0] == "pool" and len(parts) == 2 and parts[1] == "max_slots":
+        if cfg.pool_size is not None:
+            machine_output(str(cfg.pool_size))
+        else:
+            machine_output(f"{DEFAULT_POOL_SIZE} (default)")
         return
 
     user_output(f"Invalid key: {key}")
@@ -252,6 +306,20 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
         user_output(f"Set trunk-branch={value}")
         return
 
+    # Handle pool.max_slots
+    if parts[0] == "pool" and len(parts) == 2 and parts[1] == "max_slots":
+        repo = discover_repo_context(ctx, Path.cwd())
+
+        # Validate value is a positive integer
+        if not value.isdigit() or int(value) < 1:
+            user_output(f"Invalid value: {value}. pool.max_slots must be a positive integer.")
+            raise SystemExit(1)
+
+        pool_size = int(value)
+        _write_pool_max_slots(repo.root, pool_size)
+        user_output(f"Set pool.max_slots={pool_size}")
+        return
+
     # Other repo config keys not implemented yet
-    user_output("Setting repo config keys not yet implemented")
+    user_output(f"Invalid key: {key}")
     raise SystemExit(1)

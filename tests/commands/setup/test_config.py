@@ -12,7 +12,7 @@ from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
 def test_config_list_displays_global_config() -> None:
@@ -589,3 +589,219 @@ def test_config_set_github_planning_invalid_value() -> None:
 
         assert result.exit_code == 1
         assert "Invalid boolean value" in result.output
+
+
+def test_config_get_pool_max_slots_configured() -> None:
+    """Test getting pool.max_slots when it's configured."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        local_config = LoadedConfig.test(pool_size=8)
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "get", "pool.max_slots"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "8" in result.output.strip()
+
+
+def test_config_get_pool_max_slots_default() -> None:
+    """Test getting pool.max_slots when it's not configured (shows default)."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        local_config = LoadedConfig.test()  # No pool_size set
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "get", "pool.max_slots"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "4 (default)" in result.output.strip()
+
+
+def test_config_set_pool_max_slots() -> None:
+    """Test setting pool.max_slots writes to config file."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "set", "pool.max_slots", "6"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Set pool.max_slots=6" in result.output
+
+        # Verify config file was created
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert config_path.exists()
+        content = config_path.read_text(encoding="utf-8")
+        assert "[pool]" in content
+        assert "max_slots = 6" in content
+
+
+def test_config_set_pool_max_slots_invalid_value() -> None:
+    """Test that setting pool.max_slots with invalid value fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "set", "pool.max_slots", "invalid"], obj=test_ctx)
+
+        assert result.exit_code == 1
+        assert "Invalid value" in result.output
+
+
+def test_config_set_pool_max_slots_zero() -> None:
+    """Test that setting pool.max_slots to zero fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "set", "pool.max_slots", "0"], obj=test_ctx)
+
+        assert result.exit_code == 1
+        assert "Invalid value" in result.output
+
+
+def test_config_list_shows_pool_max_slots() -> None:
+    """Test that config list displays pool.max_slots when configured."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        local_config = LoadedConfig.test(pool_size=6)
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "pool.max_slots=6" in result.output
+
+
+def test_config_list_shows_pool_max_slots_default() -> None:
+    """Test that config list displays pool.max_slots default when not configured."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        # No pool_size configured - should show default
+        local_config = LoadedConfig.test()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "pool.max_slots=4 (default)" in result.output
