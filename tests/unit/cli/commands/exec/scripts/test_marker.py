@@ -110,6 +110,58 @@ class TestMarkerCreate:
         assert data["success"] is False
         assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
 
+    def test_create_marker_with_associated_objective(self, tmp_path: Path) -> None:
+        """Test creating marker with --associated-objective stores the issue number."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+        objective_issue = 3679
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["create", "--associated-objective", str(objective_issue), "objective-context"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert "objective-context" in data["message"]
+
+        # Verify marker file was created with correct content
+        marker_file = (
+            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "objective-context.marker"
+        )
+        assert marker_file.exists()
+        assert marker_file.read_text(encoding="utf-8") == "3679"
+
+    def test_create_marker_without_associated_objective_creates_empty_file(
+        self, tmp_path: Path
+    ) -> None:
+        """Test creating marker without --associated-objective creates empty file."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["create", "some-marker"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+
+        # Verify marker file was created and is empty
+        marker_file = (
+            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "some-marker.marker"
+        )
+        assert marker_file.exists()
+        assert marker_file.read_text(encoding="utf-8") == ""
+
 
 class TestMarkerExists:
     """Tests for 'erk exec marker exists' subcommand."""

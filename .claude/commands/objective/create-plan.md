@@ -39,6 +39,19 @@ gh issue view <issue-number> --json number,title,body,labels
 2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:plan-implement` instead."
 3. If neither label: warn but proceed
 
+### Step 2.5: Create Objective Context Marker
+
+Create a marker to persist the objective issue number for the exit-plan-mode hook:
+
+```bash
+erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID \
+  --associated-objective <objective-number> objective-context
+```
+
+Replace `<objective-number>` with the issue number from Step 2.
+
+This enables the exit-plan-mode-hook to suggest the correct save command with `--objective-issue` automatically.
+
 ### Step 3: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
@@ -112,13 +125,16 @@ Enter plan mode to create the implementation plan:
 
 ### Step 8: Save Plan with Objective Link
 
-**CRITICAL**: When the `exit-plan-mode-hook` blocks and asks about saving, it will suggest using `/erk:plan-save`. **IGNORE that generic instruction.** This workflow requires the objective-aware save command below.
+After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
 
-After the plan is approved in plan mode, save it with the objective link:
+**If the objective-context marker was created in Step 2.5:**
+The hook will automatically suggest the correct command with `--objective-issue=<objective-number>`. Simply follow the hook's suggestion.
+
+**If the marker was not created (fallback):**
+Use the objective-aware save command manually:
 
 ```bash
-erk exec plan-save-to-issue --session-id=$CLAUDE_CODE_SESSION_ID \
-  --objective-issue=<objective-number> --format=display
+/erk:plan-save --objective-issue=<objective-number>
 ```
 
 Replace `<objective-number>` with the objective issue number from Step 2.

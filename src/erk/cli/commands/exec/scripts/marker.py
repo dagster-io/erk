@@ -58,12 +58,23 @@ def marker() -> None:
     default=None,
     help="Session ID for marker storage (default: $CLAUDE_CODE_SESSION_ID)",
 )
+@click.option(
+    "--associated-objective",
+    type=int,
+    default=None,
+    help="Associated objective issue number (stored in marker file)",
+)
 @click.pass_context
-def marker_create(ctx: click.Context, name: str, session_id: str | None) -> None:
+def marker_create(
+    ctx: click.Context, name: str, session_id: str | None, associated_objective: int | None
+) -> None:
     """Create a marker file.
 
     NAME is the marker name (e.g., 'incremental-plan').
     The '.marker' extension is added automatically.
+
+    If --associated-objective is provided, the issue number is stored
+    in the marker file content. Otherwise, an empty file is created.
     """
     resolved_session_id = _resolve_session_id(session_id)
     if resolved_session_id is None:
@@ -77,7 +88,10 @@ def marker_create(ctx: click.Context, name: str, session_id: str | None) -> None
     repo_root = require_repo_root(ctx)
     scratch_dir = get_scratch_dir(resolved_session_id, repo_root=repo_root)
     marker_file = scratch_dir / f"{name}{MARKER_EXTENSION}"
-    marker_file.touch()
+    if associated_objective is not None:
+        marker_file.write_text(str(associated_objective), encoding="utf-8")
+    else:
+        marker_file.touch()
     _output_json(True, f"Created marker: {name}")
 
 
