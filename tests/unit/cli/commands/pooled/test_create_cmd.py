@@ -5,6 +5,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import load_pool_state
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -159,3 +160,39 @@ def test_pooled_create_fails_if_branch_already_assigned() -> None:
         )
         assert result2.exit_code == 1
         assert "already assigned" in result2.output
+
+
+def test_pooled_create_tracks_branch_with_graphite() -> None:
+    """Test that pooled create registers the branch with Graphite."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["pooled", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        # Verify Graphite tracking was called
+        assert len(graphite_ops.track_branch_calls) == 1
+        cwd, branch, parent = graphite_ops.track_branch_calls[0]
+        assert branch == "feature-test"
+        assert parent == "main"
