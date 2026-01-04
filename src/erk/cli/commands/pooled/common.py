@@ -2,6 +2,7 @@
 
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
+from erk_shared.output.output import user_confirm, user_output
 
 # Default pool configuration
 DEFAULT_POOL_SIZE = 4
@@ -94,8 +95,6 @@ def display_pool_assignments(state: PoolState) -> None:
     Args:
         state: Current pool state
     """
-    from erk_shared.output.output import user_output
-
     user_output("\nCurrent pool assignments:")
     for assignment in sorted(state.assignments, key=lambda a: a.assigned_at):
         slot = assignment.slot_name
@@ -125,8 +124,6 @@ def handle_pool_full_interactive(
     Returns:
         SlotAssignment to unassign, or None if user declined/error
     """
-    from erk_shared.output.output import user_confirm, user_output
-
     oldest = find_oldest_assignment(state)
     if oldest is None:
         return None
