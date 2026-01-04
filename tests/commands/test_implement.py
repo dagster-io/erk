@@ -13,6 +13,7 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.metadata import format_plan_header_body
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -2253,8 +2254,6 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
 
 def _create_plan_with_objective(issue_number: str, objective_issue: int | None) -> Plan:
     """Create a plan issue with optional objective_issue in its metadata."""
-    from erk_shared.github.metadata import format_plan_header_body
-
     # Create plan body with plan-header metadata block
     body = format_plan_header_body(
         created_at="2024-01-01T00:00:00+00:00",
@@ -2283,8 +2282,6 @@ def test_implement_propagates_objective_from_plan_to_slot() -> None:
     that objective should be saved to the slot's last_objective_issue field
     so it appears in `erk slot list` during development.
     """
-    from erk.core.worktree_pool import load_pool_state
-
     plan_with_objective = _create_plan_with_objective("300", objective_issue=3869)
 
     runner = CliRunner()
@@ -2320,8 +2317,6 @@ def test_implement_without_objective_leaves_slot_unchanged() -> None:
     When a plan issue has no objective_issue in its metadata, the slot's
     last_objective_issue should remain unchanged (None for new slots).
     """
-    from erk.core.worktree_pool import load_pool_state
-
     plan_without_objective = _create_plan_with_objective("301", objective_issue=None)
 
     runner = CliRunner()
@@ -2359,8 +2354,6 @@ def test_implement_from_file_works_without_objective() -> None:
     no objective_issue metadata to extract. This should work without error
     and not attempt to propagate any objective.
     """
-    from erk.core.worktree_pool import load_pool_state
-
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
