@@ -1,4 +1,4 @@
-"""Slot assign command - assign an existing branch to a worktree slot."""
+"""Branch assign command - assign an existing branch to a worktree slot."""
 
 import shutil
 import sys
@@ -47,7 +47,7 @@ def _cleanup_worktree_artifacts(worktree_path: Path) -> None:
 @click.argument("branch_name", metavar="BRANCH")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @click.pass_obj
-def slot_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
+def branch_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
     """Assign an EXISTING branch to an available pool slot.
 
     BRANCH is the name of an existing git branch to assign to the pool.
@@ -59,7 +59,7 @@ def slot_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
     4. Assign the branch to the slot
     5. Persist the assignment to pool.json
 
-    Use `erk slot create` to create a NEW branch and assign it.
+    Use `erk br create` to create a NEW branch and assign it.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -88,7 +88,7 @@ def slot_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
     if branch_name not in local_branches:
         user_output(
             f"Error: Branch '{branch_name}' does not exist.\n"
-            "Use `erk slot create` to create a new branch."
+            "Use `erk br create` to create a new branch."
         )
         raise SystemExit(1) from None
 

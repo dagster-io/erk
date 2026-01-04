@@ -1,4 +1,4 @@
-"""Slot create command - create a new branch and assign to a slot."""
+"""Branch create command - create a new branch with optional slot assignment."""
 
 import sys
 from datetime import UTC, datetime
@@ -27,25 +27,45 @@ from erk_shared.output.output import user_output
 
 @click.command("create")
 @click.argument("branch_name", metavar="BRANCH")
+@click.option("--no-slot", is_flag=True, help="Create branch without slot assignment")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @click.pass_obj
-def slot_create(ctx: ErkContext, branch_name: str, force: bool) -> None:
-    """Create a NEW branch and assign it to an available pool slot.
+def branch_create(ctx: ErkContext, branch_name: str, no_slot: bool, force: bool) -> None:
+    """Create a NEW branch and optionally assign it to a pool slot.
 
-    BRANCH is the name of the new git branch to create and assign.
+    BRANCH is the name of the new git branch to create.
 
-    The command will:
+    By default, the command will:
     1. Verify the branch does NOT already exist (fails if it does)
-    2. Find the next available slot in the pool
-    3. Create the branch from trunk
+    2. Create the branch from trunk
+    3. Find the next available slot in the pool
     4. Create a worktree for that slot
     5. Assign the branch to the slot
-    6. Persist the assignment to pool.json
 
-    Use `erk slot assign` to assign an EXISTING branch to a slot.
+    Use --no-slot to create a branch without assigning it to a slot.
+    Use `erk br assign` to assign an EXISTING branch to a slot.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
+
+    # Check if branch already exists
+    local_branches = ctx.git.list_local_branches(repo.root)
+    if branch_name in local_branches:
+        user_output(
+            f"Error: Branch '{branch_name}' already exists.\n"
+            "Use `erk br assign` to assign an existing branch to a slot."
+        )
+        raise SystemExit(1) from None
+
+    # Create the new branch from trunk
+    trunk = ctx.git.detect_trunk_branch(repo.root)
+    ctx.git.create_branch(repo.root, branch_name, trunk)
+    ctx.graphite.track_branch(repo.root, branch_name, trunk)
+    user_output(f"Created branch: {branch_name}")
+
+    # If --no-slot is specified, we're done
+    if no_slot:
+        return
 
     # Get pool size from config or default
     pool_size = get_pool_size(ctx)
@@ -60,26 +80,11 @@ def slot_create(ctx: ErkContext, branch_name: str, force: bool) -> None:
             assignments=(),
         )
 
-    # Check if branch is already assigned
+    # Check if branch is already assigned (shouldn't happen since we just created it)
     existing = find_branch_assignment(state, branch_name)
     if existing is not None:
         user_output(f"Error: Branch '{branch_name}' already assigned to {existing.slot_name}")
         raise SystemExit(1) from None
-
-    # Check if branch already exists - create command requires NEW branch
-    local_branches = ctx.git.list_local_branches(repo.root)
-    if branch_name in local_branches:
-        user_output(
-            f"Error: Branch '{branch_name}' already exists.\n"
-            "Use `erk slot assign` for existing branches."
-        )
-        raise SystemExit(1) from None
-
-    # Create the new branch from trunk (required before any slot assignment)
-    trunk = ctx.git.detect_trunk_branch(repo.root)
-    ctx.git.create_branch(repo.root, branch_name, trunk)
-    ctx.graphite.track_branch(repo.root, branch_name, trunk)
-    user_output(f"Created branch: {branch_name}")
 
     # First, prefer pre-initialized slots (fast path)
     inactive_slot = find_inactive_slot(state)

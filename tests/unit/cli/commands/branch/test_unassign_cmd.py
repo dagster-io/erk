@@ -1,4 +1,4 @@
-"""Unit tests for slot unassign command."""
+"""Unit tests for branch unassign command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,7 +26,7 @@ def _create_test_assignment(
     )
 
 
-def test_slot_unassign_by_slot_name() -> None:
+def test_branch_unassign_by_slot_name() -> None:
     """Test unassigning by slot name checks out placeholder branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -59,7 +59,7 @@ def test_slot_unassign_by_slot_name() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["branch", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -81,7 +81,46 @@ def test_slot_unassign_by_slot_name() -> None:
         assert (env.cwd, "__erk-slot-01-placeholder__", "main") in git_ops.created_branches
 
 
-def test_slot_unassign_not_found() -> None:
+def test_branch_unassign_with_br_alias() -> None:
+    """Test that 'erk br unassign' alias works."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        git_ops = FakeGit(
+            worktrees={env.cwd: env.build_worktrees("main")[env.cwd]},
+            current_branches={env.cwd: "main", worktree_path: "feature-test"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["br", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Unassigned" in result.output
+
+
+def test_branch_unassign_not_found() -> None:
     """Test unassigning non-existent slot or branch shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -109,14 +148,14 @@ def test_slot_unassign_not_found() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "nonexistent"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "unassign", "nonexistent"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No worktree found" in result.output
 
 
-def test_slot_unassign_no_pool_configured() -> None:
+def test_branch_unassign_no_pool_configured() -> None:
     """Test unassigning when no pool is configured shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -142,14 +181,14 @@ def test_slot_unassign_no_pool_configured() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "something"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "unassign", "something"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No pool configured" in result.output
 
 
-def test_slot_unassign_preserves_other_assignments() -> None:
+def test_branch_unassign_preserves_other_assignments() -> None:
     """Test that unassigning one slot preserves other assignments."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -187,7 +226,7 @@ def test_slot_unassign_preserves_other_assignments() -> None:
 
         # Unassign first one by slot name
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -200,7 +239,7 @@ def test_slot_unassign_preserves_other_assignments() -> None:
         assert state.assignments[0].slot_name == "erk-managed-wt-02"
 
 
-def test_slot_unassign_fails_with_uncommitted_changes() -> None:
+def test_branch_unassign_fails_with_uncommitted_changes() -> None:
     """Test unassigning fails when worktree has uncommitted changes."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -234,7 +273,7 @@ def test_slot_unassign_fails_with_uncommitted_changes() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
@@ -249,7 +288,7 @@ def test_slot_unassign_fails_with_uncommitted_changes() -> None:
         assert len(git_ops.checked_out_branches) == 0
 
 
-def test_slot_unassign_uses_existing_placeholder_branch() -> None:
+def test_branch_unassign_uses_existing_placeholder_branch() -> None:
     """Test unassigning uses existing placeholder branch without creating new one."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -282,7 +321,7 @@ def test_slot_unassign_uses_existing_placeholder_branch() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["br", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
