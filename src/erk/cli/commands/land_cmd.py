@@ -27,12 +27,14 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
 )
+from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -138,6 +140,29 @@ def check_unresolved_comments(
             raise SystemExit(0)
 
 
+def _find_assignment_by_worktree_path(
+    state: PoolState, worktree_path: Path
+) -> SlotAssignment | None:
+    """Find a slot assignment by its worktree path.
+
+    Args:
+        state: Current pool state
+        worktree_path: Path to the worktree to find
+
+    Returns:
+        SlotAssignment if the worktree is a pool slot, None otherwise
+    """
+    if not worktree_path.exists():
+        return None
+    resolved_path = worktree_path.resolve()
+    for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            continue
+        if assignment.worktree_path.resolve() == resolved_path:
+            return assignment
+    return None
+
+
 def _cleanup_and_navigate(
     ctx: ErkContext,
     repo: RepoContext,
@@ -167,18 +192,37 @@ def _cleanup_and_navigate(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     if worktree_path is not None:
-        # Confirm cleanup unless --force
-        if not force:
-            if not user_confirm(
-                f"Delete worktree '{worktree_path.name}' (branch '{branch}')?",
-                default=True,
-            ):
-                user_output("Worktree preserved. Branch still exists locally.")
-                # User declined deletion - stay in current location
-                return
+        # Check if this is a slot worktree
+        state = load_pool_state(repo.pool_json_path)
+        assignment: SlotAssignment | None = None
+        if state is not None:
+            assignment = _find_assignment_by_worktree_path(state, worktree_path)
 
-        delete_branch_and_worktree(ctx, repo, branch, worktree_path)
-        user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
+        if assignment is not None:
+            # Slot worktree: unassign instead of delete
+            # state is guaranteed to be non-None since assignment was found in it
+            assert state is not None
+            if not force:
+                if not user_confirm(
+                    f"Unassign slot '{assignment.slot_name}' and delete branch '{branch}'?",
+                    default=True,
+                ):
+                    user_output("Slot preserved. Branch still exists locally.")
+                    return
+            execute_unassign(ctx, repo, state, assignment)
+            ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+            user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
+        else:
+            # Non-slot worktree: delete worktree and branch
+            if not force:
+                if not user_confirm(
+                    f"Delete worktree '{worktree_path.name}' and branch '{branch}'?",
+                    default=True,
+                ):
+                    user_output("Worktree preserved. Branch still exists locally.")
+                    return
+            delete_branch_and_worktree(ctx, repo, branch, worktree_path)
+            user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
     else:
         # No worktree - check if branch exists locally before deletion (LBYL)
         local_branches = ctx.git.list_local_branches(main_repo_root)
