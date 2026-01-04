@@ -42,7 +42,7 @@ class BranchDetectionFailed:
 
     @property
     def error_type(self) -> str:
-        return "branch_detection_failed"
+        return "branch-detection-failed"
 
     @property
     def message(self) -> str:
@@ -57,7 +57,7 @@ class NoPRForBranch:
 
     @property
     def error_type(self) -> str:
-        return "no_pr_for_branch"
+        return "no-pr-for-branch"
 
     @property
     def message(self) -> str:
@@ -72,7 +72,7 @@ class PRNotFoundError:
 
     @property
     def error_type(self) -> str:
-        return "pr_not_found"
+        return "pr-not-found"
 
     @property
     def message(self) -> str:
@@ -87,7 +87,7 @@ class GitHubAPIFailed:
 
     @property
     def error_type(self) -> str:
-        return "github_api_failed"
+        return "github-api-failed"
 
     @property
     def message(self) -> str:
@@ -102,7 +102,7 @@ class SessionNotFound:
 
     @property
     def error_type(self) -> str:
-        return "session_not_found"
+        return "session-not-found"
 
     @property
     def message(self) -> str:

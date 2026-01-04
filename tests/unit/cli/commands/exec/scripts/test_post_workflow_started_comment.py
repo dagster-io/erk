@@ -213,7 +213,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "github_api_failed"
+    assert output["error"] == "github-api-failed"
 
 
 def test_cli_missing_required_option() -> None:

@@ -177,7 +177,7 @@ def test_update_dispatch_info_issue_not_found() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "issue_not_found"
+    assert output["error"] == "issue-not-found"
     assert "#999" in output["message"]
 
 
@@ -199,7 +199,7 @@ This is an issue created before plan-header blocks were introduced.
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "no_plan_header_block"
+    assert output["error"] == "no-plan-header-block"
 
 
 def test_update_dispatch_info_github_api_failure() -> None:
@@ -222,7 +222,7 @@ def test_update_dispatch_info_github_api_failure() -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "github_api_failed"
+    assert output["error"] == "github-api-failed"
     assert "Network error" in output["message"]
 
 

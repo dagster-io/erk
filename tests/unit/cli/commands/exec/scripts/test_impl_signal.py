@@ -62,7 +62,7 @@ def test_impl_signal_started_no_issue_reference(impl_folder: Path, monkeypatch) 
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "started"
-    assert data["error_type"] == "no_issue_reference"
+    assert data["error_type"] == "no-issue-reference"
 
 
 def test_impl_signal_ended_no_issue_reference(impl_folder: Path, monkeypatch) -> None:
@@ -77,7 +77,7 @@ def test_impl_signal_ended_no_issue_reference(impl_folder: Path, monkeypatch) ->
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "ended"
-    assert data["error_type"] == "no_issue_reference"
+    assert data["error_type"] == "no-issue-reference"
 
 
 def test_impl_signal_started_missing_impl_folder(tmp_path: Path, monkeypatch) -> None:
@@ -92,7 +92,7 @@ def test_impl_signal_started_missing_impl_folder(tmp_path: Path, monkeypatch) ->
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "started"
-    assert data["error_type"] == "no_issue_reference"
+    assert data["error_type"] == "no-issue-reference"
 
 
 def test_impl_signal_ended_missing_impl_folder(tmp_path: Path, monkeypatch) -> None:
@@ -107,7 +107,7 @@ def test_impl_signal_ended_missing_impl_folder(tmp_path: Path, monkeypatch) -> N
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "ended"
-    assert data["error_type"] == "no_issue_reference"
+    assert data["error_type"] == "no-issue-reference"
 
 
 def test_impl_signal_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
@@ -132,7 +132,7 @@ def test_impl_signal_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
     assert result.exit_code == 0
     data = json.loads(result.output)
     # Fails at issue reference, which means folder was found
-    assert data["error_type"] == "no_issue_reference"
+    assert data["error_type"] == "no-issue-reference"
 
 
 def test_impl_signal_invalid_event() -> None:

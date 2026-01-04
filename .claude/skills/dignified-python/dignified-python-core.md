@@ -753,7 +753,6 @@ WorkflowStatus = Literal["completed", "in_progress", "queued"]
 
 The rule is: kebab-case by default, external convention when modeling external APIs.
 
-
 ### Pattern
 
 ```python

@@ -307,7 +307,7 @@ def test_reply_to_discussion_comment_comment_not_found(tmp_path: Path) -> None:
     assert result.exit_code == 0  # Graceful degradation
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "comment_not_found"
+    assert output["error_type"] == "comment-not-found"
     assert "999" in output["message"]
 
 

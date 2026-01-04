@@ -173,7 +173,7 @@ def test_cli_commit_not_found(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "commit_not_found"
+    assert output["error"] == "commit-not-found"
 
 
 def test_cli_pr_not_found(tmp_path: Path) -> None:
@@ -242,7 +242,7 @@ def test_cli_github_api_failure(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "github_api_failed"
+    assert output["error"] == "github-api-failed"
 
 
 def test_cli_missing_required_option() -> None:

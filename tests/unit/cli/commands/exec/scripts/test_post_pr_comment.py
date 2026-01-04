@@ -135,7 +135,7 @@ def test_post_pr_comment_no_issue_reference(tmp_path: Path) -> None:
     assert result.exit_code == 0  # Always exits 0 for || true pattern
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "no_issue_reference"
+    assert output["error_type"] == "no-issue-reference"
     assert ".impl/issue.json" in output["message"]
 
 
@@ -160,7 +160,7 @@ def test_post_pr_comment_invalid_issue_json(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "invalid_issue_reference"
+    assert output["error_type"] == "invalid-issue-reference"
 
 
 def test_post_pr_comment_branch_detection_failed(tmp_path: Path) -> None:
@@ -183,7 +183,7 @@ def test_post_pr_comment_branch_detection_failed(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "branch_detection_failed"
+    assert output["error_type"] == "branch-detection-failed"
 
 
 def test_post_pr_comment_github_api_failure(tmp_path: Path) -> None:
@@ -210,7 +210,7 @@ def test_post_pr_comment_github_api_failure(tmp_path: Path) -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "github_api_failed"
+    assert output["error_type"] == "github-api-failed"
     assert "Network error" in output["message"]
 
 
