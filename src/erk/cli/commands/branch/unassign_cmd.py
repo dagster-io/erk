@@ -87,8 +87,11 @@ def execute_unassign(
         assignments=new_assignments,
     )
 
-    # Save updated state
-    save_pool_state(repo.pool_json_path, new_state)
+    # Save updated state (guard for dry-run mode)
+    if ctx.dry_run:
+        user_output("[DRY RUN] Would save pool state")
+    else:
+        save_pool_state(repo.pool_json_path, new_state)
 
     return UnassignResult(
         branch_name=assignment.branch_name,
