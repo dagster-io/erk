@@ -7,7 +7,6 @@ statically registered.
 import click
 
 # Import and register all scripts
-from erk.cli.commands.exec.scripts.add_issue_label import add_issue_label
 from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
     add_reaction_to_comment,
 )
@@ -15,17 +14,12 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
-from erk.cli.commands.exec.scripts.check_progress import check_progress
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
-from erk.cli.commands.exec.scripts.configure_git_user import configure_git_user
 from erk.cli.commands.exec.scripts.create_extraction_branch import (
     create_extraction_branch,
 )
 from erk.cli.commands.exec.scripts.create_extraction_plan import (
     create_extraction_plan,
-)
-from erk.cli.commands.exec.scripts.create_impl_run_info import (
-    create_impl_run_info,
 )
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
@@ -43,10 +37,6 @@ from erk.cli.commands.exec.scripts.extract_session_from_issue import (
     extract_session_from_issue,
 )
 from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
-from erk.cli.commands.exec.scripts.format_error import format_error
-from erk.cli.commands.exec.scripts.format_success_output import (
-    format_success_output,
-)
 from erk.cli.commands.exec.scripts.generate_pr_summary import generate_pr_summary
 from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
@@ -80,8 +70,6 @@ from erk.cli.commands.exec.scripts.post_extraction_comment import (
 from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
     post_or_update_pr_summary,
 )
-from erk.cli.commands.exec.scripts.post_plan_comment import post_plan_comment
-from erk.cli.commands.exec.scripts.post_pr_comment import post_pr_comment
 from erk.cli.commands.exec.scripts.post_pr_inline_comment import (
     post_pr_inline_comment,
 )
@@ -107,7 +95,6 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
 from erk.cli.commands.exec.scripts.update_dispatch_info import update_dispatch_info
-from erk.cli.commands.exec.scripts.update_pr_summary import update_pr_summary
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_plan_content import (
     validate_plan_content,
@@ -124,15 +111,11 @@ def exec_group() -> None:
 
 
 # Register all commands
-exec_group.add_command(add_issue_label, name="add-issue-label")
 exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(check_impl, name="check-impl")
-exec_group.add_command(check_progress, name="check-progress")
-exec_group.add_command(configure_git_user, name="configure-git-user")
 exec_group.add_command(create_extraction_branch, name="create-extraction-branch")
 exec_group.add_command(create_extraction_plan, name="create-extraction-plan")
-exec_group.add_command(create_impl_run_info, name="create-impl-run-info")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
@@ -141,8 +124,6 @@ exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
 exec_group.add_command(extract_session_from_issue, name="extract-session-from-issue")
 exec_group.add_command(find_project_dir, name="find-project-dir")
-exec_group.add_command(format_error, name="format-error")
-exec_group.add_command(format_success_output, name="format-success-output")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
@@ -163,9 +144,7 @@ exec_group.add_command(marker, name="marker")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(post_extraction_comment, name="post-extraction-comment")
-exec_group.add_command(post_plan_comment, name="post-plan-comment")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
-exec_group.add_command(post_pr_comment, name="post-pr-comment")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
 exec_group.add_command(post_start_comment, name="post-start-comment")
 exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")
@@ -180,7 +159,6 @@ exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook"
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(ci_update_pr_body)
-exec_group.add_command(update_pr_summary, name="update-pr-summary")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_plan_content, name="validate-plan-content")
 exec_group.add_command(wrap_plan_in_metadata_block, name="wrap-plan-in-metadata-block")
