@@ -165,6 +165,26 @@ For each comment in the batch:
    - Record these findings - they become permanent documentation in the reply
 3. Take action if needed
 
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**Example reply for a false positive:**
+
+```bash
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "False positive: The LBYL check the bot is requesting already exists on line 344 where we check \`.exists()\` before the operation on line 353. No code change needed."
+```
+
 **For Outdated Review Threads** (`is_outdated: true`):
 
 Outdated threads have `line: null` because the code has changed since the comment was made.
