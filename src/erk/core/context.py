@@ -139,6 +139,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         ),
         prompt_executor=FakePromptExecutor(),
         claude_settings_store=FakeClaudeSettingsStore(),
@@ -286,6 +287,7 @@ def context_for_test(
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
     if prompt_executor is None:

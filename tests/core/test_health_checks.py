@@ -324,6 +324,7 @@ def test_check_hooks_disabled_no_files() -> None:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)
@@ -343,6 +344,7 @@ def test_check_hooks_disabled_in_settings() -> None:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)
@@ -366,6 +368,7 @@ def test_check_hooks_disabled_in_local(tmp_path: Path) -> None:
         local_settings={"hooks": {"disabled": True}},  # Not used yet in check
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     # For now, the local settings check still reads from filesystem
@@ -387,6 +390,7 @@ def test_check_hooks_disabled_false() -> None:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)
@@ -405,6 +409,7 @@ def test_check_hooks_disabled_no_hooks_key() -> None:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)

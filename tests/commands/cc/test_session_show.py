@@ -119,6 +119,7 @@ def test_show_session_displays_metadata() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -159,6 +160,7 @@ def test_show_session_not_found_error() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -200,6 +202,7 @@ def test_show_session_agent_session_error() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -247,6 +250,7 @@ def test_show_session_displays_child_agents() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -286,6 +290,7 @@ def test_show_session_no_child_agents() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -309,6 +314,7 @@ def test_show_session_no_project_error() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -348,6 +354,7 @@ def test_show_session_infers_most_recent() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -375,6 +382,7 @@ def test_show_session_infer_no_sessions_error() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -423,6 +431,7 @@ def test_show_session_displays_agent_type_and_prompt() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -482,6 +491,7 @@ def test_show_session_handles_string_timestamps() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -540,6 +550,7 @@ def test_show_session_displays_agent_duration() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -594,6 +605,7 @@ def test_show_session_duration_formats_minutes() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -644,6 +656,7 @@ def test_show_session_no_duration_without_timestamps() -> None:
             local_settings=None,
             session_slugs=None,
             session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)

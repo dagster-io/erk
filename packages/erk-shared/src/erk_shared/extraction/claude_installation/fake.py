@@ -45,6 +45,7 @@ class FakeClaudeInstallation(ClaudeInstallation):
         local_settings: dict | None,
         session_slugs: dict[str, list[str]] | None,
         session_planning_agents: dict[str, list[str]] | None,
+        plans_dir_path: Path | None,
     ) -> None:
         """Initialize fake installation with test data.
 
@@ -55,6 +56,7 @@ class FakeClaudeInstallation(ClaudeInstallation):
             local_settings: Local settings dict, or None if file doesn't exist
             session_slugs: Map of session_id -> list of slugs for that session
             session_planning_agents: Map of session_id -> list of agent IDs for Plan agents
+            plans_dir_path: Custom path for plans directory (for filesystem tests)
         """
         self._projects = projects or {}
         self._plans = plans or {}
@@ -62,6 +64,7 @@ class FakeClaudeInstallation(ClaudeInstallation):
         self._local_settings = local_settings
         self._session_slugs = session_slugs or {}
         self._session_planning_agents = session_planning_agents or {}
+        self._plans_dir_path = plans_dir_path
 
     def _find_project_for_path(self, project_cwd: Path) -> Path | None:
         """Find project at or above the given path.
@@ -267,7 +270,12 @@ class FakeClaudeInstallation(ClaudeInstallation):
     # --- Plan operations ---
 
     def get_plans_dir_path(self) -> Path:
-        """Return path to ~/.claude/plans/ directory (fake path)."""
+        """Return path to ~/.claude/plans/ directory.
+
+        Returns custom path if configured, otherwise a fake path.
+        """
+        if self._plans_dir_path is not None:
+            return self._plans_dir_path
         return Path("/fake/.claude/plans")
 
     def extract_slugs_from_session(self, project_cwd: Path, session_id: str) -> list[str]:

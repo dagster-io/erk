@@ -42,6 +42,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -82,6 +83,7 @@ Context here"""
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -110,6 +112,7 @@ def test_plan_save_to_issue_no_plan() -> None:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -147,6 +150,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -193,6 +197,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -238,6 +243,7 @@ Steps here"""
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -298,6 +304,7 @@ steps:
         local_settings=None,
         session_slugs={"test-session-id": ["session-context-test"]},
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -347,6 +354,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -390,6 +398,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -442,6 +451,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -512,6 +522,7 @@ steps:
         local_settings=None,
         session_slugs={"test-session-id": ["display-session-test"]},
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -569,6 +580,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -634,6 +646,7 @@ steps:
         local_settings=None,
         session_slugs={flag_session_id: ["session-flag-test"]},
         session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -678,6 +691,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -734,6 +748,7 @@ steps:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -889,6 +904,7 @@ def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -927,6 +943,7 @@ Details here.
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1024,6 +1041,7 @@ This plan has no frontmatter steps.
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1068,6 +1086,7 @@ Details here.
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1107,6 +1126,7 @@ One step plan.
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1139,6 +1159,7 @@ No steps in frontmatter and no --steps provided.
         local_settings=None,
         session_slugs=None,
         session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1157,9 +1178,7 @@ No steps in frontmatter and no --steps provided.
     assert "Plan missing required 'steps' in frontmatter" in output["error"]
 
 
-def test_plan_save_to_issue_deletes_plan_file_after_save(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_plan_save_to_issue_deletes_plan_file_after_save(tmp_path: Path) -> None:
     """Verify Claude plan file is deleted after successful save.
 
     When a plan is saved to GitHub with a session ID, the original
@@ -1178,31 +1197,20 @@ steps:
 
 - Step 1"""
 
-    # Create the plan file at the location that will be discovered
+    # Set up a real plans directory so we can verify deletion
     plans_dir = tmp_path / ".claude" / "plans"
     plans_dir.mkdir(parents=True)
     plan_file = plans_dir / f"{test_slug}.md"
     plan_file.write_text(plan_content, encoding="utf-8")
-
-    # Mock extract_slugs_from_session to return our test slug
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "extract_slugs_from_session",
-        lambda *args, **kwargs: [test_slug],
-    )
-
-    # Mock get_plans_dir to return our test location
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "get_plans_dir",
-        lambda: plans_dir,
-    )
 
     fake_store = FakeClaudeInstallation(
         projects=None,
         plans={test_slug: plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={test_session_id: [test_slug]},
+        session_planning_agents=None,
+        plans_dir_path=plans_dir,
     )
 
     runner = CliRunner()
