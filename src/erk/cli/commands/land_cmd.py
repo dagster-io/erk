@@ -23,19 +23,20 @@ from erk.cli.commands.navigation_helpers import (
     check_clean_working_tree,
     delete_branch_and_worktree,
 )
+from erk.cli.commands.objective_helpers import (
+    get_objective_for_branch,
+    prompt_objective_update,
+)
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
-from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
-from erk_shared.github.metadata import extract_plan_header_objective_issue
 from erk_shared.github.types import PRDetails, PRNotFound
-from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 
 
@@ -135,86 +136,6 @@ def check_unresolved_comments(
         )
         if not user_confirm("Continue anyway?", default=False):
             raise SystemExit(0)
-
-
-def _get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> int | None:
-    """Extract objective issue number from branch's linked plan issue.
-
-    Returns objective issue number if:
-    1. Branch has P<number>- prefix (plan issue link)
-    2. Plan issue has objective_issue in its metadata
-
-    Returns None otherwise (fail-open - never blocks landing).
-    """
-    plan_number = extract_leading_issue_number(branch)
-    if plan_number is None:
-        return None
-
-    issue = ctx.issues.get_issue(repo_root, plan_number)
-    if issue is None:
-        return None
-
-    return extract_plan_header_objective_issue(issue.body)
-
-
-def _prompt_objective_update(
-    ctx: ErkContext,
-    repo_root: Path,
-    objective_number: int,
-    pr_number: int,
-    branch: str,
-    force: bool,
-) -> None:
-    """Prompt user to update objective after landing.
-
-    Args:
-        ctx: ErkContext with claude_executor
-        repo_root: Repository root path for Claude execution
-        objective_number: The linked objective issue number
-        pr_number: The PR number that was just landed
-        force: If True, skip prompt (print command to run later)
-    """
-    user_output(f"   Linked to Objective #{objective_number}")
-
-    # Build the command with all arguments for context-free execution
-    cmd = (
-        f"/objective:update-with-landed-pr "
-        f"--pr {pr_number} --objective {objective_number} --branch {branch}"
-    )
-
-    if force:
-        # --force skips all prompts, print command for later
-        user_output(f"   Run '{cmd}' to update objective")
-        return
-
-    # Ask y/n prompt
-    user_output("")
-    if not user_confirm("Update objective now? (runs Claude agent)", default=True):
-        user_output("")
-        user_output("Skipped. To update later, run:")
-        user_output(f"  {cmd}")
-    else:
-        # Add feedback BEFORE streaming starts (important for visibility)
-        user_output("")
-        user_output("Starting objective update...")
-
-        result = stream_command_with_feedback(
-            executor=ctx.claude_executor,
-            command=cmd,
-            worktree_path=repo_root,
-            dangerous=True,
-        )
-
-        # Add feedback AFTER streaming completes
-        if result.success:
-            user_output("")
-            user_output(click.style("✓", fg="green") + " Objective updated successfully")
-        else:
-            user_output("")
-            user_output(
-                click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
-            )
-            user_output("  Run '/objective:update-with-landed-pr' manually to retry")
 
 
 def _cleanup_and_navigate(
@@ -492,9 +413,9 @@ def _land_current_branch(
 
     # Check for linked objective and offer to update
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    objective_number = _get_objective_for_branch(ctx, main_repo_root, current_branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
     if objective_number is not None:
-        _prompt_objective_update(
+        prompt_objective_update(
             ctx, main_repo_root, objective_number, success_result.pr_number, current_branch, force
         )
 
@@ -592,9 +513,9 @@ def _land_specific_pr(
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
 
     # Check for linked objective and offer to update
-    objective_number = _get_objective_for_branch(ctx, main_repo_root, branch)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
     if objective_number is not None:
-        _prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, branch, force)
+        prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, branch, force)
 
     # Cleanup and navigate
     _cleanup_and_navigate(
@@ -683,9 +604,9 @@ def _land_by_branch(
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
 
     # Check for linked objective and offer to update
-    objective_number = _get_objective_for_branch(ctx, main_repo_root, branch_name)
+    objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
     if objective_number is not None:
-        _prompt_objective_update(
+        prompt_objective_update(
             ctx, main_repo_root, objective_number, pr_number, branch_name, force
         )
 
