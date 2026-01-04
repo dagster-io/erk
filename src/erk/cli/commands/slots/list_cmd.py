@@ -75,6 +75,7 @@ def slots_list(ctx: ErkContext) -> None:
         state = PoolState(
             version="1.0",
             pool_size=DEFAULT_POOL_SIZE,
+            slots=(),
             assignments=(),
         )
 

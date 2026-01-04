@@ -80,6 +80,7 @@ def test_slots_list_with_assigned_slot(monkeypatch: pytest.MonkeyPatch) -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
+            slots=(),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-managed-wt-01",
@@ -189,6 +190,7 @@ def test_slots_list_mixed_states(monkeypatch: pytest.MonkeyPatch) -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
+            slots=(),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-managed-wt-01",
