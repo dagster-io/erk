@@ -234,22 +234,14 @@ def test_list_plans_filters_by_labels() -> None:
     """Test filtering by labels uses AND logic."""
     backend = FakeLinearPlanBackend(
         issues={
-            "id-1": _create_linear_issue(
-                id="id-1", title="Plan 1", labels=("erk-plan", "feature")
-            ),
-            "id-2": _create_linear_issue(
-                id="id-2", title="Plan 2", labels=("erk-plan",)
-            ),
-            "id-3": _create_linear_issue(
-                id="id-3", title="Bug", labels=("bug",)
-            ),
+            "id-1": _create_linear_issue(id="id-1", title="Plan 1", labels=("erk-plan", "feature")),
+            "id-2": _create_linear_issue(id="id-2", title="Plan 2", labels=("erk-plan",)),
+            "id-3": _create_linear_issue(id="id-3", title="Bug", labels=("bug",)),
         }
     )
 
     # Both labels must match
-    results = backend.list_plans(
-        Path("/repo"), PlanQuery(labels=["erk-plan", "feature"])
-    )
+    results = backend.list_plans(Path("/repo"), PlanQuery(labels=["erk-plan", "feature"]))
 
     assert len(results) == 1
     assert results[0].plan_identifier == "id-1"
@@ -258,10 +250,7 @@ def test_list_plans_filters_by_labels() -> None:
 def test_list_plans_applies_limit() -> None:
     """Test limit parameter restricts results."""
     backend = FakeLinearPlanBackend(
-        issues={
-            f"id-{i}": _create_linear_issue(id=f"id-{i}", title=f"Plan {i}")
-            for i in range(10)
-        }
+        issues={f"id-{i}": _create_linear_issue(id=f"id-{i}", title=f"Plan {i}") for i in range(10)}
     )
 
     results = backend.list_plans(Path("/repo"), PlanQuery(limit=3))
