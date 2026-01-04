@@ -127,22 +127,6 @@ Lists Claude Code sessions for the current project.
 }
 ```
 
-### mark-step
-
-Mark implementation steps as complete.
-
-**Command**: `erk exec mark-step 1 2 3`
-
-**Output**:
-
-```json
-{
-  "success": true,
-  "steps_marked": [1, 2, 3],
-  "progress": "3/10"
-}
-```
-
 ### check-impl
 
 Validate implementation folder (precursor to impl-init).

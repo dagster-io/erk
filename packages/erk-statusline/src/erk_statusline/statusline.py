@@ -202,64 +202,6 @@ def get_issue_number(git_root: str) -> int | None:
     return None
 
 
-def get_plan_progress(git_root: str) -> tuple[int, int] | None:
-    """Parse .impl/progress.md file to extract step progress.
-
-    Args:
-        git_root: Absolute path to git repository root
-
-    Returns:
-        Tuple of (completed_steps, total_steps) or None if unavailable.
-        Reads YAML frontmatter for completed_steps/total_steps,
-        falls back to counting checkboxes if frontmatter missing.
-    """
-    if not git_root:
-        return None
-
-    progress_file = Path(git_root) / ".impl" / "progress.md"
-    if not progress_file.is_file():
-        return None
-
-    try:
-        content = progress_file.read_text(encoding="utf-8")
-
-        # Try to parse YAML frontmatter first
-        if content.startswith("---"):
-            parts = content.split("---", 2)
-            if len(parts) >= 3:
-                frontmatter = parts[1]
-                completed = None
-                total = None
-
-                for line in frontmatter.split("\n"):
-                    line = line.strip()
-                    if line.startswith("completed_steps:"):
-                        try:
-                            completed = int(line.split(":", 1)[1].strip())
-                        except (ValueError, IndexError):
-                            pass
-                    elif line.startswith("total_steps:"):
-                        try:
-                            total = int(line.split(":", 1)[1].strip())
-                        except (ValueError, IndexError):
-                            pass
-
-                if completed is not None and total is not None:
-                    return (completed, total)
-
-        # Fallback: count checkboxes
-        completed = content.count("- [x]")
-        total = completed + content.count("- [ ]")
-
-        if total > 0:
-            return (completed, total)
-
-    except (OSError, UnicodeDecodeError):
-        pass
-
-    return None
-
-
 def find_new_plan_file(git_root: str) -> str | None:
     """Find plan file with enriched_by_persist_plan frontmatter at git root.
 
@@ -743,39 +685,13 @@ def build_context_labels(
     return labels
 
 
-def build_plan_label(plan_progress: tuple[int, int] | None) -> Token:
-    """Build (.impl) label with progress indicator.
-
-    Args:
-        plan_progress: Tuple of (completed_steps, total_steps) or None
+def build_plan_label() -> Token:
+    """Build (.impl) label.
 
     Returns:
-        Token with progress indicator:
-        - (.impl ⚪ 0/N) for 0% complete
-        - (.impl 🟡 X/N) for 1-99% complete
-        - (.impl ✅ N/N) for 100% complete
-        - (.impl) if no progress data available
+        Token with (.impl) indicator.
     """
-    if not plan_progress:
-        return Token("(.impl)")
-
-    completed, total = plan_progress
-
-    if total == 0:
-        return Token("(.impl)")
-
-    # Calculate progress percentage
-    progress_pct = (completed / total) * 100
-
-    # Choose indicator based on progress
-    if progress_pct == 0:
-        indicator = "⚪"
-    elif progress_pct >= 100:
-        indicator = "✅"
-    else:
-        indicator = "🟡"
-
-    return Token(f"(.impl {indicator} {completed}/{total})")
+    return Token("(.impl)")
 
 
 def build_new_plan_label(filename: str) -> Token:
@@ -876,7 +792,6 @@ def main():
         is_linked_worktree = False
         worktree_name = ""
         relative_cwd = ""
-        plan_progress = None
         new_plan_file = None
         git_root = ""
         issue_number = None
@@ -896,7 +811,6 @@ def main():
                         ctx, repo_root
                     )
                     relative_cwd = get_relative_cwd(cwd, git_root)
-                    plan_progress = get_plan_progress(git_root)
                     new_plan_file = find_new_plan_file(git_root)
                     issue_number = get_issue_number(git_root)
                     # Fetch GitHub data using gateway for Graphite PR cache
@@ -926,11 +840,7 @@ def main():
                 *build_context_labels(
                     repo_name, is_linked_worktree, worktree_name, branch, relative_cwd
                 ),
-                *(
-                    [build_plan_label(plan_progress)]
-                    if plan_progress or (git_root and has_plan_file(git_root))
-                    else []
-                ),
+                *([build_plan_label()] if git_root and has_plan_file(git_root) else []),
                 *([build_new_plan_label(new_plan_file)] if new_plan_file else []),
                 *([Token("✗")] if is_dirty else []),
                 Token("|"),

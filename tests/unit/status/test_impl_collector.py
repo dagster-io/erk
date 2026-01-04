@@ -65,57 +65,6 @@ def test_plan_collector_with_issue_reference(tmp_path: Path) -> None:
     assert result.issue_url == "https://github.com/owner/repo/issues/42"
 
 
-def test_plan_collector_issue_reference_with_progress(tmp_path: Path) -> None:
-    """Test collector includes both progress and issue information."""
-    import frontmatter
-
-    # Create plan folder (uses ## Step N: format for regex extraction)
-    plan_content = (
-        "# Test Plan\n\n## Step 1: Step one\n## Step 2: Step two\n## Step 3: Step three\n"
-    )
-    plan_folder = create_impl_folder(tmp_path, plan_content, None, overwrite=False)
-
-    # Save issue reference
-    save_issue_reference(plan_folder, 123, "https://github.com/test/repo/issues/123")
-
-    # Mark one step complete using frontmatter library
-    progress_file = plan_folder / "progress.md"
-    content = progress_file.read_text(encoding="utf-8")
-
-    # Parse frontmatter
-    post = frontmatter.loads(content)
-
-    # Update the steps array and current_step
-    post.metadata["steps"][0]["completed"] = True
-    post.metadata["completed_steps"] = 1
-    post.metadata["current_step"] = 1
-
-    # Regenerate checkboxes in body
-    body_lines = ["# Progress Tracking\n"]
-    for step in post.metadata["steps"]:
-        checkbox = "[x]" if step["completed"] else "[ ]"
-        body_lines.append(f"- {checkbox} {step['title']}")
-    body_lines.append("")
-    post.content = "\n".join(body_lines)
-
-    # Write back
-    updated_content = frontmatter.dumps(post)
-    progress_file.write_text(updated_content, encoding="utf-8")
-
-    git = FakeGit()
-    ctx = minimal_context(git, tmp_path)
-    collector = PlanFileCollector()
-
-    result = collector.collect(ctx, tmp_path, tmp_path)
-
-    assert result is not None
-    assert result.exists is True
-    assert result.progress_summary == "1/3 steps completed"
-    assert result.completion_percentage == 33  # 1/3 = 33%
-    assert result.issue_number == 123
-    assert result.issue_url == "https://github.com/test/repo/issues/123"
-
-
 def test_plan_collector_invalid_issue_reference(tmp_path: Path) -> None:
     """Test collector handles invalid issue.json gracefully."""
     # Create plan folder (uses ## Step N: format)

@@ -363,13 +363,7 @@ steps:
 - [ ] 5. Fifth step
 ```
 
-Use erk exec commands to update progress:
-
-```bash
-erk exec mark-step 1        # Mark step 1 complete
-erk exec mark-step 1 2 3    # Mark multiple steps
-erk exec get-progress       # Show current progress
-```
+Progress tracking is done via the TodoWrite tool in the Claude Code session.
 
 ---
 

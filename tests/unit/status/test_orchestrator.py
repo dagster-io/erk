@@ -525,7 +525,6 @@ def test_orchestrator_multiple_collector_types(tmp_path: Path) -> None:
                 line_count=5,
                 first_lines=["# Plan"],
                 summary="Test plan",
-                progress_summary="2/3 steps completed",
                 format="folder",
             )
 

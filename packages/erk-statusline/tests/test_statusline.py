@@ -36,7 +36,6 @@ from erk_statusline.statusline import (
     get_git_status_via_gateway,
     get_github_repo_via_gateway,
     get_issue_number,
-    get_plan_progress,
     get_pr_info_via_branch_manager,
     get_repo_info,
     get_worktree_info_via_gateway,
@@ -372,198 +371,13 @@ class TestGetIssueNumber:
             assert result is None
 
 
-class TestGetPlanProgress:
-    """Test plan progress parsing."""
-
-    def test_no_git_root_returns_none(self) -> None:
-        """Empty git root should return None."""
-        result = get_plan_progress("")
-        assert result is None
-
-    def test_missing_progress_file_returns_none(self) -> None:
-        """Missing progress.md file should return None."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            result = get_plan_progress(tmpdir)
-            assert result is None
-
-    def test_parse_yaml_frontmatter_with_steps(self) -> None:
-        """Should parse YAML frontmatter with completed_steps and total_steps."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            plan_dir = Path(tmpdir) / ".impl"
-            plan_dir.mkdir()
-            progress_file = plan_dir / "progress.md"
-            progress_file.write_text(
-                """---
-completed_steps: 3
-total_steps: 10
----
-
-# Progress Tracking
-
-- [x] Task 1
-- [x] Task 2
-- [x] Task 3
-- [ ] Task 4
-"""
-            )
-
-            result = get_plan_progress(tmpdir)
-            assert result is not None
-            assert result == (3, 10)
-
-    def test_fallback_to_checkbox_counting(self) -> None:
-        """Should count checkboxes when YAML frontmatter is missing."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            plan_dir = Path(tmpdir) / ".impl"
-            plan_dir.mkdir()
-            progress_file = plan_dir / "progress.md"
-            progress_file.write_text(
-                """# Progress Tracking
-
-- [x] Task 1
-- [x] Task 2
-- [ ] Task 3
-- [ ] Task 4
-- [ ] Task 5
-"""
-            )
-
-            result = get_plan_progress(tmpdir)
-            assert result is not None
-            assert result == (2, 5)
-
-    def test_zero_completed_steps(self) -> None:
-        """Should handle zero completed steps correctly."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            plan_dir = Path(tmpdir) / ".impl"
-            plan_dir.mkdir()
-            progress_file = plan_dir / "progress.md"
-            progress_file.write_text(
-                """---
-completed_steps: 0
-total_steps: 5
----
-
-# Progress Tracking
-
-- [ ] Task 1
-- [ ] Task 2
-"""
-            )
-
-            result = get_plan_progress(tmpdir)
-            assert result is not None
-            assert result == (0, 5)
-
-    def test_all_completed_steps(self) -> None:
-        """Should handle all steps completed correctly."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            plan_dir = Path(tmpdir) / ".impl"
-            plan_dir.mkdir()
-            progress_file = plan_dir / "progress.md"
-            progress_file.write_text(
-                """---
-completed_steps: 5
-total_steps: 5
----
-
-# Progress Tracking
-
-- [x] Task 1
-- [x] Task 2
-- [x] Task 3
-- [x] Task 4
-- [x] Task 5
-"""
-            )
-
-            result = get_plan_progress(tmpdir)
-            assert result is not None
-            assert result == (5, 5)
-
-    def test_no_checkboxes_returns_none(self) -> None:
-        """Should return None when there are no checkboxes and no YAML."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            plan_dir = Path(tmpdir) / ".impl"
-            plan_dir.mkdir()
-            progress_file = plan_dir / "progress.md"
-            progress_file.write_text(
-                """# Progress Tracking
-
-Just some text with no checkboxes.
-"""
-            )
-
-            result = get_plan_progress(tmpdir)
-            assert result is None
-
-    def test_malformed_yaml_falls_back_to_checkboxes(self) -> None:
-        """Should fall back to checkbox counting when YAML is malformed."""
-        with tempfile.TemporaryDirectory() as tmpdir:
-            plan_dir = Path(tmpdir) / ".impl"
-            plan_dir.mkdir()
-            progress_file = plan_dir / "progress.md"
-            progress_file.write_text(
-                """---
-completed_steps: not_a_number
-total_steps: also_not_a_number
----
-
-# Progress Tracking
-
-- [x] Task 1
-- [ ] Task 2
-"""
-            )
-
-            result = get_plan_progress(tmpdir)
-            assert result is not None
-            assert result == (1, 2)
-
-
 class TestBuildPlanLabel:
     """Test plan label building."""
 
-    def test_none_progress_returns_simple_label(self) -> None:
-        """None progress should return (.impl) without indicator."""
-        result = build_plan_label(None)
+    def test_returns_simple_label(self) -> None:
+        """Should return (.impl) label."""
+        result = build_plan_label()
         assert result.text == "(.impl)"
-
-    def test_zero_total_returns_simple_label(self) -> None:
-        """Zero total steps should return (.impl) without indicator."""
-        result = build_plan_label((0, 0))
-        assert result.text == "(.impl)"
-
-    def test_zero_percent_shows_white_circle(self) -> None:
-        """0% completion should show white circle indicator."""
-        result = build_plan_label((0, 10))
-        assert "⚪" in result.text
-        assert "0/10" in result.text
-
-    def test_partial_progress_shows_yellow_circle(self) -> None:
-        """Partial progress should show yellow circle indicator."""
-        result = build_plan_label((3, 10))
-        assert "🟡" in result.text
-        assert "3/10" in result.text
-
-    def test_ninety_nine_percent_shows_yellow_circle(self) -> None:
-        """99% completion should still show yellow circle."""
-        result = build_plan_label((99, 100))
-        assert "🟡" in result.text
-        assert "99/100" in result.text
-
-    def test_complete_shows_green_check(self) -> None:
-        """100% completion should show green check indicator."""
-        result = build_plan_label((10, 10))
-        assert "✅" in result.text
-        assert "10/10" in result.text
-
-    def test_label_format(self) -> None:
-        """Label should have correct format (.impl INDICATOR X/Y)."""
-        result = build_plan_label((5, 8))
-        assert result.text.startswith("(.impl ")
-        assert result.text.endswith(")")
-        assert "5/8" in result.text
 
 
 class TestFindNewPlanFile:

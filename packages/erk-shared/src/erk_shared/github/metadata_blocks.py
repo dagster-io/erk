@@ -88,50 +88,6 @@ class ImplementationStatusSchema(MetadataBlockSchema):
 
 
 @dataclass(frozen=True)
-class ProgressStatusSchema(MetadataBlockSchema):
-    """Schema for erk-implementation-status progress blocks."""
-
-    def validate(self, data: dict[str, Any]) -> None:
-        """Validate progress status data structure."""
-        required_fields = {
-            "status",
-            "completed_steps",
-            "total_steps",
-            "timestamp",
-        }
-
-        # Check required fields exist
-        missing = required_fields - set(data.keys())
-        if missing:
-            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
-
-        # Validate status values
-        valid_statuses = {"pending", "in_progress", "complete", "failed"}
-        if data["status"] not in valid_statuses:
-            raise ValueError(
-                f"Invalid status '{data['status']}'. "
-                f"Must be one of: {', '.join(sorted(valid_statuses))}"
-            )
-
-        # Validate numeric fields
-        if not isinstance(data["completed_steps"], int):
-            raise ValueError("completed_steps must be an integer")
-        if not isinstance(data["total_steps"], int):
-            raise ValueError("total_steps must be an integer")
-        if data["completed_steps"] < 0:
-            raise ValueError("completed_steps must be non-negative")
-        if data["total_steps"] < 1:
-            raise ValueError("total_steps must be at least 1")
-        if data["completed_steps"] > data["total_steps"]:
-            raise ValueError("completed_steps cannot exceed total_steps")
-
-        # step_description is optional - no validation needed if present
-
-    def get_key(self) -> str:
-        return "erk-implementation-status"
-
-
-@dataclass(frozen=True)
 class WorktreeCreationSchema(MetadataBlockSchema):
     """Schema for erk-worktree-creation blocks."""
 
@@ -359,30 +315,6 @@ def create_implementation_status_block(
     }
     if summary is not None:
         data["summary"] = summary
-    return create_metadata_block(
-        key=schema.get_key(),
-        data=data,
-        schema=schema,
-    )
-
-
-def create_progress_status_block(
-    status: str,
-    completed_steps: int,
-    total_steps: int,
-    timestamp: str,
-    step_description: str | None = None,
-) -> MetadataBlock:
-    """Create an erk-implementation-status progress block with validation."""
-    schema = ProgressStatusSchema()
-    data = {
-        "status": status,
-        "completed_steps": completed_steps,
-        "total_steps": total_steps,
-        "timestamp": timestamp,
-    }
-    if step_description is not None:
-        data["step_description"] = step_description
     return create_metadata_block(
         key=schema.get_key(),
         data=data,

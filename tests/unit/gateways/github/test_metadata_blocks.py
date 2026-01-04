@@ -7,10 +7,8 @@ import pytest
 from erk_shared.github.metadata_blocks import (
     ImplementationStatusSchema,
     MetadataBlock,
-    ProgressStatusSchema,
     create_implementation_status_block,
     create_metadata_block,
-    create_progress_status_block,
     extract_metadata_value,
     extract_raw_metadata_blocks,
     find_metadata_block,
@@ -298,93 +296,6 @@ def test_implementation_status_schema_accepts_without_summary() -> None:
         "timestamp": "2025-11-22T12:00:00Z",
     }
     schema.validate(data)  # Should not raise
-
-
-# === ProgressStatusSchema Tests ===
-
-
-def test_progress_schema_validates_valid_data() -> None:
-    """Test ProgressStatusSchema accepts valid data."""
-    schema = ProgressStatusSchema()
-    data = {
-        "status": "in_progress",
-        "completed_steps": 3,
-        "total_steps": 5,
-        "timestamp": "2025-11-22T12:00:00Z",
-        "step_description": "Phase 1 complete",
-    }
-    schema.validate(data)  # Should not raise
-
-
-def test_progress_schema_validates_without_step_description() -> None:
-    """Test ProgressStatusSchema accepts data without optional step_description."""
-    schema = ProgressStatusSchema()
-    data = {
-        "status": "in_progress",
-        "completed_steps": 2,
-        "total_steps": 5,
-        "timestamp": "2025-11-22T12:00:00Z",
-    }
-    schema.validate(data)  # Should not raise
-
-
-def test_progress_schema_rejects_missing_required_field() -> None:
-    """Test ProgressStatusSchema rejects missing required fields."""
-    schema = ProgressStatusSchema()
-    data = {
-        "status": "in_progress",
-        "completed_steps": 3,
-        # missing total_steps
-        "timestamp": "2025-11-22T12:00:00Z",
-    }
-    with pytest.raises(ValueError, match="Missing required fields: total_steps"):
-        schema.validate(data)
-
-
-def test_progress_schema_rejects_invalid_status() -> None:
-    """Test ProgressStatusSchema rejects invalid status values."""
-    schema = ProgressStatusSchema()
-    data = {
-        "status": "invalid",
-        "completed_steps": 3,
-        "total_steps": 5,
-        "timestamp": "2025-11-22T12:00:00Z",
-    }
-    with pytest.raises(ValueError, match="Invalid status"):
-        schema.validate(data)
-
-
-def test_progress_schema_get_key() -> None:
-    """Test ProgressStatusSchema returns correct key."""
-    schema = ProgressStatusSchema()
-    assert schema.get_key() == "erk-implementation-status"
-
-
-def test_create_progress_status_block_with_description() -> None:
-    """Test create_progress_status_block with step_description."""
-    block = create_progress_status_block(
-        status="in_progress",
-        completed_steps=3,
-        total_steps=5,
-        timestamp="2025-11-22T12:00:00Z",
-        step_description="Phase 1 complete",
-    )
-    assert block.key == "erk-implementation-status"
-    assert block.data["status"] == "in_progress"
-    assert block.data["completed_steps"] == 3
-    assert block.data["step_description"] == "Phase 1 complete"
-
-
-def test_create_progress_status_block_without_description() -> None:
-    """Test create_progress_status_block without step_description."""
-    block = create_progress_status_block(
-        status="in_progress",
-        completed_steps=2,
-        total_steps=5,
-        timestamp="2025-11-22T12:00:00Z",
-    )
-    assert block.key == "erk-implementation-status"
-    assert "step_description" not in block.data
 
 
 # === Parsing Tests ===
@@ -843,12 +754,12 @@ Next steps:
 
 def test_render_erk_issue_event_with_all_parameters() -> None:
     """Test render_erk_issue_event with title, metadata, and description."""
-    block = create_progress_status_block(
+    block = create_implementation_status_block(
         status="in_progress",
         completed_steps=3,
         total_steps=5,
         timestamp="2025-11-22T12:00:00Z",
-        step_description="Phase 1 complete",
+        summary="Phase 1 complete",
     )
 
     comment = render_erk_issue_event(
@@ -903,7 +814,7 @@ def test_render_erk_issue_event_with_empty_description() -> None:
 
 def test_render_erk_issue_event_markdown_structure() -> None:
     """Test render_erk_issue_event produces valid markdown structure."""
-    block = create_progress_status_block(
+    block = create_implementation_status_block(
         status="in_progress",
         completed_steps=2,
         total_steps=4,

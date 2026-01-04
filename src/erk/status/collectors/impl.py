@@ -10,8 +10,6 @@ from erk.status.collectors.base import StatusCollector
 from erk.status.models.status_data import PlanStatus
 from erk_shared.impl_folder import (
     get_impl_path,
-    get_progress_path,
-    parse_progress_frontmatter,
     read_issue_reference,
 )
 
@@ -97,7 +95,6 @@ class PlanFileCollector(StatusCollector):
                 summary=None,
                 line_count=0,
                 first_lines=[],
-                progress_summary=None,
                 format="none",
                 enriched_plan_path=enriched_plan_path,
                 enriched_plan_filename=enriched_plan_filename,
@@ -126,9 +123,6 @@ class PlanFileCollector(StatusCollector):
         if summary and len(summary) > 100:
             summary = summary[:97] + "..."
 
-        # Calculate progress from progress.md
-        progress_summary, completion_percentage = self._calculate_progress(worktree_path)
-
         # Return folder path, not plan.md file path
         impl_folder = worktree_path / ".impl"
 
@@ -143,64 +137,9 @@ class PlanFileCollector(StatusCollector):
             summary=summary,
             line_count=line_count,
             first_lines=first_lines,
-            progress_summary=progress_summary,
             format="folder",
-            completion_percentage=completion_percentage,
             enriched_plan_path=enriched_plan_path,
             enriched_plan_filename=enriched_plan_filename,
             issue_number=issue_number,
             issue_url=issue_url,
         )
-
-    def _calculate_progress(self, worktree_path: Path) -> tuple[str | None, int | None]:
-        """Calculate progress from progress.md YAML frontmatter.
-
-        The YAML steps array is the source of truth for progress tracking.
-        Checkboxes are rendered output only.
-
-        Args:
-            worktree_path: Path to worktree
-
-        Returns:
-            Tuple of (progress_summary, completion_percentage)
-            - progress_summary: String like "3/10 steps completed" or None
-            - completion_percentage: Integer 0-100 or None if no YAML steps array
-        """
-        progress_path = get_progress_path(worktree_path)
-        if progress_path is None:
-            return None, None
-
-        content = progress_path.read_text(encoding="utf-8")
-
-        # Parse front matter
-        front_matter = parse_progress_frontmatter(content)
-
-        if front_matter is None:
-            return None, None
-
-        # Check for steps array (new format)
-        if "steps" in front_matter and isinstance(front_matter["steps"], list):
-            # New format: Read from YAML steps array (source of truth)
-            steps = front_matter["steps"]
-            total = len(steps)
-            if total == 0:
-                return None, None
-
-            completed = sum(1 for step in steps if step.get("completed", False))
-            completion_percentage = int((completed / total) * 100)
-            progress_summary = f"{completed}/{total} steps completed"
-            return progress_summary, completion_percentage
-
-        # Old format fallback: Read from completed_steps/total_steps fields
-        if "completed_steps" in front_matter and "total_steps" in front_matter:
-            completed = front_matter.get("completed_steps", 0)
-            total = front_matter.get("total_steps", 0)
-
-            if total == 0:
-                return None, None
-
-            completion_percentage = int((completed / total) * 100)
-            progress_summary = f"{completed}/{total} steps completed"
-            return progress_summary, completion_percentage
-
-        return None, None

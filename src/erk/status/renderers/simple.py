@@ -22,21 +22,6 @@ class SimpleRenderer:
         self._render_git_status(status)
         self._render_related_worktrees(status)
 
-    def _get_progress_emoji(self, percentage: int) -> str:
-        """Get progress emoji based on completion percentage.
-
-        Args:
-            percentage: Completion percentage (0-100)
-
-        Returns:
-            Emoji indicator: ⚪ (0%), 🟡 (1-99%), or 🟢 (100%)
-        """
-        if percentage == 0:
-            return "⚪"
-        if percentage == 100:
-            return "🟢"
-        return "🟡"
-
     def _render_file_list(self, files: list[str], *, max_files: int = 3) -> None:
         """Render a list of files with truncation.
 
@@ -122,26 +107,14 @@ class SimpleRenderer:
         if not has_plan_folder and not has_enriched_plan:
             return
 
-        # Build plan header with both indicators
+        # Build plan header
         plan_header = "Plan:"
-
-        # Add .impl/ folder progress indicator if exists
-        if has_plan_folder and status.plan.completion_percentage is not None:
-            # New format with emoji: "Plan: 🟡 7/10"
-            emoji = self._get_progress_emoji(status.plan.completion_percentage)
-            # Extract fraction from progress_summary (e.g., "3/10" from "3/10 steps completed")
-            if status.plan.progress_summary:
-                fraction = status.plan.progress_summary.split(" ")[0]  # Get "3/10" part
-                plan_header += f" {emoji} {fraction}"
 
         # Add enriched plan indicator if exists
         if has_enriched_plan and status.plan.enriched_plan_filename is not None:
-            # Add spacing if .impl/ folder exists
-            if has_plan_folder and status.plan.completion_percentage is not None:
-                plan_header += "  "
             # Strip suffixes and truncate to max 22 chars for display
             display_filename = self._truncate_plan_filename(status.plan.enriched_plan_filename)
-            plan_header += f"🆕 {display_filename}"
+            plan_header += f" 🆕 {display_filename}"
 
         user_output(click.style(plan_header, fg="bright_magenta", bold=True))
 
