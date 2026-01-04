@@ -27,12 +27,15 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
 )
+from erk.cli.commands.slot.common import extract_slot_number
+from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -167,18 +170,41 @@ def _cleanup_and_navigate(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     if worktree_path is not None:
-        # Confirm cleanup unless --force
-        if not force:
-            if not user_confirm(
-                f"Delete worktree '{worktree_path.name}' (branch '{branch}')?",
-                default=True,
-            ):
-                user_output("Worktree preserved. Branch still exists locally.")
-                # User declined deletion - stay in current location
-                return
+        # Check if this is a managed pool slot with an active assignment
+        slot_number = extract_slot_number(worktree_path.name)
+        pool_state = load_pool_state(repo.pool_json_path) if slot_number is not None else None
 
-        delete_branch_and_worktree(ctx, repo, branch, worktree_path)
-        user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
+        # Find assignment for this slot (if pool state exists)
+        assignment = None
+        if pool_state is not None:
+            for a in pool_state.assignments:
+                if a.slot_name == worktree_path.name:
+                    assignment = a
+                    break
+
+        if pool_state is not None and assignment is not None:
+            # This is a managed pool slot with an active assignment - unassign instead of delete
+            execute_unassign(ctx, repo, pool_state, assignment)
+            user_output(
+                click.style("✓ ", fg="green")
+                + f"Unassigned slot '{worktree_path.name}' (available for reuse)"
+            )
+            # Delete the branch since PR is merged
+            local_branches = ctx.git.list_local_branches(main_repo_root)
+            if branch in local_branches:
+                ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+        else:
+            # Either not a managed slot, or no pool state, or assignment not found (stale state)
+            # Use existing deletion behavior
+            if not force:
+                if not user_confirm(
+                    f"Delete worktree '{worktree_path.name}' (branch '{branch}')?",
+                    default=True,
+                ):
+                    user_output("Worktree preserved. Branch still exists locally.")
+                    return
+            delete_branch_and_worktree(ctx, repo, branch, worktree_path)
+            user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
     else:
         # No worktree - check if branch exists locally before deletion (LBYL)
         local_branches = ctx.git.list_local_branches(main_repo_root)
