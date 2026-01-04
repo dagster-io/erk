@@ -99,7 +99,7 @@ def slot_list(ctx: ErkContext) -> None:
     """List all pool slots with unified status view.
 
     Shows a table combining pool.json state and filesystem state:
-    - Slot: The pool slot name
+    - Worktree: The pool worktree name
     - Status: active (has assignment), ready (initialized), or empty
     - Branch: Assigned branch or "(available)"
     - Assigned: When the assignment was made (relative time)
@@ -129,7 +129,7 @@ def slot_list(ctx: ErkContext) -> None:
 
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
-    table.add_column("Slot", style="cyan", no_wrap=True)
+    table.add_column("Worktree", style="cyan", no_wrap=True)
     table.add_column("Status", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
     table.add_column("Assigned", no_wrap=True)
