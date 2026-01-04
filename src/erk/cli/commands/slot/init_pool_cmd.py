@@ -1,8 +1,8 @@
-"""Pooled init-slots command - proactively initialize pool slots."""
+"""Slot init-pool command - proactively initialize pool slots."""
 
 import click
 
-from erk.cli.commands.pooled.common import (
+from erk.cli.commands.slot.common import (
     generate_slot_name,
     get_placeholder_branch_name,
     get_pool_size,
@@ -20,7 +20,7 @@ from erk.core.worktree_pool import (
 from erk_shared.output.output import user_output
 
 
-@click.command("init-slots")
+@click.command("init-pool")
 @click.option(
     "-n",
     "--count",
@@ -33,20 +33,20 @@ from erk_shared.output.output import user_output
     help="Print what would be done without executing destructive operations.",
 )
 @click.pass_obj
-def pooled_init_slots(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None:
+def slot_init_pool(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None:
     """Initialize pool slots with worktrees and placeholder branches.
 
     Pre-creates worktrees with placeholder branches so they're ready for
-    immediate assignment. This makes `erk pooled plan` and `erk pooled create`
-    faster because they can reuse existing worktrees instead of creating new ones.
+    immediate assignment. This makes `erk slot create` faster because it can
+    reuse existing worktrees instead of creating new ones.
 
     By default, initializes slots up to the configured pool_size. Use -n to
     specify a different count.
 
     Examples:
-        erk pooled init-slots       # Initialize all slots up to pool_size
-        erk pooled init-slots -n 2  # Initialize just 2 slots
-        erk pooled init-slots --dry-run  # Preview without executing
+        erk slot init-pool       # Initialize all slots up to pool_size
+        erk slot init-pool -n 2  # Initialize just 2 slots
+        erk slot init-pool --dry-run  # Preview without executing
     """
     if dry_run:
         ctx = create_context(dry_run=True)

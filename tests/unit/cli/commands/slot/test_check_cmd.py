@@ -1,4 +1,4 @@
-"""Unit tests for pooled check command."""
+"""Unit tests for slot check command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,8 +27,8 @@ def _create_test_assignment(
     )
 
 
-def test_pooled_check_no_pool_configured() -> None:
-    """Test sync when no pool is configured shows error."""
+def test_slot_check_no_pool_configured() -> None:
+    """Test check when no pool is configured shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -50,14 +50,14 @@ def test_pooled_check_no_pool_configured() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "No pool configured" in result.output
 
 
-def test_pooled_check_no_issues() -> None:
-    """Test sync with consistent pool state shows no issues."""
+def test_slot_check_no_issues() -> None:
+    """Test check with consistent pool state shows no issues."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -96,7 +96,7 @@ def test_pooled_check_no_issues() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Pool Check Report" in result.output
@@ -104,8 +104,8 @@ def test_pooled_check_no_issues() -> None:
         assert "No issues found" in result.output
 
 
-def test_pooled_check_orphan_state() -> None:
-    """Test sync detects orphan state (assignment without directory)."""
+def test_slot_check_orphan_state() -> None:
+    """Test check detects orphan state (assignment without directory)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -139,7 +139,7 @@ def test_pooled_check_orphan_state() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -147,8 +147,8 @@ def test_pooled_check_orphan_state() -> None:
         assert "directory does not exist" in result.output
 
 
-def test_pooled_check_orphan_dir() -> None:
-    """Test sync detects orphan directory (directory without assignment)."""
+def test_slot_check_orphan_dir() -> None:
+    """Test check detects orphan directory (directory without assignment)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -179,7 +179,7 @@ def test_pooled_check_orphan_dir() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -187,8 +187,8 @@ def test_pooled_check_orphan_dir() -> None:
         assert "not in pool state" in result.output
 
 
-def test_pooled_check_missing_branch() -> None:
-    """Test sync detects missing branch (assignment to deleted branch)."""
+def test_slot_check_missing_branch() -> None:
+    """Test check detects missing branch (assignment to deleted branch)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -222,7 +222,7 @@ def test_pooled_check_missing_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -231,8 +231,8 @@ def test_pooled_check_missing_branch() -> None:
         assert "deleted" in result.output
 
 
-def test_pooled_check_git_registry_mismatch() -> None:
-    """Test sync detects mismatch between pool state and git worktree registry."""
+def test_slot_check_git_registry_mismatch() -> None:
+    """Test check detects mismatch between pool state and git worktree registry."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -269,7 +269,7 @@ def test_pooled_check_git_registry_mismatch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -278,8 +278,8 @@ def test_pooled_check_git_registry_mismatch() -> None:
         assert "git says 'different-branch'" in result.output
 
 
-def test_pooled_check_empty_pool() -> None:
-    """Test sync with empty pool shows clean state."""
+def test_slot_check_empty_pool() -> None:
+    """Test check with empty pool shows clean state."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -305,7 +305,7 @@ def test_pooled_check_empty_pool() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Pool Check Report" in result.output

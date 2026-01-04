@@ -1,4 +1,4 @@
-"""Unit tests for pooled checkout command."""
+"""Unit tests for slot checkout command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,7 +26,7 @@ def _create_test_assignment(
     )
 
 
-def test_pooled_checkout_by_branch_name() -> None:
+def test_slot_checkout_by_branch_name() -> None:
     """Test checkout to a pool slot by branch name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -57,14 +57,14 @@ def test_pooled_checkout_by_branch_name() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "checkout", "feature-branch"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "feature-branch"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
         assert "Shell integration not detected" in result.output
 
 
-def test_pooled_checkout_slot_name_not_supported() -> None:
+def test_slot_checkout_slot_name_not_supported() -> None:
     """Test that slot name lookup is not supported (only branch names)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -96,14 +96,14 @@ def test_pooled_checkout_slot_name_not_supported() -> None:
 
         # Trying to checkout by slot name should fail (only branch names supported)
         result = runner.invoke(
-            cli, ["pooled", "checkout", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No assignment found for branch" in result.output
 
 
-def test_pooled_checkout_no_argument_shows_error() -> None:
+def test_slot_checkout_no_argument_shows_error() -> None:
     """Test that checkout without argument shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -130,13 +130,13 @@ def test_pooled_checkout_no_argument_shows_error() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "checkout"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "checkout"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "Specify branch name to checkout" in result.output
 
 
-def test_pooled_checkout_not_found() -> None:
+def test_slot_checkout_not_found() -> None:
     """Test checkout to non-existent branch shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -164,14 +164,14 @@ def test_pooled_checkout_not_found() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "checkout", "nonexistent"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "nonexistent"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No assignment found" in result.output
 
 
-def test_pooled_checkout_no_pool_configured() -> None:
+def test_slot_checkout_no_pool_configured() -> None:
     """Test checkout when no pool is configured shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -197,14 +197,14 @@ def test_pooled_checkout_no_pool_configured() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "checkout", "something"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "something"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No pool configured" in result.output
 
 
-def test_pooled_checkout_already_in_slot() -> None:
+def test_slot_checkout_already_in_slot() -> None:
     """Test checkout to current slot shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -239,14 +239,14 @@ def test_pooled_checkout_already_in_slot() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo, cwd=worktree_path)
 
         result = runner.invoke(
-            cli, ["pooled", "checkout", "feature-test"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "checkout", "feature-test"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "Already in pool slot" in result.output
 
 
-def test_pooled_checkout_script_mode() -> None:
+def test_slot_checkout_script_mode() -> None:
     """Test checkout with --script flag outputs activation script path."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -278,7 +278,7 @@ def test_pooled_checkout_script_mode() -> None:
 
         result = runner.invoke(
             cli,
-            ["pooled", "checkout", "--script", "feature-test"],
+            ["slot", "checkout", "--script", "feature-test"],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -290,7 +290,7 @@ def test_pooled_checkout_script_mode() -> None:
         assert output.endswith(".sh") or "erk-activation" in output
 
 
-def test_pooled_checkout_with_entry_scripts() -> None:
+def test_slot_checkout_with_entry_scripts() -> None:
     """Test checkout includes entry scripts from pool.checkout config."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -333,7 +333,7 @@ commands = ["git fetch origin", "echo 'Entry script executed'"]
 
         result = runner.invoke(
             cli,
-            ["pooled", "checkout", "--script", "feature-test"],
+            ["slot", "checkout", "--script", "feature-test"],
             obj=test_ctx,
             catch_exceptions=False,
         )

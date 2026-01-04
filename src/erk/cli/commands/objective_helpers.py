@@ -1,7 +1,7 @@
 """Shared helpers for objective tracking in land commands.
 
-These helpers are used by both `erk land` and `erk pooled land` commands
-to check for linked objectives and prompt users to update them after landing.
+These helpers are used by `erk land` to check for linked objectives
+and prompt users to update them after landing.
 """
 
 from pathlib import Path

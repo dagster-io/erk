@@ -8,7 +8,7 @@ from typing import Any, cast
 import click
 import tomlkit
 
-from erk.cli.commands.pooled.common import DEFAULT_POOL_SIZE
+from erk.cli.commands.slot.common import DEFAULT_POOL_SIZE
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure

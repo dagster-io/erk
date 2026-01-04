@@ -81,7 +81,8 @@ def test_compound_commands_have_all_expected_entries() -> None:
         "pr checkout",
         "pr co",  # alias for pr checkout
         # Note: "pr land" was moved to top-level "land" command in #3711
-        "pooled land",  # pooled land supports shell integration
+        "slot checkout",  # slot checkout supports shell integration
+        "slot co",  # alias for slot checkout
     ]
 
     for cmd in expected_compound_commands:
@@ -506,11 +507,12 @@ def test_passthrough_flags_include_yolo_and_no_interactive() -> None:
         assert result.passthrough is True, f"{flag} should cause passthrough"
 
 
-def test_pooled_implement_registered() -> None:
-    """Verify 'pooled implement' is registered for shell integration.
+def test_slot_checkout_registered() -> None:
+    """Verify 'slot checkout' is registered for shell integration.
 
-    Without this registration, 'erk pooled implement' leaves the shell at the
-    root repo after Claude exits instead of staying in the worktree. The shell
-    wrapper needs to generate an activation script to change the shell's cwd.
+    Without this registration, 'erk slot checkout' cannot change the shell's
+    working directory. The shell wrapper needs to generate an activation
+    script to change the shell's cwd.
     """
-    assert "pooled implement" in SHELL_INTEGRATION_COMMANDS
+    assert "slot checkout" in SHELL_INTEGRATION_COMMANDS
+    assert "slot co" in SHELL_INTEGRATION_COMMANDS

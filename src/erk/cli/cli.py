@@ -26,13 +26,12 @@ from erk.cli.commands.objective import objective_group
 from erk.cli.commands.plan import plan_group
 from erk.cli.commands.plan.list_cmd import dash
 from erk.cli.commands.planner import planner_group
-from erk.cli.commands.pooled import pooled_group
 from erk.cli.commands.pr import pr_group
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
 from erk.cli.commands.run import run_group
 from erk.cli.commands.shell_integration import hidden_shell_cmd
-from erk.cli.commands.slots import slots_group
+from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
 from erk.cli.commands.wt import wt_group
@@ -190,9 +189,8 @@ cli.add_command(planner_group)
 cli.add_command(pr_group)
 cli.add_command(info_group)
 cli.add_command(objective_group)
-cli.add_command(pooled_group)
 cli.add_command(project_group)
-cli.add_command(slots_group)
+cli.add_command(slot_group)
 cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
