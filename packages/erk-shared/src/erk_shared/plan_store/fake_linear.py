@@ -10,6 +10,11 @@ Key differences from GitHub that this fake models:
 - Comment IDs are UUID strings (not integers)
 - Metadata stored in custom_fields (not YAML in body)
 
+Sources:
+- docs/learned/integrations/linear-primitives.md (Linear API and GraphQL schema)
+- docs/learned/integrations/linear-erk-mapping.md (erk-to-Linear concept mapping)
+- Linear GraphQL schema: https://github.com/linear/linear/blob/master/packages/sdk/src/schema.graphql
+
 ABC Abstraction Validation Results:
 ========================================
 
