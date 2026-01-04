@@ -38,7 +38,6 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.extraction.local_plans import extract_slugs_from_session, get_plans_dir
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
@@ -135,32 +134,6 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
         "Lifecycle: Deleted after being read by next hook invocation\n",
         encoding="utf-8",
     )
-
-
-def _get_source_plan_file(
-    plan_file: Path | None,
-    session_id: str,
-    cwd: Path,
-) -> Path | None:
-    """Determine the Claude plan file path to snapshot and delete.
-
-    Args:
-        plan_file: Explicitly provided plan file path (highest priority).
-        session_id: Session ID for slug-based lookup.
-        cwd: Current working directory for hint.
-
-    Returns:
-        Path to the Claude plan file, or None if not found.
-    """
-    if plan_file:
-        return plan_file
-
-    # Look up slug from session to find plan file
-    slugs = extract_slugs_from_session(session_id, cwd_hint=str(cwd))
-    if slugs:
-        return get_plans_dir() / f"{slugs[-1]}.md"
-
-    return None
 
 
 @click.command(name="plan-save-to-issue")
@@ -339,18 +312,24 @@ def plan_save_to_issue(
         _create_plan_saved_marker(effective_session_id, repo_root)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
-        claude_plan_file = _get_source_plan_file(plan_file, effective_session_id, cwd)
+        # Determine plan file path
+        if plan_file:
+            snapshot_path = plan_file
+        else:
+            # Look up slug from session to find plan file
+            snapshot_path = claude_installation.find_plan_for_session(cwd, effective_session_id)
 
-        if claude_plan_file is not None and claude_plan_file.exists():
+        if snapshot_path is not None and snapshot_path.exists():
             snapshot_result = snapshot_plan_for_session(
                 session_id=effective_session_id,
-                plan_file_path=claude_plan_file,
-                cwd_hint=str(cwd),
+                plan_file_path=snapshot_path,
+                project_cwd=cwd,
+                claude_installation=claude_installation,
                 repo_root=repo_root,
             )
             # Delete the Claude plan file to prevent stale content from being re-saved
             # The content is now safely archived in .erk/scratch/ and on GitHub
-            claude_plan_file.unlink()
+            snapshot_path.unlink()
 
     # Step 10: Output success
     # Detect enrichment status for informational output

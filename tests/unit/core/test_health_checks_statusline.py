@@ -14,7 +14,13 @@ from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 def test_returns_info_when_no_settings_file() -> None:
     """Test returns info-level result when no global settings file exists."""
     installation = FakeClaudeInstallation(
-        projects=None, plans=None, settings=None, local_settings=None
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_statusline_configured(installation)
@@ -43,6 +49,9 @@ def test_returns_configured_when_erk_statusline_present(
             }
         },
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_statusline_configured(installation)
@@ -66,6 +75,9 @@ def test_returns_info_when_different_statusline() -> None:
             }
         },
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_statusline_configured(installation)
@@ -87,6 +99,9 @@ def test_returns_info_when_no_statusline_in_settings() -> None:
         plans=None,
         settings={"permissions": {"allow": []}},
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_statusline_configured(installation)

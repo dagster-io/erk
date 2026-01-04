@@ -7,7 +7,6 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts import plan_save_to_issue as plan_save_to_issue_module
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     inject_steps_into_plan,
     plan_save_to_issue,
@@ -41,6 +40,9 @@ steps:
         plans={"test-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -79,6 +81,9 @@ Context here"""
         plans={"enriched-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -105,6 +110,9 @@ def test_plan_save_to_issue_no_plan() -> None:
         plans=None,
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -140,6 +148,9 @@ steps:
         plans={"format-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -184,6 +195,9 @@ steps:
         plans={"display-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -227,6 +241,9 @@ Steps here"""
         plans={"label-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -285,6 +302,9 @@ steps:
         plans={"session-context-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={"test-session-id": ["session-context-test"]},
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -332,6 +352,9 @@ steps:
         plans={"no-session-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -373,6 +396,9 @@ steps:
         plans={"metadata-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -401,17 +427,11 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that --session-id argument still creates marker file even with context disabled."""
+    _ = monkeypatch  # Unused but kept for test signature compatibility
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
-    )
-
-    # Patch to avoid reading real ~/.claude/projects/
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "extract_slugs_from_session",
-        lambda *args, **kwargs: [],
     )
 
     test_session_id = "test-session-12345"
@@ -429,6 +449,9 @@ steps:
         plans={"session-id-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -497,6 +520,9 @@ steps:
         plans={"display-session-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={"test-session-id": ["display-session-test"]},
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -552,6 +578,9 @@ steps:
         plans={"store-session-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -615,6 +644,9 @@ steps:
         plans={"session-flag-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={flag_session_id: ["session-flag-test"]},
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     runner = CliRunner()
@@ -657,6 +689,9 @@ steps:
         plans={"marker-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -711,6 +746,9 @@ steps:
         plans={"no-marker-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -864,6 +902,9 @@ def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
         plans={"no-frontmatter": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -900,6 +941,9 @@ Details here.
         plans={"with-frontmatter": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -995,6 +1039,9 @@ This plan has no frontmatter steps.
         plans={"no-steps-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1037,6 +1084,9 @@ Details here.
         plans={"existing-steps-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1074,6 +1124,9 @@ One step plan.
         plans={"single-step-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1104,6 +1157,9 @@ No steps in frontmatter and no --steps provided.
         plans={"no-steps-anywhere": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
     runner = CliRunner()
 
@@ -1122,9 +1178,7 @@ No steps in frontmatter and no --steps provided.
     assert "Plan missing required 'steps' in frontmatter" in output["error"]
 
 
-def test_plan_save_to_issue_deletes_plan_file_after_save(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_plan_save_to_issue_deletes_plan_file_after_save(tmp_path: Path) -> None:
     """Verify Claude plan file is deleted after successful save.
 
     When a plan is saved to GitHub with a session ID, the original
@@ -1143,31 +1197,20 @@ steps:
 
 - Step 1"""
 
-    # Create the plan file at the location that will be discovered
+    # Set up a real plans directory so we can verify deletion
     plans_dir = tmp_path / ".claude" / "plans"
     plans_dir.mkdir(parents=True)
     plan_file = plans_dir / f"{test_slug}.md"
     plan_file.write_text(plan_content, encoding="utf-8")
-
-    # Mock extract_slugs_from_session to return our test slug
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "extract_slugs_from_session",
-        lambda *args, **kwargs: [test_slug],
-    )
-
-    # Mock get_plans_dir to return our test location
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "get_plans_dir",
-        lambda: plans_dir,
-    )
 
     fake_store = FakeClaudeInstallation(
         projects=None,
         plans={test_slug: plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={test_session_id: [test_slug]},
+        session_planning_agents=None,
+        plans_dir_path=plans_dir,
     )
 
     runner = CliRunner()

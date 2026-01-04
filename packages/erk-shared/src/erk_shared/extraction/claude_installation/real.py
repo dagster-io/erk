@@ -9,6 +9,10 @@ from erk_shared.extraction.claude_installation.abc import (
     SessionContent,
     SessionNotFound,
 )
+from erk_shared.extraction.session_schema import (
+    extract_agent_id_from_tool_result,
+    extract_task_tool_use_id,
+)
 
 
 def _extract_parent_session_id(agent_log_path: Path) -> str | None:
@@ -195,11 +199,27 @@ class RealClaudeInstallation(ClaudeInstallation):
         Returns:
             Plan content as markdown string, or None if no plan found
         """
-        from erk_shared.extraction.local_plans import get_latest_plan_content
+        plans_dir = self.get_plans_dir_path()
+        if not plans_dir.exists():
+            return None
 
-        # Note: project_cwd could be used for session correlation in future
-        _ = project_cwd
-        return get_latest_plan_content(session_id=session_id)
+        # Session-scoped lookup via slug extraction
+        if session_id:
+            plan_file = self.find_plan_for_session(project_cwd, session_id)
+            if plan_file is not None:
+                return plan_file.read_text(encoding="utf-8")
+
+        # Fallback: mtime-based selection
+        plan_files = sorted(
+            [f for f in plans_dir.glob("*.md") if f.is_file()],
+            key=lambda f: f.stat().st_mtime,
+            reverse=True,
+        )
+
+        if not plan_files:
+            return None
+
+        return plan_files[0].read_text(encoding="utf-8")
 
     def get_session(
         self,
@@ -278,3 +298,147 @@ class RealClaudeInstallation(ClaudeInstallation):
             return {}
         content = path.read_text(encoding="utf-8")
         return json.loads(content)
+
+    # --- Plan operations ---
+
+    def get_plans_dir_path(self) -> Path:
+        """Return path to ~/.claude/plans/ directory."""
+        return Path.home() / ".claude" / "plans"
+
+    def _iter_session_entries(
+        self, project_dir: Path, session_id: str, max_lines: int | None
+    ) -> list[dict]:
+        """Iterate over JSONL entries matching a session ID in a project directory.
+
+        Args:
+            project_dir: Path to project directory
+            session_id: Session ID to filter entries by
+            max_lines: Optional max lines to read per file (for existence checks)
+
+        Returns:
+            List of JSON entries matching the session ID
+        """
+        entries: list[dict] = []
+
+        for jsonl_file in project_dir.glob("*.jsonl"):
+            if jsonl_file.name.startswith("agent-"):
+                continue
+
+            with open(jsonl_file, encoding="utf-8") as f:
+                for i, line in enumerate(f):
+                    if max_lines is not None and i >= max_lines:
+                        break
+                    line = line.strip()
+                    if not line:
+                        continue
+                    entry = json.loads(line)
+                    if entry.get("sessionId") == session_id:
+                        entries.append(entry)
+
+        return entries
+
+    def extract_slugs_from_session(self, project_cwd: Path, session_id: str) -> list[str]:
+        """Extract plan slugs from session log entries.
+
+        Searches session logs for entries with the given session ID
+        and collects any slug fields found. Slugs indicate plan mode
+        was entered and correspond to plan filenames.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: The session ID to search for
+
+        Returns:
+            List of slugs in occurrence order (last = most recent)
+        """
+        project_dir = self._get_project_dir(project_cwd)
+        if project_dir is None:
+            return []
+
+        # Read all entries (no line limit) and extract unique slugs
+        entries = self._iter_session_entries(project_dir, session_id, max_lines=None)
+
+        slugs: list[str] = []
+        seen_slugs: set[str] = set()
+
+        for entry in entries:
+            slug = entry.get("slug")
+            if slug and slug not in seen_slugs:
+                slugs.append(slug)
+                seen_slugs.add(slug)
+
+        return slugs
+
+    def extract_planning_agent_ids(self, project_cwd: Path, session_id: str) -> list[str]:
+        """Extract agent IDs for Task invocations with subagent_type='Plan'.
+
+        Searches session logs for Task tool invocations where subagent_type is "Plan",
+        then correlates with tool_result entries to extract the agentId.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: The session ID to search for
+
+        Returns:
+            List of agent IDs in format ["agent-<id>", ...]
+        """
+        project_dir = self._get_project_dir(project_cwd)
+        if project_dir is None:
+            return []
+
+        # Read all entries for this session
+        entries = self._iter_session_entries(project_dir, session_id, max_lines=None)
+
+        # Step 1: Collect Task tool_use entries with subagent_type="Plan"
+        plan_task_ids: set[str] = set()
+
+        # Step 2: Collect tool_result entries: tool_use_id -> agentId
+        tool_to_agent: dict[str, str] = {}
+
+        for entry in entries:
+            entry_type = entry.get("type")
+
+            if entry_type == "assistant":
+                tool_use_id = extract_task_tool_use_id(entry, subagent_type="Plan")
+                if tool_use_id is not None:
+                    plan_task_ids.add(tool_use_id)
+
+            elif entry_type == "user":
+                result = extract_agent_id_from_tool_result(entry)
+                if result is not None:
+                    tool_use_id, agent_id = result
+                    tool_to_agent[tool_use_id] = agent_id
+
+        # Step 3: Match Plan Task IDs with their agent IDs
+        agent_ids: list[str] = []
+        for tool_use_id in plan_task_ids:
+            agent_id = tool_to_agent.get(tool_use_id)
+            if agent_id:
+                agent_ids.append(f"agent-{agent_id}")
+
+        return agent_ids
+
+    def find_plan_for_session(self, project_cwd: Path, session_id: str) -> Path | None:
+        """Find plan file path for session using slug lookup.
+
+        Searches session logs for slug entries and returns the corresponding
+        plan file path if found.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: Session ID to search for plan slugs
+
+        Returns:
+            Path to plan file if found, None otherwise
+        """
+        slugs = self.extract_slugs_from_session(project_cwd, session_id)
+        if not slugs:
+            return None
+
+        # Use most recent slug (last in list)
+        slug = slugs[-1]
+        plan_file = self.get_plans_dir_path() / f"{slug}.md"
+        if plan_file.exists() and plan_file.is_file():
+            return plan_file
+
+        return None

@@ -50,6 +50,9 @@ def test_list_sessions_shows_sessions() -> None:
             plans=None,
             settings=None,
             local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -87,6 +90,9 @@ def test_list_sessions_respects_limit() -> None:
             plans=None,
             settings=None,
             local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -108,7 +114,13 @@ def test_list_sessions_no_project() -> None:
     with erk_inmem_env(runner) as env:
         # Empty session store - no projects
         session_store = FakeClaudeInstallation(
-            projects={}, plans=None, settings=None, local_settings=None
+            projects={},
+            plans=None,
+            settings=None,
+            local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -129,6 +141,9 @@ def test_list_sessions_empty_project() -> None:
             plans=None,
             settings=None,
             local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -164,6 +179,9 @@ def test_list_sessions_sorted_by_time() -> None:
             plans=None,
             settings=None,
             local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -204,6 +222,9 @@ def test_list_sessions_excludes_agents_by_default() -> None:
             plans=None,
             settings=None,
             local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -245,6 +266,9 @@ def test_list_sessions_include_agents_flag() -> None:
             plans=None,
             settings=None,
             local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)

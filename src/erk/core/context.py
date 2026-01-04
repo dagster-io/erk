@@ -133,7 +133,13 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         plan_list_service=FakePlanListService(),
         planner_registry=FakePlannerRegistry(),
         claude_installation=FakeClaudeInstallation(
-            projects=None, plans=None, settings=None, local_settings=None
+            projects=None,
+            plans=None,
+            settings=None,
+            local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         ),
         prompt_executor=FakePromptExecutor(),
         claude_settings_store=FakeClaudeSettingsStore(),
@@ -275,7 +281,13 @@ def context_for_test(
 
     if claude_installation is None:
         claude_installation = FakeClaudeInstallation(
-            projects=None, plans=None, settings=None, local_settings=None
+            projects=None,
+            plans=None,
+            settings=None,
+            local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
         )
 
     if prompt_executor is None:

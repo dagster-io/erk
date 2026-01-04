@@ -318,7 +318,13 @@ def test_check_uv_version_with_build_info() -> None:
 def test_check_hooks_disabled_no_files() -> None:
     """Test when no settings files exist."""
     installation = FakeClaudeInstallation(
-        projects=None, plans=None, settings=None, local_settings=None
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)
@@ -336,6 +342,9 @@ def test_check_hooks_disabled_in_settings() -> None:
         plans=None,
         settings={"hooks": {"disabled": True}},
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)
@@ -357,6 +366,9 @@ def test_check_hooks_disabled_in_local(tmp_path: Path) -> None:
         plans=None,
         settings=None,  # No global settings
         local_settings={"hooks": {"disabled": True}},  # Not used yet in check
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     # For now, the local settings check still reads from filesystem
@@ -376,6 +388,9 @@ def test_check_hooks_disabled_false() -> None:
         plans=None,
         settings={"hooks": {"disabled": False}},
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)
@@ -392,6 +407,9 @@ def test_check_hooks_disabled_no_hooks_key() -> None:
         plans=None,
         settings={"other_key": "value"},
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
     )
 
     result = check_hooks_disabled(installation)

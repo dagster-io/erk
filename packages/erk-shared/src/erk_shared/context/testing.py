@@ -88,7 +88,15 @@ def context_for_test(
     resolved_claude_installation: ClaudeInstallation = (
         claude_installation
         if claude_installation is not None
-        else FakeClaudeInstallation(projects=None, plans=None, settings=None, local_settings=None)
+        else FakeClaudeInstallation(
+            projects=None,
+            plans=None,
+            settings=None,
+            local_settings=None,
+            session_slugs=None,
+            session_planning_agents=None,
+            plans_dir_path=None,
+        )
     )
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
