@@ -17,32 +17,6 @@ This separation keeps machine-readable metadata in the body while the human-read
 
 ## Agent Instructions
 
-### Step 0: Ensure Plan Has Steps
-
-Plans require steps for tracking during implementation. You have two options:
-
-**Option A: Frontmatter steps in plan file**
-
-Verify the plan file has a `steps:` array in YAML frontmatter:
-
-```markdown
----
-steps:
-  - name: "First implementation step"
-  - name: "Second implementation step"
----
-
-# Plan Title
-
-...
-```
-
-If missing, edit the plan file to add frontmatter steps.
-
-**Option B: Use --steps CLI option**
-
-Provide steps directly via the CLI (see Step 2). This injects steps into the plan at save time, useful when you don't want to modify the plan file.
-
 ### Step 1: Extract Session ID
 
 Get the session ID from the `SESSION_CONTEXT` reminder in your conversation context.
@@ -54,14 +28,6 @@ Run this command with the extracted session ID:
 ```bash
 erk exec plan-save-to-issue --format display --session-id="<session-id-from-step-1>"
 ```
-
-**With --steps option** (if plan lacks frontmatter steps):
-
-```bash
-erk exec plan-save-to-issue --format display --session-id="<session-id>" --steps "First step" --steps "Second step"
-```
-
-The `--steps` option is repeatable and injects steps into the plan frontmatter, overriding any existing steps.
 
 ### Step 3: Display Results
 
