@@ -224,17 +224,22 @@ def _create_worktree_with_plan_content(
             if use_graphite:
                 ctx.graphite.track_branch(repo_root, branch, base_branch)
 
-        # Create directory for worktree if needed
-        wt_path.mkdir(parents=True, exist_ok=True)
+        # Check if worktree directory already exists (from pool initialization)
+        if wt_path.exists():
+            # Worktree already exists - check out the branch
+            ctx.git.checkout_branch(wt_path, branch)
+        else:
+            # Create directory for worktree
+            wt_path.mkdir(parents=True, exist_ok=True)
 
-        # Add worktree
-        ctx.git.add_worktree(
-            repo_root,
-            wt_path,
-            branch=branch,
-            ref=None,
-            create_branch=False,
-        )
+            # Add worktree
+            ctx.git.add_worktree(
+                repo_root,
+                wt_path,
+                branch=branch,
+                ref=None,
+                create_branch=False,
+            )
 
     ctx.feedback.success(f"✓ Assigned {branch} to {slot_name}")
 
