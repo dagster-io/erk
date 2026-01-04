@@ -195,6 +195,7 @@ def activate_root_repo(
 
 
 def activate_worktree(
+    *,
     ctx: ErkContext,
     repo: RepoContext,
     target_path: Path,

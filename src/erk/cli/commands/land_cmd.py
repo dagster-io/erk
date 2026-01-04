@@ -306,10 +306,10 @@ def _navigate_after_land(
             + f" Run 'gt restack' in {target_child_branch} to update PR base branch"
         )
         activate_worktree(
-            ctx,
-            post_deletion_repo,
-            target_path,
-            script,
+            ctx=ctx,
+            repo=post_deletion_repo,
+            target_path=target_path,
+            script=script,
             command_name="land",
             preserve_relative_path=True,
             post_cd_commands=None,

@@ -1,5 +1,6 @@
 """Pooled sync command - check pool state consistency with disk and git."""
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
@@ -13,15 +14,21 @@ from erk_shared.output.output import user_output
 
 # Type alias for sync issue codes - using Literal for type safety
 SyncIssueCode = Literal[
-    "ORPHAN_STATE",
-    "ORPHAN_DIR",
-    "MISSING_BRANCH",
-    "BRANCH_MISMATCH",
-    "GIT_REGISTRY_MISSING",
-    "UNTRACKED_WORKTREE",
+    "orphan-state",
+    "orphan-dir",
+    "missing-branch",
+    "branch-mismatch",
+    "git-registry-missing",
+    "untracked-worktree",
 ]
 
-SyncIssue = tuple[SyncIssueCode, str]
+
+@dataclass(frozen=True)
+class SyncIssue:
+    """A sync diagnostic issue found during pool state check."""
+
+    code: SyncIssueCode
+    message: str
 
 
 def _find_erk_managed_dirs(worktrees_dir: Path, git: Git) -> set[str]:
@@ -82,9 +89,9 @@ def _check_orphan_states(
     for assignment in assignments:
         if not ctx.git.path_exists(assignment.worktree_path):
             issues.append(
-                (
-                    "ORPHAN_STATE",
-                    f"Slot {assignment.slot_name}: directory does not exist",
+                SyncIssue(
+                    code="orphan-state",
+                    message=f"Slot {assignment.slot_name}: directory does not exist",
                 )
             )
     return issues
@@ -110,9 +117,9 @@ def _check_orphan_dirs(
     for slot_name in fs_slots:
         if slot_name not in assigned_slots:
             issues.append(
-                (
-                    "ORPHAN_DIR",
-                    f"Directory {slot_name}: not in pool state",
+                SyncIssue(
+                    code="orphan-dir",
+                    message=f"Directory {slot_name}: not in pool state",
                 )
             )
     return issues
@@ -137,12 +144,8 @@ def _check_missing_branches(
     for assignment in assignments:
         # Check if branch exists by getting its head commit
         if ctx.git.get_branch_head(repo_root, assignment.branch_name) is None:
-            issues.append(
-                (
-                    "MISSING_BRANCH",
-                    f"Slot {assignment.slot_name}: branch '{assignment.branch_name}' deleted",
-                )
-            )
+            msg = f"Slot {assignment.slot_name}: branch '{assignment.branch_name}' deleted"
+            issues.append(SyncIssue(code="missing-branch", message=msg))
     return issues
 
 
@@ -167,19 +170,17 @@ def _check_git_worktree_mismatch(
             wt = git_slots[assignment.slot_name]
             # Check if branch matches
             if wt.branch != assignment.branch_name:
-                issues.append(
-                    (
-                        "BRANCH_MISMATCH",
-                        f"Slot {assignment.slot_name}: pool says '{assignment.branch_name}', "
-                        f"git says '{wt.branch}'",
-                    )
+                msg = (
+                    f"Slot {assignment.slot_name}: pool says '{assignment.branch_name}', "
+                    f"git says '{wt.branch}'"
                 )
+                issues.append(SyncIssue(code="branch-mismatch", message=msg))
         else:
             # Slot is in pool.json but not in git worktree registry
             issues.append(
-                (
-                    "GIT_REGISTRY_MISSING",
-                    f"Slot {assignment.slot_name}: not in git worktree registry",
+                SyncIssue(
+                    code="git-registry-missing",
+                    message=f"Slot {assignment.slot_name}: not in git worktree registry",
                 )
             )
 
@@ -188,7 +189,7 @@ def _check_git_worktree_mismatch(
     for slot_name, wt in git_slots.items():
         if slot_name not in assigned_slots:
             msg = f"Slot {slot_name}: in git registry (branch '{wt.branch}') but not in pool state"
-            issues.append(("UNTRACKED_WORKTREE", msg))
+            issues.append(SyncIssue(code="untracked-worktree", message=msg))
 
     return issues
 
@@ -268,7 +269,7 @@ def pooled_sync(ctx: ErkContext) -> None:
 
     if issues:
         user_output("Issues Found:")
-        for issue_type, message in issues:
-            user_output(f"  [{issue_type}] {message}")
+        for issue in issues:
+            user_output(f"  [{issue.code}] {issue.message}")
     else:
         user_output(click.style("✓ No issues found", fg="green"))

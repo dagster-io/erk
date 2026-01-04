@@ -151,7 +151,7 @@ def test_pooled_sync_orphan_state() -> None:
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
-        assert "[ORPHAN_STATE]" in result.output
+        assert "[orphan-state]" in result.output
         assert "directory does not exist" in result.output
 
 
@@ -195,7 +195,7 @@ def test_pooled_sync_orphan_dir() -> None:
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
-        assert "[ORPHAN_DIR]" in result.output
+        assert "[orphan-dir]" in result.output
         assert "not in pool state" in result.output
 
 
@@ -242,7 +242,7 @@ def test_pooled_sync_missing_branch() -> None:
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
-        assert "[MISSING_BRANCH]" in result.output
+        assert "[missing-branch]" in result.output
         assert "feature-deleted" in result.output
         assert "deleted" in result.output
 
@@ -293,7 +293,7 @@ def test_pooled_sync_git_registry_mismatch() -> None:
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
-        assert "[BRANCH_MISMATCH]" in result.output
+        assert "[branch-mismatch]" in result.output
         assert "pool says 'feature-test'" in result.output
         assert "git says 'different-branch'" in result.output
 

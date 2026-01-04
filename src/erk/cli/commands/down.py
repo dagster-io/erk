@@ -161,11 +161,11 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     else:
         # No cleanup needed, use standard activation
         activate_worktree(
-            ctx,
-            repo,
-            target_wt_path,
-            script,
-            "down",
+            ctx=ctx,
+            repo=repo,
+            target_path=target_wt_path,
+            script=script,
+            command_name="down",
             preserve_relative_path=True,
             post_cd_commands=None,
         )

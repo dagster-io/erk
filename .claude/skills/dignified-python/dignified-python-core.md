@@ -734,22 +734,27 @@ When strings represent a fixed set of valid values (error codes, status values, 
 ### Pattern
 
 ```python
+from dataclasses import dataclass
 from typing import Literal
 
 # ✅ CORRECT: Define a type alias for the valid values
-IssueCode = Literal["ORPHAN_STATE", "ORPHAN_DIR", "MISSING_BRANCH"]
-Issue = tuple[IssueCode, str]
+IssueCode = Literal["orphan-state", "orphan-dir", "missing-branch"]
+
+@dataclass(frozen=True)
+class Issue:
+    code: IssueCode
+    message: str
 
 def check_state() -> list[Issue]:
     issues: list[Issue] = []
     if problem_detected:
-        issues.append(("ORPHAN_STATE", "description"))  # Type-checked!
+        issues.append(Issue(code="orphan-state", message="description"))  # Type-checked!
     return issues
 
 # ❌ WRONG: Bare strings without type constraint
 def check_state() -> list[tuple[str, str]]:
     issues: list[tuple[str, str]] = []
-    issues.append(("ORPHEN_STATE", "desc"))  # Typo goes unnoticed!
+    issues.append(("orphen-state", "desc"))  # Typo goes unnoticed!
     return issues
 ```
 

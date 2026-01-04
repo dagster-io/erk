@@ -74,11 +74,11 @@ def pooled_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
 
     # Activate the worktree with entry scripts
     activate_worktree(
-        ctx,
-        repo,
-        assignment.worktree_path,
-        script,
-        "pooled checkout",
+        ctx=ctx,
+        repo=repo,
+        target_path=assignment.worktree_path,
+        script=script,
+        command_name="pooled checkout",
         preserve_relative_path=True,
         post_cd_commands=post_cd_commands,
     )
