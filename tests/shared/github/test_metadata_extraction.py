@@ -12,7 +12,9 @@ from erk_shared.github.metadata import (
     extract_plan_header_local_impl_at,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
+    find_metadata_block,
     update_plan_header_comment_id,
+    update_plan_header_metadata,
     update_plan_header_remote_impl,
     update_plan_header_worktree_name,
 )
@@ -579,3 +581,133 @@ last_dispatched_at: '2025-11-26T08:00:00Z'
     # Should have the new comment ID
     comment_id = extract_plan_header_comment_id(result)
     assert comment_id == 55555555
+
+
+# === Generic Metadata Update Tests ===
+
+
+def test_update_plan_header_metadata_single_field() -> None:
+    """Test update_plan_header_metadata updates a single field."""
+    issue_body = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2025-01-15T10:30:00Z'
+created_by: testuser
+worktree_name: null
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: null
+last_remote_impl_at: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = update_plan_header_metadata(issue_body, {"worktree_name": "my-worktree"})
+
+    # Should have updated worktree_name
+    worktree_name = extract_plan_header_worktree_name(result)
+    assert worktree_name == "my-worktree"
+
+
+def test_update_plan_header_metadata_multiple_fields() -> None:
+    """Test update_plan_header_metadata updates multiple fields at once."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2025-01-15T10:30:00Z'
+created_by: testuser
+worktree_name: null
+last_dispatched_run_id: null
+last_dispatched_at: null
+last_local_impl_at: null
+last_remote_impl_at: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = update_plan_header_metadata(
+        issue_body,
+        {
+            "worktree_name": "feature-branch",
+            "last_local_impl_at": "2025-01-16T08:00:00Z",
+            "last_local_impl_event": "started",
+        },
+    )
+
+    # Verify all fields were updated
+    block = find_metadata_block(result, "plan-header")
+    assert block is not None
+    assert block.data.get("worktree_name") == "feature-branch"
+    assert block.data.get("last_local_impl_at") == "2025-01-16T08:00:00Z"
+    assert block.data.get("last_local_impl_event") == "started"
+
+
+def test_update_plan_header_metadata_unknown_field_raises() -> None:
+    """Test update_plan_header_metadata raises for unknown fields."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2025-01-15T10:30:00Z'
+created_by: testuser
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    with pytest.raises(ValueError, match="Unknown metadata field: invalid_field"):
+        update_plan_header_metadata(issue_body, {"invalid_field": "value"})
+
+
+def test_update_plan_header_metadata_no_block_raises() -> None:
+    """Test update_plan_header_metadata raises when no plan-header block."""
+    issue_body = "No plan-header block here"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_metadata(issue_body, {"worktree_name": "test"})
+
+
+def test_update_plan_header_metadata_preserves_other_fields() -> None:
+    """Test that update_plan_header_metadata preserves other fields."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2025-01-15T10:30:00Z'
+created_by: testuser
+worktree_name: existing-worktree
+last_dispatched_run_id: '12345'
+last_dispatched_at: '2025-01-15T12:00:00Z'
+last_local_impl_at: null
+last_remote_impl_at: null
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+
+    result = update_plan_header_metadata(
+        issue_body, {"last_local_impl_at": "2025-01-16T08:00:00Z"}
+    )
+
+    # Should preserve existing fields
+    block = find_metadata_block(result, "plan-header")
+    assert block is not None
+    assert block.data.get("worktree_name") == "existing-worktree"
+    assert block.data.get("last_dispatched_run_id") == "12345"
+    assert block.data.get("last_dispatched_at") == "2025-01-15T12:00:00Z"
+
+    # Should have the new field
+    assert block.data.get("last_local_impl_at") == "2025-01-16T08:00:00Z"
