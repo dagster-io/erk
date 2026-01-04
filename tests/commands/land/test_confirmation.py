@@ -112,8 +112,7 @@ def test_land_cleanup_confirmation_decline() -> None:
         assert "Worktree preserved" in result.output
 
         # Verify confirmation prompt includes both worktree name and branch
-        assert "Delete worktree 'feature-1'" in result.output
-        assert "(branch 'feature-1')" in result.output
+        assert "Delete worktree 'feature-1' and branch 'feature-1'" in result.output
 
         # Verify NO navigation script was written (user stays in current worktree)
         assert env.script_writer.last_script is None
