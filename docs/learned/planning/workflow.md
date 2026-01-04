@@ -54,19 +54,53 @@ impl_dir = repo_root / ".impl"
 
 Create a plan using Claude's ExitPlanMode tool. This stores the plan in session logs.
 
-### 2. Save Plan to GitHub Issue
+### 2. Choose Your Workflow
 
-After exiting Plan Mode, use `/erk:plan-save` to save the plan as a GitHub issue:
+When exiting plan mode, you have three options:
+
+#### Option A: Save for Later ("Save the plan")
+
+Save the plan to GitHub without implementing:
 
 ```bash
 /erk:plan-save
 ```
 
-This command saves the plan from the current session as a GitHub issue with the `erk-plan` label. The issue becomes the source of truth.
+This command saves the plan from the current session as a GitHub issue with the `erk-plan` label. The issue becomes the source of truth. Use this when you want to:
 
-### 4. Implement from Issue
+- Defer implementation to a remote worker
+- Review the plan before committing to implementation
+- Hand off to someone else
 
-Use the unified `erk implement` command to create a worktree and start implementation:
+#### Option B: Save and Implement ("Implement")
+
+Save to GitHub AND immediately implement in the current worktree:
+
+```bash
+/erk:plan-implement
+```
+
+This command:
+
+1. Saves the plan to GitHub as an issue
+2. Creates a feature branch (stacked if on feature branch, otherwise from trunk)
+3. Sets up `.impl/` folder with plan content
+4. Executes the implementation phases
+5. Runs CI and creates a PR
+
+Use this for the typical flow where you plan and implement in one session.
+
+#### Option C: Incremental Changes ("Incremental implementation")
+
+For small PR iterations that don't need issue tracking:
+
+- Skip saving to GitHub
+- Implement changes directly in the current worktree
+- Best for minor fixes or follow-up changes to existing PRs
+
+### 3. Implement from Existing Issue (Alternative)
+
+If you have an issue number from a previously saved plan:
 
 ```bash
 erk implement <issue-number>
@@ -79,15 +113,7 @@ This command:
 - Links the worktree to the GitHub issue for progress tracking
 - Automatically switches to the new worktree
 
-### 5. Execute the Plan (if not auto-implemented)
-
-If you didn't use `erk implement` (which auto-implements), run the implementation command manually:
-
-```bash
-/erk:plan-implement
-```
-
-The agent reads `.impl/plan.md`, executes each phase, and updates `.impl/progress.md` as steps complete.
+**Slot-Aware Behavior**: If you run `erk implement` from within a pool slot, it automatically reuses the current slot instead of creating a new worktree.
 
 ## Plan Save Workflow
 
@@ -96,31 +122,39 @@ When a user saves their plan to GitHub (via `/erk:plan-save`), the workflow shou
 ### Flow Diagram
 
 ```
-┌─────────────────┐
-│  Plan Mode      │
-│  (plan created) │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ User: "Save to  │
-│ GitHub"         │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ /erk:plan-save  │
-│ - Create issue  │
-│ - Create marker │
-│ - Show success  │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ STOP            │  ← Do NOT call ExitPlanMode
-│ Stay in plan    │
-│ mode            │
-└─────────────────┘
+┌─────────────────────┐
+│  Plan Mode          │
+│  (plan created)     │
+└─────────┬───────────┘
+          │
+          ▼
+┌─────────────────────┐
+│ Exit Plan Mode Hook │
+│ "What would you     │
+│ like to do?"        │
+└─────────┬───────────┘
+          │
+    ┌─────┼─────┬─────────────┐
+    │     │     │             │
+    ▼     ▼     ▼             ▼
+┌───────┐ ┌─────────┐ ┌──────────────┐ ┌──────────┐
+│ Save  │ │Implement│ │ Incremental  │ │View/Edit │
+│ (A)   │ │ (B)     │ │ (C)          │ │          │
+└───┬───┘ └────┬────┘ └──────┬───────┘ └────┬─────┘
+    │          │             │              │
+    ▼          ▼             ▼              │
+┌───────┐ ┌─────────────┐ ┌──────────────┐  │
+│GitHub │ │Save + Setup │ │Create marker │  │
+│issue  │ │+ Implement  │ │Exit plan mode│  │
+│created│ │+ CI + PR    │ │Impl directly │  │
+└───┬───┘ └─────────────┘ └──────────────┘  │
+    │                                       │
+    ▼                                       │
+┌───────┐                                   │
+│ STOP  │  ← Do NOT call ExitPlanMode       │
+│(plan  │                          ┌────────┘
+│mode)  │                          │ (loop back)
+└───────┘                          ▼
 ```
 
 ### Key Principle: Don't Call ExitPlanMode After Saving
@@ -271,11 +305,20 @@ gh run watch
 
 ## Commands Reference
 
-### Plan Creation
+### Plan Creation and Saving
 
-- `/erk:plan-save` - Save the current session's plan to GitHub as an issue
+- `/erk:plan-save` - Save the current session's plan to GitHub as an issue (no implementation)
 
-### Implementation (Issue-Based)
+### Implementation
 
-- `erk implement <issue>` - Create worktree and implement plan from GitHub issue
-- `/erk:plan-implement` - Execute plan in current worktree (called by `erk implement`)
+- `/erk:plan-implement` - Save plan to GitHub AND implement (full workflow: save → setup → implement → CI → PR)
+- `erk implement <issue>` - Create worktree and implement plan from existing GitHub issue
+- `/erk:plan-implement-here` - Implement from existing GitHub issue in current worktree (skips save step)
+
+### Slot-Aware Behavior
+
+When `erk implement` is called from within a pool slot:
+
+- Automatically delegates to `erk pooled implement`
+- Reuses the current slot instead of creating a new worktree
+- Same flags and options apply

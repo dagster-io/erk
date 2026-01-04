@@ -1872,3 +1872,138 @@ def test_invalid_model_flag() -> None:
 
         assert result.exit_code != 0
         assert "Invalid model" in result.output
+
+
+# Pool Slot Detection Tests
+
+
+def test_is_in_pool_slot_returns_false_when_no_pool() -> None:
+    """Test _is_in_pool_slot returns False when no pool.json exists."""
+    from erk.cli.commands.implement import _is_in_pool_slot
+    from erk.core.context import ErkContext
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        ctx = ErkContext.for_test(cwd=env.cwd)
+        pool_json_path = env.cwd / ".erk" / "pool.json"
+
+        # No pool.json exists
+        result = _is_in_pool_slot(ctx, pool_json_path)
+        assert result is False
+
+
+def test_is_in_pool_slot_returns_false_when_not_in_slot() -> None:
+    """Test _is_in_pool_slot returns False when in repo but not in a slot."""
+    import json
+
+    from erk.cli.commands.implement import _is_in_pool_slot
+    from erk.core.context import ErkContext
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create pool.json with an assignment in a different location
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True, exist_ok=True)
+        pool_json_path = erk_dir / "pool.json"
+
+        pool_state = {
+            "version": 1,
+            "pool_size": 4,
+            "slots": [],
+            "assignments": [
+                {
+                    "slot_name": "erk-managed-wt-01",
+                    "branch_name": "feature-branch",
+                    "worktree_path": "/some/other/path",  # Different path
+                    "assigned_at": "2024-01-01T00:00:00Z",
+                }
+            ],
+        }
+        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
+
+        ctx = ErkContext.for_test(cwd=env.cwd)
+
+        # cwd is not in the assigned worktree path
+        result = _is_in_pool_slot(ctx, pool_json_path)
+        assert result is False
+
+
+def test_is_in_pool_slot_returns_true_when_in_slot() -> None:
+    """Test _is_in_pool_slot returns True when cwd is inside an assigned slot."""
+    import json
+
+    from erk.cli.commands.implement import _is_in_pool_slot
+    from erk.core.context import ErkContext
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create a slot directory
+        slot_dir = env.cwd / "worktrees" / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create pool.json with assignment pointing to the slot
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True, exist_ok=True)
+        pool_json_path = erk_dir / "pool.json"
+
+        pool_state = {
+            "version": 1,
+            "pool_size": 4,
+            "slots": [],
+            "assignments": [
+                {
+                    "slot_name": "erk-managed-wt-01",
+                    "branch_name": "feature-branch",
+                    "worktree_path": str(slot_dir),
+                    "assigned_at": "2024-01-01T00:00:00Z",
+                }
+            ],
+        }
+        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
+
+        # Create context with cwd in the slot
+        ctx = ErkContext.for_test(cwd=slot_dir)
+
+        result = _is_in_pool_slot(ctx, pool_json_path)
+        assert result is True
+
+
+def test_is_in_pool_slot_returns_true_when_in_slot_subdirectory() -> None:
+    """Test _is_in_pool_slot returns True when cwd is in subdirectory of slot."""
+    import json
+
+    from erk.cli.commands.implement import _is_in_pool_slot
+    from erk.core.context import ErkContext
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create a slot directory with subdirectory
+        slot_dir = env.cwd / "worktrees" / "erk-managed-wt-01"
+        sub_dir = slot_dir / "src" / "lib"
+        sub_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create pool.json with assignment pointing to the slot
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True, exist_ok=True)
+        pool_json_path = erk_dir / "pool.json"
+
+        pool_state = {
+            "version": 1,
+            "pool_size": 4,
+            "slots": [],
+            "assignments": [
+                {
+                    "slot_name": "erk-managed-wt-01",
+                    "branch_name": "feature-branch",
+                    "worktree_path": str(slot_dir),
+                    "assigned_at": "2024-01-01T00:00:00Z",
+                }
+            ],
+        }
+        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
+
+        # Create context with cwd in subdirectory of the slot
+        ctx = ErkContext.for_test(cwd=sub_dir)
+
+        result = _is_in_pool_slot(ctx, pool_json_path)
+        assert result is True

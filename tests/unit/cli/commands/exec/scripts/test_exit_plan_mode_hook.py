@@ -191,12 +191,19 @@ class TestBuildBlockingMessage:
         assert "AskUserQuestion" in message
         assert "Save the plan" in message
         assert "(Recommended)" in message
-        assert "Implement now" in message
-        assert "edits code in the current worktree" in message
+        # New "Implement" option (save + implement)
+        assert '"Implement"' in message
+        assert "Save to GitHub, then immediately implement" in message
+        # New "Incremental implementation" option
+        assert "Incremental implementation" in message
+        assert "small PR iterations" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message
         assert "exit-plan-mode-hook.implement-now" in message
+        # Verify the Implement option runs plan-save first, then creates marker
+        assert "If user chooses 'Implement':" in message
+        assert "/erk:plan-implement" in message
 
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""
@@ -243,7 +250,7 @@ class TestBuildBlockingMessage:
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
         assert "After user confirms they're done editing" in message
-        assert "loop until user chooses Save or Implement" in message
+        assert "loop until user chooses Save, Implement, or Incremental" in message
 
     def test_edit_plan_instructions_omitted_when_no_path(self) -> None:
         """Edit plan instructions omitted when plan_file_path is None."""

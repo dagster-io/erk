@@ -12,6 +12,8 @@ tripwires:
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
   - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
     warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+  - action: "using subprocess.run with git command outside of a gateway"
+    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
 ---
 
 # Gateway ABC Implementation Checklist
