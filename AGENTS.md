@@ -100,7 +100,7 @@ This ensures plans aren't lost—they either become tracked GitHub issues or get
 
 **CRITICAL: NEVER use raw `pip install`. Always use `uv` for package management.**
 
-**CRITICAL: NEVER commit directly to `master`. Always create a feature branch first.**
+**CRITICAL: Treat `master`/`main` as READONLY. NEVER commit directly to trunk. Always create a feature branch first.**
 
 **CRITICAL: NEVER push code to remote (git push, gt ss, gt submit) unless the user explicitly requests it.**
 
