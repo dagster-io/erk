@@ -32,6 +32,7 @@ from erk.cli.commands.implement_shared import (
     validate_flags,
 )
 from erk.cli.commands.slot.common import (
+    find_assignment_by_cwd,
     find_branch_assignment,
     find_inactive_slot,
     find_next_available_slot,
@@ -78,6 +79,168 @@ def _check_worktree_clean_for_checkout(
         )
 
 
+def _implement_in_current_slot(
+    ctx: ErkContext,
+    *,
+    current_assignment: SlotAssignment,
+    plan_source: PlanSource,
+    branch: str,
+    base_branch: str,
+    dry_run: bool,
+    submit: bool,
+    dangerous: bool,
+    no_interactive: bool,
+    model: str | None,
+    state: PoolState,
+    repo_root: Path,
+) -> WorktreeCreationResult | None:
+    """Implement in the current slot by stacking a new branch on the current one.
+
+    When running from within a managed slot, this function:
+    1. Commits any uncommitted changes to the current branch
+    2. Creates a new stacked branch from the current branch
+    3. Updates the slot assignment to track the new branch
+    4. Creates the .impl/ folder with plan content
+
+    Args:
+        ctx: Erk context
+        current_assignment: The assignment for the slot we're running from
+        plan_source: Plan source with content and metadata
+        branch: New branch name to create
+        base_branch: Base branch for stacking (typically current branch)
+        dry_run: Whether to perform dry run
+        submit: Whether to auto-submit PR after implementation
+        dangerous: Whether to skip permission prompts
+        no_interactive: Whether to execute non-interactively
+        model: Optional model name for Claude CLI
+        state: Current pool state
+        repo_root: Path to repository root
+
+    Returns:
+        WorktreeCreationResult with paths, or None if dry-run mode
+    """
+    slot_name = current_assignment.slot_name
+    wt_path = current_assignment.worktree_path
+
+    # Handle dry-run mode
+    if dry_run:
+        _show_dry_run_output_same_slot(
+            slot_name,
+            current_assignment.branch_name,
+            branch,
+            plan_source,
+            submit,
+            dangerous,
+            no_interactive,
+            model,
+        )
+        return None
+
+    # Check for uncommitted changes and require commit before stacking
+    if ctx.git.has_uncommitted_changes(wt_path):
+        raise click.ClickException(
+            f"Slot '{slot_name}' has uncommitted changes.\n\n"
+            f"Commit your changes before starting a new stacked implementation:\n"
+            f"  cd {wt_path} && git commit -am 'WIP: <description>'\n\n"
+            f"Then re-run: erk implement <target>"
+        )
+
+    # Get current branch in the slot
+    current_branch = ctx.git.get_current_branch(wt_path)
+    if current_branch is None:
+        raise click.ClickException(
+            f"Cannot determine current branch in slot '{slot_name}'.\n"
+            f"The worktree may be in a detached HEAD state."
+        )
+    ctx.feedback.info(f"Stacking new branch on '{current_branch}' in {slot_name}...")
+
+    # Respect global use_graphite config
+    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+
+    # Create the new stacked branch from current branch
+    ctx.feedback.info(f"Creating branch '{branch}' from {current_branch}...")
+    ctx.git.create_branch(repo_root, branch, current_branch)
+    if use_graphite:
+        ctx.graphite.track_branch(repo_root, branch, current_branch)
+
+    # Checkout the new branch in the slot
+    ctx.git.checkout_branch(wt_path, branch)
+
+    ctx.feedback.success(f"✓ Stacked {branch} on {current_branch} in {slot_name}")
+
+    # Update slot assignment with new branch
+    now = ctx.time.now().isoformat()
+    updated_assignment = SlotAssignment(
+        slot_name=slot_name,
+        branch_name=branch,
+        assigned_at=now,
+        worktree_path=wt_path,
+    )
+
+    # Replace the old assignment with the updated one
+    new_assignments = tuple(
+        updated_assignment if a.slot_name == slot_name else a for a in state.assignments
+    )
+    new_state = PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        slots=state.slots,
+        assignments=new_assignments,
+    )
+
+    # Save state
+    from erk.cli.core import discover_repo_context
+
+    repo = discover_repo_context(ctx, ctx.cwd)
+    save_pool_state(repo.pool_json_path, new_state)
+
+    # Create .impl/ folder with plan content
+    ctx.feedback.info("Creating .impl/ folder with plan...")
+    create_impl_folder(
+        worktree_path=wt_path,
+        plan_content=plan_source.plan_content,
+        overwrite=True,
+    )
+    ctx.feedback.success("✓ Created .impl/ folder")
+
+    return WorktreeCreationResult(
+        worktree_path=wt_path,
+        impl_dir=wt_path / ".impl",
+    )
+
+
+def _show_dry_run_output_same_slot(
+    slot_name: str,
+    current_branch: str,
+    new_branch: str,
+    plan_source: PlanSource,
+    submit: bool,
+    dangerous: bool,
+    no_interactive: bool,
+    model: str | None,
+) -> None:
+    """Show dry-run output for same-slot stacking."""
+    dry_run_header = click.style("Dry-run mode:", fg="cyan", bold=True)
+    user_output(dry_run_header + " No changes will be made\n")
+
+    # Show execution mode
+    mode = "non-interactive" if no_interactive else "interactive"
+    user_output(f"Execution mode: {mode}\n")
+
+    # Show same-slot stacking behavior
+    user_output(f"Would stack in current slot '{slot_name}':")
+    user_output(f"  Current branch: {current_branch}")
+    user_output(f"  New branch: {new_branch}")
+    user_output(f"  {plan_source.dry_run_description}")
+
+    # Show command sequence
+    commands = build_command_sequence(submit)
+    user_output("\nCommand sequence:")
+    for i, cmd in enumerate(commands, 1):
+        cmd_args = build_claude_args(cmd, dangerous, model)
+        user_output(f"  {i}. {' '.join(cmd_args)}")
+
+
 def _create_worktree_with_plan_content(
     ctx: ErkContext,
     *,
@@ -93,7 +256,10 @@ def _create_worktree_with_plan_content(
 ) -> WorktreeCreationResult | None:
     """Create worktree with plan content using slot assignment.
 
-    Always assigns a pool slot for the implementation worktree.
+    Behavior depends on where the command is run from:
+    - From a managed slot: Stack the new branch on the current branch within
+      the same slot (same-slot stacking)
+    - From elsewhere: Assign a new pool slot for the implementation
 
     Args:
         ctx: Erk context
@@ -143,6 +309,25 @@ def _create_worktree_with_plan_content(
             pool_size=pool_size,
             slots=state.slots,
             assignments=state.assignments,
+        )
+
+    # Check if we're running from within a managed slot
+    current_slot_assignment = find_assignment_by_cwd(state, ctx.cwd)
+    if current_slot_assignment is not None:
+        # Same-slot stacking: stack new branch on current branch in this slot
+        return _implement_in_current_slot(
+            ctx,
+            current_assignment=current_slot_assignment,
+            plan_source=plan_source,
+            branch=branch,
+            base_branch=base_branch,
+            dry_run=dry_run,
+            submit=submit,
+            dangerous=dangerous,
+            no_interactive=no_interactive,
+            model=model,
+            state=state,
+            repo_root=repo_root,
         )
 
     # Check if branch is already assigned to a slot

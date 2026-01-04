@@ -5,6 +5,7 @@ from pathlib import Path
 from erk.cli.commands.slot.common import (
     DEFAULT_POOL_SIZE,
     extract_slot_number,
+    find_assignment_by_cwd,
     find_inactive_slot,
     find_oldest_assignment,
     get_placeholder_branch_name,
@@ -220,3 +221,91 @@ def test_get_placeholder_branch_name_invalid() -> None:
     """Returns None for invalid slot names."""
     assert get_placeholder_branch_name("invalid-name") is None
     assert get_placeholder_branch_name("erk-managed-wt-1") is None
+
+
+class TestFindAssignmentByCwd:
+    """Tests for find_assignment_by_cwd function."""
+
+    def test_returns_none_for_empty_state(self, tmp_path: Path) -> None:
+        """Returns None when no assignments exist."""
+        state = PoolState.test()
+        cwd = tmp_path / "somewhere"
+
+        result = find_assignment_by_cwd(state, cwd)
+
+        assert result is None
+
+    def test_returns_none_when_cwd_not_in_any_slot(self, tmp_path: Path) -> None:
+        """Returns None when cwd is not within any assigned slot."""
+        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot_path.mkdir(parents=True)
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+        cwd = tmp_path / "other" / "location"
+
+        result = find_assignment_by_cwd(state, cwd)
+
+        assert result is None
+
+    def test_returns_assignment_when_cwd_equals_worktree_path(self, tmp_path: Path) -> None:
+        """Returns assignment when cwd exactly matches worktree path."""
+        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot_path.mkdir(parents=True)
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+
+        result = find_assignment_by_cwd(state, slot_path)
+
+        assert result == assignment
+
+    def test_returns_assignment_when_cwd_is_subdirectory(self, tmp_path: Path) -> None:
+        """Returns assignment when cwd is a subdirectory of worktree path."""
+        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        subdir = slot_path / "src" / "nested"
+        subdir.mkdir(parents=True)
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+
+        result = find_assignment_by_cwd(state, subdir)
+
+        assert result == assignment
+
+    def test_returns_first_matching_assignment(self, tmp_path: Path) -> None:
+        """Returns first matching assignment when multiple slots exist."""
+        slot1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        slot1_path.mkdir(parents=True)
+        slot2_path.mkdir(parents=True)
+        assignment1 = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot1_path,
+        )
+        assignment2 = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-b",
+            assigned_at="2024-01-01T13:00:00+00:00",
+            worktree_path=slot2_path,
+        )
+        state = PoolState.test(assignments=(assignment1, assignment2))
+
+        result = find_assignment_by_cwd(state, slot2_path)
+
+        assert result == assignment2
+        assert result.slot_name == "erk-managed-wt-02"

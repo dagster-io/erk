@@ -1,5 +1,7 @@
 """Shared utilities for slot commands."""
 
+from pathlib import Path
+
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
 from erk_shared.output.output import user_confirm, user_output
@@ -133,6 +135,37 @@ def find_branch_assignment(state: PoolState, branch_name: str) -> SlotAssignment
     for assignment in state.assignments:
         if assignment.branch_name == branch_name:
             return assignment
+    return None
+
+
+def find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | None:
+    """Find if cwd is within a managed slot.
+
+    Checks if the current working directory is within a worktree path
+    tracked by the pool state.
+
+    Args:
+        state: Current pool state
+        cwd: Current working directory
+
+    Returns:
+        SlotAssignment if cwd is within a managed slot, None otherwise
+    """
+    for assignment in state.assignments:
+        # Check if cwd is within or equal to the worktree path
+        worktree_path = assignment.worktree_path
+        if cwd == worktree_path:
+            return assignment
+        # Also check if cwd is a subdirectory of the worktree
+        # Use LBYL: check exists() before resolve() per dignified-python
+        if worktree_path.exists() and cwd.exists():
+            resolved_cwd = cwd.resolve()
+            resolved_wt = worktree_path.resolve()
+            if resolved_cwd == resolved_wt:
+                return assignment
+            # Check parent relationship using is_relative_to (LBYL, no exception)
+            if resolved_cwd.is_relative_to(resolved_wt):
+                return assignment
     return None
 
 
