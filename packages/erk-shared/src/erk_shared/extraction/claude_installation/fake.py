@@ -69,6 +69,34 @@ class FakeClaudeInstallation(ClaudeInstallation):
         self._plans_dir_path = plans_dir_path
         self._projects_dir_path = projects_dir_path
 
+    @classmethod
+    def for_test(
+        cls,
+        *,
+        projects: dict[Path, FakeProject] | None = None,
+        plans: dict[str, str] | None = None,
+        settings: dict | None = None,
+        local_settings: dict | None = None,
+        session_slugs: dict[str, list[str]] | None = None,
+        session_planning_agents: dict[str, list[str]] | None = None,
+        plans_dir_path: Path | None = None,
+        projects_dir_path: Path | None = None,
+    ) -> FakeClaudeInstallation:
+        """Create FakeClaudeInstallation with test-friendly defaults.
+
+        All parameters default to None, allowing tests to specify only what they need.
+        """
+        return cls(
+            projects=projects,
+            plans=plans,
+            settings=settings,
+            local_settings=local_settings,
+            session_slugs=session_slugs,
+            session_planning_agents=session_planning_agents,
+            plans_dir_path=plans_dir_path,
+            projects_dir_path=projects_dir_path,
+        )
+
     def _find_project_for_path(self, project_cwd: Path) -> Path | None:
         """Find project at or above the given path.
 
