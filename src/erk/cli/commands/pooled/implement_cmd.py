@@ -372,7 +372,12 @@ def pooled_implement(
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
         execute_non_interactive_mode(
-            worktree_path, commands, dangerous, verbose, model, ctx.claude_executor
+            worktree_path=worktree_path,
+            commands=commands,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
+            executor=ctx.claude_executor,
         )
     else:
         # Interactive mode - hand off to Claude (never returns)
