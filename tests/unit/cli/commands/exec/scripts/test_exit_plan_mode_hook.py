@@ -30,12 +30,13 @@ class TestDetermineExitAction:
     def test_github_planning_disabled_allows_exit(self) -> None:
         """When github_planning is disabled, always allow exit."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
+            HookInput.for_test(
                 github_planning_enabled=False,
                 implement_now_marker_exists=True,  # Even with markers
                 plan_saved_marker_exists=True,
                 incremental_plan_marker_exists=True,
+                objective_context_marker_exists=True,
+                objective_issue=3679,
                 plan_file_path=Path("/some/plan.md"),
                 current_branch="main",
             )
@@ -45,31 +46,16 @@ class TestDetermineExitAction:
 
     def test_no_session_id_allows_exit(self) -> None:
         """When no session ID provided, allow exit."""
-        result = determine_exit_action(
-            HookInput(
-                session_id=None,
-                github_planning_enabled=True,
-                implement_now_marker_exists=False,
-                plan_saved_marker_exists=False,
-                incremental_plan_marker_exists=False,
-                plan_file_path=None,
-                current_branch=None,
-            )
-        )
+        result = determine_exit_action(HookInput.for_test(session_id=None))
         assert result.action == ExitAction.ALLOW
         assert "No session context" in result.message
 
     def test_implement_now_marker_allows_exit_and_deletes(self) -> None:
         """Implement-now marker allows exit and markers deletion."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
+            HookInput.for_test(
                 implement_now_marker_exists=True,
-                plan_saved_marker_exists=False,
-                incremental_plan_marker_exists=False,
                 plan_file_path=Path("/some/plan.md"),  # Even if plan exists
-                current_branch="main",
             )
         )
         assert result.action == ExitAction.ALLOW
@@ -80,14 +66,10 @@ class TestDetermineExitAction:
     def test_implement_now_marker_takes_precedence_over_plan_saved_marker(self) -> None:
         """Implement-now marker is checked before plan-saved marker."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
+            HookInput.for_test(
                 implement_now_marker_exists=True,  # Both exist
                 plan_saved_marker_exists=True,
-                incremental_plan_marker_exists=False,
                 plan_file_path=Path("/some/plan.md"),
-                current_branch="main",
             )
         )
         assert result.action == ExitAction.ALLOW
@@ -97,14 +79,9 @@ class TestDetermineExitAction:
     def test_incremental_plan_marker_allows_exit_and_deletes(self) -> None:
         """Incremental-plan marker allows exit and markers deletion."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
-                implement_now_marker_exists=False,
-                plan_saved_marker_exists=False,
+            HookInput.for_test(
                 incremental_plan_marker_exists=True,
                 plan_file_path=Path("/some/plan.md"),  # Even if plan exists
-                current_branch="feature-branch",
             )
         )
         assert result.action == ExitAction.ALLOW
@@ -117,14 +94,10 @@ class TestDetermineExitAction:
     def test_implement_now_takes_precedence_over_incremental_plan(self) -> None:
         """Implement-now marker is checked before incremental-plan marker."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
+            HookInput.for_test(
                 implement_now_marker_exists=True,
-                plan_saved_marker_exists=False,
                 incremental_plan_marker_exists=True,  # Both exist
                 plan_file_path=Path("/some/plan.md"),
-                current_branch="feature-branch",
             )
         )
         assert result.action == ExitAction.ALLOW
@@ -134,14 +107,10 @@ class TestDetermineExitAction:
     def test_incremental_plan_takes_precedence_over_plan_saved(self) -> None:
         """Incremental-plan marker is checked before plan-saved marker."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
-                implement_now_marker_exists=False,
+            HookInput.for_test(
                 plan_saved_marker_exists=True,
                 incremental_plan_marker_exists=True,  # Both exist
                 plan_file_path=Path("/some/plan.md"),
-                current_branch="feature-branch",
             )
         )
         assert result.action == ExitAction.ALLOW
@@ -151,14 +120,9 @@ class TestDetermineExitAction:
     def test_plan_saved_marker_blocks_and_deletes(self) -> None:
         """Plan-saved marker blocks exit and markers deletion."""
         result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
-                implement_now_marker_exists=False,
+            HookInput.for_test(
                 plan_saved_marker_exists=True,
-                incremental_plan_marker_exists=False,
                 plan_file_path=Path("/some/plan.md"),
-                current_branch="main",
             )
         )
         assert result.action == ExitAction.BLOCK
@@ -168,39 +132,47 @@ class TestDetermineExitAction:
 
     def test_no_plan_file_allows_exit(self) -> None:
         """No plan file allows exit."""
-        result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
-                implement_now_marker_exists=False,
-                plan_saved_marker_exists=False,
-                incremental_plan_marker_exists=False,
-                plan_file_path=None,
-                current_branch="feature-branch",
-            )
-        )
+        result = determine_exit_action(HookInput.for_test(plan_file_path=None))
         assert result.action == ExitAction.ALLOW
         assert "No plan file found" in result.message
 
     def test_plan_exists_blocks_with_instructions(self) -> None:
         """Plan exists without markers - blocks with instructions."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
-        result = determine_exit_action(
-            HookInput(
-                session_id="abc123",
-                github_planning_enabled=True,
-                implement_now_marker_exists=False,
-                plan_saved_marker_exists=False,
-                incremental_plan_marker_exists=False,
-                plan_file_path=plan_path,
-                current_branch="feature-branch",
-            )
-        )
+        result = determine_exit_action(HookInput.for_test(plan_file_path=plan_path))
         assert result.action == ExitAction.BLOCK
         assert "PLAN SAVE PROMPT" in result.message
         assert "AskUserQuestion" in result.message
         assert result.delete_implement_now_marker is False
         assert result.delete_plan_saved_marker is False
+
+    def test_implement_now_deletes_objective_context_marker_when_present(self) -> None:
+        """Implement-now marker also deletes objective-context marker if present."""
+        result = determine_exit_action(
+            HookInput.for_test(
+                implement_now_marker_exists=True,
+                objective_context_marker_exists=True,
+                objective_issue=3679,
+                plan_file_path=Path("/some/plan.md"),
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert result.delete_implement_now_marker is True
+        assert result.delete_objective_context_marker is True
+
+    def test_plan_saved_deletes_objective_context_marker_when_present(self) -> None:
+        """Plan-saved marker also deletes objective-context marker if present."""
+        result = determine_exit_action(
+            HookInput.for_test(
+                plan_saved_marker_exists=True,
+                objective_context_marker_exists=True,
+                objective_issue=3679,
+                plan_file_path=Path("/some/plan.md"),
+            )
+        )
+        assert result.action == ExitAction.BLOCK
+        assert result.delete_plan_saved_marker is True
+        assert result.delete_objective_context_marker is True
 
 
 # ============================================================================
@@ -214,7 +186,7 @@ class TestBuildBlockingMessage:
     def test_contains_required_elements(self) -> None:
         """Message contains all required elements."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
         assert "Save the plan" in message
@@ -229,7 +201,7 @@ class TestBuildBlockingMessage:
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "main", plan_path)
+        message = build_blocking_message("session-123", "main", plan_path, None)
         assert "WARNING" in message
         assert "main" in message
         assert "trunk branch" in message
@@ -238,7 +210,7 @@ class TestBuildBlockingMessage:
     def test_trunk_branch_master_shows_warning(self) -> None:
         """Warning shown when on master branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "master", plan_path)
+        message = build_blocking_message("session-123", "master", plan_path, None)
         assert "WARNING" in message
         assert "master" in message
         assert "trunk branch" in message
@@ -246,28 +218,28 @@ class TestBuildBlockingMessage:
     def test_feature_branch_no_warning(self) -> None:
         """No warning when on feature branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
         assert "WARNING" not in message
         assert "trunk branch" not in message
 
     def test_none_branch_no_warning(self) -> None:
         """No warning when branch is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", None, plan_path)
+        message = build_blocking_message("session-123", None, plan_path, None)
         assert "WARNING" not in message
         assert "trunk branch" not in message
 
     def test_edit_plan_option_included(self) -> None:
         """Third option 'View/Edit the plan' is included in message."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
 
     def test_edit_plan_instructions_include_path(self) -> None:
         """Edit plan instructions include the plan file path."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
         assert "After user confirms they're done editing" in message
@@ -275,10 +247,24 @@ class TestBuildBlockingMessage:
 
     def test_edit_plan_instructions_omitted_when_no_path(self) -> None:
         """Edit plan instructions omitted when plan_file_path is None."""
-        message = build_blocking_message("session-123", "feature-branch", None)
+        message = build_blocking_message("session-123", "feature-branch", None, None)
         # The option is still listed (as it's hardcoded), but no instructions
         assert "View/Edit the plan" in message
         assert "If user chooses 'View/Edit the plan':" not in message
+
+    def test_objective_issue_included_in_save_command(self) -> None:
+        """Save command includes --objective-issue when objective_issue is provided."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "feature-branch", plan_path, 3679)
+        assert "/erk:plan-save --objective-issue=3679" in message
+
+    def test_save_command_without_objective_issue(self) -> None:
+        """Save command is plain when objective_issue is None."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
+        # Should have /erk:plan-save but not --objective-issue
+        assert "/erk:plan-save" in message
+        assert "--objective-issue" not in message
 
 
 # ============================================================================
@@ -390,3 +376,57 @@ class TestHookIntegration:
 
         assert result.exit_code == 0
         assert result.output == ""
+
+    def test_objective_context_marker_deleted_on_implement_now(self, tmp_path: Path) -> None:
+        """Verify objective-context marker is deleted when implement-now is chosen."""
+        runner = CliRunner()
+        session_id = "session-abc123"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create both implement-now and objective-context markers
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        implement_now_marker = marker_dir / "exit-plan-mode-hook.implement-now.marker"
+        implement_now_marker.touch()
+        objective_context_marker = marker_dir / "objective-context.marker"
+        objective_context_marker.write_text("3679", encoding="utf-8")
+
+        # Inject via ErkContext - NO mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Implement-now marker found" in result.output
+        assert not implement_now_marker.exists()  # Marker deleted
+        assert not objective_context_marker.exists()  # Also deleted
+
+    def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -> None:
+        """Verify objective-context marker is deleted when plan-saved is triggered."""
+        runner = CliRunner()
+        session_id = "session-abc123"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create both plan-saved and objective-context markers
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+        plan_saved_marker.touch()
+        objective_context_marker = marker_dir / "objective-context.marker"
+        objective_context_marker.write_text("3679", encoding="utf-8")
+
+        # Inject via ErkContext - NO mocking needed
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+
+        assert result.exit_code == 2  # Block
+        assert "Plan already saved to GitHub" in result.output
+        assert not plan_saved_marker.exists()  # Marker deleted
+        assert not objective_context_marker.exists()  # Also deleted

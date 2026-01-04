@@ -48,6 +48,7 @@ import sys
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
+from typing import Self
 
 import click
 
@@ -77,8 +78,46 @@ class HookInput:
     implement_now_marker_exists: bool
     plan_saved_marker_exists: bool
     incremental_plan_marker_exists: bool
+    objective_context_marker_exists: bool
+    objective_issue: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     current_branch: str | None
+
+    @classmethod
+    def for_test(
+        cls,
+        *,
+        session_id: str | None = "test-session",
+        github_planning_enabled: bool = True,
+        implement_now_marker_exists: bool = False,
+        plan_saved_marker_exists: bool = False,
+        incremental_plan_marker_exists: bool = False,
+        objective_context_marker_exists: bool = False,
+        objective_issue: int | None = None,
+        plan_file_path: Path | None = None,
+        current_branch: str | None = "feature-branch",
+    ) -> Self:
+        """Create a HookInput with test defaults.
+
+        All fields have sensible defaults for testing:
+        - session_id: "test-session"
+        - github_planning_enabled: True
+        - All marker exists flags: False
+        - objective_issue: None
+        - plan_file_path: None
+        - current_branch: "feature-branch"
+        """
+        return cls(
+            session_id=session_id,
+            github_planning_enabled=github_planning_enabled,
+            implement_now_marker_exists=implement_now_marker_exists,
+            plan_saved_marker_exists=plan_saved_marker_exists,
+            incremental_plan_marker_exists=incremental_plan_marker_exists,
+            objective_context_marker_exists=objective_context_marker_exists,
+            objective_issue=objective_issue,
+            plan_file_path=plan_file_path,
+            current_branch=current_branch,
+        )
 
 
 @dataclass(frozen=True)
@@ -90,6 +129,7 @@ class HookOutput:
     delete_implement_now_marker: bool = False
     delete_plan_saved_marker: bool = False
     delete_incremental_plan_marker: bool = False
+    delete_objective_context_marker: bool = False
 
 
 # ============================================================================
@@ -101,10 +141,17 @@ def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
+    objective_issue: int | None,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
     Pure function - string building only. Testable without mocking.
+
+    Args:
+        session_id: Claude session ID for marker creation commands.
+        current_branch: Current git branch name.
+        plan_file_path: Path to the plan file, if it exists.
+        objective_issue: Objective issue number, if this plan is part of an objective.
     """
     lines = [
         "PLAN SAVE PROMPT",
@@ -132,11 +179,17 @@ def build_blocking_message(
             ]
         )
 
+    # Build the save command with optional --objective-issue flag
+    if objective_issue is not None:
+        save_cmd = f"/erk:plan-save --objective-issue={objective_issue}"
+    else:
+        save_cmd = "/erk:plan-save"
+
     lines.extend(
         [
             "",
             "If user chooses 'Save the plan':",
-            "  1. Run /erk:plan-save",
+            f"  1. Run {save_cmd}",
             "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
@@ -181,6 +234,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             ExitAction.ALLOW,
             "Implement-now marker found, allowing exit",
             delete_implement_now_marker=True,
+            delete_objective_context_marker=hook_input.objective_context_marker_exists,
         )
 
     # Incremental-plan marker present (session started via /local:incremental-plan-mode)
@@ -198,6 +252,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             ExitAction.BLOCK,
             "✅ Plan already saved to GitHub. Session complete - no further action needed.",
             delete_plan_saved_marker=True,
+            delete_objective_context_marker=hook_input.objective_context_marker_exists,
         )
 
     # No plan file
@@ -214,6 +269,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             hook_input.session_id,
             hook_input.current_branch,
             hook_input.plan_file_path,
+            hook_input.objective_issue,
         ),
     )
 
@@ -269,6 +325,42 @@ def _get_incremental_plan_marker_path(session_id: str, repo_root: Path) -> Path:
         Path to incremental-plan marker file
     """
     return get_scratch_dir(session_id, repo_root=repo_root) / "incremental-plan.marker"
+
+
+def _get_objective_context_marker_path(session_id: str, repo_root: Path) -> Path:
+    """Get objective-context marker path in .erk/scratch/sessions/<session_id>/.
+
+    The objective-context marker stores the objective issue number when
+    a plan is created via /objective:create-plan. This allows the hook
+    to suggest the correct --objective-issue flag in the save command.
+
+    Args:
+        session_id: The session ID to build the path for
+        repo_root: Path to the git repository root
+
+    Returns:
+        Path to objective-context marker file
+    """
+    return get_scratch_dir(session_id, repo_root=repo_root) / "objective-context.marker"
+
+
+def _read_objective_context(session_id: str, repo_root: Path) -> int | None:
+    """Read objective issue number from marker, if present.
+
+    Args:
+        session_id: The session ID to look up
+        repo_root: Path to the git repository root
+
+    Returns:
+        Objective issue number, or None if marker doesn't exist or is invalid.
+    """
+    marker_path = _get_objective_context_marker_path(session_id, repo_root)
+    if not marker_path.exists():
+        return None
+    content = marker_path.read_text(encoding="utf-8").strip()
+    if not content.isdigit():
+        return None
+    return int(content)
 
 
 def _find_session_plan(session_id: str, repo_root: Path) -> Path | None:
@@ -336,11 +428,17 @@ def _gather_inputs(
     implement_now_marker_exists = False
     plan_saved_marker_exists = False
     incremental_plan_marker_exists = False
+    objective_context_marker_exists = False
+    objective_issue: int | None = None
     if session_id is not None:
         implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
         plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
         marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
         incremental_plan_marker_exists = marker_path.exists()
+        objective_context_marker_exists = _get_objective_context_marker_path(
+            session_id, repo_root
+        ).exists()
+        objective_issue = _read_objective_context(session_id, repo_root)
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -365,6 +463,8 @@ def _gather_inputs(
         implement_now_marker_exists=implement_now_marker_exists,
         plan_saved_marker_exists=plan_saved_marker_exists,
         incremental_plan_marker_exists=incremental_plan_marker_exists,
+        objective_context_marker_exists=objective_context_marker_exists,
+        objective_issue=objective_issue,
         plan_file_path=plan_file_path,
         current_branch=current_branch,
     )
@@ -382,6 +482,9 @@ def _execute_result(result: HookOutput, hook_input: HookInput, repo_root: Path) 
 
     if result.delete_incremental_plan_marker and session_id:
         _get_incremental_plan_marker_path(session_id, repo_root).unlink()
+
+    if result.delete_objective_context_marker and session_id:
+        _get_objective_context_marker_path(session_id, repo_root).unlink()
 
     # Snapshot plan whenever a plan exists and user made a decision
     # (implement-now or plan-saved, but NOT when blocking to prompt)
