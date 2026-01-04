@@ -124,7 +124,7 @@ def test_hook_context_frozen() -> None:
 
     # Attempting to modify should raise FrozenInstanceError
     try:
-        hook_ctx.session_id = "modified"  # type: ignore[misc]
+        hook_ctx.session_id = "modified"  # type: ignore[misc] -- testing frozen dataclass rejects mutation
         raise AssertionError("Expected FrozenInstanceError")
     except dataclasses.FrozenInstanceError:
         pass  # Expected

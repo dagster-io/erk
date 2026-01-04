@@ -99,7 +99,7 @@ def test_immutable_move_operation() -> None:
 
     # Verify frozen dataclass
     with pytest.raises(AttributeError):
-        operation.operation_type = MoveOperationType.SWAP  # type: ignore[misc]
+        operation.operation_type = MoveOperationType.SWAP  # type: ignore[misc] -- testing frozen dataclass rejects mutation
 
 
 def test_multiple_worktrees_only_relevant_ones_checked() -> None:

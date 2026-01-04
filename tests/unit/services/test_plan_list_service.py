@@ -385,7 +385,7 @@ class TestPlanListData:
         )
 
         with pytest.raises(AttributeError):
-            data.issues = []  # type: ignore[misc]
+            data.issues = []  # type: ignore[misc] -- testing frozen dataclass rejects mutation
 
     def test_dataclass_contains_all_fields(self) -> None:
         """PlanListData has all expected fields."""
