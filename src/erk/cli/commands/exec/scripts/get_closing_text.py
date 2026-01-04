@@ -29,12 +29,12 @@ Examples:
     (no output)
 """
 
-import subprocess
 from pathlib import Path
 
 import click
 
 from erk.cli.config import load_config
+from erk_shared.context.helpers import get_current_branch, require_cwd
 from erk_shared.impl_folder import validate_issue_linkage
 
 
@@ -48,26 +48,9 @@ def _find_repo_root(start: Path) -> Path | None:
     return None
 
 
-def _get_current_branch(cwd: Path) -> str | None:
-    """Get current git branch name."""
-    result = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-        check=False,
-    )
-    if result.returncode != 0:
-        return None
-    branch = result.stdout.strip()
-    # HEAD means detached HEAD state
-    if branch == "HEAD":
-        return None
-    return branch
-
-
 @click.command(name="get-closing-text")
-def get_closing_text() -> None:
+@click.pass_context
+def get_closing_text(ctx: click.Context) -> None:
     """Get closing text for PR body based on .impl/issue.json or branch name.
 
     Validates that branch name and .impl/issue.json agree (if both present).
@@ -75,10 +58,10 @@ def get_closing_text() -> None:
 
     Outputs nothing and exits successfully if no issue number is discoverable.
     """
-    cwd = Path.cwd()
+    cwd = require_cwd(ctx)
 
     # Get current branch name for validation and fallback
-    branch_name = _get_current_branch(cwd)
+    branch_name = get_current_branch(ctx)
     if branch_name is None:
         # Not on a branch (detached HEAD) - can't determine issue number
         return

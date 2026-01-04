@@ -1,18 +1,20 @@
 """Tests for get-closing-text kit CLI command.
 
 Tests the closing text generation for PR body based on .impl/issue.json or branch name.
+Uses FakeGit for dependency injection instead of mocking subprocess.
 """
 
 import json
 from pathlib import Path
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
+from erk_shared.context import ErkContext
+from erk_shared.git.fake import FakeGit
 
 
-def test_get_closing_text_with_issue_reference(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_with_issue_reference(tmp_path: Path) -> None:
     """Test get-closing-text outputs 'Closes #N' when issue.json exists."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -30,64 +32,59 @@ def test_get_closing_text_with_issue_reference(tmp_path: Path, monkeypatch) -> N
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
+    git = FakeGit(current_branches={tmp_path: "P776-feature-01-04-1234"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
 
-    # Mock _get_current_branch to return a matching branch
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "P776-feature-01-04-1234"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #776"
 
 
-def test_get_closing_text_no_impl_folder_with_branch_fallback(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_no_impl_folder_with_branch_fallback(tmp_path: Path) -> None:
     """Test get-closing-text uses branch name when no .impl/ folder exists."""
-    monkeypatch.chdir(tmp_path)
+    # No .impl/ folder - branch name encodes issue number
+    git = FakeGit(current_branches={tmp_path: "P123-add-feature-01-04-1234"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
 
-    # Branch name encodes issue number
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "P123-add-feature-01-04-1234"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #123"
 
 
-def test_get_closing_text_no_impl_folder_no_issue_in_branch(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_no_impl_folder_no_issue_in_branch(tmp_path: Path) -> None:
     """Test get-closing-text outputs nothing when no .impl/ and branch has no issue."""
-    monkeypatch.chdir(tmp_path)
-
     # Branch name without issue number pattern
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "feature-branch"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    git = FakeGit(current_branches={tmp_path: "feature-branch"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output == ""
 
 
-def test_get_closing_text_no_issue_json(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_no_issue_json(tmp_path: Path) -> None:
     """Test get-closing-text outputs nothing when .impl/ exists but no issue.json."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
 
-    monkeypatch.chdir(tmp_path)
-
     # Branch without issue prefix
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "main"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    git = FakeGit(current_branches={tmp_path: "main"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output == ""
 
 
-def test_get_closing_text_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_with_worker_impl(tmp_path: Path) -> None:
     """Test get-closing-text works with .worker-impl/ folder."""
     impl_dir = tmp_path / ".worker-impl"
     impl_dir.mkdir()
@@ -105,19 +102,17 @@ def test_get_closing_text_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
+    git = FakeGit(current_branches={tmp_path: "P2935-feature"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
 
-    # Mock branch to match the issue
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "P2935-feature"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #2935"
 
 
-def test_get_closing_text_prefers_impl_over_worker_impl(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_prefers_impl_over_worker_impl(tmp_path: Path) -> None:
     """Test get-closing-text prefers .impl/ when both folders exist."""
     # Create both folders with different issue numbers
     impl_dir = tmp_path / ".impl"
@@ -148,18 +143,17 @@ def test_get_closing_text_prefers_impl_over_worker_impl(tmp_path: Path, monkeypa
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
+    git = FakeGit(current_branches={tmp_path: "P100-feature"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
 
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "P100-feature"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #100"
 
 
-def test_get_closing_text_invalid_json(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_invalid_json(tmp_path: Path) -> None:
     """Test get-closing-text handles invalid JSON gracefully via branch fallback."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -167,34 +161,32 @@ def test_get_closing_text_invalid_json(tmp_path: Path, monkeypatch) -> None:
     issue_json = impl_dir / "issue.json"
     issue_json.write_text("not valid json {{{", encoding="utf-8")
 
-    monkeypatch.chdir(tmp_path)
-
     # With invalid JSON, validate_issue_linkage returns the branch issue number
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "P42-feature"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    git = FakeGit(current_branches={tmp_path: "P42-feature"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     # Falls back to branch issue number (invalid JSON means no impl_issue)
     assert result.exit_code == 0
     assert result.output.strip() == "Closes #42"
 
 
-def test_get_closing_text_detached_head(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_detached_head(tmp_path: Path) -> None:
     """Test get-closing-text outputs nothing when on detached HEAD."""
-    monkeypatch.chdir(tmp_path)
+    # Detached HEAD - get_current_branch returns None
+    git = FakeGit(current_branches={tmp_path: None})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
 
-    # Detached HEAD - _get_current_branch returns None
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = None
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 0
     assert result.output == ""
 
 
-def test_get_closing_text_branch_issue_json_mismatch(tmp_path: Path, monkeypatch) -> None:
+def test_get_closing_text_branch_issue_json_mismatch(tmp_path: Path) -> None:
     """Test get-closing-text fails when branch and issue.json disagree."""
     impl_dir = tmp_path / ".impl"
     impl_dir.mkdir()
@@ -212,13 +204,12 @@ def test_get_closing_text_branch_issue_json_mismatch(tmp_path: Path, monkeypatch
         encoding="utf-8",
     )
 
-    monkeypatch.chdir(tmp_path)
-
     # Branch says issue 42, issue.json says issue 99 - mismatch!
-    with patch("erk.cli.commands.exec.scripts.get_closing_text._get_current_branch") as mock_branch:
-        mock_branch.return_value = "P42-wrong-issue-01-04-1234"
-        runner = CliRunner()
-        result = runner.invoke(get_closing_text)
+    git = FakeGit(current_branches={tmp_path: "P42-wrong-issue-01-04-1234"})
+    ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+
+    runner = CliRunner()
+    result = runner.invoke(get_closing_text, [], obj=ctx)
 
     assert result.exit_code == 1
     assert "disagrees" in result.output
