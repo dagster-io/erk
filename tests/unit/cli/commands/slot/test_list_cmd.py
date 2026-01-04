@@ -39,8 +39,8 @@ def test_slot_list_empty() -> None:
         assert "erk-managed-wt-02" in result.output
         assert "erk-managed-wt-03" in result.output
         assert "erk-managed-wt-04" in result.output
-        # All should be available
-        assert "(available)" in result.output
+        # All should show "available" status
+        assert "available" in result.output
 
 
 def test_slot_list_with_assignments() -> None:
@@ -115,8 +115,8 @@ def test_slot_list_alias_ls() -> None:
         assert "erk-managed-wt-01" in result.output
 
 
-def test_slot_list_shows_fs_state_column() -> None:
-    """Test that slot list shows FS State column with sync status."""
+def test_slot_list_shows_reason_column() -> None:
+    """Test that slot list shows Reason column with issue status."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -157,7 +157,6 @@ def test_slot_list_shows_fs_state_column() -> None:
         result = runner.invoke(cli, ["slot", "list"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        # FS State column should be shown
-        assert "FS State" in result.output
-        # Should show synced status when pool.json matches filesystem
-        assert "synced" in result.output
+        # Reason column should be shown
+        assert "Reason" in result.output
+        # When pool.json matches filesystem, healthy state shows "-" (no issue)

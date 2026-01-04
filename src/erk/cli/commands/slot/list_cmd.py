@@ -1,6 +1,5 @@
 """Slot list command - display unified worktree pool status."""
 
-from pathlib import Path
 from typing import Literal
 
 import click
@@ -11,85 +10,75 @@ from erk.cli.alias import alias
 from erk.cli.commands.slot.common import (
     DEFAULT_POOL_SIZE,
     generate_slot_name,
-    get_placeholder_branch_name,
 )
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk.core.worktree_pool import PoolState, load_pool_state
 
-SlotStatus = Literal["active", "ready", "empty"]
+SlotStatus = Literal["available", "assigned", "error"]
+SlotReason = Literal["worktree-missing", "branch-mismatch", "-"]
 
 
 def _determine_slot_status(
     slot_name: str,
-    worktree_path: Path,
-    current_branch: str | None,
     assigned_slots: set[str],
-    initialized_slots: set[str],
+    reason: SlotReason,
 ) -> SlotStatus:
     """Determine the status of a worktree slot.
 
     Args:
         slot_name: The slot identifier (e.g., "erk-managed-wt-01")
-        worktree_path: Expected filesystem path for the worktree
-        current_branch: Current branch checked out, or None if not exists
         assigned_slots: Set of slot names that have assignments in pool.json
-        initialized_slots: Set of slot names that are initialized
+        reason: The reason code from _get_slot_reason (indicates any problems)
 
     Returns:
-        Status: "active" (has assignment), "ready" (initialized, unassigned), "empty"
+        Status: "assigned" (healthy assignment), "error" (assignment with problem),
+                "available" (can be used)
     """
-    # If slot is in pool.json assignments, it's active
+    # If slot has an assignment in pool.json
     if slot_name in assigned_slots:
-        return "active"
+        # Check if there's a problem with the assignment
+        if reason != "-":
+            return "error"
+        return "assigned"
 
-    # If slot is initialized (has worktree created), it's ready
-    if slot_name in initialized_slots:
-        return "ready"
-
-    # Check if worktree exists on filesystem but not tracked
-    placeholder_branch = get_placeholder_branch_name(slot_name)
-    if current_branch is not None:
-        # Worktree exists but not in initialized list
-        if placeholder_branch is not None and current_branch == placeholder_branch:
-            return "ready"
-        # Worktree exists with a non-placeholder branch but not in pool.json
-        return "ready"
-
-    # Slot doesn't exist
-    return "empty"
+    # No assignment - slot is available
+    return "available"
 
 
-def _get_fs_sync_state(
-    slot_name: str,
+def _get_slot_reason(
     assigned_branch: str | None,
     actual_branch: str | None,
-) -> str:
-    """Determine filesystem sync state.
+) -> SlotReason:
+    """Determine the reason for slot state.
+
+    Returns a kebab-case reason explaining any issues with the slot:
+    - "worktree-missing": pool.json has assignment but worktree doesn't exist
+    - "branch-mismatch": worktree exists but has different branch than assignment
+    - "-": healthy state (no problem)
 
     Args:
-        slot_name: Slot name
         assigned_branch: Branch assigned in pool.json (if any)
         actual_branch: Actual branch on filesystem (if any)
 
     Returns:
-        Sync state: "synced", "stale", or "-"
+        Reason literal explaining any issues
     """
     if actual_branch is None:
         # No worktree on filesystem
         if assigned_branch is not None:
-            return "stale"  # pool.json says assigned but no worktree
-        return "-"  # Neither assigned nor exists
+            return "worktree-missing"  # pool.json says assigned but no worktree
+        return "-"  # Neither assigned nor exists - healthy available state
 
     if assigned_branch is None:
-        # Worktree exists but not assigned
-        return "synced"  # Ready state is valid
+        # Worktree exists but not assigned - healthy available state
+        return "-"
 
     # Both exist - check if they match
     if actual_branch == assigned_branch:
-        return "synced"
-    return "stale"
+        return "-"  # Healthy - branches match
+    return "branch-mismatch"
 
 
 @alias("ls")
@@ -100,10 +89,10 @@ def slot_list(ctx: ErkContext) -> None:
 
     Shows a table combining pool.json state and filesystem state:
     - Worktree: The pool worktree name
-    - Status: active (has assignment), ready (initialized), or empty
-    - Branch: Assigned branch or "(available)"
+    - Branch: Assigned branch or - (available)
     - Assigned: When the assignment was made (relative time)
-    - FS State: synced (matches pool.json), stale (mismatch), or -
+    - Status: available, assigned (healthy), or error (has problem)
+    - Reason: worktree-missing, branch-mismatch, or - (healthy)
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -117,9 +106,8 @@ def slot_list(ctx: ErkContext) -> None:
             assignments=(),
         )
 
-    # Build lookup sets
+    # Build lookup set
     assigned_slots = {a.slot_name for a in state.assignments}
-    initialized_slots = {s.name for s in state.slots}
 
     # Build lookup of slot_name -> (branch_name, relative_time)
     assignments_by_slot: dict[str, tuple[str, str]] = {}
@@ -136,15 +124,15 @@ def slot_list(ctx: ErkContext) -> None:
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("Worktree", style="cyan", no_wrap=True)
-    table.add_column("Status", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
     table.add_column("Objective", no_wrap=True)
     table.add_column("Assigned", no_wrap=True)
-    table.add_column("FS State", no_wrap=True)
+    table.add_column("Status", no_wrap=True)
+    table.add_column("Reason", no_wrap=True)
 
     # Track counts for summary
-    active_count = 0
-    ready_count = 0
+    assigned_count = 0
+    error_count = 0
 
     # Add rows for all slots
     for slot_num in range(1, state.pool_size + 1):
@@ -158,45 +146,41 @@ def slot_list(ctx: ErkContext) -> None:
         if worktree_exists:
             actual_branch = ctx.git.get_current_branch(worktree_path)
 
-        # Determine status
-        status = _determine_slot_status(
-            slot_name, worktree_path, actual_branch, assigned_slots, initialized_slots
-        )
-
         # Get assigned branch info
         assigned_branch: str | None = None
         assigned_time = "-"
         if slot_name in assignments_by_slot:
             assigned_branch, assigned_time = assignments_by_slot[slot_name]
 
-        # Determine FS sync state
-        fs_state = _get_fs_sync_state(slot_name, assigned_branch, actual_branch)
+        # Determine reason for any issues (needed before status)
+        reason = _get_slot_reason(assigned_branch, actual_branch)
+
+        # Determine status (depends on reason)
+        status = _determine_slot_status(slot_name, assigned_slots, reason)
 
         # Format branch display
-        if status == "active":
-            branch_display = assigned_branch if assigned_branch else "-"
-        elif status == "ready":
-            branch_display = "[dim](available)[/dim]"
+        if status == "available":
+            branch_display = "[dim]-[/dim]"
             assigned_time = "-"
         else:
-            branch_display = "[dim](available)[/dim]"
-            assigned_time = "-"
+            # Both "assigned" and "error" show the assigned branch
+            branch_display = assigned_branch if assigned_branch else "-"
 
         # Format status with color
-        status_map = {
-            "active": "[green]active[/green]",
-            "ready": "[blue]ready[/blue]",
-            "empty": "[dim]-[/dim]",
+        status_map: dict[SlotStatus, str] = {
+            "available": "[dim]available[/dim]",
+            "assigned": "[green]assigned[/green]",
+            "error": "[red]error[/red]",
         }
         status_display = status_map[status]
 
-        # Format FS state with color
-        fs_state_map = {
-            "synced": "[green]synced[/green]",
-            "stale": "[red]stale[/red]",
+        # Format reason with color (only shown for error states)
+        reason_map: dict[SlotReason, str] = {
+            "worktree-missing": "[red]worktree-missing[/red]",
+            "branch-mismatch": "[red]branch-mismatch[/red]",
             "-": "[dim]-[/dim]",
         }
-        fs_state_display = fs_state_map.get(fs_state, fs_state)
+        reason_display = reason_map[reason]
 
         # Format objective display
         objective_display: str
@@ -207,28 +191,28 @@ def slot_list(ctx: ErkContext) -> None:
 
         table.add_row(
             slot_name,
-            status_display,
             branch_display,
             objective_display,
             assigned_time,
-            fs_state_display,
+            status_display,
+            reason_display,
         )
 
         # Track counts
-        if status == "active":
-            active_count += 1
-        elif status == "ready":
-            ready_count += 1
+        if status == "assigned":
+            assigned_count += 1
+        elif status == "error":
+            error_count += 1
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)
     console.print(table)
 
     # Print summary
-    initialized_count = len(state.slots)
+    available_count = state.pool_size - assigned_count - error_count
     console.print(
         f"\nPool: {state.pool_size} slots | "
-        f"{initialized_count} initialized | "
-        f"{active_count} active | "
-        f"{ready_count} ready"
+        f"{available_count} available | "
+        f"{assigned_count} assigned | "
+        f"{error_count} error"
     )
