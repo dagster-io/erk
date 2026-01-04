@@ -313,27 +313,27 @@ def plan_save_to_issue(
         _create_plan_saved_marker(effective_session_id, repo_root)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
-        # Determine plan file path
+        # Determine Claude plan file path (source for snapshot)
         if plan_file:
-            snapshot_path = plan_file
+            claude_plan_file = plan_file
         else:
             # Look up slug from session to find plan file
             slugs = extract_slugs_from_session(effective_session_id, cwd_hint=str(cwd))
             if slugs:
-                snapshot_path = get_plans_dir() / f"{slugs[-1]}.md"
+                claude_plan_file = get_plans_dir() / f"{slugs[-1]}.md"
             else:
-                snapshot_path = None
+                claude_plan_file = None
 
-        if snapshot_path is not None and snapshot_path.exists():
+        if claude_plan_file is not None and claude_plan_file.exists():
             snapshot_result = snapshot_plan_for_session(
                 session_id=effective_session_id,
-                plan_file_path=snapshot_path,
+                plan_file_path=claude_plan_file,
                 cwd_hint=str(cwd),
                 repo_root=repo_root,
             )
             # Delete the Claude plan file to prevent stale content from being re-saved
             # The content is now safely archived in .erk/scratch/ and on GitHub
-            snapshot_path.unlink()
+            claude_plan_file.unlink()
 
     # Step 10: Output success
     # Detect enrichment status for informational output
