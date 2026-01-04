@@ -23,7 +23,7 @@ from tests.test_utils.env_helpers import erk_inmem_env
 
 
 def test_land_cleanup_confirmation_decline() -> None:
-    """Test that declining cleanup confirmation preserves worktree."""
+    """Test that declining cleanup confirmation preserves worktree and does not navigate."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -110,6 +110,13 @@ def test_land_cleanup_confirmation_decline() -> None:
 
         # Verify message about preserved worktree
         assert "Worktree preserved" in result.output
+
+        # Verify confirmation prompt includes both worktree name and branch
+        assert "Delete worktree 'feature-1'" in result.output
+        assert "(branch 'feature-1')" in result.output
+
+        # Verify NO navigation script was written (user stays in current worktree)
+        assert env.script_writer.last_script is None
 
 
 def test_land_force_skips_cleanup_confirmation() -> None:
