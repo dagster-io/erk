@@ -1,8 +1,8 @@
-"""Unit tests for pooled common module utilities."""
+"""Unit tests for slot common module utilities."""
 
 from pathlib import Path
 
-from erk.cli.commands.pooled.common import (
+from erk.cli.commands.slot.common import (
     DEFAULT_POOL_SIZE,
     extract_slot_number,
     find_inactive_slot,

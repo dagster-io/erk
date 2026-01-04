@@ -1,4 +1,4 @@
-"""Unit tests for pooled unassign command."""
+"""Unit tests for slot unassign command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,7 +26,7 @@ def _create_test_assignment(
     )
 
 
-def test_pooled_unassign_by_slot_name() -> None:
+def test_slot_unassign_by_slot_name() -> None:
     """Test unassigning by slot name checks out placeholder branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -59,7 +59,7 @@ def test_pooled_unassign_by_slot_name() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -81,7 +81,7 @@ def test_pooled_unassign_by_slot_name() -> None:
         assert (env.cwd, "__erk-slot-01-placeholder__", "main") in git_ops.created_branches
 
 
-def test_pooled_unassign_by_branch_name() -> None:
+def test_slot_unassign_by_branch_name() -> None:
     """Test unassigning by branch name checks out placeholder branch."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -114,7 +114,7 @@ def test_pooled_unassign_by_branch_name() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "unassign", "feature-branch"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "feature-branch"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -132,7 +132,7 @@ def test_pooled_unassign_by_branch_name() -> None:
         assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
 
 
-def test_pooled_unassign_not_found() -> None:
+def test_slot_unassign_not_found() -> None:
     """Test unassigning non-existent slot or branch shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -160,14 +160,14 @@ def test_pooled_unassign_not_found() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "unassign", "nonexistent"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "nonexistent"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No assignment found" in result.output
 
 
-def test_pooled_unassign_no_pool_configured() -> None:
+def test_slot_unassign_no_pool_configured() -> None:
     """Test unassigning when no pool is configured shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -193,14 +193,14 @@ def test_pooled_unassign_no_pool_configured() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "unassign", "something"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "something"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No pool configured" in result.output
 
 
-def test_pooled_unassign_preserves_other_assignments() -> None:
+def test_slot_unassign_preserves_other_assignments() -> None:
     """Test that unassigning one slot preserves other assignments."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -238,7 +238,7 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
 
         # Unassign first one
         result = runner.invoke(
-            cli, ["pooled", "unassign", "feature-a"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "feature-a"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -251,7 +251,7 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
         assert state.assignments[0].slot_name == "erk-managed-wt-02"
 
 
-def test_pooled_unassign_fails_with_uncommitted_changes() -> None:
+def test_slot_unassign_fails_with_uncommitted_changes() -> None:
     """Test unassigning fails when worktree has uncommitted changes."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -285,7 +285,7 @@ def test_pooled_unassign_fails_with_uncommitted_changes() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
@@ -300,7 +300,7 @@ def test_pooled_unassign_fails_with_uncommitted_changes() -> None:
         assert len(git_ops.checked_out_branches) == 0
 
 
-def test_pooled_unassign_uses_existing_placeholder_branch() -> None:
+def test_slot_unassign_uses_existing_placeholder_branch() -> None:
     """Test unassigning uses existing placeholder branch without creating new one."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -333,7 +333,7 @@ def test_pooled_unassign_uses_existing_placeholder_branch() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0

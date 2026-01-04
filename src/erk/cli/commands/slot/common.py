@@ -1,4 +1,4 @@
-"""Shared utilities for pooled branch commands."""
+"""Shared utilities for slot commands."""
 
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
@@ -203,7 +203,7 @@ def handle_pool_full_interactive(
         user_output(
             f"Error: Pool is full ({slots} slots). "
             "Use --force to auto-unassign the oldest branch, "
-            "or run `erk pooled list` to see assignments."
+            "or run `erk slot list` to see assignments."
         )
         return None
 

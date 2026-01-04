@@ -1,4 +1,4 @@
-"""Unit tests for pooled init-slots command."""
+"""Unit tests for slot init-pool command."""
 
 from click.testing import CliRunner
 
@@ -11,7 +11,7 @@ from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
-def test_init_slots_dry_run_does_not_create_worktrees() -> None:
+def test_init_pool_dry_run_does_not_create_worktrees() -> None:
     """Test that dry-run mode prevents worktree creation.
 
     This test passes dry_run=True to the context (not via CLI flag) to verify
@@ -41,7 +41,7 @@ def test_init_slots_dry_run_does_not_create_worktrees() -> None:
         # Note: Don't pass --dry-run flag because that would call create_context()
         # which replaces our fake context with a real one. Instead, the context
         # already has dry_run=True which is what we're testing.
-        result = runner.invoke(cli, ["pooled", "init-slots"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "init-pool"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
 
@@ -60,7 +60,7 @@ def test_init_slots_dry_run_does_not_create_worktrees() -> None:
         assert state is None
 
 
-def test_init_slots_dry_run_shows_slot_count() -> None:
+def test_init_pool_dry_run_shows_slot_count() -> None:
     """Test that dry-run shows the number of slots that would be initialized."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -83,7 +83,7 @@ def test_init_slots_dry_run_shows_slot_count() -> None:
         )
 
         result = runner.invoke(
-            cli, ["pooled", "init-slots", "-n", "1"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "init-pool", "-n", "1"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -94,8 +94,8 @@ def test_init_slots_dry_run_shows_slot_count() -> None:
         assert "Would initialize" in result.output
 
 
-def test_init_slots_creates_worktrees_without_dry_run() -> None:
-    """Test that init-slots actually creates worktrees when dry_run=False."""
+def test_init_pool_creates_worktrees_without_dry_run() -> None:
+    """Test that init-pool actually creates worktrees when dry_run=False."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -124,7 +124,7 @@ def test_init_slots_creates_worktrees_without_dry_run() -> None:
         (repo_dir / "worktrees").mkdir(parents=True, exist_ok=True)
 
         result = runner.invoke(
-            cli, ["pooled", "init-slots", "-n", "1"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "init-pool", "-n", "1"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0

@@ -6,8 +6,7 @@ This unified command provides two modes:
 
 Both modes create a worktree and invoke Claude for implementation.
 
-When run from within a pool slot, delegates to pooled implement to reuse
-the current slot instead of creating a new worktree.
+Running from within a pool slot is not currently supported.
 """
 
 import shutil
@@ -697,31 +696,15 @@ def implement(
     # Detect target type
     target_info = detect_target_type(target)
 
-    # Check if we're in a pool slot - if so, delegate to pooled implement
+    # Check if we're in a pool slot - error for now (Phase 2 will add pool slot support)
     repo = discover_repo_context(ctx, ctx.cwd)
     if _is_in_pool_slot(ctx, repo.pool_json_path):
-        # Import here to avoid circular dependency
-        from erk.cli.commands.pooled.implement_cmd import pooled_implement
-
-        ctx.feedback.info("Detected pool slot, delegating to pooled implement...")
-
-        # Forward to pooled implement by invoking the command callback directly
-        # with the click context that has our ErkContext attached
-        parent_ctx = click.get_current_context()
-        parent_ctx.invoke(
-            pooled_implement,
-            target=target,
-            force=force,
-            dry_run=dry_run,
-            submit=submit,
-            dangerous=dangerous,
-            no_interactive=no_interactive,
-            script=script,
-            yolo=False,  # Already handled above
-            verbose=verbose,
-            model=model,
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Cannot run 'erk implement' from within a pool slot.\n"
+            "Either navigate to the repo root first, or run from outside the pool slot."
         )
-        return
+        raise SystemExit(1)
 
     # Output target detection diagnostic
     if target_info.target_type in ("issue_number", "issue_url"):

@@ -1,11 +1,11 @@
-"""Pooled create command - create a new branch and assign to a slot."""
+"""Slot create command - create a new branch and assign to a slot."""
 
 import sys
 from datetime import UTC, datetime
 
 import click
 
-from erk.cli.commands.pooled.common import (
+from erk.cli.commands.slot.common import (
     find_branch_assignment,
     find_inactive_slot,
     find_next_available_slot,
@@ -29,7 +29,7 @@ from erk_shared.output.output import user_output
 @click.argument("branch_name", metavar="BRANCH")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @click.pass_obj
-def pooled_create(ctx: ErkContext, branch_name: str, force: bool) -> None:
+def slot_create(ctx: ErkContext, branch_name: str, force: bool) -> None:
     """Create a NEW branch and assign it to an available pool slot.
 
     BRANCH is the name of the new git branch to create and assign.
@@ -42,7 +42,7 @@ def pooled_create(ctx: ErkContext, branch_name: str, force: bool) -> None:
     5. Assign the branch to the slot
     6. Persist the assignment to pool.json
 
-    Use `erk pooled assign` to assign an EXISTING branch to a slot.
+    Use `erk slot assign` to assign an EXISTING branch to a slot.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
@@ -71,7 +71,7 @@ def pooled_create(ctx: ErkContext, branch_name: str, force: bool) -> None:
     if branch_name in local_branches:
         user_output(
             f"Error: Branch '{branch_name}' already exists.\n"
-            "Use `erk pooled assign` for existing branches."
+            "Use `erk slot assign` for existing branches."
         )
         raise SystemExit(1) from None
 

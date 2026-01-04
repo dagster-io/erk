@@ -1,9 +1,10 @@
-"""Pooled checkout command - navigate to a pool slot's worktree by branch name."""
+"""Slot checkout command - navigate to a pool slot's worktree by branch name."""
+
+from pathlib import Path
 
 import click
 
 from erk.cli.commands.navigation_helpers import activate_worktree
-from erk.cli.commands.pooled.unassign_cmd import _find_assignment_by_cwd
 from erk.cli.config import load_config
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
@@ -28,24 +29,42 @@ def _find_assignment_by_branch(state: PoolState, branch: str) -> SlotAssignment 
     return None
 
 
+def _find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | None:
+    """Find an assignment by checking if cwd is within a pool slot's worktree.
+
+    Args:
+        state: Current pool state
+        cwd: Current working directory
+
+    Returns:
+        SlotAssignment if cwd is within a pool slot, None otherwise
+    """
+    resolved_cwd = cwd.resolve()
+    for assignment in state.assignments:
+        wt_path = assignment.worktree_path.resolve()
+        if resolved_cwd == wt_path or wt_path in resolved_cwd.parents:
+            return assignment
+    return None
+
+
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH", required=False)
 @script_option
 @click.pass_obj
-def pooled_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
+def slot_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
     """Switch to a pool slot's worktree by branch name.
 
     BRANCH is the name of the branch assigned to a pool slot.
 
     Examples:
-        erk pooled checkout feature-branch    # Switch to the slot with this branch
+        erk slot checkout feature-branch    # Switch to the slot with this branch
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Load pool state
     state = load_pool_state(repo.pool_json_path)
     if state is None:
-        user_output("Error: No pool configured. Run `erk pooled create` first.")
+        user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
 
     # Require branch argument
@@ -58,7 +77,7 @@ def pooled_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
     if assignment is None:
         user_output(
             f"Error: No assignment found for branch '{branch}'.\n"
-            "Run `erk pooled list` to see current assignments."
+            "Run `erk slot list` to see current assignments."
         )
         raise SystemExit(1) from None
 
@@ -78,7 +97,7 @@ def pooled_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
         repo=repo,
         target_path=assignment.worktree_path,
         script=script,
-        command_name="pooled checkout",
+        command_name="slot checkout",
         preserve_relative_path=True,
         post_cd_commands=post_cd_commands,
     )

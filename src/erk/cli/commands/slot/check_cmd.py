@@ -1,4 +1,4 @@
-"""Pooled check command - check pool state consistency with disk and git."""
+"""Slot check command - check pool state consistency with disk and git."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -226,7 +226,7 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
 
 @click.command("check")
 @click.pass_obj
-def pooled_check(ctx: ErkContext) -> None:
+def slot_check(ctx: ErkContext) -> None:
     """Check pool state consistency with disk and git.
 
     Reports drift between:
@@ -241,7 +241,7 @@ def pooled_check(ctx: ErkContext) -> None:
     # Load pool state
     state = load_pool_state(repo.pool_json_path)
     if state is None:
-        user_output("Error: No pool configured. Run `erk pooled create` first.")
+        user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
 
     # Get git worktrees

@@ -1,10 +1,6 @@
-"""Shared utilities for implement commands (traditional and pooled).
+"""Shared utilities for implement commands.
 
-This module contains the common logic shared between:
-- erk implement (traditional worktree-based implementation)
-- erk pooled implement (pool slot-based implementation)
-
-Both commands share ~90% of logic - only worktree path determination differs.
+This module contains the common logic for erk implement - worktree-based implementation.
 """
 
 import re
