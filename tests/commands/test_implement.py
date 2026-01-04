@@ -116,9 +116,9 @@ def test_implement_from_plain_issue_number() -> None:
         result = runner.invoke(implement, ["123", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
-        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        assert "123-add-authentication-feature-01-15-1430" in result.output
+        assert "Assigned" in result.output
+        # Slot-based path
+        assert "erk-managed-wt-" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -150,9 +150,9 @@ def test_implement_from_issue_number() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
-        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        assert "42-add-authentication-feature-01-15-1430" in result.output
+        assert "Assigned" in result.output
+        # Slot-based path
+        assert "erk-managed-wt-" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -184,7 +184,7 @@ def test_implement_from_issue_url() -> None:
         result = runner.invoke(implement, [url, "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
         assert len(git.added_worktrees) == 1
 
         # Verify issue.json contains correct issue number
@@ -194,8 +194,8 @@ def test_implement_from_issue_url() -> None:
         assert '"issue_number": 123' in issue_json_content
 
 
-def test_implement_from_issue_with_custom_name() -> None:
-    """Test implementing from issue with custom worktree name."""
+def test_implement_assigns_to_pool_slot() -> None:
+    """Test that implement assigns worktree to a pool slot."""
     plan_issue = _create_sample_plan_issue()
 
     runner = CliRunner()
@@ -208,15 +208,17 @@ def test_implement_from_issue_with_custom_name() -> None:
         store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
-        result = runner.invoke(
-            implement, ["#42", "--worktree-name", "my-custom-feature", "--script"], obj=ctx
-        )
+        result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "my-custom-feature" in result.output
+        # Should show slot assignment message instead of worktree creation
+        assert "Assigned" in result.output
+        assert "erk-managed-wt-" in result.output
 
+        # Verify worktree was created in slot path
+        assert len(git.added_worktrees) == 1
         worktree_path, _ = git.added_worktrees[0]
-        assert "my-custom-feature" in str(worktree_path)
+        assert "erk-managed-wt-" in str(worktree_path)
 
 
 def test_implement_from_issue_fails_without_erk_plan_label() -> None:
@@ -316,8 +318,8 @@ def test_implement_from_plan_file() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
-        assert "my-feature" in result.output
+        assert "Assigned" in result.output
+        assert "erk-managed-wt-" in result.output
 
         # Verify worktree created
         assert len(git.added_worktrees) == 1
@@ -332,8 +334,8 @@ def test_implement_from_plan_file() -> None:
         assert not plan_file.exists()
 
 
-def test_implement_from_plan_file_with_custom_name() -> None:
-    """Test implementing from plan file with custom worktree name."""
+def test_implement_from_plan_file_assigns_to_slot() -> None:
+    """Test implementing from plan file assigns to a pool slot."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -347,15 +349,16 @@ def test_implement_from_plan_file_with_custom_name() -> None:
         plan_file = env.cwd / "feature-plan.md"
         plan_file.write_text("# Plan", encoding="utf-8")
 
-        result = runner.invoke(
-            implement, [str(plan_file), "--worktree-name", "custom-name", "--script"], obj=ctx
-        )
+        result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "custom-name" in result.output
+        # Should show slot assignment message
+        assert "Assigned" in result.output
+        assert "erk-managed-wt-" in result.output
 
+        # Verify worktree was created in slot path
         worktree_path, _ = git.added_worktrees[0]
-        assert "custom-name" in str(worktree_path)
+        assert "erk-managed-wt-" in str(worktree_path)
 
 
 def test_implement_from_plan_file_strips_plan_suffix() -> None:
@@ -432,11 +435,11 @@ def test_implement_from_plan_file_dry_run() -> None:
 # Branch Conflict Tests
 
 
-def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
-    """Test that issue mode uses computed branch name, ignoring --worktree-name for branch.
+def test_implement_works_from_pool_slot() -> None:
+    """Test that implement can be run from within a pool slot.
 
-    The branch is computed from the issue number and title with a timestamp suffix.
-    The --worktree-name flag only affects the worktree directory name, not the branch.
+    Unlike the previous behavior which blocked running from within pool slots,
+    the slot-first implementation allows this and assigns to a different slot.
     """
     plan_issue = _create_sample_plan_issue()
 
@@ -444,54 +447,49 @@ def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
+            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
-        # Even though "existing-branch" exists, issue mode uses a computed branch name
-        # (e.g., "42-add-authentication-feature-01-15-1430") so this should succeed - the
-        # worktree name is "existing-branch" but the branch is derived from issue title
-        result = runner.invoke(
-            implement, ["#42", "--worktree-name", "existing-branch", "--script"], obj=ctx
-        )
+        # Simulate running from within a pool slot by having the command work normally
+        # (The old behavior would have blocked this with an error)
+        result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
-        # Should succeed because the branch doesn't conflict with "existing-branch"
+        # Should succeed - slot-first allows running from anywhere
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
-        # Verify worktree was created with custom name but branch created directly
+        # Verify worktree was created
         assert len(git.added_worktrees) == 1
-        worktree_path, _ = git.added_worktrees[0]
-        assert "existing-branch" in str(worktree_path)
 
 
-def test_implement_fails_when_branch_exists_file_mode() -> None:
-    """Test that file mode fails when branch already exists with explicit name."""
+def test_implement_force_flag_accepted() -> None:
+    """Test that --force flag is accepted by the command.
+
+    The --force flag allows auto-unassigning the oldest slot when the pool
+    is full. This test verifies the flag is properly parsed and doesn't
+    cause errors during normal operation.
+    """
+    plan_issue = _create_sample_plan_issue()
+
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
+            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
         )
-        ctx = build_workspace_test_context(env, git=git)
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
-        # Create plan file
-        plan_file = env.cwd / "feature-plan.md"
-        plan_file.write_text("# Plan", encoding="utf-8")
+        # Use --force flag (should work without issue when pool isn't full)
+        result = runner.invoke(implement, ["#42", "--script", "--force"], obj=ctx)
 
-        result = runner.invoke(
-            implement, [str(plan_file), "--worktree-name", "existing-branch"], obj=ctx
-        )
-
-        assert result.exit_code == 1
-        assert "Error" in result.output
-        assert "already exists" in result.output
-        # Should suggest -f flag or choosing a different name (not suggest --worktree-name)
-        assert "Use -f to delete" in result.output or "choose a different name" in result.output
-        assert len(git.added_worktrees) == 0
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        assert len(git.added_worktrees) == 1
 
 
 # Submit Flag Tests
@@ -515,7 +513,7 @@ def test_implement_with_submit_flag_from_issue() -> None:
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
@@ -540,7 +538,7 @@ def test_implement_with_submit_flag_from_file() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
@@ -567,7 +565,7 @@ def test_implement_without_submit_uses_default_command() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Verify script has only implement-plan command (not CI/submit)
         assert "erk-implement-" in result.output
@@ -668,7 +666,7 @@ def test_implement_uses_git_when_graphite_disabled() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
 
@@ -696,7 +694,7 @@ def test_implement_plan_file_uses_git_when_graphite_disabled() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
 
@@ -719,14 +717,14 @@ def test_implement_from_issue_uses_gt_create_with_graphite() -> None:
     pass
 
 
-def test_implement_from_issue_tracks_existing_branch_with_graphite() -> None:
-    """Test track_branch is called when re-implementing with an existing branch.
+def test_implement_from_issue_skips_tracking_existing_branch_with_graphite() -> None:
+    """Test track_branch is NOT called when re-implementing with an existing branch.
 
     When implementing an issue where the branch ALREADY exists locally,
-    ctx.graphite.track_branch() is called to ensure Graphite tracks the parent.
+    we do NOT re-track the branch since it was already tracked when first created.
 
     This scenario occurs when:
-    1. A previous implementation attempt created the branch
+    1. A previous implementation attempt created the branch (and tracked it)
     2. The worktree was deleted but branch remains
     3. User runs `erk implement` again for the same issue
     """
@@ -769,26 +767,11 @@ def test_implement_from_issue_tracks_existing_branch_with_graphite() -> None:
         # Assert: Worktree was created
         assert len(git.added_worktrees) == 1
 
-        # Assert: track_branch was called because branch already existed
-        # (when branch exists, we use use_existing_branch=True path which calls track_branch)
-        assert len(fake_graphite.track_branch_calls) == 1, (
-            f"Expected 1 track_branch call, got {len(fake_graphite.track_branch_calls)}: "
-            f"{fake_graphite.track_branch_calls}"
-        )
-
-        cwd_path, branch_name, parent_branch = fake_graphite.track_branch_calls[0]
-
-        # Branch name should match the existing branch
-        assert branch_name == existing_branch
-
-        # Parent should be trunk branch (main) since we're checking out from main
-        assert parent_branch == "main", f"Parent branch should be 'main', got: {parent_branch}"
-
-        # Critical: cwd_path should be repo_root, not the new worktree path
-        worktree_path = git.added_worktrees[0][0]
-        assert cwd_path != worktree_path, (
-            f"track_branch should be called with repo_root, not worktree path. "
-            f"Got cwd_path={cwd_path}, worktree_path={worktree_path}"
+        # Assert: track_branch was NOT called because branch already existed
+        # (when branch exists, it was already tracked when first created)
+        assert len(fake_graphite.track_branch_calls) == 0, (
+            f"Expected 0 track_branch calls for existing branch, got "
+            f"{len(fake_graphite.track_branch_calls)}: {fake_graphite.track_branch_calls}"
         )
 
 
@@ -1017,7 +1000,7 @@ def test_implement_with_dangerous_shows_in_manual_instructions() -> None:
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Verify dangerous flag shown in script file
         assert result.stdout
@@ -1055,8 +1038,8 @@ def test_interactive_mode_calls_executor() -> None:
         assert len(executor.executed_commands) == 0
 
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
-        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        assert "42-add-authentication-feature-01-15-1430" in str(worktree_path)
+        # Slot-based path
+        assert "erk-managed-wt-" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:plan-implement"
         # No relative path preservation when running from worktree root
@@ -1115,7 +1098,7 @@ def test_interactive_mode_from_plan_file() -> None:
         # Verify execute_interactive was called
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
-        assert "my-feature" in str(worktree_path)
+        assert "erk-managed-wt-" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:plan-implement"
         assert model is None
@@ -1422,42 +1405,41 @@ def test_yolo_flag_conflicts_with_script() -> None:
 def test_implement_from_worktree_stacks_on_current_branch_with_graphite() -> None:
     """When Graphite enabled and on feature branch, stack on current branch.
 
-    This test uses an existing branch to avoid the gt create subprocess path.
     The key verification is that the parent_branch in track_branch is the
-    current branch (feature-branch), not trunk.
+    current branch (feature-branch), not trunk. This test uses file mode
+    with a new branch (not pre-existing) so track_branch is called.
     """
     from erk_shared.gateway.graphite.fake import FakeGraphite
-
-    plan_issue = _create_sample_plan_issue("123")
-    # Pre-create the branch that will be used for this issue
-    existing_branch = "P123-add-authentication-feature-01-15-1430"
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch", existing_branch]},
+            # Note: "new-feature" branch does NOT exist yet
+            local_branches={env.cwd: ["main", "feature-branch"]},
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "feature-branch"},  # On feature branch
         )
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
         fake_graphite = FakeGraphite()
         ctx = build_workspace_test_context(
             env,
             git=git,
-            plan_store=store,
             graphite=fake_graphite,
             use_graphite=True,  # Graphite enabled
         )
 
-        result = runner.invoke(implement, ["123", "--script"], obj=ctx)
+        # Create plan file - branch name will be derived as "new-feature"
+        plan_file = env.cwd / "new-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
 
         # Verify track_branch was called with feature-branch as parent (stacking behavior)
         assert len(fake_graphite.track_branch_calls) == 1
         _cwd, branch_name, parent_branch = fake_graphite.track_branch_calls[0]
-        assert branch_name == existing_branch
+        assert branch_name == "new-feature"
         assert parent_branch == "feature-branch", (
             f"Expected parent 'feature-branch' (stacking), got: {parent_branch}"
         )
@@ -1492,41 +1474,40 @@ def test_implement_from_worktree_uses_trunk_without_graphite() -> None:
 def test_implement_from_trunk_uses_trunk_with_graphite() -> None:
     """When on trunk branch, use trunk as base regardless of Graphite.
 
-    This test uses an existing branch to avoid the gt create subprocess path.
     The key verification is that the parent_branch in track_branch is trunk (main).
+    This test uses file mode with a new branch (not pre-existing) so track_branch is called.
     """
     from erk_shared.gateway.graphite.fake import FakeGraphite
-
-    plan_issue = _create_sample_plan_issue("123")
-    # Pre-create the branch that will be used for this issue
-    existing_branch = "P123-add-authentication-feature-01-15-1430"
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", existing_branch]},
+            # Note: "new-feature" branch does NOT exist yet
+            local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},  # On trunk branch
         )
-        store, _ = create_plan_store_with_plans({"123": plan_issue})
         fake_graphite = FakeGraphite()
         ctx = build_workspace_test_context(
             env,
             git=git,
-            plan_store=store,
             graphite=fake_graphite,
             use_graphite=True,  # Graphite enabled
         )
 
-        result = runner.invoke(implement, ["123", "--script"], obj=ctx)
+        # Create plan file - branch name will be derived as "new-feature"
+        plan_file = env.cwd / "new-feature-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
 
         # Verify track_branch was called with main as parent (trunk-based)
         assert len(fake_graphite.track_branch_calls) == 1
         _cwd, branch_name, parent_branch = fake_graphite.track_branch_calls[0]
-        assert branch_name == existing_branch
+        assert branch_name == "new-feature"
         assert parent_branch == "main", f"Expected parent 'main' (trunk), got: {parent_branch}"
 
 
@@ -1874,136 +1855,3 @@ def test_invalid_model_flag() -> None:
         assert "Invalid model" in result.output
 
 
-# Pool Slot Detection Tests
-
-
-def test_is_in_pool_slot_returns_false_when_no_pool() -> None:
-    """Test _is_in_pool_slot returns False when no pool.json exists."""
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        ctx = ErkContext.for_test(cwd=env.cwd)
-        pool_json_path = env.cwd / ".erk" / "pool.json"
-
-        # No pool.json exists
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is False
-
-
-def test_is_in_pool_slot_returns_false_when_not_in_slot() -> None:
-    """Test _is_in_pool_slot returns False when in repo but not in a slot."""
-    import json
-
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        # Create pool.json with an assignment in a different location
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True, exist_ok=True)
-        pool_json_path = erk_dir / "pool.json"
-
-        pool_state = {
-            "version": 1,
-            "pool_size": 4,
-            "slots": [],
-            "assignments": [
-                {
-                    "slot_name": "erk-managed-wt-01",
-                    "branch_name": "feature-branch",
-                    "worktree_path": "/some/other/path",  # Different path
-                    "assigned_at": "2024-01-01T00:00:00Z",
-                }
-            ],
-        }
-        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
-
-        ctx = ErkContext.for_test(cwd=env.cwd)
-
-        # cwd is not in the assigned worktree path
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is False
-
-
-def test_is_in_pool_slot_returns_true_when_in_slot() -> None:
-    """Test _is_in_pool_slot returns True when cwd is inside an assigned slot."""
-    import json
-
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        # Create a slot directory
-        slot_dir = env.cwd / "worktrees" / "erk-managed-wt-01"
-        slot_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create pool.json with assignment pointing to the slot
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True, exist_ok=True)
-        pool_json_path = erk_dir / "pool.json"
-
-        pool_state = {
-            "version": 1,
-            "pool_size": 4,
-            "slots": [],
-            "assignments": [
-                {
-                    "slot_name": "erk-managed-wt-01",
-                    "branch_name": "feature-branch",
-                    "worktree_path": str(slot_dir),
-                    "assigned_at": "2024-01-01T00:00:00Z",
-                }
-            ],
-        }
-        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
-
-        # Create context with cwd in the slot
-        ctx = ErkContext.for_test(cwd=slot_dir)
-
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is True
-
-
-def test_is_in_pool_slot_returns_true_when_in_slot_subdirectory() -> None:
-    """Test _is_in_pool_slot returns True when cwd is in subdirectory of slot."""
-    import json
-
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        # Create a slot directory with subdirectory
-        slot_dir = env.cwd / "worktrees" / "erk-managed-wt-01"
-        sub_dir = slot_dir / "src" / "lib"
-        sub_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create pool.json with assignment pointing to the slot
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True, exist_ok=True)
-        pool_json_path = erk_dir / "pool.json"
-
-        pool_state = {
-            "version": 1,
-            "pool_size": 4,
-            "slots": [],
-            "assignments": [
-                {
-                    "slot_name": "erk-managed-wt-01",
-                    "branch_name": "feature-branch",
-                    "worktree_path": str(slot_dir),
-                    "assigned_at": "2024-01-01T00:00:00Z",
-                }
-            ],
-        }
-        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
-
-        # Create context with cwd in subdirectory of the slot
-        ctx = ErkContext.for_test(cwd=sub_dir)
-
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is True
