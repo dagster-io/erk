@@ -8,6 +8,7 @@ from erk.cli.commands.pooled.check_cmd import pooled_check
 from erk.cli.commands.pooled.checkout_cmd import pooled_checkout
 from erk.cli.commands.pooled.create_cmd import pooled_create
 from erk.cli.commands.pooled.list_cmd import pooled_list
+from erk.cli.commands.pooled.plan_cmd import pooled_plan
 from erk.cli.commands.pooled.unassign_cmd import pooled_unassign
 from erk.cli.help_formatter import ErkCommandGroup
 
@@ -24,4 +25,5 @@ pooled_group.add_command(pooled_assign)
 pooled_group.add_command(pooled_unassign)
 pooled_group.add_command(pooled_checkout)
 pooled_group.add_command(pooled_check)
+pooled_group.add_command(pooled_plan)
 register_with_aliases(pooled_group, pooled_list)
