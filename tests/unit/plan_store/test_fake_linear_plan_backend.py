@@ -289,9 +289,12 @@ def test_create_plan_returns_uuid_id() -> None:
         metadata={},
     )
 
-    # UUID-style ID with prefix
+    # UUID-style ID with prefix (8 hex characters after prefix)
     assert result.plan_id.startswith("LIN-")
-    assert not result.plan_id.replace("LIN-", "").isdigit()
+    hex_part = result.plan_id.replace("LIN-", "")
+    assert len(hex_part) == 8
+    # Verify it's valid hex (UUID hex can be all digits, so check hex validity not "not digits")
+    int(hex_part, 16)  # Raises ValueError if not valid hex
     assert result.url.startswith("https://linear.app/")
 
 
