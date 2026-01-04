@@ -17,6 +17,7 @@ Create a graphite-stacked branch from a saved plan issue and implement it in the
 ✅ **Use when**: You have a saved plan (GitHub issue) and want to implement it as a stacked branch on top of your current branch.
 
 ❌ **Don't use when**:
+
 - You just finished planning and want to save + implement → Use `/erk:plan-implement`
 - You want to implement in a new worktree → Use `erk implement <issue-number>`
 
