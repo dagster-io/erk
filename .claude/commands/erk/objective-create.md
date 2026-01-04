@@ -74,12 +74,14 @@ How would you like the objective structured?
 ```
 
 **Options:**
+
 1. **Steelthread (Recommended)** - Phase 1A is a minimal vertical slice proving the concept works end-to-end, followed by Phase 1B to complete the feature. Best when you can demonstrate value with a partial implementation.
 2. **Linear** - Sequential phases, each building on the previous. Good when infrastructure must exist before any use case works (e.g., database schema before queries).
 3. **Single** - One phase, one PR. For small, focused objectives that don't need phasing.
 4. **Custom** - User describes their preferred structure
 
 **Selection guidelines:**
+
 - **Steelthread**: Default choice. Use when feasible - it de-risks the approach early by proving the concept works.
 - **Linear**: Use when Phase 1A doesn't make sense - e.g., building a new abstraction layer that has no value until complete.
 - **Single**: Use for objectives small enough to implement in one PR (typically 1-2 days of work).
