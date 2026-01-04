@@ -6,7 +6,7 @@ read_when:
   - "debugging empty steps in progress.md"
 tripwires:
   - action: "creating test plan content without frontmatter steps"
-    warning: "Plans MUST have a `steps:` array in YAML frontmatter with dictionaries containing 'name' keys. The /erk:plan-save command will reject plans without proper frontmatter steps."
+    warning: "Plans MUST have steps for tracking. Either add a `steps:` array in YAML frontmatter with dictionaries containing 'name' keys, or use the --steps CLI option when saving."
 ---
 
 # Step Extraction Format
@@ -61,6 +61,16 @@ The `plan-save-to-issue` command validates frontmatter before saving:
 - **Step missing `name`** → Error with format instructions
 
 This ensures all plans have valid step tracking from the start.
+
+### Alternative: CLI --steps Option
+
+Instead of adding steps to frontmatter, you can provide steps via the CLI:
+
+```bash
+erk exec plan-save-to-issue --steps "First step" --steps "Second step" --format display
+```
+
+The `--steps` option injects steps into the plan frontmatter at save time, overriding any existing steps. This is useful when you don't want to modify the plan file.
 
 ## Fallback: Regex Extraction (Backwards Compatibility)
 

@@ -59,7 +59,7 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
-**CRITICAL: Before creating test plan content without frontmatter steps** → Read [Step Extraction Format](planning/step-extraction-format.md) first. Plans MUST have a `steps:` array in YAML frontmatter with dictionaries containing 'name' keys. The /erk:plan-save command will reject plans without proper frontmatter steps.
+**CRITICAL: Before creating test plan content without frontmatter steps** → Read [Step Extraction Format](planning/step-extraction-format.md) first. Plans MUST have steps for tracking. Either add a `steps:` array in YAML frontmatter with dictionaries containing 'name' keys, or use the --steps CLI option when saving.
 
 **CRITICAL: Before working with session-specific data** → Read [Parallel Session Awareness](sessions/parallel-session-awareness.md) first. Multiple sessions can run in parallel. NEVER use "most recent by mtime" for session data lookup - always scope by session ID.
 

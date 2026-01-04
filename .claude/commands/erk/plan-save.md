@@ -17,9 +17,13 @@ This separation keeps machine-readable metadata in the body while the human-read
 
 ## Agent Instructions
 
-### Step 0: Ensure Plan Has Frontmatter Steps
+### Step 0: Ensure Plan Has Steps
 
-Before saving, verify the plan file has a `steps:` array in YAML frontmatter. Each step must be a dictionary with a `name` key:
+Plans require steps for tracking during implementation. You have two options:
+
+**Option A: Frontmatter steps in plan file**
+
+Verify the plan file has a `steps:` array in YAML frontmatter:
 
 ```markdown
 ---
@@ -33,14 +37,11 @@ steps:
 ...
 ```
 
-If the plan is missing frontmatter steps:
+If missing, edit the plan file to add frontmatter steps.
 
-1. Read the plan file
-2. Extract the logical implementation steps from the content
-3. Add them to YAML frontmatter at the top of the file using the `- name: "..."` format
-4. Save the updated plan file
+**Option B: Use --steps CLI option**
 
-The frontmatter is required for step tracking during implementation.
+Provide steps directly via the CLI (see Step 2). This injects steps into the plan at save time, useful when you don't want to modify the plan file.
 
 ### Step 1: Extract Session ID
 
@@ -53,6 +54,14 @@ Run this command with the extracted session ID:
 ```bash
 erk exec plan-save-to-issue --format display --session-id="<session-id-from-step-1>"
 ```
+
+**With --steps option** (if plan lacks frontmatter steps):
+
+```bash
+erk exec plan-save-to-issue --format display --session-id="<session-id>" --steps "First step" --steps "Second step"
+```
+
+The `--steps` option is repeatable and injects steps into the plan frontmatter, overriding any existing steps.
 
 ### Step 3: Display Results
 
