@@ -1,16 +1,15 @@
-"""Initialize implementation by validating .impl/ folder and extracting phases.
+"""Initialize implementation by validating .impl/ folder.
 
-This exec command combines validation and initialization for /erk:plan-implement:
-- Validates .impl/ folder structure (plan.md, progress.md exist)
+This exec command validates .impl/ folder for /erk:plan-implement:
+- Validates .impl/ folder structure (plan.md exists)
 - Checks for GitHub issue tracking (issue.json)
-- Extracts phases from plan.md
 - Parses "Related Documentation" section for skills and docs
 
 Usage:
     erk exec impl-init --json
 
 Output:
-    JSON with validation status, phases, and related docs
+    JSON with validation status and related docs
     Always outputs JSON (for machine parsing by slash command)
 
 Exit Codes:
@@ -29,10 +28,7 @@ from typing import NoReturn
 
 import click
 
-from erk_shared.impl_folder import (
-    parse_progress_frontmatter,
-    read_issue_reference,
-)
+from erk_shared.impl_folder import read_issue_reference
 
 
 def _error_json(error_type: str, message: str) -> NoReturn:
@@ -71,36 +67,7 @@ def _validate_impl_folder() -> tuple[Path, str]:
     if not plan_file.exists():
         _error_json("no_plan_file", f"No plan.md found in {impl_dir.name}/ folder")
 
-    progress_file = impl_dir / "progress.md"
-    if not progress_file.exists():
-        _error_json("no_progress_file", f"No progress.md found in {impl_dir.name}/ folder")
-
     return impl_dir, impl_type
-
-
-def _extract_phases_from_frontmatter(impl_dir: Path) -> list[dict[str, str | int]]:
-    """Extract phases from progress.md frontmatter steps array.
-
-    Args:
-        impl_dir: Path to .impl/ directory
-
-    Returns:
-        List of phase dicts with 'number' and 'text' keys
-    """
-    progress_file = impl_dir / "progress.md"
-    content = progress_file.read_text(encoding="utf-8")
-    frontmatter = parse_progress_frontmatter(content)
-
-    if frontmatter is None:
-        return []
-
-    steps = frontmatter.get("steps", [])
-    phases = []
-    for i, step in enumerate(steps, start=1):
-        if isinstance(step, dict) and "text" in step:
-            phases.append({"number": i, "text": step["text"]})
-
-    return phases
 
 
 def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
@@ -157,10 +124,10 @@ def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
 @click.command(name="impl-init")
 @click.option("--json", "json_output", is_flag=True, default=True, help="Output JSON (default)")
 def impl_init(json_output: bool) -> None:
-    """Initialize implementation by validating .impl/ folder and extracting phases.
+    """Initialize implementation by validating .impl/ folder.
 
-    Combines validation (check-impl) with phase extraction for /erk:plan-implement.
-    Returns structured JSON with validation status, phases, and related documentation.
+    Validates .impl/ folder for /erk:plan-implement.
+    Returns structured JSON with validation status and related documentation.
     """
     # Validate folder structure
     impl_dir, impl_type = _validate_impl_folder()
@@ -174,9 +141,6 @@ def impl_init(json_output: bool) -> None:
     plan_file = impl_dir / "plan.md"
     plan_content = plan_file.read_text(encoding="utf-8")
 
-    # Extract phases from progress.md frontmatter
-    phases = _extract_phases_from_frontmatter(impl_dir)
-
     # Extract related documentation
     related_docs = _extract_related_docs(plan_content)
 
@@ -185,7 +149,6 @@ def impl_init(json_output: bool) -> None:
         "valid": True,
         "impl_type": impl_type,
         "has_issue_tracking": has_issue_tracking,
-        "phases": phases,
         "related_docs": related_docs,
     }
 

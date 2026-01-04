@@ -3,9 +3,10 @@
 Layer 3: Pure unit tests (zero dependencies).
 
 These tests verify the worker_impl_folder module functions work correctly with
-basic filesystem operations. Uses regex-based step extraction (no LLM needed).
+basic filesystem operations.
 """
 
+import json
 from pathlib import Path
 
 import pytest
@@ -13,11 +14,9 @@ import pytest
 
 def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
     """Test creating .worker-impl/ folder with all required files."""
-    import json
-
     from erk_shared.worker_impl_folder import create_worker_impl_folder
 
-    plan_content = "# Test Plan\n\n## Step 1: First step\n\n## Step 2: Second step\n"
+    plan_content = "# Test Plan\n\n## Tasks\n\n1. First task\n2. Second task\n"
     issue_number = 123
     issue_url = "https://github.com/owner/repo/issues/123"
 
@@ -26,7 +25,6 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
         issue_number=issue_number,
         issue_url=issue_url,
         repo_root=tmp_path,
-        prompt_executor=None,  # No longer needed
     )
 
     # Verify folder was created
@@ -47,16 +45,6 @@ def test_create_worker_impl_folder_success(tmp_path: Path) -> None:
     assert issue_data["issue_url"] == issue_url
     assert "created_at" in issue_data
     assert "synced_at" in issue_data
-
-    # Verify progress.md exists with checkboxes (step titles, not numbers)
-    progress_file = worker_impl_folder / "progress.md"
-    assert progress_file.exists()
-    progress_content = progress_file.read_text(encoding="utf-8")
-    assert "---" in progress_content  # Front matter
-    assert "completed_steps: 0" in progress_content
-    assert "total_steps: 2" in progress_content
-    assert "- [ ] First step" in progress_content
-    assert "- [ ] Second step" in progress_content
 
     # Verify README.md exists
     readme_file = worker_impl_folder / "README.md"
@@ -82,7 +70,6 @@ def test_create_worker_impl_folder_already_exists(tmp_path: Path) -> None:
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
             repo_root=tmp_path,
-            prompt_executor=None,
         )
 
 
@@ -98,7 +85,6 @@ def test_create_worker_impl_folder_repo_root_not_exists(tmp_path: Path) -> None:
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
             repo_root=nonexistent_path,
-            prompt_executor=None,
         )
 
 
@@ -116,7 +102,6 @@ def test_create_worker_impl_folder_repo_root_not_directory(tmp_path: Path) -> No
             issue_number=123,
             issue_url="https://github.com/owner/repo/issues/123",
             repo_root=file_path,
-            prompt_executor=None,
         )
 
 
@@ -126,11 +111,10 @@ def test_remove_worker_impl_folder_success(tmp_path: Path) -> None:
 
     # Create .worker-impl/ folder first
     create_worker_impl_folder(
-        plan_content="# Test\n\n## Step 1: Step one\n",
+        plan_content="# Test\n",
         issue_number=123,
         issue_url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
-        prompt_executor=None,
     )
 
     worker_impl_folder = tmp_path / ".worker-impl"
@@ -167,11 +151,10 @@ def test_worker_impl_folder_exists_true(tmp_path: Path) -> None:
 
     # Create .worker-impl/ folder
     create_worker_impl_folder(
-        plan_content="# Test\n\n## Step 1: Step one\n",
+        plan_content="# Test\n",
         issue_number=123,
         issue_url="https://github.com/owner/repo/issues/123",
         repo_root=tmp_path,
-        prompt_executor=None,
     )
 
     assert worker_impl_folder_exists(tmp_path) is True
@@ -203,11 +186,10 @@ def test_worker_impl_folder_plan_content_preservation(tmp_path: Path) -> None:
 ## Overview
 This plan contains **markdown** formatting and `code blocks`.
 
-## Step 1: First step with `inline code`
-Implementation details.
+## Tasks
 
-## Step 2: Second step with special chars: $, &, *, ()
-More details.
+1. First task with `inline code`
+2. Second task with special chars: $, &, *, ()
 
 ```python
 def example():
@@ -221,7 +203,6 @@ def example():
         issue_number=456,
         issue_url="https://github.com/owner/repo/issues/456",
         repo_root=tmp_path,
-        prompt_executor=None,
     )
 
     plan_file = tmp_path / ".worker-impl" / "plan.md"
@@ -229,40 +210,3 @@ def example():
 
     # Content should be preserved exactly
     assert saved_content == plan_content
-
-
-def test_worker_impl_folder_progress_generation(tmp_path: Path) -> None:
-    """Test progress.md generation from plan steps."""
-    from erk_shared.worker_impl_folder import create_worker_impl_folder
-
-    plan_content = """# Test Plan
-
-## Step 1: First step
-Details.
-
-## Step 2: Second step
-Details.
-
-## Step 3: Third step
-Details.
-"""
-    create_worker_impl_folder(
-        plan_content=plan_content,
-        issue_number=789,
-        issue_url="https://github.com/owner/repo/issues/789",
-        repo_root=tmp_path,
-        prompt_executor=None,
-    )
-
-    progress_file = tmp_path / ".worker-impl" / "progress.md"
-    progress_content = progress_file.read_text(encoding="utf-8")
-
-    # Verify front matter
-    assert "---" in progress_content
-    assert "completed_steps: 0" in progress_content
-    assert "total_steps: 3" in progress_content
-
-    # Verify all steps have checkboxes (step titles, not numbered)
-    assert "- [ ] First step" in progress_content
-    assert "- [ ] Second step" in progress_content
-    assert "- [ ] Third step" in progress_content

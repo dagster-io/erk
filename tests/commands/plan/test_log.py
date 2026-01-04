@@ -239,8 +239,6 @@ def test_log_with_all_event_types() -> None:
 
     status_block = create_implementation_status_block(
         status="in_progress",
-        completed_steps=3,
-        total_steps=5,
         timestamp="2024-01-15T12:40:00Z",
     )
 
@@ -271,7 +269,7 @@ def test_log_with_all_event_types() -> None:
         assert "Plan created" in result.output
         assert "Queued for execution" in result.output
         assert "GitHub Actions workflow started" in result.output
-        assert "Progress: 3/5 steps" in result.output
+        assert "Implementation in progress" in result.output
 
 
 def test_log_with_invalid_plan_identifier() -> None:
@@ -309,22 +307,16 @@ def test_log_multiple_status_updates() -> None:
     # Create multiple status updates
     status1 = create_implementation_status_block(
         status="in_progress",
-        completed_steps=1,
-        total_steps=5,
         timestamp="2024-01-15T12:30:00Z",
     )
 
     status2 = create_implementation_status_block(
         status="in_progress",
-        completed_steps=3,
-        total_steps=5,
         timestamp="2024-01-15T12:35:00Z",
     )
 
     status3 = create_implementation_status_block(
         status="complete",
-        completed_steps=5,
-        total_steps=5,
         timestamp="2024-01-15T12:40:00Z",
     )
 
@@ -350,9 +342,8 @@ def test_log_multiple_status_updates() -> None:
         # Assert
         assert result.exit_code == 0
 
-        # Verify all status updates are shown
-        assert "Progress: 1/5 steps" in result.output
-        assert "Progress: 3/5 steps" in result.output
+        # Verify status updates are shown
+        assert "Implementation in progress" in result.output
         assert "Implementation complete" in result.output
 
 

@@ -71,7 +71,6 @@ from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
 from erk.cli.commands.exec.scripts.post_pr_inline_comment import (
     post_pr_inline_comment,
 )
-from erk.cli.commands.exec.scripts.post_start_comment import post_start_comment
 from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment,
 )
@@ -142,7 +141,6 @@ exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(post_extraction_comment, name="post-extraction-comment")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
-exec_group.add_command(post_start_comment, name="post-start-comment")
 exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")
 exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")

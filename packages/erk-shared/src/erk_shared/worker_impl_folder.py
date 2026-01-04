@@ -13,23 +13,14 @@ Folder structure:
 .worker-impl/
 ├── plan.md          # Full plan content from GitHub issue
 ├── issue.json       # Canonical schema from impl_folder (issue_number, issue_url, etc.)
-├── progress.md      # Progress tracking checkboxes
 └── README.md        # Explanation that folder is temporary
 """
 
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
-from erk_shared.impl_folder import (
-    extract_steps_from_plan_regex,
-    generate_progress_content,
-    save_issue_reference,
-)
-
-if TYPE_CHECKING:
-    from erk_shared.prompt_executor.abc import PromptExecutor
+from erk_shared.impl_folder import save_issue_reference
 
 
 def create_worker_impl_folder(
@@ -37,7 +28,6 @@ def create_worker_impl_folder(
     issue_number: int,
     issue_url: str,
     repo_root: Path,
-    prompt_executor: PromptExecutor | None,
 ) -> Path:
     """Create .worker-impl/ folder with all required files.
 
@@ -46,7 +36,6 @@ def create_worker_impl_folder(
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
         repo_root: Repository root directory path
-        prompt_executor: Deprecated, now ignored (steps extracted via regex)
 
     Returns:
         Path to the created .worker-impl/ directory
@@ -77,12 +66,6 @@ def create_worker_impl_folder(
 
     # Write issue.json using canonical function from impl_folder
     save_issue_reference(worker_impl_folder, issue_number, issue_url)
-
-    # Generate and write progress.md using regex-based extraction (deterministic)
-    steps = extract_steps_from_plan_regex(plan_content)
-    progress_content = generate_progress_content(steps)
-    progress_file = worker_impl_folder / "progress.md"
-    progress_file.write_text(progress_content, encoding="utf-8")
 
     # Write README.md
     readme_content = f"""# .worker-impl/ - Worker Implementation Plan

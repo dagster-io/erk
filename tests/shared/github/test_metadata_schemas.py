@@ -10,8 +10,6 @@ from erk_shared.github.metadata import (
     ImplementationStatusSchema,
     PlanHeaderSchema,
     PlanSchema,
-    ProgressStatusSchema,
-    StartStatusSchema,
     SubmissionQueuedSchema,
     WorkflowStartedSchema,
     WorktreeCreationSchema,
@@ -26,8 +24,6 @@ class TestImplementationStatusSchema:
         schema = ImplementationStatusSchema()
         data = {
             "status": "complete",
-            "completed_steps": 5,
-            "total_steps": 5,
             "timestamp": "2024-01-15T10:30:00Z",
         }
         schema.validate(data)  # Should not raise
@@ -37,8 +33,6 @@ class TestImplementationStatusSchema:
         schema = ImplementationStatusSchema()
         data = {
             "status": "in_progress",
-            "completed_steps": 3,
-            "total_steps": 5,
             "timestamp": "2024-01-15T10:30:00Z",
         }
         schema.validate(data)  # Should not raise
@@ -48,8 +42,6 @@ class TestImplementationStatusSchema:
         schema = ImplementationStatusSchema()
         data = {
             "status": "complete",
-            "completed_steps": 5,
-            "total_steps": 5,
             "timestamp": "2024-01-15T10:30:00Z",
             "summary": "Implemented feature X",
             "branch_name": "feature/x",
@@ -65,11 +57,9 @@ class TestImplementationStatusSchema:
         schema = ImplementationStatusSchema()
         data = {
             "status": "complete",
-            "completed_steps": 5,
-            # Missing total_steps
-            "timestamp": "2024-01-15T10:30:00Z",
+            # Missing timestamp
         }
-        with pytest.raises(ValueError, match="Missing required fields: total_steps"):
+        with pytest.raises(ValueError, match="Missing required fields: timestamp"):
             schema.validate(data)
 
     def test_invalid_status_value(self) -> None:
@@ -77,171 +67,15 @@ class TestImplementationStatusSchema:
         schema = ImplementationStatusSchema()
         data = {
             "status": "invalid_status",
-            "completed_steps": 5,
-            "total_steps": 5,
             "timestamp": "2024-01-15T10:30:00Z",
         }
         with pytest.raises(ValueError, match="Invalid status 'invalid_status'"):
-            schema.validate(data)
-
-    def test_non_integer_completed_steps(self) -> None:
-        """Non-integer completed_steps raises ValueError."""
-        schema = ImplementationStatusSchema()
-        data = {
-            "status": "complete",
-            "completed_steps": "5",  # String instead of int
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-        }
-        with pytest.raises(ValueError, match="completed_steps must be an integer"):
-            schema.validate(data)
-
-    def test_negative_completed_steps(self) -> None:
-        """Negative completed_steps raises ValueError."""
-        schema = ImplementationStatusSchema()
-        data = {
-            "status": "complete",
-            "completed_steps": -1,
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-        }
-        with pytest.raises(ValueError, match="completed_steps must be non-negative"):
-            schema.validate(data)
-
-    def test_total_steps_less_than_one(self) -> None:
-        """total_steps less than 1 raises ValueError."""
-        schema = ImplementationStatusSchema()
-        data = {
-            "status": "complete",
-            "completed_steps": 0,
-            "total_steps": 0,
-            "timestamp": "2024-01-15T10:30:00Z",
-        }
-        with pytest.raises(ValueError, match="total_steps must be at least 1"):
-            schema.validate(data)
-
-    def test_completed_exceeds_total(self) -> None:
-        """completed_steps exceeding total_steps raises ValueError."""
-        schema = ImplementationStatusSchema()
-        data = {
-            "status": "complete",
-            "completed_steps": 6,
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-        }
-        with pytest.raises(ValueError, match="completed_steps cannot exceed total_steps"):
             schema.validate(data)
 
     def test_get_key(self) -> None:
         """get_key returns correct key."""
         schema = ImplementationStatusSchema()
         assert schema.get_key() == "erk-implementation-status"
-
-
-class TestProgressStatusSchema:
-    """Test ProgressStatusSchema validation."""
-
-    def test_valid_progress(self) -> None:
-        """Valid progress status."""
-        schema = ProgressStatusSchema()
-        data = {
-            "status": "in_progress",
-            "completed_steps": 3,
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-        }
-        schema.validate(data)  # Should not raise
-
-    def test_valid_with_step_description(self) -> None:
-        """Valid progress with optional step_description."""
-        schema = ProgressStatusSchema()
-        data = {
-            "status": "in_progress",
-            "completed_steps": 3,
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-            "step_description": "Implementing database layer",
-        }
-        schema.validate(data)  # Should not raise
-
-    def test_missing_required_field(self) -> None:
-        """Missing required field raises ValueError."""
-        schema = ProgressStatusSchema()
-        data = {
-            "status": "in_progress",
-            "completed_steps": 3,
-            # Missing total_steps and timestamp
-        }
-        with pytest.raises(ValueError, match="Missing required fields"):
-            schema.validate(data)
-
-
-class TestStartStatusSchema:
-    """Test StartStatusSchema validation."""
-
-    def test_valid_start_status(self) -> None:
-        """Valid start status with all required fields."""
-        schema = StartStatusSchema()
-        data = {
-            "status": "starting",
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-            "worktree": "feature-123",
-            "branch": "feature/new-feature",
-        }
-        schema.validate(data)  # Should not raise
-
-    def test_invalid_status_value(self) -> None:
-        """Status must be 'starting'."""
-        schema = StartStatusSchema()
-        data = {
-            "status": "complete",  # Wrong status
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-            "worktree": "feature-123",
-            "branch": "feature/new-feature",
-        }
-        with pytest.raises(ValueError, match="Invalid status 'complete'. Must be 'starting'"):
-            schema.validate(data)
-
-    def test_non_integer_total_steps(self) -> None:
-        """total_steps must be integer."""
-        schema = StartStatusSchema()
-        data = {
-            "status": "starting",
-            "total_steps": "5",
-            "timestamp": "2024-01-15T10:30:00Z",
-            "worktree": "feature-123",
-            "branch": "feature/new-feature",
-        }
-        with pytest.raises(ValueError, match="total_steps must be an integer"):
-            schema.validate(data)
-
-    def test_empty_timestamp(self) -> None:
-        """Empty timestamp raises ValueError."""
-        schema = StartStatusSchema()
-        data = {
-            "status": "starting",
-            "total_steps": 5,
-            "timestamp": "",
-            "worktree": "feature-123",
-            "branch": "feature/new-feature",
-        }
-        with pytest.raises(ValueError, match="timestamp must not be empty"):
-            schema.validate(data)
-
-    def test_empty_worktree(self) -> None:
-        """Empty worktree raises ValueError."""
-        schema = StartStatusSchema()
-        data = {
-            "status": "starting",
-            "total_steps": 5,
-            "timestamp": "2024-01-15T10:30:00Z",
-            "worktree": "",
-            "branch": "feature/new-feature",
-        }
-        with pytest.raises(ValueError, match="worktree must not be empty"):
-            schema.validate(data)
 
 
 class TestWorktreeCreationSchema:

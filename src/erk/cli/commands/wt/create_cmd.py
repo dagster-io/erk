@@ -867,9 +867,7 @@ def create_wt(
 
         # Create .impl/ folder in new worktree
         # Use overwrite=False since fresh worktree should not have .impl/
-        impl_folder_destination = create_impl_folder(
-            wt_path, plan_content, ctx.prompt_executor, overwrite=False
-        )
+        impl_folder_destination = create_impl_folder(wt_path, plan_content, overwrite=False)
 
         # Handle --keep-plan-file flag
         if keep_plan_file:
@@ -887,9 +885,7 @@ def create_wt(
 
         # Create .impl/ folder in new worktree
         # Use overwrite=False since fresh worktree should not have .impl/
-        impl_folder_destination = create_impl_folder(
-            wt_path, setup.plan_content, ctx.prompt_executor, overwrite=False
-        )
+        impl_folder_destination = create_impl_folder(wt_path, setup.plan_content, overwrite=False)
 
         # Create .impl/issue.json metadata using shared helper
         save_issue_reference(

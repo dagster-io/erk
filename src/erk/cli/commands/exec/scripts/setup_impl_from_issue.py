@@ -31,7 +31,6 @@ from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import generate_issue_branch_name
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.prompt_executor.real import RealPromptExecutor
 
 
 def _get_current_branch(git: Git, cwd: Path) -> str:
@@ -89,7 +88,6 @@ def setup_impl_from_issue(
     time = RealTime()
     github_issues = RealGitHubIssues(target_repo=None)
     plan_store = GitHubPlanStore(github_issues, time)
-    prompt_executor = RealPromptExecutor(time)
 
     # Step 1: Fetch plan from GitHub
     try:
@@ -142,7 +140,6 @@ def setup_impl_from_issue(
         create_impl_folder(
             worktree_path=cwd,
             plan_content=plan.body,
-            prompt_executor=prompt_executor,
             overwrite=True,
         )
 

@@ -108,10 +108,9 @@ def test_create_with_plan_file() -> None:
         date_suffix = _get_current_date_suffix()
         wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
         assert wt_path.exists()
-        # Impl folder should be created with plan.md and progress.md
+        # Impl folder should be created with plan.md
         assert (wt_path / ".impl").exists()
         assert (wt_path / ".impl" / "plan.md").exists()
-        assert (wt_path / ".impl" / "progress.md").exists()
         assert not plan_file.exists()
 
 
@@ -163,7 +162,6 @@ def test_create_with_plan_file_removes_plan_word() -> None:
             wt_path = repo_dir / "worktrees" / expected_worktree_name
             assert wt_path.exists(), f"Expected worktree at {wt_path} for {plan_filename}"
             assert (wt_path / ".impl" / "plan.md").exists()
-            assert (wt_path / ".impl" / "progress.md").exists()
             assert not plan_file.exists()
 
             # Clean up for next test
@@ -751,9 +749,8 @@ def test_create_with_keep_plan_file_flag() -> None:
         date_suffix = _get_current_date_suffix()
         wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
         assert wt_path.exists()
-        # Impl folder should be created with plan.md and progress.md
+        # Impl folder should be created with plan.md
         assert (wt_path / ".impl" / "plan.md").exists()
-        assert (wt_path / ".impl" / "progress.md").exists()
         # Original plan file should still exist (copied, not moved)
         assert plan_file.exists()
         assert "Copied plan to" in result.output
@@ -1180,7 +1177,6 @@ def test_create_with_json_and_plan_file() -> None:
 
         # Verify impl folder was created
         assert (expected_impl_folder / "plan.md").exists()
-        assert (expected_impl_folder / "progress.md").exists()
         assert not plan_file.exists()  # Original should be moved, not copied
 
 
@@ -1310,7 +1306,6 @@ def test_create_with_stay_and_plan_file() -> None:
         assert wt_path.exists()
         # Impl folder should be created
         assert (wt_path / ".impl" / "plan.md").exists()
-        assert (wt_path / ".impl" / "progress.md").exists()
         assert not plan_file.exists()
         # When --stay is used, only show creation message (no navigation)
         assert "Created worktree at" in result.output

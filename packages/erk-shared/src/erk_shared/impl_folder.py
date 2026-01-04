@@ -2,7 +2,6 @@
 
 This module provides shared utilities for managing .impl/ folder structures:
 - plan.md: Immutable implementation plan
-- progress.md: Mutable progress tracking with step checkboxes
 - issue.json: GitHub issue reference (optional)
 
 These utilities are used by both erk (for local operations) and erk-kits
@@ -12,16 +11,10 @@ These utilities are used by both erk (for local operations) and erk-kits
 from __future__ import annotations
 
 import json
-import re
 import shutil
-import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, cast
-
-import frontmatter
-import yaml
 
 from erk_shared.github.metadata import (
     create_worktree_creation_block,
@@ -29,23 +22,18 @@ from erk_shared.github.metadata import (
 )
 from erk_shared.naming import extract_leading_issue_number
 
-if TYPE_CHECKING:
-    from erk_shared.prompt_executor.abc import PromptExecutor
-
 
 def create_impl_folder(
     worktree_path: Path,
     plan_content: str,
-    prompt_executor: PromptExecutor | None,
     *,
     overwrite: bool,
 ) -> Path:
-    """Create .impl/ folder with plan.md and progress.md files.
+    """Create .impl/ folder with plan.md file.
 
     Args:
         worktree_path: Path to the worktree directory
         plan_content: Content for plan.md file
-        prompt_executor: Optional executor (deprecated, now ignored - steps extracted via regex)
         overwrite: If True, remove existing .impl/ folder before creating new one.
                    If False, raise FileExistsError when .impl/ already exists.
 
@@ -70,27 +58,6 @@ def create_impl_folder(
     plan_file = impl_folder / "plan.md"
     plan_file.write_text(plan_content, encoding="utf-8")
 
-    # Extract steps (frontmatter first, then regex fallback)
-    steps = extract_steps_from_plan_with_fallback(plan_content)
-
-    if not steps:
-        print(
-            "⚠️  No steps found in plan. Step tracking disabled.",
-            file=sys.stderr,
-        )
-
-    progress_content = generate_progress_content(steps)
-
-    progress_file = impl_folder / "progress.md"
-    progress_file.write_text(progress_content, encoding="utf-8")
-
-    # Verify file integrity after creation
-    errors = validate_progress_schema(progress_file)
-    if errors:
-        # This should never happen if generate_progress_content is correct
-        msg = f"Generated invalid progress.md: {'; '.join(errors)}"
-        raise ValueError(msg)
-
     return impl_folder
 
 
@@ -109,411 +76,6 @@ def get_impl_path(worktree_path: Path, git_ops=None) -> Path | None:
     if path_exists:
         return plan_file
     return None
-
-
-def get_progress_path(worktree_path: Path) -> Path | None:
-    """Get path to progress.md if it exists.
-
-    Args:
-        worktree_path: Path to the worktree directory
-
-    Returns:
-        Path to progress.md if exists, None otherwise
-    """
-    progress_file = worktree_path / ".impl" / "progress.md"
-    if progress_file.exists():
-        return progress_file
-    return None
-
-
-def extract_steps_from_plan_regex(plan_content: str) -> list[str]:
-    """Extract step headers from plan markdown using regex.
-
-    Extracts steps from structural `## Step N: Title` headers.
-    This is deterministic (regex) vs probabilistic (LLM).
-
-    Args:
-        plan_content: Full plan markdown content
-
-    Returns:
-        List of step descriptions (e.g., ["Database Schema", "API Endpoints"])
-
-    Examples:
-        >>> extract_steps_from_plan_regex("## Step 1: Database Schema\\n## Step 2: API")
-        ['Database Schema', 'API']
-        >>> extract_steps_from_plan_regex("# No steps here")
-        []
-    """
-    # Pattern: ## Step N: Title or ## Step N Title (colon optional)
-    # Captures just the title part after the step number
-    pattern = r"^## Step \d+[:\s]+(.+)$"
-    matches = re.findall(pattern, plan_content, re.MULTILINE)
-    return [match.strip() for match in matches]
-
-
-def extract_steps_from_frontmatter(plan_content: str) -> list[str] | None:
-    """Extract steps from plan YAML frontmatter.
-
-    Looks for a `steps:` array in the frontmatter and returns step names.
-    Steps must be dictionaries with a 'name' key.
-    Returns None if frontmatter is missing, invalid, or has no steps key.
-
-    Args:
-        plan_content: Full plan markdown content
-
-    Returns:
-        List of step names if frontmatter has valid steps, None otherwise
-
-    Examples:
-        >>> content = "---\\nsteps:\\n  - name: First\\n  - name: Second\\n---\\n# Plan"
-        >>> extract_steps_from_frontmatter(content)
-        ['First', 'Second']
-        >>> extract_steps_from_frontmatter("# No frontmatter")
-        None
-    """
-    # Gracefully handle YAML parsing errors (third-party API exception handling)
-    try:
-        post = frontmatter.loads(plan_content)
-    except yaml.YAMLError:
-        return None
-
-    if "steps" not in post.metadata:
-        return None
-
-    steps = post.metadata["steps"]
-    if not isinstance(steps, list):
-        return None
-
-    # Extract 'name' from each step dict
-    result = []
-    for step in steps:
-        if isinstance(step, dict) and "name" in step:
-            # Cast after isinstance check - YAML returns object but we've verified it's a dict
-            step_dict = cast(dict[str, Any], step)
-            result.append(str(step_dict["name"]))
-        # Skip invalid entries silently
-
-    return result
-
-
-def extract_steps_from_plan_with_fallback(plan_content: str) -> list[str]:
-    """Extract steps from plan frontmatter, with regex fallback.
-
-    Primary source: YAML frontmatter `steps:` array (authoritative if present)
-    Fallback: Regex extraction from `## Step N:` headers (backwards compatibility)
-
-    Args:
-        plan_content: Full plan markdown content
-
-    Returns:
-        List of step descriptions
-    """
-    # Frontmatter is authoritative if present
-    frontmatter_steps = extract_steps_from_frontmatter(plan_content)
-    if frontmatter_steps is not None:
-        return frontmatter_steps
-
-    # Fallback to regex for backwards compatibility
-    return extract_steps_from_plan_regex(plan_content)
-
-
-# Legacy LLM-based extraction - kept for backward compatibility during transition
-# New code should use extract_steps_from_plan_regex instead
-_STEP_EXTRACTION_PROMPT = (
-    "You are a JSON extraction tool. Your ONLY output must be valid JSON.\n\n"
-    "CRITICAL: Output ONLY a JSON array. No explanations, no markdown, no preamble.\n\n"
-    "Task: Extract implementation steps from the plan below.\n"
-    "- Include: Numbered steps, phase headings, implementation tasks\n"
-    "- Exclude: Testing strategy, success criteria, prerequisites, documentation\n\n"
-    'Output format: ["1. Step one", "2. Step two"]\n'
-    "Empty plan: []\n\n"
-    "IMPORTANT: Your response must start with [ and end with ] - nothing else.\n\n"
-    "Plan:\n{plan_content}"
-)
-
-
-def extract_steps_from_plan(plan_content: str, prompt_executor: PromptExecutor) -> list[str]:
-    """Extract implementation steps from plan markdown using LLM.
-
-    DEPRECATED: Use extract_steps_from_plan_regex for deterministic extraction.
-    This function is kept for backward compatibility during transition.
-
-    Uses Claude Sonnet to semantically understand the plan and extract
-    actionable implementation steps.
-
-    Args:
-        plan_content: Full plan markdown content
-        prompt_executor: Executor for running the extraction prompt
-
-    Returns:
-        List of step descriptions with their numbers
-
-    Raises:
-        RuntimeError: If LLM execution fails or returns invalid response
-    """
-    prompt = _STEP_EXTRACTION_PROMPT.format(plan_content=plan_content)
-    result = prompt_executor.execute_prompt(prompt, model="sonnet")
-
-    if not result.success:
-        msg = f"LLM step extraction failed: {result.error}"
-        raise RuntimeError(msg)
-
-    # Parse JSON response
-    output = result.output.strip()
-
-    # Handle empty output (LLM may return empty response even on success)
-    # Gracefully degrade to empty list, consistent with invalid JSON handling
-    if not output:
-        # LOUD warning to help debug this edge case
-        print("=" * 60, file=sys.stderr)
-        print("WARNING: LLM returned empty output for step extraction", file=sys.stderr)
-        print("=" * 60, file=sys.stderr)
-        print("Model: sonnet", file=sys.stderr)
-        print(f"Prompt length: {len(prompt)} chars", file=sys.stderr)
-        print("First 500 chars of prompt:", file=sys.stderr)
-        print(prompt[:500], file=sys.stderr)
-        print("Falling back to empty steps list", file=sys.stderr)
-        print("=" * 60, file=sys.stderr)
-        return []
-
-    # Handle markdown code blocks (LLM may wrap in ```json ... ```)
-    if output.startswith("```"):
-        # Remove first and last lines (code block markers)
-        lines = output.split("\n")
-        output = "\n".join(lines[1:-1])
-
-    try:
-        steps = json.loads(output)
-    except json.JSONDecodeError as e:
-        # LOUD warning and fallback to empty list
-        print("=" * 60, file=sys.stderr)
-        print("WARNING: LLM returned invalid JSON for step extraction", file=sys.stderr)
-        print("=" * 60, file=sys.stderr)
-        print(f"Error: {e}", file=sys.stderr)
-        print(f"Output (first 500 chars): {output[:500]}", file=sys.stderr)
-        print("Falling back to empty steps list", file=sys.stderr)
-        print("=" * 60, file=sys.stderr)
-        steps = []
-
-    # Validate response structure
-    if not isinstance(steps, list):
-        msg = f"LLM returned non-list: {type(steps).__name__}"
-        raise RuntimeError(msg)
-
-    # Validate all items are strings
-    for i, step in enumerate(steps):
-        if not isinstance(step, str):
-            msg = f"Step {i} is not a string: {type(step).__name__}"
-            raise RuntimeError(msg)
-
-    return steps
-
-
-def extract_plan_steps(impl_dir: Path, prompt_executor: PromptExecutor | None) -> list[str]:
-    """Extract step descriptions from .impl/plan.md file.
-
-    Args:
-        impl_dir: Path to .impl/ directory
-        prompt_executor: Optional executor (deprecated, now ignored)
-
-    Returns:
-        List of step description strings
-
-    Raises:
-        FileNotFoundError: If plan.md doesn't exist
-        ValueError: If plan.md contains no steps
-    """
-    plan_file = impl_dir / "plan.md"
-
-    if not plan_file.exists():
-        msg = f"Plan file not found: {plan_file}"
-        raise FileNotFoundError(msg)
-
-    plan_content = plan_file.read_text(encoding="utf-8")
-    steps = extract_steps_from_plan_regex(plan_content)
-
-    if not steps:
-        msg = f"No steps found in plan file: {plan_file}"
-        raise ValueError(msg)
-
-    return steps
-
-
-def parse_progress_frontmatter(content: str) -> dict[str, Any] | None:
-    """Parse YAML front matter from progress.md content.
-
-    Args:
-        content: Full progress.md file content
-
-    Returns:
-        Dictionary with 'completed_steps' and 'total_steps', or None if missing/invalid
-    """
-    # Gracefully handle YAML parsing errors (third-party API exception handling)
-    try:
-        post = frontmatter.loads(content)
-    except yaml.YAMLError:
-        return None
-
-    # Check for required fields
-    metadata = post.metadata
-    if "completed_steps" not in metadata or "total_steps" not in metadata:
-        return None
-
-    return metadata
-
-
-def validate_progress_schema(progress_file: Path) -> list[str]:
-    """Validate progress.md schema and structure.
-
-    Validates that progress.md has valid YAML frontmatter with required fields
-    and internal consistency.
-
-    Schema (aligned with GitHub issue plan-header):
-    - steps: [{number: N, title: "...", completed: bool}, ...]
-    - current_step: int (highest completed step number, 0 = not started)
-    - completed_steps: int (count of completed steps)
-    - total_steps: int
-
-    Args:
-        progress_file: Path to progress.md file
-
-    Returns:
-        List of error messages (empty if valid)
-    """
-    errors: list[str] = []
-
-    if not progress_file.exists():
-        return ["progress.md file not found"]
-
-    content = progress_file.read_text(encoding="utf-8")
-
-    # Gracefully handle YAML parsing errors - return as validation error, not exception.
-    # Invalid YAML is a validation failure, not a crash condition.
-    try:
-        post = frontmatter.loads(content)
-    except yaml.YAMLError as e:
-        return [f"Invalid YAML: {e}"]
-
-    metadata = post.metadata
-
-    # Required fields
-    if "steps" not in metadata:
-        errors.append("Missing 'steps' field")
-    elif not isinstance(metadata["steps"], list):
-        errors.append("'steps' must be a list")
-    else:
-        # Validate step structure (number, title, completed)
-        for i, step in enumerate(metadata["steps"]):
-            if not isinstance(step, dict):
-                errors.append(f"Step {i + 1} must be an object")
-            else:
-                # Cast after isinstance check - YAML returns object but we've verified it's a dict
-                step_dict = cast(dict[str, Any], step)
-                if "number" not in step_dict:
-                    errors.append(f"Step {i + 1} missing 'number' field")
-                elif not isinstance(step_dict["number"], int):
-                    errors.append(f"Step {i + 1} 'number' must be an integer")
-                if "title" not in step_dict:
-                    errors.append(f"Step {i + 1} missing 'title' field")
-                if "completed" not in step_dict:
-                    errors.append(f"Step {i + 1} missing 'completed' field")
-
-    if "total_steps" not in metadata:
-        errors.append("Missing 'total_steps' field")
-
-    if "completed_steps" not in metadata:
-        errors.append("Missing 'completed_steps' field")
-
-    if "current_step" not in metadata:
-        errors.append("Missing 'current_step' field")
-
-    # Consistency checks (only if no structural errors)
-    if not errors and "steps" in metadata:
-        steps = metadata["steps"]
-        total_steps = metadata["total_steps"]
-        completed_steps = metadata["completed_steps"]
-        current_step = metadata["current_step"]
-
-        # Type assertions for ty (narrows types after YAML loading)
-        assert isinstance(steps, list)
-        assert isinstance(total_steps, int)
-        assert isinstance(completed_steps, int)
-        assert isinstance(current_step, int)
-
-        if total_steps != len(steps):
-            errors.append(f"total_steps ({total_steps}) != len(steps) ({len(steps)})")
-
-        # Count completed steps - cast each item to dict after isinstance check
-        actual_completed = 0
-        for s in steps:
-            if isinstance(s, dict):
-                step_item = cast(dict[str, Any], s)
-                if step_item.get("completed"):
-                    actual_completed += 1
-        if completed_steps != actual_completed:
-            errors.append(
-                f"completed_steps ({completed_steps}) != actual count ({actual_completed})"
-            )
-
-        # Validate current_step is consistent with completed steps
-        if current_step < 0:
-            errors.append(f"current_step ({current_step}) must be non-negative")
-        elif current_step > total_steps:
-            errors.append(f"current_step ({current_step}) exceeds total_steps ({total_steps})")
-
-    return errors
-
-
-def generate_progress_content(steps: list[str]) -> str:
-    """Generate progress.md content with YAML front matter and checkboxes.
-
-    The YAML frontmatter contains the source of truth (steps array with completion status),
-    while checkboxes are rendered output for human readability.
-
-    Schema aligned with GitHub issue plan-header metadata:
-    - steps: [{number: 1, title: "...", completed: false}, ...]
-    - current_step: 0 (highest completed step number, 0 = not started)
-    - completed_steps: 0 (count of completed steps)
-    - total_steps: N
-
-    Args:
-        steps: List of step descriptions (titles)
-
-    Returns:
-        Formatted progress markdown with front matter (including steps array) and checkboxes
-    """
-    # Build steps array for YAML with number, title, completed (even if empty)
-    steps_yaml = [
-        {"number": i + 1, "title": step, "completed": False} for i, step in enumerate(steps)
-    ]
-
-    metadata = {
-        "current_step": 0,  # Highest completed step number (0 = not started)
-        "completed_steps": 0,  # Count of completed steps
-        "total_steps": len(steps),
-        "steps": steps_yaml,
-    }
-
-    # Build markdown body
-    if not steps:
-        body = "# Progress Tracking\n\nNo steps detected in plan.\n"
-    else:
-        body_lines = ["# Progress Tracking\n"]
-        for step in steps:
-            body_lines.append(f"- [ ] {step}")
-        body_lines.append("")  # Trailing newline
-        body = "\n".join(body_lines)
-
-    # Use frontmatter.dumps to create the full content
-    # Pass metadata as explicit keyword args to satisfy type checker
-    post = frontmatter.Post(
-        body,
-        current_step=metadata["current_step"],
-        completed_steps=metadata["completed_steps"],
-        total_steps=metadata["total_steps"],
-        steps=metadata["steps"],
-    )
-    return frontmatter.dumps(post)
 
 
 @dataclass(frozen=True)

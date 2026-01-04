@@ -45,13 +45,11 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.env import in_github_actions
 from erk_shared.github.metadata import (
-    create_start_status_block,
     render_erk_issue_event,
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
 )
 from erk_shared.impl_folder import (
-    parse_progress_frontmatter,
     read_issue_reference,
     write_local_run_state,
 )
@@ -197,20 +195,6 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
         _output_error(event, "branch-detection-failed", "Could not determine branch name")
         return
 
-    # Read total steps from progress.md
-    progress_file = impl_dir / "progress.md"
-    if not progress_file.exists():
-        _output_error(event, "no-progress-file", f"Progress file not found: {progress_file}")
-        return
-
-    content = progress_file.read_text(encoding="utf-8")
-    frontmatter = parse_progress_frontmatter(content)
-    if frontmatter is None:
-        _output_error(event, "invalid-progress-format", "Invalid YAML frontmatter in progress.md")
-        return
-
-    total_steps = frontmatter["total_steps"]
-
     # Capture metadata
     timestamp = datetime.now(UTC).isoformat()
     session_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
@@ -238,18 +222,12 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
 
     # Post start comment
     try:
-        block = create_start_status_block(
-            total_steps=total_steps,
-            worktree=worktree_name,
-            branch=branch_name,
-        )
-
         description = f"""**Worktree:** `{worktree_name}`
 **Branch:** `{branch_name}`"""
 
         comment_body = render_erk_issue_event(
             title="🚀 Starting implementation",
-            metadata=block,
+            metadata=None,
             description=description,
         )
 

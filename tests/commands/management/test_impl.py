@@ -61,12 +61,11 @@ def test_create_with_plan_file() -> None:
         assert worktree_path.exists()
         assert worktree_path.is_dir()
 
-        # Verify impl folder was created with plan.md and progress.md
+        # Verify impl folder was created with plan.md
         impl_folder = worktree_path / ".impl"
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
         assert (impl_folder / "plan.md").read_text(encoding="utf-8") == plan_content
-        assert (impl_folder / "progress.md").exists()
 
         # Verify original plan file was moved (not copied)
         assert not plan_file.exists()
@@ -116,7 +115,6 @@ def test_create_with_plan_name_sanitization() -> None:
 
         # Verify impl folder was created
         assert (worktree_path / ".impl" / "plan.md").exists()
-        assert (worktree_path / ".impl" / "progress.md").exists()
         assert not plan_file.exists()
 
 

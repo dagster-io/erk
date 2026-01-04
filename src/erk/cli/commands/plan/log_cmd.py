@@ -416,12 +416,7 @@ def _format_event_description(event: Event) -> str:
             return f"Implementation starting in worktree '{worktree}'"
 
         if status == "in_progress":
-            completed = metadata.get("completed_steps", 0)
-            total = metadata.get("total_steps", 0)
-            step_desc = metadata.get("step_description")
-            if step_desc:
-                return f"Progress: {completed}/{total} steps - {step_desc}"
-            return f"Progress: {completed}/{total} steps"
+            return "Implementation in progress"
 
         if status == "complete":
             return "Implementation complete"

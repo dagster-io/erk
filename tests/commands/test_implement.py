@@ -164,7 +164,6 @@ def test_implement_from_issue_number() -> None:
         impl_path = worktree_paths[0] / ".impl"
         assert impl_path.exists()
         assert (impl_path / "plan.md").exists()
-        assert (impl_path / "progress.md").exists()
         assert (impl_path / "issue.json").exists()
 
 

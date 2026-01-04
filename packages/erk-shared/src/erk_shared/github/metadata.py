@@ -51,8 +51,6 @@ class ImplementationStatusSchema(MetadataBlockSchema):
         """Validate erk-implementation-status data structure."""
         required_fields = {
             "status",
-            "completed_steps",
-            "total_steps",
             "timestamp",
         }
 
@@ -68,67 +66,6 @@ class ImplementationStatusSchema(MetadataBlockSchema):
                 f"Invalid status '{data['status']}'. "
                 f"Must be one of: {', '.join(sorted(valid_statuses))}"
             )
-
-        # Validate numeric fields
-        if not isinstance(data["completed_steps"], int):
-            raise ValueError("completed_steps must be an integer")
-        if not isinstance(data["total_steps"], int):
-            raise ValueError("total_steps must be an integer")
-        if data["completed_steps"] < 0:
-            raise ValueError("completed_steps must be non-negative")
-        if data["total_steps"] < 1:
-            raise ValueError("total_steps must be at least 1")
-        if data["completed_steps"] > data["total_steps"]:
-            raise ValueError("completed_steps cannot exceed total_steps")
-
-    def get_key(self) -> str:
-        return "erk-implementation-status"
-
-
-@dataclass(frozen=True)
-class StartStatusSchema(MetadataBlockSchema):
-    """Schema for erk-implementation-status start blocks."""
-
-    def validate(self, data: dict[str, Any]) -> None:
-        """Validate start status data structure."""
-        required_fields = {
-            "status",
-            "total_steps",
-            "timestamp",
-            "worktree",
-            "branch",
-        }
-
-        # Check required fields exist
-        missing = required_fields - set(data.keys())
-        if missing:
-            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
-
-        # Validate status value
-        if data["status"] != "starting":
-            raise ValueError(f"Invalid status '{data['status']}'. Must be 'starting'")
-
-        # Validate total_steps
-        if not isinstance(data["total_steps"], int):
-            raise ValueError("total_steps must be an integer")
-        if data["total_steps"] < 1:
-            raise ValueError("total_steps must be at least 1")
-
-        # Validate string fields
-        if not isinstance(data["timestamp"], str):
-            raise ValueError("timestamp must be a string")
-        if len(data["timestamp"]) == 0:
-            raise ValueError("timestamp must not be empty")
-
-        if not isinstance(data["worktree"], str):
-            raise ValueError("worktree must be a string")
-        if len(data["worktree"]) == 0:
-            raise ValueError("worktree must not be empty")
-
-        if not isinstance(data["branch"], str):
-            raise ValueError("branch must be a string")
-        if len(data["branch"]) == 0:
-            raise ValueError("branch must not be empty")
 
     def get_key(self) -> str:
         return "erk-implementation-status"
@@ -479,7 +416,7 @@ def render_metadata_block(block: MetadataBlock) -> str:
 
 def render_erk_issue_event(
     title: str,
-    metadata: MetadataBlock,
+    metadata: MetadataBlock | None = None,
     description: str = "",
 ) -> str:
     """
@@ -487,37 +424,36 @@ def render_erk_issue_event(
 
     Creates a comment with:
     - Title line
-    - Metadata block (collapsible YAML)
+    - Metadata block (collapsible YAML) if provided
     - Horizontal separator
     - Optional description/instructions
 
     Args:
-        title: The event title (e.g., "✓ Step 3/5 completed")
-        metadata: Metadata block with event details
+        title: The event title (e.g., "🚀 Starting implementation")
+        metadata: Optional metadata block with event details
         description: Optional instructions or additional context
 
     Returns:
         Formatted comment body ready for GitHub API
 
     Example:
-        >>> block = create_progress_status_block(...)
         >>> comment = render_erk_issue_event(
-        ...     "✓ Step 3/5 completed",
-        ...     block,
-        ...     "Next: implement feature X"
+        ...     "🚀 Starting implementation",
+        ...     description="**Worktree:** `my-worktree`"
         ... )
     """
-    metadata_markdown = render_metadata_block(metadata)
-
     # Build comment structure
     parts = [
         title,
         "",  # Blank line after title
-        metadata_markdown,
-        "",  # Blank line after metadata
-        "---",
-        "",  # Blank line after separator
     ]
+
+    # Add metadata block if provided
+    if metadata is not None:
+        metadata_markdown = render_metadata_block(metadata)
+        parts.extend([metadata_markdown, ""])  # Blank line after metadata
+
+    parts.extend(["---", ""])  # Separator and blank line
 
     # Add description if provided
     if description:
@@ -528,8 +464,6 @@ def render_erk_issue_event(
 
 def create_implementation_status_block(
     status: str,
-    completed_steps: int,
-    total_steps: int,
     timestamp: str,
     summary: str | None = None,
     branch_name: str | None = None,
@@ -542,8 +476,6 @@ def create_implementation_status_block(
 
     Args:
         status: Current status (pending, in_progress, complete, failed)
-        completed_steps: Number of completed steps
-        total_steps: Total number of steps
         timestamp: ISO 8601 timestamp
         summary: Optional summary text
         branch_name: Optional git branch name
@@ -556,10 +488,8 @@ def create_implementation_status_block(
         MetadataBlock with erk-implementation-status schema
     """
     schema = ImplementationStatusSchema()
-    data = {
+    data: dict[str, Any] = {
         "status": status,
-        "completed_steps": completed_steps,
-        "total_steps": total_steps,
         "timestamp": timestamp,
     }
     if summary is not None:
@@ -574,42 +504,6 @@ def create_implementation_status_block(
         data["worktree_path"] = worktree_path
     if status_history is not None:
         data["status_history"] = status_history
-    return create_metadata_block(
-        key=schema.get_key(),
-        data=data,
-        schema=schema,
-    )
-
-
-def create_start_status_block(
-    *,
-    total_steps: int,
-    worktree: str,
-    branch: str,
-) -> MetadataBlock:
-    """Create an erk-implementation-status start block with validation.
-
-    Args:
-        total_steps: Total number of steps in the plan
-        worktree: Name of the worktree
-        branch: Git branch name
-
-    Returns:
-        MetadataBlock with erk-implementation-status schema
-    """
-    from datetime import UTC, datetime
-
-    schema = StartStatusSchema()
-    timestamp = datetime.now(UTC).isoformat()
-
-    data = {
-        "status": "starting",
-        "total_steps": total_steps,
-        "timestamp": timestamp,
-        "worktree": worktree,
-        "branch": branch,
-    }
-
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1094,9 +988,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
-        steps: Array of step objects extracted from plan (nullable)
-        current_step: Current step number being executed, 0 = not started (nullable)
-        total_steps: Total number of steps in plan (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -1122,10 +1013,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "extraction_session_ids",
             "source_repo",
             "objective_issue",
-            # Step progress fields
-            "steps",
-            "current_step",
-            "total_steps",
         }
 
         # Check required fields exist
@@ -1265,36 +1152,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
             if data["objective_issue"] <= 0:
                 raise ValueError("objective_issue must be positive when provided")
 
-        # Validate step progress fields
-        if "steps" in data and data["steps"] is not None:
-            if not isinstance(data["steps"], list):
-                raise ValueError("steps must be a list or null")
-            for i, step in enumerate(data["steps"]):
-                if not isinstance(step, dict):
-                    raise ValueError(f"steps[{i}] must be an object")
-                if "number" not in step:
-                    raise ValueError(f"steps[{i}] missing 'number' field")
-                if "title" not in step:
-                    raise ValueError(f"steps[{i}] missing 'title' field")
-                if not isinstance(step["number"], int):
-                    raise ValueError(f"steps[{i}].number must be an integer")
-                if step["number"] < 1:
-                    raise ValueError(f"steps[{i}].number must be positive")
-                if not isinstance(step["title"], str):
-                    raise ValueError(f"steps[{i}].title must be a string")
-
-        if "current_step" in data and data["current_step"] is not None:
-            if not isinstance(data["current_step"], int):
-                raise ValueError("current_step must be an integer or null")
-            if data["current_step"] < 0:
-                raise ValueError("current_step must be non-negative")
-
-        if "total_steps" in data and data["total_steps"] is not None:
-            if not isinstance(data["total_steps"], int):
-                raise ValueError("total_steps must be an integer or null")
-            if data["total_steps"] < 0:
-                raise ValueError("total_steps must be non-negative")
-
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
         unknown_fields = set(data.keys()) - known_fields
@@ -1303,14 +1160,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
 
     def get_key(self) -> str:
         return "plan-header"
-
-
-@dataclass(frozen=True)
-class StepInfo:
-    """A single step in the plan with number and title."""
-
-    number: int
-    title: str
 
 
 def create_plan_header_block(
@@ -1332,9 +1181,6 @@ def create_plan_header_block(
     extraction_session_ids: list[str] | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
-    steps: list[StepInfo] | None = None,
-    current_step: int | None = None,
-    total_steps: int | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -1356,9 +1202,6 @@ def create_plan_header_block(
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
-        steps: Optional list of steps extracted from plan
-        current_step: Optional current step number (0 = not started)
-        total_steps: Optional total number of steps
 
     Returns:
         MetadataBlock with plan-header schema
@@ -1401,14 +1244,6 @@ def create_plan_header_block(
     if objective_issue is not None:
         data["objective_issue"] = objective_issue
 
-    # Include step progress fields if provided
-    if steps is not None:
-        data["steps"] = [{"number": s.number, "title": s.title} for s in steps]
-    if current_step is not None:
-        data["current_step"] = current_step
-    if total_steps is not None:
-        data["total_steps"] = total_steps
-
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -1435,9 +1270,6 @@ def format_plan_header_body(
     extraction_session_ids: list[str] | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
-    steps: list[StepInfo] | None = None,
-    current_step: int | None = None,
-    total_steps: int | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -1462,9 +1294,6 @@ def format_plan_header_body(
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
-        steps: Optional list of steps extracted from plan
-        current_step: Optional current step number (0 = not started)
-        total_steps: Optional total number of steps
 
     Returns:
         Issue body string with metadata block only
@@ -1487,9 +1316,6 @@ def format_plan_header_body(
         extraction_session_ids=extraction_session_ids,
         source_repo=source_repo,
         objective_issue=objective_issue,
-        steps=steps,
-        current_step=current_step,
-        total_steps=total_steps,
     )
 
     return render_metadata_block(block)
@@ -1978,279 +1804,6 @@ def extract_plan_header_objective_issue(issue_body: str) -> int | None:
         return None
 
     return block.data.get("objective_issue")
-
-
-# =============================================================================
-# Step Progress Functions
-# =============================================================================
-
-
-@dataclass(frozen=True)
-class StepProgress:
-    """Current step progress extracted from plan-header."""
-
-    steps: list[StepInfo]
-    current_step: int  # 0 = not started
-    total_steps: int
-
-
-def extract_step_progress(issue_body: str) -> StepProgress | None:
-    """Extract step progress from plan-header block.
-
-    Args:
-        issue_body: Issue body containing plan-header block
-
-    Returns:
-        StepProgress if step fields exist, None otherwise
-    """
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        return None
-
-    raw_steps = block.data.get("steps")
-    current_step = block.data.get("current_step")
-    total_steps = block.data.get("total_steps")
-
-    # All three fields must be present
-    if raw_steps is None or current_step is None or total_steps is None:
-        return None
-
-    # Convert raw steps to StepInfo objects
-    steps = [StepInfo(number=s["number"], title=s["title"]) for s in raw_steps]
-
-    return StepProgress(
-        steps=steps,
-        current_step=current_step,
-        total_steps=total_steps,
-    )
-
-
-def update_step_progress(
-    issue_body: str,
-    current_step: int,
-) -> str:
-    """Update current_step field in plan-header metadata block.
-
-    Uses Python YAML parsing for robustness (not regex).
-    This function reads the existing plan-header block, updates the
-    current_step field, and re-renders the entire body.
-
-    Args:
-        issue_body: Current issue body containing plan-header block
-        current_step: New current step number (1-indexed, 0 = not started)
-
-    Returns:
-        Updated issue body with new current_step field
-
-    Raises:
-        ValueError: If plan-header block not found or invalid
-    """
-    # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        raise ValueError("plan-header block not found in issue body")
-
-    # Validate current_step against total_steps if present
-    total_steps = block.data.get("total_steps")
-    if total_steps is not None:
-        if current_step < 0:
-            raise ValueError("current_step must be non-negative")
-        if current_step > total_steps:
-            raise ValueError(f"current_step ({current_step}) exceeds total_steps ({total_steps})")
-
-    # Update current_step field
-    updated_data = dict(block.data)
-    updated_data["current_step"] = current_step
-
-    # Validate updated data
-    schema = PlanHeaderSchema()
-    schema.validate(updated_data)
-
-    # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
-    new_block_content = render_metadata_block(new_block)
-
-    # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
-
-
-# =============================================================================
-# Progress Update Comments
-# =============================================================================
-# These support logging step completion as GitHub issue comments
-
-
-@dataclass(frozen=True)
-class ProgressUpdateSchema(MetadataBlockSchema):
-    """Schema for progress-update metadata blocks in comments.
-
-    Fields:
-        timestamp: ISO 8601 timestamp of the update
-        session_id: Claude Code session ID (from CLAUDE_CODE_SESSION_ID env var)
-        user: User who marked step(s) complete
-        steps_completed: List of step numbers marked complete in this update
-        previous_step: Step number before this update (0 = not started)
-        current_step: Step number after this update
-        total_steps: Total number of steps in plan
-        notes: Optional implementation notes
-    """
-
-    def validate(self, data: dict[str, Any]) -> None:
-        """Validate progress-update data structure."""
-        required_fields = {
-            "timestamp",
-            "steps_completed",
-            "previous_step",
-            "current_step",
-            "total_steps",
-        }
-        optional_fields = {
-            "session_id",
-            "user",
-            "notes",
-        }
-
-        # Check required fields exist
-        missing = required_fields - set(data.keys())
-        if missing:
-            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
-
-        # Validate timestamp
-        if not isinstance(data["timestamp"], str):
-            raise ValueError("timestamp must be a string")
-
-        # Validate steps_completed
-        if not isinstance(data["steps_completed"], list):
-            raise ValueError("steps_completed must be a list")
-        for step in data["steps_completed"]:
-            if not isinstance(step, int):
-                raise ValueError("steps_completed must contain only integers")
-            if step < 1:
-                raise ValueError("steps_completed must contain positive integers")
-
-        # Validate step numbers
-        for field in ["previous_step", "current_step", "total_steps"]:
-            if not isinstance(data[field], int):
-                raise ValueError(f"{field} must be an integer")
-            if field != "previous_step" and data[field] < 0:
-                raise ValueError(f"{field} must be non-negative")
-
-        # Validate optional fields
-        if "session_id" in data and data["session_id"] is not None:
-            if not isinstance(data["session_id"], str):
-                raise ValueError("session_id must be a string or null")
-
-        if "user" in data and data["user"] is not None:
-            if not isinstance(data["user"], str):
-                raise ValueError("user must be a string or null")
-
-        if "notes" in data and data["notes"] is not None:
-            if not isinstance(data["notes"], str):
-                raise ValueError("notes must be a string or null")
-
-        # Check for unexpected fields
-        known_fields = required_fields | optional_fields
-        unknown_fields = set(data.keys()) - known_fields
-        if unknown_fields:
-            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
-
-    def get_key(self) -> str:
-        return "progress-update"
-
-
-@dataclass(frozen=True)
-class ProgressUpdateData:
-    """Data for a progress update comment."""
-
-    timestamp: str
-    steps_completed: list[int]
-    previous_step: int
-    current_step: int
-    total_steps: int
-    session_id: str | None
-    user: str | None
-    notes: str | None
-
-
-def format_progress_update_comment(
-    *,
-    timestamp: str,
-    steps_completed: list[int],
-    step_titles: list[str],
-    previous_step: int,
-    current_step: int,
-    total_steps: int,
-    session_id: str | None,
-    user: str | None,
-    notes: str | None,
-) -> str:
-    """Format a progress update comment for a GitHub issue.
-
-    Args:
-        timestamp: ISO 8601 timestamp of the update
-        steps_completed: List of step numbers marked complete
-        step_titles: List of step titles (parallel to steps_completed)
-        previous_step: Step number before this update
-        current_step: Step number after this update
-        total_steps: Total number of steps in plan
-        session_id: Optional Claude Code session ID
-        user: Optional user who marked step(s) complete
-        notes: Optional implementation notes
-
-    Returns:
-        Formatted comment body with human-readable content and metadata block
-    """
-    # Calculate progress percentage
-    percentage = round((current_step / total_steps) * 100) if total_steps > 0 else 0
-
-    # Build human-readable section
-    lines = [
-        "## 📋 Progress Update",
-        "",
-        f"**Steps completed:** {', '.join(str(s) for s in steps_completed)}",
-        f"**Progress:** {current_step}/{total_steps} steps ({percentage}%)",
-        "",
-        "### Steps marked complete:",
-    ]
-
-    for step_num, title in zip(steps_completed, step_titles, strict=True):
-        lines.append(f"- [x] Step {step_num}: {title}")
-
-    if notes:
-        lines.extend(
-            [
-                "",
-                "### Implementation notes:",
-                f"> {notes}",
-            ]
-        )
-
-    lines.append("")
-
-    # Build metadata block
-    schema = ProgressUpdateSchema()
-    data: dict[str, Any] = {
-        "timestamp": timestamp,
-        "steps_completed": steps_completed,
-        "previous_step": previous_step,
-        "current_step": current_step,
-        "total_steps": total_steps,
-    }
-    if session_id is not None:
-        data["session_id"] = session_id
-    if user is not None:
-        data["user"] = user
-    if notes is not None:
-        data["notes"] = notes
-
-    block = create_metadata_block(
-        key=schema.get_key(),
-        data=data,
-        schema=schema,
-    )
-    metadata_block = render_metadata_block(block)
-
-    return "\n".join(lines) + metadata_block
 
 
 # =============================================================================

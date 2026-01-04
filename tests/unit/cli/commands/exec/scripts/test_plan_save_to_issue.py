@@ -3,14 +3,11 @@
 import json
 from pathlib import Path
 
-import click
 import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
-    inject_steps_into_plan,
     plan_save_to_issue,
-    validate_plan_frontmatter,
 )
 from erk_shared.context import ErkContext
 from erk_shared.extraction.claude_installation import (
@@ -25,13 +22,7 @@ from erk_shared.github.issues import FakeGitHubIssues
 def test_plan_save_to_issue_success() -> None:
     """Test successful plan extraction and issue creation."""
     fake_gh = FakeGitHubIssues()
-    plan_content = """---
-steps:
-  - name: "Step 1"
-  - name: "Step 2"
----
-
-# My Feature
+    plan_content = """# My Feature
 
 - Step 1
 - Step 2"""
@@ -66,12 +57,7 @@ steps:
 def test_plan_save_to_issue_enriched_plan() -> None:
     """Test detection of enriched plan."""
     fake_gh = FakeGitHubIssues()
-    plan_content = """---
-steps:
-  - name: "Implement feature"
----
-
-# My Feature
+    plan_content = """# My Feature
 
 ## Enrichment Details
 
@@ -135,12 +121,7 @@ def test_plan_save_to_issue_format() -> None:
     """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Test Plan
+    plan_content = """# Test Plan
 
 - Step 1"""
     fake_store = FakeClaudeInstallation(
@@ -182,12 +163,7 @@ steps:
 def test_plan_save_to_issue_display_format() -> None:
     """Test display output format."""
     fake_gh = FakeGitHubIssues()
-    plan_content = """---
-steps:
-  - name: "Implementation step"
----
-
-# Test Feature
+    plan_content = """# Test Feature
 
 - Implementation step"""
     fake_store = FakeClaudeInstallation(
@@ -228,12 +204,7 @@ steps:
 def test_plan_save_to_issue_label_created() -> None:
     """Test that erk-plan label is created."""
     fake_gh = FakeGitHubIssues()
-    plan_content = """---
-steps:
-  - name: "Implement feature"
----
-
-# Feature
+    plan_content = """# Feature
 
 Steps here"""
     fake_store = FakeClaudeInstallation(
@@ -279,12 +250,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}}\n'
     )
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
     fake_store = FakeClaudeInstallation(
@@ -338,12 +304,7 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     """Test session context is skipped when no session ID provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
     # Session store with no sessions but has a plan
@@ -383,12 +344,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     """Test JSON output includes session_context_chunks and session_ids fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature
+    plan_content = """# Feature
 
 - Step 1"""
     fake_store = FakeClaudeInstallation(
@@ -435,12 +391,7 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
     )
 
     test_session_id = "test-session-12345"
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
 
@@ -497,12 +448,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
     )
 
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
     fake_store = FakeClaudeInstallation(
@@ -553,12 +499,7 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
     )
 
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
 
@@ -619,12 +560,7 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
 
     flag_session_id = "flag-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
 
@@ -676,12 +612,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     test_session_id = "marker-test-session-id"
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
     fake_store = FakeClaudeInstallation(
@@ -732,12 +663,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
     """Test marker file is not created when no session ID is provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
     # Session store has plan but no session ID will be passed
@@ -773,411 +699,6 @@ steps:
                 assert not item.is_dir(), f"Unexpected directory: {item}"
 
 
-# =============================================================================
-# validate_plan_frontmatter Tests
-# =============================================================================
-
-
-def test_validate_plan_frontmatter_valid() -> None:
-    """Test validation passes for valid frontmatter with steps."""
-    plan_content = """---
-steps:
-  - name: "First step"
-  - name: "Second step"
----
-
-# Plan
-
-Content here.
-"""
-    # Should not raise
-    validate_plan_frontmatter(plan_content)
-
-
-def test_validate_plan_frontmatter_missing_steps() -> None:
-    """Test validation fails when steps key is missing."""
-    plan_content = """---
-title: "My Plan"
----
-
-# Plan
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "Plan missing required 'steps' in frontmatter" in exc_info.value.message
-
-
-def test_validate_plan_frontmatter_no_frontmatter() -> None:
-    """Test validation fails when no frontmatter present."""
-    plan_content = """# Plan
-
-No frontmatter.
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "Plan missing required 'steps' in frontmatter" in exc_info.value.message
-
-
-def test_validate_plan_frontmatter_steps_not_list() -> None:
-    """Test validation fails when steps is not a list."""
-    plan_content = """---
-steps: "not a list"
----
-
-# Plan
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "'steps' must be a list" in exc_info.value.message
-
-
-def test_validate_plan_frontmatter_empty_steps() -> None:
-    """Test validation fails when steps array is empty."""
-    plan_content = """---
-steps: []
----
-
-# Plan
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "Plan has empty 'steps' array" in exc_info.value.message
-
-
-def test_validate_plan_frontmatter_invalid_yaml() -> None:
-    """Test validation fails for invalid YAML."""
-    plan_content = """---
-steps: [invalid yaml
----
-
-# Plan
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "Invalid YAML frontmatter" in exc_info.value.message
-
-
-def test_validate_plan_frontmatter_step_not_dict() -> None:
-    """Test validation fails when step is not a dictionary."""
-    plan_content = """---
-steps:
-  - "Plain string not dict"
----
-
-# Plan
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "Step 1 must be a dictionary" in exc_info.value.message
-
-
-def test_validate_plan_frontmatter_step_missing_name() -> None:
-    """Test validation fails when step dict is missing name key."""
-    plan_content = """---
-steps:
-  - description: "Has description but no name"
----
-
-# Plan
-"""
-    with pytest.raises(click.ClickException) as exc_info:
-        validate_plan_frontmatter(plan_content)
-
-    assert "Step 1 missing required 'name' key" in exc_info.value.message
-
-
-def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
-    """Test command rejects plan without frontmatter steps."""
-    fake_gh = FakeGitHubIssues()
-    # Plan without frontmatter steps
-    plan_content = "# My Feature\n\n- Step 1\n- Step 2"
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"no-frontmatter": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert "Plan missing required 'steps' in frontmatter" in output["error"]
-
-
-def test_plan_save_to_issue_accepts_plan_with_frontmatter() -> None:
-    """Test command accepts plan with valid frontmatter steps."""
-    fake_gh = FakeGitHubIssues()
-    plan_content = """---
-steps:
-  - name: "First step"
-  - name: "Second step"
----
-
-# My Feature
-
-Details here.
-"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"with-frontmatter": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-
-# =============================================================================
-# inject_steps_into_plan Tests
-# =============================================================================
-
-
-def test_inject_steps_into_plan_no_frontmatter() -> None:
-    """Test injecting steps into plan with no existing frontmatter."""
-    plan_content = """# My Feature
-
-Details here.
-"""
-    result = inject_steps_into_plan(plan_content, ("Step 1", "Step 2"))
-
-    assert "steps:" in result
-    assert "name: Step 1" in result
-    assert "name: Step 2" in result
-
-
-def test_inject_steps_into_plan_replaces_existing_steps() -> None:
-    """Test that CLI steps replace existing frontmatter steps."""
-    plan_content = """---
-steps:
-  - name: "Old step 1"
-  - name: "Old step 2"
----
-
-# My Feature
-
-Details here.
-"""
-    result = inject_steps_into_plan(plan_content, ("New step 1", "New step 2"))
-
-    # New steps should be present
-    assert "name: New step 1" in result
-    assert "name: New step 2" in result
-    # Old steps should be gone
-    assert "Old step 1" not in result
-    assert "Old step 2" not in result
-
-
-def test_inject_steps_into_plan_preserves_other_frontmatter() -> None:
-    """Test that injecting steps preserves other frontmatter fields."""
-    plan_content = """---
-title: My Plan
-author: test-user
-steps:
-  - name: "Old step"
----
-
-# My Feature
-"""
-    result = inject_steps_into_plan(plan_content, ("New step",))
-
-    # Other fields should be preserved
-    assert "title: My Plan" in result
-    assert "author: test-user" in result
-    # New step should be present
-    assert "name: New step" in result
-
-
-# =============================================================================
-# --steps CLI Option Tests
-# =============================================================================
-
-
-def test_plan_save_to_issue_steps_option_injects_steps() -> None:
-    """Test --steps option injects steps into plan without frontmatter."""
-    fake_gh = FakeGitHubIssues()
-    # Plan without frontmatter steps
-    plan_content = """# My Feature
-
-This plan has no frontmatter steps.
-"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"no-steps-plan": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json", "--steps", "First step", "--steps", "Second step"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    # Verify the plan comment contains the injected steps
-    assert len(fake_gh.added_comments) == 1
-    _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
-    assert "First step" in plan_comment
-    assert "Second step" in plan_comment
-
-
-def test_plan_save_to_issue_steps_option_overrides_existing_steps() -> None:
-    """Test --steps option overrides existing frontmatter steps."""
-    fake_gh = FakeGitHubIssues()
-    # Plan with existing frontmatter steps
-    plan_content = """---
-steps:
-  - name: "Old step 1"
-  - name: "Old step 2"
----
-
-# My Feature
-
-Details here.
-"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"existing-steps-plan": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json", "--steps", "New step 1", "--steps", "New step 2"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-    # Verify old steps are gone and new steps are present
-    assert len(fake_gh.added_comments) == 1
-    _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
-    assert "New step 1" in plan_comment
-    assert "New step 2" in plan_comment
-    assert "Old step 1" not in plan_comment
-    assert "Old step 2" not in plan_comment
-
-
-def test_plan_save_to_issue_steps_option_single_step() -> None:
-    """Test --steps option works with a single step."""
-    fake_gh = FakeGitHubIssues()
-    plan_content = """# Simple Plan
-
-One step plan.
-"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"single-step-plan": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json", "--steps", "The only step"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0, f"Failed: {result.output}"
-    output = json.loads(result.output)
-    assert output["success"] is True
-
-
-def test_plan_save_to_issue_without_steps_option_still_validates() -> None:
-    """Test plan without --steps still requires frontmatter steps."""
-    fake_gh = FakeGitHubIssues()
-    # Plan without steps - should fail
-    plan_content = """# My Feature
-
-No steps in frontmatter and no --steps provided.
-"""
-    fake_store = FakeClaudeInstallation(
-        projects=None,
-        plans={"no-steps-anywhere": plan_content},
-        settings=None,
-        local_settings=None,
-        session_slugs=None,
-        session_planning_agents=None,
-        plans_dir_path=None,
-    )
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert "Plan missing required 'steps' in frontmatter" in output["error"]
-
-
 def test_plan_save_to_issue_preserves_plan_file_after_save(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1191,12 +712,7 @@ def test_plan_save_to_issue_preserves_plan_file_after_save(
     fake_gh = FakeGitHubIssues()
     test_session_id = "delete-test-session"
     test_slug = "test-plan-slug"
-    plan_content = """---
-steps:
-  - name: "Step 1"
----
-
-# Feature Plan
+    plan_content = """# Feature Plan
 
 - Step 1"""
 

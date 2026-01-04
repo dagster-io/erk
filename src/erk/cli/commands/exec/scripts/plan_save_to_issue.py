@@ -25,8 +25,6 @@ import json
 from pathlib import Path
 
 import click
-import frontmatter
-import yaml
 
 from erk_shared.context.helpers import (
     get_repo_identifier,
@@ -42,80 +40,6 @@ from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
-
-
-def validate_plan_frontmatter(plan_content: str) -> None:
-    """Validate plan has required frontmatter steps.
-
-    Args:
-        plan_content: The plan content to validate.
-
-    Raises:
-        click.ClickException: If frontmatter is missing, invalid, or steps array is empty.
-    """
-    # Gracefully handle YAML parsing errors (third-party API exception handling)
-    try:
-        post = frontmatter.loads(plan_content)
-    except yaml.YAMLError as e:
-        raise click.ClickException(f"Invalid YAML frontmatter: {e}") from None
-
-    if "steps" not in post.metadata:
-        raise click.ClickException(
-            "Plan missing required 'steps' in frontmatter.\n"
-            "Add steps to the plan file before saving:\n\n"
-            "---\n"
-            "steps:\n"
-            '  - name: "First step"\n'
-            '  - name: "Second step"\n'
-            "---"
-        )
-
-    steps = post.metadata["steps"]
-    if not isinstance(steps, list):
-        raise click.ClickException(f"'steps' must be a list, got {type(steps).__name__}")
-
-    if len(steps) == 0:
-        raise click.ClickException("Plan has empty 'steps' array. Add implementation steps.")
-
-    # Validate each step is a dict with 'name' key
-    for i, step in enumerate(steps):
-        if not isinstance(step, dict):
-            raise click.ClickException(
-                f"Step {i + 1} must be a dictionary with 'name' key, got {type(step).__name__}.\n"
-                "Use format:\n"
-                "steps:\n"
-                '  - name: "Step description"'
-            )
-        if "name" not in step:
-            raise click.ClickException(
-                f"Step {i + 1} missing required 'name' key.\n"
-                "Use format:\n"
-                "steps:\n"
-                '  - name: "Step description"'
-            )
-
-
-def inject_steps_into_plan(plan_content: str, step_names: tuple[str, ...]) -> str:
-    """Inject steps into plan frontmatter, replacing any existing steps.
-
-    Args:
-        plan_content: The plan content to modify.
-        step_names: Tuple of step names to inject.
-
-    Returns:
-        Plan content with steps injected into frontmatter.
-    """
-    # Gracefully handle YAML parsing errors (third-party API exception handling)
-    try:
-        post = frontmatter.loads(plan_content)
-    except yaml.YAMLError:
-        # If existing frontmatter is invalid, create new frontmatter
-        post = frontmatter.Post(plan_content)
-
-    # Replace or add steps in frontmatter
-    post.metadata["steps"] = [{"name": name} for name in step_names]
-
-    return frontmatter.dumps(post)
 
 
 def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
@@ -161,11 +85,6 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     default=None,
     help="Link plan to parent objective issue number",
 )
-@click.option(
-    "--steps",
-    multiple=True,
-    help="Step names to inject into plan frontmatter (repeatable, overrides existing steps)",
-)
 @click.pass_context
 def plan_save_to_issue(
     ctx: click.Context,
@@ -173,7 +92,6 @@ def plan_save_to_issue(
     plan_file: Path | None,
     session_id: str | None,
     objective_issue: int | None,
-    steps: tuple[str, ...],
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
@@ -204,20 +122,6 @@ def plan_save_to_issue(
         else:
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
-
-    # Inject CLI-provided steps if any (overrides existing frontmatter steps)
-    if steps:
-        plan = inject_steps_into_plan(plan, steps)
-
-    # Validate frontmatter before saving
-    try:
-        validate_plan_frontmatter(plan)
-    except click.ClickException as e:
-        if output_format == "display":
-            click.echo(f"Error: {e.message}", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": e.message}))
-        raise SystemExit(1) from None
 
     # Determine source_repo for cross-repo plans
     # When plans_repo is configured, plans are stored in a separate repo

@@ -4,7 +4,6 @@ Tests the integration of plan file reading, worktree creation, issue creation,
 and linking them together via .impl/issue.json.
 """
 
-import json
 from pathlib import Path
 
 import pytest
@@ -16,14 +15,8 @@ from erk_shared.impl_folder import (
     read_issue_reference,
     save_issue_reference,
 )
-from erk_shared.prompt_executor.fake import FakePromptExecutor
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
-
-
-def _make_executor(steps: list[str]) -> FakePromptExecutor:
-    """Create a FakePromptExecutor that returns the given steps as JSON."""
-    return FakePromptExecutor(output=json.dumps(steps))
 
 
 def test_save_and_read_issue_reference(tmp_path: Path) -> None:
@@ -96,9 +89,8 @@ Test the workflow.
 1. Step one
 2. Step two
 """
-    executor = _make_executor(["1. Step one", "2. Step two"])
     # Step 1: Create plan folder (simulates erk create --from-plan)
-    impl_folder = create_impl_folder(tmp_path, plan_content, executor, overwrite=False)
+    impl_folder = create_impl_folder(tmp_path, plan_content, overwrite=False)
 
     # Step 2: Create issue (simulates gh issue create)
     issues = FakeGitHubIssues(next_issue_number=123)

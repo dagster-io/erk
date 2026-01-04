@@ -29,7 +29,6 @@ import click
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.prompt_executor.real import RealPromptExecutor
 from erk_shared.worker_impl_folder import create_worker_impl_folder
 
 
@@ -61,7 +60,6 @@ def create_worker_impl_from_issue(
     time = RealTime()
     github_issues = RealGitHubIssues(target_repo=None)
     plan_store = GitHubPlanStore(github_issues, time)
-    prompt_executor = RealPromptExecutor(time)
 
     # Fetch plan from GitHub (raises RuntimeError if not found)
     try:
@@ -83,7 +81,6 @@ def create_worker_impl_from_issue(
         issue_number=issue_number,
         issue_url=plan.url,
         repo_root=repo_root,
-        prompt_executor=prompt_executor,
     )
 
     # Output structured success result
