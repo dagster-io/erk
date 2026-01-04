@@ -97,7 +97,9 @@ def _write_pool_max_slots(repo_root: Path, max_slots: int) -> None:
         cast(dict[str, Any], doc)["pool"] = tomlkit.table()
 
     # Set max_slots value
-    cast(dict[str, Any], doc["pool"])["max_slots"] = max_slots
+    pool_section = doc["pool"]
+    assert isinstance(pool_section, MutableMapping), f"Expected MutableMapping, got {type(pool_section)}"
+    cast(dict[str, Any], pool_section)["max_slots"] = max_slots
 
     # Write back to file
     with config_path.open("w", encoding="utf-8") as f:
