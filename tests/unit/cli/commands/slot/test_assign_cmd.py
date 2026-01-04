@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.cli.commands.slot.assign_cmd import _cleanup_worktree_artifacts
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
@@ -322,3 +323,114 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
         assert result.exit_code == 1
         assert "Pool is full" in result.output
         assert "--force" in result.output
+
+
+def test_cleanup_worktree_artifacts_removes_impl_folder(tmp_path) -> None:
+    """Test that cleanup removes .impl/ folder."""
+    worktree_path = tmp_path / "worktree"
+    worktree_path.mkdir()
+
+    impl_folder = worktree_path / ".impl"
+    impl_folder.mkdir()
+    (impl_folder / "plan.md").write_text("test plan", encoding="utf-8")
+
+    _cleanup_worktree_artifacts(worktree_path)
+
+    assert not impl_folder.exists()
+
+
+def test_cleanup_worktree_artifacts_removes_scratch_folder(tmp_path) -> None:
+    """Test that cleanup removes .erk/scratch/ folder."""
+    worktree_path = tmp_path / "worktree"
+    worktree_path.mkdir()
+
+    erk_folder = worktree_path / ".erk"
+    erk_folder.mkdir()
+    scratch_folder = erk_folder / "scratch"
+    scratch_folder.mkdir()
+    (scratch_folder / "session-marker").write_text("test", encoding="utf-8")
+
+    _cleanup_worktree_artifacts(worktree_path)
+
+    assert not scratch_folder.exists()
+    # .erk folder should still exist (only scratch is removed)
+    assert erk_folder.exists()
+
+
+def test_cleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
+    """Test that cleanup doesn't fail if folders don't exist."""
+    worktree_path = tmp_path / "worktree"
+    worktree_path.mkdir()
+
+    # No .impl/ or .erk/scratch/ exists - should not raise
+    _cleanup_worktree_artifacts(worktree_path)
+
+    assert worktree_path.exists()
+
+
+def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
+    """Test that slot assign cleans up .impl/ and .erk/scratch/ when reusing worktree."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Pre-create worktree directory with stale artifacts
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Create stale .impl/ folder
+        impl_folder = worktree_path / ".impl"
+        impl_folder.mkdir()
+        (impl_folder / "plan.md").write_text("old plan", encoding="utf-8")
+
+        # Create stale .erk/scratch/ folder
+        scratch_folder = worktree_path / ".erk" / "scratch"
+        scratch_folder.mkdir(parents=True)
+        (scratch_folder / "session-marker").write_text("old session", encoding="utf-8")
+
+        worktrees = env.build_worktrees("main")
+        worktrees[env.cwd].append(WorktreeInfo(path=worktree_path, branch="old-branch"))
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            current_branches={env.cwd: "main", worktree_path: "old-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "old-branch", "new-branch"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-create a full pool with 1 slot
+        full_state = PoolState.test(
+            pool_size=1,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-managed-wt-01",
+                    branch_name="old-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, full_state)
+
+        local_config = LoadedConfig.test(pool_size=1)
+        test_ctx = env.build_context(git=git_ops, repo=repo, local_config=local_config)
+
+        # Assign with --force to reuse the worktree
+        result = runner.invoke(
+            cli, ["slot", "assign", "--force", "new-branch"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify artifacts were cleaned up
+        assert not impl_folder.exists(), ".impl/ folder should be removed"
+        assert not scratch_folder.exists(), ".erk/scratch/ folder should be removed"
