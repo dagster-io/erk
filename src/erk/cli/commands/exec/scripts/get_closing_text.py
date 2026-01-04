@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-"""Get closing text for PR body based on .impl/issue.json reference.
+"""Get closing text for PR body based on .impl/issue.json or branch name.
 
-This command reads the .impl/issue.json file to determine if there's an
-associated GitHub issue that should be closed when the PR merges.
+This command determines the issue number from .impl/issue.json or the branch
+name (P{issue_number}-... pattern) and outputs the appropriate closing text.
 
 Usage:
     erk exec get-closing-text
 
 Output:
     Plain text "Closes #N" (same-repo) or "Closes owner/repo#N" (cross-repo)
-    Empty output if no issue reference
+    Empty output if no issue reference found
 
 Exit Codes:
-    0: Always (whether issue reference exists or not)
+    0: Success (whether issue reference exists or not)
+    1: Error (branch/issue.json mismatch)
 
 Examples:
     $ erk exec get-closing-text
@@ -21,16 +22,20 @@ Examples:
     $ erk exec get-closing-text  # Cross-repo plans
     Closes owner/plans-repo#776
 
-    $ erk exec get-closing-text  # No .impl/issue.json
+    $ erk exec get-closing-text  # No .impl/issue.json but branch is P123-feature
+    Closes #123
+
+    $ erk exec get-closing-text  # No .impl/ and branch is feature-branch
     (no output)
 """
 
+import subprocess
 from pathlib import Path
 
 import click
 
 from erk.cli.config import load_config
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import validate_issue_linkage
 
 
 def _find_repo_root(start: Path) -> Path | None:
@@ -43,42 +48,68 @@ def _find_repo_root(start: Path) -> Path | None:
     return None
 
 
+def _get_current_branch(cwd: Path) -> str | None:
+    """Get current git branch name."""
+    result = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    branch = result.stdout.strip()
+    # HEAD means detached HEAD state
+    if branch == "HEAD":
+        return None
+    return branch
+
+
 @click.command(name="get-closing-text")
 def get_closing_text() -> None:
-    """Get closing text for PR body based on .impl/issue.json reference.
+    """Get closing text for PR body based on .impl/issue.json or branch name.
 
-    Reads .impl/issue.json from the current directory. If an issue reference
-    exists, outputs "Closes #N" (or "Closes owner/repo#N" for cross-repo plans)
-    which can be included in PR descriptions to automatically close the issue
-    when the PR merges.
+    Validates that branch name and .impl/issue.json agree (if both present).
+    Falls back to branch name if no .impl/ folder exists.
 
-    Outputs nothing and exits successfully if no issue reference is found.
+    Outputs nothing and exits successfully if no issue number is discoverable.
     """
     cwd = Path.cwd()
+
+    # Get current branch name for validation and fallback
+    branch_name = _get_current_branch(cwd)
+    if branch_name is None:
+        # Not on a branch (detached HEAD) - can't determine issue number
+        return
 
     # Check .impl/ first, then .worker-impl/
     impl_dir = cwd / ".impl"
     if not impl_dir.exists():
         impl_dir = cwd / ".worker-impl"
 
-    if not impl_dir.exists():
-        # No impl folder - nothing to output
+    # Validate linkage and get issue number (branch fallback if no .impl/)
+    try:
+        issue_number = validate_issue_linkage(impl_dir, branch_name)
+    except ValueError as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1) from None
+
+    if issue_number is None:
+        # No issue to close (neither branch nor .impl/ has one)
         return
 
-    issue_ref = read_issue_reference(impl_dir)
+    # Load config to check for cross-repo plans
+    repo_root = _find_repo_root(cwd)
+    plans_repo: str | None = None
+    if repo_root is not None:
+        config = load_config(repo_root)
+        plans_repo = config.plans_repo
 
-    if issue_ref is not None:
-        # Load config to check for cross-repo plans
-        repo_root = _find_repo_root(cwd)
-        plans_repo: str | None = None
-        if repo_root is not None:
-            config = load_config(repo_root)
-            plans_repo = config.plans_repo
+    # Format closing text
+    if plans_repo is None:
+        closing_text = f"Closes #{issue_number}"
+    else:
+        closing_text = f"Closes {plans_repo}#{issue_number}"
 
-        # Format issue reference
-        if plans_repo is None:
-            closing_text = f"Closes #{issue_ref.issue_number}"
-        else:
-            closing_text = f"Closes {plans_repo}#{issue_ref.issue_number}"
-
-        click.echo(closing_text)
+    click.echo(closing_text)

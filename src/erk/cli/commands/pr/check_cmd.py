@@ -9,7 +9,7 @@ from erk_shared.gateway.pr.submit import (
     has_issue_closing_reference,
 )
 from erk_shared.github.types import PRNotFound
-from erk_shared.impl_folder import read_issue_reference
+from erk_shared.impl_folder import read_issue_reference, validate_issue_linkage
 from erk_shared.output.output import user_output
 
 
@@ -49,9 +49,24 @@ def pr_check(ctx: ErkContext) -> None:
 
     pr_body = pr.body
 
-    # Check 1: Issue closing reference (if .impl/issue.json exists)
     # .impl always lives at worktree/repo root
     impl_dir = repo_root / ".impl"
+
+    # Check 0: Branch/issue.json agreement
+    # This catches cases where branch name says "P42-..." but issue.json says #99
+    issue_number: int | None = None
+    try:
+        issue_number = validate_issue_linkage(impl_dir, branch)
+        if issue_number is not None:
+            checks.append((True, f"Branch name and .impl/issue.json agree (#{issue_number})"))
+    except ValueError as e:
+        checks.append((False, str(e)))
+        # Continue with other checks - use the issue from .impl/issue.json as fallback
+        issue_ref_fallback = read_issue_reference(impl_dir)
+        if issue_ref_fallback is not None:
+            issue_number = issue_ref_fallback.issue_number
+
+    # Check 1: Issue closing reference (if issue number is discoverable)
     issue_ref = read_issue_reference(impl_dir)
 
     if issue_ref is not None:

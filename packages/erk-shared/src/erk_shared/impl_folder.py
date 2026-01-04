@@ -27,6 +27,7 @@ from erk_shared.github.metadata import (
     create_worktree_creation_block,
     render_erk_issue_event,
 )
+from erk_shared.naming import extract_leading_issue_number
 
 if TYPE_CHECKING:
     from erk_shared.prompt_executor.abc import PromptExecutor
@@ -631,6 +632,49 @@ def has_issue_reference(impl_dir: Path) -> bool:
     """
     issue_file = impl_dir / "issue.json"
     return issue_file.exists()
+
+
+def validate_issue_linkage(impl_dir: Path, branch_name: str) -> int | None:
+    """Validate branch name and .impl/issue.json agree. Returns issue number.
+
+    Branch names follow the pattern P{issue_number}-{slug} (e.g., "P2382-add-feature").
+    If both branch name and .impl/issue.json contain an issue number, they MUST match.
+
+    Args:
+        impl_dir: Path to .impl/ or .worker-impl/ directory
+        branch_name: Current git branch name
+
+    Returns:
+        Issue number if discoverable from either source, None if neither has one.
+
+    Raises:
+        ValueError: If both sources have issue numbers and they disagree.
+
+    Examples:
+        >>> # Branch P42-feature with .impl/issue.json containing issue 42 -> 42
+        >>> # Branch P42-feature with no .impl/ -> 42
+        >>> # Branch main with .impl/issue.json containing issue 42 -> 42
+        >>> # Branch main with no .impl/ -> None
+        >>> # Branch P42-feature with .impl/issue.json containing issue 99 -> ValueError
+    """
+    branch_issue = extract_leading_issue_number(branch_name)
+
+    issue_ref = read_issue_reference(impl_dir) if impl_dir.exists() else None
+    impl_issue = issue_ref.issue_number if issue_ref is not None else None
+
+    # If both exist, they must match
+    if branch_issue is not None and impl_issue is not None:
+        if branch_issue != impl_issue:
+            raise ValueError(
+                f"Branch name (P{branch_issue}-...) disagrees with "
+                f".impl/issue.json (#{impl_issue}). Fix the mismatch before proceeding."
+            )
+        return branch_issue
+
+    # Return whichever is available (impl_issue takes precedence if branch_issue is None)
+    if impl_issue is not None:
+        return impl_issue
+    return branch_issue
 
 
 def read_run_info(impl_dir: Path) -> RunInfo | None:

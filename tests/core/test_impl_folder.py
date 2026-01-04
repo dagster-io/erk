@@ -25,6 +25,7 @@ from erk_shared.impl_folder import (
     read_last_dispatched_run_id,
     read_plan_author,
     save_issue_reference,
+    validate_issue_linkage,
     validate_progress_schema,
 )
 from erk_shared.prompt_executor.fake import FakePromptExecutor
@@ -1633,3 +1634,92 @@ No steps detected in plan.
     assert "Missing 'steps' field" in errors
     assert "Missing 'total_steps' field" in errors
     assert "Missing 'completed_steps' field" in errors
+
+
+# ============================================================================
+# Issue Linkage Validation Tests
+# ============================================================================
+
+
+def test_validate_issue_linkage_both_match(tmp_path: Path) -> None:
+    """Test validation passes when branch and .impl/issue.json match."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_issue_reference(impl_dir, 42, "https://github.com/org/repo/issues/42")
+
+    # Branch name matches issue number
+    result = validate_issue_linkage(impl_dir, "P42-add-feature-01-04-1234")
+
+    assert result == 42
+
+
+def test_validate_issue_linkage_mismatch_raises(tmp_path: Path) -> None:
+    """Test validation raises ValueError when branch and .impl/issue.json disagree."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_issue_reference(impl_dir, 99, "https://github.com/org/repo/issues/99")
+
+    # Branch says issue 42, but .impl/ says issue 99
+    with pytest.raises(ValueError) as exc_info:
+        validate_issue_linkage(impl_dir, "P42-add-feature-01-04-1234")
+
+    error_msg = str(exc_info.value)
+    assert "P42" in error_msg
+    assert "#99" in error_msg
+    assert "disagrees" in error_msg
+
+
+def test_validate_issue_linkage_branch_only(tmp_path: Path) -> None:
+    """Test validation returns branch issue when no .impl/ exists."""
+    impl_dir = tmp_path / ".impl"
+    # Don't create impl_dir
+
+    result = validate_issue_linkage(impl_dir, "P123-some-feature-01-04-1234")
+
+    assert result == 123
+
+
+def test_validate_issue_linkage_impl_only(tmp_path: Path) -> None:
+    """Test validation returns impl issue when branch has no issue number."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_issue_reference(impl_dir, 456, "https://github.com/org/repo/issues/456")
+
+    # Branch without issue prefix (e.g., main, master, feature-branch)
+    result = validate_issue_linkage(impl_dir, "main")
+
+    assert result == 456
+
+
+def test_validate_issue_linkage_neither(tmp_path: Path) -> None:
+    """Test validation returns None when neither source has issue number."""
+    impl_dir = tmp_path / ".impl"
+    # Don't create impl_dir
+
+    # Branch without issue prefix
+    result = validate_issue_linkage(impl_dir, "feature-branch")
+
+    assert result is None
+
+
+def test_validate_issue_linkage_impl_exists_no_issue_json(tmp_path: Path) -> None:
+    """Test validation uses branch when .impl/ exists but has no issue.json."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    # Create plan.md but NOT issue.json
+    (impl_dir / "plan.md").write_text("# Plan", encoding="utf-8")
+
+    result = validate_issue_linkage(impl_dir, "P789-feature-01-04-1234")
+
+    assert result == 789
+
+
+def test_validate_issue_linkage_worker_impl(tmp_path: Path) -> None:
+    """Test validation works with .worker-impl/ folder."""
+    worker_impl_dir = tmp_path / ".worker-impl"
+    worker_impl_dir.mkdir()
+    save_issue_reference(worker_impl_dir, 555, "https://github.com/org/repo/issues/555")
+
+    result = validate_issue_linkage(worker_impl_dir, "P555-worker-feature-01-04-1234")
+
+    assert result == 555

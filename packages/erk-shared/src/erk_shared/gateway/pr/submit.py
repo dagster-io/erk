@@ -19,9 +19,14 @@ from pathlib import Path
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.types import CoreSubmitError, CoreSubmitResult
+from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import PRNotFound
-from erk_shared.impl_folder import has_issue_reference, read_issue_reference
+from erk_shared.impl_folder import (
+    has_issue_reference,
+    save_issue_reference,
+    validate_issue_linkage,
+)
 
 
 def has_body_footer(body: str) -> bool:
@@ -190,13 +195,40 @@ def execute_core_submit(
     yield ProgressEvent(f"{commit_count} commit(s) ahead of {parent_branch}")
 
     # Step 5: Get issue reference for PR footer
+    # Use validate_issue_linkage() to discover issue number from either:
+    #   - .impl/issue.json (if present)
+    #   - Branch name (P{number}-... pattern)
+    # Also validates they match if both are present.
     impl_dir = cwd / ".impl"
     issue_number: int | None = None
-    if has_issue_reference(impl_dir):
-        issue_ref = read_issue_reference(impl_dir)
-        if issue_ref is not None:
-            issue_number = issue_ref.issue_number
-            yield ProgressEvent(f"Found linked issue: #{issue_number}")
+
+    try:
+        issue_number = validate_issue_linkage(impl_dir, branch_name)
+    except ValueError as e:
+        # Branch and .impl/issue.json disagree - fail fast
+        yield CompletionEvent(
+            CoreSubmitError(
+                success=False,
+                error_type="issue_linkage_mismatch",
+                message=str(e),
+                details={"branch": branch_name},
+            )
+        )
+        return
+
+    if issue_number is not None:
+        # Auto-repair: If we discovered issue from branch but .impl/issue.json is missing,
+        # create it so future operations don't need to re-derive it
+        if not has_issue_reference(impl_dir) and impl_dir.exists():
+            # Get repo info from git remote URL
+            remote_url = ctx.git.get_remote_url(repo_root, "origin")
+            owner, repo_name = parse_git_remote_url(remote_url)
+            issue_url = f"https://github.com/{owner}/{repo_name}/issues/{issue_number}"
+            save_issue_reference(impl_dir, issue_number, issue_url)
+            yield ProgressEvent(
+                f"Auto-created .impl/issue.json for issue #{issue_number}", style="info"
+            )
+        yield ProgressEvent(f"Found linked issue: #{issue_number}")
 
     # Step 6: Pre-flight divergence check and auto-rebase
     divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")

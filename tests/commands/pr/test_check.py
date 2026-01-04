@@ -541,3 +541,171 @@ def test_pr_check_reports_multiple_failures(tmp_path: Path) -> None:
         assert "[FAIL] PR body missing issue closing reference" in result.output
         assert "[FAIL] PR body missing checkout footer" in result.output
         assert "2 checks failed" in result.output
+
+
+def test_pr_check_fails_when_branch_and_issue_json_mismatch(tmp_path: Path) -> None:
+    """Test PR check fails when branch name disagrees with .impl/issue.json."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Create .impl/issue.json with issue 99
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir()
+        issue_json = impl_dir / "issue.json"
+        issue_json.write_text(
+            json.dumps(
+                {
+                    "issue_number": 99,
+                    "issue_url": "https://github.com/owner/repo/issues/99",
+                    "created_at": "2025-01-01T00:00:00Z",
+                    "synced_at": "2025-01-01T00:00:00Z",
+                }
+            )
+        )
+
+        # PR body has everything correct (for issue 99)
+        pr_body = """## Summary
+This PR adds a feature.
+
+---
+
+Closes #99
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+erk pr checkout 123
+```
+"""
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="P42-wrong-issue-01-04-1234",  # Branch says issue 42!
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                "P42-wrong-issue-01-04-1234": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Add feature",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "P42-wrong-issue-01-04-1234"},
+            existing_paths={env.cwd, impl_dir},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["check"], obj=ctx)
+
+        # Should fail due to mismatch
+        assert result.exit_code == 1
+        assert "disagrees" in result.output
+        assert "P42" in result.output
+        assert "#99" in result.output
+
+
+def test_pr_check_passes_when_branch_and_issue_json_match(tmp_path: Path) -> None:
+    """Test PR check passes with matching branch name and .impl/issue.json."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Create .impl/issue.json with issue 456
+        impl_dir = env.cwd / ".impl"
+        impl_dir.mkdir()
+        issue_json = impl_dir / "issue.json"
+        issue_json.write_text(
+            json.dumps(
+                {
+                    "issue_number": 456,
+                    "issue_url": "https://github.com/owner/repo/issues/456",
+                    "created_at": "2025-01-01T00:00:00Z",
+                    "synced_at": "2025-01-01T00:00:00Z",
+                }
+            )
+        )
+
+        # PR body with correct closing reference
+        pr_body = """## Summary
+This PR adds a feature.
+
+---
+
+Closes #456
+
+To checkout this PR in a fresh worktree and environment locally, run:
+
+```
+erk pr checkout 123
+```
+"""
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Add feature",
+            body=pr_body,
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="P456-add-feature-01-04-1234",  # Branch matches issue!
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+        )
+        github = FakeGitHub(
+            prs={
+                "P456-add-feature-01-04-1234": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Add feature",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                )
+            },
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "P456-add-feature-01-04-1234"},
+            existing_paths={env.cwd, impl_dir},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["check"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "[PASS] Branch name and .impl/issue.json agree (#456)" in result.output
+        assert "[PASS] PR body contains issue closing reference (Closes #456)" in result.output
+        assert "[PASS] PR body contains checkout footer" in result.output
+        assert "All checks passed" in result.output
