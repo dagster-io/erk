@@ -98,7 +98,7 @@ def _write_pool_max_slots(repo_root: Path, max_slots: int) -> None:
 
     # Set max_slots value
     pool_section = doc["pool"]
-    assert isinstance(pool_section, MutableMapping), f"Expected MutableMapping, got {type(pool_section)}"
+    assert isinstance(pool_section, MutableMapping), type(pool_section)
     cast(dict[str, Any], pool_section)["max_slots"] = max_slots
 
     # Write back to file
