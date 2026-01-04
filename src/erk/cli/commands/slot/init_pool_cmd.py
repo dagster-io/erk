@@ -123,7 +123,7 @@ def slot_init_pool(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None
             )
 
         # Add to slots list
-        new_slots.append(SlotInfo(name=slot_name))
+        new_slots.append(SlotInfo(name=slot_name, last_objective_issue=None))
         initialized_count += 1
         if ctx.dry_run:
             user_output(f"[DRY RUN] Would initialize {slot_name}")

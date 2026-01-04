@@ -119,8 +119,8 @@ class TestFindInactiveSlot:
 
     def test_returns_inactive_slot_when_available(self) -> None:
         """Returns an inactive slot when available."""
-        slot1 = SlotInfo(name="erk-managed-wt-01")
-        slot2 = SlotInfo(name="erk-managed-wt-02")
+        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
         state = PoolState.test(slots=(slot1, slot2))
 
         result = find_inactive_slot(state)
@@ -130,8 +130,8 @@ class TestFindInactiveSlot:
 
     def test_returns_none_when_all_slots_assigned(self) -> None:
         """Returns None when all initialized slots have assignments."""
-        slot1 = SlotInfo(name="erk-managed-wt-01")
-        slot2 = SlotInfo(name="erk-managed-wt-02")
+        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
         assignment1 = SlotAssignment(
             slot_name="erk-managed-wt-01",
             branch_name="feature-a",
@@ -152,9 +152,9 @@ class TestFindInactiveSlot:
 
     def test_returns_first_inactive_slot(self) -> None:
         """Returns the first slot that is not assigned."""
-        slot1 = SlotInfo(name="erk-managed-wt-01")
-        slot2 = SlotInfo(name="erk-managed-wt-02")
-        slot3 = SlotInfo(name="erk-managed-wt-03")
+        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+        slot3 = SlotInfo(name="erk-managed-wt-03", last_objective_issue=None)
         assignment1 = SlotAssignment(
             slot_name="erk-managed-wt-01",
             branch_name="feature-a",
@@ -180,14 +180,14 @@ class TestIsSlotInitialized:
 
     def test_returns_true_when_slot_exists(self) -> None:
         """Returns True when the slot is in the initialized list."""
-        slot = SlotInfo(name="erk-managed-wt-01")
+        slot = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
         state = PoolState.test(slots=(slot,))
 
         assert is_slot_initialized(state, "erk-managed-wt-01") is True
 
     def test_returns_false_for_different_slot(self) -> None:
         """Returns False when checking for a slot not in the list."""
-        slot = SlotInfo(name="erk-managed-wt-01")
+        slot = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
         state = PoolState.test(slots=(slot,))
 
         assert is_slot_initialized(state, "erk-managed-wt-02") is False

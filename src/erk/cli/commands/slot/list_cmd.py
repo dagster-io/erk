@@ -127,11 +127,18 @@ def slot_list(ctx: ErkContext) -> None:
         relative_time = format_relative_time(assignment.assigned_at)
         assignments_by_slot[assignment.slot_name] = (assignment.branch_name, relative_time)
 
+    # Build lookup of slot_name -> last_objective_issue
+    objectives_by_slot: dict[str, int] = {}
+    for slot in state.slots:
+        if slot.last_objective_issue is not None:
+            objectives_by_slot[slot.name] = slot.last_objective_issue
+
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("Worktree", style="cyan", no_wrap=True)
     table.add_column("Status", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
+    table.add_column("Objective", no_wrap=True)
     table.add_column("Assigned", no_wrap=True)
     table.add_column("FS State", no_wrap=True)
 
@@ -191,7 +198,21 @@ def slot_list(ctx: ErkContext) -> None:
         }
         fs_state_display = fs_state_map.get(fs_state, fs_state)
 
-        table.add_row(slot_name, status_display, branch_display, assigned_time, fs_state_display)
+        # Format objective display
+        objective_display: str
+        if slot_name in objectives_by_slot:
+            objective_display = f"#{objectives_by_slot[slot_name]}"
+        else:
+            objective_display = "[dim]-[/dim]"
+
+        table.add_row(
+            slot_name,
+            status_display,
+            branch_display,
+            objective_display,
+            assigned_time,
+            fs_state_display,
+        )
 
         # Track counts
         if status == "active":

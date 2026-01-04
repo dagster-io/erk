@@ -34,7 +34,13 @@ from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+from erk.core.worktree_pool import (
+    PoolState,
+    SlotAssignment,
+    load_pool_state,
+    save_pool_state,
+    update_slot_objective,
+)
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -173,6 +179,7 @@ def _cleanup_and_navigate(
     force: bool,
     is_current_branch: bool,
     target_child_branch: str | None,
+    objective_number: int | None,
 ) -> None:
     """Handle worktree/branch cleanup and navigation after PR merge.
 
@@ -188,6 +195,7 @@ def _cleanup_and_navigate(
         force: Whether to skip cleanup confirmation
         is_current_branch: True if landing from the branch's worktree
         target_child_branch: Target child branch for --up navigation (None for trunk)
+        objective_number: Issue number of the objective linked to this branch (if any)
     """
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
@@ -209,6 +217,10 @@ def _cleanup_and_navigate(
                 ):
                     user_output("Slot preserved. Branch still exists locally.")
                     return
+            # Record objective on slot BEFORE unassigning (so it persists after assignment removed)
+            if objective_number is not None:
+                state = update_slot_objective(state, assignment.slot_name, objective_number)
+                save_pool_state(repo.pool_json_path, state)
             execute_unassign(ctx, repo, state, assignment)
             ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
             user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
@@ -475,6 +487,7 @@ def _land_current_branch(
         force,
         is_current_branch=True,
         target_child_branch=target_child_branch,
+        objective_number=objective_number,
     )
 
 
@@ -573,6 +586,7 @@ def _land_specific_pr(
         force,
         is_current_branch,
         target_child_branch=None,
+        objective_number=objective_number,
     )
 
 
@@ -666,4 +680,5 @@ def _land_by_branch(
         force,
         is_current_branch,
         target_child_branch=None,
+        objective_number=objective_number,
     )

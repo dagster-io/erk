@@ -8,6 +8,7 @@ from erk.core.worktree_pool import (
     SlotInfo,
     load_pool_state,
     save_pool_state,
+    update_slot_objective,
 )
 
 
@@ -98,8 +99,8 @@ def test_save_and_load_pool_state_with_assignments(tmp_path: Path) -> None:
     """Test round-trip save and load with assignments."""
     pool_json = tmp_path / "pool.json"
 
-    slot1 = SlotInfo(name="erk-managed-wt-01")
-    slot2 = SlotInfo(name="erk-managed-wt-02")
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+    slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
 
     assignment1 = SlotAssignment(
         slot_name="erk-managed-wt-01",
@@ -158,15 +159,24 @@ def test_save_pool_state_creates_parent_dirs(tmp_path: Path) -> None:
 
 def test_slot_info_creation() -> None:
     """Test that SlotInfo is created correctly."""
-    slot = SlotInfo(name="erk-managed-wt-01")
+    slot = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
 
     assert slot.name == "erk-managed-wt-01"
+    assert slot.last_objective_issue is None
+
+
+def test_slot_info_with_objective() -> None:
+    """Test that SlotInfo preserves last_objective_issue."""
+    slot = SlotInfo(name="erk-managed-wt-01", last_objective_issue=42)
+
+    assert slot.name == "erk-managed-wt-01"
+    assert slot.last_objective_issue == 42
 
 
 def test_pool_state_with_slots_no_assignments() -> None:
     """Test PoolState with initialized slots but no assignments."""
-    slot1 = SlotInfo(name="erk-managed-wt-01")
-    slot2 = SlotInfo(name="erk-managed-wt-02")
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+    slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
 
     state = PoolState(
         version="1.0",
@@ -181,3 +191,108 @@ def test_pool_state_with_slots_no_assignments() -> None:
     assert state.slots[0].name == "erk-managed-wt-01"
     assert state.slots[1].name == "erk-managed-wt-02"
     assert len(state.assignments) == 0
+
+
+def test_save_and_load_pool_state_with_objective(tmp_path: Path) -> None:
+    """Test round-trip save and load preserves last_objective_issue."""
+    pool_json = tmp_path / "pool.json"
+
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=123)
+    slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(slot1, slot2),
+        assignments=(),
+    )
+
+    save_pool_state(pool_json, state)
+    loaded = load_pool_state(pool_json)
+
+    assert loaded is not None
+    assert loaded.slots[0].last_objective_issue == 123
+    assert loaded.slots[1].last_objective_issue is None
+
+
+def test_load_pool_state_missing_objective_field(tmp_path: Path) -> None:
+    """Test that loading old pool.json without last_objective_issue defaults to None."""
+    pool_json = tmp_path / "pool.json"
+
+    # Write old-format data without last_objective_issue field
+    old_format_json = (
+        '{"version": "1.0", "pool_size": 4, '
+        '"slots": [{"name": "erk-managed-wt-01"}], "assignments": []}'
+    )
+    pool_json.write_text(old_format_json, encoding="utf-8")
+
+    loaded = load_pool_state(pool_json)
+
+    assert loaded is not None
+    assert loaded.slots[0].name == "erk-managed-wt-01"
+    assert loaded.slots[0].last_objective_issue is None
+
+
+def test_update_slot_objective_sets_value() -> None:
+    """Test that update_slot_objective sets the objective on the correct slot."""
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+    slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+    state = PoolState.test(slots=(slot1, slot2))
+
+    new_state = update_slot_objective(state, "erk-managed-wt-01", 123)
+
+    assert new_state.slots[0].last_objective_issue == 123
+    assert new_state.slots[1].last_objective_issue is None
+
+
+def test_update_slot_objective_clears_value() -> None:
+    """Test that update_slot_objective can clear an existing objective."""
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=123)
+    state = PoolState.test(slots=(slot1,))
+
+    new_state = update_slot_objective(state, "erk-managed-wt-01", None)
+
+    assert new_state.slots[0].last_objective_issue is None
+
+
+def test_update_slot_objective_replaces_value() -> None:
+    """Test that update_slot_objective replaces an existing objective."""
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=100)
+    state = PoolState.test(slots=(slot1,))
+
+    new_state = update_slot_objective(state, "erk-managed-wt-01", 200)
+
+    assert new_state.slots[0].last_objective_issue == 200
+
+
+def test_update_slot_objective_returns_unchanged_for_unknown_slot() -> None:
+    """Test that update_slot_objective returns state unchanged if slot not found."""
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+    state = PoolState.test(slots=(slot1,))
+
+    new_state = update_slot_objective(state, "erk-managed-wt-99", 123)
+
+    assert new_state is state  # Same object, unchanged
+
+
+def test_update_slot_objective_preserves_other_fields() -> None:
+    """Test that update_slot_objective preserves version, pool_size, assignments."""
+    slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+    assignment = SlotAssignment(
+        slot_name="erk-managed-wt-01",
+        branch_name="feature-a",
+        assigned_at="2025-01-01T12:00:00+00:00",
+        worktree_path=Path("/worktrees/wt-01"),
+    )
+    state = PoolState(
+        version="2.0",
+        pool_size=8,
+        slots=(slot1,),
+        assignments=(assignment,),
+    )
+
+    new_state = update_slot_objective(state, "erk-managed-wt-01", 42)
+
+    assert new_state.version == "2.0"
+    assert new_state.pool_size == 8
+    assert new_state.assignments == (assignment,)

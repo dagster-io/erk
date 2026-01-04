@@ -20,9 +20,12 @@ class SlotInfo:
 
     Attributes:
         name: The pool slot identifier (e.g., "erk-managed-wt-01")
+        last_objective_issue: Issue number of the last objective worked on in this slot.
+            Persists across assignment cycles so /erk:objective-next-plan can default to it.
     """
 
     name: str
+    last_objective_issue: int | None
 
 
 @dataclass(frozen=True)
@@ -98,7 +101,10 @@ def load_pool_state(pool_json_path: Path) -> PoolState | None:
     content = pool_json_path.read_text(encoding="utf-8")
     data = json.loads(content)
 
-    slots = tuple(SlotInfo(name=s["name"]) for s in data.get("slots", []))
+    slots = tuple(
+        SlotInfo(name=s["name"], last_objective_issue=s.get("last_objective_issue"))
+        for s in data.get("slots", [])
+    )
 
     assignments = tuple(
         SlotAssignment(
@@ -132,7 +138,9 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
     data = {
         "version": state.version,
         "pool_size": state.pool_size,
-        "slots": [{"name": s.name} for s in state.slots],
+        "slots": [
+            {"name": s.name, "last_objective_issue": s.last_objective_issue} for s in state.slots
+        ],
         "assignments": [
             {
                 "slot_name": a.slot_name,
@@ -145,3 +153,38 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
     }
 
     pool_json_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+
+def update_slot_objective(
+    state: PoolState, slot_name: str, objective_issue: int | None
+) -> PoolState:
+    """Return new PoolState with slot's last_objective_issue updated.
+
+    Args:
+        state: Current pool state
+        slot_name: Name of the slot to update
+        objective_issue: Issue number to set, or None to clear
+
+    Returns:
+        New PoolState with the updated slot. If slot_name is not found,
+        returns state unchanged.
+    """
+    new_slots: list[SlotInfo] = []
+    found = False
+
+    for slot in state.slots:
+        if slot.name == slot_name:
+            new_slots.append(SlotInfo(name=slot.name, last_objective_issue=objective_issue))
+            found = True
+        else:
+            new_slots.append(slot)
+
+    if not found:
+        return state
+
+    return PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        slots=tuple(new_slots),
+        assignments=state.assignments,
+    )

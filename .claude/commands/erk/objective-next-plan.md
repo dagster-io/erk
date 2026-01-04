@@ -25,7 +25,31 @@ Parse `$ARGUMENTS` to extract the issue reference:
 
 - If argument is a URL: extract issue number from path
 - If argument is a number: use directly
-- If no argument provided: prompt user using AskUserQuestion with "What objective issue should I work from?"
+- If no argument provided: try to get the default from pool.json (see below), then prompt if no default
+
+**Getting default objective from pool.json:**
+
+If no argument is provided, check if we're in a pool slot worktree with a last objective:
+
+```bash
+erk exec slot-objective
+```
+
+This returns JSON like:
+
+```json
+{ "objective_issue": 123, "slot_name": "erk-managed-wt-01" }
+```
+
+Or if not in a slot or no objective:
+
+```json
+{ "objective_issue": null, "slot_name": null }
+```
+
+If `objective_issue` is not null, use it as the default and inform the user: "Using objective #<number> from slot's last objective. Run with explicit argument to override."
+
+If no default found or not in a pool slot, prompt user using AskUserQuestion with "What objective issue should I work from?"
 
 ### Step 2: Fetch and Validate Issue
 
