@@ -137,6 +137,32 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     )
 
 
+def _get_source_plan_file(
+    plan_file: Path | None,
+    session_id: str,
+    cwd: Path,
+) -> Path | None:
+    """Determine the Claude plan file path to snapshot and delete.
+
+    Args:
+        plan_file: Explicitly provided plan file path (highest priority).
+        session_id: Session ID for slug-based lookup.
+        cwd: Current working directory for hint.
+
+    Returns:
+        Path to the Claude plan file, or None if not found.
+    """
+    if plan_file:
+        return plan_file
+
+    # Look up slug from session to find plan file
+    slugs = extract_slugs_from_session(session_id, cwd_hint=str(cwd))
+    if slugs:
+        return get_plans_dir() / f"{slugs[-1]}.md"
+
+    return None
+
+
 @click.command(name="plan-save-to-issue")
 @click.option(
     "--format",
@@ -313,16 +339,7 @@ def plan_save_to_issue(
         _create_plan_saved_marker(effective_session_id, repo_root)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
-        # Determine Claude plan file path (source for snapshot)
-        if plan_file:
-            claude_plan_file = plan_file
-        else:
-            # Look up slug from session to find plan file
-            slugs = extract_slugs_from_session(effective_session_id, cwd_hint=str(cwd))
-            if slugs:
-                claude_plan_file = get_plans_dir() / f"{slugs[-1]}.md"
-            else:
-                claude_plan_file = None
+        claude_plan_file = _get_source_plan_file(plan_file, effective_session_id, cwd)
 
         if claude_plan_file is not None and claude_plan_file.exists():
             snapshot_result = snapshot_plan_for_session(
