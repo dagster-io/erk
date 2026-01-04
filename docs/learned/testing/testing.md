@@ -21,6 +21,7 @@ All business logic changes in `src/` must include corresponding tests:
 - **Features**: Add tests covering the new behavior
 
 If existing tests pass after your change, either:
+
 1. The tests weren't covering the changed code path, or
 2. You need to add a new test for the specific scenario
 
