@@ -934,7 +934,10 @@ query {{
         if isinstance(result, RetriesExhausted):
             # Timeout - run never appeared
             return None
-        return result  # type: ignore[invalid-return-type]
+        # with_retries never returns RetryRequested (consumed internally).
+        # Assert narrows type to str for both runtime safety and static analysis.
+        assert isinstance(result, str)
+        return result
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
