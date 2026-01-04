@@ -15,7 +15,7 @@ import secrets
 import string
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 
 from erk_shared.debug import debug_log
 from erk_shared.gateway.time.abc import Time
@@ -934,9 +934,10 @@ query {{
         if isinstance(result, RetriesExhausted):
             # Timeout - run never appeared
             return None
-        # with_retries consumes RetryRequested internally, only returns T | RetriesExhausted
-        # Cast to str since we've excluded RetriesExhausted above
-        return cast(str, result)
+        # with_retries never returns RetryRequested (consumed internally).
+        # Assert narrows type to str for both runtime safety and static analysis.
+        assert isinstance(result, str)
+        return result
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check GitHub CLI authentication status.
