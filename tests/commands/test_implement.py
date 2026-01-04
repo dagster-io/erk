@@ -6,7 +6,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.implement import _detect_target_type, _normalize_model_name, implement
+from erk.cli.commands.implement import implement
+from erk.cli.commands.implement_shared import detect_target_type, normalize_model_name
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
@@ -37,14 +38,14 @@ def _create_sample_plan_issue(issue_number: str = "42") -> Plan:
 
 def test_detect_issue_number_with_hash() -> None:
     """Test detection of issue numbers with # prefix."""
-    target_info = _detect_target_type("#123")
+    target_info = detect_target_type("#123")
     assert target_info.target_type == "issue_number"
     assert target_info.issue_number == "123"
 
 
 def test_detect_plain_number_as_issue() -> None:
     """Test that plain numbers are treated as GitHub issue numbers."""
-    target_info = _detect_target_type("123")
+    target_info = detect_target_type("123")
     assert target_info.target_type == "issue_number"
     assert target_info.issue_number == "123"
 
@@ -52,7 +53,7 @@ def test_detect_plain_number_as_issue() -> None:
 def test_detect_issue_url() -> None:
     """Test detection of GitHub issue URLs."""
     url = "https://github.com/user/repo/issues/456"
-    target_info = _detect_target_type(url)
+    target_info = detect_target_type(url)
     assert target_info.target_type == "issue_url"
     assert target_info.issue_number == "456"
 
@@ -60,36 +61,36 @@ def test_detect_issue_url() -> None:
 def test_detect_issue_url_with_path() -> None:
     """Test detection of GitHub issue URLs with additional path."""
     url = "https://github.com/user/repo/issues/789#issuecomment-123"
-    target_info = _detect_target_type(url)
+    target_info = detect_target_type(url)
     assert target_info.target_type == "issue_url"
     assert target_info.issue_number == "789"
 
 
 def test_detect_relative_numeric_file() -> None:
     """Test that numeric files with ./ prefix are treated as file paths."""
-    target_info = _detect_target_type("./123")
+    target_info = detect_target_type("./123")
     assert target_info.target_type == "file_path"
     assert target_info.issue_number is None
 
 
 def test_plain_and_prefixed_numbers_equivalent() -> None:
     """Test that plain and prefixed numbers both resolve to issue numbers."""
-    result_plain = _detect_target_type("809")
-    result_prefixed = _detect_target_type("#809")
+    result_plain = detect_target_type("809")
+    result_prefixed = detect_target_type("#809")
     assert result_plain.target_type == result_prefixed.target_type == "issue_number"
     assert result_plain.issue_number == result_prefixed.issue_number == "809"
 
 
 def test_detect_file_path() -> None:
     """Test detection of file paths."""
-    target_info = _detect_target_type("./my-feature-plan.md")
+    target_info = detect_target_type("./my-feature-plan.md")
     assert target_info.target_type == "file_path"
     assert target_info.issue_number is None
 
 
 def test_detect_file_path_with_special_chars() -> None:
     """Test detection of file paths with special characters."""
-    target_info = _detect_target_type("/path/to/my-plan.md")
+    target_info = detect_target_type("/path/to/my-plan.md")
     assert target_info.target_type == "file_path"
     assert target_info.issue_number is None
 
@@ -1652,42 +1653,42 @@ def test_interactive_mode_preserves_relative_path_from_plan_file() -> None:
 # Model Normalization Tests
 
 
-def test_normalize_model_name_full_names() -> None:
+def testnormalize_model_name_full_names() -> None:
     """Test normalizing full model names (haiku, sonnet, opus)."""
-    assert _normalize_model_name("haiku") == "haiku"
-    assert _normalize_model_name("sonnet") == "sonnet"
-    assert _normalize_model_name("opus") == "opus"
+    assert normalize_model_name("haiku") == "haiku"
+    assert normalize_model_name("sonnet") == "sonnet"
+    assert normalize_model_name("opus") == "opus"
 
 
-def test_normalize_model_name_aliases() -> None:
+def testnormalize_model_name_aliases() -> None:
     """Test normalizing model name aliases (h, s, o)."""
-    assert _normalize_model_name("h") == "haiku"
-    assert _normalize_model_name("s") == "sonnet"
-    assert _normalize_model_name("o") == "opus"
+    assert normalize_model_name("h") == "haiku"
+    assert normalize_model_name("s") == "sonnet"
+    assert normalize_model_name("o") == "opus"
 
 
-def test_normalize_model_name_case_insensitive() -> None:
+def testnormalize_model_name_case_insensitive() -> None:
     """Test that model names are case-insensitive."""
-    assert _normalize_model_name("HAIKU") == "haiku"
-    assert _normalize_model_name("Sonnet") == "sonnet"
-    assert _normalize_model_name("OPUS") == "opus"
-    assert _normalize_model_name("H") == "haiku"
-    assert _normalize_model_name("S") == "sonnet"
-    assert _normalize_model_name("O") == "opus"
+    assert normalize_model_name("HAIKU") == "haiku"
+    assert normalize_model_name("Sonnet") == "sonnet"
+    assert normalize_model_name("OPUS") == "opus"
+    assert normalize_model_name("H") == "haiku"
+    assert normalize_model_name("S") == "sonnet"
+    assert normalize_model_name("O") == "opus"
 
 
-def test_normalize_model_name_none() -> None:
+def testnormalize_model_name_none() -> None:
     """Test that None input returns None."""
-    assert _normalize_model_name(None) is None
+    assert normalize_model_name(None) is None
 
 
-def test_normalize_model_name_invalid() -> None:
+def testnormalize_model_name_invalid() -> None:
     """Test that invalid model names raise ClickException."""
     import click
     import pytest
 
     with pytest.raises(click.ClickException) as exc_info:
-        _normalize_model_name("invalid")
+        normalize_model_name("invalid")
     assert "Invalid model: 'invalid'" in str(exc_info.value)
     assert "Valid options:" in str(exc_info.value)
 
