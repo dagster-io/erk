@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.metadata import find_metadata_block, format_plan_header_body
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
@@ -692,3 +693,190 @@ This is the actual plan content.
 
     # Verify retry logic was used (should have attempted 3 times with delays of 0.5s and 1s)
     assert fake_time.sleep_calls == [0.5, 1.0]
+
+
+# ============================================================================
+# Write operation tests (PlanBackend interface)
+# ============================================================================
+
+
+def test_create_plan_success() -> None:
+    """Test creating a plan issue via create_plan method."""
+    fake_github = FakeGitHubIssues(username="testuser")
+    store = GitHubPlanStore(fake_github)
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="New Plan Title",
+        content="# Plan Content\n\nThis is the plan body.",
+        labels=("erk-plan", "enhancement"),
+        metadata={},
+    )
+
+    # Verify result
+    assert result.plan_id == "1"  # First issue created
+    assert "github.com" in result.url
+    assert "/issues/1" in result.url
+
+    # Verify issue was created with correct title
+    assert len(fake_github.created_issues) == 1
+    title, _body, labels = fake_github.created_issues[0]
+    assert title == "New Plan Title [erk-plan]"
+    assert "erk-plan" in labels
+
+
+def test_create_plan_with_objective_issue() -> None:
+    """Test creating a plan with objective_issue metadata."""
+    fake_github = FakeGitHubIssues(username="testuser")
+    store = GitHubPlanStore(fake_github)
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="Plan for Objective",
+        content="# Plan\n\nLinked to objective.",
+        labels=("erk-plan",),
+        metadata={"objective_issue": 42},
+    )
+
+    # Verify result
+    assert result.plan_id == "1"
+
+    # Verify the issue body contains objective_issue reference
+    _title, body, _labels = fake_github.created_issues[0]
+    block = find_metadata_block(body, "plan-header")
+    assert block is not None
+    assert block.data.get("objective_issue") == 42
+
+
+def test_create_plan_with_extraction_type() -> None:
+    """Test creating an extraction plan."""
+    fake_github = FakeGitHubIssues(username="testuser")
+    store = GitHubPlanStore(fake_github)
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="Extraction Plan",
+        content="# Extraction\n\nDocumentation extraction.",
+        labels=("erk-plan", "erk-extraction"),
+        metadata={"plan_type": "extraction"},
+    )
+
+    # Verify result
+    assert result.plan_id == "1"
+
+    # Verify the title suffix includes extraction
+    title, _body, labels = fake_github.created_issues[0]
+    assert "[erk-extraction]" in title
+    assert "erk-extraction" in labels
+
+
+def test_create_plan_invalid_metadata_type() -> None:
+    """Test create_plan raises error for invalid metadata types."""
+    fake_github = FakeGitHubIssues(username="testuser")
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(RuntimeError, match="plan_type must be a string"):
+        store.create_plan(
+            repo_root=Path("/fake/repo"),
+            title="Bad Plan",
+            content="# Plan",
+            labels=("erk-plan",),
+            metadata={"plan_type": 123},  # Should be string, not int
+        )
+
+
+def test_update_metadata_success() -> None:
+    """Test updating plan metadata via update_metadata method."""
+    # Create issue with initial plan-header metadata
+    initial_body = format_plan_header_body(
+        created_at="2024-01-01T00:00:00Z",
+        created_by="testuser",
+        worktree_name=None,
+    )
+    issue = create_test_issue(
+        number=42,
+        title="Test Plan",
+        body=initial_body,
+    )
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    # Update metadata
+    store.update_metadata(
+        repo_root=Path("/fake/repo"),
+        plan_id="42",
+        metadata={
+            "worktree_name": "my-worktree",
+            "last_local_impl_at": "2024-01-02T00:00:00Z",
+        },
+    )
+
+    # Verify update was applied
+    assert len(fake_github.updated_bodies) == 1
+    issue_num, updated_body = fake_github.updated_bodies[0]
+    assert issue_num == 42
+
+    # Verify metadata block was updated
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data.get("worktree_name") == "my-worktree"
+    assert block.data.get("last_local_impl_at") == "2024-01-02T00:00:00Z"
+
+
+def test_update_metadata_unknown_field_raises() -> None:
+    """Test update_metadata raises error for unknown fields."""
+    initial_body = format_plan_header_body(
+        created_at="2024-01-01T00:00:00Z",
+        created_by="testuser",
+    )
+    issue = create_test_issue(
+        number=42,
+        title="Test Plan",
+        body=initial_body,
+    )
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(ValueError, match="Unknown metadata field: invalid_field"):
+        store.update_metadata(
+            repo_root=Path("/fake/repo"),
+            plan_id="42",
+            metadata={"invalid_field": "value"},
+        )
+
+
+def test_add_comment_success() -> None:
+    """Test adding a comment to a plan issue."""
+    issue = create_test_issue(
+        number=42,
+        title="Test Plan",
+        body="Plan content",
+    )
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    comment_id = store.add_comment(
+        repo_root=Path("/fake/repo"),
+        plan_id="42",
+        body="This is a progress update.",
+    )
+
+    # Verify comment was added (FakeGitHubIssues starts comment IDs at 1000)
+    assert comment_id == "1000"
+    assert len(fake_github.added_comments) == 1
+    issue_num, comment_body, _returned_id = fake_github.added_comments[0]
+    assert issue_num == 42
+    assert comment_body == "This is a progress update."
+
+
+def test_add_comment_to_nonexistent_issue() -> None:
+    """Test add_comment raises error for non-existent issue."""
+    fake_github = FakeGitHubIssues(issues={})
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(RuntimeError, match="Issue #999 not found"):
+        store.add_comment(
+            repo_root=Path("/fake/repo"),
+            plan_id="999",
+            body="This should fail.",
+        )

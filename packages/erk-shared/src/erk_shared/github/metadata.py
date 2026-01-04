@@ -3,6 +3,7 @@
 import logging
 import re
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -2129,6 +2130,78 @@ def update_step_progress(
     # Update current_step field
     updated_data = dict(block.data)
     updated_data["current_step"] = current_step
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def update_plan_header_metadata(
+    issue_body: str,
+    metadata: Mapping[str, object],
+) -> str:
+    """Update multiple fields in plan-header metadata block.
+
+    A generic update function that accepts a mapping of field names to values
+    and updates all provided fields in the plan-header block. Only updates
+    fields that are present in the metadata mapping.
+
+    Uses Python YAML parsing for robustness (not regex).
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        metadata: Mapping of field names to values. Supported fields:
+            - worktree_name: str
+            - last_local_impl_at: str (ISO timestamp)
+            - last_local_impl_event: str ("started" or "ended")
+            - last_local_impl_session: str (session ID)
+            - last_local_impl_user: str (username)
+            - last_remote_impl_at: str (ISO timestamp)
+            - last_dispatched_run_id: str
+            - last_dispatched_node_id: str
+            - last_dispatched_at: str (ISO timestamp)
+            - current_step: int
+
+    Returns:
+        Updated issue body with new field values
+
+    Raises:
+        ValueError: If plan-header block not found or validation fails
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Define allowed fields to prevent arbitrary data injection
+    allowed_fields = {
+        "worktree_name",
+        "last_local_impl_at",
+        "last_local_impl_event",
+        "last_local_impl_session",
+        "last_local_impl_user",
+        "last_remote_impl_at",
+        "last_dispatched_run_id",
+        "last_dispatched_node_id",
+        "last_dispatched_at",
+        "current_step",
+        "plan_comment_id",
+    }
+
+    # Update fields from metadata mapping
+    updated_data = dict(block.data)
+    for field, value in metadata.items():
+        if field not in allowed_fields:
+            msg = f"Unknown metadata field: {field}"
+            raise ValueError(msg)
+        updated_data[field] = value
 
     # Validate updated data
     schema = PlanHeaderSchema()
