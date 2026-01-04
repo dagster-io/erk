@@ -236,3 +236,15 @@ class ClaudeInstallation(ABC):
             List of agent IDs in format ["agent-<id>", ...]
         """
         ...
+
+    # --- Projects directory operations ---
+
+    @abstractmethod
+    def projects_dir_exists(self) -> bool:
+        """Check if ~/.claude/projects/ directory exists."""
+        ...
+
+    @abstractmethod
+    def get_projects_dir_path(self) -> Path:
+        """Return path to ~/.claude/projects/ directory."""
+        ...

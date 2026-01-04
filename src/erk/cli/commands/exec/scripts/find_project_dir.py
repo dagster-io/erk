@@ -61,6 +61,9 @@ from pathlib import Path
 
 import click
 
+from erk_shared.context.helpers import require_claude_installation
+from erk_shared.extraction.claude_installation import ClaudeInstallation
+
 
 @dataclass(frozen=True)
 class ProjectInfo:
@@ -108,17 +111,18 @@ def encode_path_to_project_folder(path: Path) -> str:
     return str(path).replace("/", "-").replace(".", "-")
 
 
-def find_project_info(path: Path) -> ProjectInfo | ProjectError:
+def find_project_info(path: Path, installation: ClaudeInstallation) -> ProjectInfo | ProjectError:
     """Find Claude Code project directory and metadata for given path.
 
     Args:
         path: Filesystem path to find project for
+        installation: ClaudeInstallation gateway for accessing projects directory
 
     Returns:
         ProjectInfo on success, ProjectError if not found
     """
-    projects_dir = Path.home() / ".claude" / "projects"
-    if not projects_dir.exists():
+    projects_dir = installation.get_projects_dir_path()
+    if not installation.projects_dir_exists():
         return ProjectError(
             success=False,
             error="Claude Code projects directory not found",
@@ -186,18 +190,21 @@ def find_project_info(path: Path) -> ProjectInfo | ProjectError:
     is_flag=True,
     help="Output in JSON format",
 )
-def find_project_dir(path: Path | None, json_output: bool) -> None:
+@click.pass_context
+def find_project_dir(ctx: click.Context, path: Path | None, json_output: bool) -> None:
     """Find Claude Code project directory for a filesystem path.
 
     This command maps filesystem paths to Claude Code project directories
     in ~/.claude/projects/ using deterministic encoding rules.
     """
+    installation = require_claude_installation(ctx)
+
     # Default to current directory if no path specified
     if path is None:
         path = Path(os.getcwd())
 
     # Find project information
-    result = find_project_info(path)
+    result = find_project_info(path, installation)
 
     # Always output JSON (the --json flag is for future extensibility)
     click.echo(json.dumps(asdict(result), indent=2))

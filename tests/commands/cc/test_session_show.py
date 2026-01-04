@@ -120,6 +120,7 @@ def test_show_session_displays_metadata() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -161,6 +162,7 @@ def test_show_session_not_found_error() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -203,6 +205,7 @@ def test_show_session_agent_session_error() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -251,6 +254,7 @@ def test_show_session_displays_child_agents() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -291,6 +295,7 @@ def test_show_session_no_child_agents() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -315,6 +320,7 @@ def test_show_session_no_project_error() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -355,6 +361,7 @@ def test_show_session_infers_most_recent() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -383,6 +390,7 @@ def test_show_session_infer_no_sessions_error() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -432,6 +440,7 @@ def test_show_session_displays_agent_type_and_prompt() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -492,6 +501,7 @@ def test_show_session_handles_string_timestamps() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -551,6 +561,7 @@ def test_show_session_displays_agent_duration() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -606,6 +617,7 @@ def test_show_session_duration_formats_minutes() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -657,6 +669,7 @@ def test_show_session_no_duration_without_timestamps() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)

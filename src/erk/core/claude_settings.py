@@ -232,15 +232,6 @@ def write_claude_settings(settings_path: Path, settings: dict) -> Path | NoBacku
     return backup_result
 
 
-def get_global_claude_settings_path() -> Path:
-    """Return the path to the user's global Claude settings file.
-
-    Returns:
-        Path to ~/.claude/settings.json
-    """
-    return Path.home() / ".claude" / "settings.json"
-
-
 @dataclass(frozen=True)
 class StatuslineConfig:
     """Represents the current statusline configuration."""

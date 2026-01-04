@@ -15,6 +15,8 @@ from erk.cli.commands.exec.scripts.find_project_dir import (
     find_project_dir,
     find_project_info,
 )
+from erk_shared.context import ErkContext
+from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 
 # ============================================================================
 # 1. Path Encoding Tests (5 tests)
@@ -62,7 +64,7 @@ def test_encode_path_tmp_directory() -> None:
 # ============================================================================
 
 
-def test_find_project_info_success(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_success(tmp_path: Path) -> None:
     """Test successful project directory discovery with metadata."""
     # Setup: Create mock ~/.claude/projects/ structure
     projects_dir = tmp_path / ".claude" / "projects"
@@ -79,11 +81,20 @@ def test_find_project_info_success(tmp_path: Path, monkeypatch) -> None:
     (project_dir / "def456.jsonl").write_text("{}", encoding="utf-8")
     (project_dir / "agent-17cfd3f4.jsonl").write_text("{}", encoding="utf-8")
 
-    # Mock Path.home()
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    # Create FakeClaudeInstallation with real projects directory
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
     # Test
-    result = find_project_info(test_cwd)
+    result = find_project_info(test_cwd, installation)
 
     # Assertions
     assert isinstance(result, ProjectInfo)
@@ -100,7 +111,7 @@ def test_find_project_info_success(tmp_path: Path, monkeypatch) -> None:
     assert result.latest_session_id in ["abc123", "def456"]
 
 
-def test_find_project_info_with_hidden_directory(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_with_hidden_directory(tmp_path: Path) -> None:
     """Test project discovery for path with dot (hidden directory)."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -114,16 +125,25 @@ def test_find_project_info_with_hidden_directory(tmp_path: Path, monkeypatch) ->
     project_dir.mkdir()
     (project_dir / "test123.jsonl").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
-    result = find_project_info(test_cwd)
+    result = find_project_info(test_cwd, installation)
 
     assert isinstance(result, ProjectInfo)
     assert result.success is True
     assert result.encoded_path == encoded_name
 
 
-def test_find_project_info_exact_matching_no_false_positives(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_exact_matching_no_false_positives(tmp_path: Path) -> None:
     """Test that exact matching prevents false positives from path prefixes."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -142,21 +162,30 @@ def test_find_project_info_exact_matching_no_false_positives(tmp_path: Path, mon
     (projects_dir / encoded1 / "session1.jsonl").write_text("{}", encoding="utf-8")
     (projects_dir / encoded2 / "session2.jsonl").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
     # Test that each path matches only its own project directory
-    result1 = find_project_info(path1)
+    result1 = find_project_info(path1, installation)
     assert isinstance(result1, ProjectInfo)
     assert result1.project_dir == str(projects_dir / encoded1)
     assert result1.session_logs == ["session1.jsonl"]
 
-    result2 = find_project_info(path2)
+    result2 = find_project_info(path2, installation)
     assert isinstance(result2, ProjectInfo)
     assert result2.project_dir == str(projects_dir / encoded2)
     assert result2.session_logs == ["session2.jsonl"]
 
 
-def test_find_project_info_latest_session_is_main_not_agent(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_latest_session_is_main_not_agent(tmp_path: Path) -> None:
     """Test that latest_session_id excludes agent logs."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -180,9 +209,18 @@ def test_find_project_info_latest_session_is_main_not_agent(tmp_path: Path, monk
     time.sleep(0.01)
     agent_log.touch()
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
-    result = find_project_info(test_cwd)
+    result = find_project_info(test_cwd, installation)
 
     # Latest should be main session, NOT agent log
     assert isinstance(result, ProjectInfo)
@@ -196,14 +234,23 @@ def test_find_project_info_no_sessions() -> None:
     pass  # Skipped - see comment
 
 
-def test_find_project_info_project_not_found(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_project_not_found(tmp_path: Path) -> None:
     """Test error when project directory doesn't exist."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
-    result = find_project_info(tmp_path / "nonexistent")
+    result = find_project_info(tmp_path / "nonexistent", installation)
 
     assert isinstance(result, ProjectError)
     assert result.success is False
@@ -211,11 +258,23 @@ def test_find_project_info_project_not_found(tmp_path: Path, monkeypatch) -> Non
     assert "nonexistent" in result.help
 
 
-def test_find_project_info_claude_projects_missing(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_claude_projects_missing(tmp_path: Path) -> None:
     """Test error when ~/.claude/projects/ doesn't exist."""
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    # projects_dir does not exist
+    nonexistent_projects_dir = tmp_path / ".claude" / "projects"
 
-    result = find_project_info(tmp_path / "some" / "path")
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=nonexistent_projects_dir,
+    )
+
+    result = find_project_info(tmp_path / "some" / "path", installation)
 
     assert isinstance(result, ProjectError)
     assert result.success is False
@@ -223,7 +282,7 @@ def test_find_project_info_claude_projects_missing(tmp_path: Path, monkeypatch) 
     assert "Is Claude Code installed?" in result.help
 
 
-def test_find_project_info_sorts_session_logs(tmp_path: Path, monkeypatch) -> None:
+def test_find_project_info_sorts_session_logs(tmp_path: Path) -> None:
     """Test that session logs are sorted alphabetically."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -238,9 +297,18 @@ def test_find_project_info_sorts_session_logs(tmp_path: Path, monkeypatch) -> No
     (project_dir / "aaa.jsonl").write_text("{}", encoding="utf-8")
     (project_dir / "mmm.jsonl").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
-    result = find_project_info(test_cwd)
+    result = find_project_info(test_cwd, installation)
 
     assert isinstance(result, ProjectInfo)
     assert result.session_logs == ["aaa.jsonl", "mmm.jsonl", "zzz.jsonl"]
@@ -251,7 +319,7 @@ def test_find_project_info_sorts_session_logs(tmp_path: Path, monkeypatch) -> No
 # ============================================================================
 
 
-def test_cli_success(tmp_path: Path, monkeypatch) -> None:
+def test_cli_success(tmp_path: Path) -> None:
     """Test CLI command with successful project discovery."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -263,10 +331,23 @@ def test_cli_success(tmp_path: Path, monkeypatch) -> None:
     project_dir.mkdir()
     (project_dir / "test.jsonl").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
     runner = CliRunner()
-    result = runner.invoke(find_project_dir, ["--path", str(test_cwd)])
+    result = runner.invoke(
+        find_project_dir,
+        ["--path", str(test_cwd)],
+        obj=ErkContext.for_test(cwd=tmp_path, claude_installation=installation),
+    )
 
     assert result.exit_code == 0
     output = json.loads(result.output)
@@ -274,12 +355,9 @@ def test_cli_success(tmp_path: Path, monkeypatch) -> None:
     assert output["encoded_path"] == encoded_name
 
 
-def test_cli_defaults_to_cwd(tmp_path: Path, monkeypatch) -> None:
+def test_cli_defaults_to_cwd(tmp_path: Path) -> None:
     """Test CLI command defaults to current working directory."""
-    # Setup home directory structure
-    home_dir = tmp_path / "home"
-    home_dir.mkdir()
-    projects_dir = home_dir / ".claude" / "projects"
+    projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
 
     # Create a test cwd directory
@@ -292,7 +370,16 @@ def test_cli_defaults_to_cwd(tmp_path: Path, monkeypatch) -> None:
     project_dir.mkdir()
     (project_dir / "test.jsonl").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(Path, "home", lambda: home_dir)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
     runner = CliRunner()
     # Run without --path flag (should use cwd)
@@ -302,7 +389,11 @@ def test_cli_defaults_to_cwd(tmp_path: Path, monkeypatch) -> None:
     original_cwd = os.getcwd()
     try:
         os.chdir(test_cwd)
-        result = runner.invoke(find_project_dir, [])
+        result = runner.invoke(
+            find_project_dir,
+            [],
+            obj=ErkContext.for_test(cwd=test_cwd, claude_installation=installation),
+        )
 
         assert result.exit_code == 0
         output = json.loads(result.output)
@@ -311,7 +402,7 @@ def test_cli_defaults_to_cwd(tmp_path: Path, monkeypatch) -> None:
         os.chdir(original_cwd)
 
 
-def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
+def test_cli_project_not_found(tmp_path: Path) -> None:
     """Test CLI command error when project not found."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -320,10 +411,23 @@ def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
     test_dir = tmp_path / "nonexistent"
     test_dir.mkdir()
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
     runner = CliRunner()
-    result = runner.invoke(find_project_dir, ["--path", str(test_dir)])
+    result = runner.invoke(
+        find_project_dir,
+        ["--path", str(test_dir)],
+        obj=ErkContext.for_test(cwd=tmp_path, claude_installation=installation),
+    )
 
     assert result.exit_code == 1
     output = json.loads(result.output)
@@ -331,7 +435,7 @@ def test_cli_project_not_found(tmp_path: Path, monkeypatch) -> None:
     assert output["error"] == "Project directory not found"
 
 
-def test_cli_json_output_structure(tmp_path: Path, monkeypatch) -> None:
+def test_cli_json_output_structure(tmp_path: Path) -> None:
     """Test that JSON output has expected structure."""
     projects_dir = tmp_path / ".claude" / "projects"
     projects_dir.mkdir(parents=True)
@@ -343,10 +447,23 @@ def test_cli_json_output_structure(tmp_path: Path, monkeypatch) -> None:
     project_dir.mkdir()
     (project_dir / "session123.jsonl").write_text("{}", encoding="utf-8")
 
-    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    installation = FakeClaudeInstallation(
+        projects=None,
+        plans=None,
+        settings=None,
+        local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
+        plans_dir_path=None,
+        projects_dir_path=projects_dir,
+    )
 
     runner = CliRunner()
-    result = runner.invoke(find_project_dir, ["--path", str(test_cwd), "--json"])
+    result = runner.invoke(
+        find_project_dir,
+        ["--path", str(test_cwd), "--json"],
+        obj=ErkContext.for_test(cwd=tmp_path, claude_installation=installation),
+    )
 
     assert result.exit_code == 0
     output = json.loads(result.output)

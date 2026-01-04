@@ -442,3 +442,13 @@ class RealClaudeInstallation(ClaudeInstallation):
             return plan_file
 
         return None
+
+    # --- Projects directory operations ---
+
+    def projects_dir_exists(self) -> bool:
+        """Check if ~/.claude/projects/ directory exists."""
+        return self.get_projects_dir_path().exists()
+
+    def get_projects_dir_path(self) -> Path:
+        """Return path to ~/.claude/projects/ directory."""
+        return Path.home() / ".claude" / "projects"
