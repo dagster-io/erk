@@ -64,7 +64,7 @@ class ConfigurationError:
     """Error result when user identity cannot be configured."""
 
     success: bool
-    error: Literal["not_authenticated", "config_failed"]
+    error: Literal["not-authenticated", "config-failed"]
     message: str
 
 
@@ -90,7 +90,7 @@ def _configure_git_user_impl(
     if not is_authenticated or username is None:
         return ConfigurationError(
             success=False,
-            error="not_authenticated",
+            error="not-authenticated",
             message="GitHub CLI is not authenticated. Run 'gh auth login' first.",
         )
 

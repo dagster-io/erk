@@ -42,7 +42,7 @@ def execute_pre_analysis(
         yield CompletionEvent(
             PreAnalysisError(
                 success=False,
-                error_type="gt_not_authenticated",
+                error_type="gt-not-authenticated",
                 message="Graphite CLI (gt) is not authenticated",
                 details={
                     "fix": "Run 'gt auth' to authenticate with Graphite",
@@ -60,7 +60,7 @@ def execute_pre_analysis(
         yield CompletionEvent(
             PreAnalysisError(
                 success=False,
-                error_type="gh_not_authenticated",
+                error_type="gh-not-authenticated",
                 message="GitHub CLI (gh) is not authenticated",
                 details={
                     "fix": "Run 'gh auth login' to authenticate with GitHub",
@@ -82,7 +82,7 @@ def execute_pre_analysis(
             yield CompletionEvent(
                 PreAnalysisError(
                     success=False,
-                    error_type="squash_failed",
+                    error_type="squash-failed",
                     message="Failed to stage uncommitted changes",
                     details={"reason": "git add failed"},
                 )
@@ -98,7 +98,7 @@ def execute_pre_analysis(
             yield CompletionEvent(
                 PreAnalysisError(
                     success=False,
-                    error_type="squash_failed",
+                    error_type="squash-failed",
                     message="Failed to commit uncommitted changes",
                     details={"reason": "git commit failed"},
                 )
@@ -113,7 +113,7 @@ def execute_pre_analysis(
         yield CompletionEvent(
             PreAnalysisError(
                 success=False,
-                error_type="no_branch",
+                error_type="no-branch",
                 message="Could not determine current branch",
                 details={"branch_name": "unknown"},
             )
@@ -129,7 +129,7 @@ def execute_pre_analysis(
         yield CompletionEvent(
             PreAnalysisError(
                 success=False,
-                error_type="no_parent",
+                error_type="no-parent",
                 message=f"Could not determine parent branch for: {branch_name}",
                 details={"branch_name": branch_name},
             )
@@ -145,7 +145,7 @@ def execute_pre_analysis(
             yield CompletionEvent(
                 PreAnalysisError(
                     success=False,
-                    error_type="parent_merged",
+                    error_type="parent-merged",
                     message=(
                         f"Parent branch '{parent_branch}' has been merged. "
                         "Run 'gt sync' to update your stack."
@@ -215,7 +215,7 @@ def execute_pre_analysis(
         yield CompletionEvent(
             PreAnalysisError(
                 success=False,
-                error_type="no_commits",
+                error_type="no-commits",
                 message=f"No commits found in branch: {branch_name}",
                 details={"branch_name": branch_name, "parent_branch": parent_branch},
             )
@@ -241,7 +241,7 @@ def execute_pre_analysis(
                 yield CompletionEvent(
                     PreAnalysisError(
                         success=False,
-                        error_type="squash_conflict",
+                        error_type="squash-conflict",
                         message="Merge conflicts detected while squashing commits",
                         details={
                             "branch_name": branch_name,
@@ -257,7 +257,7 @@ def execute_pre_analysis(
             yield CompletionEvent(
                 PreAnalysisError(
                     success=False,
-                    error_type="squash_failed",
+                    error_type="squash-failed",
                     message="Failed to squash commits",
                     details={
                         "branch_name": branch_name,

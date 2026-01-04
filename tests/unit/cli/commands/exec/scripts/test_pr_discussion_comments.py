@@ -162,7 +162,7 @@ def test_get_pr_discussion_comments_pr_not_found(tmp_path: Path) -> None:
     assert result.exit_code == 0  # Graceful degradation
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error_type"] == "pr_not_found"
+    assert output["error_type"] == "pr-not-found"
 
 
 # ============================================================================

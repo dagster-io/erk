@@ -28,7 +28,7 @@ class SquashSuccess:
     """Success result from idempotent squash."""
 
     success: Literal[True]
-    action: Literal["squashed", "already_single_commit"]
+    action: Literal["squashed", "already-single-commit"]
     commit_count: int
     message: str
 
@@ -38,7 +38,7 @@ class SquashError:
     """Error result from idempotent squash."""
 
     success: Literal[False]
-    error: Literal["no_commits", "squash_conflict", "squash_failed"]
+    error: Literal["no-commits", "squash-conflict", "squash-failed"]
     message: str
 
 
@@ -54,12 +54,12 @@ class SquashError:
 # =============================================================================
 
 LandPrErrorType = Literal[
-    "parent_not_trunk",
-    "no_pr_found",
-    "pr_not_open",
-    "pr_base_mismatch",
-    "github_api_error",
-    "merge_failed",
+    "parent-not-trunk",
+    "no-pr-found",
+    "pr-not-open",
+    "pr-base-mismatch",
+    "github-api-error",
+    "merge-failed",
 ]
 
 
@@ -88,14 +88,14 @@ class LandPrError:
 # =============================================================================
 
 PrepErrorType = Literal[
-    "gt_not_authenticated",
-    "gh_not_authenticated",
-    "no_branch",
-    "no_parent",
-    "no_commits",
-    "restack_conflict",
-    "squash_conflict",
-    "squash_failed",
+    "gt-not-authenticated",
+    "gh-not-authenticated",
+    "no-branch",
+    "no-parent",
+    "no-commits",
+    "restack-conflict",
+    "squash-conflict",
+    "squash-failed",
 ]
 
 
@@ -128,27 +128,27 @@ class PrepError:
 # =============================================================================
 
 PreAnalysisErrorType = Literal[
-    "gt_not_authenticated",
-    "gh_not_authenticated",
-    "no_branch",
-    "no_parent",
-    "no_commits",
-    "squash_failed",
-    "squash_conflict",
-    "parent_merged",
+    "gt-not-authenticated",
+    "gh-not-authenticated",
+    "no-branch",
+    "no-parent",
+    "no-commits",
+    "squash-failed",
+    "squash-conflict",
+    "parent-merged",
 ]
 
 PostAnalysisErrorType = Literal[
-    "amend_failed",
-    "submit_failed",
-    "submit_timeout",
-    "submit_merged_parent",
-    "submit_diverged",
-    "submit_conflict",
-    "submit_empty_parent",
-    "pr_update_failed",
-    "claude_not_available",
-    "ai_generation_failed",
+    "amend-failed",
+    "submit-failed",
+    "submit-timeout",
+    "submit-merged-parent",
+    "submit-diverged",
+    "submit-conflict",
+    "submit-empty-parent",
+    "pr-update-failed",
+    "claude-not-available",
+    "ai-generation-failed",
 ]
 
 
@@ -240,12 +240,12 @@ class FinalizeResult:
 # =============================================================================
 
 RestackPreflightErrorType = Literal[
-    "squash_conflict",
-    "squash_failed",
-    "no_commits",
-    "restack_failed",
-    "not_in_repo",
-    "dirty_working_tree",
+    "squash-conflict",
+    "squash-failed",
+    "no-commits",
+    "restack-failed",
+    "not-in-repo",
+    "dirty-working-tree",
 ]
 
 
@@ -270,7 +270,7 @@ class RestackPreflightError:
     details: dict[str, str]
 
 
-RestackContinueErrorType = Literal["stage_failed", "continue_failed"]
+RestackContinueErrorType = Literal["stage-failed", "continue-failed"]
 
 
 @dataclass(frozen=True)
@@ -296,7 +296,7 @@ class RestackContinueError:
 
 
 RestackFinalizeErrorType = Literal[
-    "rebase_still_in_progress", "dirty_working_tree", "unresolved_conflicts"
+    "rebase-still-in-progress", "dirty-working-tree", "unresolved-conflicts"
 ]
 
 
@@ -323,7 +323,7 @@ class RestackFinalizeError:
 # Quick Submit Operation Types
 # =============================================================================
 
-QuickSubmitErrorType = Literal["stage_failed", "commit_failed", "submit_failed"]
+QuickSubmitErrorType = Literal["stage-failed", "commit-failed", "submit-failed"]
 
 
 @dataclass(frozen=True)

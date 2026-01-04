@@ -91,7 +91,7 @@ def mark_impl_ended(ctx: click.Context) -> None:
     if issue_ref is None:
         result = MarkImplError(
             success=False,
-            error_type="no_issue_reference",
+            error_type="no-issue-reference",
             message="No issue reference found in .impl/issue.json",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -114,7 +114,7 @@ def mark_impl_ended(ctx: click.Context) -> None:
     except (FileNotFoundError, ValueError) as e:
         result = MarkImplError(
             success=False,
-            error_type="local_state_write_failed",
+            error_type="local-state-write-failed",
             message=f"Failed to write local state: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -126,7 +126,7 @@ def mark_impl_ended(ctx: click.Context) -> None:
     except SystemExit:
         result = MarkImplError(
             success=False,
-            error_type="context_not_initialized",
+            error_type="context-not-initialized",
             message="Context not initialized",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -138,7 +138,7 @@ def mark_impl_ended(ctx: click.Context) -> None:
     except RuntimeError as e:
         result = MarkImplError(
             success=False,
-            error_type="issue_not_found",
+            error_type="issue-not-found",
             message=f"Issue #{issue_ref.issue_number} not found: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -163,7 +163,7 @@ def mark_impl_ended(ctx: click.Context) -> None:
         # plan-header block not found (old format issue)
         result = MarkImplError(
             success=False,
-            error_type="no_plan_header_block",
+            error_type="no-plan-header-block",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -175,7 +175,7 @@ def mark_impl_ended(ctx: click.Context) -> None:
     except RuntimeError as e:
         result = MarkImplError(
             success=False,
-            error_type="github_api_failed",
+            error_type="github-api-failed",
             message=f"Failed to update issue body: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))

@@ -392,18 +392,18 @@ class Graphite(ABC):
             if "nothing to squash" in error_msg:
                 return SquashSuccess(
                     success=True,
-                    action="already_single_commit",
+                    action="already-single-commit",
                     commit_count=1,
                     message="Already a single commit, no squash needed.",
                 )
             if "conflict" in error_msg:
                 return SquashError(
                     success=False,
-                    error="squash_conflict",
+                    error="squash-conflict",
                     message="Merge conflicts detected during squash.",
                 )
             return SquashError(
                 success=False,
-                error="squash_failed",
+                error="squash-failed",
                 message=f"Failed to squash: {e}",
             )

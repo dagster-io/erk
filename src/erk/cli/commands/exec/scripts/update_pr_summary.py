@@ -107,7 +107,7 @@ def update_pr_summary(
     if commit_message is None:
         result = UpdateError(
             success=False,
-            error="commit_not_found",
+            error="commit-not-found",
             message=f"Could not find commit {commit_sha}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -118,7 +118,7 @@ def update_pr_summary(
     if isinstance(pr_result, PRNotFound):
         result = UpdateError(
             success=False,
-            error="pr_not_found",
+            error="pr-not-found",
             message=f"No PR found for branch {branch_name}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -140,7 +140,7 @@ def update_pr_summary(
     except RuntimeError as e:
         result = UpdateError(
             success=False,
-            error="github_api_failed",
+            error="github-api-failed",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))

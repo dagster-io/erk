@@ -111,7 +111,7 @@ def post_pr_inline_comment(
     except RuntimeError as e:
         result = InlineCommentError(
             success=False,
-            error_type="pr_not_found",
+            error_type="pr-not-found",
             message=f"Could not get PR head commit: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -135,7 +135,7 @@ def post_pr_inline_comment(
     except RuntimeError as e:
         result = InlineCommentError(
             success=False,
-            error_type="github_api_failed",
+            error_type="github-api-failed",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))

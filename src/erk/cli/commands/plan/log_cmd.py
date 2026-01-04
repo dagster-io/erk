@@ -15,12 +15,12 @@ from erk_shared.output.output import user_output
 
 # Event type literals
 type EventType = Literal[
-    "plan_created",
-    "submission_queued",
-    "workflow_started",
-    "implementation_status",
-    "plan_retry",
-    "worktree_created",
+    "plan-created",
+    "submission-queued",
+    "workflow-started",
+    "implementation-status",
+    "plan-retry",
+    "worktree-created",
 ]
 
 
@@ -227,7 +227,7 @@ def _extract_plan_created_event(data: dict) -> Event | None:
 
     return Event(
         timestamp=timestamp,
-        event_type="plan_created",
+        event_type="plan-created",
         metadata=metadata,
     )
 
@@ -246,7 +246,7 @@ def _extract_submission_queued_event(data: dict) -> Event | None:
 
     return Event(
         timestamp=timestamp,
-        event_type="submission_queued",
+        event_type="submission-queued",
         metadata=metadata,
     )
 
@@ -265,7 +265,7 @@ def _extract_workflow_started_event(data: dict) -> Event | None:
 
     return Event(
         timestamp=timestamp,
-        event_type="workflow_started",
+        event_type="workflow-started",
         metadata=metadata,
     )
 
@@ -295,7 +295,7 @@ def _extract_implementation_status_event(data: dict) -> Event | None:
 
     return Event(
         timestamp=timestamp,
-        event_type="implementation_status",
+        event_type="implementation-status",
         metadata=metadata,
     )
 
@@ -314,7 +314,7 @@ def _extract_plan_retry_event(data: dict) -> Event | None:
 
     return Event(
         timestamp=timestamp,
-        event_type="plan_retry",
+        event_type="plan-retry",
         metadata=metadata,
     )
 
@@ -333,7 +333,7 @@ def _extract_worktree_creation_event(data: dict) -> Event | None:
 
     return Event(
         timestamp=timestamp,
-        event_type="worktree_created",
+        event_type="worktree-created",
         metadata=metadata,
     )
 
@@ -396,19 +396,19 @@ def _format_event_description(event: Event) -> str:
     event_type = event["event_type"]
     metadata = event["metadata"]
 
-    if event_type == "plan_created":
+    if event_type == "plan-created":
         worktree = metadata.get("worktree_name", "unknown")
         return f"Plan created: worktree '{worktree}' assigned"
 
-    if event_type == "submission_queued":
+    if event_type == "submission-queued":
         submitted_by = metadata.get("submitted_by", "unknown")
         return f"Queued for execution by {submitted_by}"
 
-    if event_type == "workflow_started":
+    if event_type == "workflow-started":
         workflow_url = metadata.get("workflow_run_url", "")
         return f"GitHub Actions workflow started: {workflow_url}"
 
-    if event_type == "implementation_status":
+    if event_type == "implementation-status":
         status = metadata.get("status", "unknown")
 
         if status == "starting":
@@ -431,12 +431,12 @@ def _format_event_description(event: Event) -> str:
 
         return f"Status: {status}"
 
-    if event_type == "plan_retry":
+    if event_type == "plan-retry":
         retry_count = metadata.get("retry_count", "unknown")
         triggered_by = metadata.get("triggered_by", "unknown")
         return f"Retry #{retry_count} triggered by {triggered_by}"
 
-    if event_type == "worktree_created":
+    if event_type == "worktree-created":
         worktree = metadata.get("worktree_name", "unknown")
         branch = metadata.get("branch_name", "unknown")
         return f"Worktree created: '{worktree}' (branch: {branch})"

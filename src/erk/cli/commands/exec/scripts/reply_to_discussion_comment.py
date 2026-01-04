@@ -134,7 +134,7 @@ def reply_to_discussion_comment(
 
     if target_comment is None:
         exit_with_error(
-            "comment_not_found",
+            "comment-not-found",
             f"Comment ID {comment_id} not found in PR #{pr_details.number} discussion",
         )
     # Type narrowing: target_comment is not None after the check above
@@ -152,7 +152,7 @@ def reply_to_discussion_comment(
     try:
         reply_comment_id = github_issues.add_comment(repo_root, pr_details.number, reply_body)
     except RuntimeError as e:
-        exit_with_error("github_api_error", f"Failed to post reply: {e}")
+        exit_with_error("github-api-error", f"Failed to post reply: {e}")
 
     # Add reaction to original comment
     reaction_result = GitHubChecks.add_reaction(github_issues, repo_root, comment_id, "+1")

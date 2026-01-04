@@ -115,7 +115,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     if not has_issue_reference(impl_dir):
         result = PrCommentError(
             success=False,
-            error_type="no_issue_reference",
+            error_type="no-issue-reference",
             message="No issue reference found in .impl/issue.json",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -125,7 +125,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     if issue_ref is None:
         result = PrCommentError(
             success=False,
-            error_type="invalid_issue_reference",
+            error_type="invalid-issue-reference",
             message="Could not read .impl/issue.json",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -136,7 +136,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     if branch_name is None:
         result = PrCommentError(
             success=False,
-            error_type="branch_detection_failed",
+            error_type="branch-detection-failed",
             message="Could not determine branch name from git",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -169,7 +169,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     except SystemExit:
         result = PrCommentError(
             success=False,
-            error_type="context_not_initialized",
+            error_type="context-not-initialized",
             message="Context not initialized",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -188,7 +188,7 @@ def post_pr_comment(ctx: click.Context, pr_url: str, pr_number: int) -> None:
     except RuntimeError as e:
         result = PrCommentError(
             success=False,
-            error_type="github_api_failed",
+            error_type="github-api-failed",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))

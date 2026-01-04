@@ -114,7 +114,7 @@ def _add_comment_if_provided(
     except RuntimeError as e:
         return ResolveThreadError(
             success=False,
-            error_type="comment_failed",
+            error_type="comment-failed",
             message=f"Failed to add comment: {e}",
         )
 
@@ -146,7 +146,7 @@ def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | Non
     except RuntimeError as e:
         result = ResolveThreadError(
             success=False,
-            error_type="github_api_failed",
+            error_type="github-api-failed",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -162,7 +162,7 @@ def resolve_review_thread(ctx: click.Context, thread_id: str, comment: str | Non
     else:
         result_error = ResolveThreadError(
             success=False,
-            error_type="resolution_failed",
+            error_type="resolution-failed",
             message=f"Failed to resolve thread {thread_id}",
         )
         click.echo(json.dumps(asdict(result_error), indent=2))

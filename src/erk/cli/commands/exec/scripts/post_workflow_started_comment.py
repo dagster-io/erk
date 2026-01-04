@@ -161,7 +161,7 @@ def post_workflow_started_comment(
     except RuntimeError as e:
         result = PostError(
             success=False,
-            error="github_api_failed",
+            error="github-api-failed",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))

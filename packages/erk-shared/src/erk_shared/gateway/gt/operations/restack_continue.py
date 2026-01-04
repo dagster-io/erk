@@ -42,7 +42,7 @@ def execute_restack_continue(
         yield CompletionEvent(
             RestackContinueError(
                 success=False,
-                error_type="stage_failed",
+                error_type="stage-failed",
                 message=f"Failed to stage files: {e}",
                 details={"files": ",".join(resolved_files)},
             )

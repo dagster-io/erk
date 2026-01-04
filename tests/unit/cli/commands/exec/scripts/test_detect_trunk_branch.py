@@ -66,7 +66,7 @@ def test_detect_impl_neither_found(tmp_path: Path) -> None:
 
     assert isinstance(result, DetectionError)
     assert result.success is False
-    assert result.error == "trunk_not_found"
+    assert result.error == "trunk-not-found"
     assert "main" in result.message
     assert "master" in result.message
 
@@ -115,7 +115,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "trunk_not_found"
+    assert output["error"] == "trunk-not-found"
 
 
 def test_cli_json_output_structure(tmp_path: Path) -> None:

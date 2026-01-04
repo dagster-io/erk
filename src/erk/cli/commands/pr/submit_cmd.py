@@ -228,7 +228,7 @@ def _run_core_submit(
     if result is None:
         return CoreSubmitError(
             success=False,
-            error_type="submit_failed",
+            error_type="submit-failed",
             message="Core submit did not complete",
             details={},
         )
@@ -315,7 +315,7 @@ def _run_finalize(
     if result is None:
         return PostAnalysisError(
             success=False,
-            error_type="submit_failed",
+            error_type="submit-failed",
             message="Finalize did not complete",
             details={},
         )

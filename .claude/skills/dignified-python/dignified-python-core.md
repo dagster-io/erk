@@ -731,6 +731,29 @@ When strings represent a fixed set of valid values (error codes, status values, 
 3. **Documentation** - Valid values are explicit in the code
 4. **Refactoring** - Rename operations work correctly
 
+### Naming Convention
+
+**Use kebab-case for all internal Literal string values:**
+
+```python
+# ✅ CORRECT: kebab-case for internal values
+IssueCode = Literal["orphan-state", "orphan-dir", "missing-branch"]
+ErrorType = Literal["not-found", "invalid-format", "timeout-exceeded"]
+```
+
+**Exception: When modeling external systems, match the external API's convention:**
+
+```python
+# ✅ CORRECT: Match GitHub API's UPPER_CASE
+PRState = Literal["OPEN", "MERGED", "CLOSED"]
+
+# ✅ CORRECT: Match GitHub Actions API's lowercase
+WorkflowStatus = Literal["completed", "in_progress", "queued"]
+```
+
+The rule is: kebab-case by default, external convention when modeling external APIs.
+
+
 ### Pattern
 
 ```python

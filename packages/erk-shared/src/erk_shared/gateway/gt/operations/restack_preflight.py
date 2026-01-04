@@ -51,11 +51,11 @@ def execute_restack_preflight(
                 yield CompletionEvent(
                     RestackPreflightError(
                         success=False,
-                        error_type="squash_failed"
-                        if result.error == "squash_failed"
-                        else "squash_conflict"
-                        if result.error == "squash_conflict"
-                        else "no_commits",
+                        error_type="squash-failed"
+                        if result.error == "squash-failed"
+                        else "squash-conflict"
+                        if result.error == "squash-conflict"
+                        else "no-commits",
                         message=result.message,
                         details={"squash_error": result.error},
                     )

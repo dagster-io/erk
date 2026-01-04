@@ -160,7 +160,7 @@ def test_log_json_output() -> None:
         assert len(events) == 1
 
         event = events[0]
-        assert event["event_type"] == "plan_created"
+        assert event["event_type"] == "plan-created"
         assert event["timestamp"] == "2024-01-15T12:30:00Z"
         assert event["metadata"]["worktree_name"] == "test-plan"
 

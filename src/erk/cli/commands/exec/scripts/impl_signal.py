@@ -136,37 +136,37 @@ def _signal_started(ctx: click.Context) -> None:
     # Read issue reference FIRST (doesn't require context)
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
-        _output_error(event, "no_issue_reference", "No issue reference found in issue.json")
+        _output_error(event, "no-issue-reference", "No issue reference found in issue.json")
         return
 
     # Now get context dependencies (after confirming we need them)
     try:
         repo_root = require_repo_root(ctx)
     except SystemExit:
-        _output_error(event, "context_not_initialized", "Context not initialized")
+        _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
     # Get worktree and branch names
     worktree_name = _get_worktree_name()
     if worktree_name is None:
-        _output_error(event, "worktree_detection_failed", "Could not determine worktree name")
+        _output_error(event, "worktree-detection-failed", "Could not determine worktree name")
         return
 
     branch_name = _get_branch_name()
     if branch_name is None:
-        _output_error(event, "branch_detection_failed", "Could not determine branch name")
+        _output_error(event, "branch-detection-failed", "Could not determine branch name")
         return
 
     # Read total steps from progress.md
     progress_file = impl_dir / "progress.md"
     if not progress_file.exists():
-        _output_error(event, "no_progress_file", f"Progress file not found: {progress_file}")
+        _output_error(event, "no-progress-file", f"Progress file not found: {progress_file}")
         return
 
     content = progress_file.read_text(encoding="utf-8")
     frontmatter = parse_progress_frontmatter(content)
     if frontmatter is None:
-        _output_error(event, "invalid_progress_format", "Invalid YAML frontmatter in progress.md")
+        _output_error(event, "invalid-progress-format", "Invalid YAML frontmatter in progress.md")
         return
 
     total_steps = frontmatter["total_steps"]
@@ -186,14 +186,14 @@ def _signal_started(ctx: click.Context) -> None:
             session_id=session_id,
         )
     except (FileNotFoundError, ValueError) as e:
-        _output_error(event, "local_state_write_failed", f"Failed to write local state: {e}")
+        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
         return
 
     # Get GitHub Issues from context
     try:
         github = require_github_issues(ctx)
     except SystemExit:
-        _output_error(event, "context_not_initialized", "Context not initialized")
+        _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
     # Post start comment
@@ -215,7 +215,7 @@ def _signal_started(ctx: click.Context) -> None:
 
         github.add_comment(repo_root, issue_ref.issue_number, comment_body)
     except RuntimeError as e:
-        _output_error(event, "github_comment_failed", f"Failed to post comment: {e}")
+        _output_error(event, "github-comment-failed", f"Failed to post comment: {e}")
         return
 
     # Update issue metadata
@@ -263,14 +263,14 @@ def _signal_ended(ctx: click.Context) -> None:
     # Read issue reference FIRST (doesn't require context)
     issue_ref = read_issue_reference(impl_dir)
     if issue_ref is None:
-        _output_error(event, "no_issue_reference", "No issue reference found in issue.json")
+        _output_error(event, "no-issue-reference", "No issue reference found in issue.json")
         return
 
     # Now get context dependencies (after confirming we need them)
     try:
         repo_root = require_repo_root(ctx)
     except SystemExit:
-        _output_error(event, "context_not_initialized", "Context not initialized")
+        _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
     # Capture metadata
@@ -288,14 +288,14 @@ def _signal_ended(ctx: click.Context) -> None:
             session_id=session_id,
         )
     except (FileNotFoundError, ValueError) as e:
-        _output_error(event, "local_state_write_failed", f"Failed to write local state: {e}")
+        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
         return
 
     # Get GitHub Issues from context
     try:
         github = require_github_issues(ctx)
     except SystemExit:
-        _output_error(event, "context_not_initialized", "Context not initialized")
+        _output_error(event, "context-not-initialized", "Context not initialized")
         return
 
     # Update issue metadata
@@ -318,7 +318,7 @@ def _signal_ended(ctx: click.Context) -> None:
 
         github.update_issue_body(repo_root, issue_ref.issue_number, updated_body)
     except (RuntimeError, ValueError) as e:
-        _output_error(event, "github_api_failed", f"Failed to update issue: {e}")
+        _output_error(event, "github-api-failed", f"Failed to update issue: {e}")
         return
 
     result = SignalSuccess(

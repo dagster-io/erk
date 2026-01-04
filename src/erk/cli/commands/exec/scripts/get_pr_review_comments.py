@@ -68,7 +68,7 @@ class ReviewCommentSuccess:
 def _ensure_branch(branch: str | None) -> str:
     """Ensure branch was detected, exit with error if not."""
     if branch is None:
-        exit_with_error("branch_detection_failed", "Could not determine current branch")
+        exit_with_error("branch-detection-failed", "Could not determine current branch")
     assert branch is not None  # Type narrowing after NoReturn
     return branch
 
@@ -82,9 +82,9 @@ def _ensure_pr_result(
     """Ensure PR lookup succeeded, exit with appropriate error if not."""
     if isinstance(pr_result, PRNotFound):
         if branch is not None:
-            exit_with_error("no_pr_for_branch", f"No PR found for branch '{branch}'")
+            exit_with_error("no-pr-for-branch", f"No PR found for branch '{branch}'")
         else:
-            exit_with_error("pr_not_found", f"PR #{pr_number} not found")
+            exit_with_error("pr-not-found", f"PR #{pr_number} not found")
     assert not isinstance(pr_result, PRNotFound)  # Type narrowing after NoReturn
     return pr_result
 
@@ -142,7 +142,7 @@ def get_pr_review_comments(ctx: click.Context, pr: int | None, include_resolved:
             repo_root, pr_result.number, include_resolved=include_resolved
         )
     except RuntimeError as e:
-        exit_with_error("github_api_failed", str(e))
+        exit_with_error("github-api-failed", str(e))
 
     result_success = ReviewCommentSuccess(
         success=True,

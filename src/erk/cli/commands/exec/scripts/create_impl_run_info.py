@@ -60,7 +60,7 @@ class RunInfoError:
     """Error result when run-info.json cannot be created."""
 
     success: bool
-    error: Literal["directory_not_found", "write_failed"]
+    error: Literal["directory-not-found", "write-failed"]
     message: str
 
 
@@ -83,7 +83,7 @@ def _create_impl_run_info_impl(
     if not impl_dir.exists():
         return RunInfoError(
             success=False,
-            error="directory_not_found",
+            error="directory-not-found",
             message="Directory .impl does not exist. Create it first with 'mkdir -p .impl'",
         )
 

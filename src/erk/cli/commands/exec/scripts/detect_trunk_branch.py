@@ -70,7 +70,7 @@ class DetectionError:
     """Error result when trunk branch cannot be detected."""
 
     success: bool
-    error: Literal["trunk_not_found", "git_error"]
+    error: Literal["trunk-not-found", "git-error"]
     message: str
 
 
@@ -95,7 +95,7 @@ def _detect_trunk_branch_impl(git: Git, repo_root: Path) -> DetectedTrunk | Dete
     # Neither found
     return DetectionError(
         success=False,
-        error="trunk_not_found",
+        error="trunk-not-found",
         message="Could not detect trunk branch (neither 'main' nor 'master' exists on origin)",
     )
 

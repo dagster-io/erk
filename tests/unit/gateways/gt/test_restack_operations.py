@@ -76,7 +76,7 @@ class TestRestackPreflight:
 
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
-        assert result.error_type == "squash_failed"
+        assert result.error_type == "squash-failed"
 
     def test_no_commits_returns_error(self, tmp_path: Path) -> None:
         """Test error when no commits to squash."""
@@ -92,7 +92,7 @@ class TestRestackPreflight:
 
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
-        assert result.error_type == "no_commits"
+        assert result.error_type == "no-commits"
 
     def test_squash_conflict_returns_error(self, tmp_path: Path) -> None:
         """Test error when squash has conflicts."""
@@ -109,7 +109,7 @@ class TestRestackPreflight:
 
         assert isinstance(result, RestackPreflightError)
         assert result.success is False
-        assert result.error_type == "squash_conflict"
+        assert result.error_type == "squash-conflict"
 
     def test_dirty_working_tree_auto_commits(self, tmp_path: Path) -> None:
         """Test that uncommitted changes are auto-committed before restack."""
@@ -207,7 +207,7 @@ class TestRestackFinalize:
 
         assert isinstance(result, RestackFinalizeError)
         assert result.success is False
-        assert result.error_type == "rebase_still_in_progress"
+        assert result.error_type == "rebase-still-in-progress"
 
     def test_finalize_fails_dirty_working_tree(self, tmp_path: Path) -> None:
         """Test finalize fails with uncommitted changes."""
@@ -223,7 +223,7 @@ class TestRestackFinalize:
 
         assert isinstance(result, RestackFinalizeError)
         assert result.success is False
-        assert result.error_type == "dirty_working_tree"
+        assert result.error_type == "dirty-working-tree"
 
     def test_finalize_retries_on_transient_dirty_state(self, tmp_path: Path) -> None:
         """Test finalize succeeds when dirty state clears after brief delay.

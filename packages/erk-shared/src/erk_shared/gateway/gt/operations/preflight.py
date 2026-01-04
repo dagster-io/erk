@@ -63,7 +63,7 @@ def _execute_submit_only(
             yield CompletionEvent(
                 PostAnalysisError(
                     success=False,
-                    error_type="submit_conflict",
+                    error_type="submit-conflict",
                     message="Merge conflicts detected during stack rebase",
                     details={
                         "branch_name": branch_name,
@@ -78,7 +78,7 @@ def _execute_submit_only(
         yield CompletionEvent(
             PostAnalysisError(
                 success=False,
-                error_type="submit_failed",
+                error_type="submit-failed",
                 message="Failed to restack branch",
                 details={
                     "branch_name": branch_name,
@@ -138,7 +138,7 @@ def _execute_submit_only(
             yield CompletionEvent(
                 PostAnalysisError(
                     success=False,
-                    error_type="submit_empty_parent",
+                    error_type="submit-empty-parent",
                     message=(
                         "Stack contains an empty parent branch that was already merged. "
                         "Run 'gt track --parent <trunk>' to reparent this branch, "
@@ -156,7 +156,7 @@ def _execute_submit_only(
             yield CompletionEvent(
                 PostAnalysisError(
                     success=False,
-                    error_type="submit_conflict",
+                    error_type="submit-conflict",
                     message="Merge conflicts detected during branch submission",
                     details={
                         "branch_name": branch_name,
@@ -170,7 +170,7 @@ def _execute_submit_only(
             yield CompletionEvent(
                 PostAnalysisError(
                     success=False,
-                    error_type="submit_merged_parent",
+                    error_type="submit-merged-parent",
                     message="Parent branches have been merged but are not in main trunk",
                     details={
                         "branch_name": branch_name,
@@ -184,7 +184,7 @@ def _execute_submit_only(
             yield CompletionEvent(
                 PostAnalysisError(
                     success=False,
-                    error_type="submit_diverged",
+                    error_type="submit-diverged",
                     message="Branch has diverged from remote - manual resolution required",
                     details={
                         "branch_name": branch_name,
@@ -198,7 +198,7 @@ def _execute_submit_only(
             yield CompletionEvent(
                 PostAnalysisError(
                     success=False,
-                    error_type="submit_timeout",
+                    error_type="submit-timeout",
                     message=(
                         "gt submit timed out after 120 seconds. "
                         "Check network connectivity and try again."
@@ -214,7 +214,7 @@ def _execute_submit_only(
         yield CompletionEvent(
             PostAnalysisError(
                 success=False,
-                error_type="submit_failed",
+                error_type="submit-failed",
                 message="Failed to submit branch with gt submit",
                 details={
                     "branch_name": branch_name,
@@ -248,7 +248,7 @@ def _execute_submit_only(
         yield CompletionEvent(
             PostAnalysisError(
                 success=False,
-                error_type="submit_failed",
+                error_type="submit-failed",
                 message="PR was submitted but could not retrieve PR info from GitHub",
                 details={"branch_name": branch_name},
             )

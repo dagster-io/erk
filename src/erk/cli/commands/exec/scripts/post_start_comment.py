@@ -127,7 +127,7 @@ def post_start_comment(ctx: click.Context) -> None:
     if issue_ref is None:
         result = StartError(
             success=False,
-            error_type="no_issue_reference",
+            error_type="no-issue-reference",
             message="No issue reference found in .impl/issue.json",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -138,7 +138,7 @@ def post_start_comment(ctx: click.Context) -> None:
     if worktree_name is None:
         result = StartError(
             success=False,
-            error_type="worktree_detection_failed",
+            error_type="worktree-detection-failed",
             message="Could not determine worktree name from git",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -149,7 +149,7 @@ def post_start_comment(ctx: click.Context) -> None:
     if branch_name is None:
         result = StartError(
             success=False,
-            error_type="branch_detection_failed",
+            error_type="branch-detection-failed",
             message="Could not determine branch name from git",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -160,7 +160,7 @@ def post_start_comment(ctx: click.Context) -> None:
     if not progress_file.exists():
         result = StartError(
             success=False,
-            error_type="no_progress_file",
+            error_type="no-progress-file",
             message=f"Progress file not found: {progress_file}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -171,7 +171,7 @@ def post_start_comment(ctx: click.Context) -> None:
     if frontmatter is None:
         result = StartError(
             success=False,
-            error_type="invalid_progress_format",
+            error_type="invalid-progress-format",
             message="Invalid YAML frontmatter in progress.md",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -204,7 +204,7 @@ def post_start_comment(ctx: click.Context) -> None:
     except SystemExit:
         result = StartError(
             success=False,
-            error_type="context_not_initialized",
+            error_type="context-not-initialized",
             message="Context not initialized",
         )
         click.echo(json.dumps(asdict(result), indent=2))
@@ -223,7 +223,7 @@ def post_start_comment(ctx: click.Context) -> None:
     except RuntimeError as e:
         result = StartError(
             success=False,
-            error_type="github_api_failed",
+            error_type="github-api-failed",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result), indent=2))

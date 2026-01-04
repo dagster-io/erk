@@ -49,7 +49,7 @@ def execute_restack_finalize(
         yield CompletionEvent(
             RestackFinalizeError(
                 success=False,
-                error_type="rebase_still_in_progress",
+                error_type="rebase-still-in-progress",
                 message="Rebase is still in progress",
                 details={},
             )
@@ -85,7 +85,7 @@ def execute_restack_finalize(
         yield CompletionEvent(
             RestackFinalizeError(
                 success=False,
-                error_type="unresolved_conflicts",
+                error_type="unresolved-conflicts",
                 message=msg,
                 details={"unmerged_files": ",".join(unmerged_files)},
             )
@@ -124,7 +124,7 @@ def execute_restack_finalize(
             yield CompletionEvent(
                 RestackFinalizeError(
                     success=False,
-                    error_type="dirty_working_tree",
+                    error_type="dirty-working-tree",
                     message=msg,
                     details={
                         "head_state": head_state,

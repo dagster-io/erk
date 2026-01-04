@@ -38,7 +38,7 @@ def execute_quick_submit(
         yield CompletionEvent(
             QuickSubmitError(
                 success=False,
-                error_type="stage_failed",
+                error_type="stage-failed",
                 message=f"Failed to stage changes: {e}",
             )
         )
@@ -59,7 +59,7 @@ def execute_quick_submit(
             yield CompletionEvent(
                 QuickSubmitError(
                     success=False,
-                    error_type="commit_failed",
+                    error_type="commit-failed",
                     message=f"Failed to commit changes: {e}",
                 )
             )
@@ -74,7 +74,7 @@ def execute_quick_submit(
         yield CompletionEvent(
             QuickSubmitError(
                 success=False,
-                error_type="submit_failed",
+                error_type="submit-failed",
                 message=f"Failed to submit: {e}",
             )
         )

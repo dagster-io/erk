@@ -71,7 +71,7 @@ def update_dispatch_info(
     except RuntimeError as e:
         result = UpdateError(
             success=False,
-            error="issue_not_found",
+            error="issue-not-found",
             message=f"Issue #{issue_number} not found: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)
@@ -89,7 +89,7 @@ def update_dispatch_info(
         # plan-header block not found (old format issue)
         result = UpdateError(
             success=False,
-            error="no_plan_header_block",
+            error="no-plan-header-block",
             message=str(e),
         )
         click.echo(json.dumps(asdict(result)), err=True)
@@ -101,7 +101,7 @@ def update_dispatch_info(
     except RuntimeError as e:
         result = UpdateError(
             success=False,
-            error="github_api_failed",
+            error="github-api-failed",
             message=f"Failed to update issue body: {e}",
         )
         click.echo(json.dumps(asdict(result)), err=True)

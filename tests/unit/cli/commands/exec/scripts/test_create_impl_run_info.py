@@ -73,7 +73,7 @@ def test_impl_directory_not_found(tmp_path: Path) -> None:
 
     assert isinstance(result, RunInfoError)
     assert result.success is False
-    assert result.error == "directory_not_found"
+    assert result.error == "directory-not-found"
     assert ".impl" in result.message
 
 
@@ -135,7 +135,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "directory_not_found"
+    assert output["error"] == "directory-not-found"
 
 
 def test_cli_json_output_structure_success(tmp_path: Path) -> None:

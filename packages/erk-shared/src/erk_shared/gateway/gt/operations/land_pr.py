@@ -44,7 +44,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="parent_not_trunk",
+                error_type="parent-not-trunk",
                 message=f"Could not determine parent branch for: {branch_name}",
                 details={"current_branch": branch_name},
             )
@@ -58,7 +58,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="parent_not_trunk",
+                error_type="parent-not-trunk",
                 message=(
                     f"Branch must be exactly one level up from {trunk}\n"
                     f"Current branch: {branch_name}\n"
@@ -80,7 +80,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="no_pr_found",
+                error_type="no-pr-found",
                 message=(
                     "No pull request found for this branch\n\n"
                     "Please create a PR first using: gt submit"
@@ -96,7 +96,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="pr_not_open",
+                error_type="pr-not-open",
                 message=(
                     f"Pull request is not open (state: {pr_state})\n\n"
                     f"This command only works with open pull requests."
@@ -119,7 +119,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="github_api_error",
+                error_type="github-api-error",
                 message=(
                     f"Failed to get base branch for PR #{pr_number}.\n\nCheck: gh auth status"
                 ),
@@ -134,7 +134,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="pr_base_mismatch",
+                error_type="pr-base-mismatch",
                 message=(
                     f"PR #{pr_number} targets '{pr_base}' but should target '{trunk}'.\n\n"
                     f"The GitHub PR's base branch has diverged from your local stack.\n"
@@ -168,7 +168,7 @@ def execute_land_pr(
         yield CompletionEvent(
             LandPrError(
                 success=False,
-                error_type="merge_failed",
+                error_type="merge-failed",
                 message=f"Failed to merge PR #{pr_number}\n\n{error_detail}",
                 details={
                     "current_branch": branch_name,

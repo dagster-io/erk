@@ -108,7 +108,7 @@ class TestQuickSubmitErrors:
 
         assert isinstance(result, QuickSubmitError)
         assert result.success is False
-        assert result.error_type == "stage_failed"
+        assert result.error_type == "stage-failed"
         assert "Failed to stage changes" in result.message
 
     def test_quick_submit_submit_failure(self, tmp_repo: Path) -> None:
@@ -125,7 +125,7 @@ class TestQuickSubmitErrors:
 
         assert isinstance(result, QuickSubmitError)
         assert result.success is False
-        assert result.error_type == "submit_failed"
+        assert result.error_type == "submit-failed"
         assert "Failed to submit" in result.message
 
 

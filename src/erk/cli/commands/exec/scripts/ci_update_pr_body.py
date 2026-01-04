@@ -73,12 +73,12 @@ class UpdateError:
 
     success: bool
     error: Literal[
-        "pr_not_found",
-        "empty_diff",
-        "diff_fetch_failed",
-        "claude_execution_failed",
-        "claude_empty_output",
-        "github_api_failed",
+        "pr-not-found",
+        "empty-diff",
+        "diff-fetch-failed",
+        "claude-execution-failed",
+        "claude-empty-output",
+        "github-api-failed",
     ]
     message: str
     stderr: str | None
@@ -173,7 +173,7 @@ def _update_pr_body_impl(
     if current_branch is None:
         return UpdateError(
             success=False,
-            error="pr_not_found",
+            error="pr-not-found",
             message="Could not determine current branch",
             stderr=None,
         )
@@ -183,7 +183,7 @@ def _update_pr_body_impl(
     if isinstance(pr_result, PRNotFound):
         return UpdateError(
             success=False,
-            error="pr_not_found",
+            error="pr-not-found",
             message=f"No PR found for branch {current_branch}",
             stderr=None,
         )
@@ -196,7 +196,7 @@ def _update_pr_body_impl(
     except RuntimeError as e:
         return UpdateError(
             success=False,
-            error="diff_fetch_failed",
+            error="diff-fetch-failed",
             message=f"Failed to get PR diff: {e}",
             stderr=None,
         )
@@ -204,7 +204,7 @@ def _update_pr_body_impl(
     if not pr_diff.strip():
         return UpdateError(
             success=False,
-            error="empty_diff",
+            error="empty-diff",
             message="PR diff is empty",
             stderr=None,
         )
@@ -224,7 +224,7 @@ def _update_pr_body_impl(
         stderr_preview = result.error[:500] if result.error else None
         return UpdateError(
             success=False,
-            error="claude_execution_failed",
+            error="claude-execution-failed",
             message="Claude CLI returned non-zero exit code",
             stderr=stderr_preview,
         )
@@ -234,7 +234,7 @@ def _update_pr_body_impl(
         stderr_preview = result.error[:500] if result.error else None
         return UpdateError(
             success=False,
-            error="claude_empty_output",
+            error="claude-empty-output",
             message="Claude returned empty output (check API quota, rate limits, or token)",
             stderr=stderr_preview,
         )
@@ -248,7 +248,7 @@ def _update_pr_body_impl(
     except RuntimeError as e:
         return UpdateError(
             success=False,
-            error="github_api_failed",
+            error="github-api-failed",
             message=f"Failed to update PR: {e}",
             stderr=None,
         )

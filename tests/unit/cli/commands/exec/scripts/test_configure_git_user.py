@@ -73,7 +73,7 @@ def test_impl_not_authenticated(tmp_path: Path) -> None:
 
     assert isinstance(result, ConfigurationError)
     assert result.success is False
-    assert result.error == "not_authenticated"
+    assert result.error == "not-authenticated"
     assert "gh auth login" in result.message
 
 
@@ -87,7 +87,7 @@ def test_impl_no_username(tmp_path: Path) -> None:
 
     assert isinstance(result, ConfigurationError)
     assert result.success is False
-    assert result.error == "not_authenticated"
+    assert result.error == "not-authenticated"
 
 
 # ============================================================================
@@ -123,7 +123,7 @@ def test_cli_error_exit_code(tmp_path: Path) -> None:
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert output["error"] == "not_authenticated"
+    assert output["error"] == "not-authenticated"
 
 
 def test_cli_json_output_structure_success(tmp_path: Path) -> None:

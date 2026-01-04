@@ -40,7 +40,7 @@ def execute_squash(
         yield CompletionEvent(
             SquashError(
                 success=False,
-                error="no_commits",
+                error="no-commits",
                 message=f"No commits found ahead of {trunk}.",
             )
         )
