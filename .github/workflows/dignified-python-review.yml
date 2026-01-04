@@ -50,8 +50,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Using sonnet for better analysis accuracy. Haiku missed inline import
+          # violations in PR #3980 - see https://github.com/dagster-io/erk/pull/3980
           claude --print \
-            --model claude-haiku-4-5 \
+            --model claude-sonnet-4-5 \
             --allowedTools 'Bash(gh:*),Bash(erk exec:*),Read(*)' \
             --dangerously-skip-permissions \
             --output-format stream-json \
