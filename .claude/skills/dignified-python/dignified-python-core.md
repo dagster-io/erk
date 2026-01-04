@@ -778,6 +778,85 @@ If any answer is "yes", use `Literal` instead.
 
 ---
 
+## Using `type: ignore` in Tests
+
+### Core Rule
+
+**`type: ignore` is acceptable when explicitly testing behavior that violates the type system.**
+
+Some tests intentionally pass invalid types or attempt operations the type checker prohibits. In these cases, `type: ignore` with an explanatory comment is the correct approach.
+
+### Required Format
+
+Always include the specific error code and an explanation:
+
+```python
+# ✅ CORRECT: Specific error code with explanation
+value = some_func(None)  # type: ignore[arg-type] -- testing defensive handling of None input
+
+# ✅ CORRECT: Testing frozen dataclass immutability
+with pytest.raises(AttributeError):
+    ctx.dry_run = False  # type: ignore[misc] -- testing frozen dataclass rejects mutation
+
+# ❌ WRONG: Bare type: ignore without explanation
+value = some_func(None)  # type: ignore
+
+# ❌ WRONG: Missing error code
+value = some_func(None)  # type: ignore -- testing None input
+```
+
+### Acceptable Patterns
+
+1. **Testing frozen dataclass immutability**
+   ```python
+   # Test that frozen dataclasses reject mutation at runtime
+   with pytest.raises(AttributeError):
+       frozen_obj.field = new_value  # type: ignore[misc] -- testing frozen dataclass rejects mutation
+   ```
+
+2. **Testing defensive handling of invalid input types**
+   ```python
+   # Test that function handles None gracefully even though signature requires str
+   result = extract_metadata(None)  # type: ignore[arg-type] -- testing defensive handling of None input
+   assert result == default_value
+   ```
+
+3. **Testing robustness with wrong types**
+   ```python
+   # Test handling of string where datetime expected (e.g., from JSON)
+   obj = DataClass(
+       timestamp="2024-01-01T00:00:00Z",  # type: ignore[arg-type] -- testing string timestamp handling
+   )
+   ```
+
+4. **Testing invalid enum/state values**
+   ```python
+   # Test handling of unknown state values
+   pr = PullRequestInfo(
+       state="UNKNOWN",  # type: ignore[arg-type] -- testing defensive behavior with invalid state
+   )
+   result = get_status_emoji(pr)
+   assert result == ""  # Graceful fallback
+   ```
+
+### Anti-Pattern
+
+**Never use `type: ignore` to suppress legitimate type errors in production code:**
+
+```python
+# ❌ WRONG: Suppressing real type error in production code
+def process(data: dict[str, Any]) -> None:
+    value = data["key"]  # type: ignore  <- Hiding a real issue
+
+# ✅ CORRECT: Fix the type issue properly
+def process(data: dict[str, Any]) -> None:
+    if "key" in data:
+        value = data["key"]
+        # ...
+```
+
+---
+
 ## Anti-Patterns
 
 ### Preserving Unnecessary Backwards Compatibility
@@ -1118,6 +1197,14 @@ Benefits:
 - [ ] If skipping for performance, have I documented the measured overhead?
 
 **Default: Always add runtime assertion before cast when cost is trivial**
+
+### Before using `type: ignore` in tests:
+
+- [ ] Is this test code explicitly testing type-violating behavior?
+- [ ] Have I included the specific error code? (e.g., `[misc]`, `[arg-type]`)
+- [ ] Have I added a `--` comment explaining what's being tested?
+
+**Default: Fix the type error; only use `type: ignore` when testing type-violating behavior**
 
 ### Before preserving backwards compatibility:
 
