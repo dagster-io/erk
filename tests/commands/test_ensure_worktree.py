@@ -271,12 +271,7 @@ def test_ensure_worktree_creates_env_file_from_config() -> None:
         )
 
         # Create config with env template
-        local_config = LoadedConfig(
-            env={"MY_VAR": "test_value_{name}"},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test(env={"MY_VAR": "test_value_{name}"})
 
         repo = RepoContext(
             root=env.cwd,
@@ -325,12 +320,7 @@ def test_ensure_worktree_skips_env_when_no_template() -> None:
         )
 
         # Create config WITHOUT env template
-        local_config = LoadedConfig(
-            env={},  # Empty env dict
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         repo = RepoContext(
             root=env.cwd,
@@ -376,11 +366,9 @@ def test_ensure_worktree_runs_post_create_commands() -> None:
         )
 
         # Create config with post-create commands
-        local_config = LoadedConfig(
-            env={},
+        local_config = LoadedConfig.test(
             post_create_commands=["echo 'Hello World'", "touch test.txt"],
             post_create_shell="bash",
-            plans_repo=None,
         )
 
         repo = RepoContext(

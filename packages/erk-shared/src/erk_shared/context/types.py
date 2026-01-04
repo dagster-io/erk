@@ -110,3 +110,22 @@ class LoadedConfig:
     post_create_commands: list[str]
     post_create_shell: str | None
     plans_repo: str | None
+    pool_size: int | None  # None = use default
+
+    @staticmethod
+    def test(
+        *,
+        env: dict[str, str] | None = None,
+        post_create_commands: list[str] | None = None,
+        post_create_shell: str | None = None,
+        plans_repo: str | None = None,
+        pool_size: int | None = None,
+    ) -> LoadedConfig:
+        """Create a LoadedConfig with sensible test defaults."""
+        return LoadedConfig(
+            env=env if env is not None else {},
+            post_create_commands=post_create_commands if post_create_commands is not None else [],
+            post_create_shell=post_create_shell,
+            plans_repo=plans_repo,
+            pool_size=pool_size,
+        )

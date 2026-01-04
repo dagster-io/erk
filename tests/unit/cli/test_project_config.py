@@ -102,12 +102,7 @@ class TestMergeConfigs:
 
     def test_merges_env_project_overrides_repo(self) -> None:
         """Project env values override repo env values."""
-        repo_config = LoadedConfig(
-            env={"VAR1": "repo_val1", "VAR2": "repo_val2"},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        repo_config = LoadedConfig.test(env={"VAR1": "repo_val1", "VAR2": "repo_val2"})
         project_config = ProjectConfig(
             name=None,
             env={"VAR2": "project_val2", "VAR3": "project_val3"},
@@ -125,12 +120,7 @@ class TestMergeConfigs:
 
     def test_concatenates_commands(self) -> None:
         """Commands are concatenated: repo first, then project."""
-        repo_config = LoadedConfig(
-            env={},
-            post_create_commands=["repo_cmd1", "repo_cmd2"],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        repo_config = LoadedConfig.test(post_create_commands=["repo_cmd1", "repo_cmd2"])
         project_config = ProjectConfig(
             name=None,
             env={},
@@ -149,12 +139,7 @@ class TestMergeConfigs:
 
     def test_project_shell_overrides_repo_shell(self) -> None:
         """Project shell overrides repo shell when set."""
-        repo_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell="bash",
-            plans_repo=None,
-        )
+        repo_config = LoadedConfig.test(post_create_shell="bash")
         project_config = ProjectConfig(
             name=None,
             env={},
@@ -168,12 +153,7 @@ class TestMergeConfigs:
 
     def test_uses_repo_shell_when_project_shell_none(self) -> None:
         """Uses repo shell when project shell is None."""
-        repo_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell="bash",
-            plans_repo=None,
-        )
+        repo_config = LoadedConfig.test(post_create_shell="bash")
         project_config = ProjectConfig(
             name=None,
             env={},
@@ -187,9 +167,7 @@ class TestMergeConfigs:
 
     def test_merges_empty_configs(self) -> None:
         """Handles merging empty configs."""
-        repo_config = LoadedConfig(
-            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-        )
+        repo_config = LoadedConfig.test()
         project_config = ProjectConfig(
             name=None, env={}, post_create_commands=[], post_create_shell=None
         )
@@ -332,4 +310,57 @@ repo = "owner/plans-repo"
         assert result.env == {"FOO": "bar"}
         assert result.post_create_shell == "bash"
         assert result.post_create_commands == ["cmd1"]
+        assert result.plans_repo == "owner/plans-repo"
+
+    def test_loads_pool_max_slots(self, tmp_path: Path) -> None:
+        """Loads pool.max_slots from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            "[pool]\nmax_slots = 8\n",
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.pool_size == 8
+
+    def test_pool_size_defaults_to_none(self, tmp_path: Path) -> None:
+        """pool_size defaults to None when [pool] section absent."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[env]\nFOO = "bar"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.pool_size is None
+
+    def test_loads_full_config_with_pool(self, tmp_path: Path) -> None:
+        """Loads full config including pool.max_slots."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            """
+[env]
+FOO = "bar"
+
+[pool]
+max_slots = 6
+
+[plans]
+repo = "owner/plans-repo"
+""",
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.env == {"FOO": "bar"}
+        assert result.pool_size == 6
         assert result.plans_repo == "owner/plans-repo"

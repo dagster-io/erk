@@ -144,9 +144,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         repo=repo,
         repo_info=repo_info,
         global_config=None,
-        local_config=LoadedConfig(
-            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-        ),
+        local_config=LoadedConfig.test(),
         dry_run=False,
         debug=debug,
     )

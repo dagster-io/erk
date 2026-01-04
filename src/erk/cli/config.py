@@ -63,11 +63,18 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     if plans_repo is not None:
         plans_repo = str(plans_repo)
 
+    # Parse [pool] section
+    pool = data.get("pool", {})
+    pool_size = pool.get("max_slots")
+    if pool_size is not None:
+        pool_size = int(pool_size)
+
     return LoadedConfig(
         env=env,
         post_create_commands=commands,
         post_create_shell=shell,
         plans_repo=plans_repo,
+        pool_size=pool_size,
     )
 
 
@@ -143,7 +150,13 @@ def load_config(repo_root: Path) -> LoadedConfig:
         return _parse_config_file(config_path)
 
     # No config found
-    return LoadedConfig(env={}, post_create_commands=[], post_create_shell=None, plans_repo=None)
+    return LoadedConfig(
+        env={},
+        post_create_commands=[],
+        post_create_shell=None,
+        plans_repo=None,
+        pool_size=None,
+    )
 
 
 def load_project_config(project_root: Path) -> ProjectConfig:
@@ -212,4 +225,5 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         post_create_commands=merged_commands,
         post_create_shell=merged_shell,
         plans_repo=repo_config.plans_repo,
+        pool_size=repo_config.pool_size,  # Pool is repo-level only, no project override
     )

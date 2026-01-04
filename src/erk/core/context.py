@@ -139,9 +139,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         claude_settings_store=FakeClaudeSettingsStore(),
         cwd=cwd,
         global_config=None,
-        local_config=LoadedConfig(
-            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-        ),
+        local_config=LoadedConfig.test(),
         repo=NoRepoSentinel(),
         repo_info=None,
         dry_run=dry_run,
@@ -296,9 +294,7 @@ def context_for_test(
         erk_installation = FakeErkInstallation(config=global_config)
 
     if local_config is None:
-        local_config = LoadedConfig(
-            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-        )
+        local_config = LoadedConfig.test()
 
     if repo is None:
         repo = NoRepoSentinel()
@@ -489,9 +485,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 7. Load local config (or defaults if no repo)
     # Loaded early so plans_repo can be used for GitHubIssues
     if isinstance(repo, NoRepoSentinel):
-        local_config = LoadedConfig(
-            env={}, post_create_commands=[], post_create_shell=None, plans_repo=None
-        )
+        local_config = LoadedConfig.test()
     else:
         # Ensure metadata directories exist (needed for worktrees)
         ensure_erk_metadata_dir(repo)

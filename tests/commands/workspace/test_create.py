@@ -80,12 +80,7 @@ def test_create_with_plan_file() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -127,12 +122,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -326,12 +316,7 @@ def test_create_runs_post_create_commands() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly with post_create commands
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=["echo hello > test.txt"],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test(post_create_commands=["echo hello > test.txt"])
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -361,12 +346,7 @@ def test_create_sets_env_variables() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly with env vars
-        local_config = LoadedConfig(
-            env={"MY_VAR": "my_value"},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test(env={"MY_VAR": "my_value"})
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -408,12 +388,7 @@ def test_create_uses_graphite_when_enabled() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -451,12 +426,7 @@ def test_create_blocks_when_staged_changes_present_with_graphite_enabled() -> No
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -753,12 +723,7 @@ def test_create_with_keep_plan_file_flag() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -833,12 +798,7 @@ def test_from_current_branch_with_main_in_use_prefers_graphite_parent() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         # Set up worktree stack: main -> feature-1 -> feature-2
         from erk_shared.gateway.graphite.types import BranchMetadata
@@ -1174,12 +1134,7 @@ def test_create_with_json_and_plan_file() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         # Create a plan file - name will be derived from filename
         plan_file = env.cwd / "test-feature-plan.md"
@@ -1325,12 +1280,7 @@ def test_create_with_stay_and_plan_file() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
@@ -1509,12 +1459,7 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pass local config directly
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},

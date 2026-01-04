@@ -150,11 +150,7 @@ def ensure_worktree_for_branch(
     user_output(f"Branch '{branch}' not checked out, creating worktree...")
 
     # Load local config for .env template and post-create commands
-    config = (
-        ctx.local_config
-        if ctx.local_config is not None
-        else LoadedConfig(env={}, post_create_commands=[], post_create_shell=None, plans_repo=None)
-    )
+    config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
 
     # Generate and ensure unique worktree name
     name = sanitize_worktree_name(branch)

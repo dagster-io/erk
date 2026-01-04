@@ -1,14 +1,16 @@
 """Pooled assign command - assign an existing branch to a worktree slot."""
 
+import sys
 from datetime import UTC, datetime
 
 import click
 
 from erk.cli.commands.pooled.common import (
-    DEFAULT_POOL_SIZE,
     find_branch_assignment,
     find_next_available_slot,
     generate_slot_name,
+    get_pool_size,
+    handle_pool_full_interactive,
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
@@ -25,8 +27,9 @@ from erk_shared.output.output import user_output
 
 @click.command("assign")
 @click.argument("branch_name", metavar="BRANCH")
+@click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @click.pass_obj
-def pooled_assign(ctx: ErkContext, branch_name: str) -> None:
+def pooled_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
     """Assign an EXISTING branch to an available pool slot.
 
     BRANCH is the name of an existing git branch to assign to the pool.
@@ -43,12 +46,15 @@ def pooled_assign(ctx: ErkContext, branch_name: str) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
+    # Get pool size from config or default
+    pool_size = get_pool_size(ctx)
+
     # Load or create pool state
     state = load_pool_state(repo.pool_json_path)
     if state is None:
         state = PoolState(
             version="1.0",
-            pool_size=DEFAULT_POOL_SIZE,
+            pool_size=pool_size,
             assignments=(),
         )
 
@@ -70,11 +76,33 @@ def pooled_assign(ctx: ErkContext, branch_name: str) -> None:
     # Find next available slot
     slot_num = find_next_available_slot(state)
     if slot_num is None:
-        user_output(
-            f"Error: Pool is full ({state.pool_size} slots). "
-            "Run `erk pooled list` to see assignments."
+        # Pool is full - handle interactively or with --force
+        to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
+        if to_unassign is None:
+            raise SystemExit(1) from None
+
+        # Remove the assignment from state
+        new_assignments = tuple(
+            a for a in state.assignments if a.slot_name != to_unassign.slot_name
         )
-        raise SystemExit(1) from None
+        state = PoolState(
+            version=state.version,
+            pool_size=state.pool_size,
+            assignments=new_assignments,
+        )
+        save_pool_state(repo.pool_json_path, state)
+        user_output(
+            click.style("✓ ", fg="green")
+            + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
+            + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
+        )
+
+        # Retry finding a slot - should now succeed
+        slot_num = find_next_available_slot(state)
+        if slot_num is None:
+            # This shouldn't happen, but handle gracefully
+            user_output("Error: Failed to find available slot after unassigning")
+            raise SystemExit(1) from None
 
     slot_name = generate_slot_name(slot_num)
     worktree_path = repo.worktrees_dir / slot_name

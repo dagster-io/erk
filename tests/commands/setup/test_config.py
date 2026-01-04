@@ -54,11 +54,10 @@ def test_config_list_displays_repo_config() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Pass local config directly instead of creating files
-        local_config = LoadedConfig(
+        local_config = LoadedConfig.test(
             env={"FOO": "bar"},
             post_create_commands=["echo hello"],
             post_create_shell="/bin/bash",
-            plans_repo=None,
         )
 
         repo = RepoContext(
@@ -217,12 +216,7 @@ def test_config_get_env_key() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Pass local config directly instead of creating files
-        local_config = LoadedConfig(
-            env={"MY_VAR": "my_value"},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test(env={"MY_VAR": "my_value"})
 
         repo = RepoContext(
             root=env.cwd,
@@ -254,12 +248,7 @@ def test_config_get_post_create_shell() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Pass local config directly instead of creating files
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell="/bin/zsh",
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test(post_create_shell="/bin/zsh")
 
         repo = RepoContext(
             root=env.cwd,
@@ -291,12 +280,7 @@ def test_config_get_post_create_commands() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Pass local config directly instead of creating files
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=["echo hello", "echo world"],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test(post_create_commands=["echo hello", "echo world"])
 
         repo = RepoContext(
             root=env.cwd,
@@ -329,12 +313,7 @@ def test_config_get_env_key_not_found() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Pass empty local config
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         repo = RepoContext(
             root=env.cwd,
@@ -449,12 +428,7 @@ def test_config_get_post_create_shell_not_found() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Pass local config with no shell set
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         repo = RepoContext(
             root=env.cwd,
@@ -486,12 +460,7 @@ def test_config_get_post_create_invalid_subkey() -> None:
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        local_config = LoadedConfig(
-            env={},
-            post_create_commands=[],
-            post_create_shell=None,
-            plans_repo=None,
-        )
+        local_config = LoadedConfig.test()
 
         repo = RepoContext(
             root=env.cwd,

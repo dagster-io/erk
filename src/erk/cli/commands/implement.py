@@ -814,11 +814,7 @@ def _create_worktree_with_plan_content(
     ctx.feedback.info(f"Creating worktree '{name}'...")
 
     # Load local config
-    config = (
-        ctx.local_config
-        if ctx.local_config is not None
-        else LoadedConfig(env={}, post_create_commands=[], post_create_shell=None, plans_repo=None)
-    )
+    config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
 
     # Output worktree creation diagnostic
     if use_existing_branch:
