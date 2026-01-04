@@ -46,12 +46,16 @@ Analyze the diff following these principles:
 
 **Before:**
 ```
+
 [Show the old user experience - what command they ran and what happened]
+
 ```
 
 **After:**
 ```
+
 [Show the new user experience - same scenario with new behavior]
+
 ```
 
 [Optional 1-2 sentence explanation of the improvement]

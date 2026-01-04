@@ -41,6 +41,25 @@ Analyze the diff following these principles:
 - Strategic change description focusing on purpose and impact
 - Focus on what capabilities changed, not implementation details
 
+## User Experience
+[Only include this section if changes affect user-facing behavior: CLI commands, prompts, output, workflows]
+
+**Before:**
+```
+
+[Show the old user experience - what command they ran and what happened]
+
+```
+
+**After:**
+```
+
+[Show the new user experience - same scenario with new behavior]
+
+```
+
+[Optional 1-2 sentence explanation of the improvement]
+
 ## Critical Notes
 [Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
 ```
@@ -52,7 +71,7 @@ Analyze the diff following these principles:
 - NO Claude attribution or footer (NEVER add "Generated with Claude Code" or similar)
 - NO metadata headers (NEVER add `**Author:**`, `**Plan:**`, `Closes #N`, or similar)
 - Use relative paths from repository root
-- Be concise (15-30 lines total)
+- Be concise (15-40 lines total, shorter if no User Experience section)
 - First line = PR title, rest = PR body
 - Avoid function-level details unless critical
 - Maximum 5 key changes
