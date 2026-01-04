@@ -543,6 +543,7 @@ class ErkIsolatedFsEnv:
             shell=shell,
             global_config=global_config,
             repo=repo,
+            dry_run=dry_run,
             **kwargs,
         )
 
@@ -961,6 +962,7 @@ class ErkInMemEnv:
             shell=shell,
             global_config=global_config,
             repo=repo,
+            dry_run=dry_run,
             **kwargs,
         )
 

@@ -9,7 +9,7 @@ from erk.cli.commands.pooled.common import (
     is_slot_initialized,
 )
 from erk.cli.core import discover_repo_context
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_pool import (
     PoolState,
@@ -27,8 +27,13 @@ from erk_shared.output.output import user_output
     type=int,
     help="Number of slots to initialize. Defaults to pool_size from config.",
 )
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Print what would be done without executing destructive operations.",
+)
 @click.pass_obj
-def pooled_init_slots(ctx: ErkContext, count: int | None) -> None:
+def pooled_init_slots(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None:
     """Initialize pool slots with worktrees and placeholder branches.
 
     Pre-creates worktrees with placeholder branches so they're ready for
@@ -41,7 +46,11 @@ def pooled_init_slots(ctx: ErkContext, count: int | None) -> None:
     Examples:
         erk pooled init-slots       # Initialize all slots up to pool_size
         erk pooled init-slots -n 2  # Initialize just 2 slots
+        erk pooled init-slots --dry-run  # Preview without executing
     """
+    if dry_run:
+        ctx = create_context(dry_run=True)
+
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
 
@@ -98,7 +107,10 @@ def pooled_init_slots(ctx: ErkContext, count: int | None) -> None:
             ctx.git.create_branch(repo.root, placeholder_branch, trunk)
 
         # Create worktree directory
-        worktree_path.mkdir(parents=True, exist_ok=True)
+        if ctx.dry_run:
+            user_output(f"[DRY RUN] Would create directory: {worktree_path}")
+        else:
+            worktree_path.mkdir(parents=True, exist_ok=True)
 
         # Create worktree with placeholder branch
         if not ctx.git.path_exists(worktree_path / ".git"):
@@ -113,7 +125,10 @@ def pooled_init_slots(ctx: ErkContext, count: int | None) -> None:
         # Add to slots list
         new_slots.append(SlotInfo(name=slot_name))
         initialized_count += 1
-        user_output(f"  Initialized {slot_name}")
+        if ctx.dry_run:
+            user_output(f"[DRY RUN] Would initialize {slot_name}")
+        else:
+            user_output(f"  Initialized {slot_name}")
 
     # Update and save state
     new_state = PoolState(
@@ -122,11 +137,17 @@ def pooled_init_slots(ctx: ErkContext, count: int | None) -> None:
         slots=tuple(new_slots),
         assignments=state.assignments,
     )
-    save_pool_state(repo.pool_json_path, new_state)
+    if ctx.dry_run:
+        user_output("[DRY RUN] Would save pool state")
+    else:
+        save_pool_state(repo.pool_json_path, new_state)
 
     # Report results
     if initialized_count > 0:
-        msg = click.style(f"✓ Initialized {initialized_count} slots", fg="green")
+        if ctx.dry_run:
+            msg = f"[DRY RUN] Would initialize {initialized_count} slots"
+        else:
+            msg = click.style(f"✓ Initialized {initialized_count} slots", fg="green")
         if already_initialized_count > 0:
             msg += f" ({already_initialized_count} already existed)"
         user_output(msg)
