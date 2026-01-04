@@ -1853,3 +1853,49 @@ def test_invalid_model_flag() -> None:
 
         assert result.exit_code != 0
         assert "Invalid model" in result.output
+
+
+# Pre-existing Slot Directory Tests
+
+
+def test_implement_uses_checkout_when_slot_directory_exists() -> None:
+    """Test that implement uses checkout_branch (not add_worktree) when slot dir exists.
+
+    This is a regression test for a bug where `erk implement` would fail with
+    "directory already exists" when:
+    1. A managed slot directory exists on disk (from pool initialization)
+    2. But find_inactive_slot() returns None (slot not tracked in pool state)
+
+    The fix checks if wt_path.exists() and uses checkout_branch instead of add_worktree.
+    """
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        # Pre-create the slot directory to simulate pool initialization
+        # The slot path is in repo.worktrees_dir (e.g., .erk/repos/repo/worktrees/)
+        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True)
+
+        result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+
+        # Key assertion: checkout_branch should be called (not add_worktree)
+        # because the slot directory already existed
+        assert len(git.checked_out_branches) == 1, (
+            f"Expected 1 checkout_branch call, got {len(git.checked_out_branches)}"
+        )
+        assert len(git.added_worktrees) == 0, (
+            f"Expected 0 add_worktree calls (dir existed), got {len(git.added_worktrees)}: "
+            f"{git.added_worktrees}"
+        )
