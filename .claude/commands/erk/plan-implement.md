@@ -18,6 +18,17 @@ This is the primary implementation workflow - it orchestrates:
 - Must have a plan in `~/.claude/plans/` (from plan mode)
 - GitHub CLI (`gh`) must be authenticated
 
+## When NOT to Use This Command
+
+❌ **After `/erk:plan-save`** - The plan is already saved to GitHub. Use:
+
+- `erk implement <issue-number>` - CLI command to fetch and implement
+- `/erk:plan-implement-here <issue-number>` - Slash command alternative
+
+❌ **When implementing an existing GitHub issue** - Use the commands above instead.
+
+✅ **Use this command when**: You just finished planning in plan mode and want to immediately implement (save + implement in one step).
+
 ---
 
 ## Agent Instructions
