@@ -34,6 +34,7 @@ def test_plan_save_to_issue_success() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -70,6 +71,7 @@ Context here"""
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -99,6 +101,7 @@ def test_plan_save_to_issue_no_plan() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -132,6 +135,7 @@ def test_plan_save_to_issue_format() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -174,6 +178,7 @@ def test_plan_save_to_issue_display_format() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -215,6 +220,7 @@ Steps here"""
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -271,6 +277,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
         session_slugs={"test-session-id": ["session-context-test"]},
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -316,6 +323,7 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -355,6 +363,7 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -403,6 +412,7 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -469,6 +479,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
         session_slugs={"test-session-id": ["display-session-test"]},
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -522,6 +533,7 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -583,6 +595,7 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
         session_slugs={flag_session_id: ["session-flag-test"]},
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()
@@ -623,6 +636,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -675,6 +689,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
     runner = CliRunner()
 
@@ -730,6 +745,7 @@ def test_plan_save_to_issue_preserves_plan_file_after_save(
         session_slugs={test_session_id: [test_slug]},
         session_planning_agents=None,
         plans_dir_path=plans_dir,
+        projects_dir_path=None,
     )
 
     runner = CliRunner()

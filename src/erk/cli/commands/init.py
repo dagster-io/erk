@@ -14,7 +14,6 @@ from erk.core.claude_settings import (
     add_erk_permission,
     add_erk_statusline,
     get_erk_statusline_command,
-    get_global_claude_settings_path,
     get_repo_claude_settings_path,
     get_statusline_config,
     has_erk_permission,
@@ -41,6 +40,7 @@ from erk.core.repo_discovery import (
 )
 from erk.core.shell import Shell
 from erk_shared.context.types import GlobalConfig
+from erk_shared.extraction.claude_installation import RealClaudeInstallation
 from erk_shared.git.real import RealGit
 from erk_shared.output.output import user_confirm, user_output
 
@@ -357,7 +357,9 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
         True if status line was configured, False otherwise.
     """
     if settings_path is None:
-        settings_path = get_global_claude_settings_path()
+        # Use RealClaudeInstallation directly since this runs before ErkContext exists
+        installation = RealClaudeInstallation()
+        settings_path = installation.get_settings_path()
 
     user_output("\n  Configuring Claude Code status line...")
 

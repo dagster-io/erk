@@ -96,6 +96,7 @@ def context_for_test(
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
     )
     resolved_prompt_executor: PromptExecutor = (

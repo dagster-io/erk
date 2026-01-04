@@ -5,12 +5,10 @@ Session ID Injector Hook
 This command is invoked via erk exec session-id-injector-hook.
 """
 
-import tomllib
-from pathlib import Path
-
 import click
 
 from erk.hooks.decorators import HookContext, hook_command
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 
 
 def _is_github_planning_enabled() -> bool:
@@ -18,12 +16,13 @@ def _is_github_planning_enabled() -> bool:
 
     Returns True (enabled) if config doesn't exist or flag is missing.
     """
-    config_path = Path.home() / ".erk" / "config.toml"
-    if not config_path.exists():
+    # Use RealErkInstallation directly since hooks run outside normal CLI context
+    installation = RealErkInstallation()
+    if not installation.config_exists():
         return True  # Default enabled
 
-    data = tomllib.loads(config_path.read_text(encoding="utf-8"))
-    return bool(data.get("github_planning", True))
+    config = installation.load_config()
+    return config.github_planning
 
 
 @hook_command(name="session-id-injector-hook")

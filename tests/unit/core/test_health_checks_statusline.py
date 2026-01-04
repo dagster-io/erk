@@ -21,6 +21,7 @@ def test_returns_info_when_no_settings_file() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     result = check_statusline_configured(installation)
@@ -52,6 +53,7 @@ def test_returns_configured_when_erk_statusline_present(
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     result = check_statusline_configured(installation)
@@ -78,6 +80,7 @@ def test_returns_info_when_different_statusline() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     result = check_statusline_configured(installation)
@@ -102,6 +105,7 @@ def test_returns_info_when_no_statusline_in_settings() -> None:
         session_slugs=None,
         session_planning_agents=None,
         plans_dir_path=None,
+        projects_dir_path=None,
     )
 
     result = check_statusline_configured(installation)

@@ -23,7 +23,6 @@ from erk.core.claude_settings import (
     add_erk_permission,
     add_erk_statusline,
     get_erk_statusline_command,
-    get_global_claude_settings_path,
     get_repo_claude_settings_path,
     get_statusline_config,
     has_erk_permission,
@@ -751,12 +750,6 @@ def test_write_claude_settings_returns_no_backup_sentinel(tmp_path: Path) -> Non
 def test_statusline_command_constant() -> None:
     """Test that ERK_STATUSLINE_COMMAND has expected value."""
     assert ERK_STATUSLINE_COMMAND == "uvx erk-statusline"
-
-
-def test_get_global_claude_settings_path() -> None:
-    """Test that get_global_claude_settings_path returns path to ~/.claude/settings.json."""
-    path = get_global_claude_settings_path()
-    assert path == Path.home() / ".claude" / "settings.json"
 
 
 def test_get_statusline_config_returns_not_configured_for_empty() -> None:
