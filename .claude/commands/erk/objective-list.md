@@ -2,7 +2,7 @@
 description: List open objectives
 ---
 
-# /objective:list
+# /erk:objective-list
 
 List all open objectives in the current repository.
 
@@ -31,4 +31,4 @@ If no objectives found, report: "No open objectives found."
 
 After listing, suggest:
 
-- `/objective:create-plan <number>` to start planning a step from an objective
+- /erk:objective-create-plan <number> to start planning a step from an objective

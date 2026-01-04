@@ -57,7 +57,7 @@ def prompt_objective_update(
 
     # Build the command with all arguments for context-free execution
     cmd = (
-        f"/objective:update-with-landed-pr "
+        f"/erk:objective-update-with-landed-pr "
         f"--pr {pr_number} --objective {objective_number} --branch {branch}"
     )
 
@@ -93,4 +93,4 @@ def prompt_objective_update(
             user_output(
                 click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
             )
-            user_output("  Run '/objective:update-with-landed-pr' manually to retry")
+            user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")

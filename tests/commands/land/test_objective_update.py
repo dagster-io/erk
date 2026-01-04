@@ -142,7 +142,7 @@ def test_land_force_skips_objective_update_prompt() -> None:
 
         # Should show objective info and command to run later
         assert "Linked to Objective #100" in result.output
-        assert "/objective:update-with-landed-pr" in result.output
+        assert "/erk:objective-update-with-landed-pr" in result.output
 
         # Should NOT have called claude executor (--force skips prompt)
         assert len(executor.executed_commands) == 0
@@ -243,7 +243,7 @@ def test_land_user_declines_objective_update_shows_command() -> None:
 
         # Should show skip message with command
         assert "Skipped" in result.output
-        assert "/objective:update-with-landed-pr" in result.output
+        assert "/erk:objective-update-with-landed-pr" in result.output
 
         # Should NOT have called claude executor
         assert len(executor.executed_commands) == 0
@@ -351,7 +351,8 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         assert len(executor.executed_commands) == 1
         cmd, path, dangerous, verbose, model = executor.executed_commands[0]
         expected = (
-            "/objective:update-with-landed-pr --pr 123 --objective 100 --branch P42-test-feature"
+            "/erk:objective-update-with-landed-pr "
+            "--pr 123 --objective 100 --branch P42-test-feature"
         )
         assert cmd == expected
         assert dangerous is True
@@ -454,7 +455,7 @@ def test_land_claude_failure_shows_retry_command() -> None:
         # Should show starting feedback and failure message with manual retry command
         assert "Starting objective update..." in result.output
         assert "failed" in result.output.lower()
-        assert "/objective:update-with-landed-pr" in result.output
+        assert "/erk:objective-update-with-landed-pr" in result.output
         assert "manually" in result.output.lower()
 
         # Should have tried to call claude executor

@@ -135,12 +135,12 @@ def _prompt_objective_update(
 
     if force:
         # --force skips prompts, show command for later
-        user_output("   Run '/objective:update-with-landed-pr' to update objective")
+        user_output("   Run '/erk:objective-update-with-landed-pr' to update objective")
         return
 
     # User chooses to run now
     result = ctx.claude_executor.execute_command(
-        "/objective:update-with-landed-pr",
+        "/erk:objective-update-with-landed-pr",
         repo_root,
         dangerous=True,  # Skip permission prompts for non-interactive
     )
