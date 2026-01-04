@@ -60,6 +60,7 @@ SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     "pooled co": ["pooled", "checkout"],
     "pooled plan": ["pooled", "plan"],
     "pooled land": ["pooled", "land"],
+    "pooled implement": ["pooled", "implement"],
 }
 
 

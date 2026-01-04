@@ -504,3 +504,13 @@ def test_passthrough_flags_include_yolo_and_no_interactive() -> None:
     for args, flag in passthrough_test_cases:
         result = handle_shell_request(args)
         assert result.passthrough is True, f"{flag} should cause passthrough"
+
+
+def test_pooled_implement_registered() -> None:
+    """Verify 'pooled implement' is registered for shell integration.
+
+    Without this registration, 'erk pooled implement' leaves the shell at the
+    root repo after Claude exits instead of staying in the worktree. The shell
+    wrapper needs to generate an activation script to change the shell's cwd.
+    """
+    assert "pooled implement" in SHELL_INTEGRATION_COMMANDS
