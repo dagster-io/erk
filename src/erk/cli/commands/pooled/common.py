@@ -9,6 +9,39 @@ DEFAULT_POOL_SIZE = 4
 SLOT_NAME_PREFIX = "erk-managed-wt"
 
 
+def extract_slot_number(slot_name: str) -> str | None:
+    """Extract slot number from slot name.
+
+    Args:
+        slot_name: Slot name like "erk-managed-wt-03"
+
+    Returns:
+        Two-digit slot number (e.g., "03") or None if not in expected format
+    """
+    if not slot_name.startswith(SLOT_NAME_PREFIX + "-"):
+        return None
+    suffix = slot_name[len(SLOT_NAME_PREFIX) + 1 :]
+    if len(suffix) != 2 or not suffix.isdigit():
+        return None
+    return suffix
+
+
+def get_placeholder_branch_name(slot_name: str) -> str | None:
+    """Get placeholder branch name for a slot.
+
+    Args:
+        slot_name: Slot name like "erk-managed-wt-03"
+
+    Returns:
+        Placeholder branch name like "__erk-slot-03-placeholder__",
+        or None if slot_name is not in expected format
+    """
+    slot_number = extract_slot_number(slot_name)
+    if slot_number is None:
+        return None
+    return f"__erk-slot-{slot_number}-placeholder__"
+
+
 def get_pool_size(ctx: ErkContext) -> int:
     """Get effective pool size from config or default.
 
