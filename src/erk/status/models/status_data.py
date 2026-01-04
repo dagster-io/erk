@@ -298,9 +298,7 @@ class PlanStatus:
     summary: str | None
     line_count: int
     first_lines: list[str]
-    progress_summary: str | None  # e.g., "3/10 steps completed"
     format: str  # "folder" or "none"
-    completion_percentage: int | None = None  # None if no front matter present
     enriched_plan_path: Path | None = None  # Path to enriched plan file
     enriched_plan_filename: str | None = None  # Filename of enriched plan
     issue_number: int | None = None  # GitHub issue number if linked

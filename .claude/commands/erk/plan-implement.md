@@ -115,23 +115,16 @@ This also deletes the Claude plan file (from `~/.claude/plans/`) since:
 
 For each phase:
 
-1. **Mark phase as in_progress**
+1. **Mark phase as in_progress** (in TodoWrite)
 2. **Read task requirements** carefully
 3. **Implement code AND tests together**:
    - Load `dignified-python-313` skill for coding standards
    - Load `fake-driven-testing` skill for test patterns
    - Follow project AGENTS.md standards
-4. **Mark phase as completed**:
-   ```bash
-   erk exec mark-step <step_number>
-   ```
-   **NEVER** run multiple `mark-step` commands in parallel - use batching: `mark-step 1 2 3`
+4. **Mark phase as completed** (in TodoWrite)
 5. **Report progress**: changes made, what's next
 
-**Progress Tracking:**
-
-- `.impl/plan.md` is immutable - NEVER edit during implementation
-- `.impl/progress.md` is mutable - use `mark-step` command to update
+**Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
 
 ### Step 9: Report Progress
 

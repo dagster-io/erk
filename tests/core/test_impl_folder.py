@@ -456,7 +456,7 @@ def test_create_impl_folder_empty_plan(tmp_path: Path) -> None:
     This is the fix for GitHub issue #3274: Empty plans must still generate
     valid YAML frontmatter with steps: [], total_steps: 0, completed_steps: 0.
     Previously, empty plans returned plain markdown without frontmatter,
-    causing mark_step to fail with "Progress file missing 'steps' array".
+    causing step extraction to fail with "Progress file missing 'steps' array".
     """
     plan_content = """# Empty Plan
 

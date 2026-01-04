@@ -48,7 +48,6 @@ from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
-from erk.cli.commands.exec.scripts.get_progress import get_progress
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
@@ -58,7 +57,6 @@ from erk.cli.commands.exec.scripts.issue_title_to_filename import (
 from erk.cli.commands.exec.scripts.list_sessions import list_sessions
 from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
 from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
-from erk.cli.commands.exec.scripts.mark_step import mark_step
 from erk.cli.commands.exec.scripts.marker import marker
 from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
@@ -131,7 +129,6 @@ exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
-exec_group.add_command(get_progress, name="get-progress")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")
@@ -139,7 +136,6 @@ exec_group.add_command(issue_title_to_filename, name="issue-title-to-filename")
 exec_group.add_command(list_sessions, name="list-sessions")
 exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
 exec_group.add_command(mark_impl_started, name="mark-impl-started")
-exec_group.add_command(mark_step, name="mark-step")
 exec_group.add_command(marker, name="marker")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")

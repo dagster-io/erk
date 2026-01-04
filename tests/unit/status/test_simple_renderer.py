@@ -132,7 +132,6 @@ def test_renderer_with_plan_file() -> None:
             "",
             "This is a test plan.",
         ],
-        progress_summary="5/10 steps completed",
         format="folder",
     )
 
@@ -174,7 +173,6 @@ def test_renderer_without_plan_file() -> None:
         summary=None,
         line_count=0,
         first_lines=[],
-        progress_summary=None,
         format="none",
     )
 
@@ -660,7 +658,6 @@ def test_renderer_full_status() -> None:
         summary="Implementation plan",
         line_count=20,
         first_lines=["# Implementation Plan"],
-        progress_summary="3/5 steps completed",
         format="folder",
     )
 
@@ -752,184 +749,3 @@ def test_renderer_file_list_method() -> None:
     assert "single.py" in result.output
     assert "f1.py" in result.output
     assert "... and 1 more" in result.output
-
-
-def test_get_progress_emoji_zero_percent() -> None:
-    """Test emoji selection for 0% completion."""
-    renderer = SimpleRenderer()
-    emoji = renderer._get_progress_emoji(0)
-    assert emoji == "⚪"
-
-
-def test_get_progress_emoji_one_percent() -> None:
-    """Test emoji selection for 1% completion."""
-    renderer = SimpleRenderer()
-    emoji = renderer._get_progress_emoji(1)
-    assert emoji == "🟡"
-
-
-def test_get_progress_emoji_fifty_percent() -> None:
-    """Test emoji selection for 50% completion."""
-    renderer = SimpleRenderer()
-    emoji = renderer._get_progress_emoji(50)
-    assert emoji == "🟡"
-
-
-def test_get_progress_emoji_ninety_nine_percent() -> None:
-    """Test emoji selection for 99% completion."""
-    renderer = SimpleRenderer()
-    emoji = renderer._get_progress_emoji(99)
-    assert emoji == "🟡"
-
-
-def test_get_progress_emoji_hundred_percent() -> None:
-    """Test emoji selection for 100% completion."""
-    renderer = SimpleRenderer()
-    emoji = renderer._get_progress_emoji(100)
-    assert emoji == "🟢"
-
-
-def test_renderer_plan_with_emoji_progress() -> None:
-    """Test rendering plan with emoji progress indicator."""
-    worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")
-
-    plan = PlanStatus(
-        exists=True,
-        path=Path("/tmp/test/.plan"),
-        summary="Test plan summary",
-        line_count=42,
-        first_lines=["# Test Plan"],
-        progress_summary="7/10 steps completed",
-        format="folder",
-        completion_percentage=70,
-    )
-
-    git_status = GitStatus.clean_status("feature")
-
-    status_data = StatusData(
-        worktree_info=worktree_info,
-        git_status=git_status,
-        stack_position=None,
-        pr_status=None,
-        environment=None,
-        dependencies=None,
-        plan=plan,
-        related_worktrees=[],
-    )
-
-    renderer = SimpleRenderer()
-    output = capture_renderer_output(renderer, status_data)
-
-    # Should show emoji and fraction
-    assert "Plan: 🟡 7/10" in output
-    assert "# Test Plan" in output
-
-
-def test_renderer_plan_with_emoji_zero_percent() -> None:
-    """Test rendering plan with 0% completion shows white circle."""
-    worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")
-
-    plan = PlanStatus(
-        exists=True,
-        path=Path("/tmp/test/.plan"),
-        summary="Test plan summary",
-        line_count=42,
-        first_lines=["# Test Plan"],
-        progress_summary="0/10 steps completed",
-        format="folder",
-        completion_percentage=0,
-    )
-
-    git_status = GitStatus.clean_status("feature")
-
-    status_data = StatusData(
-        worktree_info=worktree_info,
-        git_status=git_status,
-        stack_position=None,
-        pr_status=None,
-        environment=None,
-        dependencies=None,
-        plan=plan,
-        related_worktrees=[],
-    )
-
-    renderer = SimpleRenderer()
-    output = capture_renderer_output(renderer, status_data)
-
-    assert "Plan: ⚪ 0/10" in output
-
-
-def test_renderer_plan_with_emoji_hundred_percent() -> None:
-    """Test rendering plan with 100% completion shows green circle."""
-    worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")
-
-    plan = PlanStatus(
-        exists=True,
-        path=Path("/tmp/test/.plan"),
-        summary="Test plan summary",
-        line_count=42,
-        first_lines=["# Test Plan"],
-        progress_summary="10/10 steps completed",
-        format="folder",
-        completion_percentage=100,
-    )
-
-    git_status = GitStatus.clean_status("feature")
-
-    status_data = StatusData(
-        worktree_info=worktree_info,
-        git_status=git_status,
-        stack_position=None,
-        pr_status=None,
-        environment=None,
-        dependencies=None,
-        plan=plan,
-        related_worktrees=[],
-    )
-
-    renderer = SimpleRenderer()
-    output = capture_renderer_output(renderer, status_data)
-
-    assert "Plan: 🟢 10/10" in output
-
-
-def test_renderer_plan_without_frontmatter_no_emoji() -> None:
-    """Test rendering plan without front matter shows no progress indicator."""
-    worktree_info = WorktreeDisplayInfo.feature(Path("/tmp/test"), "feature", name="test-worktree")
-
-    # Old format: has progress_summary but no completion_percentage
-    plan = PlanStatus(
-        exists=True,
-        path=Path("/tmp/test/.plan"),
-        summary="Test plan summary",
-        line_count=42,
-        first_lines=["# Test Plan"],
-        progress_summary="5/10 steps completed",
-        format="folder",
-        completion_percentage=None,  # No front matter
-    )
-
-    git_status = GitStatus.clean_status("feature")
-
-    status_data = StatusData(
-        worktree_info=worktree_info,
-        git_status=git_status,
-        stack_position=None,
-        pr_status=None,
-        environment=None,
-        dependencies=None,
-        plan=plan,
-        related_worktrees=[],
-    )
-
-    renderer = SimpleRenderer()
-    output = capture_renderer_output(renderer, status_data)
-
-    # Should show "Plan:" without emoji or progress
-    assert "Plan:" in output
-    # Should not show emoji
-    assert "🟡" not in output
-    assert "⚪" not in output
-    assert "🟢" not in output
-    # Should not show progress summary in header
-    assert "5/10" not in output
