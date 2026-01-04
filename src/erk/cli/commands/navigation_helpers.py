@@ -201,6 +201,7 @@ def activate_worktree(
     script: bool,
     command_name: str,
     preserve_relative_path: bool = True,
+    post_cd_commands: Sequence[str] | None = None,
 ) -> None:
     """Activate a worktree and exit.
 
@@ -212,6 +213,7 @@ def activate_worktree(
         command_name: Name of the command (for script generation and debug logging)
         preserve_relative_path: If True (default), compute and preserve the user's
             relative directory position from the current worktree
+        post_cd_commands: Optional shell commands to run after activation (e.g., entry scripts)
 
     Raises:
         SystemExit: If worktree not found, or after successful activation
@@ -232,7 +234,7 @@ def activate_worktree(
         activation_script = render_activation_script(
             worktree_path=wt_path,
             target_subpath=relative_path,
-            post_cd_commands=None,
+            post_cd_commands=post_cd_commands,
             final_message='echo "Activated worktree: $(pwd)"',
             comment="work activate-script",
         )

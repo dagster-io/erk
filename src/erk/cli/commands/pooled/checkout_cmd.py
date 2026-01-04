@@ -4,6 +4,7 @@ import click
 
 from erk.cli.commands.navigation_helpers import activate_worktree
 from erk.cli.commands.pooled.unassign_cmd import _find_assignment_by_cwd
+from erk.cli.config import load_config
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
@@ -67,5 +68,16 @@ def pooled_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
         user_output(f"Error: Already in pool slot '{assignment.slot_name}'.")
         raise SystemExit(1) from None
 
-    # Activate the worktree
-    activate_worktree(ctx, repo, assignment.worktree_path, script, "pooled checkout")
+    # Load config for entry scripts
+    config = load_config(repo.root)
+    post_cd_commands = config.pool_checkout_commands if config.pool_checkout_commands else None
+
+    # Activate the worktree with entry scripts
+    activate_worktree(
+        ctx,
+        repo,
+        assignment.worktree_path,
+        script,
+        "pooled checkout",
+        post_cd_commands=post_cd_commands,
+    )

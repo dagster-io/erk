@@ -111,6 +111,8 @@ class LoadedConfig:
     post_create_shell: str | None
     plans_repo: str | None
     pool_size: int | None  # None = use default
+    pool_checkout_commands: list[str]  # Commands to run after pooled checkout
+    pool_checkout_shell: str | None  # Shell to use for checkout commands
 
     @staticmethod
     def test(
@@ -120,6 +122,8 @@ class LoadedConfig:
         post_create_shell: str | None = None,
         plans_repo: str | None = None,
         pool_size: int | None = None,
+        pool_checkout_commands: list[str] | None = None,
+        pool_checkout_shell: str | None = None,
     ) -> LoadedConfig:
         """Create a LoadedConfig with sensible test defaults."""
         return LoadedConfig(
@@ -128,4 +132,8 @@ class LoadedConfig:
             post_create_shell=post_create_shell,
             plans_repo=plans_repo,
             pool_size=pool_size,
+            pool_checkout_commands=(
+                pool_checkout_commands if pool_checkout_commands is not None else []
+            ),
+            pool_checkout_shell=pool_checkout_shell,
         )

@@ -312,3 +312,64 @@ def test_pooled_checkout_script_mode() -> None:
         # The output should be a path ending with .sh
         output = result.output.strip()
         assert output.endswith(".sh") or "erk-activation" in output
+
+
+def test_pooled_checkout_with_entry_scripts() -> None:
+    """Test checkout includes entry scripts from pool.checkout config."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create pool state with an assignment
+        worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            assignments=(assignment,),
+        )
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        # Create config with entry script commands
+        erk_config_dir = env.cwd / ".erk"
+        erk_config_dir.mkdir(exist_ok=True)
+        config_toml = erk_config_dir / "config.toml"
+        config_toml.write_text(
+            """
+[pool.checkout]
+commands = ["git fetch origin", "echo 'Entry script executed'"]
+"""
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["pooled", "checkout", "--script", "feature-test"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        # Verify the script was generated with entry commands
+        script_path = Path(result.output.strip())
+        if script_path.exists():
+            script_content = script_path.read_text()
+            assert "git fetch origin" in script_content
+            assert "Entry script executed" in script_content

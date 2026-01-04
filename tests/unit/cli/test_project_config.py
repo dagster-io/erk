@@ -364,3 +364,69 @@ repo = "owner/plans-repo"
         assert result.env == {"FOO": "bar"}
         assert result.pool_size == 6
         assert result.plans_repo == "owner/plans-repo"
+
+    def test_loads_pool_checkout_commands(self, tmp_path: Path) -> None:
+        """Loads pool.checkout.commands from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[pool.checkout]\ncommands = ["git fetch origin", "echo hello"]\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.pool_checkout_commands == ["git fetch origin", "echo hello"]
+
+    def test_loads_pool_checkout_shell(self, tmp_path: Path) -> None:
+        """Loads pool.checkout.shell from config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[pool.checkout]\nshell = "zsh"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.pool_checkout_shell == "zsh"
+
+    def test_pool_checkout_defaults_to_empty(self, tmp_path: Path) -> None:
+        """pool_checkout_commands defaults to empty list when section absent."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            '[env]\nFOO = "bar"\n',
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.pool_checkout_commands == []
+        assert result.pool_checkout_shell is None
+
+    def test_loads_full_pool_config(self, tmp_path: Path) -> None:
+        """Loads full pool config including checkout section."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text(
+            """
+[pool]
+max_slots = 4
+
+[pool.checkout]
+shell = "bash"
+commands = ["git fetch origin", "uv sync"]
+""",
+            encoding="utf-8",
+        )
+
+        result = load_config(repo_root)
+
+        assert result.pool_size == 4
+        assert result.pool_checkout_shell == "bash"
+        assert result.pool_checkout_commands == ["git fetch origin", "uv sync"]
