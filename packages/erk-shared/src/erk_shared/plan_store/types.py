@@ -55,3 +55,17 @@ class PlanQuery:
     labels: list[str] | None = None
     state: PlanState | None = None
     limit: int | None = None
+
+
+@dataclass(frozen=True)
+class CreatePlanResult:
+    """Result of creating a plan.
+
+    Fields:
+        plan_id: Provider-specific ID as string
+            (GitHub: "42", Jira: "PROJ-123", Linear: UUID)
+        url: Web URL to view the created plan
+    """
+
+    plan_id: str
+    url: str

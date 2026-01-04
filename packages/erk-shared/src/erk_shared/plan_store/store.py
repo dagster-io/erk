@@ -1,4 +1,9 @@
-"""Abstract interface for plan storage providers."""
+"""Abstract interface for plan storage providers.
+
+DEPRECATED: This module contains PlanStore which is deprecated in favor of
+PlanBackend (see backend.py). PlanStore will be removed after Phase 3 migration
+when GitHubPlanStore is refactored to GitHubPlanBackend.
+"""
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -9,9 +14,11 @@ from erk_shared.plan_store.types import Plan, PlanQuery
 class PlanStore(ABC):
     """Abstract interface for plan operations.
 
-    All implementations (real and fake) must implement this interface.
-    This interface provides READ-only operations for plans.
-    Write operations (create, comment, label) will be added in future versions.
+    DEPRECATED: Use PlanBackend instead. This interface only supports read
+    operations. PlanBackend provides the complete interface with both read
+    and write operations.
+
+    This interface will be removed after Phase 3 migration.
     """
 
     @abstractmethod
