@@ -437,8 +437,8 @@ def test_show_session_handles_string_timestamps() -> None:
             tool_use_id="toolu_abc123",
             subagent_type="devrun",
             agent_id="abc12345",
-            start_timestamp="2024-12-22T13:20:00.000Z",  # type: ignore[arg-type]
-            end_timestamp="2024-12-22T13:20:42.000Z",  # type: ignore[arg-type]
+            start_timestamp="2024-12-22T13:20:00.000Z",  # type: ignore[arg-type] -- testing with string timestamps instead of floats
+            end_timestamp="2024-12-22T13:20:42.000Z",  # type: ignore[arg-type] -- testing with string timestamps instead of floats
         )
 
         session_store = FakeClaudeInstallation(

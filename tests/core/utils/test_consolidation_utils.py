@@ -287,4 +287,4 @@ def test_immutable_plan_object() -> None:
 
     # Verify frozen dataclass
     with pytest.raises(AttributeError):
-        plan.stack_branches = ["different"]  # type: ignore[misc]
+        plan.stack_branches = ["different"]  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability

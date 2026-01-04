@@ -54,7 +54,7 @@ def test_context_is_frozen() -> None:
     )
 
     with pytest.raises(AttributeError):
-        ctx.dry_run = False  # type: ignore[misc]
+        ctx.dry_run = False  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
 
 
 def test_minimal_factory_creates_context_with_git_ops() -> None:

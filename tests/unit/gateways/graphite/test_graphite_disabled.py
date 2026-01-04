@@ -23,7 +23,7 @@ def test_graphite_disabled_is_frozen() -> None:
     sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
 
     with pytest.raises(AttributeError):
-        sentinel.reason = GraphiteDisabledReason.NOT_INSTALLED  # type: ignore[misc]
+        sentinel.reason = GraphiteDisabledReason.NOT_INSTALLED  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
 
 
 def test_graphite_url_always_works() -> None:

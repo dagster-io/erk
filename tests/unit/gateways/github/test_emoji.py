@@ -188,7 +188,7 @@ def test_get_pr_status_emoji_unknown_state() -> None:
     """Test emoji for unknown PR state returns empty string."""
     pr = PullRequestInfo(
         number=108,
-        state="UNKNOWN",  # type: ignore - testing defensive behavior
+        state="UNKNOWN",  # type: ignore[arg-type] -- testing defensive behavior with invalid state
         url="https://github.com/owner/repo/pull/108",
         is_draft=False,
         title="Unknown State PR",

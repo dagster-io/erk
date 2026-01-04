@@ -69,7 +69,7 @@ def test_metadata_block_is_immutable() -> None:
     """Test that MetadataBlock is frozen (immutable)."""
     block = MetadataBlock(key="test", data={"field": "value"})
     with pytest.raises(AttributeError):  # FrozenInstanceError is subclass
-        block.key = "changed"  # type: ignore
+        block.key = "changed"  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
 
 
 # === Rendering Tests ===

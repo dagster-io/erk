@@ -501,7 +501,7 @@ https://github.com/dagster-io/erk/pull/1311"""
 
     def test_non_string_input(self) -> None:
         """Test with non-string input returns empty result."""
-        result = extract_pr_metadata_from_text(None)  # type: ignore[arg-type]
+        result = extract_pr_metadata_from_text(None)  # type: ignore[arg-type] -- intentionally passing None to test defensive behavior
 
         assert result["pr_number"] is None
         assert result["pr_title"] is None

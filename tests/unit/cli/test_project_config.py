@@ -194,7 +194,7 @@ class TestProjectConfig:
         )
 
         with pytest.raises(AttributeError):
-            cfg.name = "new-name"  # type: ignore[misc]
+            cfg.name = "new-name"  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
 
 
 class TestLoadConfig:

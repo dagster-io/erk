@@ -109,4 +109,4 @@ class TestLegacyConfigLocation:
         )
 
         with pytest.raises(AttributeError):
-            loc.path = Path("/other")  # type: ignore[misc]
+            loc.path = Path("/other")  # type: ignore[misc] -- intentionally mutating frozen dataclass to test immutability
