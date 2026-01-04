@@ -4,13 +4,11 @@ This unified command provides two modes:
 - GitHub issue mode: erk implement 123 or erk implement <URL>
 - Plan file mode: erk implement path/to/plan.md
 
-Both modes create a worktree and invoke Claude for implementation.
-
-Running from within a pool slot is not currently supported.
+Both modes assign a pool slot and invoke Claude for implementation.
 """
 
-import shutil
-from dataclasses import dataclass
+import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -33,305 +31,86 @@ from erk.cli.commands.implement_shared import (
     prepare_plan_source_from_issue,
     validate_flags,
 )
-from erk.cli.commands.wt.create_cmd import add_worktree, run_post_worktree_setup
+from erk.cli.commands.slot.common import (
+    find_branch_assignment,
+    find_inactive_slot,
+    find_next_available_slot,
+    generate_slot_name,
+    get_pool_size,
+    handle_pool_full_interactive,
+)
+from erk.cli.commands.wt.create_cmd import run_post_worktree_setup
 from erk.cli.config import LoadedConfig
-from erk.cli.core import discover_repo_context, worktree_path_for
+from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.core.worktree_pool import load_pool_state
-from erk_shared.impl_folder import create_impl_folder, save_issue_reference
-from erk_shared.naming import (
-    ensure_unique_worktree_name_with_date,
-    sanitize_worktree_name,
+from erk.core.worktree_pool import (
+    PoolState,
+    SlotAssignment,
+    load_pool_state,
+    save_pool_state,
 )
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.impl_folder import create_impl_folder, save_issue_reference
+from erk_shared.naming import sanitize_worktree_name
+from erk_shared.output.output import user_output
 
 
-def _is_in_pool_slot(ctx: ErkContext, pool_json_path: Path) -> bool:
-    """Check if current working directory is inside a pool slot.
+def _generate_file_branch_name(base_name: str) -> str:
+    """Generate a unique branch name for file-based implementation.
 
     Args:
-        ctx: ErkContext with cwd
-        pool_json_path: Path to pool.json file
+        base_name: Base name from the plan file (e.g., "my-feature")
 
     Returns:
-        True if cwd is within a pool slot worktree, False otherwise
+        Branch name with timestamp suffix for uniqueness (e.g., "my-feature-01-15-1430")
     """
-    state = load_pool_state(pool_json_path)
-    if state is None:
-        return False
-
-    resolved_cwd = ctx.cwd.resolve()
-    for assignment in state.assignments:
-        wt_path = assignment.worktree_path.resolve()
-        if resolved_cwd == wt_path or wt_path in resolved_cwd.parents:
-            return True
-    return False
-
-
-@dataclass(frozen=True)
-class ForceDeleteOptions:
-    """Options for force-deleting existing worktree/branch.
-
-    Attributes:
-        worktree: Whether to delete existing worktree with same name
-        branch: Whether to delete existing branch with same name
-    """
-
-    worktree: bool = False
-    branch: bool = False
-
-    @classmethod
-    def from_force_flag(cls, force: bool) -> ForceDeleteOptions:
-        """Create options from --force flag value."""
-        return cls(worktree=force, branch=force)
-
-    @property
-    def any_enabled(self) -> bool:
-        """Return True if any force delete option is enabled."""
-        return self.worktree or self.branch
-
-
-def _show_conflict_error(
-    ctx: ErkContext,
-    *,
-    branch: str,
-    wt_path: Path,
-    wt_exists: bool,
-    branch_exists: bool,
-    worktree_name_provided: bool,
-) -> None:
-    """Show error message when branch or worktree already exists.
-
-    Args:
-        ctx: Erk context
-        branch: Branch name that conflicts
-        wt_path: Worktree path that conflicts
-        wt_exists: Whether worktree directory exists
-        branch_exists: Whether branch exists
-        worktree_name_provided: Whether user explicitly provided --worktree-name
-
-    Raises:
-        SystemExit: Always exits with code 1
-    """
-    # Build error message based on what exists
-    if wt_exists and branch_exists:
-        conflict_msg = f"Branch '{branch}' and worktree '{wt_path.name}' already exist."
-    elif branch_exists:
-        conflict_msg = f"Branch '{branch}' already exists."
-    else:
-        conflict_msg = f"Worktree '{wt_path.name}' already exists."
-
-    # Suggest using --force or --worktree-name
-    if worktree_name_provided:
-        suggestion = "Use -f to delete the existing resources, or choose a different name."
-    else:
-        suggestion = (
-            "Use -f to delete the existing resources, "
-            "or --worktree-name to choose a different name."
-        )
-
-    ctx.feedback.error(f"Error: {conflict_msg}\n{suggestion}")
-    raise SystemExit(1) from None
-
-
-def _handle_force_delete(
-    ctx: ErkContext,
-    *,
-    repo_root: Path,
-    wt_path: Path,
-    branch: str,
-    wt_exists: bool,
-    branch_exists: bool,
-    force_delete: ForceDeleteOptions,
-    dry_run: bool,
-) -> None:
-    """Handle --force flag by prompting for confirmation and deleting existing resources.
-
-    Args:
-        ctx: Erk context
-        repo_root: Repository root path
-        wt_path: Path to existing worktree
-        branch: Branch name
-        wt_exists: Whether worktree directory exists
-        branch_exists: Whether branch exists
-        force_delete: Options for which resources to force-delete
-        dry_run: Whether in dry-run mode
-
-    Raises:
-        SystemExit: If user declines confirmation
-    """
-    # Build list of what will be deleted
-    deletions: list[str] = []
-    if wt_exists and force_delete.worktree:
-        deletions.append(f"worktree: {click.style(str(wt_path), fg='cyan')}")
-    if branch_exists and force_delete.branch:
-        deletions.append(f"branch: {click.style(branch, fg='yellow')}")
-
-    if not deletions:
-        return
-
-    # Display what will be deleted
-    user_output(click.style("⚠️  The following will be deleted:", fg="yellow", bold=True))
-    for item in deletions:
-        user_output(f"  • {item}")
-
-    # Prompt for confirmation
-    if not dry_run:
-        if not user_confirm("Proceed with deletion?", default=False):
-            user_output(click.style("⭕ Aborted.", fg="red", bold=True))
-            raise SystemExit(1) from None
-
-    # Perform deletions
-    if wt_exists and force_delete.worktree:
-        if dry_run:
-            user_output(f"[DRY RUN] Would delete worktree: {wt_path}")
-        else:
-            ctx.feedback.info(f"Deleting existing worktree: {wt_path.name}...")
-            _delete_worktree_for_force(ctx, repo_root, wt_path)
-            ctx.feedback.success(f"✓ Deleted worktree: {wt_path.name}")
-
-    if branch_exists and force_delete.branch:
-        if dry_run:
-            user_output(f"[DRY RUN] Would delete branch: {branch}")
-        else:
-            ctx.feedback.info(f"Deleting existing branch: {branch}...")
-            _delete_branch_for_force(ctx, repo_root, branch)
-            ctx.feedback.success(f"✓ Deleted branch: {branch}")
-
-
-def _delete_worktree_for_force(ctx: ErkContext, repo_root: Path, wt_path: Path) -> None:
-    """Delete a worktree directory for --force flag.
-
-    This reuses patterns from wt/delete_cmd.py for worktree cleanup.
-    """
-    # Try git worktree remove first
-    ctx.git.remove_worktree(repo_root, wt_path, force=True)
-
-    # Manually delete directory if still exists (e.g., if git worktree remove didn't fully clean up)
-    if ctx.git.path_exists(wt_path):
-        shutil.rmtree(wt_path)
-
-    # Prune worktree metadata
-    ctx.git.prune_worktrees(repo_root)
-
-
-def _delete_branch_for_force(ctx: ErkContext, repo_root: Path, branch: str) -> None:
-    """Delete a branch for --force flag.
-
-    Uses force delete (-D) since we've already confirmed with user.
-    """
-    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
-
-    if use_graphite:
-        ctx.git.delete_branch_with_graphite(repo_root, branch, force=True)
-    else:
-        ctx.git.delete_branch(repo_root, branch, force=True)
+    sanitized = sanitize_worktree_name(base_name)
+    timestamp = datetime.now(UTC).strftime("%m-%d-%H%M")
+    return f"{sanitized}-{timestamp}"
 
 
 def _create_worktree_with_plan_content(
     ctx: ErkContext,
     *,
     plan_source: PlanSource,
-    worktree_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
     no_interactive: bool,
-    linked_branch_name: str | None = None,
+    linked_branch_name: str | None,
     base_branch: str,
-    model: str | None = None,
-    force_delete: ForceDeleteOptions | None = None,
+    model: str | None,
+    force: bool,
 ) -> WorktreeCreationResult | None:
-    """Create worktree with plan content.
+    """Create worktree with plan content using slot assignment.
 
     Args:
         ctx: Erk context
         plan_source: Plan source with content and metadata
-        worktree_name: Optional custom worktree name
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
         no_interactive: Whether to execute non-interactively
-        linked_branch_name: Optional branch name for issue-based worktrees
-                           (when provided, use this branch instead of creating new)
-        base_branch: Base branch to use as ref for worktree creation
+        linked_branch_name: Branch name for the implementation
+        base_branch: Base branch to use as ref for branch creation
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        force_delete: Options for force-deleting existing worktree/branch
+        force: If True, auto-unassign oldest branch if pool is full
 
     Returns:
         WorktreeCreationResult with paths, or None if dry-run mode
     """
-    if force_delete is None:
-        force_delete = ForceDeleteOptions()
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
 
-    # Determine branch name and worktree name
-    # - linked_branch_name: use the issue-linked branch for the worktree
-    # - worktree_name: user override for worktree directory name (not branch)
-    # - base_name: fallback derived from plan file or issue title
-    if linked_branch_name:
-        # For issue mode: always use the branch created for this issue
-        branch = linked_branch_name
-        # But allow --worktree-name to override the directory name
-        if worktree_name:
-            name = sanitize_worktree_name(worktree_name)
-        else:
-            name = sanitize_worktree_name(linked_branch_name)
-    elif worktree_name:
-        name = sanitize_worktree_name(worktree_name)
-        branch = name
-    else:
-        name = ensure_unique_worktree_name_with_date(
-            plan_source.base_name, repo.worktrees_dir, ctx.git
-        )
-        branch = name
-
-    # Calculate worktree path
-    wt_path = worktree_path_for(repo.worktrees_dir, name)
-
-    # Check if linked branch already exists locally
-    # (for issue-based worktrees, the branch may or may not exist yet)
-    local_branches = ctx.git.list_local_branches(repo_root)
-    if linked_branch_name:
-        use_existing_branch = linked_branch_name in local_branches
-    else:
-        use_existing_branch = False
-
-    if not use_existing_branch:
-        # Check for existing worktree and branch
-        branch_exists = branch in local_branches
-        wt_exists = ctx.git.path_exists(wt_path)
-
-        # Handle conflicts with --force flag
-        if branch_exists or wt_exists:
-            if force_delete.any_enabled:
-                # Prompt for confirmation and delete what exists
-                _handle_force_delete(
-                    ctx,
-                    repo_root=repo_root,
-                    wt_path=wt_path,
-                    branch=branch,
-                    wt_exists=wt_exists,
-                    branch_exists=branch_exists,
-                    force_delete=force_delete,
-                    dry_run=dry_run,
-                )
-            else:
-                # No --force flag - show error with suggestion
-                _show_conflict_error(
-                    ctx,
-                    branch=branch,
-                    wt_path=wt_path,
-                    wt_exists=wt_exists,
-                    branch_exists=branch_exists,
-                    worktree_name_provided=worktree_name is not None,
-                )
+    # Use the linked branch name (required)
+    if linked_branch_name is None:
+        ctx.feedback.error("Error: Branch name is required for implementation")
+        raise SystemExit(1) from None
+    branch = linked_branch_name
 
     # Handle dry-run mode
     if dry_run:
@@ -342,7 +121,7 @@ def _create_worktree_with_plan_content(
         mode = "non-interactive" if no_interactive else "interactive"
         user_output(f"Execution mode: {mode}\n")
 
-        user_output(f"Would create worktree '{name}'")
+        user_output(f"Would assign branch '{branch}' to a pool slot")
         user_output(f"  {plan_source.dry_run_description}")
 
         # Show command sequence
@@ -354,41 +133,129 @@ def _create_worktree_with_plan_content(
 
         return None
 
-    # Create worktree
-    ctx.feedback.info(f"Creating worktree '{name}'...")
+    # Get pool size from config or default
+    pool_size = get_pool_size(ctx)
 
-    # Load local config
-    config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
+    # Load or create pool state
+    state = load_pool_state(repo.pool_json_path)
+    if state is None:
+        state = PoolState(
+            version="1.0",
+            pool_size=pool_size,
+            slots=(),
+            assignments=(),
+        )
 
-    # Output worktree creation diagnostic
-    if use_existing_branch:
-        ctx.feedback.info(f"Using branch '{branch}'...")
+    # Check if branch is already assigned to a slot
+    existing_assignment = find_branch_assignment(state, branch)
+    if existing_assignment is not None:
+        # Branch already has a slot - use it
+        slot_name = existing_assignment.slot_name
+        wt_path = existing_assignment.worktree_path
+        ctx.feedback.info(f"Branch '{branch}' already assigned to {slot_name}")
     else:
-        ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
+        # Need to assign to a new slot
+        # First check if branch exists locally
+        local_branches = ctx.git.list_local_branches(repo_root)
+        branch_exists = branch in local_branches
 
-    # Respect global use_graphite config (matching erk create behavior)
-    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
-    # Create worktree
-    add_worktree(
-        ctx,
-        repo_root,
-        wt_path,
-        branch=branch,
-        ref=base_branch,
-        use_existing_branch=use_existing_branch,
-        use_graphite=use_graphite,
-        skip_remote_check=True,
-    )
+        if not branch_exists:
+            # Create the branch from base_branch
+            ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
+            ctx.git.create_branch(repo_root, branch, base_branch)
+            if use_graphite:
+                ctx.graphite.track_branch(repo_root, branch, base_branch)
+        elif use_graphite:
+            # Branch exists - ensure it's tracked by graphite
+            ctx.graphite.track_branch(repo_root, branch, base_branch)
 
-    ctx.feedback.success(f"✓ Created worktree: {name}")
+        # Find an available slot: first try pre-initialized slots (fast path)
+        inactive_slot = find_inactive_slot(state)
+        if inactive_slot is not None:
+            slot_name = inactive_slot.name
+            wt_path = repo.worktrees_dir / slot_name
 
-    # Run post-worktree setup
-    run_post_worktree_setup(ctx, config, wt_path, repo_root, name)
+            # Checkout the branch in the existing worktree
+            ctx.feedback.info(f"Assigning to existing slot {slot_name}...")
+            ctx.git.checkout_branch(wt_path, branch)
+        else:
+            # Fall back to on-demand slot creation
+            slot_num = find_next_available_slot(state)
+            if slot_num is None:
+                # Pool is full - handle interactively or with --force
+                to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
+                if to_unassign is None:
+                    raise SystemExit(1) from None
+
+                # Remove the assignment from state
+                new_assignments = tuple(
+                    a for a in state.assignments if a.slot_name != to_unassign.slot_name
+                )
+                state = PoolState(
+                    version=state.version,
+                    pool_size=state.pool_size,
+                    slots=state.slots,
+                    assignments=new_assignments,
+                )
+                save_pool_state(repo.pool_json_path, state)
+                user_output(
+                    click.style("✓ ", fg="green")
+                    + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
+                    + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
+                )
+
+                # Retry finding a slot - should now succeed
+                slot_num = find_next_available_slot(state)
+                if slot_num is None:
+                    user_output("Error: Failed to find available slot after unassigning")
+                    raise SystemExit(1) from None
+
+            slot_name = generate_slot_name(slot_num)
+            wt_path = repo.worktrees_dir / slot_name
+
+            # Create directory for worktree if needed
+            wt_path.mkdir(parents=True, exist_ok=True)
+
+            # Add worktree
+            ctx.feedback.info(f"Creating worktree in slot {slot_name}...")
+            ctx.git.add_worktree(
+                repo_root,
+                wt_path,
+                branch=branch,
+                ref=None,
+                create_branch=False,
+            )
+
+        # Create new assignment
+        now = datetime.now(UTC).isoformat()
+        new_assignment = SlotAssignment(
+            slot_name=slot_name,
+            branch_name=branch,
+            assigned_at=now,
+            worktree_path=wt_path,
+        )
+
+        # Update state with new assignment
+        new_state = PoolState(
+            version=state.version,
+            pool_size=state.pool_size,
+            slots=state.slots,
+            assignments=(*state.assignments, new_assignment),
+        )
+
+        # Save state
+        save_pool_state(repo.pool_json_path, new_state)
+
+    ctx.feedback.success(f"✓ Assigned {branch} to {slot_name}")
+
+    # Load local config and run post-worktree setup
+    config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
+    run_post_worktree_setup(ctx, config, wt_path, repo_root, slot_name)
 
     # Create .impl/ folder with plan content at worktree root
-    # Use overwrite=True since new worktrees created from branches with existing
-    # .impl/ folders inherit that folder, and we want to replace it with the new plan
+    # Use overwrite=True since worktrees may inherit .impl/ folders from branches
     ctx.feedback.info("Creating .impl/ folder with plan...")
     create_impl_folder(
         worktree_path=wt_path,
@@ -408,7 +275,6 @@ def _implement_from_issue(
     ctx: ErkContext,
     *,
     issue_number: str,
-    worktree_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -416,6 +282,7 @@ def _implement_from_issue(
     no_interactive: bool,
     verbose: bool,
     model: str | None,
+    force: bool,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from GitHub issue.
@@ -423,7 +290,6 @@ def _implement_from_issue(
     Args:
         ctx: Erk context
         issue_number: GitHub issue number
-        worktree_name: Optional custom worktree name
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -431,6 +297,7 @@ def _implement_from_issue(
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+        force: If True, auto-unassign oldest branch if pool is full
         executor: Claude CLI executor for command execution
     """
     # Discover repo context for issue fetch
@@ -445,11 +312,10 @@ def _implement_from_issue(
         ctx, repo.root, issue_number, base_branch=base_branch
     )
 
-    # Create worktree with plan content, using the branch name
+    # Create worktree with plan content using slot assignment
     result = _create_worktree_with_plan_content(
         ctx,
         plan_source=issue_plan_source.plan_source,
-        worktree_name=worktree_name,
         dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
@@ -457,6 +323,7 @@ def _implement_from_issue(
         linked_branch_name=issue_plan_source.branch_name,
         base_branch=base_branch,
         model=model,
+        force=force,
     )
 
     # Early return for dry-run mode
@@ -508,7 +375,6 @@ def _implement_from_file(
     ctx: ErkContext,
     *,
     plan_file: Path,
-    worktree_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -516,7 +382,7 @@ def _implement_from_file(
     no_interactive: bool,
     verbose: bool,
     model: str | None,
-    force_delete: ForceDeleteOptions,
+    force: bool,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from plan file.
@@ -524,7 +390,6 @@ def _implement_from_file(
     Args:
         ctx: Erk context
         plan_file: Path to plan file
-        worktree_name: Optional custom worktree name
         dry_run: Whether to perform dry run
         submit: Whether to auto-submit PR after implementation
         dangerous: Whether to skip permission prompts
@@ -532,7 +397,7 @@ def _implement_from_file(
         no_interactive: Whether to execute non-interactively
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-        force_delete: Options for force-deleting existing worktree/branch
+        force: If True, auto-unassign oldest branch if pool is full
         executor: Claude CLI executor for command execution
     """
     # Discover repo context
@@ -544,18 +409,22 @@ def _implement_from_file(
     # Prepare plan source from file
     plan_source = prepare_plan_source_from_file(ctx, plan_file)
 
-    # Create worktree with plan content
+    # Generate branch name from plan file
+    # The branch name is generated with timestamp to ensure uniqueness
+    branch_name = _generate_file_branch_name(plan_source.base_name)
+
+    # Create worktree with plan content using slot assignment
     result = _create_worktree_with_plan_content(
         ctx,
         plan_source=plan_source,
-        worktree_name=worktree_name,
         dry_run=dry_run,
         submit=submit,
         dangerous=dangerous,
         no_interactive=no_interactive,
+        linked_branch_name=branch_name,
         base_branch=base_branch,
         model=model,
-        force_delete=force_delete,
+        force=force,
     )
 
     # Early return for dry-run mode
@@ -604,25 +473,18 @@ def _implement_from_file(
 @alias("impl")
 @click.command("implement", cls=CommandWithHiddenOptions)
 @click.argument("target", shell_complete=complete_plan_files)
-@click.option(
-    "--worktree-name",
-    type=str,
-    default=None,
-    help="Override worktree name (optional, auto-generated if not provided)",
-)
 @implement_common_options
 @click.option(
     "-f",
     "--force",
     is_flag=True,
     default=False,
-    help="Delete existing branch/worktree with same name after confirmation.",
+    help="Auto-unassign oldest branch if pool is full.",
 )
 @click.pass_obj
 def implement(
     ctx: ErkContext,
     target: str,
-    worktree_name: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -690,21 +552,8 @@ def implement(
     # Validate flag combinations
     validate_flags(submit, no_interactive, script)
 
-    # Create force delete options from --force flag (set at entry point for clarity)
-    force_delete = ForceDeleteOptions.from_force_flag(force)
-
     # Detect target type
     target_info = detect_target_type(target)
-
-    # Check if we're in a pool slot - error for now (Phase 2 will add pool slot support)
-    repo = discover_repo_context(ctx, ctx.cwd)
-    if _is_in_pool_slot(ctx, repo.pool_json_path):
-        user_output(
-            click.style("Error: ", fg="red")
-            + "Cannot run 'erk implement' from within a pool slot.\n"
-            "Either navigate to the repo root first, or run from outside the pool slot."
-        )
-        raise SystemExit(1)
 
     # Output target detection diagnostic
     if target_info.target_type in ("issue_number", "issue_url"):
@@ -723,7 +572,6 @@ def implement(
         _implement_from_issue(
             ctx,
             issue_number=target_info.issue_number,
-            worktree_name=worktree_name,
             dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
@@ -731,6 +579,7 @@ def implement(
             no_interactive=no_interactive,
             verbose=verbose,
             model=model,
+            force=force,
             executor=ctx.claude_executor,
         )
     else:
@@ -739,7 +588,6 @@ def implement(
         _implement_from_file(
             ctx,
             plan_file=plan_file,
-            worktree_name=worktree_name,
             dry_run=dry_run,
             submit=submit,
             dangerous=dangerous,
@@ -747,6 +595,6 @@ def implement(
             no_interactive=no_interactive,
             verbose=verbose,
             model=model,
-            force_delete=force_delete,
+            force=force,
             executor=ctx.claude_executor,
         )

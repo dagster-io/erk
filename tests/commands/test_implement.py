@@ -116,16 +116,19 @@ def test_implement_from_plain_issue_number() -> None:
         result = runner.invoke(implement, ["123", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
-        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        assert "123-add-authentication-feature-01-15-1430" in result.output
+        # Slot assignment message
+        assert "Assigned" in result.output
+        assert "erk-managed-wt-01" in result.output
+        # Branch name should be in output
+        assert "P123-add-authentication-feature-01-15-1430" in result.output
 
-        # Verify worktree was created
+        # Verify worktree was created in slot
         assert len(git.added_worktrees) == 1
+        worktree_path, _ = git.added_worktrees[0]
+        assert "erk-managed-wt-01" in str(worktree_path)
 
         # Verify .impl/ folder exists with correct issue number
-        worktree_paths = [wt[0] for wt in git.added_worktrees]
-        issue_json_path = worktree_paths[0] / ".impl" / "issue.json"
+        issue_json_path = worktree_path / ".impl" / "issue.json"
         issue_json_content = issue_json_path.read_text(encoding="utf-8")
         assert '"issue_number": 123' in issue_json_content
 
@@ -150,16 +153,19 @@ def test_implement_from_issue_number() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
-        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        assert "42-add-authentication-feature-01-15-1430" in result.output
+        # Slot assignment message
+        assert "Assigned" in result.output
+        assert "erk-managed-wt-01" in result.output
+        # Branch name should be in output
+        assert "P42-add-authentication-feature-01-15-1430" in result.output
 
-        # Verify worktree was created
+        # Verify worktree was created in slot
         assert len(git.added_worktrees) == 1
+        worktree_path, _ = git.added_worktrees[0]
+        assert "erk-managed-wt-01" in str(worktree_path)
 
         # Verify .impl/ folder exists
-        worktree_paths = [wt[0] for wt in git.added_worktrees]
-        impl_path = worktree_paths[0] / ".impl"
+        impl_path = worktree_path / ".impl"
         assert impl_path.exists()
         assert (impl_path / "plan.md").exists()
         assert (impl_path / "progress.md").exists()
@@ -184,39 +190,14 @@ def test_implement_from_issue_url() -> None:
         result = runner.invoke(implement, [url, "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
         assert len(git.added_worktrees) == 1
 
         # Verify issue.json contains correct issue number
-        worktree_paths = [wt[0] for wt in git.added_worktrees]
-        issue_json_path = worktree_paths[0] / ".impl" / "issue.json"
+        worktree_path, _ = git.added_worktrees[0]
+        issue_json_path = worktree_path / ".impl" / "issue.json"
         issue_json_content = issue_json_path.read_text(encoding="utf-8")
         assert '"issue_number": 123' in issue_json_content
-
-
-def test_implement_from_issue_with_custom_name() -> None:
-    """Test implementing from issue with custom worktree name."""
-    plan_issue = _create_sample_plan_issue()
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-        )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
-
-        result = runner.invoke(
-            implement, ["#42", "--worktree-name", "my-custom-feature", "--script"], obj=ctx
-        )
-
-        assert result.exit_code == 0
-        assert "my-custom-feature" in result.output
-
-        worktree_path, _ = git.added_worktrees[0]
-        assert "my-custom-feature" in str(worktree_path)
 
 
 def test_implement_from_issue_fails_without_erk_plan_label() -> None:
@@ -289,7 +270,7 @@ def test_implement_from_issue_dry_run() -> None:
 
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
-        assert "Would create worktree" in result.output
+        assert "Would assign branch" in result.output
         assert "Add Authentication Feature" in result.output
         assert len(git.added_worktrees) == 0
 
@@ -316,46 +297,23 @@ def test_implement_from_plan_file() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
+        assert "erk-managed-wt-01" in result.output
+        # Branch name should include the base name (without -plan suffix)
         assert "my-feature" in result.output
 
-        # Verify worktree created
+        # Verify worktree created in slot
         assert len(git.added_worktrees) == 1
+        worktree_path, _ = git.added_worktrees[0]
+        assert "erk-managed-wt-01" in str(worktree_path)
 
         # Verify .impl/ folder exists with plan content
-        worktree_paths = [wt[0] for wt in git.added_worktrees]
-        impl_plan = worktree_paths[0] / ".impl" / "plan.md"
+        impl_plan = worktree_path / ".impl" / "plan.md"
         assert impl_plan.exists()
         assert impl_plan.read_text(encoding="utf-8") == plan_content
 
         # Verify original plan file deleted (move semantics)
         assert not plan_file.exists()
-
-
-def test_implement_from_plan_file_with_custom_name() -> None:
-    """Test implementing from plan file with custom worktree name."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-        )
-        ctx = build_workspace_test_context(env, git=git)
-
-        # Create plan file
-        plan_file = env.cwd / "feature-plan.md"
-        plan_file.write_text("# Plan", encoding="utf-8")
-
-        result = runner.invoke(
-            implement, [str(plan_file), "--worktree-name", "custom-name", "--script"], obj=ctx
-        )
-
-        assert result.exit_code == 0
-        assert "custom-name" in result.output
-
-        worktree_path, _ = git.added_worktrees[0]
-        assert "custom-name" in str(worktree_path)
 
 
 def test_implement_from_plan_file_strips_plan_suffix() -> None:
@@ -376,12 +334,14 @@ def test_implement_from_plan_file_strips_plan_suffix() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify -plan suffix was stripped
+        # Verify -plan suffix was stripped from branch name in output
         assert "authentication-feature" in result.output
-        # Ensure no "-plan" in worktree name
-        worktree_path, _ = git.added_worktrees[0]
-        worktree_name = str(worktree_path.name)
-        assert "-plan" not in worktree_name or worktree_name.endswith("-plan") is False
+        # Slot should be assigned
+        assert "erk-managed-wt-01" in result.output
+        # Branch name in created branches should have -plan stripped
+        assert len(git.created_branches) == 1
+        branch_name = git.created_branches[0]
+        assert "-plan" not in branch_name or branch_name.endswith("-plan") is False
 
 
 def test_implement_from_plan_file_fails_when_not_found() -> None:
@@ -429,71 +389,6 @@ def test_implement_from_plan_file_dry_run() -> None:
         assert plan_file.exists()
 
 
-# Branch Conflict Tests
-
-
-def test_implement_issue_mode_uses_linked_branch_not_worktree_name() -> None:
-    """Test that issue mode uses computed branch name, ignoring --worktree-name for branch.
-
-    The branch is computed from the issue number and title with a timestamp suffix.
-    The --worktree-name flag only affects the worktree directory name, not the branch.
-    """
-    plan_issue = _create_sample_plan_issue()
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
-            default_branches={env.cwd: "main"},
-        )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
-
-        # Even though "existing-branch" exists, issue mode uses a computed branch name
-        # (e.g., "42-add-authentication-feature-01-15-1430") so this should succeed - the
-        # worktree name is "existing-branch" but the branch is derived from issue title
-        result = runner.invoke(
-            implement, ["#42", "--worktree-name", "existing-branch", "--script"], obj=ctx
-        )
-
-        # Should succeed because the branch doesn't conflict with "existing-branch"
-        assert result.exit_code == 0
-        assert "Created worktree" in result.output
-
-        # Verify worktree was created with custom name but branch created directly
-        assert len(git.added_worktrees) == 1
-        worktree_path, _ = git.added_worktrees[0]
-        assert "existing-branch" in str(worktree_path)
-
-
-def test_implement_fails_when_branch_exists_file_mode() -> None:
-    """Test that file mode fails when branch already exists with explicit name."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-branch"]},
-            default_branches={env.cwd: "main"},
-        )
-        ctx = build_workspace_test_context(env, git=git)
-
-        # Create plan file
-        plan_file = env.cwd / "feature-plan.md"
-        plan_file.write_text("# Plan", encoding="utf-8")
-
-        result = runner.invoke(
-            implement, [str(plan_file), "--worktree-name", "existing-branch"], obj=ctx
-        )
-
-        assert result.exit_code == 1
-        assert "Error" in result.output
-        assert "already exists" in result.output
-        # Should suggest -f flag or choosing a different name (not suggest --worktree-name)
-        assert "Use -f to delete" in result.output or "choose a different name" in result.output
-        assert len(git.added_worktrees) == 0
-
-
 # Submit Flag Tests
 
 
@@ -515,7 +410,7 @@ def test_implement_with_submit_flag_from_issue() -> None:
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
@@ -540,7 +435,7 @@ def test_implement_with_submit_flag_from_file() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
@@ -567,7 +462,7 @@ def test_implement_without_submit_uses_default_command() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Verify script has only implement-plan command (not CI/submit)
         assert "erk-implement-" in result.output
@@ -668,7 +563,7 @@ def test_implement_uses_git_when_graphite_disabled() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
 
@@ -696,7 +591,7 @@ def test_implement_plan_file_uses_git_when_graphite_disabled() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
 
@@ -1017,7 +912,7 @@ def test_implement_with_dangerous_shows_in_manual_instructions() -> None:
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Created worktree" in result.output
+        assert "Assigned" in result.output
 
         # Verify dangerous flag shown in script file
         assert result.stdout
@@ -1055,8 +950,8 @@ def test_interactive_mode_calls_executor() -> None:
         assert len(executor.executed_commands) == 0
 
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
-        # Branch name: sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
-        assert "42-add-authentication-feature-01-15-1430" in str(worktree_path)
+        # Worktree path now uses slot naming
+        assert "erk-managed-wt-01" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:plan-implement"
         # No relative path preservation when running from worktree root
@@ -1115,7 +1010,8 @@ def test_interactive_mode_from_plan_file() -> None:
         # Verify execute_interactive was called
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
-        assert "my-feature" in str(worktree_path)
+        # Worktree path now uses slot naming
+        assert "erk-managed-wt-01" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:plan-implement"
         assert model is None
@@ -1874,136 +1770,3 @@ def test_invalid_model_flag() -> None:
         assert "Invalid model" in result.output
 
 
-# Pool Slot Detection Tests
-
-
-def test_is_in_pool_slot_returns_false_when_no_pool() -> None:
-    """Test _is_in_pool_slot returns False when no pool.json exists."""
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        ctx = ErkContext.for_test(cwd=env.cwd)
-        pool_json_path = env.cwd / ".erk" / "pool.json"
-
-        # No pool.json exists
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is False
-
-
-def test_is_in_pool_slot_returns_false_when_not_in_slot() -> None:
-    """Test _is_in_pool_slot returns False when in repo but not in a slot."""
-    import json
-
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        # Create pool.json with an assignment in a different location
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True, exist_ok=True)
-        pool_json_path = erk_dir / "pool.json"
-
-        pool_state = {
-            "version": 1,
-            "pool_size": 4,
-            "slots": [],
-            "assignments": [
-                {
-                    "slot_name": "erk-managed-wt-01",
-                    "branch_name": "feature-branch",
-                    "worktree_path": "/some/other/path",  # Different path
-                    "assigned_at": "2024-01-01T00:00:00Z",
-                }
-            ],
-        }
-        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
-
-        ctx = ErkContext.for_test(cwd=env.cwd)
-
-        # cwd is not in the assigned worktree path
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is False
-
-
-def test_is_in_pool_slot_returns_true_when_in_slot() -> None:
-    """Test _is_in_pool_slot returns True when cwd is inside an assigned slot."""
-    import json
-
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        # Create a slot directory
-        slot_dir = env.cwd / "worktrees" / "erk-managed-wt-01"
-        slot_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create pool.json with assignment pointing to the slot
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True, exist_ok=True)
-        pool_json_path = erk_dir / "pool.json"
-
-        pool_state = {
-            "version": 1,
-            "pool_size": 4,
-            "slots": [],
-            "assignments": [
-                {
-                    "slot_name": "erk-managed-wt-01",
-                    "branch_name": "feature-branch",
-                    "worktree_path": str(slot_dir),
-                    "assigned_at": "2024-01-01T00:00:00Z",
-                }
-            ],
-        }
-        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
-
-        # Create context with cwd in the slot
-        ctx = ErkContext.for_test(cwd=slot_dir)
-
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is True
-
-
-def test_is_in_pool_slot_returns_true_when_in_slot_subdirectory() -> None:
-    """Test _is_in_pool_slot returns True when cwd is in subdirectory of slot."""
-    import json
-
-    from erk.cli.commands.implement import _is_in_pool_slot
-    from erk.core.context import ErkContext
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        # Create a slot directory with subdirectory
-        slot_dir = env.cwd / "worktrees" / "erk-managed-wt-01"
-        sub_dir = slot_dir / "src" / "lib"
-        sub_dir.mkdir(parents=True, exist_ok=True)
-
-        # Create pool.json with assignment pointing to the slot
-        erk_dir = env.cwd / ".erk"
-        erk_dir.mkdir(parents=True, exist_ok=True)
-        pool_json_path = erk_dir / "pool.json"
-
-        pool_state = {
-            "version": 1,
-            "pool_size": 4,
-            "slots": [],
-            "assignments": [
-                {
-                    "slot_name": "erk-managed-wt-01",
-                    "branch_name": "feature-branch",
-                    "worktree_path": str(slot_dir),
-                    "assigned_at": "2024-01-01T00:00:00Z",
-                }
-            ],
-        }
-        pool_json_path.write_text(json.dumps(pool_state), encoding="utf-8")
-
-        # Create context with cwd in subdirectory of the slot
-        ctx = ErkContext.for_test(cwd=sub_dir)
-
-        result = _is_in_pool_slot(ctx, pool_json_path)
-        assert result is True
