@@ -6,6 +6,8 @@ from pathlib import Path
 import pytest
 
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.metadata.core import find_metadata_block
+from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue
@@ -821,8 +823,6 @@ def test_add_comment_issue_not_found() -> None:
 
 def test_update_metadata_worktree_name() -> None:
     """Test updating worktree_name metadata field."""
-    from erk_shared.github.metadata.plan_header import format_plan_header_body
-
     # Create issue with valid plan-header block
     metadata_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
@@ -845,10 +845,12 @@ def test_update_metadata_worktree_name() -> None:
     assert "feature-branch-wt" in updated_body
 
 
-def test_update_metadata_whitelist_filter() -> None:
-    """Test that only allowed fields are updated."""
-    from erk_shared.github.metadata.plan_header import format_plan_header_body
+def test_update_metadata_unknown_field_raises() -> None:
+    """Test that unknown metadata fields raise ValueError.
 
+    The update_plan_header_metadata helper validates fields and raises
+    ValueError for any field not in the allowed list.
+    """
     # Create issue with valid plan-header block
     metadata_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
@@ -858,24 +860,16 @@ def test_update_metadata_whitelist_filter() -> None:
     fake_github = FakeGitHubIssues(issues={42: issue})
     store = GitHubPlanStore(fake_github)
 
-    # Try to update both allowed and disallowed fields
-    store.update_metadata(
-        repo_root=Path("/fake/repo"),
-        plan_id="42",
-        metadata={
-            "worktree_name": "allowed-wt",  # Allowed
-            "created_by": "hacker",  # Not in whitelist - should be ignored
-            "schema_version": "999",  # Not in whitelist - should be ignored
-        },
-    )
-
-    # Verify update was called and worktree_name was set
-    assert len(fake_github.updated_bodies) == 1
-    _issue_num, updated_body = fake_github.updated_bodies[0]
-    assert "worktree_name" in updated_body
-    assert "allowed-wt" in updated_body
-    # created_by should remain as original (testuser), not "hacker"
-    assert "testuser" in updated_body
+    # Try to update with disallowed field - should raise ValueError
+    with pytest.raises(ValueError, match="Unknown metadata field: created_by"):
+        store.update_metadata(
+            repo_root=Path("/fake/repo"),
+            plan_id="42",
+            metadata={
+                "worktree_name": "allowed-wt",  # Allowed
+                "created_by": "hacker",  # Not in whitelist - should raise
+            },
+        )
 
 
 def test_update_metadata_no_plan_header_block() -> None:
@@ -885,7 +879,7 @@ def test_update_metadata_no_plan_header_block() -> None:
     fake_github = FakeGitHubIssues(issues={42: issue})
     store = GitHubPlanStore(fake_github)
 
-    with pytest.raises(RuntimeError, match="plan-header block not found"):
+    with pytest.raises(ValueError, match="plan-header block not found"):
         store.update_metadata(
             repo_root=Path("/fake/repo"),
             plan_id="42",

@@ -18,6 +18,7 @@ from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
+    update_plan_header_metadata,
 )
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
@@ -314,75 +315,35 @@ class GitHubPlanStore(PlanBackend):
     ) -> None:
         """Update plan metadata in the issue body.
 
-        Fetches the current issue body, updates the plan-header metadata block
-        with allowed fields, and updates the issue body.
+        Updates the plan-header metadata block in the GitHub issue body.
+        Only updates fields that are provided in the metadata mapping.
 
         Args:
             repo_root: Repository root directory
-            plan_id: Provider-specific identifier (issue number)
-            metadata: New metadata to set. Allowed fields:
-                - worktree_name
-                - last_dispatched_run_id
-                - last_dispatched_node_id
-                - last_dispatched_at
-                - last_local_impl_at
-                - last_local_impl_event
-                - last_local_impl_session
-                - last_local_impl_user
-                - last_remote_impl_at
+            plan_id: Issue number as string (e.g., "42")
+            metadata: Fields to update in plan-header block. Supported fields:
+                - worktree_name: str
+                - last_local_impl_at: str (ISO timestamp)
+                - last_local_impl_event: str ("started" or "ended")
+                - last_local_impl_session: str (session ID)
+                - last_local_impl_user: str (username)
+                - last_remote_impl_at: str (ISO timestamp)
+                - last_dispatched_run_id: str
+                - last_dispatched_node_id: str
+                - last_dispatched_at: str (ISO timestamp)
+                - current_step: int
 
         Raises:
-            RuntimeError: If provider fails or plan not found
+            RuntimeError: If GitHub API fails or issue not found
+            ValueError: If unknown metadata field is provided
         """
-        # Import here to avoid circular imports
-        from erk_shared.github.metadata.core import (
-            find_metadata_block,
-            render_metadata_block,
-            replace_metadata_block_in_body,
-        )
-        from erk_shared.github.metadata.schemas import PlanHeaderSchema
-        from erk_shared.github.metadata.types import MetadataBlock
-
         issue_number = int(plan_id)
         issue_info = self._github_issues.get_issue(repo_root, issue_number)
 
-        # Parse current metadata from issue body
-        block = find_metadata_block(issue_info.body, "plan-header")
-        if block is None:
-            raise RuntimeError("plan-header block not found in issue body")
+        # Update the plan-header metadata in issue body
+        updated_body = update_plan_header_metadata(issue_info.body, metadata)
 
-        current_data = dict(block.data)
-
-        # Whitelist of allowed metadata fields
-        allowed_fields = {
-            "worktree_name",
-            "last_dispatched_run_id",
-            "last_dispatched_node_id",
-            "last_dispatched_at",
-            "last_local_impl_at",
-            "last_local_impl_event",
-            "last_local_impl_session",
-            "last_local_impl_user",
-            "last_remote_impl_at",
-        }
-
-        # Merge allowed fields from new metadata
-        for key, value in metadata.items():
-            if key in allowed_fields:
-                current_data[key] = value
-
-        # Validate updated data
-        schema = PlanHeaderSchema()
-        schema.validate(current_data)
-
-        # Create new block and render
-        new_block = MetadataBlock(key="plan-header", data=current_data)
-        new_block_content = render_metadata_block(new_block)
-
-        # Replace block in full body and update issue
-        updated_body = replace_metadata_block_in_body(
-            issue_info.body, "plan-header", new_block_content
-        )
+        # Write back to GitHub
         self._github_issues.update_issue_body(repo_root, issue_number, updated_body)
 
     def add_comment(
