@@ -313,12 +313,3 @@ gh run watch
 
 - `/erk:plan-implement` - Save plan to GitHub AND implement (full workflow: save → setup → implement → CI → PR)
 - `erk implement <issue>` - Create worktree and implement plan from existing GitHub issue
-- `/erk:plan-implement-here` - Implement from existing GitHub issue in current worktree (skips save step)
-
-### Slot-Aware Behavior
-
-When `erk implement` is called from within a pool slot:
-
-- Automatically delegates to `erk pooled implement`
-- Reuses the current slot instead of creating a new worktree
-- Same flags and options apply
