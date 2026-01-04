@@ -1,5 +1,6 @@
 """Pooled unassign command - remove a branch assignment from a pool slot."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
@@ -7,6 +8,7 @@ import click
 from erk.cli.commands.pooled.common import get_placeholder_branch_name
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
     PoolState,
     SlotAssignment,
@@ -14,6 +16,84 @@ from erk.core.worktree_pool import (
     save_pool_state,
 )
 from erk_shared.output.output import user_output
+
+
+@dataclass(frozen=True)
+class UnassignResult:
+    """Result of an unassign operation."""
+
+    branch_name: str
+    slot_name: str
+    trunk_branch: str
+
+
+def execute_unassign(
+    ctx: ErkContext,
+    repo: RepoContext,
+    state: PoolState,
+    assignment: SlotAssignment,
+) -> UnassignResult:
+    """Execute the unassign operation for a pool slot.
+
+    This function handles:
+    - Checking for uncommitted changes
+    - Getting or creating placeholder branch
+    - Checking out placeholder branch
+    - Removing assignment from pool state
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        state: Current pool state
+        assignment: The assignment to remove
+
+    Returns:
+        UnassignResult with branch name, slot name, and trunk branch
+
+    Raises:
+        SystemExit: If worktree has uncommitted changes or placeholder branch cannot be determined
+    """
+    # Check for uncommitted changes before switching branches
+    if ctx.git.has_uncommitted_changes(assignment.worktree_path):
+        user_output(
+            f"Error: Worktree has uncommitted changes at {assignment.worktree_path}.\n"
+            "Commit or stash your changes before unassigning."
+        )
+        raise SystemExit(1) from None
+
+    # Get or create placeholder branch
+    placeholder_branch = get_placeholder_branch_name(assignment.slot_name)
+    if placeholder_branch is None:
+        user_output(
+            f"Error: Could not determine placeholder branch for slot {assignment.slot_name}."
+        )
+        raise SystemExit(1) from None
+
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    local_branches = ctx.git.list_local_branches(repo.root)
+
+    if placeholder_branch not in local_branches:
+        ctx.git.create_branch(repo.root, placeholder_branch, trunk_branch)
+
+    # Checkout placeholder branch in the worktree
+    ctx.git.checkout_branch(assignment.worktree_path, placeholder_branch)
+
+    # Remove assignment from state (immutable update)
+    new_assignments = tuple(a for a in state.assignments if a.slot_name != assignment.slot_name)
+    new_state = PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        assignments=new_assignments,
+    )
+
+    # Save updated state
+    save_pool_state(repo.pool_json_path, new_state)
+
+    return UnassignResult(
+        branch_name=assignment.branch_name,
+        slot_name=assignment.slot_name,
+        trunk_branch=trunk_branch,
+    )
 
 
 def _find_assignment(state: PoolState, slot_or_branch: str) -> SlotAssignment | None:
@@ -100,44 +180,13 @@ def pooled_unassign(ctx: ErkContext, slot_or_branch: str | None) -> None:
             )
             raise SystemExit(1) from None
 
-    # Check for uncommitted changes before switching branches
-    if ctx.git.has_uncommitted_changes(assignment.worktree_path):
-        user_output(
-            f"Error: Worktree has uncommitted changes at {assignment.worktree_path}.\n"
-            "Commit or stash your changes before unassigning."
-        )
-        raise SystemExit(1) from None
-
-    # Get or create placeholder branch
-    placeholder_branch = get_placeholder_branch_name(assignment.slot_name)
-    if placeholder_branch is None:
-        user_output(
-            f"Error: Could not determine placeholder branch for slot {assignment.slot_name}."
-        )
-        raise SystemExit(1) from None
-
-    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
-    local_branches = ctx.git.list_local_branches(repo.root)
-
-    if placeholder_branch not in local_branches:
-        ctx.git.create_branch(repo.root, placeholder_branch, trunk_branch)
-
-    # Checkout placeholder branch in the worktree
-    ctx.git.checkout_branch(assignment.worktree_path, placeholder_branch)
-
-    # Remove assignment from state (immutable update)
-    new_assignments = tuple(a for a in state.assignments if a.slot_name != assignment.slot_name)
-    new_state = PoolState(
-        version=state.version,
-        pool_size=state.pool_size,
-        assignments=new_assignments,
-    )
-
-    # Save updated state
-    save_pool_state(repo.pool_json_path, new_state)
+    # Execute the unassign operation
+    result = execute_unassign(ctx, repo, state, assignment)
 
     user_output(
         click.style("✓ ", fg="green")
-        + f"Unassigned {click.style(assignment.branch_name, fg='yellow')} "
-        + f"from {click.style(assignment.slot_name, fg='cyan')}"
+        + f"Unassigned {click.style(result.branch_name, fg='yellow')} "
+        + f"from {click.style(result.slot_name, fg='cyan')}"
     )
+    user_output("  Switched to placeholder branch")
+    user_output("  Tip: Use 'erk wt co root' to return to root worktree")

@@ -70,6 +70,8 @@ def test_pooled_unassign_by_slot_name() -> None:
         assert "Unassigned" in result.output
         assert "feature-test" in result.output
         assert "erk-managed-wt-01" in result.output
+        assert "Switched to placeholder branch" in result.output
+        assert "erk wt co root" in result.output
 
         # Verify assignment was removed
         state = load_pool_state(repo.pool_json_path)
@@ -126,6 +128,8 @@ def test_pooled_unassign_by_branch_name() -> None:
         assert result.exit_code == 0
         assert "Unassigned" in result.output
         assert "feature-branch" in result.output
+        assert "Switched to placeholder branch" in result.output
+        assert "erk wt co root" in result.output
 
         # Verify assignment was removed
         state = load_pool_state(repo.pool_json_path)

@@ -1,9 +1,9 @@
-"""Pooled land command - merge current branch's PR without cleanup.
+"""Pooled land command - merge current branch's PR and release the slot.
 
 A simpler, safer alternative to `erk land` for pooled workflows:
 - Merges the current branch's PR via squash merge
 - Offers objective update (same as `erk land`)
-- Does NOT delete the worktree or clean up the branch
+- Automatically unassigns the slot after successful merge
 """
 
 import click
@@ -12,9 +12,14 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
 )
+from erk.cli.commands.pooled.unassign_cmd import (
+    _find_assignment_by_cwd,
+    execute_unassign,
+)
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_output
 
@@ -23,16 +28,16 @@ from erk_shared.output.output import user_output
 @click.option("-f", "--force", is_flag=True, help="Skip objective update prompt")
 @click.pass_obj
 def pooled_land(ctx: ErkContext, force: bool) -> None:
-    """Land current branch's PR via squash merge.
+    """Land current branch's PR via squash merge and release the slot.
 
     This is a simpler alternative to `erk land` for pooled workflows:
     - Merges the PR with squash merge
-    - Does NOT delete the worktree or branch
+    - Automatically unassigns the pool slot (worktree preserved)
     - Offers to update linked objective (skipped with --force)
 
     Examples:
-        erk pooled land           # Merge current branch's PR
-        erk pooled land --force   # Merge and skip objective prompt
+        erk pooled land           # Merge current branch's PR and unassign slot
+        erk pooled land --force   # Merge, unassign, and skip objective prompt
     """
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
@@ -84,9 +89,17 @@ def pooled_land(ctx: ErkContext, force: bool) -> None:
             ctx, main_repo_root, objective_number, pr_number, current_branch, force
         )
 
-    # No cleanup - branch and worktree are preserved
-    user_output("")
-    user_output(
-        click.style("Note: ", fg="cyan")
-        + "Branch and worktree preserved. Use 'erk pooled unassign' to release the slot."
-    )
+    # Auto-unassign the slot if we're in a pool worktree
+    state = load_pool_state(repo.pool_json_path)
+    if state is not None:
+        assignment = _find_assignment_by_cwd(state, ctx.cwd)
+        if assignment is not None:
+            result = execute_unassign(ctx, repo, state, assignment)
+            user_output("")
+            user_output(
+                click.style("✓ ", fg="green")
+                + f"Unassigned {click.style(result.branch_name, fg='yellow')} "
+                + f"from {click.style(result.slot_name, fg='cyan')}"
+            )
+            user_output("  Switched to placeholder branch")
+            user_output("  Tip: Use 'erk wt co root' to return to root worktree")

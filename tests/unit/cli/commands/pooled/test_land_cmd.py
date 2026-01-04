@@ -1,8 +1,13 @@
 """Unit tests for pooled land command."""
 
+from datetime import UTC, datetime
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo
@@ -53,7 +58,7 @@ def _create_pr_info(
 
 
 def test_pooled_land_success_merges_pr() -> None:
-    """Test that pooled land merges the PR successfully."""
+    """Test that pooled land merges the PR successfully (no pool slot)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -79,7 +84,8 @@ def test_pooled_land_success_merges_pr() -> None:
 
         assert result.exit_code == 0
         assert f"Merged PR #{pr_number}" in result.output
-        assert "Branch and worktree preserved" in result.output
+        # No pool configured, so no unassign message
+        assert "Unassigned" not in result.output
         # Verify PR was merged
         assert pr_number in github_ops.merged_prs
 
@@ -223,20 +229,39 @@ def test_pooled_land_force_skips_objective_prompt() -> None:
         assert pr_number in github_ops.merged_prs
 
 
-def test_pooled_land_preserves_worktree_message() -> None:
-    """Test that pooled land shows message about preserving worktree."""
+def _create_test_assignment(
+    slot_name: str,
+    branch_name: str,
+    worktree_path: Path,
+) -> SlotAssignment:
+    """Create a test assignment with current timestamp."""
+    return SlotAssignment(
+        slot_name=slot_name,
+        branch_name=branch_name,
+        assigned_at=datetime.now(UTC).isoformat(),
+        worktree_path=worktree_path,
+    )
+
+
+def test_pooled_land_auto_unassigns_slot() -> None:
+    """Test that pooled land automatically unassigns the pool slot after merge."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
 
         branch_name = "feature-branch"
         pr_number = 123
 
+        # Set cwd to the worktree (simulating being inside the pool worktree)
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: branch_name},
-            git_common_dirs={env.cwd: env.git_dir},
+            worktrees={worktree_path: env.build_worktrees("main")[env.cwd]},
+            current_branches={worktree_path: branch_name},
+            git_common_dirs={worktree_path: env.git_dir, env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", branch_name]},
         )
 
         github_ops = FakeGitHub(
@@ -244,10 +269,43 @@ def test_pooled_land_preserves_worktree_message() -> None:
             pr_details={pr_number: _create_pr_details(pr_number, branch_name)},
         )
 
-        test_ctx = env.build_context(git=git_ops, github=github_ops)
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create pool state with assignment
+        assignment = _create_test_assignment("erk-managed-wt-01", branch_name, worktree_path)
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            assignments=(assignment,),
+        )
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        # Use worktree_path as cwd (simulating being inside the pool worktree)
+        test_ctx = env.build_context(git=git_ops, github=github_ops, repo=repo, cwd=worktree_path)
 
         result = runner.invoke(cli, ["pooled", "land"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Branch and worktree preserved" in result.output
-        assert "erk pooled unassign" in result.output
+        assert f"Merged PR #{pr_number}" in result.output
+        assert "Unassigned" in result.output
+        assert branch_name in result.output
+        assert "erk-managed-wt-01" in result.output
+        assert "Switched to placeholder branch" in result.output
+        assert "erk wt co root" in result.output
+
+        # Verify PR was merged
+        assert pr_number in github_ops.merged_prs
+
+        # Verify assignment was removed
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 0
+
+        # Verify placeholder branch was checked out
+        assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
