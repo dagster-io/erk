@@ -80,7 +80,10 @@ def test_pooled_land_success_merges_pr() -> None:
 
         test_ctx = env.build_context(git=git_ops, github=github_ops)
 
-        result = runner.invoke(cli, ["pooled", "land"], obj=test_ctx, catch_exceptions=False)
+        # Confirm the merge prompt
+        result = runner.invoke(
+            cli, ["pooled", "land"], obj=test_ctx, input="y\n", catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         assert f"Merged PR #{pr_number}" in result.output
@@ -169,7 +172,10 @@ def test_pooled_land_merge_failure_error() -> None:
 
         test_ctx = env.build_context(git=git_ops, github=github_ops)
 
-        result = runner.invoke(cli, ["pooled", "land"], obj=test_ctx, catch_exceptions=False)
+        # Confirm the merge prompt (then merge should fail)
+        result = runner.invoke(
+            cli, ["pooled", "land"], obj=test_ctx, input="y\n", catch_exceptions=False
+        )
 
         assert result.exit_code == 1
         assert "Failed to merge" in result.output
@@ -289,7 +295,10 @@ def test_pooled_land_auto_unassigns_slot() -> None:
         # Use worktree_path as cwd (simulating being inside the pool worktree)
         test_ctx = env.build_context(git=git_ops, github=github_ops, repo=repo, cwd=worktree_path)
 
-        result = runner.invoke(cli, ["pooled", "land"], obj=test_ctx, catch_exceptions=False)
+        # Confirm the merge prompt
+        result = runner.invoke(
+            cli, ["pooled", "land"], obj=test_ctx, input="y\n", catch_exceptions=False
+        )
 
         assert result.exit_code == 0
         assert f"Merged PR #{pr_number}" in result.output
@@ -297,7 +306,8 @@ def test_pooled_land_auto_unassigns_slot() -> None:
         assert branch_name in result.output
         assert "erk-managed-wt-01" in result.output
         assert "Switched to placeholder branch" in result.output
-        assert "erk wt co root" in result.output
+        # Shell integration message (instead of "erk wt co root" tip)
+        assert "root repo" in result.output.lower() or "shell integration" in result.output.lower()
 
         # Verify PR was merged
         assert pr_number in github_ops.merged_prs
@@ -309,3 +319,109 @@ def test_pooled_land_auto_unassigns_slot() -> None:
 
         # Verify placeholder branch was checked out
         assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
+
+
+def test_pooled_land_confirmation_decline_exits_cleanly() -> None:
+    """Test that declining the confirmation prompt exits with code 0 without merging."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        branch_name = "feature-branch"
+        pr_number = 123
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: branch_name},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        github_ops = FakeGitHub(
+            prs={branch_name: _create_pr_info(pr_number)},
+            pr_details={pr_number: _create_pr_details(pr_number, branch_name)},
+        )
+
+        test_ctx = env.build_context(git=git_ops, github=github_ops)
+
+        # Decline the merge prompt
+        result = runner.invoke(
+            cli, ["pooled", "land"], obj=test_ctx, input="n\n", catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        # Should show confirmation prompt but not merge
+        assert "Merge PR" in result.output
+        assert "Merged PR" not in result.output
+        # Verify PR was NOT merged
+        assert pr_number not in github_ops.merged_prs
+
+
+def test_pooled_land_force_skips_confirmation() -> None:
+    """Test that --force skips the confirmation prompt."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        branch_name = "feature-branch"
+        pr_number = 123
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: branch_name},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        github_ops = FakeGitHub(
+            prs={branch_name: _create_pr_info(pr_number)},
+            pr_details={pr_number: _create_pr_details(pr_number, branch_name)},
+        )
+
+        test_ctx = env.build_context(git=git_ops, github=github_ops)
+
+        # No input needed - --force skips confirmation
+        result = runner.invoke(
+            cli, ["pooled", "land", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        # Should not show confirmation prompt
+        assert "Merge PR #" not in result.output or "release slot?" not in result.output
+        # Should merge immediately
+        assert f"Merged PR #{pr_number}" in result.output
+        assert pr_number in github_ops.merged_prs
+
+
+def test_pooled_land_with_script_flag_outputs_script_path() -> None:
+    """Test that --script flag outputs activation script path."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        branch_name = "feature-branch"
+        pr_number = 123
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: branch_name},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        github_ops = FakeGitHub(
+            prs={branch_name: _create_pr_info(pr_number)},
+            pr_details={pr_number: _create_pr_details(pr_number, branch_name)},
+        )
+
+        test_ctx = env.build_context(git=git_ops, github=github_ops)
+
+        # Use --force to skip confirmation, --script for shell integration
+        result = runner.invoke(
+            cli, ["pooled", "land", "--force", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert f"Merged PR #{pr_number}" in result.output
+        # Script mode should output a path (in stdout, merged with output due to CliRunner)
+        assert pr_number in github_ops.merged_prs

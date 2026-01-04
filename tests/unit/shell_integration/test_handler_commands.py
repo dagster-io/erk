@@ -81,6 +81,7 @@ def test_compound_commands_have_all_expected_entries() -> None:
         "pr checkout",
         "pr co",  # alias for pr checkout
         # Note: "pr land" was moved to top-level "land" command in #3711
+        "pooled land",  # pooled land supports shell integration
     ]
 
     for cmd in expected_compound_commands:

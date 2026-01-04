@@ -8,6 +8,7 @@ A simpler, safer alternative to `erk land` for pooled workflows:
 
 import click
 
+from erk.cli.commands.navigation_helpers import activate_root_repo
 from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
@@ -18,16 +19,20 @@ from erk.cli.commands.pooled.unassign_cmd import (
 )
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.github.types import PRDetails, PRNotFound
-from erk_shared.output.output import user_output
+from erk_shared.output.output import user_confirm, user_output
 
 
-@click.command("land")
-@click.option("-f", "--force", is_flag=True, help="Skip objective update prompt")
+@click.command("land", cls=CommandWithHiddenOptions)
+@script_option
+@click.option(
+    "-f", "--force", is_flag=True, help="Skip confirmation prompt and objective update prompt"
+)
 @click.pass_obj
-def pooled_land(ctx: ErkContext, force: bool) -> None:
+def pooled_land(ctx: ErkContext, script: bool, force: bool) -> None:
     """Land current branch's PR via squash merge and release the slot.
 
     This is a simpler alternative to `erk land` for pooled workflows:
@@ -69,6 +74,11 @@ def pooled_land(ctx: ErkContext, force: bool) -> None:
         user_output(f"Error: Pull request #{pr_number} is not open (state: {pr_details.state}).")
         raise SystemExit(1)
 
+    # Confirm before merge
+    if not force:
+        if not user_confirm(f"Merge PR #{pr_number} and release slot?", default=True):
+            raise SystemExit(0)
+
     # Merge the PR
     user_output(f"Merging PR #{pr_number}...")
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
@@ -94,12 +104,14 @@ def pooled_land(ctx: ErkContext, force: bool) -> None:
     if state is not None:
         assignment = _find_assignment_by_cwd(state, ctx.cwd)
         if assignment is not None:
-            result = execute_unassign(ctx, repo, state, assignment)
+            unassign_result = execute_unassign(ctx, repo, state, assignment)
             user_output("")
             user_output(
                 click.style("✓ ", fg="green")
-                + f"Unassigned {click.style(result.branch_name, fg='yellow')} "
-                + f"from {click.style(result.slot_name, fg='cyan')}"
+                + f"Unassigned {click.style(unassign_result.branch_name, fg='yellow')} "
+                + f"from {click.style(unassign_result.slot_name, fg='cyan')}"
             )
             user_output("  Switched to placeholder branch")
-            user_output("  Tip: Use 'erk wt co root' to return to root worktree")
+
+    # Navigate to root worktree (raises SystemExit(0))
+    activate_root_repo(ctx, repo, script, command_name="pooled-land", post_cd_commands=None)
