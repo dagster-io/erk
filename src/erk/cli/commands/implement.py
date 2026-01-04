@@ -57,6 +57,27 @@ from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
 
 
+def _check_worktree_clean_for_checkout(
+    ctx: ErkContext,
+    wt_path: Path,
+    slot_name: str,
+) -> None:
+    """Raise ClickException if worktree has uncommitted changes.
+
+    Checks for uncommitted changes before checkout to provide a friendly error
+    message with actionable remediation steps, rather than letting git fail
+    with an ugly traceback.
+    """
+    if ctx.git.has_uncommitted_changes(wt_path):
+        raise click.ClickException(
+            f"Slot '{slot_name}' has uncommitted changes that would be overwritten.\n\n"
+            f"Remediation options:\n"
+            f"  1. cd {wt_path} && git stash\n"
+            f"  2. cd {wt_path} && git commit -am 'WIP'\n"
+            f"  3. erk slot unassign {slot_name}  # discard changes and reset slot"
+        )
+
+
 def _create_worktree_with_plan_content(
     ctx: ErkContext,
     *,
@@ -212,6 +233,8 @@ def _create_worktree_with_plan_content(
 
     if inactive_slot is not None:
         # Fast path: checkout branch in existing worktree
+        # Check for uncommitted changes before checkout
+        _check_worktree_clean_for_checkout(ctx, wt_path, slot_name)
         if use_existing_branch:
             ctx.feedback.info(f"Checking out existing branch '{branch}'...")
             ctx.git.checkout_branch(wt_path, branch)
@@ -233,6 +256,8 @@ def _create_worktree_with_plan_content(
 
         # Check if worktree directory already exists (from pool initialization)
         if wt_path.exists():
+            # Check for uncommitted changes before checkout
+            _check_worktree_clean_for_checkout(ctx, wt_path, slot_name)
             # Worktree already exists - check out the branch
             ctx.git.checkout_branch(wt_path, branch)
         else:

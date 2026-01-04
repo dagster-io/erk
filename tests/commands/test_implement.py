@@ -1965,3 +1965,49 @@ def test_implement_respects_config_pool_size_over_stored_state() -> None:
 
         # Should have assigned to slot 5 (first available after slots 1-4)
         assert "erk-managed-wt-05" in result.output
+
+
+# Uncommitted Changes Detection Tests
+
+
+def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
+    """Test that implement fails with friendly error when slot has uncommitted changes.
+
+    When a pre-existing slot directory has uncommitted changes that would be
+    overwritten by git checkout, we should detect this BEFORE attempting checkout
+    and provide actionable remediation steps instead of letting git fail with
+    an ugly traceback.
+    """
+    plan_issue = _create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Pre-create the slot directory with uncommitted changes
+        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            # Configure the slot worktree to have uncommitted changes
+            file_statuses={slot_dir: ([], ["modified_file.py"], [])},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
+
+        # Should fail with friendly error message
+        assert result.exit_code != 0
+
+        # Verify error message contains remediation options
+        assert "uncommitted changes" in result.output
+        assert "erk-managed-wt-01" in result.output
+        assert "git stash" in result.output
+        assert "git commit" in result.output
+        assert "erk slot unassign" in result.output
+
+        # Verify no worktree operations were attempted after the check
+        assert len(git.added_worktrees) == 0
+        assert len(git.checked_out_branches) == 0
