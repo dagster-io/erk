@@ -2,13 +2,34 @@
 
 from pathlib import Path
 
+import click
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
+    _get_current_branch,
     _is_trunk_branch,
     setup_impl_from_issue,
 )
 from erk_shared.context import ErkContext
+from erk_shared.git.fake import FakeGit
+
+
+class TestGetCurrentBranch:
+    """Tests for the _get_current_branch helper function."""
+
+    def test_returns_branch_name(self, tmp_path: Path) -> None:
+        """Returns current branch name when on a branch."""
+        git = FakeGit(current_branches={tmp_path: "feature-branch"})
+        result = _get_current_branch(git, tmp_path)
+        assert result == "feature-branch"
+
+    def test_raises_on_detached_head(self, tmp_path: Path) -> None:
+        """Raises ClickException when in detached HEAD state."""
+        git = FakeGit(current_branches={tmp_path: None})
+        with pytest.raises(click.ClickException) as exc_info:
+            _get_current_branch(git, tmp_path)
+        assert "detached HEAD" in str(exc_info.value)
 
 
 class TestIsTrunkBranch:

@@ -19,7 +19,6 @@ Examples:
 """
 
 import json
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -27,6 +26,7 @@ import click
 
 from erk_shared.context.helpers import require_cwd, require_git, require_repo_root
 from erk_shared.gateway.time.real import RealTime
+from erk_shared.git.abc import Git
 from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import generate_issue_branch_name
@@ -34,16 +34,13 @@ from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.prompt_executor.real import RealPromptExecutor
 
 
-def _detect_current_branch(cwd: Path) -> str:
-    """Detect the current git branch name."""
-    result = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
+def _get_current_branch(git: Git, cwd: Path) -> str:
+    """Get current branch via gateway, raising if detached HEAD."""
+    branch = git.get_current_branch(cwd)
+    if branch is None:
+        msg = "Cannot set up implementation from detached HEAD state"
+        raise click.ClickException(msg)
+    return branch
 
 
 def _is_trunk_branch(branch: str) -> bool:
@@ -102,7 +99,7 @@ def setup_impl_from_issue(
         raise SystemExit(1) from e
 
     # Step 2: Determine base branch and create feature branch
-    current_branch = _detect_current_branch(cwd)
+    current_branch = _get_current_branch(git, cwd)
 
     # Generate branch name from issue
     timestamp = datetime.now(UTC)
