@@ -37,6 +37,7 @@ erk pooled implement <issue-number>
 ```
 
 This command:
+
 1. Fetches the plan from the GitHub issue
 2. Assigns the issue's branch to a pool slot
 3. Creates `.impl/plan.md` in the worktree
