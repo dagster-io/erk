@@ -1,4 +1,4 @@
-"""Unit tests for pooled switch command."""
+"""Unit tests for pooled checkout command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -26,53 +26,8 @@ def _create_test_assignment(
     )
 
 
-def test_pooled_switch_by_slot_name() -> None:
-    """Test switching to a pool slot by slot name."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            default_branches={env.cwd: "main"},
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        # Create pool state with an assignment
-        worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
-        worktree_path.mkdir(parents=True)
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
-        save_pool_state(repo.pool_json_path, initial_state)
-
-        test_ctx = env.build_context(git=git_ops, repo=repo)
-
-        # Switch by slot name - we're in root repo (env.cwd), not in the slot
-        result = runner.invoke(
-            cli, ["pooled", "switch", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
-        )
-
-        # Script mode is added by shell integration; without --script we get the fallback message
-        # The command succeeds (exit 0) and outputs activation guidance
-        assert result.exit_code == 0
-        assert "Shell integration not detected" in result.output
-
-
-def test_pooled_switch_by_branch_name() -> None:
-    """Test switching to a pool slot by branch name."""
+def test_pooled_checkout_by_branch_name() -> None:
+    """Test checkout to a pool slot by branch name."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -106,15 +61,58 @@ def test_pooled_switch_by_branch_name() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "switch", "feature-branch"], obj=test_ctx, catch_exceptions=False
+            cli, ["pooled", "checkout", "feature-branch"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
         assert "Shell integration not detected" in result.output
 
 
-def test_pooled_switch_no_argument_shows_error() -> None:
-    """Test that switch without argument shows error."""
+def test_pooled_checkout_slot_name_not_supported() -> None:
+    """Test that slot name lookup is not supported (only branch names)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create pool state with an assignment
+        worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            assignments=(assignment,),
+        )
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        # Trying to checkout by slot name should fail (only branch names supported)
+        result = runner.invoke(
+            cli, ["pooled", "checkout", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "No assignment found for branch" in result.output
+
+
+def test_pooled_checkout_no_argument_shows_error() -> None:
+    """Test that checkout without argument shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -144,14 +142,14 @@ def test_pooled_switch_no_argument_shows_error() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "switch"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "checkout"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
-        assert "Specify slot or branch name" in result.output
+        assert "Specify branch name to checkout" in result.output
 
 
-def test_pooled_switch_not_found() -> None:
-    """Test switching to non-existent slot or branch shows error."""
+def test_pooled_checkout_not_found() -> None:
+    """Test checkout to non-existent branch shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -182,15 +180,15 @@ def test_pooled_switch_not_found() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "switch", "nonexistent"], obj=test_ctx, catch_exceptions=False
+            cli, ["pooled", "checkout", "nonexistent"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No assignment found" in result.output
 
 
-def test_pooled_switch_no_pool_configured() -> None:
-    """Test switching when no pool is configured shows error."""
+def test_pooled_checkout_no_pool_configured() -> None:
+    """Test checkout when no pool is configured shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -215,15 +213,15 @@ def test_pooled_switch_no_pool_configured() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "switch", "something"], obj=test_ctx, catch_exceptions=False
+            cli, ["pooled", "checkout", "something"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "No pool configured" in result.output
 
 
-def test_pooled_switch_already_in_slot() -> None:
-    """Test switching to current slot shows error."""
+def test_pooled_checkout_already_in_slot() -> None:
+    """Test checkout to current slot shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -261,15 +259,15 @@ def test_pooled_switch_already_in_slot() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo, cwd=worktree_path)
 
         result = runner.invoke(
-            cli, ["pooled", "switch", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["pooled", "checkout", "feature-test"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
         assert "Already in pool slot" in result.output
 
 
-def test_pooled_switch_script_mode() -> None:
-    """Test switch with --script flag outputs activation script path."""
+def test_pooled_checkout_script_mode() -> None:
+    """Test checkout with --script flag outputs activation script path."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -304,7 +302,7 @@ def test_pooled_switch_script_mode() -> None:
 
         result = runner.invoke(
             cli,
-            ["pooled", "switch", "--script", "erk-managed-wt-01"],
+            ["pooled", "checkout", "--script", "feature-test"],
             obj=test_ctx,
             catch_exceptions=False,
         )
