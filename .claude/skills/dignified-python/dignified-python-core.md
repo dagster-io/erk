@@ -808,6 +808,7 @@ value = some_func(None)  # type: ignore -- testing None input
 ### Acceptable Patterns
 
 1. **Testing frozen dataclass immutability**
+
    ```python
    # Test that frozen dataclasses reject mutation at runtime
    with pytest.raises(AttributeError):
@@ -815,6 +816,7 @@ value = some_func(None)  # type: ignore -- testing None input
    ```
 
 2. **Testing defensive handling of invalid input types**
+
    ```python
    # Test that function handles None gracefully even though signature requires str
    result = extract_metadata(None)  # type: ignore[arg-type] -- testing defensive handling of None input
@@ -822,6 +824,7 @@ value = some_func(None)  # type: ignore -- testing None input
    ```
 
 3. **Testing robustness with wrong types**
+
    ```python
    # Test handling of string where datetime expected (e.g., from JSON)
    obj = DataClass(
