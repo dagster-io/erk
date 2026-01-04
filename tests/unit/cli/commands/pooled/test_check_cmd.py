@@ -1,4 +1,4 @@
-"""Unit tests for pooled sync command."""
+"""Unit tests for pooled check command."""
 
 from datetime import UTC, datetime
 from pathlib import Path
@@ -27,7 +27,7 @@ def _create_test_assignment(
     )
 
 
-def test_pooled_sync_no_pool_configured() -> None:
+def test_pooled_check_no_pool_configured() -> None:
     """Test sync when no pool is configured shows error."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -50,13 +50,13 @@ def test_pooled_sync_no_pool_configured() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "No pool configured" in result.output
 
 
-def test_pooled_sync_no_issues() -> None:
+def test_pooled_check_no_issues() -> None:
     """Test sync with consistent pool state shows no issues."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -100,15 +100,15 @@ def test_pooled_sync_no_issues() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Pool Sync Report" in result.output
+        assert "Pool Check Report" in result.output
         assert "1 assignments" in result.output
         assert "No issues found" in result.output
 
 
-def test_pooled_sync_orphan_state() -> None:
+def test_pooled_check_orphan_state() -> None:
     """Test sync detects orphan state (assignment without directory)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -147,7 +147,7 @@ def test_pooled_sync_orphan_state() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -155,7 +155,7 @@ def test_pooled_sync_orphan_state() -> None:
         assert "directory does not exist" in result.output
 
 
-def test_pooled_sync_orphan_dir() -> None:
+def test_pooled_check_orphan_dir() -> None:
     """Test sync detects orphan directory (directory without assignment)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -191,7 +191,7 @@ def test_pooled_sync_orphan_dir() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -199,7 +199,7 @@ def test_pooled_sync_orphan_dir() -> None:
         assert "not in pool state" in result.output
 
 
-def test_pooled_sync_missing_branch() -> None:
+def test_pooled_check_missing_branch() -> None:
     """Test sync detects missing branch (assignment to deleted branch)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -238,7 +238,7 @@ def test_pooled_sync_missing_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -247,7 +247,7 @@ def test_pooled_sync_missing_branch() -> None:
         assert "deleted" in result.output
 
 
-def test_pooled_sync_git_registry_mismatch() -> None:
+def test_pooled_check_git_registry_mismatch() -> None:
     """Test sync detects mismatch between pool state and git worktree registry."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -289,7 +289,7 @@ def test_pooled_sync_git_registry_mismatch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
@@ -298,7 +298,7 @@ def test_pooled_sync_git_registry_mismatch() -> None:
         assert "git says 'different-branch'" in result.output
 
 
-def test_pooled_sync_empty_pool() -> None:
+def test_pooled_check_empty_pool() -> None:
     """Test sync with empty pool shows clean state."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -329,9 +329,9 @@ def test_pooled_sync_empty_pool() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
-        result = runner.invoke(cli, ["pooled", "sync"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["pooled", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Pool Sync Report" in result.output
+        assert "Pool Check Report" in result.output
         assert "0 assignments" in result.output
         assert "No issues found" in result.output

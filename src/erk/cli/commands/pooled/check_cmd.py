@@ -1,4 +1,4 @@
-"""Pooled sync command - check pool state consistency with disk and git."""
+"""Pooled check command - check pool state consistency with disk and git."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -224,9 +224,9 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     return issues
 
 
-@click.command("sync")
+@click.command("check")
 @click.pass_obj
-def pooled_sync(ctx: ErkContext) -> None:
+def pooled_check(ctx: ErkContext) -> None:
     """Check pool state consistency with disk and git.
 
     Reports drift between:
@@ -259,7 +259,7 @@ def pooled_sync(ctx: ErkContext) -> None:
     issues.extend(_check_git_worktree_mismatch(state.assignments, git_slots))
 
     # Print report
-    user_output("Pool Sync Report")
+    user_output("Pool Check Report")
     user_output("================")
     user_output("")
     user_output(f"Pool state: {len(state.assignments)} assignments")
