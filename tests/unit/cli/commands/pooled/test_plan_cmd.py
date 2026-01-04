@@ -160,7 +160,10 @@ def test_pooled_plan_script_mode_outputs_activation_script_path() -> None:
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["pooled", "plan", "feature-test", "--script"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["pooled", "plan", "feature-test", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
