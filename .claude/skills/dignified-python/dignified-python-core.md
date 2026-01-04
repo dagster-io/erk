@@ -718,6 +718,61 @@ Skip the assertion only in these narrow cases:
 
 ---
 
+## Programmatically Significant Strings
+
+**Use `Literal` types for strings that have programmatic meaning.**
+
+When strings represent a fixed set of valid values (error codes, status values, command types), model them in the type system using `Literal`.
+
+### Why This Matters
+
+1. **Type safety** - Typos caught at type-check time, not runtime
+2. **IDE support** - Autocomplete shows valid options
+3. **Documentation** - Valid values are explicit in the code
+4. **Refactoring** - Rename operations work correctly
+
+### Pattern
+
+```python
+from typing import Literal
+
+# ✅ CORRECT: Define a type alias for the valid values
+IssueCode = Literal["ORPHAN_STATE", "ORPHAN_DIR", "MISSING_BRANCH"]
+Issue = tuple[IssueCode, str]
+
+def check_state() -> list[Issue]:
+    issues: list[Issue] = []
+    if problem_detected:
+        issues.append(("ORPHAN_STATE", "description"))  # Type-checked!
+    return issues
+
+# ❌ WRONG: Bare strings without type constraint
+def check_state() -> list[tuple[str, str]]:
+    issues: list[tuple[str, str]] = []
+    issues.append(("ORPHEN_STATE", "desc"))  # Typo goes unnoticed!
+    return issues
+```
+
+### When to Use Literal
+
+- Error/issue codes
+- Status values (pending, complete, failed)
+- Command types or action names
+- Configuration keys with fixed valid values
+- Any string that is compared programmatically
+
+### Decision Checklist
+
+Before using a bare `str` type, ask:
+
+- Is this string compared with `==` or `in` anywhere?
+- Is there a fixed set of valid values?
+- Would a typo in this string cause a bug?
+
+If any answer is "yes", use `Literal` instead.
+
+---
+
 ## Anti-Patterns
 
 ### Preserving Unnecessary Backwards Compatibility

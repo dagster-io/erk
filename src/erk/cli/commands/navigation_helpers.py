@@ -200,8 +200,8 @@ def activate_worktree(
     target_path: Path,
     script: bool,
     command_name: str,
-    preserve_relative_path: bool = True,
-    post_cd_commands: Sequence[str] | None = None,
+    preserve_relative_path: bool,
+    post_cd_commands: Sequence[str] | None,
 ) -> None:
     """Activate a worktree and exit.
 

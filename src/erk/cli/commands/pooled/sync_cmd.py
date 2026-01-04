@@ -1,6 +1,7 @@
 """Pooled sync command - check pool state consistency with disk and git."""
 
 from pathlib import Path
+from typing import Literal
 
 import click
 
@@ -9,6 +10,18 @@ from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.output.output import user_output
+
+# Type alias for sync issue codes - using Literal for type safety
+SyncIssueCode = Literal[
+    "ORPHAN_STATE",
+    "ORPHAN_DIR",
+    "MISSING_BRANCH",
+    "BRANCH_MISMATCH",
+    "GIT_REGISTRY_MISSING",
+    "UNTRACKED_WORKTREE",
+]
+
+SyncIssue = tuple[SyncIssueCode, str]
 
 
 def _find_erk_managed_dirs(worktrees_dir: Path, git: Git) -> set[str]:
@@ -55,7 +68,7 @@ def _get_git_managed_slots(
 def _check_orphan_states(
     assignments: tuple[SlotAssignment, ...],
     ctx: ErkContext,
-) -> list[tuple[str, str]]:
+) -> list[SyncIssue]:
     """Check for assignments where the worktree directory doesn't exist.
 
     Args:
@@ -65,7 +78,7 @@ def _check_orphan_states(
     Returns:
         List of (issue_type, message) tuples
     """
-    issues: list[tuple[str, str]] = []
+    issues: list[SyncIssue] = []
     for assignment in assignments:
         if not ctx.git.path_exists(assignment.worktree_path):
             issues.append(
@@ -80,7 +93,7 @@ def _check_orphan_states(
 def _check_orphan_dirs(
     assignments: tuple[SlotAssignment, ...],
     fs_slots: set[str],
-) -> list[tuple[str, str]]:
+) -> list[SyncIssue]:
     """Check for directories that exist on filesystem but not in pool state.
 
     Args:
@@ -93,7 +106,7 @@ def _check_orphan_dirs(
     # Get slots that have assignments
     assigned_slots = {a.slot_name for a in assignments}
 
-    issues: list[tuple[str, str]] = []
+    issues: list[SyncIssue] = []
     for slot_name in fs_slots:
         if slot_name not in assigned_slots:
             issues.append(
@@ -109,7 +122,7 @@ def _check_missing_branches(
     assignments: tuple[SlotAssignment, ...],
     ctx: ErkContext,
     repo_root: Path,
-) -> list[tuple[str, str]]:
+) -> list[SyncIssue]:
     """Check for assignments where the branch no longer exists in git.
 
     Args:
@@ -120,7 +133,7 @@ def _check_missing_branches(
     Returns:
         List of (issue_type, message) tuples
     """
-    issues: list[tuple[str, str]] = []
+    issues: list[SyncIssue] = []
     for assignment in assignments:
         # Check if branch exists by getting its head commit
         if ctx.git.get_branch_head(repo_root, assignment.branch_name) is None:
@@ -136,7 +149,7 @@ def _check_missing_branches(
 def _check_git_worktree_mismatch(
     assignments: tuple[SlotAssignment, ...],
     git_slots: dict[str, WorktreeInfo],
-) -> list[tuple[str, str]]:
+) -> list[SyncIssue]:
     """Check for mismatches between pool state and git worktree registry.
 
     Args:
@@ -146,7 +159,7 @@ def _check_git_worktree_mismatch(
     Returns:
         List of (issue_type, message) tuples
     """
-    issues: list[tuple[str, str]] = []
+    issues: list[SyncIssue] = []
 
     # Check assignments against git registry
     for assignment in assignments:
@@ -180,9 +193,7 @@ def _check_git_worktree_mismatch(
     return issues
 
 
-def run_sync_diagnostics(
-    ctx: ErkContext, state: PoolState, repo_root: Path
-) -> list[tuple[str, str]]:
+def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> list[SyncIssue]:
     """Run all sync diagnostics and return issues found.
 
     Args:
@@ -193,8 +204,6 @@ def run_sync_diagnostics(
     Returns:
         List of (issue_type, message) tuples
     """
-    from erk.cli.core import discover_repo_context
-
     repo = discover_repo_context(ctx, repo_root)
 
     # Get git worktrees
@@ -205,7 +214,7 @@ def run_sync_diagnostics(
     fs_slots = _find_erk_managed_dirs(repo.worktrees_dir, ctx.git)
 
     # Run all checks
-    issues: list[tuple[str, str]] = []
+    issues: list[SyncIssue] = []
     issues.extend(_check_orphan_states(state.assignments, ctx))
     issues.extend(_check_orphan_dirs(state.assignments, fs_slots))
     issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))
@@ -242,7 +251,7 @@ def pooled_sync(ctx: ErkContext) -> None:
     fs_slots = _find_erk_managed_dirs(repo.worktrees_dir, ctx.git)
 
     # Run all checks
-    issues: list[tuple[str, str]] = []
+    issues: list[SyncIssue] = []
     issues.extend(_check_orphan_states(state.assignments, ctx))
     issues.extend(_check_orphan_dirs(state.assignments, fs_slots))
     issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))

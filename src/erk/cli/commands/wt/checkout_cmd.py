@@ -99,4 +99,6 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
         user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
 
     # Activate the worktree
-    activate_worktree(ctx, repo, target_path, script, "co", preserve_relative_path=True)
+    activate_worktree(
+        ctx, repo, target_path, script, "co", preserve_relative_path=True, post_cd_commands=None
+    )

@@ -79,5 +79,6 @@ def pooled_checkout(ctx: ErkContext, branch: str | None, script: bool) -> None:
         assignment.worktree_path,
         script,
         "pooled checkout",
+        preserve_relative_path=True,
         post_cd_commands=post_cd_commands,
     )

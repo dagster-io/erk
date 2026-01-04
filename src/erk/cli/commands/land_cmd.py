@@ -305,7 +305,15 @@ def _navigate_after_land(
             click.style("💡", fg="cyan")
             + f" Run 'gt restack' in {target_child_branch} to update PR base branch"
         )
-        activate_worktree(ctx, post_deletion_repo, target_path, script, command_name="land")
+        activate_worktree(
+            ctx,
+            post_deletion_repo,
+            target_path,
+            script,
+            command_name="land",
+            preserve_relative_path=True,
+            post_cd_commands=None,
+        )
         # activate_worktree raises SystemExit(0)
     else:
         # Construct git pull commands if pull_flag is set
