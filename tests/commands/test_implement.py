@@ -2246,3 +2246,150 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
         updated_state = load_pool_state(env.repo.pool_json_path)
         assert updated_state is not None
         assert len(updated_state.assignments) == 2  # Original + new
+
+
+# Objective Propagation Tests
+
+
+def _create_plan_with_objective(
+    issue_number: str, objective_issue: int | None
+) -> Plan:
+    """Create a plan issue with optional objective_issue in its metadata."""
+    from erk_shared.github.metadata import format_plan_header_body
+
+    # Create plan body with plan-header metadata block
+    body = format_plan_header_body(
+        created_at="2024-01-01T00:00:00+00:00",
+        created_by="test-user",
+        objective_issue=objective_issue,
+    )
+
+    return Plan(
+        plan_identifier=issue_number,
+        title="Feature with Objective",
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{issue_number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+    )
+
+
+def test_implement_propagates_objective_from_plan_to_slot() -> None:
+    """Test that objective_issue from plan metadata is propagated to the slot.
+
+    When a plan issue has objective_issue in its plan-header metadata,
+    that objective should be saved to the slot's last_objective_issue field
+    so it appears in `erk slot list` during development.
+    """
+    from erk.core.worktree_pool import load_pool_state
+
+    plan_with_objective = _create_plan_with_objective("300", objective_issue=3869)
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"300": plan_with_objective})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#300", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        assert "Linked to objective #3869" in result.output
+
+        # Verify the slot has the objective saved
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+
+        # Find the slot that was assigned
+        slot_name = "erk-managed-wt-01"
+        slot_info = next((s for s in state.slots if s.name == slot_name), None)
+        assert slot_info is not None, f"SlotInfo for {slot_name} not found"
+        assert slot_info.last_objective_issue == 3869
+
+
+def test_implement_without_objective_leaves_slot_unchanged() -> None:
+    """Test that plans without objective_issue don't affect slot objective.
+
+    When a plan issue has no objective_issue in its metadata, the slot's
+    last_objective_issue should remain unchanged (None for new slots).
+    """
+    from erk.core.worktree_pool import load_pool_state
+
+    plan_without_objective = _create_plan_with_objective("301", objective_issue=None)
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"301": plan_without_objective})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#301", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        # Should NOT show "Linked to objective" message
+        assert "Linked to objective" not in result.output
+
+        # Verify the slot has no objective (None)
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+
+        # The slot should exist but have None for objective
+        slot_name = "erk-managed-wt-01"
+        slot_info = next((s for s in state.slots if s.name == slot_name), None)
+        assert slot_info is not None, f"SlotInfo for {slot_name} not found"
+        assert slot_info.last_objective_issue is None
+
+
+def test_implement_from_file_works_without_objective() -> None:
+    """Test that implementing from a local file works without objectives.
+
+    When implementing from a local plan file (not a GitHub issue), there's
+    no objective_issue metadata to extract. This should work without error
+    and not attempt to propagate any objective.
+    """
+    from erk.core.worktree_pool import load_pool_state
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file (no metadata, just markdown content)
+        plan_content = "# Implementation Plan\n\nImplement feature X."
+        plan_file = env.cwd / "feature-plan.md"
+        plan_file.write_text(plan_content, encoding="utf-8")
+
+        result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        # Should NOT show "Linked to objective" message
+        assert "Linked to objective" not in result.output
+
+        # Verify the slot exists but has no objective
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+
+        slot_name = "erk-managed-wt-01"
+        slot_info = next((s for s in state.slots if s.name == slot_name), None)
+        # File mode may or may not create SlotInfo; if it does, objective should be None
+        if slot_info is not None:
+            assert slot_info.last_objective_issue is None

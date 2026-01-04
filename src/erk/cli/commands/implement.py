@@ -49,9 +49,12 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_pool import (
     PoolState,
     SlotAssignment,
+    SlotInfo,
     load_pool_state,
     save_pool_state,
+    update_slot_objective,
 )
+from erk_shared.github.metadata import extract_plan_header_objective_issue
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -291,6 +294,16 @@ def _create_worktree_with_plan_content(
         assignments=(*state.assignments, new_assignment),
     )
 
+    # Ensure SlotInfo exists for this slot (required for objective tracking)
+    slot_info = next((s for s in new_state.slots if s.name == slot_name), None)
+    if slot_info is None:
+        new_state = PoolState(
+            version=new_state.version,
+            pool_size=new_state.pool_size,
+            slots=(*new_state.slots, SlotInfo(name=slot_name, last_objective_issue=None)),
+            assignments=new_state.assignments,
+        )
+
     # Save state
     save_pool_state(repo.pool_json_path, new_state)
 
@@ -407,6 +420,16 @@ def _implement_from_issue(
     save_issue_reference(result.impl_dir, int(issue_number), plan.url, plan.title)
 
     ctx.feedback.success(f"✓ Saved issue reference: {plan.url}")
+
+    # Propagate objective_issue from plan metadata to slot (if present)
+    objective_issue = extract_plan_header_objective_issue(plan.body)
+    if objective_issue is not None:
+        slot_name = wt_path.name
+        state = load_pool_state(repo.pool_json_path)
+        if state is not None:
+            state = update_slot_objective(state, slot_name, objective_issue)
+            save_pool_state(repo.pool_json_path, state)
+            ctx.feedback.info(f"Linked to objective #{objective_issue}")
 
     # Execute based on mode
     if script:
