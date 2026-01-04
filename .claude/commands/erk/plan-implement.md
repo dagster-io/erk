@@ -22,11 +22,23 @@ This is the primary implementation workflow - it orchestrates:
 
 ## Agent Instructions
 
-### Step 1: Extract Session ID
+### Step 1: Check if .impl/ Already Set Up
+
+First, check if implementation is already set up (e.g., from `erk implement <issue>`):
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true` and `"has_issue_tracking": true`, the `.impl/` folder is already configured. **Skip directly to Step 4** (Read Plan and Load Context).
+
+If it fails or returns `"valid": false`, continue to Step 2 to save the plan.
+
+### Step 2: Extract Session ID
 
 Get the session ID from the `SESSION_CONTEXT` reminder in your conversation context.
 
-### Step 2: Save Plan to GitHub
+### Step 3: Save Plan to GitHub
 
 Save the current plan to GitHub and capture the issue number:
 
@@ -41,7 +53,7 @@ Parse the JSON output to get:
 
 If this fails, display the error and stop.
 
-### Step 3: Create Branch and Setup .impl/
+### Step 3b: Create Branch and Setup .impl/
 
 Now set up the implementation environment using the saved issue:
 
@@ -58,9 +70,9 @@ This command:
 
 If this fails, display the error and stop.
 
-### Step 4: Initialize Implementation
+### Step 3c: Re-run Implementation Initialization
 
-Run the implementation initialization:
+Run impl-init again now that .impl/ is set up:
 
 ```bash
 erk exec impl-init --json
@@ -68,7 +80,7 @@ erk exec impl-init --json
 
 Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
 
-### Step 5: Read Plan and Load Context
+### Step 4: Read Plan and Load Context
 
 Read `.impl/plan.md` to understand:
 
@@ -79,21 +91,21 @@ Read `.impl/plan.md` to understand:
 
 **Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
 
-### Step 6: Load Related Documentation
+### Step 5: Load Related Documentation
 
 If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
 
-### Step 7: Create TodoWrite Entries
+### Step 6: Create TodoWrite Entries
 
 Create todo entries for each phase from impl-init output.
 
-### Step 8: Signal GitHub Started
+### Step 7: Signal GitHub Started
 
 ```bash
 erk exec impl-signal started 2>/dev/null || true
 ```
 
-### Step 9: Execute Each Phase Sequentially
+### Step 8: Execute Each Phase Sequentially
 
 For each phase:
 
@@ -115,21 +127,21 @@ For each phase:
 - `.impl/plan.md` is immutable - NEVER edit during implementation
 - `.impl/progress.md` is mutable - use `mark-step` command to update
 
-### Step 10: Report Progress
+### Step 9: Report Progress
 
 After each phase: report changes made and what's next.
 
-### Step 11: Final Verification
+### Step 10: Final Verification
 
 Confirm all tasks executed, success criteria met, note deviations, summarize changes.
 
-### Step 12: Signal GitHub Ended
+### Step 11: Signal GitHub Ended
 
 ```bash
 erk exec impl-signal ended 2>/dev/null || true
 ```
 
-### Step 13: Verify .impl/ Preserved
+### Step 12: Verify .impl/ Preserved
 
 **CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
 
@@ -139,7 +151,7 @@ erk exec impl-verify
 
 If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
 
-### Step 14: Run CI Iteratively
+### Step 13: Run CI Iteratively
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
@@ -149,7 +161,7 @@ After CI passes:
 - `.worker-impl/`: delete folder, commit cleanup, push
 - `.impl/`: **NEVER DELETE** - leave for user review (no auto-commit)
 
-### Step 15: Create/Update PR (if .worker-impl/ present)
+### Step 14: Create/Update PR (if .worker-impl/ present)
 
 **Only if .worker-impl/ was present:**
 
@@ -165,7 +177,7 @@ erk pr check
 
 If checks fail, display output and warn user.
 
-### Step 16: Output Format
+### Step 15: Output Format
 
 - **Start**: "Saving plan and setting up implementation..."
 - **After save**: "Plan saved as issue #X, setting up .impl/ folder..."
