@@ -1,4 +1,9 @@
-"""Abstract interface for plan storage providers."""
+"""Abstract interface for plan storage providers.
+
+DEPRECATED: Use PlanBackend instead. PlanStore is a read-only subset of PlanBackend
+and is retained only for backward compatibility with existing type annotations.
+New code should use PlanBackend for full read/write access.
+"""
 
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -7,20 +12,22 @@ from erk_shared.plan_store.types import Plan, PlanQuery
 
 
 class PlanStore(ABC):
-    """Abstract interface for plan operations.
+    """Abstract interface for plan read operations.
 
-    All implementations (real and fake) must implement this interface.
-    This interface provides READ-only operations for plans.
-    Write operations (create, comment, label) will be added in future versions.
+    DEPRECATED: Use PlanBackend for new code. PlanBackend provides the full
+    read/write interface including create_plan(), update_metadata(), and add_comment().
+
+    This interface is retained for backward compatibility with code that only needs
+    read operations (get_plan, list_plans, get_provider_name, close_plan).
     """
 
     @abstractmethod
-    def get_plan(self, repo_root: Path, plan_identifier: str) -> Plan:
+    def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
         """Fetch a plan by identifier.
 
         Args:
             repo_root: Repository root directory
-            plan_identifier: Provider-specific identifier (e.g., "42", "PROJ-123")
+            plan_id: Provider-specific identifier (e.g., "42", "PROJ-123")
 
         Returns:
             Plan with all metadata
@@ -56,12 +63,12 @@ class PlanStore(ABC):
         ...
 
     @abstractmethod
-    def close_plan(self, repo_root: Path, identifier: str) -> None:
+    def close_plan(self, repo_root: Path, plan_id: str) -> None:
         """Close a plan by its identifier (issue number or GitHub URL).
 
         Args:
             repo_root: Repository root directory
-            identifier: Plan identifier (issue number like "123" or GitHub URL)
+            plan_id: Plan identifier (issue number like "123" or GitHub URL)
 
         Raises:
             RuntimeError: If provider fails, plan not found, or invalid identifier

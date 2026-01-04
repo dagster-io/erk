@@ -34,6 +34,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
+from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.prompt_executor import PromptExecutor
 
@@ -127,6 +128,22 @@ class ErkContext:
         backward compatibility with code written for the old DotAgentContext.
         """
         return self.issues
+
+    @property
+    def plan_backend(self) -> PlanBackend:
+        """Access plan_store as PlanBackend (read/write interface).
+
+        GitHubPlanStore now extends PlanBackend, so this property provides
+        typed access to write operations (create_plan, update_metadata, add_comment)
+        while plan_store remains for backward compatibility.
+        """
+        # GitHubPlanStore extends PlanBackend, so this cast is safe
+        # At runtime, plan_store is always a GitHubPlanStore instance
+        if not isinstance(self.plan_store, PlanBackend):
+            raise RuntimeError(
+                f"plan_store must be a PlanBackend, got {type(self.plan_store).__name__}"
+            )
+        return self.plan_store
 
     @staticmethod
     def for_test(

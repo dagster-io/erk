@@ -21,6 +21,7 @@ from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
+from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.prompt_executor import PromptExecutor
 
 
@@ -359,3 +360,31 @@ def get_repo_identifier(ctx: click.Context) -> str | None:
         return None
 
     return f"{repo.github.owner}/{repo.github.repo}"
+
+
+def require_plan_backend(ctx: click.Context) -> PlanBackend:
+    """Get PlanBackend from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        PlanBackend instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     backend = require_plan_backend(ctx)
+        ...     result = backend.create_plan(repo_root, title, content, labels, metadata)
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.plan_backend

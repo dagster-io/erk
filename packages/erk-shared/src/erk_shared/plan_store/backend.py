@@ -17,32 +17,36 @@ See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
 for the full gateway vs backend architecture.
 """
 
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
 
+from erk_shared.plan_store.store import PlanStore
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery
 
 
-class PlanBackend(ABC):
+class PlanBackend(PlanStore):
     """Abstract interface for plan storage operations.
+
+    Extends PlanStore to add write operations while maintaining backward
+    compatibility with code that only needs read operations.
 
     Implementations provide backend-specific storage for plans.
     Both read and write operations are supported.
 
-    Read operations:
+    Read operations (inherited from PlanStore):
         get_plan: Fetch a plan by identifier
         list_plans: Query plans by criteria
         get_provider_name: Get the provider name
+        close_plan: Close a plan
 
-    Write operations:
+    Write operations (added by PlanBackend):
         create_plan: Create a new plan
         update_metadata: Update plan metadata
-        close_plan: Close a plan
         add_comment: Add a comment to a plan
     """
 
-    # Read operations
+    # Read operations (inherited from PlanStore, re-declared with updated param names)
 
     @abstractmethod
     def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
@@ -132,18 +136,7 @@ class PlanBackend(ABC):
         """
         ...
 
-    @abstractmethod
-    def close_plan(self, repo_root: Path, plan_id: str) -> None:
-        """Close a plan.
-
-        Args:
-            repo_root: Repository root directory
-            plan_id: Provider-specific identifier
-
-        Raises:
-            RuntimeError: If provider fails or plan not found
-        """
-        ...
+    # close_plan is inherited from PlanStore
 
     @abstractmethod
     def add_comment(

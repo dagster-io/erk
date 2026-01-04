@@ -692,3 +692,215 @@ This is the actual plan content.
 
     # Verify retry logic was used (should have attempted 3 times with delays of 0.5s and 1s)
     assert fake_time.sleep_calls == [0.5, 1.0]
+
+
+# ============================================================================
+# Write method tests (PlanBackend interface)
+# ============================================================================
+
+
+def test_create_plan_standard() -> None:
+    """Test creating a standard plan.
+
+    This test verifies that create_plan() delegates to create_plan_issue()
+    and correctly converts the result to CreatePlanResult.
+    """
+    fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
+    store = GitHubPlanStore(fake_github)
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="Test Plan Title",
+        content="# Test Plan\n\nPlan content here",
+        labels=("erk-plan",),
+        metadata={},
+    )
+
+    # Verify result
+    assert result.plan_id == "1"  # First issue
+    assert "github.com" in result.url
+    # Verify issue was created
+    assert len(fake_github.created_issues) == 1
+    title, _body, labels = fake_github.created_issues[0]
+    assert "Test Plan Title" in title
+    assert "erk-plan" in labels
+
+
+def test_create_plan_with_extraction_type() -> None:
+    """Test creating an extraction plan with extra labels."""
+    fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan", "erk-extraction"})
+    store = GitHubPlanStore(fake_github)
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="Extraction Plan",
+        content="# Extraction Plan\n\nContent",
+        labels=("erk-plan", "erk-extraction"),
+        metadata={
+            "plan_type": "extraction",
+            "extraction_session_ids": ["session-abc", "session-def"],
+        },
+    )
+
+    # Verify result
+    assert result.plan_id == "1"
+    # Verify labels include extraction
+    _title, _body, labels = fake_github.created_issues[0]
+    assert "erk-plan" in labels
+    assert "erk-extraction" in labels
+
+
+def test_create_plan_with_objective_link() -> None:
+    """Test creating a plan linked to an objective."""
+    fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan"})
+    store = GitHubPlanStore(fake_github)
+
+    result = store.create_plan(
+        repo_root=Path("/fake/repo"),
+        title="Objective Step Plan",
+        content="# Step Implementation\n\nContent",
+        labels=("erk-plan",),
+        metadata={
+            "objective_issue": 100,
+        },
+    )
+
+    # Verify result
+    assert result.plan_id == "1"
+    assert result.url != ""
+
+
+def test_create_plan_unauthenticated_error() -> None:
+    """Test that create_plan raises RuntimeError when not authenticated."""
+    # username=None simulates unauthenticated gh CLI
+    fake_github = FakeGitHubIssues(username=None)
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(RuntimeError, match="username"):
+        store.create_plan(
+            repo_root=Path("/fake/repo"),
+            title="Test Plan",
+            content="Content",
+            labels=("erk-plan",),
+            metadata={},
+        )
+
+
+def test_add_comment() -> None:
+    """Test adding a comment to a plan."""
+    issue = create_test_issue(number=42, title="Test Issue", body="Test body")
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    comment_id = store.add_comment(
+        repo_root=Path("/fake/repo"),
+        plan_id="42",
+        body="Progress update: Phase 1 complete",
+    )
+
+    # Verify comment was added
+    assert comment_id == "1000"  # FakeGitHubIssues starts comment IDs at 1000
+    assert len(fake_github.added_comments) == 1
+    issue_num, comment_body, _comment_id = fake_github.added_comments[0]
+    assert issue_num == 42
+    assert comment_body == "Progress update: Phase 1 complete"
+
+
+def test_add_comment_issue_not_found() -> None:
+    """Test add_comment raises error when issue doesn't exist."""
+    fake_github = FakeGitHubIssues(issues={})
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(RuntimeError, match="Issue #999 not found"):
+        store.add_comment(
+            repo_root=Path("/fake/repo"),
+            plan_id="999",
+            body="Comment",
+        )
+
+
+def test_update_metadata_worktree_name() -> None:
+    """Test updating worktree_name metadata field."""
+    from erk_shared.github.metadata import format_plan_header_body
+
+    # Create issue with valid plan-header block
+    metadata_body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="testuser",
+    )
+    issue = create_test_issue(number=42, title="Plan Issue", body=metadata_body)
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    store.update_metadata(
+        repo_root=Path("/fake/repo"),
+        plan_id="42",
+        metadata={"worktree_name": "feature-branch-wt"},
+    )
+
+    # Verify update was called
+    assert len(fake_github.updated_bodies) == 1
+    _issue_num, updated_body = fake_github.updated_bodies[0]
+    assert "worktree_name" in updated_body
+    assert "feature-branch-wt" in updated_body
+
+
+def test_update_metadata_whitelist_filter() -> None:
+    """Test that only allowed fields are updated."""
+    from erk_shared.github.metadata import format_plan_header_body
+
+    # Create issue with valid plan-header block
+    metadata_body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="testuser",
+    )
+    issue = create_test_issue(number=42, title="Plan Issue", body=metadata_body)
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    # Try to update both allowed and disallowed fields
+    store.update_metadata(
+        repo_root=Path("/fake/repo"),
+        plan_id="42",
+        metadata={
+            "worktree_name": "allowed-wt",  # Allowed
+            "created_by": "hacker",  # Not in whitelist - should be ignored
+            "schema_version": "999",  # Not in whitelist - should be ignored
+        },
+    )
+
+    # Verify update was called and worktree_name was set
+    assert len(fake_github.updated_bodies) == 1
+    _issue_num, updated_body = fake_github.updated_bodies[0]
+    assert "worktree_name" in updated_body
+    assert "allowed-wt" in updated_body
+    # created_by should remain as original (testuser), not "hacker"
+    assert "testuser" in updated_body
+
+
+def test_update_metadata_no_plan_header_block() -> None:
+    """Test that update_metadata raises error when no plan-header block exists."""
+    # Issue without plan-header block
+    issue = create_test_issue(number=42, title="Old Format Issue", body="Just plain text body")
+    fake_github = FakeGitHubIssues(issues={42: issue})
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(RuntimeError, match="plan-header block not found"):
+        store.update_metadata(
+            repo_root=Path("/fake/repo"),
+            plan_id="42",
+            metadata={"worktree_name": "test"},
+        )
+
+
+def test_update_metadata_issue_not_found() -> None:
+    """Test that update_metadata raises error when issue doesn't exist."""
+    fake_github = FakeGitHubIssues(issues={})
+    store = GitHubPlanStore(fake_github)
+
+    with pytest.raises(RuntimeError, match="Issue #999 not found"):
+        store.update_metadata(
+            repo_root=Path("/fake/repo"),
+            plan_id="999",
+            metadata={"worktree_name": "test"},
+        )

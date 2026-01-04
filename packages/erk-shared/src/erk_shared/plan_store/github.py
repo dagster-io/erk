@@ -7,6 +7,7 @@ Schema Version 2:
 """
 
 import sys
+from collections.abc import Mapping
 from datetime import UTC
 from pathlib import Path
 from urllib.parse import urlparse
@@ -15,12 +16,13 @@ from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata import extract_plan_from_comment, extract_plan_header_comment_id
+from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
-from erk_shared.plan_store.store import PlanStore
-from erk_shared.plan_store.types import Plan, PlanQuery, PlanState
+from erk_shared.plan_store.backend import PlanBackend
+from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
 
 
-class GitHubPlanStore(PlanStore):
+class GitHubPlanStore(PlanBackend):
     """GitHub implementation using gh CLI.
 
     Wraps GitHub issue operations and converts to provider-agnostic Plan format.
@@ -41,7 +43,7 @@ class GitHubPlanStore(PlanStore):
         self._github_issues = github_issues
         self._time = time if time is not None else RealTime()
 
-    def get_plan(self, repo_root: Path, plan_identifier: str) -> Plan:
+    def get_plan(self, repo_root: Path, plan_id: str) -> Plan:
         """Fetch plan from GitHub by identifier.
 
         Schema Version 2:
@@ -58,7 +60,7 @@ class GitHubPlanStore(PlanStore):
 
         Args:
             repo_root: Repository root directory
-            plan_identifier: Issue number as string (e.g., "42")
+            plan_id: Issue number as string (e.g., "42")
 
         Returns:
             Plan with converted data (plan content in body field)
@@ -66,7 +68,7 @@ class GitHubPlanStore(PlanStore):
         Raises:
             RuntimeError: If gh CLI fails or plan not found
         """
-        issue_number = int(plan_identifier)
+        issue_number = int(plan_id)
         issue_info = self._github_issues.get_issue(repo_root, issue_number)
         plan_body = self._get_plan_body(repo_root, issue_info)
         return self._convert_to_plan(issue_info, plan_body)
@@ -191,18 +193,18 @@ class GitHubPlanStore(PlanStore):
         """
         return "github"
 
-    def close_plan(self, repo_root: Path, identifier: str) -> None:
+    def close_plan(self, repo_root: Path, plan_id: str) -> None:
         """Close a plan by its identifier.
 
         Args:
             repo_root: Repository root directory
-            identifier: Plan identifier (issue number like "123" or GitHub URL)
+            plan_id: Plan identifier (issue number like "123" or GitHub URL)
 
         Raises:
             RuntimeError: If gh CLI fails, plan not found, or invalid identifier
         """
         # Parse identifier to extract issue number
-        number = self._parse_identifier(identifier)
+        number = self._parse_identifier(plan_id)
 
         # Add comment before closing
         comment_body = "Plan completed via erk plan close"
@@ -210,6 +212,212 @@ class GitHubPlanStore(PlanStore):
 
         # Close the issue
         self._github_issues.close_issue(repo_root, number)
+
+    def create_plan(
+        self,
+        repo_root: Path,
+        title: str,
+        content: str,
+        labels: tuple[str, ...],
+        metadata: Mapping[str, object],
+    ) -> CreatePlanResult:
+        """Create a new plan issue.
+
+        Delegates to create_plan_issue() which handles:
+        - GitHub authentication validation
+        - Label creation
+        - Issue creation with metadata body
+        - Plan content comment creation
+
+        Args:
+            repo_root: Repository root directory
+            title: Plan title
+            content: Plan body/description
+            labels: Labels to apply (immutable tuple)
+            metadata: Provider-specific metadata. Supported keys:
+                - plan_type: str | None (e.g., "extraction")
+                - title_suffix: str | None
+                - source_plan_issues: list[int] | None
+                - extraction_session_ids: list[str] | None
+                - source_repo: str | None
+                - objective_issue: int | None
+
+        Returns:
+            CreatePlanResult with plan_id and url
+
+        Raises:
+            RuntimeError: If plan creation fails completely (no partial success)
+        """
+        # Extract and convert metadata fields with explicit type handling
+        plan_type_raw = metadata.get("plan_type")
+        plan_type_str: str | None = str(plan_type_raw) if plan_type_raw is not None else None
+
+        title_suffix_raw = metadata.get("title_suffix")
+        title_suffix_str: str | None = None
+        if title_suffix_raw is not None:
+            title_suffix_str = str(title_suffix_raw)
+
+        source_repo_raw = metadata.get("source_repo")
+        source_repo_str: str | None = str(source_repo_raw) if source_repo_raw is not None else None
+
+        # Handle list fields - must be iterables
+        source_plan_issues_raw = metadata.get("source_plan_issues")
+        source_plan_issues_list: list[int] | None = None
+        if source_plan_issues_raw is not None and hasattr(source_plan_issues_raw, "__iter__"):
+            source_plan_issues_list = [int(x) for x in source_plan_issues_raw]  # type: ignore[union-attr]
+
+        extraction_session_ids_raw = metadata.get("extraction_session_ids")
+        extraction_session_ids_list: list[str] | None = None
+        if extraction_session_ids_raw is not None:
+            if hasattr(extraction_session_ids_raw, "__iter__"):
+                ids_raw: list[object] = list(extraction_session_ids_raw)  # type: ignore[arg-type]
+                extraction_session_ids_list = [str(x) for x in ids_raw]
+
+        # Handle int field
+        objective_issue_raw = metadata.get("objective_issue")
+        objective_issue_int: int | None = None
+        if objective_issue_raw is not None:
+            objective_issue_int = int(objective_issue_raw)  # type: ignore[arg-type]
+
+        # Convert tuple labels to list, excluding standard 'erk-plan' label
+        # since create_plan_issue adds it automatically
+        extra_labels = [lbl for lbl in labels if lbl != "erk-plan"]
+
+        result = create_plan_issue(
+            github_issues=self._github_issues,
+            repo_root=repo_root,
+            plan_content=content,
+            title=title,
+            plan_type=plan_type_str,
+            extra_labels=extra_labels if extra_labels else None,
+            title_suffix=title_suffix_str,
+            source_plan_issues=source_plan_issues_list,
+            extraction_session_ids=extraction_session_ids_list,
+            source_repo=source_repo_str,
+            objective_issue=objective_issue_int,
+        )
+
+        if not result.success:
+            # For full failures (no issue created), raise RuntimeError
+            if result.issue_number is None:
+                error_msg = result.error or "Unknown error creating plan"
+                raise RuntimeError(error_msg)
+
+            # For partial success (issue created but comment failed),
+            # still return success since the plan was created
+            # The caller can check the error field if needed
+
+        # At this point result is either full success or partial success with issue_number set
+        issue_number = result.issue_number
+        if issue_number is None:
+            raise RuntimeError("Unexpected: issue_number is None after successful creation")
+
+        return CreatePlanResult(
+            plan_id=str(issue_number),
+            url=result.issue_url or "",
+        )
+
+    def update_metadata(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        metadata: Mapping[str, object],
+    ) -> None:
+        """Update plan metadata in the issue body.
+
+        Fetches the current issue body, updates the plan-header metadata block
+        with allowed fields, and updates the issue body.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier (issue number)
+            metadata: New metadata to set. Allowed fields:
+                - worktree_name
+                - last_dispatched_run_id
+                - last_dispatched_node_id
+                - last_dispatched_at
+                - last_local_impl_at
+                - last_local_impl_event
+                - last_local_impl_session
+                - last_local_impl_user
+                - last_remote_impl_at
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        # Import here to avoid circular imports
+        from erk_shared.github.metadata import (
+            MetadataBlock,
+            PlanHeaderSchema,
+            find_metadata_block,
+            render_metadata_block,
+            replace_metadata_block_in_body,
+        )
+
+        issue_number = int(plan_id)
+        issue_info = self._github_issues.get_issue(repo_root, issue_number)
+
+        # Parse current metadata from issue body
+        block = find_metadata_block(issue_info.body, "plan-header")
+        if block is None:
+            raise RuntimeError("plan-header block not found in issue body")
+
+        current_data = dict(block.data)
+
+        # Whitelist of allowed metadata fields
+        allowed_fields = {
+            "worktree_name",
+            "last_dispatched_run_id",
+            "last_dispatched_node_id",
+            "last_dispatched_at",
+            "last_local_impl_at",
+            "last_local_impl_event",
+            "last_local_impl_session",
+            "last_local_impl_user",
+            "last_remote_impl_at",
+        }
+
+        # Merge allowed fields from new metadata
+        for key, value in metadata.items():
+            if key in allowed_fields:
+                current_data[key] = value
+
+        # Validate updated data
+        schema = PlanHeaderSchema()
+        schema.validate(current_data)
+
+        # Create new block and render
+        new_block = MetadataBlock(key="plan-header", data=current_data)
+        new_block_content = render_metadata_block(new_block)
+
+        # Replace block in full body and update issue
+        updated_body = replace_metadata_block_in_body(
+            issue_info.body, "plan-header", new_block_content
+        )
+        self._github_issues.update_issue_body(repo_root, issue_number, updated_body)
+
+    def add_comment(
+        self,
+        repo_root: Path,
+        plan_id: str,
+        body: str,
+    ) -> str:
+        """Add a comment to a plan.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier (issue number)
+            body: Comment body text
+
+        Returns:
+            Comment ID as string
+
+        Raises:
+            RuntimeError: If provider fails or plan not found
+        """
+        issue_number = int(plan_id)
+        comment_id = self._github_issues.add_comment(repo_root, issue_number, body)
+        return str(comment_id)
 
     def _parse_identifier(self, identifier: str) -> int:
         """Parse identifier to extract issue number.
