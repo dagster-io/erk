@@ -236,8 +236,7 @@ def test_pooled_implement_force_unassigns_oldest_in_script_mode() -> None:
         )
 
         # Pre-create a full pool with 1 slot
-        full_state = PoolState(
-            version="1.0",
+        full_state = PoolState.test(
             pool_size=1,
             assignments=(
                 SlotAssignment(
@@ -314,8 +313,7 @@ def test_pooled_implement_pool_full_non_tty_fails() -> None:
         )
 
         # Pre-create a full pool with 1 slot
-        full_state = PoolState(
-            version="1.0",
+        full_state = PoolState.test(
             pool_size=1,
             assignments=(
                 SlotAssignment(

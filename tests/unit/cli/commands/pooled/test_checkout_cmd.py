@@ -51,11 +51,7 @@ def test_pooled_checkout_by_branch_name() -> None:
         worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
         worktree_path.mkdir(parents=True)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -93,11 +89,7 @@ def test_pooled_checkout_slot_name_not_supported() -> None:
         worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
         worktree_path.mkdir(parents=True)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -133,11 +125,7 @@ def test_pooled_checkout_no_argument_shows_error() -> None:
         )
 
         # Create pool state
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(),
-        )
+        initial_state = PoolState.test()
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -170,11 +158,7 @@ def test_pooled_checkout_not_found() -> None:
         )
 
         # Create empty pool state
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(),
-        )
+        initial_state = PoolState.test()
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -248,11 +232,7 @@ def test_pooled_checkout_already_in_slot() -> None:
 
         # Create pool state with assignment to current directory
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         # Build context with cwd inside the pool slot
@@ -291,11 +271,7 @@ def test_pooled_checkout_script_mode() -> None:
         worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
         worktree_path.mkdir(parents=True)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -339,11 +315,7 @@ def test_pooled_checkout_with_entry_scripts() -> None:
         worktree_path = repo.worktrees_dir / "erk-managed-wt-01"
         worktree_path.mkdir(parents=True)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         # Create config with entry script commands

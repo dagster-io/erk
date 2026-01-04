@@ -1,7 +1,7 @@
 """Shared utilities for pooled branch commands."""
 
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment
+from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
 from erk_shared.output.output import user_confirm, user_output
 
 # Default pool configuration
@@ -85,6 +85,39 @@ def find_next_available_slot(state: PoolState) -> int | None:
             return slot_num
 
     return None
+
+
+def find_inactive_slot(state: PoolState) -> SlotInfo | None:
+    """Find an initialized slot without an active assignment.
+
+    Prefers returning slots in order (lowest slot number first).
+
+    Args:
+        state: Current pool state
+
+    Returns:
+        SlotInfo for an inactive initialized slot, or None if none available
+    """
+    assigned_slots = {a.slot_name for a in state.assignments}
+
+    for slot in state.slots:
+        if slot.name not in assigned_slots:
+            return slot
+
+    return None
+
+
+def is_slot_initialized(state: PoolState, slot_name: str) -> bool:
+    """Check if a slot has been initialized.
+
+    Args:
+        state: Current pool state
+        slot_name: Name of the slot to check
+
+    Returns:
+        True if slot is in the initialized slots list
+    """
+    return any(slot.name == slot_name for slot in state.slots)
 
 
 def find_branch_assignment(state: PoolState, branch_name: str) -> SlotAssignment | None:

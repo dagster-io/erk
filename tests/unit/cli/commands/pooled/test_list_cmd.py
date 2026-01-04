@@ -64,9 +64,7 @@ def test_pooled_list_with_assignments() -> None:
         )
 
         # Pre-populate pool state
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
+        state = PoolState.test(
             assignments=(
                 SlotAssignment(
                     slot_name="erk-managed-wt-01",

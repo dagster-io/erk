@@ -279,11 +279,7 @@ def test_pooled_land_auto_unassigns_slot() -> None:
 
         # Create pool state with assignment
         assignment = _create_test_assignment("erk-managed-wt-01", branch_name, worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         # Use worktree_path as cwd (simulating being inside the pool worktree)
