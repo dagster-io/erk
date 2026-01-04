@@ -33,12 +33,14 @@ def list_objectives(ctx: ErkContext) -> None:
     table.add_column("#", style="cyan", no_wrap=True)
     table.add_column("title", no_wrap=False)
     table.add_column("created", no_wrap=True)
+    table.add_column("url", no_wrap=True)
 
     for issue in issues:
         table.add_row(
             f"[link={issue.url}]#{issue.number}[/link]",
             issue.title,
             format_relative_time(issue.created_at.isoformat()),
+            issue.url,
         )
 
     console = Console(stderr=True, force_terminal=True)
