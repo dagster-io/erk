@@ -749,5 +749,3 @@ def test_renderer_file_list_method() -> None:
     assert "single.py" in result.output
     assert "f1.py" in result.output
     assert "... and 1 more" in result.output
-
-
