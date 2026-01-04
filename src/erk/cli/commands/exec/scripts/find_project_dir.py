@@ -111,9 +111,7 @@ def encode_path_to_project_folder(path: Path) -> str:
     return str(path).replace("/", "-").replace(".", "-")
 
 
-def find_project_info(
-    path: Path, installation: ClaudeInstallation
-) -> ProjectInfo | ProjectError:
+def find_project_info(path: Path, installation: ClaudeInstallation) -> ProjectInfo | ProjectError:
     """Find Claude Code project directory and metadata for given path.
 
     Args:

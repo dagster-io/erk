@@ -133,6 +133,7 @@ def test_agent_type_extraction_with_real_data_format() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -200,6 +201,7 @@ def test_agent_type_no_match_without_tool_result() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
@@ -260,6 +262,7 @@ def test_agent_duration_with_timestamps() -> None:
             session_slugs=None,
             session_planning_agents=None,
             plans_dir_path=None,
+            projects_dir_path=None,
         )
 
         ctx = build_workspace_test_context(env, claude_installation=session_store)
