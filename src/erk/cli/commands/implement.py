@@ -466,7 +466,14 @@ def _implement_from_issue(
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
-        execute_non_interactive_mode(wt_path, commands, dangerous, verbose, model, executor)
+        execute_non_interactive_mode(
+            worktree_path=wt_path,
+            commands=commands,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
+            executor=executor,
+        )
     else:
         # Interactive mode - hand off to Claude (never returns)
         execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
@@ -556,7 +563,14 @@ def _implement_from_file(
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
-        execute_non_interactive_mode(wt_path, commands, dangerous, verbose, model, executor)
+        execute_non_interactive_mode(
+            worktree_path=wt_path,
+            commands=commands,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
+            executor=executor,
+        )
     else:
         # Interactive mode - hand off to Claude (never returns)
         execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)

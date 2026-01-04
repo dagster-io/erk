@@ -285,6 +285,7 @@ def execute_interactive_mode(
 
 
 def execute_non_interactive_mode(
+    *,
     worktree_path: Path,
     commands: list[str],
     dangerous: bool,
