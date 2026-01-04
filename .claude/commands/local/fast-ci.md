@@ -18,10 +18,10 @@ The `make fast-ci` target runs these checks in order:
 2. **format-check** - Ruff code formatting checks
 3. **prettier-check** - Markdown formatting checks
 4. **md-check** - AGENTS.md standard compliance validation
-5. **docs-validate** - Agent documentation frontmatter validation
-6. **ty** - Type checking
-7. **test** - Pytest unit tests only (fast feedback loop)
-8. **check** - Artifact synchronization validation
+5. **ty** - Type checking
+6. **test (erk)** - Unit tests (tests/unit, tests/commands, tests/core)
+7. **test (erk-dev)** - erk-dev package tests
+8. **test (erk-statusline)** - erk-statusline package tests
 
 ## Iteration Process
 
@@ -38,7 +38,7 @@ This ensures that common issues (linting/formatting and type errors) are caught 
 
 ## Begin Now
 
-Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with the remaining checks (`make format-check prettier-check md-check docs-validate test check`). Track your progress with TodoWrite and report your final status clearly.
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete pipeline. Track your progress with TodoWrite and report your final status clearly.
 
 **Remember**:
 

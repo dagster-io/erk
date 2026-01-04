@@ -19,8 +19,10 @@ The `make all-ci` target runs these checks in order:
 3. **prettier-check** - Markdown formatting checks
 4. **md-check** - AGENTS.md standard compliance validation
 5. **ty** - Type checking
-6. **test-all** - Pytest test suite (unit + integration tests)
-7. **check** - Artifact synchronization validation
+6. **test (erk unit)** - Unit tests (tests/unit, tests/commands, tests/core)
+7. **test (erk integration)** - Integration tests (tests/integration)
+8. **test (erk-dev)** - erk-dev package tests
+9. **test (erk-statusline)** - erk-statusline package tests
 
 ## Iteration Process
 

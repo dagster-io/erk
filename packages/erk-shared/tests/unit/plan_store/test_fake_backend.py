@@ -257,9 +257,7 @@ class TestFakePlanBackendClose:
             updated_at=now,
             metadata={},
         )
-        backend = FakePlanBackend(
-            plans={"1": plan}, next_plan_id=100, provider_name="test"
-        )
+        backend = FakePlanBackend(plans={"1": plan}, next_plan_id=100, provider_name="test")
 
         backend.close_plan(tmp_path, "1")
 
@@ -281,9 +279,7 @@ class TestFakePlanBackendClose:
             updated_at=now,
             metadata={},
         )
-        backend = FakePlanBackend(
-            plans={"1": plan}, next_plan_id=100, provider_name="test"
-        )
+        backend = FakePlanBackend(plans={"1": plan}, next_plan_id=100, provider_name="test")
 
         backend.close_plan(tmp_path, "1")
 
@@ -315,9 +311,7 @@ class TestFakePlanBackendComment:
             updated_at=now,
             metadata={},
         )
-        backend = FakePlanBackend(
-            plans={"1": plan}, next_plan_id=100, provider_name="test"
-        )
+        backend = FakePlanBackend(plans={"1": plan}, next_plan_id=100, provider_name="test")
 
         comment_id = backend.add_comment(tmp_path, "1", "Comment body")
 
@@ -338,9 +332,7 @@ class TestFakePlanBackendComment:
             updated_at=now,
             metadata={},
         )
-        backend = FakePlanBackend(
-            plans={"1": plan}, next_plan_id=100, provider_name="test"
-        )
+        backend = FakePlanBackend(plans={"1": plan}, next_plan_id=100, provider_name="test")
 
         id1 = backend.add_comment(tmp_path, "1", "First")
         id2 = backend.add_comment(tmp_path, "1", "Second")
@@ -363,9 +355,7 @@ class TestFakePlanBackendComment:
             updated_at=now,
             metadata={},
         )
-        backend = FakePlanBackend(
-            plans={"1": plan}, next_plan_id=100, provider_name="test"
-        )
+        backend = FakePlanBackend(plans={"1": plan}, next_plan_id=100, provider_name="test")
 
         backend.add_comment(tmp_path, "1", "Test comment")
 
@@ -398,9 +388,7 @@ class TestFakePlanBackendMetadata:
             updated_at=now,
             metadata={},
         )
-        backend = FakePlanBackend(
-            plans={"1": plan}, next_plan_id=100, provider_name="test"
-        )
+        backend = FakePlanBackend(plans={"1": plan}, next_plan_id=100, provider_name="test")
 
         backend.update_metadata(tmp_path, "1", {"key": "value"})
 
@@ -420,9 +408,7 @@ class TestFakePlanBackendProviderName:
 
     def test_get_provider_name_returns_configured_value(self) -> None:
         """Return provider name from constructor."""
-        backend = FakePlanBackend(
-            plans=None, next_plan_id=1, provider_name="custom-provider"
-        )
+        backend = FakePlanBackend(plans=None, next_plan_id=1, provider_name="custom-provider")
 
         assert backend.get_provider_name() == "custom-provider"
 
