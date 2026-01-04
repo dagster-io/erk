@@ -1,27 +1,74 @@
 ---
-description: Execute the implementation plan from .impl/ folder in current directory
+description: Save plan to GitHub and execute implementation in current worktree
 ---
 
 # /erk:plan-implement
 
+User-facing command to save a plan to GitHub and immediately implement it.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Saving the plan to GitHub as an issue
+2. Setting up the `.impl/` folder
+3. Executing the implementation
+
 ## Prerequisites
 
-- Must be in a worktree directory with `.impl/` folder
-- `.impl/plan.md` should contain a valid implementation plan
+- Must be in a git repository managed by erk
+- Must have a plan in `~/.claude/plans/` (from plan mode)
+- GitHub CLI (`gh`) must be authenticated
 
 ---
 
 ## Agent Instructions
 
-### Step 0: Initialize
+### Step 1: Extract Session ID
+
+Get the session ID from the `SESSION_CONTEXT` reminder in your conversation context.
+
+### Step 2: Save Plan to GitHub
+
+Save the current plan to GitHub and capture the issue number:
+
+```bash
+erk exec plan-save-to-issue --format json --session-id="<session-id>"
+```
+
+Parse the JSON output to get:
+
+- `issue_number`: The created issue number
+- `title`: The issue title (for branch naming)
+
+If this fails, display the error and stop.
+
+### Step 3: Create Branch and Setup .impl/
+
+Now set up the implementation environment using the saved issue:
+
+```bash
+erk exec setup-impl-from-issue <issue-number>
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+### Step 4: Initialize Implementation
+
+Run the implementation initialization:
 
 ```bash
 erk exec impl-init --json
 ```
 
-If validation fails, display error and stop. Use returned `phases` for TodoWrite entries.
+Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
 
-### Step 1: Read Plan and Load Context
+### Step 5: Read Plan and Load Context
 
 Read `.impl/plan.md` to understand:
 
@@ -32,21 +79,21 @@ Read `.impl/plan.md` to understand:
 
 **Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
 
-### Step 2: Load Related Documentation
+### Step 6: Load Related Documentation
 
 If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
 
-### Step 3: Create TodoWrite Entries
+### Step 7: Create TodoWrite Entries
 
 Create todo entries for each phase from impl-init output.
 
-### Step 4: Signal GitHub Started
+### Step 8: Signal GitHub Started
 
 ```bash
 erk exec impl-signal started 2>/dev/null || true
 ```
 
-### Step 5: Execute Each Phase Sequentially
+### Step 9: Execute Each Phase Sequentially
 
 For each phase:
 
@@ -68,21 +115,21 @@ For each phase:
 - `.impl/plan.md` is immutable - NEVER edit during implementation
 - `.impl/progress.md` is mutable - use `mark-step` command to update
 
-### Step 6: Report Progress
+### Step 10: Report Progress
 
 After each phase: report changes made and what's next.
 
-### Step 7: Final Verification
+### Step 11: Final Verification
 
 Confirm all tasks executed, success criteria met, note deviations, summarize changes.
 
-### Step 8: Signal GitHub Ended
+### Step 12: Signal GitHub Ended
 
 ```bash
 erk exec impl-signal ended 2>/dev/null || true
 ```
 
-### Step 8.5: Verify .impl/ Preserved
+### Step 13: Verify .impl/ Preserved
 
 **CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
 
@@ -92,7 +139,7 @@ erk exec impl-verify
 
 If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
 
-### Step 9: Run CI Iteratively
+### Step 14: Run CI Iteratively
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
@@ -102,7 +149,7 @@ After CI passes:
 - `.worker-impl/`: delete folder, commit cleanup, push
 - `.impl/`: **NEVER DELETE** - leave for user review (no auto-commit)
 
-### Step 10: Create/Update PR (if .worker-impl/ present)
+### Step 15: Create/Update PR (if .worker-impl/ present)
 
 **Only if .worker-impl/ was present:**
 
@@ -118,8 +165,16 @@ erk pr check
 
 If checks fail, display output and warn user.
 
-### Step 11: Output Format
+### Step 16: Output Format
 
-- **Start**: "Executing implementation plan from .impl/plan.md"
+- **Start**: "Saving plan and setting up implementation..."
+- **After save**: "Plan saved as issue #X, setting up .impl/ folder..."
 - **Each phase**: "Phase X: [brief description]" with code changes
 - **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:plan-implement-here` - Implement from existing GitHub issue (skips save step)

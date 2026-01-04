@@ -5,6 +5,9 @@ This unified command provides two modes:
 - Plan file mode: erk implement path/to/plan.md
 
 Both modes create a worktree and invoke Claude for implementation.
+
+When run from within a pool slot, delegates to pooled implement to reuse
+the current slot instead of creating a new worktree.
 """
 
 import shutil
@@ -38,12 +41,35 @@ from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import (
     ensure_unique_worktree_name_with_date,
     sanitize_worktree_name,
 )
 from erk_shared.output.output import user_confirm, user_output
+
+
+def _is_in_pool_slot(ctx: ErkContext, pool_json_path: Path) -> bool:
+    """Check if current working directory is inside a pool slot.
+
+    Args:
+        ctx: ErkContext with cwd
+        pool_json_path: Path to pool.json file
+
+    Returns:
+        True if cwd is within a pool slot worktree, False otherwise
+    """
+    state = load_pool_state(pool_json_path)
+    if state is None:
+        return False
+
+    resolved_cwd = ctx.cwd.resolve()
+    for assignment in state.assignments:
+        wt_path = assignment.worktree_path.resolve()
+        if resolved_cwd == wt_path or wt_path in resolved_cwd.parents:
+            return True
+    return False
 
 
 @dataclass(frozen=True)
@@ -670,6 +696,32 @@ def implement(
 
     # Detect target type
     target_info = detect_target_type(target)
+
+    # Check if we're in a pool slot - if so, delegate to pooled implement
+    repo = discover_repo_context(ctx, ctx.cwd)
+    if _is_in_pool_slot(ctx, repo.pool_json_path):
+        # Import here to avoid circular dependency
+        from erk.cli.commands.pooled.implement_cmd import pooled_implement
+
+        ctx.feedback.info("Detected pool slot, delegating to pooled implement...")
+
+        # Forward to pooled implement by invoking the command callback directly
+        # with the click context that has our ErkContext attached
+        parent_ctx = click.get_current_context()
+        parent_ctx.invoke(
+            pooled_implement,
+            target=target,
+            force=force,
+            dry_run=dry_run,
+            submit=submit,
+            dangerous=dangerous,
+            no_interactive=no_interactive,
+            script=script,
+            yolo=False,  # Already handled above
+            verbose=verbose,
+            model=model,
+        )
+        return
 
     # Output target detection diagnostic
     if target_info.target_type in ("issue_number", "issue_url"):
