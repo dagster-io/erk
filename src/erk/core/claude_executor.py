@@ -437,7 +437,9 @@ class RealClaudeExecutor(ClaudeExecutor):
             cmd_args.append("--dangerously-skip-permissions")
         if model is not None:
             cmd_args.extend(["--model", model])
-        cmd_args.append(command)
+        # Only append command if non-empty (allows launching Claude for planning)
+        if command:
+            cmd_args.append(command)
 
         # Redirect stdin/stdout/stderr to /dev/tty only if they are not already TTYs.
         # This ensures Claude gets terminal access when running as subprocess with
