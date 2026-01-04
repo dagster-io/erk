@@ -7,7 +7,6 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts import plan_save_to_issue as plan_save_to_issue_module
 from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     inject_steps_into_plan,
     plan_save_to_issue,
@@ -41,6 +40,8 @@ steps:
         plans={"test-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -79,6 +80,8 @@ Context here"""
         plans={"enriched-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -105,6 +108,8 @@ def test_plan_save_to_issue_no_plan() -> None:
         plans=None,
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -140,6 +145,8 @@ steps:
         plans={"format-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -184,6 +191,8 @@ steps:
         plans={"display-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -227,6 +236,8 @@ Steps here"""
         plans={"label-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -285,6 +296,8 @@ steps:
         plans={"session-context-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={"test-session-id": ["session-context-test"]},
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -332,6 +345,8 @@ steps:
         plans={"no-session-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -373,6 +388,8 @@ steps:
         plans={"metadata-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -401,17 +418,11 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test that --session-id argument still creates marker file even with context disabled."""
+    _ = monkeypatch  # Unused but kept for test signature compatibility
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
         trunk_branches={tmp_path: "main"},
-    )
-
-    # Patch to avoid reading real ~/.claude/projects/
-    monkeypatch.setattr(
-        plan_save_to_issue_module,
-        "extract_slugs_from_session",
-        lambda *args, **kwargs: [],
     )
 
     test_session_id = "test-session-12345"
@@ -429,6 +440,8 @@ steps:
         plans={"session-id-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -497,6 +510,8 @@ steps:
         plans={"display-session-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={"test-session-id": ["display-session-test"]},
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -552,6 +567,8 @@ steps:
         plans={"store-session-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -615,6 +632,8 @@ steps:
         plans={"session-flag-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs={flag_session_id: ["session-flag-test"]},
+        session_planning_agents=None,
     )
 
     runner = CliRunner()
@@ -657,6 +676,8 @@ steps:
         plans={"marker-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -711,6 +732,8 @@ steps:
         plans={"no-marker-test": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -864,6 +887,8 @@ def test_plan_save_to_issue_rejects_plan_without_frontmatter() -> None:
         plans={"no-frontmatter": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -900,6 +925,8 @@ Details here.
         plans={"with-frontmatter": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -995,6 +1022,8 @@ This plan has no frontmatter steps.
         plans={"no-steps-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -1037,6 +1066,8 @@ Details here.
         plans={"existing-steps-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -1074,6 +1105,8 @@ One step plan.
         plans={"single-step-plan": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 
@@ -1104,6 +1137,8 @@ No steps in frontmatter and no --steps provided.
         plans={"no-steps-anywhere": plan_content},
         settings=None,
         local_settings=None,
+        session_slugs=None,
+        session_planning_agents=None,
     )
     runner = CliRunner()
 

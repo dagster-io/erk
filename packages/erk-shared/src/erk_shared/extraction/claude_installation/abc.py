@@ -180,3 +180,59 @@ class ClaudeInstallation(ABC):
             Parsed JSON as dict, or empty dict if file doesn't exist or is invalid
         """
         ...
+
+    # --- Plan operations ---
+
+    @abstractmethod
+    def get_plans_dir_path(self) -> Path:
+        """Return path to ~/.claude/plans/ directory."""
+        ...
+
+    @abstractmethod
+    def find_plan_for_session(self, project_cwd: Path, session_id: str) -> Path | None:
+        """Find plan file path for session using slug lookup.
+
+        Searches session logs for slug entries and returns the corresponding
+        plan file path if found.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: Session ID to search for plan slugs
+
+        Returns:
+            Path to plan file if found, None otherwise
+        """
+        ...
+
+    @abstractmethod
+    def extract_slugs_from_session(self, project_cwd: Path, session_id: str) -> list[str]:
+        """Extract plan slugs from session log entries.
+
+        Searches session logs for entries with the given session ID
+        and collects any slug fields found. Slugs indicate plan mode
+        was entered and correspond to plan filenames.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: The session ID to search for
+
+        Returns:
+            List of slugs in occurrence order (last = most recent)
+        """
+        ...
+
+    @abstractmethod
+    def extract_planning_agent_ids(self, project_cwd: Path, session_id: str) -> list[str]:
+        """Extract agent IDs for Task invocations with subagent_type='Plan'.
+
+        Searches session logs for Task tool invocations where subagent_type is "Plan",
+        then correlates with tool_result entries to extract the agentId.
+
+        Args:
+            project_cwd: Project working directory (for session lookup hint)
+            session_id: The session ID to search for
+
+        Returns:
+            List of agent IDs in format ["agent-<id>", ...]
+        """
+        ...

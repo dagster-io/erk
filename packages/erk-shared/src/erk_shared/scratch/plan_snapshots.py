@@ -20,10 +20,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.extraction.local_plans import (
-    extract_planning_agent_ids,
-    extract_slugs_from_session,
-)
+from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
@@ -211,28 +208,30 @@ def snapshot_plan_file(
 def snapshot_plan_for_session(
     session_id: str,
     plan_file_path: Path,
-    cwd_hint: str,
+    project_cwd: Path,
+    claude_installation: ClaudeInstallation,
     *,
-    repo_root: Path | None = None,
+    repo_root: Path | None,
 ) -> PlanSnapshot:
     """Snapshot a plan file with session context auto-discovery.
 
     Convenience function that extracts the slug and planning agent IDs
-    from session logs, then calls snapshot_plan_file.
+    from session logs via the gateway, then calls snapshot_plan_file.
 
     Args:
         session_id: Claude session ID.
         plan_file_path: Path to the plan file to snapshot.
-        cwd_hint: Current working directory hint for session lookup.
+        project_cwd: Project working directory for session lookup.
+        claude_installation: Gateway to Claude installation data.
         repo_root: Repo root path. If None, auto-detects via git.
 
     Returns:
         PlanSnapshot with paths to created files.
     """
-    slugs = extract_slugs_from_session(session_id, cwd_hint=cwd_hint)
+    slugs = claude_installation.extract_slugs_from_session(project_cwd, session_id)
     slug = slugs[-1] if slugs else "unknown"
 
-    planning_agent_ids = extract_planning_agent_ids(session_id, cwd_hint=cwd_hint)
+    planning_agent_ids = claude_installation.extract_planning_agent_ids(project_cwd, session_id)
 
     return snapshot_plan_file(
         session_id=session_id,
