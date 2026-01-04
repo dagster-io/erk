@@ -91,11 +91,7 @@ def test_pooled_check_no_issues() -> None:
 
         # Create consistent pool state
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -138,11 +134,7 @@ def test_pooled_check_orphan_state() -> None:
 
         # Create pool state with assignment to non-existent directory
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -182,11 +174,7 @@ def test_pooled_check_orphan_dir() -> None:
         )
 
         # Create empty pool state (no assignments)
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(),
-        )
+        state = PoolState.test()
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -229,11 +217,7 @@ def test_pooled_check_missing_branch() -> None:
 
         # Create pool state with assignment to deleted branch
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-deleted", worktree_path)
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -280,11 +264,7 @@ def test_pooled_check_git_registry_mismatch() -> None:
 
         # Create pool state with DIFFERENT branch than git registry
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -320,11 +300,7 @@ def test_pooled_check_empty_pool() -> None:
         )
 
         # Create empty pool state
-        state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(),
-        )
+        state = PoolState.test()
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)

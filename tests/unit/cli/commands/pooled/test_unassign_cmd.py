@@ -53,11 +53,7 @@ def test_pooled_unassign_by_slot_name() -> None:
 
         # Create initial pool state with an assignment
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -112,11 +108,7 @@ def test_pooled_unassign_by_branch_name() -> None:
 
         # Create initial pool state with an assignment
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -162,11 +154,7 @@ def test_pooled_unassign_not_found() -> None:
         )
 
         # Create empty pool state
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(),
-        )
+        initial_state = PoolState.test()
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -243,11 +231,7 @@ def test_pooled_unassign_preserves_other_assignments() -> None:
 
         assignment1 = _create_test_assignment("erk-managed-wt-01", "feature-a", wt_path_1)
         assignment2 = _create_test_assignment("erk-managed-wt-02", "feature-b", wt_path_2)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment1, assignment2),
-        )
+        initial_state = PoolState.test(assignments=(assignment1, assignment2))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -295,11 +279,7 @@ def test_pooled_unassign_fails_with_uncommitted_changes() -> None:
         )
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -347,11 +327,7 @@ def test_pooled_unassign_uses_existing_placeholder_branch() -> None:
         )
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            assignments=(assignment,),
-        )
+        initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)

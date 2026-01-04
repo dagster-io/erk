@@ -5,7 +5,11 @@ from rich.console import Console
 from rich.table import Table
 
 from erk.cli.alias import alias
-from erk.cli.commands.pooled.common import DEFAULT_POOL_SIZE, generate_slot_name
+from erk.cli.commands.pooled.common import (
+    DEFAULT_POOL_SIZE,
+    generate_slot_name,
+    is_slot_initialized,
+)
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
@@ -20,6 +24,7 @@ def pooled_list(ctx: ErkContext) -> None:
 
     Shows a table with:
     - Slot: The pool slot name
+    - Status: active (has assignment), ready (initialized, no assignment), or - (not initialized)
     - Branch: Assigned branch or "(available)"
     - Assigned: When the assignment was made
     """
@@ -31,6 +36,7 @@ def pooled_list(ctx: ErkContext) -> None:
         state = PoolState(
             version="1.0",
             pool_size=DEFAULT_POOL_SIZE,
+            slots=(),
             assignments=(),
         )
 
@@ -43,19 +49,41 @@ def pooled_list(ctx: ErkContext) -> None:
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("Slot", style="cyan", no_wrap=True)
+    table.add_column("Status", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
     table.add_column("Assigned", no_wrap=True)
+
+    # Track counts for summary
+    active_count = 0
+    ready_count = 0
 
     # Add rows for all slots
     for slot_num in range(1, state.pool_size + 1):
         slot_name = generate_slot_name(slot_num)
+        slot_initialized = is_slot_initialized(state, slot_name)
 
         if slot_name in assignments_by_slot:
             branch_name, assigned_time = assignments_by_slot[slot_name]
-            table.add_row(slot_name, branch_name, assigned_time)
+            status = "[green]active[/green]"
+            table.add_row(slot_name, status, branch_name, assigned_time)
+            active_count += 1
+        elif slot_initialized:
+            status = "[blue]ready[/blue]"
+            table.add_row(slot_name, status, "[dim](available)[/dim]", "-")
+            ready_count += 1
         else:
-            table.add_row(slot_name, "[dim](available)[/dim]", "-")
+            status = "[dim]-[/dim]"
+            table.add_row(slot_name, status, "[dim](available)[/dim]", "-")
 
     # Output table to stderr (consistent with user_output convention)
     console = Console(stderr=True, force_terminal=True)
     console.print(table)
+
+    # Print summary
+    initialized_count = len(state.slots)
+    console.print(
+        f"\nPool: {state.pool_size} slots | "
+        f"{initialized_count} initialized | "
+        f"{active_count} active | "
+        f"{ready_count} ready"
+    )

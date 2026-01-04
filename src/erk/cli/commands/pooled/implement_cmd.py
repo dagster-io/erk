@@ -85,6 +85,7 @@ def _assign_branch_to_slot(
         state = PoolState(
             version="1.0",
             pool_size=pool_size,
+            slots=(),
             assignments=(),
         )
 
@@ -110,6 +111,7 @@ def _assign_branch_to_slot(
         state = PoolState(
             version=state.version,
             pool_size=state.pool_size,
+            slots=state.slots,
             assignments=new_assignments,
         )
         save_pool_state(pool_json_path, state)
@@ -165,6 +167,7 @@ def _assign_branch_to_slot(
     new_state = PoolState(
         version=state.version,
         pool_size=state.pool_size,
+        slots=state.slots,
         assignments=(*state.assignments, new_assignment),
     )
 

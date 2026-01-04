@@ -55,6 +55,7 @@ def pooled_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
         state = PoolState(
             version="1.0",
             pool_size=pool_size,
+            slots=(),
             assignments=(),
         )
 
@@ -88,6 +89,7 @@ def pooled_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
         state = PoolState(
             version=state.version,
             pool_size=state.pool_size,
+            slots=state.slots,
             assignments=new_assignments,
         )
         save_pool_state(repo.pool_json_path, state)
@@ -141,6 +143,7 @@ def pooled_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
     new_state = PoolState(
         version=state.version,
         pool_size=state.pool_size,
+        slots=state.slots,
         assignments=(*state.assignments, new_assignment),
     )
 

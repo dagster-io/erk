@@ -8,6 +8,7 @@ import click
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.pooled.common import (
     find_branch_assignment,
+    find_inactive_slot,
     find_next_available_slot,
     generate_slot_name,
     get_pool_size,
@@ -57,6 +58,7 @@ def pooled_plan(ctx: ErkContext, branch_name: str, force: bool, script: bool) ->
         state = PoolState(
             version="1.0",
             pool_size=pool_size,
+            slots=(),
             assignments=(),
         )
 
@@ -71,57 +73,73 @@ def pooled_plan(ctx: ErkContext, branch_name: str, force: bool, script: bool) ->
     local_branches = ctx.git.list_local_branches(repo.root)
     branch_exists = branch_name in local_branches
 
-    # Find next available slot
-    slot_num = find_next_available_slot(state)
-    if slot_num is None:
-        # Pool is full - handle interactively or with --force
-        to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
-        if to_unassign is None:
-            raise SystemExit(1) from None
+    # First, prefer pre-initialized slots (fast path)
+    inactive_slot = find_inactive_slot(state)
+    if inactive_slot is not None:
+        slot_name = inactive_slot.name
+        worktree_path = repo.worktrees_dir / slot_name
 
-        # Remove the assignment from state
-        new_assignments = tuple(
-            a for a in state.assignments if a.slot_name != to_unassign.slot_name
-        )
-        state = PoolState(
-            version=state.version,
-            pool_size=state.pool_size,
-            assignments=new_assignments,
-        )
-        save_pool_state(repo.pool_json_path, state)
-        user_output(
-            click.style("✓ ", fg="green")
-            + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
-            + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
-        )
+        if not branch_exists:
+            # Create the new branch from trunk
+            trunk = ctx.git.detect_trunk_branch(repo.root)
+            ctx.git.create_branch(repo.root, branch_name, trunk)
+            user_output(f"Created branch: {branch_name}")
 
-        # Retry finding a slot - should now succeed
+        # Checkout the branch in the existing worktree
+        ctx.git.checkout_branch(worktree_path, branch_name)
+    else:
+        # Fall back to on-demand slot creation
         slot_num = find_next_available_slot(state)
         if slot_num is None:
-            # This shouldn't happen, but handle gracefully
-            user_output("Error: Failed to find available slot after unassigning")
-            raise SystemExit(1) from None
+            # Pool is full - handle interactively or with --force
+            to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
+            if to_unassign is None:
+                raise SystemExit(1) from None
 
-    slot_name = generate_slot_name(slot_num)
-    worktree_path = repo.worktrees_dir / slot_name
+            # Remove the assignment from state
+            new_assignments = tuple(
+                a for a in state.assignments if a.slot_name != to_unassign.slot_name
+            )
+            state = PoolState(
+                version=state.version,
+                pool_size=state.pool_size,
+                slots=state.slots,
+                assignments=new_assignments,
+            )
+            save_pool_state(repo.pool_json_path, state)
+            user_output(
+                click.style("✓ ", fg="green")
+                + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
+                + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
+            )
 
-    # Create directory for worktree if needed
-    worktree_path.mkdir(parents=True, exist_ok=True)
+            # Retry finding a slot - should now succeed
+            slot_num = find_next_available_slot(state)
+            if slot_num is None:
+                # This shouldn't happen, but handle gracefully
+                user_output("Error: Failed to find available slot after unassigning")
+                raise SystemExit(1) from None
 
-    if not branch_exists:
-        # Create the new branch from trunk
-        trunk = ctx.git.detect_trunk_branch(repo.root)
-        ctx.git.create_branch(repo.root, branch_name, trunk)
-        user_output(f"Created branch: {branch_name}")
+        slot_name = generate_slot_name(slot_num)
+        worktree_path = repo.worktrees_dir / slot_name
 
-    # Add worktree
-    ctx.git.add_worktree(
-        repo.root,
-        worktree_path,
-        branch=branch_name,
-        ref=None,
-        create_branch=False,
-    )
+        # Create directory for worktree if needed
+        worktree_path.mkdir(parents=True, exist_ok=True)
+
+        if not branch_exists:
+            # Create the new branch from trunk
+            trunk = ctx.git.detect_trunk_branch(repo.root)
+            ctx.git.create_branch(repo.root, branch_name, trunk)
+            user_output(f"Created branch: {branch_name}")
+
+        # Add worktree
+        ctx.git.add_worktree(
+            repo.root,
+            worktree_path,
+            branch=branch_name,
+            ref=None,
+            create_branch=False,
+        )
 
     # Create new assignment
     now = datetime.now(UTC).isoformat()
@@ -136,6 +154,7 @@ def pooled_plan(ctx: ErkContext, branch_name: str, force: bool, script: bool) ->
     new_state = PoolState(
         version=state.version,
         pool_size=state.pool_size,
+        slots=state.slots,
         assignments=(*state.assignments, new_assignment),
     )
 

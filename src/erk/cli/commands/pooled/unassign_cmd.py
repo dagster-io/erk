@@ -83,6 +83,7 @@ def execute_unassign(
     new_state = PoolState(
         version=state.version,
         pool_size=state.pool_size,
+        slots=state.slots,
         assignments=new_assignments,
     )
 
