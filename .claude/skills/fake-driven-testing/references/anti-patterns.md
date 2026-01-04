@@ -757,6 +757,7 @@ class FakePlanBackend(PlanBackend):
 ```
 
 **Problems**:
+
 - **Duplicated logic**: Fake backend duplicates real backend's business logic
 - **Untested real code**: The actual backend logic goes untested
 - **Wrong abstraction**: DI should stop at the gateway level

@@ -502,17 +502,18 @@ class FakeFileSystem(FileSystemGateway):
 
 ### The Distinction
 
-| Aspect | Gateway | Backend |
-|--------|---------|---------|
-| **Purpose** | Thin wrapper around external system | Higher-level abstraction that composes gateways |
-| **Examples** | `GitHubIssues`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubPlanStore`, `PlanBackend` implementations |
-| **Implementations** | 4: ABC, Real, Fake, DryRun | Just ABC + real implementations |
-| **Needs Fake?** | ✅ Yes - provides in-memory simulation | ❌ No - inject fake gateways instead |
-| **Testing** | Use `FakeGitHubIssues` directly | Use `GitHubPlanStore(FakeGitHubIssues())` |
+| Aspect              | Gateway                                            | Backend                                          |
+| ------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| **Purpose**         | Thin wrapper around external system                | Higher-level abstraction that composes gateways  |
+| **Examples**        | `GitHubIssues`, `Git`, `Graphite`, `Shell`, `Time` | `GitHubPlanStore`, `PlanBackend` implementations |
+| **Implementations** | 4: ABC, Real, Fake, DryRun                         | Just ABC + real implementations                  |
+| **Needs Fake?**     | ✅ Yes - provides in-memory simulation             | ❌ No - inject fake gateways instead             |
+| **Testing**         | Use `FakeGitHubIssues` directly                    | Use `GitHubPlanStore(FakeGitHubIssues())`        |
 
 ### Backend Architecture
 
 Backends are higher-level abstractions that:
+
 1. **Compose one or more gateways** via constructor injection
 2. **Transform data** from gateway-specific to domain models
 3. **Implement domain operations** (not raw external operations)
