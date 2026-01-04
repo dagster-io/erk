@@ -148,13 +148,13 @@ def test_slot_check_orphan_state() -> None:
 
 
 def test_slot_check_orphan_dir() -> None:
-    """Test check detects orphan directory (directory without assignment)."""
+    """Test check detects orphan directory (directory outside pool size range)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
 
-        # Create worktree directory on filesystem
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        # Create worktree directory OUTSIDE pool range (pool_size=4, so slot 05 is orphan)
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-05"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -173,8 +173,8 @@ def test_slot_check_orphan_dir() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # Create empty pool state (no assignments)
-        state = PoolState.test()
+        # Create pool state with size 4 (so slots 01-04 are valid, 05 is orphan)
+        state = PoolState.test(pool_size=4)
         save_pool_state(repo.pool_json_path, state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
@@ -184,6 +184,7 @@ def test_slot_check_orphan_dir() -> None:
         assert result.exit_code == 0
         assert "Issues Found:" in result.output
         assert "[orphan-dir]" in result.output
+        assert "erk-managed-wt-05" in result.output
         assert "not in pool state" in result.output
 
 

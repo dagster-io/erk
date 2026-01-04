@@ -6,6 +6,7 @@ from typing import Literal
 
 import click
 
+from erk.cli.commands.slot.common import generate_slot_name
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
@@ -98,24 +99,24 @@ def _check_orphan_states(
 
 
 def _check_orphan_dirs(
-    assignments: tuple[SlotAssignment, ...],
+    state: PoolState,
     fs_slots: set[str],
 ) -> list[SyncIssue]:
     """Check for directories that exist on filesystem but not in pool state.
 
     Args:
-        assignments: Current pool assignments
+        state: Pool state (to check against known slots)
         fs_slots: Set of slot names found on filesystem
 
     Returns:
         List of (issue_type, message) tuples
     """
-    # Get slots that have assignments
-    assigned_slots = {a.slot_name for a in assignments}
+    # Generate known slots from pool_size (same logic as slot list command)
+    known_slots = {generate_slot_name(i) for i in range(1, state.pool_size + 1)}
 
     issues: list[SyncIssue] = []
     for slot_name in fs_slots:
-        if slot_name not in assigned_slots:
+        if slot_name not in known_slots:
             issues.append(
                 SyncIssue(
                     code="orphan-dir",
@@ -150,13 +151,13 @@ def _check_missing_branches(
 
 
 def _check_git_worktree_mismatch(
-    assignments: tuple[SlotAssignment, ...],
+    state: PoolState,
     git_slots: dict[str, WorktreeInfo],
 ) -> list[SyncIssue]:
     """Check for mismatches between pool state and git worktree registry.
 
     Args:
-        assignments: Current pool assignments
+        state: Pool state (assignments and known slots)
         git_slots: Dict of slot names to WorktreeInfo from git
 
     Returns:
@@ -165,7 +166,7 @@ def _check_git_worktree_mismatch(
     issues: list[SyncIssue] = []
 
     # Check assignments against git registry
-    for assignment in assignments:
+    for assignment in state.assignments:
         if assignment.slot_name in git_slots:
             wt = git_slots[assignment.slot_name]
             # Check if branch matches
@@ -185,9 +186,10 @@ def _check_git_worktree_mismatch(
             )
 
     # Check git registry for slots not in pool state
-    assigned_slots = {a.slot_name for a in assignments}
+    # Generate known slots from pool_size (same logic as slot list command)
+    known_slots = {generate_slot_name(i) for i in range(1, state.pool_size + 1)}
     for slot_name, wt in git_slots.items():
-        if slot_name not in assigned_slots:
+        if slot_name not in known_slots:
             msg = f"Slot {slot_name}: in git registry (branch '{wt.branch}') but not in pool state"
             issues.append(SyncIssue(code="untracked-worktree", message=msg))
 
@@ -217,9 +219,9 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     # Run all checks
     issues: list[SyncIssue] = []
     issues.extend(_check_orphan_states(state.assignments, ctx))
-    issues.extend(_check_orphan_dirs(state.assignments, fs_slots))
+    issues.extend(_check_orphan_dirs(state, fs_slots))
     issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))
-    issues.extend(_check_git_worktree_mismatch(state.assignments, git_slots))
+    issues.extend(_check_git_worktree_mismatch(state, git_slots))
 
     return issues
 
@@ -254,9 +256,9 @@ def slot_check(ctx: ErkContext) -> None:
     # Run all checks
     issues: list[SyncIssue] = []
     issues.extend(_check_orphan_states(state.assignments, ctx))
-    issues.extend(_check_orphan_dirs(state.assignments, fs_slots))
+    issues.extend(_check_orphan_dirs(state, fs_slots))
     issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))
-    issues.extend(_check_git_worktree_mismatch(state.assignments, git_slots))
+    issues.extend(_check_git_worktree_mismatch(state, git_slots))
 
     # Print report
     user_output("Pool Check Report")
