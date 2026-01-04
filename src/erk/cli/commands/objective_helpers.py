@@ -56,9 +56,10 @@ def prompt_objective_update(
     user_output(f"   Linked to Objective #{objective_number}")
 
     # Build the command with all arguments for context-free execution
+    # --auto-close enables automatic objective closing when all steps are complete
     cmd = (
         f"/erk:objective-update-with-landed-pr "
-        f"--pr {pr_number} --objective {objective_number} --branch {branch}"
+        f"--pr {pr_number} --objective {objective_number} --branch {branch} --auto-close"
     )
 
     if force:

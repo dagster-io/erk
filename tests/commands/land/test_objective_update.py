@@ -352,7 +352,7 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         cmd, path, dangerous, verbose, model = executor.executed_commands[0]
         expected = (
             "/erk:objective-update-with-landed-pr "
-            "--pr 123 --objective 100 --branch P42-test-feature"
+            "--pr 123 --objective 100 --branch P42-test-feature --auto-close"
         )
         assert cmd == expected
         assert dangerous is True

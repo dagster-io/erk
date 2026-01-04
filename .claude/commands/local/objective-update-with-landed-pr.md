@@ -159,6 +159,8 @@ All roadmap steps are complete. Should I close objective #<number> now?
 
 Report the update is done and what the next focus should be.
 
+> **Note:** The `/erk:objective-update-with-landed-pr` variant supports `--auto-close` for automated contexts (e.g., `erk land`). This local variant is for interactive use and always prompts.
+
 ---
 
 ## Output Format

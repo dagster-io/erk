@@ -25,6 +25,7 @@ Check `$ARGUMENTS` for pre-provided context:
 - `--pr <number>`: PR number that was just landed
 - `--objective <number>`: Objective issue number to update
 - `--branch <name>`: Original branch name (contains plan issue number in `P<number>-...` pattern)
+- `--auto-close`: If set and all steps are complete, close objective without asking
 
 **If all arguments are provided:** Use them directly. Parse the plan issue number from the branch name pattern to get implementation details. Skip Steps 1 and 4 (discovery steps).
 
@@ -156,6 +157,14 @@ Count the roadmap steps:
 - Steps with status `pending` or `blocked`
 
 **If ALL steps are `done` or `skipped`:**
+
+**If `--auto-close` was provided:**
+
+1. Post a final "Action: Objective Complete" comment with summary
+2. Close the issue: `gh issue close <issue-number>`
+3. Report: "All steps complete - objective closed automatically"
+
+**Otherwise (interactive mode):**
 
 Ask the user:
 
