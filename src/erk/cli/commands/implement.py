@@ -127,9 +127,7 @@ def _create_worktree_with_plan_content(
 
         # Handle dry-run mode
         if dry_run:
-            _show_dry_run_output(
-                slot_name, plan_source, submit, dangerous, no_interactive, model
-            )
+            _show_dry_run_output(slot_name, plan_source, submit, dangerous, no_interactive, model)
             return None
 
         # Just update .impl/ folder with new plan content
@@ -194,9 +192,7 @@ def _create_worktree_with_plan_content(
 
     # Handle dry-run mode
     if dry_run:
-        _show_dry_run_output(
-            slot_name, plan_source, submit, dangerous, no_interactive, model
-        )
+        _show_dry_run_output(slot_name, plan_source, submit, dangerous, no_interactive, model)
         return None
 
     # Create worktree at slot path

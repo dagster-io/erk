@@ -1853,5 +1853,3 @@ def test_invalid_model_flag() -> None:
 
         assert result.exit_code != 0
         assert "Invalid model" in result.output
-
-
