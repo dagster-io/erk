@@ -125,8 +125,12 @@ def _find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | Non
     Returns:
         SlotAssignment if cwd is within a pool slot, None otherwise
     """
+    if not cwd.exists():
+        return None
     resolved_cwd = cwd.resolve()
     for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            continue
         wt_path = assignment.worktree_path.resolve()
         if resolved_cwd == wt_path or wt_path in resolved_cwd.parents:
             return assignment
