@@ -97,8 +97,9 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         check=False,
     )
 
-    # Create git instance
+    # Create git instance and erk installation
     git = RealGit()
+    erk_installation = RealErkInstallation()
 
     if result.returncode != 0:
         # Not in a git repository
@@ -107,7 +108,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     else:
         repo_root = Path(result.stdout.strip())
         repo_info = get_repo_info(git, repo_root)
-        repo_dir = Path.home() / ".erk" / "repos" / repo_root.name
+        repo_dir = erk_installation.root() / "repos" / repo_root.name
         repo = RepoContext(
             root=repo_root,
             repo_name=repo_root.name,
@@ -130,7 +131,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,
         time=fake_time,
-        erk_installation=RealErkInstallation(),
+        erk_installation=erk_installation,
         plan_store=GitHubPlanStore(github_issues, fake_time),
         claude_settings_store=FakeClaudeSettingsStore(),
         shell=FakeShell(),

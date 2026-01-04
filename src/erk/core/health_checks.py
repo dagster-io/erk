@@ -1142,8 +1142,6 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
     git_dir = ctx.git.get_git_common_dir(ctx.cwd)
     if git_dir is not None:
         repo_root = ctx.git.get_repository_root(ctx.cwd)
-        # Compute metadata dir for legacy config check (~/.erk/repos/<repo-name>/)
-        metadata_dir = Path.home() / ".erk" / "repos" / repo_root.name
         results.append(check_claude_erk_permission(repo_root))
         results.append(check_claude_settings(repo_root))
         results.append(check_user_prompt_hook(repo_root))

@@ -23,6 +23,7 @@ class FakeErkInstallation(ErkInstallation):
         config: GlobalConfig | None = None,
         command_log_path: Path | None = None,
         last_seen_version: str | None = None,
+        root_path: Path | None = None,
     ) -> None:
         """Create FakeErkInstallation with optional initial state.
 
@@ -30,12 +31,14 @@ class FakeErkInstallation(ErkInstallation):
             config: Initial config state (None = config doesn't exist)
             command_log_path: Custom command log path (defaults to /fake/erk/command_history.jsonl)
             last_seen_version: Pre-configured last seen version (None means no file exists)
+            root_path: Custom root path (defaults to /fake/erk/)
         """
         self._config = config
+        self._root_path = root_path if root_path is not None else Path("/fake/erk")
         self._command_log_path = (
             command_log_path
             if command_log_path is not None
-            else Path("/fake/erk/command_history.jsonl")
+            else self._root_path / "command_history.jsonl"
         )
         self._saved_configs: list[GlobalConfig] = []
         self._last_seen_version = last_seen_version
@@ -104,7 +107,27 @@ class FakeErkInstallation(ErkInstallation):
         Returns:
             Path to fake config location
         """
-        return Path("/fake/erk/config.toml")
+        return self._root_path / "config.toml"
+
+    # --- Root path access ---
+
+    def root(self) -> Path:
+        """Get the root path of the fake erk installation.
+
+        Returns:
+            Path to /fake/erk/ (or custom root_path)
+        """
+        return self._root_path
+
+    # --- Planner registry operations ---
+
+    def get_planners_config_path(self) -> Path:
+        """Get path to planners configuration file.
+
+        Returns:
+            Path to fake planners.toml location
+        """
+        return self._root_path / "planners.toml"
 
     # --- Command history operations ---
 

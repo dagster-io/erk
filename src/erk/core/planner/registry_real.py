@@ -18,14 +18,14 @@ SCHEMA_VERSION = 1
 class RealPlannerRegistry(PlannerRegistry):
     """Production implementation that reads/writes ~/.erk/planners.toml."""
 
-    def __init__(self, config_path: Path | None = None) -> None:
+    def __init__(self, config_path: Path) -> None:
         """Initialize the registry.
 
         Args:
-            config_path: Optional custom path for the config file.
-                        Defaults to ~/.erk/planners.toml
+            config_path: Path to the planners.toml config file.
+                        Typically obtained from erk_installation.get_planners_config_path().
         """
-        self._config_path = config_path or (Path.home() / ".erk" / "planners.toml")
+        self._config_path = config_path
 
     def _load_data(self) -> dict:
         """Load data from TOML file.

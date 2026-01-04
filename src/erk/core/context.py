@@ -463,7 +463,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
 
     # 5. Discover repo (only needs cwd, erk_root, git)
     # If global_config is None, use placeholder path for repo discovery
-    erk_root = global_config.erk_root if global_config else Path.home() / "worktrees"
+    erk_root = global_config.erk_root if global_config else erk_installation.root() / "worktrees"
     repo = discover_repo_or_sentinel(cwd, erk_root, git)
 
     # 6. Fetch repo_info (if in a repo with origin remote)
@@ -533,7 +533,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         script_writer=RealScriptWriter(),
         feedback=feedback,
         plan_list_service=plan_list_service,
-        planner_registry=RealPlannerRegistry(),
+        planner_registry=RealPlannerRegistry(erk_installation.get_planners_config_path()),
         claude_installation=real_claude_installation,
         prompt_executor=prompt_executor,
         claude_settings_store=claude_settings_store,

@@ -149,6 +149,26 @@ show_hidden_commands = {str(config.show_hidden_commands).lower()}
         """
         return _installation_path() / "command_history.jsonl"
 
+    # --- Planner registry operations ---
+
+    def get_planners_config_path(self) -> Path:
+        """Get path to planners configuration file.
+
+        Returns:
+            Path to ~/.erk/planners.toml
+        """
+        return _installation_path() / "planners.toml"
+
+    # --- Root path access ---
+
+    def root(self) -> Path:
+        """Get the root path of the erk installation (~/.erk/).
+
+        Returns:
+            Path to ~/.erk/
+        """
+        return _installation_path()
+
     # --- Version tracking operations ---
 
     def get_last_seen_version(self) -> str | None:

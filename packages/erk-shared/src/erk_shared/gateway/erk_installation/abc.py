@@ -69,6 +69,31 @@ class ErkInstallation(ABC):
         """
         ...
 
+    # --- Planner registry operations ---
+
+    @abstractmethod
+    def get_planners_config_path(self) -> Path:
+        """Get path to planners configuration file.
+
+        Returns:
+            Path to ~/.erk/planners.toml
+        """
+        ...
+
+    # --- Root path access ---
+
+    @abstractmethod
+    def root(self) -> Path:
+        """Get the root path of the erk installation (~/.erk/).
+
+        This enables derived path computation for callers that need to construct
+        paths within the installation directory without hardcoding Path.home().
+
+        Returns:
+            Path to ~/.erk/ (or equivalent in fake implementations)
+        """
+        ...
+
     # --- Version tracking operations ---
 
     @abstractmethod
