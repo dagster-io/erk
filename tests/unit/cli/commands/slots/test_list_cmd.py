@@ -1,5 +1,6 @@
 """Unit tests for slots list command."""
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -9,10 +10,13 @@ from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_slots_list_empty_pool() -> None:
+def test_slots_list_empty_pool(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that slots list shows all slots as empty when no worktrees exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        # Isolate Path.home() to prevent flakiness in parallel test runs
+        monkeypatch.setattr("pathlib.Path.home", lambda: env.cwd.parent)
+
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
@@ -45,10 +49,13 @@ def test_slots_list_empty_pool() -> None:
         assert "(not created)" in result.output
 
 
-def test_slots_list_with_assigned_slot() -> None:
+def test_slots_list_with_assigned_slot(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that slots list shows assigned branch for assigned slots."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        # Isolate Path.home() to prevent flakiness in parallel test runs
+        monkeypatch.setattr("pathlib.Path.home", lambda: env.cwd.parent)
+
         repo_dir = env.setup_repo_structure()
         worktrees_dir = repo_dir / "worktrees"
 
@@ -98,10 +105,13 @@ def test_slots_list_with_assigned_slot() -> None:
         assert "erk-managed-wt-02" in result.output
 
 
-def test_slots_list_with_available_slot() -> None:
+def test_slots_list_with_available_slot(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that slots list shows available status for unassigned worktree."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        # Isolate Path.home() to prevent flakiness in parallel test runs
+        monkeypatch.setattr("pathlib.Path.home", lambda: env.cwd.parent)
+
         repo_dir = env.setup_repo_structure()
         worktrees_dir = repo_dir / "worktrees"
 
@@ -134,10 +144,13 @@ def test_slots_list_with_available_slot() -> None:
         assert "available" in result.output
 
 
-def test_slots_list_mixed_states() -> None:
+def test_slots_list_mixed_states(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test slots list with mix of assigned, available, and empty slots."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        # Isolate Path.home() to prevent flakiness in parallel test runs
+        monkeypatch.setattr("pathlib.Path.home", lambda: env.cwd.parent)
+
         repo_dir = env.setup_repo_structure()
         worktrees_dir = repo_dir / "worktrees"
 
@@ -202,10 +215,13 @@ def test_slots_list_mixed_states() -> None:
         assert "my-feature" in result.output
 
 
-def test_slots_list_alias_ls() -> None:
+def test_slots_list_alias_ls(monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that slots ls alias works."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
+        # Isolate Path.home() to prevent flakiness in parallel test runs
+        monkeypatch.setattr("pathlib.Path.home", lambda: env.cwd.parent)
+
         repo_dir = env.setup_repo_structure()
 
         git_ops = FakeGit(
