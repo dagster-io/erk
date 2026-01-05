@@ -6,13 +6,10 @@ from datetime import UTC, datetime
 import click
 
 from erk.cli.commands.slot.common import (
-    cleanup_worktree_artifacts,
+    SlotAcquisitionDeclined,
+    acquire_slot,
     find_branch_assignment,
-    find_inactive_slot,
-    find_next_available_slot,
-    generate_slot_name,
     get_pool_size,
-    handle_pool_full_interactive,
 )
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
@@ -87,56 +84,41 @@ def branch_create(ctx: ErkContext, branch_name: str, no_slot: bool, force: bool)
         user_output(f"Error: Branch '{branch_name}' already assigned to {existing.slot_name}")
         raise SystemExit(1) from None
 
-    # First, prefer reusing existing worktrees (fast path)
-    inactive_slot = find_inactive_slot(state, ctx.git, repo.root)
-    if inactive_slot is not None:
-        slot_name, worktree_path = inactive_slot
+    # Acquire a slot for the new branch
+    acquisition = acquire_slot(
+        state=state,
+        git=ctx.git,
+        repo_root=repo.root,
+        worktrees_dir=repo.worktrees_dir,
+        pool_json_path=repo.pool_json_path,
+        force=force,
+        is_tty=sys.stdin.isatty(),
+    )
 
-        # Checkout the branch in the existing worktree
+    if isinstance(acquisition, SlotAcquisitionDeclined):
+        raise SystemExit(1) from None
+
+    slot_name = acquisition.slot_name
+    worktree_path = acquisition.worktree_path
+    state = acquisition.state
+
+    # Handle worktree setup based on acquisition type
+    if acquisition.acquisition_type == "inactive":
+        # Reuse existing worktree - just checkout
+        ctx.git.checkout_branch(worktree_path, branch_name)
+    elif worktree_path.exists():
+        # Unassigned slot with existing worktree - just checkout
         ctx.git.checkout_branch(worktree_path, branch_name)
     else:
-        # Fall back to on-demand slot creation
-        slot_num = find_next_available_slot(state, repo.worktrees_dir)
-        if slot_num is None:
-            # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
-            if to_unassign is None:
-                raise SystemExit(1) from None
-
-            # Remove the assignment from state
-            new_assignments = tuple(
-                a for a in state.assignments if a.slot_name != to_unassign.slot_name
-            )
-            state = PoolState(
-                version=state.version,
-                pool_size=state.pool_size,
-                slots=state.slots,
-                assignments=new_assignments,
-            )
-            save_pool_state(repo.pool_json_path, state)
-            user_output(
-                click.style("✓ ", fg="green")
-                + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
-                + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
-            )
-
-            # Reuse the unassigned slot - worktree exists, just checkout
-            slot_name = to_unassign.slot_name
-            worktree_path = to_unassign.worktree_path
-            cleanup_worktree_artifacts(worktree_path)
-            ctx.git.checkout_branch(worktree_path, branch_name)
-        else:
-            # Create new slot - no worktree exists yet
-            slot_name = generate_slot_name(slot_num)
-            worktree_path = repo.worktrees_dir / slot_name
-            worktree_path.mkdir(parents=True, exist_ok=True)
-            ctx.git.add_worktree(
-                repo.root,
-                worktree_path,
-                branch=branch_name,
-                ref=None,
-                create_branch=False,
-            )
+        # New slot or unassigned slot without worktree - create it
+        worktree_path.mkdir(parents=True, exist_ok=True)
+        ctx.git.add_worktree(
+            repo.root,
+            worktree_path,
+            branch=branch_name,
+            ref=None,
+            create_branch=False,
+        )
 
     # Create new assignment
     now = datetime.now(UTC).isoformat()

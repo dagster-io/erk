@@ -32,12 +32,11 @@ from erk.cli.commands.implement_shared import (
     validate_flags,
 )
 from erk.cli.commands.slot.common import (
+    SlotAcquisitionDeclined,
+    acquire_slot,
+    find_assignment_by_worktree,
     find_branch_assignment,
-    find_inactive_slot,
-    find_next_available_slot,
-    generate_slot_name,
     get_pool_size,
-    handle_pool_full_interactive,
 )
 from erk.cli.commands.wt.create_cmd import run_post_worktree_setup
 from erk.cli.config import LoadedConfig
@@ -178,43 +177,23 @@ def _create_worktree_with_plan_content(
     local_branches = ctx.git.list_local_branches(repo_root)
     use_existing_branch = branch in local_branches
 
-    # Find available slot
-    inactive_slot = find_inactive_slot(state, ctx.git, repo_root)
-    if inactive_slot is not None:
-        # Fast path: reuse existing worktree
-        slot_name, wt_path = inactive_slot
-    else:
-        # Find next available slot number
-        slot_num = find_next_available_slot(state, repo.worktrees_dir)
-        if slot_num is None:
-            # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
-            if to_unassign is None:
-                raise SystemExit(1) from None
+    # Acquire a slot for the new assignment
+    acquisition = acquire_slot(
+        state=state,
+        git=ctx.git,
+        repo_root=repo_root,
+        worktrees_dir=repo.worktrees_dir,
+        pool_json_path=repo.pool_json_path,
+        force=force,
+        is_tty=sys.stdin.isatty(),
+    )
 
-            # Remove the assignment from state
-            new_assignments = tuple(
-                a for a in state.assignments if a.slot_name != to_unassign.slot_name
-            )
-            state = PoolState(
-                version=state.version,
-                pool_size=state.pool_size,
-                slots=state.slots,
-                assignments=new_assignments,
-            )
-            save_pool_state(repo.pool_json_path, state)
-            user_output(
-                click.style("✓ ", fg="green")
-                + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
-                + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
-            )
+    if isinstance(acquisition, SlotAcquisitionDeclined):
+        raise SystemExit(1) from None
 
-            # Use the slot we just unassigned (it has a worktree directory that can be reused)
-            slot_name = to_unassign.slot_name
-            wt_path = to_unassign.worktree_path
-        else:
-            slot_name = generate_slot_name(slot_num)
-            wt_path = repo.worktrees_dir / slot_name
+    slot_name = acquisition.slot_name
+    wt_path = acquisition.worktree_path
+    state = acquisition.state
 
     # Handle dry-run mode
     if dry_run:
@@ -230,8 +209,8 @@ def _create_worktree_with_plan_content(
     # Respect global use_graphite config
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
-    if inactive_slot is not None:
-        # Fast path: checkout branch in existing worktree
+    if acquisition.acquisition_type == "inactive":
+        # Reuse existing worktree - just checkout
         # Check for uncommitted changes before checkout
         _check_worktree_clean_for_checkout(ctx, wt_path, slot_name)
         if use_existing_branch:
@@ -245,7 +224,7 @@ def _create_worktree_with_plan_content(
                 ctx.graphite.track_branch(repo_root, branch, base_branch)
             ctx.git.checkout_branch(wt_path, branch)
     else:
-        # On-demand slot creation
+        # New or unassigned slot - may need to create worktree
         if not use_existing_branch:
             # Create branch first
             ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
@@ -253,17 +232,14 @@ def _create_worktree_with_plan_content(
             if use_graphite:
                 ctx.graphite.track_branch(repo_root, branch, base_branch)
 
-        # Check if worktree directory already exists (from pool initialization)
+        # Check if worktree directory already exists
         if wt_path.exists():
-            # Check for uncommitted changes before checkout
+            # Worktree already exists - check for uncommitted changes before checkout
             _check_worktree_clean_for_checkout(ctx, wt_path, slot_name)
-            # Worktree already exists - check out the branch
             ctx.git.checkout_branch(wt_path, branch)
         else:
-            # Create directory for worktree
+            # Create directory and worktree
             wt_path.mkdir(parents=True, exist_ok=True)
-
-            # Add worktree
             ctx.git.add_worktree(
                 repo_root,
                 wt_path,

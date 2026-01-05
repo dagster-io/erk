@@ -1,12 +1,46 @@
 """Shared utilities for slot commands."""
 
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
+
+import click
 
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment
+from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
 from erk_shared.git.abc import Git
 from erk_shared.output.output import user_confirm, user_output
+
+SlotAcquisitionType = Literal["inactive", "new", "unassigned"]
+
+
+@dataclass(frozen=True)
+class SlotAcquisitionResult:
+    """Result from acquiring a slot for branch assignment.
+
+    Attributes:
+        slot_name: Name of the acquired slot (e.g., "erk-managed-wt-01")
+        worktree_path: Path to the worktree directory
+        state: Possibly updated pool state (if unassignment occurred)
+        acquisition_type: How the slot was acquired:
+            - "inactive": Reusing existing worktree (was on placeholder branch)
+            - "new": Need to create worktree from scratch
+            - "unassigned": Reusing slot we just freed up
+    """
+
+    slot_name: str
+    worktree_path: Path
+    state: PoolState
+    acquisition_type: SlotAcquisitionType
+
+
+@dataclass(frozen=True)
+class SlotAcquisitionDeclined:
+    """Sentinel indicating user declined to unassign when pool was full."""
+
+    pass
+
 
 # Default pool configuration
 DEFAULT_POOL_SIZE = 4
@@ -297,3 +331,97 @@ def cleanup_worktree_artifacts(worktree_path: Path) -> None:
 
     if scratch_folder.exists():
         shutil.rmtree(scratch_folder)
+
+
+def acquire_slot(
+    *,
+    state: PoolState,
+    git: Git,
+    repo_root: Path,
+    worktrees_dir: Path,
+    pool_json_path: Path,
+    force: bool,
+    is_tty: bool,
+) -> SlotAcquisitionResult | SlotAcquisitionDeclined:
+    """Acquire a slot for a new branch assignment.
+
+    Tries in order:
+    1. Find an inactive slot (existing worktree, no branch assignment)
+    2. Find next available slot number (for new worktree creation)
+    3. If pool full, handle interactively (prompt user or auto-unassign with --force)
+
+    For both "inactive" and "unassigned" cases, calls cleanup_worktree_artifacts()
+    to remove stale .impl/ and .erk/scratch/ directories.
+
+    Args:
+        state: Current pool state
+        git: Git gateway for worktree operations
+        repo_root: Repository root path
+        worktrees_dir: Directory containing worktrees
+        pool_json_path: Path to pool.json for persisting state changes
+        force: If True, auto-unassign oldest slot without prompting
+        is_tty: Whether running in an interactive terminal
+
+    Returns:
+        SlotAcquisitionResult with slot info and possibly updated state, or
+        SlotAcquisitionDeclined if pool is full and user declined to unassign.
+
+    Side effects:
+        - Persists state changes to pool_json_path if unassignment occurred
+        - Outputs styled success message for unassignment
+        - Calls cleanup_worktree_artifacts for both "inactive" and "unassigned" cases
+    """
+    # Try inactive slot first (fast path)
+    inactive_slot = find_inactive_slot(state, git, repo_root)
+    if inactive_slot is not None:
+        slot_name, wt_path = inactive_slot
+        cleanup_worktree_artifacts(wt_path)
+        return SlotAcquisitionResult(
+            slot_name=slot_name,
+            worktree_path=wt_path,
+            state=state,
+            acquisition_type="inactive",
+        )
+
+    # Try to find next available slot number (new slot creation)
+    slot_num = find_next_available_slot(state, worktrees_dir)
+    if slot_num is not None:
+        slot_name = generate_slot_name(slot_num)
+        wt_path = worktrees_dir / slot_name
+        return SlotAcquisitionResult(
+            slot_name=slot_name,
+            worktree_path=wt_path,
+            state=state,
+            acquisition_type="new",
+        )
+
+    # Pool is full - handle interactively or with --force
+    to_unassign = handle_pool_full_interactive(state, force, is_tty)
+    if to_unassign is None:
+        return SlotAcquisitionDeclined()
+
+    # Remove the assignment from state
+    new_assignments = tuple(a for a in state.assignments if a.slot_name != to_unassign.slot_name)
+    updated_state = PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        slots=state.slots,
+        assignments=new_assignments,
+    )
+    save_pool_state(pool_json_path, updated_state)
+
+    user_output(
+        click.style("✓ ", fg="green")
+        + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
+        + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
+    )
+
+    # Clean up artifacts from unassigned slot
+    cleanup_worktree_artifacts(to_unassign.worktree_path)
+
+    return SlotAcquisitionResult(
+        slot_name=to_unassign.slot_name,
+        worktree_path=to_unassign.worktree_path,
+        state=updated_state,
+        acquisition_type="unassigned",
+    )

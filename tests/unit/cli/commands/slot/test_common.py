@@ -4,6 +4,9 @@ from pathlib import Path
 
 from erk.cli.commands.slot.common import (
     DEFAULT_POOL_SIZE,
+    SlotAcquisitionDeclined,
+    SlotAcquisitionResult,
+    acquire_slot,
     extract_slot_number,
     find_assignment_by_worktree,
     find_inactive_slot,
@@ -15,7 +18,7 @@ from erk.cli.commands.slot.common import (
 )
 from erk.cli.config import LoadedConfig
 from erk.core.context import context_for_test
-from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
+from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, load_pool_state
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 
@@ -564,3 +567,332 @@ class TestFindAssignmentByWorktree:
 
         assert result == assignment2
         assert result.slot_name == "erk-managed-wt-02"
+
+
+class TestAcquireSlot:
+    """Tests for acquire_slot function."""
+
+    def test_returns_inactive_slot_when_available(self, tmp_path: Path) -> None:
+        """Returns inactive slot when one exists."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        wt1_path = worktrees_dir / "erk-managed-wt-01"
+        wt1_path.mkdir(parents=True)
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="placeholder"),
+                ]
+            }
+        )
+        state = PoolState.test(pool_size=4)
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=False,
+            is_tty=False,
+        )
+
+        assert isinstance(result, SlotAcquisitionResult)
+        assert result.slot_name == "erk-managed-wt-01"
+        assert result.worktree_path == wt1_path
+        assert result.acquisition_type == "inactive"
+        assert result.state == state
+
+    def test_returns_new_slot_when_no_inactive_slots(self, tmp_path: Path) -> None:
+        """Returns new slot when no inactive slots exist."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir(parents=True)
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        git = FakeGit(worktrees={repo_root: []})
+        state = PoolState.test(pool_size=4)
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=False,
+            is_tty=False,
+        )
+
+        assert isinstance(result, SlotAcquisitionResult)
+        assert result.slot_name == "erk-managed-wt-01"
+        assert result.worktree_path == worktrees_dir / "erk-managed-wt-01"
+        assert result.acquisition_type == "new"
+        assert result.state == state
+
+    def test_returns_declined_when_pool_full_and_not_forced(self, tmp_path: Path) -> None:
+        """Returns SlotAcquisitionDeclined when pool is full and user declines."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir(parents=True)
+        wt1_path = worktrees_dir / "erk-managed-wt-01"
+        wt2_path = worktrees_dir / "erk-managed-wt-02"
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        # All slots assigned, no inactive slots
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+                ]
+            }
+        )
+        assignment1 = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=wt1_path,
+        )
+        assignment2 = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-b",
+            assigned_at="2024-01-01T13:00:00+00:00",
+            worktree_path=wt2_path,
+        )
+        state = PoolState.test(pool_size=2, assignments=(assignment1, assignment2))
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=False,
+            is_tty=False,  # Non-interactive means declined
+        )
+
+        assert isinstance(result, SlotAcquisitionDeclined)
+
+    def test_unassigns_oldest_with_force_flag(self, tmp_path: Path) -> None:
+        """Unassigns oldest slot when --force is used."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir(parents=True)
+        wt1_path = worktrees_dir / "erk-managed-wt-01"
+        wt1_path.mkdir()
+        wt2_path = worktrees_dir / "erk-managed-wt-02"
+        wt2_path.mkdir()
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        # All slots assigned
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-old"),
+                    WorktreeInfo(path=wt2_path, branch="feature-new"),
+                ]
+            }
+        )
+        oldest = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-old",
+            assigned_at="2024-01-01T10:00:00+00:00",
+            worktree_path=wt1_path,
+        )
+        newest = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-new",
+            assigned_at="2024-01-01T14:00:00+00:00",
+            worktree_path=wt2_path,
+        )
+        state = PoolState.test(pool_size=2, assignments=(oldest, newest))
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=True,
+            is_tty=False,
+        )
+
+        assert isinstance(result, SlotAcquisitionResult)
+        assert result.slot_name == "erk-managed-wt-01"
+        assert result.worktree_path == wt1_path
+        assert result.acquisition_type == "unassigned"
+        # State should have the oldest assignment removed
+        assert len(result.state.assignments) == 1
+        assert result.state.assignments[0].branch_name == "feature-new"
+
+    def test_persists_state_on_unassignment(self, tmp_path: Path) -> None:
+        """Verifies state is saved to disk after unassignment."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir(parents=True)
+        wt1_path = worktrees_dir / "erk-managed-wt-01"
+        wt1_path.mkdir()
+        wt2_path = worktrees_dir / "erk-managed-wt-02"
+        wt2_path.mkdir()
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-old"),
+                    WorktreeInfo(path=wt2_path, branch="feature-new"),
+                ]
+            }
+        )
+        oldest = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-old",
+            assigned_at="2024-01-01T10:00:00+00:00",
+            worktree_path=wt1_path,
+        )
+        newest = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-new",
+            assigned_at="2024-01-01T14:00:00+00:00",
+            worktree_path=wt2_path,
+        )
+        state = PoolState.test(pool_size=2, assignments=(oldest, newest))
+
+        acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=True,
+            is_tty=False,
+        )
+
+        # Verify state was persisted
+        saved_state = load_pool_state(pool_json_path)
+        assert saved_state is not None
+        assert len(saved_state.assignments) == 1
+        assert saved_state.assignments[0].branch_name == "feature-new"
+
+    def test_cleans_up_artifacts_on_inactive_slot(self, tmp_path: Path) -> None:
+        """Cleans up .impl and .erk/scratch when reusing inactive slot."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        wt1_path = worktrees_dir / "erk-managed-wt-01"
+        wt1_path.mkdir(parents=True)
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        # Create stale artifacts
+        impl_folder = wt1_path / ".impl"
+        impl_folder.mkdir()
+        (impl_folder / "plan.md").write_text("old plan", encoding="utf-8")
+        scratch_folder = wt1_path / ".erk" / "scratch"
+        scratch_folder.mkdir(parents=True)
+        (scratch_folder / "session.txt").write_text("old session", encoding="utf-8")
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="placeholder"),
+                ]
+            }
+        )
+        state = PoolState.test(pool_size=4)
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=False,
+            is_tty=False,
+        )
+
+        assert isinstance(result, SlotAcquisitionResult)
+        assert result.acquisition_type == "inactive"
+        # Artifacts should be cleaned up
+        assert not impl_folder.exists()
+        assert not scratch_folder.exists()
+
+    def test_cleans_up_artifacts_on_unassigned_slot(self, tmp_path: Path) -> None:
+        """Cleans up .impl and .erk/scratch when unassigning a slot."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir(parents=True)
+        wt1_path = worktrees_dir / "erk-managed-wt-01"
+        wt1_path.mkdir()
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        # Create stale artifacts in the slot that will be unassigned
+        impl_folder = wt1_path / ".impl"
+        impl_folder.mkdir()
+        (impl_folder / "plan.md").write_text("old plan", encoding="utf-8")
+        scratch_folder = wt1_path / ".erk" / "scratch"
+        scratch_folder.mkdir(parents=True)
+        (scratch_folder / "session.txt").write_text("old session", encoding="utf-8")
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-old"),
+                ]
+            }
+        )
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-old",
+            assigned_at="2024-01-01T10:00:00+00:00",
+            worktree_path=wt1_path,
+        )
+        state = PoolState.test(pool_size=1, assignments=(assignment,))
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=True,
+            is_tty=False,
+        )
+
+        assert isinstance(result, SlotAcquisitionResult)
+        assert result.acquisition_type == "unassigned"
+        # Artifacts should be cleaned up
+        assert not impl_folder.exists()
+        assert not scratch_folder.exists()
+
+    def test_does_not_cleanup_for_new_slot(self, tmp_path: Path) -> None:
+        """Does not attempt cleanup for new slot (nothing to clean)."""
+        repo_root = tmp_path / "repo"
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir(parents=True)
+        pool_json_path = tmp_path / ".erk" / "pool.json"
+        pool_json_path.parent.mkdir(parents=True)
+
+        git = FakeGit(worktrees={repo_root: []})
+        state = PoolState.test(pool_size=4)
+
+        result = acquire_slot(
+            state=state,
+            git=git,
+            repo_root=repo_root,
+            worktrees_dir=worktrees_dir,
+            pool_json_path=pool_json_path,
+            force=False,
+            is_tty=False,
+        )
+
+        assert isinstance(result, SlotAcquisitionResult)
+        assert result.acquisition_type == "new"
+        # No cleanup needed - worktree doesn't exist yet
