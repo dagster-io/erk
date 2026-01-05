@@ -43,6 +43,7 @@ State Transitions:
     4. plan-saved marker exists → BLOCK with "session complete" message (delete marker)
 """
 
+import json
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -53,7 +54,10 @@ from typing import Self
 import click
 
 from erk.hooks.decorators import HookContext, hook_command
+from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.branch_manager.factory import create_branch_manager
 from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
+from erk_shared.git.abc import Git
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 
@@ -81,7 +85,11 @@ class HookInput:
     objective_context_marker_exists: bool
     objective_issue: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
+    plan_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
+    worktree_name: str | None  # Directory name of current worktree
+    pr_number: int | None  # PR number if exists for current branch
+    plan_issue_number: int | None  # Issue number from .impl/issue.json
 
     @classmethod
     def for_test(
@@ -95,7 +103,11 @@ class HookInput:
         objective_context_marker_exists: bool = False,
         objective_issue: int | None = None,
         plan_file_path: Path | None = None,
+        plan_title: str | None = None,
         current_branch: str | None = "feature-branch",
+        worktree_name: str | None = None,
+        pr_number: int | None = None,
+        plan_issue_number: int | None = None,
     ) -> Self:
         """Create a HookInput with test defaults.
 
@@ -105,7 +117,11 @@ class HookInput:
         - All marker exists flags: False
         - objective_issue: None
         - plan_file_path: None
+        - plan_title: None
         - current_branch: "feature-branch"
+        - worktree_name: None
+        - pr_number: None
+        - plan_issue_number: None
         """
         return cls(
             session_id=session_id,
@@ -116,7 +132,11 @@ class HookInput:
             objective_context_marker_exists=objective_context_marker_exists,
             objective_issue=objective_issue,
             plan_file_path=plan_file_path,
+            plan_title=plan_title,
             current_branch=current_branch,
+            worktree_name=worktree_name,
+            pr_number=pr_number,
+            plan_issue_number=plan_issue_number,
         )
 
 
@@ -137,11 +157,49 @@ class HookOutput:
 # ============================================================================
 
 
+def extract_plan_title(plan_file_path: Path | None) -> str | None:
+    """Extract title from plan file for display in menu.
+
+    Pure function - only reads file content, no other I/O.
+
+    Looks for:
+    1. First H1 heading (# Title)
+    2. Content after "## Task" section
+
+    Returns None if file doesn't exist or no title found.
+    """
+    if plan_file_path is None or not plan_file_path.exists():
+        return None
+
+    text = plan_file_path.read_text(encoding="utf-8")
+    lines = text.split("\n")
+
+    # Look for first H1 (skip generic titles)
+    for line in lines[:10]:
+        if line.startswith("# "):
+            title = line[2:].strip()
+            if title.lower() not in ("plan", "implementation plan"):
+                return title
+
+    # Look for ## Task section
+    for i, line in enumerate(lines[:20]):
+        if line.strip() == "## Task":
+            for next_line in lines[i + 1 : i + 5]:
+                if next_line.strip():
+                    return next_line.strip()
+
+    return None
+
+
 def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
     objective_issue: int | None,
+    plan_title: str | None,
+    worktree_name: str | None,
+    pr_number: int | None,
+    plan_issue_number: int | None,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
@@ -152,14 +210,48 @@ def build_blocking_message(
         current_branch: Current git branch name.
         plan_file_path: Path to the plan file, if it exists.
         objective_issue: Objective issue number, if this plan is part of an objective.
+        plan_title: Title extracted from plan file, if available.
+        worktree_name: Directory name of current worktree.
+        pr_number: PR number if exists for current branch.
+        plan_issue_number: Issue number from .impl/issue.json.
     """
+    # Build context lines for the question
+    context_lines: list[str] = []
+
+    # First line: title
+    if plan_title:
+        context_lines.append(f"📋 {plan_title}")
+
+    # Second line: statusline-style context
+    statusline_parts: list[str] = []
+    if worktree_name:
+        statusline_parts.append(f"wt:{worktree_name}")
+    if current_branch:
+        statusline_parts.append(f"br:{current_branch}")
+    if pr_number is not None:
+        statusline_parts.append(f"gh:#{pr_number}")
+    if plan_issue_number is not None:
+        statusline_parts.append(f"plan:#{plan_issue_number}")
+
+    if statusline_parts:
+        statusline = " ".join(f"({part})" for part in statusline_parts)
+        context_lines.append(statusline)
+
+    context_block = "\n".join(context_lines)
+
+    # Build the question text
+    if context_block:
+        question_text = f"{context_block}\\n\\nWhat would you like to do with this plan?"
+    else:
+        question_text = "What would you like to do with this plan?"
+
     lines = [
         "PLAN SAVE PROMPT",
         "",
         "A plan exists for this session but has not been saved.",
         "",
         "Use AskUserQuestion to ask the user:",
-        '  "What would you like to do with this plan?"',
+        f'  "{question_text}"',
         "",
         "IMPORTANT: Present options in this exact order:",
         '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
@@ -281,6 +373,10 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             hook_input.current_branch,
             hook_input.plan_file_path,
             hook_input.objective_issue,
+            hook_input.plan_title,
+            hook_input.worktree_name,
+            hook_input.pr_number,
+            hook_input.plan_issue_number,
         ),
     )
 
@@ -405,6 +501,72 @@ def _get_current_branch_within_hook() -> str | None:
     return result.stdout.strip()
 
 
+def _get_worktree_name(git: Git, repo_root: Path) -> str | None:
+    """Get the directory name of the current worktree.
+
+    Args:
+        git: Git gateway for worktree operations
+        repo_root: Path to the git repository root
+
+    Returns:
+        Worktree directory name, or None if not found
+    """
+    worktrees = git.list_worktrees(repo_root)
+    if not worktrees:
+        return None
+
+    for wt in worktrees:
+        if wt.path == repo_root:
+            return wt.path.name
+
+    return None
+
+
+def _get_pr_number_for_branch(
+    branch_manager: BranchManager, repo_root: Path, branch: str
+) -> int | None:
+    """Get PR number for the given branch.
+
+    Args:
+        branch_manager: BranchManager for PR lookups (Graphite or GitHub)
+        repo_root: Path to the git repository root
+        branch: Branch name to look up
+
+    Returns:
+        PR number if exists, None otherwise
+    """
+    pr_info = branch_manager.get_pr_for_branch(repo_root, branch)
+    if pr_info is None:
+        return None
+    return pr_info.number
+
+
+def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
+    """Load plan issue number from .impl/issue.json file.
+
+    Args:
+        repo_root: Path to the git repository root
+
+    Returns:
+        Issue number if found, None otherwise
+    """
+    issue_file = repo_root / ".impl" / "issue.json"
+    if not issue_file.is_file():
+        return None
+
+    content = issue_file.read_text(encoding="utf-8")
+    if not content.strip():
+        return None
+
+    data = json.loads(content)
+    # Try "issue_number" first (preferred), then fall back to "number"
+    issue_number = data.get("issue_number") or data.get("number")
+    if isinstance(issue_number, int):
+        return issue_number
+
+    return None
+
+
 # ============================================================================
 # Main Hook Entry Point
 # ============================================================================
@@ -415,6 +577,8 @@ def _gather_inputs(
     repo_root: Path,
     github_planning_enabled: bool,
     claude_installation: ClaudeInstallation,
+    git: Git,
+    branch_manager: BranchManager,
 ) -> HookInput:
     """Gather all inputs from environment. All I/O happens here.
 
@@ -423,6 +587,8 @@ def _gather_inputs(
         repo_root: Path to the git repository root.
         github_planning_enabled: Whether github_planning is enabled in config.
         claude_installation: Gateway to Claude installation data.
+        git: Git gateway for worktree operations.
+        branch_manager: BranchManager for PR lookups.
 
     Returns:
         HookInput with all gathered state.
@@ -448,8 +614,17 @@ def _gather_inputs(
     if session_id is not None:
         plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
 
+    # Extract title for display (after finding plan file)
+    plan_title: str | None = None
+    if plan_file_path is not None:
+        plan_title = extract_plan_title(plan_file_path)
+
     # Get current branch (only if we need to show the blocking message)
-    current_branch = None
+    current_branch: str | None = None
+    worktree_name: str | None = None
+    pr_number: int | None = None
+    plan_issue_number: int | None = None
+
     needs_blocking_message = (
         session_id is not None
         and plan_file_path is not None
@@ -459,6 +634,11 @@ def _gather_inputs(
     )
     if needs_blocking_message:
         current_branch = _get_current_branch_within_hook()
+        worktree_name = _get_worktree_name(git, repo_root)
+        plan_issue_number = _get_plan_issue_from_impl(repo_root)
+        # Only lookup PR if we have a branch
+        if current_branch is not None:
+            pr_number = _get_pr_number_for_branch(branch_manager, repo_root, current_branch)
 
     return HookInput(
         session_id=session_id,
@@ -469,7 +649,11 @@ def _gather_inputs(
         objective_context_marker_exists=objective_context_marker_exists,
         objective_issue=objective_issue,
         plan_file_path=plan_file_path,
+        plan_title=plan_title,
         current_branch=current_branch,
+        worktree_name=worktree_name,
+        pr_number=pr_number,
+        plan_issue_number=plan_issue_number,
     )
 
 
@@ -531,12 +715,17 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     global_config = ctx.obj.global_config
     github_planning_enabled = global_config.github_planning if global_config is not None else True
 
+    # Create branch manager for PR lookups
+    branch_manager = create_branch_manager(ctx.obj.git, ctx.obj.graphite, ctx.obj.github)
+
     # Gather all inputs (I/O layer)
     hook_input = _gather_inputs(
         hook_ctx.session_id,
         hook_ctx.repo_root,
         github_planning_enabled,
         ctx.obj.claude_installation,
+        ctx.obj.git,
+        branch_manager,
     )
 
     # Pure decision logic (no I/O)
