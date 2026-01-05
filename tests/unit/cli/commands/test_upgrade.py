@@ -11,7 +11,7 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_upgrade_when_installed_less_than_required(monkeypatch) -> None:
-    """Test that upgrade runs uv tool upgrade when installed < required."""
+    """Test that upgrade runs uv tool upgrade when installed < required and user confirms."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create .erk directory with required version file
@@ -28,10 +28,12 @@ def test_upgrade_when_installed_less_than_required(monkeypatch) -> None:
         monkeypatch.setattr(subprocess, "run", mock_run)
 
         ctx = env.build_context()
-        result = runner.invoke(cli, ["upgrade"], obj=ctx)
+        # Provide "y" input to confirm upgrade
+        result = runner.invoke(cli, ["upgrade"], obj=ctx, input="y\n")
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        assert "Upgrading erk from 0.4.0 to 0.5.0" in result.output
+        assert "Upgrade available: 0.4.0 → 0.5.0" in result.output
+        assert "uv tool upgrade erk" in result.output
         assert "Successfully upgraded" in result.output
 
         # Verify subprocess was called correctly
@@ -116,8 +118,32 @@ def test_upgrade_handles_subprocess_failure(monkeypatch) -> None:
         monkeypatch.setattr(subprocess, "run", mock_run)
 
         ctx = env.build_context()
-        result = runner.invoke(cli, ["upgrade"], obj=ctx)
+        # Provide "y" input to confirm upgrade
+        result = runner.invoke(cli, ["upgrade"], obj=ctx, input="y\n")
 
         assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}"
         assert "Upgrade failed" in result.output
         assert "Package not found" in result.output
+
+
+def test_upgrade_declined_shows_manual_remediation(monkeypatch) -> None:
+    """Test that declining upgrade shows manual remediation instructions."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create .erk directory with required version file
+        erk_dir = env.root_worktree / ".erk"
+        erk_dir.mkdir(parents=True)
+        version_file = erk_dir / "required-erk-uv-tool-version"
+        version_file.write_text("0.5.0", encoding="utf-8")
+
+        # Mock get_current_version to return older version
+        monkeypatch.setattr(upgrade_module, "get_current_version", lambda: "0.4.0")
+
+        ctx = env.build_context()
+        # Provide "n" input to decline upgrade
+        result = runner.invoke(cli, ["upgrade"], obj=ctx, input="n\n")
+
+        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}"
+        assert "Manual remediation required" in result.output
+        assert "uv tool upgrade erk" in result.output
+        assert "uv tool install erk==0.5.0" in result.output

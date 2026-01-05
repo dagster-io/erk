@@ -57,7 +57,19 @@ def upgrade_cmd(ctx: ErkContext) -> None:
         return
 
     # Upgrade needed: installed < required
-    click.echo(f"Upgrading erk from {installed} to {required}...")
+    click.echo(f"Upgrade available: {installed} → {required}")
+    click.echo(click.style("Command: ", dim=True) + "uv tool upgrade erk")
+    click.echo()
+
+    if not click.confirm("Proceed with upgrade?"):
+        click.echo()
+        click.echo(click.style("Manual remediation required:", bold=True))
+        click.echo("  Run: uv tool upgrade erk")
+        click.echo(f"  Or:  uv tool install erk=={required}")
+        raise SystemExit(1)
+
+    click.echo()
+    click.echo("Running uv tool upgrade erk...")
     result = subprocess.run(
         ["uv", "tool", "upgrade", "erk"],
         capture_output=True,
