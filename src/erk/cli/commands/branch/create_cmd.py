@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 import click
 
 from erk.cli.commands.slot.common import (
+    cleanup_worktree_artifacts,
     find_branch_assignment,
     find_inactive_slot,
     find_next_available_slot,
@@ -120,24 +121,23 @@ def branch_create(ctx: ErkContext, branch_name: str, no_slot: bool, force: bool)
                 + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
             )
 
-            # Use the slot we just unassigned (it has a worktree directory that can be reused)
+            # Reuse the unassigned slot - worktree exists, just checkout
             slot_name = to_unassign.slot_name
             worktree_path = to_unassign.worktree_path
+            cleanup_worktree_artifacts(worktree_path)
+            ctx.git.checkout_branch(worktree_path, branch_name)
         else:
+            # Create new slot - no worktree exists yet
             slot_name = generate_slot_name(slot_num)
             worktree_path = repo.worktrees_dir / slot_name
-
-        # Create directory for worktree if needed
-        worktree_path.mkdir(parents=True, exist_ok=True)
-
-        # Add worktree
-        ctx.git.add_worktree(
-            repo.root,
-            worktree_path,
-            branch=branch_name,
-            ref=None,
-            create_branch=False,
-        )
+            worktree_path.mkdir(parents=True, exist_ok=True)
+            ctx.git.add_worktree(
+                repo.root,
+                worktree_path,
+                branch=branch_name,
+                ref=None,
+                create_branch=False,
+            )
 
     # Create new assignment
     now = datetime.now(UTC).isoformat()
