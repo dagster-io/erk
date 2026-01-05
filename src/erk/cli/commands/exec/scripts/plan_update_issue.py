@@ -35,7 +35,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.github.metadata import format_plan_content_comment
+from erk_shared.github.metadata.plan_header import format_plan_content_comment
 
 
 @click.command(name="plan-update-issue")

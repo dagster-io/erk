@@ -20,7 +20,7 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata import format_plan_header_body
+from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.env_helpers import erk_inmem_env

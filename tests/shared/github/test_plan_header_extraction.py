@@ -6,13 +6,12 @@ zero dependencies.
 
 import pytest
 
-from erk_shared.github.metadata import (
-    PlanHeaderSchema,
+from erk_shared.github.metadata.core import find_metadata_block, render_metadata_block
+from erk_shared.github.metadata.plan_header import (
     create_plan_header_block,
-    find_metadata_block,
     format_plan_header_body,
-    render_metadata_block,
 )
+from erk_shared.github.metadata.schemas import PlanHeaderSchema
 
 # === Schema Validation Tests ===
 

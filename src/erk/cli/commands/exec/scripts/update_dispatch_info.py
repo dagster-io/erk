@@ -18,7 +18,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
-from erk_shared.github.metadata import update_plan_header_dispatch
+from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 
 
 @dataclass(frozen=True)

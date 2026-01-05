@@ -28,7 +28,7 @@ from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.plan_header import (
     extract_plan_header_local_impl_at,
     extract_plan_header_local_impl_event,
     extract_plan_header_remote_impl_at,

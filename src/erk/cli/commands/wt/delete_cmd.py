@@ -25,7 +25,7 @@ from erk.core.worktree_utils import (
 )
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
-from erk_shared.github.metadata import extract_plan_header_worktree_name
+from erk_shared.github.metadata.plan_header import extract_plan_header_worktree_name
 from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import user_confirm, user_output
 from erk_shared.plan_store.types import PlanQuery, PlanState

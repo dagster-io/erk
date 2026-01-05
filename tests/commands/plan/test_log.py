@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.core import (
     create_implementation_status_block,
     create_plan_block,
     create_submission_queued_block,

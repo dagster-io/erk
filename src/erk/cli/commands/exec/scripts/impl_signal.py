@@ -44,8 +44,8 @@ from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
 from erk_shared.env import in_github_actions
-from erk_shared.github.metadata import (
-    render_erk_issue_event,
+from erk_shared.github.metadata.core import render_erk_issue_event
+from erk_shared.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
 )

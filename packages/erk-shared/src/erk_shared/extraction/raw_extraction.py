@@ -20,7 +20,7 @@ from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.metadata import render_session_content_blocks
+from erk_shared.github.metadata.session import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
 
 # Enable/disable Stage 2 Haiku distillation

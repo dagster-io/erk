@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.core import (
     create_worktree_creation_block,
     render_erk_issue_event,
 )
@@ -292,7 +292,7 @@ def read_plan_author(impl_dir: Path) -> str | None:
     plan_content = plan_file.read_text(encoding="utf-8")
 
     # Use existing metadata parsing infrastructure
-    from erk_shared.github.metadata import find_metadata_block
+    from erk_shared.github.metadata.core import find_metadata_block
 
     block = find_metadata_block(plan_content, "plan-header")
     if block is None:
@@ -325,7 +325,7 @@ def read_last_dispatched_run_id(impl_dir: Path) -> str | None:
     plan_content = plan_file.read_text(encoding="utf-8")
 
     # Use existing metadata parsing infrastructure
-    from erk_shared.github.metadata import find_metadata_block
+    from erk_shared.github.metadata.core import find_metadata_block
 
     block = find_metadata_block(plan_content, "plan-header")
     if block is None:

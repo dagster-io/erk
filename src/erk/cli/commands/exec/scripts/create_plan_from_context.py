@@ -18,7 +18,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
-from erk_shared.github.metadata import format_plan_issue_body
+from erk_shared.github.metadata.core import format_plan_issue_body
 from erk_shared.plan_utils import extract_title_from_plan
 
 

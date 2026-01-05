@@ -14,7 +14,7 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.metadata import format_plan_header_body
+from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
