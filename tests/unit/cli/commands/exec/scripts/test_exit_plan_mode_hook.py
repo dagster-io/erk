@@ -16,6 +16,7 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     build_blocking_message,
     determine_exit_action,
     exit_plan_mode_hook,
+    extract_plan_title,
 )
 from erk_shared.context.context import ErkContext
 
@@ -176,6 +177,73 @@ class TestDetermineExitAction:
 
 
 # ============================================================================
+# Pure Logic Tests for extract_plan_title() - NO MOCKING REQUIRED
+# ============================================================================
+
+
+class TestExtractPlanTitle:
+    """Tests for the pure extract_plan_title() function."""
+
+    def test_extracts_h1_heading(self, tmp_path: Path) -> None:
+        """Extract title from first H1 heading."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text("# My Plan Title\n\nSome content here.\n", encoding="utf-8")
+        assert extract_plan_title(plan_file) == "My Plan Title"
+
+    def test_extracts_from_task_section(self, tmp_path: Path) -> None:
+        """Extract title from ## Task section when no H1."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text(
+            "## Task\nDo the thing with feature X\n\n## Details\nMore info.",
+            encoding="utf-8",
+        )
+        assert extract_plan_title(plan_file) == "Do the thing with feature X"
+
+    def test_skips_generic_plan_heading(self, tmp_path: Path) -> None:
+        """Skip generic '# Plan' heading and fall back to ## Task."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text("# Plan\n\n## Task\nActual task description\n", encoding="utf-8")
+        assert extract_plan_title(plan_file) == "Actual task description"
+
+    def test_skips_generic_implementation_plan_heading(self, tmp_path: Path) -> None:
+        """Skip generic '# Implementation Plan' heading."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text(
+            "# Implementation Plan\n\n## Task\nBuild the widget\n", encoding="utf-8"
+        )
+        assert extract_plan_title(plan_file) == "Build the widget"
+
+    def test_returns_none_for_no_file(self) -> None:
+        """Return None when plan_file_path is None."""
+        assert extract_plan_title(None) is None
+
+    def test_returns_none_for_nonexistent_file(self, tmp_path: Path) -> None:
+        """Return None when file doesn't exist."""
+        nonexistent = tmp_path / "does_not_exist.md"
+        assert extract_plan_title(nonexistent) is None
+
+    def test_returns_none_for_empty_file(self, tmp_path: Path) -> None:
+        """Return None when file is empty."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text("", encoding="utf-8")
+        assert extract_plan_title(plan_file) is None
+
+    def test_returns_none_when_no_title_found(self, tmp_path: Path) -> None:
+        """Return None when no valid title pattern found."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text(
+            "Some random content\nwithout any headings\nor task section.", encoding="utf-8"
+        )
+        assert extract_plan_title(plan_file) is None
+
+    def test_prefers_h1_over_task_section(self, tmp_path: Path) -> None:
+        """H1 heading takes precedence over ## Task section."""
+        plan_file = tmp_path / "plan.md"
+        plan_file.write_text("# Better Title\n\n## Task\nTask description\n", encoding="utf-8")
+        assert extract_plan_title(plan_file) == "Better Title"
+
+
+# ============================================================================
 # Pure Logic Tests for build_blocking_message() - NO MOCKING REQUIRED
 # ============================================================================
 
@@ -186,7 +254,7 @@ class TestBuildBlockingMessage:
     def test_contains_required_elements(self) -> None:
         """Message contains all required elements."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None, None)
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
         assert "Save the plan" in message
@@ -208,7 +276,7 @@ class TestBuildBlockingMessage:
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "main", plan_path, None)
+        message = build_blocking_message("session-123", "main", plan_path, None, None)
         assert "WARNING" in message
         assert "main" in message
         assert "trunk branch" in message
@@ -217,7 +285,7 @@ class TestBuildBlockingMessage:
     def test_trunk_branch_master_shows_warning(self) -> None:
         """Warning shown when on master branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "master", plan_path, None)
+        message = build_blocking_message("session-123", "master", plan_path, None, None)
         assert "WARNING" in message
         assert "master" in message
         assert "trunk branch" in message
@@ -225,28 +293,28 @@ class TestBuildBlockingMessage:
     def test_feature_branch_no_warning(self) -> None:
         """No warning when on feature branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None, None)
         assert "WARNING" not in message
         assert "trunk branch" not in message
 
     def test_none_branch_no_warning(self) -> None:
         """No warning when branch is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", None, plan_path, None)
+        message = build_blocking_message("session-123", None, plan_path, None, None)
         assert "WARNING" not in message
         assert "trunk branch" not in message
 
     def test_edit_plan_option_included(self) -> None:
         """Third option 'View/Edit the plan' is included in message."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None, None)
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
 
     def test_edit_plan_instructions_include_path(self) -> None:
         """Edit plan instructions include the plan file path."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None, None)
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
         assert "After user confirms they're done editing" in message
@@ -254,7 +322,7 @@ class TestBuildBlockingMessage:
 
     def test_edit_plan_instructions_omitted_when_no_path(self) -> None:
         """Edit plan instructions omitted when plan_file_path is None."""
-        message = build_blocking_message("session-123", "feature-branch", None, None)
+        message = build_blocking_message("session-123", "feature-branch", None, None, None)
         # The option is still listed (as it's hardcoded), but no instructions
         assert "View/Edit the plan" in message
         assert "If user chooses 'View/Edit the plan':" not in message
@@ -262,16 +330,44 @@ class TestBuildBlockingMessage:
     def test_objective_issue_included_in_save_command(self) -> None:
         """Save command includes --objective-issue when objective_issue is provided."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path, 3679)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, 3679, None)
         assert "/erk:plan-save --objective-issue=3679" in message
 
     def test_save_command_without_objective_issue(self) -> None:
         """Save command is plain when objective_issue is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message("session-123", "feature-branch", plan_path, None)
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None, None)
         # Should have /erk:plan-save but not --objective-issue
         assert "/erk:plan-save" in message
         assert "--objective-issue" not in message
+
+    def test_includes_title_and_path_in_question(self) -> None:
+        """Question includes title and path context when both available."""
+        plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
+        message = build_blocking_message(
+            "session-123", "feature-branch", plan_path, None, "Add Feature X"
+        )
+        # Title and path should be in the question
+        assert "📋 Add Feature X" in message
+        assert "📁 ~/.claude/plans/session-123.md" in message  # Path with ~ for home dir
+        assert "What would you like to do with this plan?" in message
+
+    def test_includes_path_only_when_no_title(self) -> None:
+        """Question includes path when title is None."""
+        plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
+        message = build_blocking_message("session-123", "feature-branch", plan_path, None, None)
+        # Only path should be present, not title emoji
+        assert "📁 ~/.claude/plans/session-123.md" in message
+        assert "📋" not in message
+
+    def test_no_context_when_neither_title_nor_path(self) -> None:
+        """Question has no context block when both title and path are None."""
+        message = build_blocking_message("session-123", "feature-branch", None, None, None)
+        # Should still have the basic question
+        assert "What would you like to do with this plan?" in message
+        # But no emoji context
+        assert "📋" not in message
+        assert "📁" not in message
 
 
 # ============================================================================

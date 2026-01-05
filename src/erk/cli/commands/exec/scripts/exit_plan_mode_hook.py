@@ -81,6 +81,7 @@ class HookInput:
     objective_context_marker_exists: bool
     objective_issue: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
+    plan_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
 
     @classmethod
@@ -95,6 +96,7 @@ class HookInput:
         objective_context_marker_exists: bool = False,
         objective_issue: int | None = None,
         plan_file_path: Path | None = None,
+        plan_title: str | None = None,
         current_branch: str | None = "feature-branch",
     ) -> Self:
         """Create a HookInput with test defaults.
@@ -105,6 +107,7 @@ class HookInput:
         - All marker exists flags: False
         - objective_issue: None
         - plan_file_path: None
+        - plan_title: None
         - current_branch: "feature-branch"
         """
         return cls(
@@ -116,6 +119,7 @@ class HookInput:
             objective_context_marker_exists=objective_context_marker_exists,
             objective_issue=objective_issue,
             plan_file_path=plan_file_path,
+            plan_title=plan_title,
             current_branch=current_branch,
         )
 
@@ -137,11 +141,46 @@ class HookOutput:
 # ============================================================================
 
 
+def extract_plan_title(plan_file_path: Path | None) -> str | None:
+    """Extract title from plan file for display in menu.
+
+    Pure function - only reads file content, no other I/O.
+
+    Looks for:
+    1. First H1 heading (# Title)
+    2. Content after "## Task" section
+
+    Returns None if file doesn't exist or no title found.
+    """
+    if plan_file_path is None or not plan_file_path.exists():
+        return None
+
+    text = plan_file_path.read_text(encoding="utf-8")
+    lines = text.split("\n")
+
+    # Look for first H1 (skip generic titles)
+    for line in lines[:10]:
+        if line.startswith("# "):
+            title = line[2:].strip()
+            if title.lower() not in ("plan", "implementation plan"):
+                return title
+
+    # Look for ## Task section
+    for i, line in enumerate(lines[:20]):
+        if line.strip() == "## Task":
+            for next_line in lines[i + 1 : i + 5]:
+                if next_line.strip():
+                    return next_line.strip()
+
+    return None
+
+
 def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
     objective_issue: int | None,
+    plan_title: str | None,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
@@ -152,14 +191,31 @@ def build_blocking_message(
         current_branch: Current git branch name.
         plan_file_path: Path to the plan file, if it exists.
         objective_issue: Objective issue number, if this plan is part of an objective.
+        plan_title: Title extracted from plan file, if available.
     """
+    # Build context block for the question
+    context_lines: list[str] = []
+    if plan_title:
+        context_lines.append(f"📋 {plan_title}")
+    if plan_file_path:
+        display_path = str(plan_file_path).replace(str(Path.home()), "~")
+        context_lines.append(f"📁 {display_path}")
+
+    context_block = "\n".join(context_lines)
+
+    # Build the question text
+    if context_block:
+        question_text = f"{context_block}\\n\\nWhat would you like to do with this plan?"
+    else:
+        question_text = "What would you like to do with this plan?"
+
     lines = [
         "PLAN SAVE PROMPT",
         "",
         "A plan exists for this session but has not been saved.",
         "",
         "Use AskUserQuestion to ask the user:",
-        '  "What would you like to do with this plan?"',
+        f'  "{question_text}"',
         "",
         "IMPORTANT: Present options in this exact order:",
         '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
@@ -281,6 +337,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             hook_input.current_branch,
             hook_input.plan_file_path,
             hook_input.objective_issue,
+            hook_input.plan_title,
         ),
     )
 
@@ -448,6 +505,11 @@ def _gather_inputs(
     if session_id is not None:
         plan_file_path = _find_session_plan(session_id, repo_root, claude_installation)
 
+    # Extract title for display (after finding plan file)
+    plan_title: str | None = None
+    if plan_file_path is not None:
+        plan_title = extract_plan_title(plan_file_path)
+
     # Get current branch (only if we need to show the blocking message)
     current_branch = None
     needs_blocking_message = (
@@ -469,6 +531,7 @@ def _gather_inputs(
         objective_context_marker_exists=objective_context_marker_exists,
         objective_issue=objective_issue,
         plan_file_path=plan_file_path,
+        plan_title=plan_title,
         current_branch=current_branch,
     )
 
