@@ -59,8 +59,8 @@ def test_doctor_runs_checks() -> None:
 
         # Should show section headers
         assert "Checking erk setup" in result.output
-        assert "CLI Tools" in result.output
         assert "Repository Setup" in result.output
+        assert "User Setup" in result.output
 
         # Should show erk version check
         assert "erk" in result.output.lower()
@@ -127,8 +127,8 @@ def test_doctor_shows_summary() -> None:
         assert "passed" in result.output.lower() or "failed" in result.output.lower()
 
 
-def test_doctor_shows_github_section() -> None:
-    """Test that doctor shows GitHub section with auth and workflow permissions."""
+def test_doctor_shows_github_checks() -> None:
+    """Test that doctor shows GitHub-related checks in appropriate sections."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -142,8 +142,9 @@ def test_doctor_shows_github_section() -> None:
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 
         assert result.exit_code == 0
-        # Should show GitHub section header
-        assert "GitHub" in result.output
+        # GitHub auth check should be under User Setup
+        # workflow-permissions should be under Repository Setup > GitHub subgroup
+        assert "GitHub" in result.output  # GitHub subgroup in repo section
 
 
 def test_doctor_shows_required_version_check() -> None:
@@ -191,3 +192,130 @@ def test_doctor_shows_exit_plan_hook_check() -> None:
         # When settings.json exists but hook is not configured, message is
         # "ExitPlanMode hook not configured"
         assert "ExitPlanMode" in result.output
+
+
+def test_doctor_default_shows_condensed_subgroups() -> None:
+    """Test that doctor default output shows condensed sub-group summaries."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should show sub-group names with "(X checks)" format
+        # At least one sub-group should be shown with check count
+        assert "checks)" in result.output
+
+
+def test_doctor_verbose_shows_all_individual_checks() -> None:
+    """Test that --verbose flag shows all individual checks expanded."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, ["--verbose"], obj=ctx)
+
+        assert result.exit_code == 0
+        # In verbose mode, should show sub-group headers like "Git repository"
+        assert "Git repository" in result.output
+        # Should show individual checks expanded (more detail visible)
+        # The sub-group header style is dim text
+        assert "Claude settings" in result.output or "Erk configuration" in result.output
+
+
+def test_doctor_verbose_short_flag() -> None:
+    """Test that -v short flag works for verbose mode."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, ["-v"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Same as --verbose, should show sub-group headers
+        assert "Git repository" in result.output
+
+
+def test_doctor_dogfooder_hides_checks_by_default() -> None:
+    """Test that early dogfooder checks are not shown by default."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+        # Early Dogfooder section should NOT appear by default
+        assert "Early Dogfooder" not in result.output
+
+
+def test_doctor_dogfooder_flag_shows_checks() -> None:
+    """Test that --dogfooder flag shows early dogfooder checks."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, ["--dogfooder"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Early Dogfooder section SHOULD appear when flag is passed
+        assert "Early Dogfooder" in result.output
+
+
+def test_doctor_subgroup_auto_expands_on_failure() -> None:
+    """Test that sub-groups with failures auto-expand to show failed checks."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create .claude/settings.json but without the required hooks
+        # This will cause user-prompt-hook and exit-plan-hook to fail
+        settings_path = env.cwd / ".claude" / "settings.json"
+        settings_path.parent.mkdir(parents=True)
+        settings_path.write_text('{"hooks": {}}', encoding="utf-8")
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        # Command should succeed but with failures
+        assert result.exit_code == 0
+
+        # Should show the failing checks expanded (not just count)
+        # When hooks are missing, should show specific failure messages
+        assert "hook" in result.output.lower()

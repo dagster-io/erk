@@ -27,6 +27,7 @@ from erk.core.claude_settings import (
     read_claude_settings,
 )
 from erk.core.context import ErkContext
+from erk.core.init_utils import has_shell_integration_in_rc
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
 from erk_shared.extraction.claude_installation import ClaudeInstallation
@@ -69,7 +70,6 @@ def check_erk_version() -> CheckResult:
             name="erk",
             passed=True,
             message=f"erk CLI installed: v{erk_version}",
-            details=erk_version,
         )
     except Exception:
         return CheckResult(
@@ -163,8 +163,7 @@ def check_claude_cli(shell: Shell) -> CheckResult:
     return CheckResult(
         name="claude",
         passed=True,
-        message=f"Claude CLI available: {version_str}",
-        details=version_str,
+        message=f"Claude CLI installed: {version_str}",
     )
 
 
@@ -196,8 +195,7 @@ def check_graphite_cli(shell: Shell) -> CheckResult:
     return CheckResult(
         name="graphite",
         passed=True,
-        message=f"Graphite CLI available: {version_output}",
-        details=version_output,
+        message=f"Graphite CLI installed: {version_output}",
     )
 
 
@@ -231,8 +229,7 @@ def check_github_cli(shell: Shell) -> CheckResult:
     return CheckResult(
         name="github",
         passed=True,
-        message=f"GitHub CLI available: {version_first_line}",
-        details=version_first_line,
+        message=f"GitHub CLI installed: {version_first_line}",
     )
 
 
@@ -381,8 +378,7 @@ def check_uv_version(shell: Shell) -> CheckResult:
     return CheckResult(
         name="uv",
         passed=True,
-        message=f"uv available: {version}",
-        details="erk works best with recent versions. Upgrade: uv self update",
+        message=f"uv installed: {version}",
     )
 
 
@@ -479,6 +475,53 @@ def check_statusline_configured(claude_installation: ClaudeInstallation) -> Chec
         message="erk-statusline not configured",
         details="Run 'erk init --statusline' to enable erk statusline",
         info=True,
+    )
+
+
+def check_shell_integration(shell: Shell) -> CheckResult:
+    """Check if shell integration is configured in user's shell RC file.
+
+    This is an info-level check - it always passes, but informs users
+    whether shell integration is configured for their shell.
+
+    Args:
+        shell: Shell implementation for detecting current shell
+
+    Returns:
+        CheckResult with info about shell integration status
+    """
+    shell_info = shell.detect_shell()
+    if shell_info is None:
+        return CheckResult(
+            name="shell-integration",
+            passed=True,
+            message="Shell not detected (unsupported shell)",
+            info=True,
+        )
+
+    shell_name, rc_path = shell_info
+
+    if not rc_path.exists():
+        return CheckResult(
+            name="shell-integration",
+            passed=True,
+            message=f"Shell RC file not found ({rc_path.name})",
+            info=True,
+        )
+
+    if has_shell_integration_in_rc(rc_path):
+        return CheckResult(
+            name="shell-integration",
+            passed=True,
+            message=f"Shell integration configured ({shell_name})",
+        )
+
+    return CheckResult(
+        name="shell-integration",
+        passed=True,
+        message=f"Shell integration not configured ({shell_name})",
+        info=True,
+        remediation="Run 'erk init' to add shell integration",
     )
 
 
@@ -865,12 +908,22 @@ def check_hook_health(repo_root: Path) -> CheckResult:
             )
 
     total_failures = error_count + exception_count
+    total_executions = success_count + blocked_count + error_count + exception_count
 
     if total_failures == 0:
+        # Build verbose details showing execution stats
+        verbose_lines = [f"{total_executions} executions in last 24h"]
+        if success_count > 0:
+            verbose_lines.append(f"  {success_count} successful")
+        if blocked_count > 0:
+            verbose_lines.append(f"  {blocked_count} blocked (expected behavior)")
+        verbose_details = "\n".join(verbose_lines)
+
         return CheckResult(
             name="hooks",
             passed=True,
-            message=f"All hooks healthy ({success_count} succeeded, {blocked_count} blocked)",
+            message="Hooks healthy",
+            verbose_details=verbose_details,
         )
 
     # Build failure details
@@ -1045,7 +1098,11 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
 
         # Add individual artifact names to verbose output
         for artifact_info in sorted(artifacts, key=lambda a: a.name):
-            verbose_summaries.append(f"      {artifact_info.name}")
+            if artifact_info.status == "up-to-date":
+                status_indicator = ""
+            else:
+                status_indicator = f" ({artifact_info.status})"
+            verbose_summaries.append(f"      {artifact_info.name}{status_indicator}")
 
     details = "\n".join(type_summaries)
     verbose_details = "\n".join(verbose_summaries)
@@ -1168,6 +1225,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_uv_version(shell),
         check_hooks_disabled(claude_installation),
         check_statusline_configured(claude_installation),
+        check_shell_integration(shell),
     ]
 
     # Add repository check

@@ -45,9 +45,9 @@ def test_doctor_passes_user_prompt_hook_check(tmp_path: Path) -> None:
     }
     (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
-    # Act: Run erk doctor and capture output
+    # Act: Run erk doctor --verbose to see individual check messages
     result = subprocess.run(
-        ["erk", "doctor"],
+        ["erk", "doctor", "--verbose"],
         cwd=repo,
         capture_output=True,
         text=True,
