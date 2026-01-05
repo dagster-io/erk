@@ -46,13 +46,13 @@ from erk_statusline.statusline import (
 class TestCategorizeCheckBuckets:
     """Test check context categorization logic."""
 
-    def test_empty_contexts_returns_empty_string(self) -> None:
-        """Empty check contexts should return empty string."""
+    def test_empty_contexts_returns_zero_counts(self) -> None:
+        """Empty check contexts should return all zeros."""
         result = _categorize_check_buckets([])
-        assert result == ""
+        assert result == (0, 0, 0)
 
-    def test_checkrun_success_returns_green_check(self) -> None:
-        """CheckRun with SUCCESS conclusion should return green check."""
+    def test_checkrun_success_counts_as_pass(self) -> None:
+        """CheckRun with SUCCESS conclusion should count as pass."""
         contexts = [
             {
                 "__typename": "CheckRun",
@@ -62,10 +62,10 @@ class TestCategorizeCheckBuckets:
             }
         ]
         result = _categorize_check_buckets(contexts)
-        assert result == "\u2705"
+        assert result == (1, 0, 0)
 
-    def test_checkrun_failure_returns_red_x(self) -> None:
-        """CheckRun with FAILURE conclusion should return red X."""
+    def test_checkrun_failure_counts_as_fail(self) -> None:
+        """CheckRun with FAILURE conclusion should count as fail."""
         contexts = [
             {
                 "__typename": "CheckRun",
@@ -75,24 +75,24 @@ class TestCategorizeCheckBuckets:
             }
         ]
         result = _categorize_check_buckets(contexts)
-        assert result == "\U0001f6ab"
+        assert result == (0, 1, 0)
 
-    def test_checkrun_in_progress_returns_pending(self) -> None:
-        """CheckRun with IN_PROGRESS status should return pending."""
+    def test_checkrun_in_progress_counts_as_pending(self) -> None:
+        """CheckRun with IN_PROGRESS status should count as pending."""
         contexts = [
             {"__typename": "CheckRun", "conclusion": "", "status": "IN_PROGRESS", "name": "test"}
         ]
         result = _categorize_check_buckets(contexts)
-        assert result == "\U0001f504"
+        assert result == (0, 0, 1)
 
-    def test_statuscontext_success_returns_green_check(self) -> None:
-        """StatusContext with SUCCESS state should return green check."""
+    def test_statuscontext_success_counts_as_pass(self) -> None:
+        """StatusContext with SUCCESS state should count as pass."""
         contexts = [{"__typename": "StatusContext", "state": "SUCCESS", "context": "test"}]
         result = _categorize_check_buckets(contexts)
-        assert result == "\u2705"
+        assert result == (1, 0, 0)
 
-    def test_mixed_fail_has_priority_over_pending(self) -> None:
-        """Fail state should have priority over pending."""
+    def test_mixed_contexts_returns_all_counts(self) -> None:
+        """Mixed contexts should return counts for each bucket."""
         contexts = [
             {
                 "__typename": "CheckRun",
@@ -109,7 +109,7 @@ class TestCategorizeCheckBuckets:
             },
         ]
         result = _categorize_check_buckets(contexts)
-        assert result == "\U0001f6ab"
+        assert result == (1, 1, 1)
 
 
 class TestGetRepoInfo:
@@ -167,8 +167,22 @@ class TestGetChecksStatus:
         result = get_checks_status(None)
         assert result == ""
 
-    def test_delegates_to_categorize_check_buckets(self) -> None:
-        """Should delegate to _categorize_check_buckets with check_contexts."""
+    def test_empty_checks_returns_empty_string(self) -> None:
+        """Empty check_contexts should return empty string."""
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+        )
+        result = get_checks_status(github_data)
+        assert result == ""
+
+    def test_single_pass_returns_count_with_emoji(self) -> None:
+        """Single passing check should return count with emoji."""
         github_data = GitHubData(
             owner="testowner",
             repo="testrepo",
@@ -186,7 +200,145 @@ class TestGetChecksStatus:
             ],
         )
         result = get_checks_status(github_data)
-        assert result == "\u2705"
+        assert result == "[✅:1]"
+
+    def test_multiple_passes_returns_count(self) -> None:
+        """Multiple passing checks should return total count."""
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test1",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test2",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test3",
+                },
+            ],
+        )
+        result = get_checks_status(github_data)
+        assert result == "[✅:3]"
+
+    def test_mixed_statuses_returns_all_counts(self) -> None:
+        """Mixed check statuses should return all non-zero counts."""
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test1",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test2",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test3",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "FAILURE",
+                    "status": "COMPLETED",
+                    "name": "test4",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "",
+                    "status": "IN_PROGRESS",
+                    "name": "test5",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "",
+                    "status": "IN_PROGRESS",
+                    "name": "test6",
+                },
+            ],
+        )
+        result = get_checks_status(github_data)
+        assert result == "[✅:3 🚫:1 🔄:2]"
+
+    def test_only_failures_shows_only_fail_count(self) -> None:
+        """Only failures should show only fail count."""
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "FAILURE",
+                    "status": "COMPLETED",
+                    "name": "test1",
+                },
+            ],
+        )
+        result = get_checks_status(github_data)
+        assert result == "[🚫:1]"
+
+    def test_pass_and_pending_shows_both(self) -> None:
+        """Pass and pending should show both counts."""
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test1",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "SUCCESS",
+                    "status": "COMPLETED",
+                    "name": "test2",
+                },
+                {
+                    "__typename": "CheckRun",
+                    "conclusion": "",
+                    "status": "IN_PROGRESS",
+                    "name": "test3",
+                },
+            ],
+        )
+        result = get_checks_status(github_data)
+        assert result == "[✅:2 🔄:1]"
 
 
 class TestBuildGhLabel:

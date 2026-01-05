@@ -662,24 +662,18 @@ def fetch_github_data_via_gateway(
     )
 
 
-def _categorize_check_buckets(check_contexts: list[dict[str, str]]) -> str:
-    """Categorize check contexts into bucket status.
+def _categorize_check_buckets(check_contexts: list[dict[str, str]]) -> tuple[int, int, int]:
+    """Categorize check contexts into bucket counts.
 
     Args:
         check_contexts: List of check context dicts (normalized to GraphQL format)
 
     Returns:
-        "✅" if all checks pass
-        "🚫" if any checks fail
-        "🔄" if checks are pending/in-progress
-        "" (empty string) if no checks
+        Tuple of (pass_count, fail_count, pending_count)
     """
-    if not check_contexts:
-        return ""
-
-    has_pass = False
-    has_fail = False
-    has_pending = False
+    pass_count = 0
+    fail_count = 0
+    pending_count = 0
 
     for context in check_contexts:
         typename = context.get("__typename", "")
@@ -690,35 +684,27 @@ def _categorize_check_buckets(check_contexts: list[dict[str, str]]) -> str:
 
             # Map CheckRun states to buckets
             if conclusion in ("SUCCESS", "NEUTRAL", "SKIPPED"):
-                has_pass = True
+                pass_count += 1
             elif conclusion in ("FAILURE", "TIMED_OUT", "ACTION_REQUIRED", "CANCELLED"):
-                has_fail = True
+                fail_count += 1
             elif status in ("IN_PROGRESS", "QUEUED", "PENDING", "WAITING"):
-                has_pending = True
+                pending_count += 1
             elif conclusion == "" and status in ("COMPLETED",):
                 # Completed without conclusion - treat as pending
-                has_pending = True
+                pending_count += 1
 
         elif typename == "StatusContext":
             state = context.get("state", "")
 
             # Map StatusContext states to buckets
             if state == "SUCCESS":
-                has_pass = True
+                pass_count += 1
             elif state in ("FAILURE", "ERROR"):
-                has_fail = True
+                fail_count += 1
             elif state in ("PENDING", "EXPECTED"):
-                has_pending = True
+                pending_count += 1
 
-    # Priority: fail > pending > pass
-    if has_fail:
-        return "🚫"
-    if has_pending:
-        return "🔄"
-    if has_pass:
-        return "✅"
-
-    return ""
+    return (pass_count, fail_count, pending_count)
 
 
 def get_checks_status(github_data: GitHubData | None) -> str:
@@ -728,15 +714,26 @@ def get_checks_status(github_data: GitHubData | None) -> str:
         github_data: GitHub data from GraphQL query, or None if unavailable
 
     Returns:
-        "✅" if all checks pass
-        "🚫" if any checks fail
-        "🔄" if checks are pending/in-progress
-        "" (empty string) if no checks or unavailable
+        Formatted string like "[✅:3 🚫:1 🔄:2]" with only non-zero counts shown.
+        Empty string if no checks or unavailable.
     """
     if not github_data:
         return ""
 
-    return _categorize_check_buckets(github_data.check_contexts)
+    pass_count, fail_count, pending_count = _categorize_check_buckets(github_data.check_contexts)
+
+    if pass_count == 0 and fail_count == 0 and pending_count == 0:
+        return ""
+
+    parts: list[str] = []
+    if pass_count > 0:
+        parts.append(f"✅:{pass_count}")
+    if fail_count > 0:
+        parts.append(f"🚫:{fail_count}")
+    if pending_count > 0:
+        parts.append(f"🔄:{pending_count}")
+
+    return "[" + " ".join(parts) + "]"
 
 
 def get_repo_info(github_data: GitHubData | None) -> RepoInfo:
