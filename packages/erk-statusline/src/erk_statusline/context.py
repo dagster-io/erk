@@ -43,7 +43,7 @@ def create_context(cwd: str) -> StatuslineContext:
     git = RealGit()
     graphite = RealGraphite()
     github = RealGitHub(RealTime())
-    branch_manager = create_branch_manager(git, github, graphite)
+    branch_manager = create_branch_manager(git=git, github=github, graphite=graphite)
     return StatuslineContext(
         cwd=Path(cwd),
         git=git,

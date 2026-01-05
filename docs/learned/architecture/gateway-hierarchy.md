@@ -118,7 +118,7 @@ class GraphiteDisabled(Graphite):
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 
 # Factory function pattern (recommended)
-def create_branch_manager(git, github, graphite) -> BranchManager:
+def create_branch_manager(*, git, github, graphite) -> BranchManager:
     if isinstance(graphite, GraphiteDisabled):
         return GitBranchManager(git=git, github=github)
     return GraphiteBranchManager(git=git, graphite=graphite)
@@ -152,13 +152,13 @@ BranchManager uses factory dispatch to select the right implementation:
 
 ```python
 # In factory.py
-def create_branch_manager(git, github, graphite) -> BranchManager:
+def create_branch_manager(*, git, github, graphite) -> BranchManager:
     if isinstance(graphite, GraphiteDisabled):
         return GitBranchManager(git=git, github=github)
     return GraphiteBranchManager(git=git, graphite=graphite)
 
 # Consumer code doesn't know which implementation
-branch_manager = create_branch_manager(ctx.git, ctx.github, ctx.graphite)
+branch_manager = create_branch_manager(git=ctx.git, github=ctx.github, graphite=ctx.graphite)
 pr = branch_manager.get_pr_for_branch(repo_root, branch)
 ```
 
