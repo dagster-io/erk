@@ -7,6 +7,7 @@ from erk.cli.commands.slot.common import (
     extract_slot_number,
     find_assignment_by_worktree,
     find_inactive_slot,
+    find_next_available_slot,
     find_oldest_assignment,
     get_placeholder_branch_name,
     get_pool_size,
@@ -193,6 +194,97 @@ class TestIsSlotInitialized:
         state = PoolState.test(slots=(slot,))
 
         assert is_slot_initialized(state, "erk-managed-wt-02") is False
+
+
+class TestFindNextAvailableSlot:
+    """Tests for find_next_available_slot function."""
+
+    def test_returns_first_slot_when_empty(self) -> None:
+        """Returns slot 1 when no slots exist and no assignments."""
+        state = PoolState.test(pool_size=4)
+
+        result = find_next_available_slot(state)
+
+        assert result == 1
+
+    def test_returns_none_when_pool_full_with_assignments(self) -> None:
+        """Returns None when all slots are assigned."""
+        assignment1 = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+        )
+        assignment2 = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-b",
+            assigned_at="2024-01-01T13:00:00+00:00",
+            worktree_path=Path("/worktrees/erk-managed-wt-02"),
+        )
+        state = PoolState.test(pool_size=2, assignments=(assignment1, assignment2))
+
+        result = find_next_available_slot(state)
+
+        assert result is None
+
+    def test_skips_assigned_slot(self) -> None:
+        """Returns next available slot, skipping assigned ones."""
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+        )
+        state = PoolState.test(pool_size=4, assignments=(assignment,))
+
+        result = find_next_available_slot(state)
+
+        assert result == 2
+
+    def test_skips_initialized_slot_without_assignment(self) -> None:
+        """Returns slot that is neither assigned nor initialized.
+
+        This is the key bug fix test: when a slot exists on disk
+        (in state.slots) but is not assigned (not in state.assignments),
+        find_next_available_slot should NOT return that slot number.
+        """
+        # Slot 1 exists on disk but has no assignment
+        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        state = PoolState.test(pool_size=4, slots=(slot1,))
+
+        result = find_next_available_slot(state)
+
+        # Should return 2, not 1 (since 1 already exists on disk)
+        assert result == 2
+
+    def test_skips_both_assigned_and_initialized_slots(self) -> None:
+        """Returns first slot that is neither assigned nor initialized."""
+        # Slot 1: initialized but not assigned
+        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        # Slot 2: initialized AND assigned
+        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+        assignment2 = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-b",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=Path("/worktrees/erk-managed-wt-02"),
+        )
+        state = PoolState.test(pool_size=4, slots=(slot1, slot2), assignments=(assignment2,))
+
+        result = find_next_available_slot(state)
+
+        # Should return 3, skipping both 1 (initialized) and 2 (assigned)
+        assert result == 3
+
+    def test_returns_none_when_all_slots_initialized(self) -> None:
+        """Returns None when all slots are initialized (even without assignments)."""
+        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+        state = PoolState.test(pool_size=2, slots=(slot1, slot2))
+
+        result = find_next_available_slot(state)
+
+        assert result is None
 
 
 def test_extract_slot_number_valid() -> None:

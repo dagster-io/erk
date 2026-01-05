@@ -72,7 +72,14 @@ def generate_slot_name(slot_number: int) -> str:
 
 
 def find_next_available_slot(state: PoolState) -> int | None:
-    """Find the next available slot number.
+    """Find the next available slot number for on-demand worktree creation.
+
+    This function finds a slot number that is:
+    1. Not currently assigned to a branch (not in state.assignments)
+    2. Not already initialized as a worktree (not in state.slots)
+
+    This ensures on-demand creation only targets slots where no worktree
+    exists on disk.
 
     Args:
         state: Current pool state
@@ -81,10 +88,11 @@ def find_next_available_slot(state: PoolState) -> int | None:
         1-based slot number if available, None if pool is full
     """
     assigned_slots = {a.slot_name for a in state.assignments}
+    initialized_slots = {s.name for s in state.slots}
 
     for slot_num in range(1, state.pool_size + 1):
         slot_name = generate_slot_name(slot_num)
-        if slot_name not in assigned_slots:
+        if slot_name not in assigned_slots and slot_name not in initialized_slots:
             return slot_num
 
     return None
