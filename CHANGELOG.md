@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of `a04ea4a41`
+As of `a342ceffd`
 
 ### Major Changes
 
@@ -24,6 +24,10 @@ As of `a04ea4a41`
 - Create `/erk:implement-stacked-plan` command for stacked branch implementation (a22e2cc41)
 - Add visible URL column to objective list command output (a2177fc87)
 - Add `pool.max_slots` configuration and worktree slot pre-initialization (413537a5d)
+- Add same-slot stacking for `erk implement` - stacks new branches on current branch instead of consuming a new slot (f7c1333e9)
+- Add "Changes" column to `erk slot list` showing dirty/clean status for each worktree (69ea51d52)
+- Add `--dry-run` flag to `erk land` command to preview deletions without executing (971168e5a)
+- Bundle `dignified-python` skill with `erk sync` command by default (e544604bf)
 
 ### Changed
 
@@ -48,6 +52,7 @@ As of `a04ea4a41`
 - Fix erk land objective update flow and shell integration output routing (97f897d65)
 - Fix statusline detection to accept commands with or without uvx prefix (c8ea23a3e)
 - Fix CLI crash when running outside git repository (07cb9c39f)
+- Fix slot selection to exclude initialized worktrees during on-demand creation (a342ceffd)
 
 ### Removed
 
