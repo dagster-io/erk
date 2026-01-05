@@ -17,6 +17,14 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 ## Agent Instructions
 
+> **CRITICAL: Use ONLY `erk exec` Commands**
+>
+> - ❌ DO NOT use raw `gh api` calls
+> - ❌ DO NOT use `gh pr` commands directly
+> - ✅ ONLY use `erk exec get-pr-review-comments`, `erk exec resolve-review-thread`, etc.
+>
+> The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
 ### Phase 1: Fetch & Analyze
 
 #### Step 1.1: Fetch All Comments
@@ -222,7 +230,16 @@ git commit -m "Address PR review comments (batch N/M)
 ..."
 ```
 
-#### Step 3.4: Resolve All Threads in the Batch
+#### Step 3.4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using `erk exec resolve-review-thread`.
+
+> **IMPORTANT: Replying ≠ Resolving**
+>
+> - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+> - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+>
+> Always use `erk exec resolve-review-thread` - it does both in one operation.
 
 After committing, resolve each review thread and mark each discussion comment:
 
@@ -331,6 +348,15 @@ If the user explicitly skipped any comments during the process, list them:
 ## Skipped Comments (user choice)
 - #5: src/legacy.py:100 - "Refactor this module" (user deferred)
 ```
+
+### Common Mistakes to Avoid
+
+| Mistake | Why It's Wrong | Correct Approach |
+|---------|----------------|------------------|
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread` |
+| Using `gh pr comment` | Doesn't resolve threads | Use `erk exec resolve-review-thread` |
+| Skipping resolution for outdated threads | Threads stay open in PR | Always resolve, even if already fixed |
+| Not re-fetching after resolution | Can't verify all threads resolved | Always run Step 4.1 verification |
 
 ### Error Handling
 
