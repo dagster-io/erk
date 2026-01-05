@@ -57,6 +57,25 @@ Click's completion mechanism requires all commands to be available at import tim
 - **Existing dependencies only**: Use erk-dev's dependencies (no external packages)
 - **`__init__.py` is optional**: May contain docstring, be empty, or be omitted entirely
 
+## Subprocess and Gateway Patterns
+
+**erk-dev is developer tooling, not production code.** The tripwire rules from `docs/learned/` (subprocess wrappers, gateway ABCs) apply to production erk code in `src/erk/` and `packages/erk-shared/`, but do NOT strictly apply to erk-dev.
+
+**Acceptable in erk-dev:**
+
+```python
+# Direct subprocess.run is fine for dev tooling
+subprocess.run(["docker", "build", ...], check=True)
+subprocess.run(["git", "rev-parse", "--show-toplevel"], check=False, capture_output=True)
+```
+
+**Why:**
+
+- erk-dev doesn't have (or need) subprocess wrapper utilities
+- erk-dev doesn't have (or need) gateway ABCs for git/docker operations
+- Commands are developer tools for local use, not production code paths
+- Using `check=False` with LBYL pattern is explicitly allowed per subprocess-wrappers.md
+
 ## Command Types
 
 ### Standard Commands

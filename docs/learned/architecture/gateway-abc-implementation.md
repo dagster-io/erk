@@ -20,6 +20,12 @@ tripwires:
 
 All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When adding a new method to any gateway, you must implement it in **5 places**:
 
+## Scope
+
+**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
+
+**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+
 | Implementation | Purpose                                              |
 | -------------- | ---------------------------------------------------- |
 | `abc.py`       | Abstract method definition (contract)                |

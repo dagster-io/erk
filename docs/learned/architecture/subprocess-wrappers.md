@@ -15,6 +15,12 @@ tripwires:
 
 This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
 
+## Scope
+
+**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
+
+**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` is acceptable in erk-dev commands since they don't need the testability/dry-run benefits of wrapper functions.
+
 ## Two-Layer Pattern
 
 Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
