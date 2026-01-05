@@ -641,11 +641,13 @@ class TestFetchPrDetails:
         """Should return MERGEABLE when PR is mergeable."""
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout=json.dumps({
-                "mergeable": True,
-                "mergeable_state": "clean",
-                "head": {"sha": "abc123def"},
-            }),
+            stdout=json.dumps(
+                {
+                    "mergeable": True,
+                    "mergeable_state": "clean",
+                    "head": {"sha": "abc123def"},
+                }
+            ),
         )
 
         result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
@@ -658,11 +660,13 @@ class TestFetchPrDetails:
         """Should return CONFLICTING when mergeable_state is dirty."""
         mock_run.return_value = MagicMock(
             returncode=0,
-            stdout=json.dumps({
-                "mergeable": False,
-                "mergeable_state": "dirty",
-                "head": {"sha": "def456"},
-            }),
+            stdout=json.dumps(
+                {
+                    "mergeable": False,
+                    "mergeable_state": "dirty",
+                    "head": {"sha": "def456"},
+                }
+            ),
         )
 
         result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
@@ -1011,9 +1015,7 @@ class TestFetchGitHubDataViaGateway:
         )
 
         # Mock the REST API calls for checks and mergeable status
-        mock_fetch_details.return_value = PRDetailsResult(
-            mergeable="MERGEABLE", head_sha="abc123"
-        )
+        mock_fetch_details.return_value = PRDetailsResult(mergeable="MERGEABLE", head_sha="abc123")
         mock_fetch_checks.return_value = [
             {
                 "__typename": "CheckRun",
