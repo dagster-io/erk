@@ -14,7 +14,6 @@ from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
 REPO_SUBGROUPS: dict[str, set[str]] = {
     "Git repository": {"repository", "gitignore"},
     "Claude settings": {
-        "claude-hooks",
         "claude-erk-permission",
         "claude-settings",
         "user-prompt-hook",
@@ -25,9 +24,15 @@ REPO_SUBGROUPS: dict[str, set[str]] = {
         "legacy-prompt-hooks",
         "legacy-config",
         "managed-artifacts",
-        "statusline",
         "post-plan-implement-ci-hook",
     },
+    "GitHub": {"workflow-permissions"},
+    "Hooks": {"hooks"},
+}
+
+# Sub-group definitions for User Setup condensed display
+USER_SUBGROUPS: dict[str, set[str]] = {
+    "User checks": {"github-auth", "claude-hooks", "statusline"},
 }
 
 
@@ -107,9 +112,8 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
     Checks for:
 
     \b
-      - Prerequisites: erk, claude, gt, gh, uv
-      - Repository: git setup, .erk/ directory
-      - Claude settings: hooks, configuration
+      - Repository Setup: git config, Claude settings, erk config, hooks
+      - User Setup: prerequisites (erk, claude, gt, gh, uv), GitHub auth
 
     Examples:
 
@@ -131,6 +135,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
 
     # Group results by category
     prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}
+    user_check_names = {"github-auth", "claude-hooks", "statusline"}
     repo_check_names = {
         "repository",
         "claude-settings",
@@ -138,39 +143,26 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
         "exit-plan-hook",
         "gitignore",
         "claude-erk-permission",
-        "claude-hooks",
         "legacy-config",
         "required-version",
         "legacy-prompt-hooks",
         "managed-artifacts",
-        "statusline",
         "post-plan-implement-ci-hook",
+        "workflow-permissions",
+        "hooks",
     }
-    github_check_names = {"github-auth", "workflow-permissions"}
-    hooks_check_names = {"hooks"}
 
     prerequisite_checks = [r for r in results if r.name in prerequisite_names]
+    user_checks = [r for r in results if r.name in user_check_names]
     repo_checks = [r for r in results if r.name in repo_check_names]
-    github_checks = [r for r in results if r.name in github_check_names]
-    hooks_checks = [r for r in results if r.name in hooks_check_names]
     early_dogfooder_checks = [r for r in results if r.name in EARLY_DOGFOODER_CHECK_NAMES]
 
     # Track displayed check names to catch any uncategorized checks
     displayed_names = (
-        prerequisite_names
-        | repo_check_names
-        | github_check_names
-        | hooks_check_names
-        | EARLY_DOGFOODER_CHECK_NAMES
+        prerequisite_names | user_check_names | repo_check_names | EARLY_DOGFOODER_CHECK_NAMES
     )
 
-    # Display Prerequisites (always expanded - these are important)
-    click.echo(click.style("Prerequisites", bold=True))
-    for result in prerequisite_checks:
-        _format_check_result(result, verbose=verbose)
-    click.echo("")
-
-    # Display Repository Setup (with sub-groups)
+    # Display Repository Setup FIRST (with sub-groups)
     click.echo(click.style("Repository Setup", bold=True))
     if verbose:
         # In verbose mode, show sub-groups with all individual checks
@@ -184,26 +176,28 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
             _format_subgroup(subgroup_name, subgroup_checks, verbose=False)
     click.echo("")
 
-    # Display GitHub checks
-    if github_checks:
-        click.echo(click.style("GitHub", bold=True))
-        for result in github_checks:
-            _format_check_result(result, verbose=verbose)
-        click.echo("")
-
-    # Display Hooks checks
-    if hooks_checks:
-        click.echo(click.style("Hooks", bold=True))
-        for result in hooks_checks:
-            _format_check_result(result, verbose=verbose)
-        click.echo("")
-
     # Display Early Dogfooder checks (only when --dogfooder flag is passed)
     if dogfooder and early_dogfooder_checks:
         click.echo(click.style("Early Dogfooder", bold=True))
         for result in early_dogfooder_checks:
             _format_check_result(result, verbose=verbose)
         click.echo("")
+
+    # Display User Setup SECOND
+    click.echo(click.style("User Setup", bold=True))
+    # Prerequisites (always expanded)
+    for result in prerequisite_checks:
+        _format_check_result(result, verbose=verbose)
+    # User checks (condensable subgroup)
+    if verbose:
+        for subgroup_name, subgroup_check_names in USER_SUBGROUPS.items():
+            subgroup_checks = [r for r in user_checks if r.name in subgroup_check_names]
+            _format_subgroup(subgroup_name, subgroup_checks, verbose=True)
+    else:
+        for subgroup_name, subgroup_check_names in USER_SUBGROUPS.items():
+            subgroup_checks = [r for r in user_checks if r.name in subgroup_check_names]
+            _format_subgroup(subgroup_name, subgroup_checks, verbose=False)
+    click.echo("")
 
     # Display any uncategorized checks (defensive - catches missing categorization)
     other_checks = [r for r in results if r.name not in displayed_names]

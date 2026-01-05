@@ -57,10 +57,10 @@ def test_doctor_runs_checks() -> None:
         # Command should succeed
         assert result.exit_code == 0
 
-        # Should show section headers (renamed from "CLI Tools" to "Prerequisites")
+        # Should show section headers
         assert "Checking erk setup" in result.output
-        assert "Prerequisites" in result.output
         assert "Repository Setup" in result.output
+        assert "User Setup" in result.output
 
         # Should show erk version check
         assert "erk" in result.output.lower()
@@ -127,8 +127,8 @@ def test_doctor_shows_summary() -> None:
         assert "passed" in result.output.lower() or "failed" in result.output.lower()
 
 
-def test_doctor_shows_github_section() -> None:
-    """Test that doctor shows GitHub section with auth and workflow permissions."""
+def test_doctor_shows_github_checks() -> None:
+    """Test that doctor shows GitHub-related checks in appropriate sections."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         git = FakeGit(
@@ -142,8 +142,9 @@ def test_doctor_shows_github_section() -> None:
         result = runner.invoke(doctor_cmd, [], obj=ctx)
 
         assert result.exit_code == 0
-        # Should show GitHub section header
-        assert "GitHub" in result.output
+        # GitHub auth check should be under User Setup
+        # workflow-permissions should be under Repository Setup > GitHub subgroup
+        assert "GitHub" in result.output  # GitHub subgroup in repo section
 
 
 def test_doctor_shows_required_version_check() -> None:
