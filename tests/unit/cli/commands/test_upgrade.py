@@ -36,8 +36,9 @@ def test_upgrade_when_installed_less_than_required(monkeypatch) -> None:
         assert "uv tool upgrade erk" in result.output
         assert "Successfully upgraded" in result.output
 
-        # Verify subprocess was called correctly
-        mock_run.assert_called_once_with(
+        # Verify subprocess was called with the upgrade command
+        # (other subprocess calls may happen, e.g., git rev-parse)
+        mock_run.assert_any_call(
             ["uv", "tool", "upgrade", "erk"],
             capture_output=True,
             text=True,
