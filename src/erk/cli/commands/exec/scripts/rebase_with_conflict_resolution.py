@@ -70,16 +70,18 @@ def _get_commits_behind(trunk_branch: str) -> int | None:
     Returns:
         Number of commits behind, or None if command fails.
     """
-    try:
-        result = subprocess.run(
-            ["git", "rev-list", "--count", f"HEAD..origin/{trunk_branch}"],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        return int(result.stdout.strip())
-    except (subprocess.CalledProcessError, ValueError):
+    result = subprocess.run(
+        ["git", "rev-list", "--count", f"HEAD..origin/{trunk_branch}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
         return None
+    count_str = result.stdout.strip()
+    if not count_str.isdigit():
+        return None
+    return int(count_str)
 
 
 def _is_rebase_in_progress() -> bool:
@@ -113,6 +115,7 @@ def _invoke_claude_for_conflicts(model: str) -> bool:
             prompt,
         ],
         capture_output=False,  # Let output stream to stdout/stderr
+        check=False,  # We check returncode explicitly below
     )
     return result.returncode == 0
 
@@ -139,6 +142,7 @@ def _rebase_with_conflict_resolution_impl(
         ["git", "fetch", "origin", trunk_branch],
         capture_output=True,
         text=True,
+        check=False,  # We check returncode explicitly below
     )
     if fetch_result.returncode != 0:
         return RebaseError(
@@ -163,11 +167,12 @@ def _rebase_with_conflict_resolution_impl(
             commits_behind=0,
         )
 
-    # Start rebase
+    # Start rebase (may fail with conflicts, which is expected)
     subprocess.run(
         ["git", "rebase", f"origin/{trunk_branch}"],
         capture_output=True,
         text=True,
+        check=False,  # Conflicts expected - we check _is_rebase_in_progress()
     )
 
     # Loop while rebase has conflicts
@@ -180,7 +185,7 @@ def _rebase_with_conflict_resolution_impl(
     # Check if rebase completed
     if _is_rebase_in_progress():
         # Abort rebase and return error
-        subprocess.run(["git", "rebase", "--abort"], capture_output=True)
+        subprocess.run(["git", "rebase", "--abort"], capture_output=True, check=False)
         return RebaseError(
             success=False,
             error="rebase-failed",
@@ -192,6 +197,7 @@ def _rebase_with_conflict_resolution_impl(
         ["git", "push", "-f", "origin", branch_name],
         capture_output=True,
         text=True,
+        check=False,  # We check returncode explicitly below
     )
     if push_result.returncode != 0:
         return RebaseError(
