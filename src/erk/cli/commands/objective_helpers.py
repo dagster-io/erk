@@ -15,6 +15,38 @@ from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 
 
+def check_and_display_plan_issue_closure(
+    ctx: ErkContext,
+    repo_root: Path,
+    branch: str,
+) -> int | None:
+    """Check and display plan issue closure status after landing.
+
+    Returns the plan issue number if found, None otherwise.
+    This is fail-open: returns None silently if the issue doesn't exist.
+    """
+    plan_number = extract_leading_issue_number(branch)
+    if plan_number is None:
+        return None
+
+    # GitHubIssues.get_issue raises RuntimeError for missing issues.
+    # This is a fail-open feature (non-critical), so we catch and return None.
+    try:
+        issue = ctx.issues.get_issue(repo_root, plan_number)
+    except RuntimeError:
+        return None
+
+    if issue.state == "CLOSED":
+        user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
+    else:
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + f"Plan issue #{plan_number} still open (expected auto-close)"
+        )
+
+    return plan_number
+
+
 def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> int | None:
     """Extract objective issue number from branch's linked plan issue.
 
@@ -28,8 +60,11 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     if plan_number is None:
         return None
 
-    issue = ctx.issues.get_issue(repo_root, plan_number)
-    if issue is None:
+    # GitHubIssues.get_issue raises RuntimeError for missing issues.
+    # This is a fail-open feature (non-critical), so we catch and return None.
+    try:
+        issue = ctx.issues.get_issue(repo_root, plan_number)
+    except RuntimeError:
         return None
 
     return extract_plan_header_objective_issue(issue.body)

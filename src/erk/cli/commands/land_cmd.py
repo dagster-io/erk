@@ -26,6 +26,7 @@ from erk.cli.commands.navigation_helpers import (
     find_assignment_by_worktree_path,
 )
 from erk.cli.commands.objective_helpers import (
+    check_and_display_plan_issue_closure,
     get_objective_for_branch,
     prompt_objective_update,
 )
@@ -464,8 +465,11 @@ def _land_current_branch(
         + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
     )
 
-    # Check for linked objective and offer to update
+    # Check and display plan issue closure
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+    check_and_display_plan_issue_closure(ctx, main_repo_root, current_branch)
+
+    # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
     if objective_number is not None:
         prompt_objective_update(
@@ -566,6 +570,9 @@ def _land_specific_pr(
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
 
+    # Check and display plan issue closure
+    check_and_display_plan_issue_closure(ctx, main_repo_root, branch)
+
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
     if objective_number is not None:
@@ -657,6 +664,9 @@ def _land_by_branch(
         raise SystemExit(1)
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
+
+    # Check and display plan issue closure
+    check_and_display_plan_issue_closure(ctx, main_repo_root, branch_name)
 
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
