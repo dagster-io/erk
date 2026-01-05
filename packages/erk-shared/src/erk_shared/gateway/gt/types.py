@@ -19,6 +19,31 @@ class CommandResult(NamedTuple):
 
 
 # =============================================================================
+# Restack Operation Types
+# =============================================================================
+
+
+RestackErrorType = Literal["restack-conflict", "restack-failed"]
+
+
+@dataclass(frozen=True)
+class RestackSuccess:
+    """Success result from idempotent restack."""
+
+    success: Literal[True]
+    message: str
+
+
+@dataclass(frozen=True)
+class RestackError:
+    """Error result from idempotent restack."""
+
+    success: Literal[False]
+    error_type: RestackErrorType
+    message: str
+
+
+# =============================================================================
 # Squash Operation Types
 # =============================================================================
 
