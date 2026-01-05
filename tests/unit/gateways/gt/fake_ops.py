@@ -12,6 +12,8 @@ Design:
 - Satisfies GtKit Protocol through structural typing
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from pathlib import Path
 

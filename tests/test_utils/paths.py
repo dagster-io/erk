@@ -4,6 +4,8 @@ This module provides utilities for working with paths in tests, particularly
 sentinel paths that allow tests to avoid unnecessary filesystem dependencies.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
 

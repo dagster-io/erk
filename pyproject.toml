@@ -75,7 +75,7 @@ packages = ["src/erk"]
 ".github/prompts/dignified-python-review.md" = "erk/data/github/prompts/dignified-python-review.md"
 
 [tool.ruff]
-target-version = "py314"
+target-version = "py311"
 line-length = 100
 src = ["src"]
 # exclude = [".claude/skills/"]
@@ -87,12 +87,6 @@ select = [
     "I",   # isort (import sorting)
     "UP",  # pyupgrade
     "B",   # flake8-bugbear
-]
-ignore = [
-    "UP040",  # TypeAlias syntax - requires Python 3.12+
-    "UP043",  # Generator type parameters - requires Python 3.12+
-    "UP046",  # Generic class syntax - requires Python 3.12+
-    "UP047",  # Type parameter syntax - requires Python 3.12+
 ]
 
 [tool.ruff.lint.isort]
