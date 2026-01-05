@@ -69,7 +69,6 @@ def check_erk_version() -> CheckResult:
             name="erk",
             passed=True,
             message=f"erk CLI installed: v{erk_version}",
-            details=erk_version,
         )
     except Exception:
         return CheckResult(
@@ -163,8 +162,7 @@ def check_claude_cli(shell: Shell) -> CheckResult:
     return CheckResult(
         name="claude",
         passed=True,
-        message=f"Claude CLI available: {version_str}",
-        details=version_str,
+        message=f"Claude CLI installed: {version_str}",
     )
 
 
@@ -196,8 +194,7 @@ def check_graphite_cli(shell: Shell) -> CheckResult:
     return CheckResult(
         name="graphite",
         passed=True,
-        message=f"Graphite CLI available: {version_output}",
-        details=version_output,
+        message=f"Graphite CLI installed: {version_output}",
     )
 
 
@@ -231,8 +228,7 @@ def check_github_cli(shell: Shell) -> CheckResult:
     return CheckResult(
         name="github",
         passed=True,
-        message=f"GitHub CLI available: {version_first_line}",
-        details=version_first_line,
+        message=f"GitHub CLI installed: {version_first_line}",
     )
 
 
@@ -381,8 +377,7 @@ def check_uv_version(shell: Shell) -> CheckResult:
     return CheckResult(
         name="uv",
         passed=True,
-        message=f"uv available: {version}",
-        details="erk works best with recent versions. Upgrade: uv self update",
+        message=f"uv installed: {version}",
     )
 
 
@@ -870,7 +865,7 @@ def check_hook_health(repo_root: Path) -> CheckResult:
         return CheckResult(
             name="hooks",
             passed=True,
-            message=f"All hooks healthy ({success_count} succeeded, {blocked_count} blocked)",
+            message="Hooks healthy",
         )
 
     # Build failure details

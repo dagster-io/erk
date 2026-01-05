@@ -73,8 +73,8 @@ def test_returns_healthy_when_all_hooks_succeed(tmp_path: Path) -> None:
     result = check_hook_health(tmp_path)
 
     assert result.passed is True
-    assert "healthy" in result.message.lower()
-    assert "2 succeeded" in result.message
+    # Simplified message when healthy (no counts shown)
+    assert result.message == "Hooks healthy"
 
 
 def test_returns_healthy_when_hooks_blocked(tmp_path: Path) -> None:
@@ -91,7 +91,8 @@ def test_returns_healthy_when_hooks_blocked(tmp_path: Path) -> None:
     result = check_hook_health(tmp_path)
 
     assert result.passed is True
-    assert "1 blocked" in result.message
+    # Simplified message when healthy (blocked is not a failure)
+    assert result.message == "Hooks healthy"
 
 
 def test_returns_failure_when_hooks_error(tmp_path: Path) -> None:

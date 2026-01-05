@@ -293,8 +293,6 @@ def test_check_uv_version_available() -> None:
     assert result.name == "uv"
     assert result.passed is True
     assert "0.9.2" in result.message
-    assert result.details is not None
-    assert "uv self update" in result.details
 
 
 def test_check_uv_version_with_build_info() -> None:

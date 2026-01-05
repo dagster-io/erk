@@ -10,13 +10,33 @@ from erk.core.context import ErkContext
 from erk.core.health_checks import CheckResult, run_all_checks
 from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
 
+# Sub-group definitions for Repository Setup condensed display
+REPO_SUBGROUPS: dict[str, set[str]] = {
+    "Git repository": {"repository", "gitignore"},
+    "Claude settings": {
+        "claude-hooks",
+        "claude-erk-permission",
+        "claude-settings",
+        "user-prompt-hook",
+        "exit-plan-hook",
+    },
+    "Erk configuration": {
+        "required-version",
+        "legacy-prompt-hooks",
+        "legacy-config",
+        "managed-artifacts",
+        "statusline",
+        "post-plan-implement-ci-hook",
+    },
+}
 
-def _format_check_result(result: CheckResult, verbose: bool) -> None:
+
+def _format_check_result(result: CheckResult, indent: str = "") -> None:
     """Format and display a single check result.
 
     Args:
-        result: The check result to display
-        verbose: If True, use verbose_details instead of details when available
+        result: The check result to format
+        indent: Optional indentation prefix for nested display
     """
     if not result.passed:
         icon = click.style("❌", fg="red")
@@ -27,37 +47,77 @@ def _format_check_result(result: CheckResult, verbose: bool) -> None:
     else:
         icon = click.style("✅", fg="green")
 
-    click.echo(f"{icon} {result.message}")
+    if result.details and "\n" not in result.details:
+        # Single-line details: show inline
+        styled_details = click.style(f" - {result.details}", dim=True)
+        click.echo(f"{indent}{icon} {result.message}{styled_details}")
+    else:
+        click.echo(f"{indent}{icon} {result.message}")
+        if result.details:
+            # Multi-line details: show with indentation
+            for line in result.details.split("\n"):
+                click.echo(click.style(f"{indent}   {line}", dim=True))
 
-    # Use verbose_details in verbose mode if available, otherwise use details
-    details = result.verbose_details if verbose and result.verbose_details else result.details
-    if details:
-        # Show details with indentation
-        for line in details.split("\n"):
-            click.echo(click.style(f"   {line}", dim=True))
+
+def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent: str = "") -> None:
+    """Format a sub-group of checks (condensed or expanded).
+
+    Args:
+        name: Sub-group display name
+        checks: List of check results in this sub-group
+        verbose: If True, always show all individual checks
+        indent: Indentation prefix
+    """
+    if not checks:
+        return
+
+    passed = sum(1 for c in checks if c.passed)
+    total = len(checks)
+    all_passed = passed == total
+
+    if verbose:
+        # Always show all individual checks with sub-group header
+        click.echo(click.style(f"{indent}  {name}", dim=True))
+        for result in checks:
+            _format_check_result(result, indent=f"{indent}  ")
+    elif all_passed:
+        # Condensed: single line with count
+        icon = click.style("✅", fg="green")
+        click.echo(f"{indent}{icon} {name} ({total} checks)")
+    else:
+        # Failed: show summary line + expand failures
+        icon = click.style("❌", fg="red")
+        click.echo(f"{indent}{icon} {name} ({passed}/{total} checks)")
+        for result in checks:
+            if not result.passed:
+                _format_check_result(result, indent=f"{indent}   ")
 
 
 @click.command("doctor")
-@click.option("-v", "--verbose", is_flag=True, help="Show detailed information for each check")
+@click.option("-v", "--verbose", is_flag=True, help="Show all individual checks")
+@click.option("--dogfooder", is_flag=True, help="Include early dogfooder migration checks")
 @click.pass_obj
-def doctor_cmd(ctx: ErkContext, verbose: bool) -> None:
+def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
     """Run diagnostic checks on erk setup.
 
     Checks for:
 
     \b
-      - CLI tools: erk, claude, gt, gh
+      - Prerequisites: erk, claude, gt, gh, uv
       - Repository: git setup, .erk/ directory
       - Claude settings: hooks, configuration
 
     Examples:
 
     \b
-      # Run all checks
+      # Run checks (condensed output)
       erk doctor
 
-      # Show detailed output
+      # Show all individual checks
       erk doctor --verbose
+
+      # Include early dogfooder migration checks
+      erk doctor --dogfooder
     """
     click.echo(click.style("🔍 Checking erk setup...", bold=True))
     click.echo("")
@@ -66,8 +126,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool) -> None:
     results = run_all_checks(ctx)
 
     # Group results by category
-    cli_tool_names = {"erk", "claude", "graphite", "github", "uv"}
-    health_check_names = {"dot-agent-health", "managed-artifacts"}
+    prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}
     repo_check_names = {
         "repository",
         "claude-settings",
@@ -79,12 +138,14 @@ def doctor_cmd(ctx: ErkContext, verbose: bool) -> None:
         "legacy-config",
         "required-version",
         "legacy-prompt-hooks",
+        "managed-artifacts",
+        "statusline",
+        "post-plan-implement-ci-hook",
     }
     github_check_names = {"github-auth", "workflow-permissions"}
     hooks_check_names = {"hooks"}
 
-    cli_checks = [r for r in results if r.name in cli_tool_names]
-    health_checks = [r for r in results if r.name in health_check_names]
+    prerequisite_checks = [r for r in results if r.name in prerequisite_names]
     repo_checks = [r for r in results if r.name in repo_check_names]
     github_checks = [r for r in results if r.name in github_check_names]
     hooks_checks = [r for r in results if r.name in hooks_check_names]
@@ -92,52 +153,52 @@ def doctor_cmd(ctx: ErkContext, verbose: bool) -> None:
 
     # Track displayed check names to catch any uncategorized checks
     displayed_names = (
-        cli_tool_names
-        | health_check_names
+        prerequisite_names
         | repo_check_names
         | github_check_names
         | hooks_check_names
         | EARLY_DOGFOODER_CHECK_NAMES
     )
 
-    # Display CLI availability
-    click.echo(click.style("CLI Tools", bold=True))
-    for result in cli_checks:
-        _format_check_result(result, verbose)
+    # Display Prerequisites (always expanded - these are important)
+    click.echo(click.style("Prerequisites", bold=True))
+    for result in prerequisite_checks:
+        _format_check_result(result)
     click.echo("")
 
-    # Display health checks if any
-    if health_checks:
-        click.echo(click.style("Health Checks", bold=True))
-        for result in health_checks:
-            _format_check_result(result, verbose)
-        click.echo("")
-
-    # Display repository checks
+    # Display Repository Setup (with sub-groups)
     click.echo(click.style("Repository Setup", bold=True))
-    for result in repo_checks:
-        _format_check_result(result, verbose)
+    if verbose:
+        # In verbose mode, show sub-groups with all individual checks
+        for subgroup_name, subgroup_check_names in REPO_SUBGROUPS.items():
+            subgroup_checks = [r for r in repo_checks if r.name in subgroup_check_names]
+            _format_subgroup(subgroup_name, subgroup_checks, verbose=True)
+    else:
+        # Condensed mode: show sub-group summaries
+        for subgroup_name, subgroup_check_names in REPO_SUBGROUPS.items():
+            subgroup_checks = [r for r in repo_checks if r.name in subgroup_check_names]
+            _format_subgroup(subgroup_name, subgroup_checks, verbose=False)
     click.echo("")
 
     # Display GitHub checks
     if github_checks:
         click.echo(click.style("GitHub", bold=True))
         for result in github_checks:
-            _format_check_result(result, verbose)
+            _format_check_result(result)
         click.echo("")
 
     # Display Hooks checks
     if hooks_checks:
         click.echo(click.style("Hooks", bold=True))
         for result in hooks_checks:
-            _format_check_result(result, verbose)
+            _format_check_result(result)
         click.echo("")
 
-    # Display Early Dogfooder checks (only shown when there are issues)
-    if early_dogfooder_checks:
+    # Display Early Dogfooder checks (only when --dogfooder flag is passed)
+    if dogfooder and early_dogfooder_checks:
         click.echo(click.style("Early Dogfooder", bold=True))
         for result in early_dogfooder_checks:
-            _format_check_result(result, verbose)
+            _format_check_result(result)
         click.echo("")
 
     # Display any uncategorized checks (defensive - catches missing categorization)
@@ -145,7 +206,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool) -> None:
     if other_checks:
         click.echo(click.style("Other Checks", bold=True))
         for result in other_checks:
-            _format_check_result(result, verbose)
+            _format_check_result(result)
         click.echo("")
 
     # Collect and display consolidated remediations for failing checks
@@ -156,9 +217,13 @@ def doctor_cmd(ctx: ErkContext, verbose: bool) -> None:
             click.echo(f"  {remediation}")
         click.echo("")
 
-    # Summary
-    passed = sum(1 for r in results if r.passed)
-    total = len(results)
+    # Calculate summary - exclude dogfooder checks from total if not showing them
+    checks_for_summary = [r for r in results if r.name not in EARLY_DOGFOODER_CHECK_NAMES]
+    if dogfooder:
+        checks_for_summary = results
+
+    passed = sum(1 for r in checks_for_summary if r.passed)
+    total = len(checks_for_summary)
     failed = total - passed
 
     if failed == 0:
