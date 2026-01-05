@@ -18,6 +18,7 @@ from erk_statusline.context import StatuslineContext
 from erk_statusline.statusline import (
     CACHE_TTL_SECONDS,
     GitHubData,
+    PRDetailsResult,
     RepoInfo,
     _categorize_check_buckets,
     _fetch_check_runs,
@@ -639,23 +640,35 @@ class TestFetchPrDetails:
     def test_returns_mergeable_on_success(self, mock_run: MagicMock) -> None:
         """Should return MERGEABLE when PR is mergeable."""
         mock_run.return_value = MagicMock(
-            returncode=0, stdout=json.dumps({"mergeable": True, "mergeable_state": "clean"})
+            returncode=0,
+            stdout=json.dumps({
+                "mergeable": True,
+                "mergeable_state": "clean",
+                "head": {"sha": "abc123def"},
+            }),
         )
 
         result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
 
-        assert result == "MERGEABLE"
+        assert result.mergeable == "MERGEABLE"
+        assert result.head_sha == "abc123def"
 
     @patch("erk_statusline.statusline.subprocess.run")
     def test_returns_conflicting_on_dirty_state(self, mock_run: MagicMock) -> None:
         """Should return CONFLICTING when mergeable_state is dirty."""
         mock_run.return_value = MagicMock(
-            returncode=0, stdout=json.dumps({"mergeable": False, "mergeable_state": "dirty"})
+            returncode=0,
+            stdout=json.dumps({
+                "mergeable": False,
+                "mergeable_state": "dirty",
+                "head": {"sha": "def456"},
+            }),
         )
 
         result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
 
-        assert result == "CONFLICTING"
+        assert result.mergeable == "CONFLICTING"
+        assert result.head_sha == "def456"
 
     @patch("erk_statusline.statusline.subprocess.run")
     def test_returns_unknown_on_failure(self, mock_run: MagicMock) -> None:
@@ -664,7 +677,8 @@ class TestFetchPrDetails:
 
         result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
 
-        assert result == "UNKNOWN"
+        assert result.mergeable == "UNKNOWN"
+        assert result.head_sha == ""
 
 
 class TestFetchCheckRuns:
@@ -997,7 +1011,9 @@ class TestFetchGitHubDataViaGateway:
         )
 
         # Mock the REST API calls for checks and mergeable status
-        mock_fetch_details.return_value = "MERGEABLE"
+        mock_fetch_details.return_value = PRDetailsResult(
+            mergeable="MERGEABLE", head_sha="abc123"
+        )
         mock_fetch_checks.return_value = [
             {
                 "__typename": "CheckRun",

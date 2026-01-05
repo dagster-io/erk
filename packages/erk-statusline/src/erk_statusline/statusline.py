@@ -404,11 +404,20 @@ def get_pr_info_via_branch_manager(
     return (pr_info.number, pr_info.state, pr_info.is_draft)
 
 
-def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: float) -> str:
-    """Fetch PR details for mergeable status.
+class PRDetailsResult(NamedTuple):
+    """Result from fetching PR details."""
+
+    mergeable: str  # "MERGEABLE", "CONFLICTING", or "UNKNOWN"
+    head_sha: str  # Commit SHA of the PR head (empty string on error)
+
+
+def _fetch_pr_details(
+    owner: str, repo: str, pr_number: int, cwd: str, timeout: float
+) -> PRDetailsResult:
+    """Fetch PR details for mergeable status and head SHA.
 
     Returns:
-        Mergeable status: "MERGEABLE", "CONFLICTING", or "UNKNOWN".
+        PRDetailsResult with mergeable status and head SHA.
     """
     _logger.debug("Fetching PR details: %s/%s #%d", owner, repo, pr_number)
     start_time = time.time()
@@ -431,11 +440,19 @@ def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: 
                 result.returncode,
                 elapsed,
             )
-            return "UNKNOWN"
+            return PRDetailsResult(mergeable="UNKNOWN", head_sha="")
 
         pr_detail = json.loads(result.stdout)
         mergeable_value = pr_detail.get("mergeable")
         mergeable_state = pr_detail.get("mergeable_state", "")
+
+        # Extract head SHA from PR response
+        head_sha = ""
+        head_info = pr_detail.get("head")
+        if isinstance(head_info, dict):
+            sha = head_info.get("sha")
+            if isinstance(sha, str):
+                head_sha = sha
 
         # Map REST mergeable fields to GraphQL-style values
         if mergeable_value is True:
@@ -447,36 +464,51 @@ def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: 
             status = "UNKNOWN"
 
         _logger.debug(
-            "PR details fetched: %s/%s #%d in %.2fs -> %s", owner, repo, pr_number, elapsed, status
+            "PR details fetched: %s/%s #%d in %.2fs -> %s sha=%s",
+            owner,
+            repo,
+            pr_number,
+            elapsed,
+            status,
+            head_sha[:7] if head_sha else "",
         )
-        return status
+        return PRDetailsResult(mergeable=status, head_sha=head_sha)
 
     except subprocess.TimeoutExpired:
         elapsed = time.time() - start_time
         _logger.debug("PR details timeout: %s/%s #%d after %.2fs", owner, repo, pr_number, elapsed)
-        return "UNKNOWN"
+        return PRDetailsResult(mergeable="UNKNOWN", head_sha="")
     except (subprocess.SubprocessError, json.JSONDecodeError) as e:
         elapsed = time.time() - start_time
         _logger.debug(
             "PR details error: %s/%s #%d in %.2fs - %s", owner, repo, pr_number, elapsed, e
         )
-        return "UNKNOWN"
+        return PRDetailsResult(mergeable="UNKNOWN", head_sha="")
 
 
 def _fetch_check_runs(
-    owner: str, repo: str, head_sha: str, cwd: str, timeout: float
+    owner: str, repo: str, ref: str, cwd: str, timeout: float
 ) -> list[dict[str, str]]:
-    """Fetch check runs for a commit.
+    """Fetch check runs for a git ref.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        ref: Git ref - can be a SHA, branch name, or tag name.
+             Using branch name resolves to GitHub's HEAD for that branch,
+             avoiding issues when local branch differs from remote.
+        cwd: Working directory for subprocess
+        timeout: Timeout in seconds
 
     Returns:
         List of check context dicts with __typename, conclusion, status, name.
     """
-    sha_short = head_sha[:7] if head_sha else ""
-    _logger.debug("Fetching check runs: %s/%s sha=%s", owner, repo, sha_short)
+    ref_display = ref[:20] + "..." if len(ref) > 20 else ref
+    _logger.debug("Fetching check runs: %s/%s ref=%s", owner, repo, ref_display)
     start_time = time.time()
     try:
         result = subprocess.run(
-            ["gh", "api", f"repos/{owner}/{repo}/commits/{head_sha}/check-runs"],
+            ["gh", "api", f"repos/{owner}/{repo}/commits/{ref}/check-runs"],
             cwd=cwd,
             capture_output=True,
             text=True,
@@ -486,10 +518,10 @@ def _fetch_check_runs(
         elapsed = time.time() - start_time
         if result.returncode != 0:
             _logger.debug(
-                "Check runs fetch failed: %s/%s sha=%s returncode=%d in %.2fs",
+                "Check runs fetch failed: %s/%s ref=%s returncode=%d in %.2fs",
                 owner,
                 repo,
-                head_sha[:7] if head_sha else "",
+                ref_display,
                 result.returncode,
                 elapsed,
             )
@@ -510,10 +542,10 @@ def _fetch_check_runs(
             )
 
         _logger.debug(
-            "Check runs fetched: %s/%s sha=%s in %.2fs -> %d checks",
+            "Check runs fetched: %s/%s ref=%s in %.2fs -> %d checks",
             owner,
             repo,
-            head_sha[:7] if head_sha else "",
+            ref_display,
             elapsed,
             len(check_contexts),
         )
@@ -522,20 +554,20 @@ def _fetch_check_runs(
     except subprocess.TimeoutExpired:
         elapsed = time.time() - start_time
         _logger.debug(
-            "Check runs timeout: %s/%s sha=%s after %.2fs",
+            "Check runs timeout: %s/%s ref=%s after %.2fs",
             owner,
             repo,
-            head_sha[:7] if head_sha else "",
+            ref_display,
             elapsed,
         )
         return []
     except (subprocess.SubprocessError, json.JSONDecodeError) as e:
         elapsed = time.time() - start_time
         _logger.debug(
-            "Check runs error: %s/%s sha=%s in %.2fs - %s",
+            "Check runs error: %s/%s ref=%s in %.2fs - %s",
             owner,
             repo,
-            head_sha[:7] if head_sha else "",
+            ref_display,
             elapsed,
             e,
         )
@@ -589,25 +621,23 @@ def fetch_github_data_via_gateway(
         "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
     )
 
-    # Get head SHA for check runs - need to use git gateway
-    head_sha = ctx.git.get_branch_head(repo_root, branch)
-    if head_sha is None:
-        head_sha = ""
-
-    # Fetch PR details and check runs in parallel (still using REST for these)
+    # Fetch PR details and check runs in parallel
+    # Note: check runs uses branch name (not local SHA) which resolves to GitHub's HEAD,
+    # avoiding issues when local branch differs from remote (e.g., after Graphite squash)
     cwd = str(ctx.cwd)
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
             pr_future = executor.submit(_fetch_pr_details, owner, repo, pr_number, cwd, 1.5)
-            checks_future = executor.submit(_fetch_check_runs, owner, repo, head_sha, cwd, 1.5)
+            checks_future = executor.submit(_fetch_check_runs, owner, repo, branch, cwd, 1.5)
 
             # Wait for both with combined timeout
-            mergeable = pr_future.result(timeout=2)
+            pr_details = pr_future.result(timeout=2)
             check_contexts = checks_future.result(timeout=2)
+        mergeable = pr_details.mergeable
     except TimeoutError:
         # If parallel execution times out, use defaults
-        elapsed = time.time() - start_time
-        _logger.debug("GitHub data fetch: ThreadPoolExecutor timeout after %.2fs", elapsed)
+        parallel_elapsed = time.time() - start_time
+        _logger.debug("GitHub data fetch: ThreadPoolExecutor timeout after %.2fs", parallel_elapsed)
         mergeable = "UNKNOWN"
         check_contexts = []
 
