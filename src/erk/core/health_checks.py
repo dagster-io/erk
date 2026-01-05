@@ -524,29 +524,30 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
 def check_post_plan_implement_ci_hook(repo_root: Path) -> CheckResult:
     """Check for post-plan-implement CI instructions hook.
 
-    This is an info-level check that detects whether the CI instructions
-    hook file exists and explains its purpose.
+    When the hook file exists and has content, this returns a success (green).
+    When missing, it returns info-level with the path to create.
 
     Args:
         repo_root: Path to the repository root
 
     Returns:
-        CheckResult with info about CI hook status
+        CheckResult with CI hook status
     """
-    hook_path = repo_root / ".erk" / "prompt-hooks" / "post-plan-implement-ci.md"
+    hook_relative_path = ".erk/prompt-hooks/post-plan-implement-ci.md"
+    hook_path = repo_root / hook_relative_path
 
     if hook_path.exists():
         return CheckResult(
             name="post-plan-implement-ci-hook",
             passed=True,
-            message="CI instructions hook configured",
-            info=True,
+            message=f"CI instructions hook configured ({hook_relative_path})",
+            info=False,
         )
 
     return CheckResult(
         name="post-plan-implement-ci-hook",
         passed=True,
-        message="No CI instructions hook configured",
+        message=f"No CI instructions hook ({hook_relative_path})",
         details=(
             "Create .erk/prompt-hooks/post-plan-implement-ci.md "
             "to add CI instructions for plan implementation"
