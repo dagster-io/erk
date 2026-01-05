@@ -1,0 +1,35 @@
+Extract acquire_slot abstraction for slot acquisition workflow
+
+This branch refactors the slot acquisition logic used across `branch create`, `implement`, and `plan start` commands. Instead of duplicating the slot-finding and pool-management code in three places, we extract it into a reusable `acquire_slot()` function that encapsulates the complete workflow: finding inactive slots, creating new slots, and handling pool-full scenarios with interactive unassignment.
+
+- `src/erk/cli/commands/branch/create_cmd.py` - Replace inline slot acquisition with call to `acquire_slot()`
+- `src/erk/cli/commands/implement.py` - Replace inline slot acquisition with call to `acquire_slot()`
+- `src/erk/cli/commands/plan/start_cmd.py` - Replace inline slot acquisition with call to `acquire_slot()`
+- `src/erk/cli/commands/slot/common.py` - Add `acquire_slot()`, `SlotAcquisitionResult`, and `SlotAcquisitionDeclined` types
+
+- `tests/commands/test_implement.py` - Update tests to use `git.list_worktrees()` instead of pool state tracking for inactive slot discovery
+- `tests/unit/cli/commands/slot/test_common.py` - Add comprehensive test suite for `acquire_slot()` with 9 test cases
+
+- Introduce `SlotAcquisitionResult` dataclass to represent the outcome of slot acquisition with acquisition type (`"inactive"`, `"new"`, or `"unassigned"`)
+- Introduce `SlotAcquisitionDeclined` sentinel to represent user declining unassignment when pool is full
+- Consolidate 60+ lines of duplicated slot acquisition logic into single `acquire_slot()` function
+- Ensure `cleanup_worktree_artifacts()` is called for both "inactive" and "unassigned" acquisition types to remove stale `.impl/` and `.erk/scratch/` directories
+- Simplify three command implementations by replacing complex branching with straightforward calls to `acquire_slot()` followed by single-line checks on acquisition type
+- Update test setup to leverage `git.list_worktrees()` for discovering managed slots instead of requiring pool state to be pre-populated with slots
+
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+#
+# Date:      Sun Jan 4 20:14:40 2026 -0800
+#
+# On branch P4178-extract-acquire-slot-abst-01-05-0331
+# Your branch and 'origin/P4178-extract-acquire-slot-abst-01-05-0331' have diverged,
+# and have 5 and 3 different commits each, respectively.
+#
+# Changes to be committed:
+#	modified:   src/erk/cli/commands/branch/create_cmd.py
+#	modified:   src/erk/cli/commands/implement.py
+#	modified:   src/erk/cli/commands/plan/start_cmd.py
+#	modified:   src/erk/cli/commands/slot/common.py
+#	modified:   tests/unit/cli/commands/slot/test_common.py
+#
