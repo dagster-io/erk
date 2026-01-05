@@ -3,12 +3,11 @@
 Upgrades the user's local erk installation to match the repo's required version.
 """
 
-import subprocess
-
 import click
 from packaging.version import Version
 
 from erk.cli.core import discover_repo_context
+from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.release_notes import get_current_version
 from erk.core.version_check import get_required_version
@@ -70,16 +69,14 @@ def upgrade_cmd(ctx: ErkContext) -> None:
 
     click.echo()
     click.echo("Running uv tool upgrade erk...")
-    result = subprocess.run(
+    run_with_error_reporting(
         ["uv", "tool", "upgrade", "erk"],
-        capture_output=True,
-        text=True,
+        error_prefix="Upgrade failed",
+        troubleshooting=[
+            "Ensure uv is installed: curl -LsSf https://astral.sh/uv/install.sh | sh",
+            "Try manual upgrade: uv tool upgrade erk",
+            f"Or install specific version: uv tool install erk=={required}",
+        ],
     )
-
-    if result.returncode != 0:
-        click.echo(click.style("Error: ", fg="red") + "Upgrade failed")
-        if result.stderr:
-            click.echo(result.stderr)
-        raise SystemExit(1)
 
     click.echo(click.style(f"Successfully upgraded erk to {required}", fg="green"))

@@ -1,6 +1,5 @@
 """Unit tests for upgrade command."""
 
-import subprocess
 from unittest.mock import MagicMock
 
 from click.testing import CliRunner
@@ -23,9 +22,9 @@ def test_upgrade_when_installed_less_than_required(monkeypatch) -> None:
         # Mock get_current_version to return older version
         monkeypatch.setattr(upgrade_module, "get_current_version", lambda: "0.4.0")
 
-        # Mock subprocess.run to avoid actual upgrade
+        # Mock run_with_error_reporting to avoid actual upgrade
         mock_run = MagicMock(return_value=MagicMock(returncode=0, stderr=""))
-        monkeypatch.setattr(subprocess, "run", mock_run)
+        monkeypatch.setattr(upgrade_module, "run_with_error_reporting", mock_run)
 
         ctx = env.build_context()
         # Provide "y" input to confirm upgrade
@@ -36,13 +35,12 @@ def test_upgrade_when_installed_less_than_required(monkeypatch) -> None:
         assert "uv tool upgrade erk" in result.output
         assert "Successfully upgraded" in result.output
 
-        # Verify subprocess was called with the upgrade command
-        # (other subprocess calls may happen, e.g., git rev-parse)
-        mock_run.assert_any_call(
-            ["uv", "tool", "upgrade", "erk"],
-            capture_output=True,
-            text=True,
-        )
+        # Verify run_with_error_reporting was called with the upgrade command
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert call_args[0][0] == ["uv", "tool", "upgrade", "erk"]
+        assert "error_prefix" in call_args[1]
+        assert call_args[1]["error_prefix"] == "Upgrade failed"
 
 
 def test_upgrade_when_installed_equals_required(monkeypatch) -> None:
@@ -114,17 +112,17 @@ def test_upgrade_handles_subprocess_failure(monkeypatch) -> None:
         # Mock get_current_version to return older version
         monkeypatch.setattr(upgrade_module, "get_current_version", lambda: "0.4.0")
 
-        # Mock subprocess.run to simulate failure
-        mock_run = MagicMock(return_value=MagicMock(returncode=1, stderr="Package not found"))
-        monkeypatch.setattr(subprocess, "run", mock_run)
+        # Mock run_with_error_reporting to simulate failure (raises SystemExit)
+        def mock_run_failure(*args, **kwargs):
+            raise SystemExit(1)
+
+        monkeypatch.setattr(upgrade_module, "run_with_error_reporting", mock_run_failure)
 
         ctx = env.build_context()
         # Provide "y" input to confirm upgrade
         result = runner.invoke(cli, ["upgrade"], obj=ctx, input="y\n")
 
         assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}"
-        assert "Upgrade failed" in result.output
-        assert "Package not found" in result.output
 
 
 def test_upgrade_declined_shows_manual_remediation(monkeypatch) -> None:
