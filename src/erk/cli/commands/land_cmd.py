@@ -32,7 +32,7 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
-from erk.core.context import ErkContext
+from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
     PoolState,
@@ -210,7 +210,7 @@ def _cleanup_and_navigate(
             # Slot worktree: unassign instead of delete
             # state is guaranteed to be non-None since assignment was found in it
             assert state is not None
-            if not force:
+            if not force and not ctx.dry_run:
                 if not user_confirm(
                     f"Unassign slot '{assignment.slot_name}' and delete branch '{branch}'?",
                     default=True,
@@ -220,13 +220,16 @@ def _cleanup_and_navigate(
             # Record objective on slot BEFORE unassigning (so it persists after assignment removed)
             if objective_number is not None:
                 state = update_slot_objective(state, assignment.slot_name, objective_number)
-                save_pool_state(repo.pool_json_path, state)
+                if ctx.dry_run:
+                    user_output("[DRY RUN] Would save pool state")
+                else:
+                    save_pool_state(repo.pool_json_path, state)
             execute_unassign(ctx, repo, state, assignment)
             ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
             user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
         else:
             # Non-slot worktree: delete worktree and branch
-            if not force:
+            if not force and not ctx.dry_run:
                 if not user_confirm(
                     f"Delete worktree '{worktree_path.name}' and branch '{branch}'?",
                     default=True,
@@ -242,6 +245,11 @@ def _cleanup_and_navigate(
             ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
             user_output(click.style("✓", fg="green") + f" Deleted branch '{branch}'")
         # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
+
+    # In dry-run mode, skip navigation and show summary
+    if ctx.dry_run:
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
 
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
@@ -331,6 +339,11 @@ def _navigate_after_land(
     default=True,
     help="Pull latest changes after landing (default: --pull)",
 )
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Print what would be done without executing destructive operations.",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -339,6 +352,7 @@ def land(
     up_flag: bool,
     force: bool,
     pull_flag: bool,
+    dry_run: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -363,14 +377,19 @@ def land(
     - PR must be open and ready to merge
     - PR's base branch must be trunk (one level from trunk)
     """
+    # Replace context with dry-run wrappers if needed
+    if dry_run:
+        ctx = create_context(dry_run=True)
+        script = False  # Force human-readable output in dry-run mode
+
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
     Ensure.graphite_available(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Validate shell integration for activation script output
-    if not script:
+    # Validate shell integration for activation script output (skip in dry-run mode)
+    if not script and not ctx.dry_run:
         user_output(
             click.style("Error: ", fg="red")
             + "This command requires shell integration for activation.\n\n"
