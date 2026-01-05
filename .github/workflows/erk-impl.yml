@@ -210,53 +210,11 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
-          BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          TRUNK_BRANCH: ${{ steps.trunk.outputs.trunk_branch }}
         run: |
-          set +e
-
-          # Check if we're behind origin (diverged)
-          git fetch origin "$TRUNK_BRANCH"
-          behind_count=$(git rev-list --count HEAD..origin/"$TRUNK_BRANCH")
-
-          if [ "$behind_count" -gt 0 ]; then
-            echo "Branch is $behind_count commits behind $TRUNK_BRANCH, rebasing..."
-
-            # Start rebase
-            git rebase "origin/$TRUNK_BRANCH"
-            REBASE_EXIT=$?
-
-            # Loop while rebase has conflicts
-            MAX_ATTEMPTS=5
-            ATTEMPT=0
-            while [ $REBASE_EXIT -ne 0 ] && [ $ATTEMPT -lt $MAX_ATTEMPTS ]; do
-              ATTEMPT=$((ATTEMPT + 1))
-              echo "Rebase conflict detected (attempt $ATTEMPT/$MAX_ATTEMPTS), invoking Claude to fix conflicts..."
-
-              # Use Claude to fix merge conflicts, then continue rebase with git
-              claude --print \
-                --model ${{ inputs.model_name }} \
-                --output-format stream-json \
-                --dangerously-skip-permissions \
-                --verbose \
-                "Fix all merge conflicts in this repository. For each conflicted file, read it, resolve the conflict markers appropriately, and save the file. After fixing all conflicts, stage the resolved files with 'git add' and then run 'git rebase --continue' to continue the rebase."
-
-              # Check rebase state after fix-conflicts
-              if [ ! -d ".git/rebase-merge" ] && [ ! -d ".git/rebase-apply" ]; then
-                echo "Rebase completed successfully"
-                REBASE_EXIT=0
-              fi
-            done
-
-            if [ $REBASE_EXIT -ne 0 ]; then
-              echo "Failed to resolve conflicts after $MAX_ATTEMPTS attempts"
-              git rebase --abort
-              exit 1
-            fi
-
-            # Force push after successful rebase
-            git push -f origin "$BRANCH_NAME"
-          fi
+          erk exec rebase-with-conflict-resolution \
+            --trunk-branch "${{ steps.trunk.outputs.trunk_branch }}" \
+            --branch-name "${{ steps.find_pr.outputs.branch_name }}" \
+            --model "${{ inputs.model_name }}"
 
       - name: Mark PR ready for review
         if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')

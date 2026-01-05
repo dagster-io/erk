@@ -77,6 +77,9 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
 )
 from erk.cli.commands.exec.scripts.preprocess_session import preprocess_session
 from erk.cli.commands.exec.scripts.quick_submit import quick_submit
+from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
+    rebase_with_conflict_resolution,
+)
 from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
     reply_to_discussion_comment,
 )
@@ -147,6 +150,7 @@ exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
 exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")
 exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")
+exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
