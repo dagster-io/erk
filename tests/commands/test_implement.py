@@ -10,6 +10,7 @@ from erk.cli.commands.implement import implement
 from erk.cli.commands.implement_shared import detect_target_type, normalize_model_name
 from erk.cli.config import LoadedConfig
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
@@ -729,7 +730,6 @@ def test_implement_from_issue_skips_tracking_existing_branch_with_graphite() -> 
     2. The worktree was deleted but branch remains
     3. User runs `erk implement` again for the same issue
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     plan_issue = _create_sample_plan_issue("500")
 
@@ -1410,7 +1410,6 @@ def test_implement_from_worktree_stacks_on_current_branch_with_graphite() -> Non
     current branch (feature-branch), not trunk. This test uses file mode
     with a new branch (not pre-existing) so track_branch is called.
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -1478,7 +1477,6 @@ def test_implement_from_trunk_uses_trunk_with_graphite() -> None:
     The key verification is that the parent_branch in track_branch is trunk (main).
     This test uses file mode with a new branch (not pre-existing) so track_branch is called.
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -2025,7 +2023,6 @@ def test_implement_from_managed_slot_stacks_on_current_branch() -> None:
     3. Updates slot assignment to new branch
     4. Does NOT consume a new slot
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     plan_issue = _create_sample_plan_issue("200")
 

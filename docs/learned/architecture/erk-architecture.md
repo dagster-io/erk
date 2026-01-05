@@ -5,6 +5,7 @@ read_when:
   - "implementing dry-run patterns"
   - "regenerating context after os.chdir"
   - "detecting root worktree"
+  - "detecting worktree location"
   - "adding composing template methods to ABC"
 tripwires:
   - action: "passing dry_run boolean flags through function parameters"
@@ -19,6 +20,8 @@ tripwires:
     warning: "These are generated files. Edit the source frontmatter instead, then run 'erk docs sync'."
   - action: "comparing worktree path to repo_root to detect root worktree"
     warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
+  - action: "detecting current worktree using path comparisons on cwd"
+    warning: "Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile."
 ---
 
 # Erk Architecture Patterns
@@ -650,6 +653,66 @@ The helper implements this precedence:
 3. **Compare current branch** to detected trunk
 
 This ensures correct detection regardless of repository trunk name.
+
+## Current Worktree Detection
+
+**ALWAYS use `git.get_repository_root(cwd)` to determine which worktree contains a path.**
+
+### The Problem
+
+Path-based detection using `.exists()`, `.resolve()`, and `.is_relative_to()` is fragile:
+
+1. Symlinks can cause paths to resolve differently
+2. Relative vs absolute paths may not match
+3. Case sensitivity issues on some filesystems
+4. Path normalization edge cases
+
+### Wrong Pattern
+
+```python
+# WRONG: Path comparisons are fragile
+def find_worktree_for_cwd(assignments: list[SlotAssignment], cwd: Path) -> SlotAssignment | None:
+    for assignment in assignments:
+        worktree_path = assignment.worktree_path
+        # Fragile: exists() then resolve() then is_relative_to()
+        if worktree_path.exists() and cwd.exists():
+            if cwd.resolve().is_relative_to(worktree_path.resolve()):
+                return assignment
+    return None
+```
+
+### Correct Pattern
+
+```python
+# CORRECT: Use git to determine worktree root
+def find_worktree_for_cwd(
+    assignments: list[SlotAssignment], git: Git, cwd: Path
+) -> SlotAssignment | None:
+    # Git knows exactly which worktree contains this path
+    worktree_root = git.get_repository_root(cwd)
+    for assignment in assignments:
+        # Exact match - no path gymnastics needed
+        if assignment.worktree_path == worktree_root:
+            return assignment
+    return None
+```
+
+### Why Git-Based Detection Works
+
+`git rev-parse --show-toplevel` (exposed via `git.get_repository_root()`) handles:
+
+- Symlink resolution correctly
+- Nested directory detection
+- Cross-platform path normalization
+- All edge cases git handles internally
+
+### When to Use
+
+Use git-based detection when you need to:
+
+- Determine which worktree contains the current working directory
+- Match paths against a list of known worktrees
+- Validate that a path is within a specific repository
 
 ## Root Worktree Detection
 

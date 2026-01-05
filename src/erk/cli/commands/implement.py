@@ -32,7 +32,7 @@ from erk.cli.commands.implement_shared import (
     validate_flags,
 )
 from erk.cli.commands.slot.common import (
-    find_assignment_by_cwd,
+    find_assignment_by_worktree,
     find_branch_assignment,
     find_inactive_slot,
     find_next_available_slot,
@@ -189,8 +189,6 @@ def _implement_in_current_slot(
     )
 
     # Save state
-    from erk.cli.core import discover_repo_context
-
     repo = discover_repo_context(ctx, ctx.cwd)
     save_pool_state(repo.pool_json_path, new_state)
 
@@ -312,7 +310,7 @@ def _create_worktree_with_plan_content(
         )
 
     # Check if we're running from within a managed slot
-    current_slot_assignment = find_assignment_by_cwd(state, ctx.cwd)
+    current_slot_assignment = find_assignment_by_worktree(state, ctx.git, ctx.cwd)
     if current_slot_assignment is not None:
         # Same-slot stacking: stack new branch on current branch in this slot
         return _implement_in_current_slot(
