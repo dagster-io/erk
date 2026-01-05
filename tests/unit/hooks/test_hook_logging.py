@@ -34,9 +34,7 @@ def test_clear_hook_logs_returns_correct_count(tmp_path: Path) -> None:
     # Arrange: Create multiple sessions with multiple hooks
     for session_id in ["session-1", "session-2"]:
         for hook_id in ["hook-a", "hook-b"]:
-            hook_dir = (
-                tmp_path / ".erk" / "scratch" / "sessions" / session_id / "hooks" / hook_id
-            )
+            hook_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "hooks" / hook_id
             hook_dir.mkdir(parents=True)
             (hook_dir / "log1.json").write_text("{}", encoding="utf-8")
             (hook_dir / "log2.json").write_text("{}", encoding="utf-8")
