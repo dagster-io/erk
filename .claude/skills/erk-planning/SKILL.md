@@ -74,24 +74,27 @@ erk exec plan-update-issue --issue-number 123 --session-id="<session-id>"
 
 **When to update vs create new:**
 
-| Scenario | Action |
-|----------|--------|
-| Minor corrections (typos, clarifications) | Update existing |
-| Adding details discovered during exploration | Update existing |
-| Plan is fundamentally wrong/obsolete | Create new via `/local:replan` |
-| Significant scope change | Create new, close old |
+| Scenario                                     | Action                         |
+| -------------------------------------------- | ------------------------------ |
+| Minor corrections (typos, clarifications)    | Update existing                |
+| Adding details discovered during exploration | Update existing                |
+| Plan is fundamentally wrong/obsolete         | Create new via `/local:replan` |
+| Significant scope change                     | Create new, close old          |
 
 ### The Update Workflow
 
 1. **Fetch existing plan** (if not in local files):
+
    ```bash
    gh issue view 123 --comments --json comments
    ```
+
    Extract content from `plan-body` block in first comment.
 
 2. **Enter plan mode** and make modifications
 
 3. **Update the issue**:
+
    ```bash
    /local:plan-update 123
    ```
@@ -110,19 +113,20 @@ When exiting plan mode with an existing linked issue (e.g., from `.impl/issue.js
 3. **Implement directly**: If changes are ready to code
 
 The `plan-update-issue` command finds plan content from:
+
 1. `--plan-path` flag (explicit file path)
 2. Session scratch storage (via `--session-id`)
 3. `~/.claude/plans/` directory (latest plan file)
 
 ## Related Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/erk:plan-save` | Create new plan issue from current plan |
-| `/local:plan-update` | Update existing plan issue |
-| `/erk:plan-implement` | Save plan and immediately implement |
-| `/local:replan` | Analyze and recreate obsolete plan |
-| `erk implement <issue>` | Implement a saved plan |
+| Command                 | Purpose                                 |
+| ----------------------- | --------------------------------------- |
+| `/erk:plan-save`        | Create new plan issue from current plan |
+| `/local:plan-update`    | Update existing plan issue              |
+| `/erk:plan-implement`   | Save plan and immediately implement     |
+| `/local:replan`         | Analyze and recreate obsolete plan      |
+| `erk implement <issue>` | Implement a saved plan                  |
 
 ## Resources
 

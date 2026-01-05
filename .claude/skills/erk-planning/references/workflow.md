@@ -4,13 +4,13 @@ This document describes the complete workflow for updating an existing plan issu
 
 ## When to Update vs Create New
 
-| Scenario | Action | Rationale |
-|----------|--------|-----------|
-| Typos, clarifications | Update | Preserves issue history |
-| Adding implementation details | Update | Same plan, more context |
-| Plan fundamentally wrong | `/local:replan` | Creates new with analysis |
-| Major scope change | Create new, close old | Different work item |
-| Plan partially implemented | Update remaining steps | Continue tracking |
+| Scenario                      | Action                 | Rationale                 |
+| ----------------------------- | ---------------------- | ------------------------- |
+| Typos, clarifications         | Update                 | Preserves issue history   |
+| Adding implementation details | Update                 | Same plan, more context   |
+| Plan fundamentally wrong      | `/local:replan`        | Creates new with analysis |
+| Major scope change            | Create new, close old  | Different work item       |
+| Plan partially implemented    | Update remaining steps | Continue tracking         |
 
 ## Update Workflow Steps
 
@@ -26,6 +26,7 @@ gh issue view 123 --comments --json comments,body
 ```
 
 Parse the first comment to extract content between:
+
 ```
 <!-- erk:metadata-block:plan-body -->
 ...plan content...
@@ -35,10 +36,12 @@ Parse the first comment to extract content between:
 ### Step 2: Modify the Plan
 
 Option A: **Enter plan mode**
+
 - Make modifications in plan mode
 - Plan will be saved to `~/.claude/plans/`
 
 Option B: **Edit directly**
+
 - Modify the plan file at `~/.claude/plans/<slug>.md`
 
 ### Step 3: Update the Issue
@@ -83,11 +86,11 @@ The plan-update command can use this context:
 
 ## Error Handling
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "No plan found" | No plan in `~/.claude/plans/` | Enter plan mode first |
-| "Issue not found" | Wrong issue number | Verify with `gh issue view` |
-| "No comments" | Issue has no comments | May be wrong issue type |
+| Error             | Cause                         | Solution                    |
+| ----------------- | ----------------------------- | --------------------------- |
+| "No plan found"   | No plan in `~/.claude/plans/` | Enter plan mode first       |
+| "Issue not found" | Wrong issue number            | Verify with `gh issue view` |
+| "No comments"     | Issue has no comments         | May be wrong issue type     |
 
 ## Examples
 
