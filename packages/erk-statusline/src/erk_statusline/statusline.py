@@ -714,7 +714,7 @@ def get_checks_status(github_data: GitHubData | None) -> str:
         github_data: GitHub data from GraphQL query, or None if unavailable
 
     Returns:
-        Formatted string like "3✅ 1🚫 2🔄" with only non-zero counts shown.
+        Formatted string like "[✅:3 🚫:1 🔄:2]" with only non-zero counts shown.
         Empty string if no checks or unavailable.
     """
     if not github_data:
@@ -727,13 +727,13 @@ def get_checks_status(github_data: GitHubData | None) -> str:
 
     parts: list[str] = []
     if pass_count > 0:
-        parts.append(f"{pass_count}✅")
+        parts.append(f"✅:{pass_count}")
     if fail_count > 0:
-        parts.append(f"{fail_count}🚫")
+        parts.append(f"🚫:{fail_count}")
     if pending_count > 0:
-        parts.append(f"{pending_count}🔄")
+        parts.append(f"🔄:{pending_count}")
 
-    return " ".join(parts)
+    return "[" + " ".join(parts) + "]"
 
 
 def get_repo_info(github_data: GitHubData | None) -> RepoInfo:

@@ -200,7 +200,7 @@ class TestGetChecksStatus:
             ],
         )
         result = get_checks_status(github_data)
-        assert result == "1✅"
+        assert result == "[✅:1]"
 
     def test_multiple_passes_returns_count(self) -> None:
         """Multiple passing checks should return total count."""
@@ -233,7 +233,7 @@ class TestGetChecksStatus:
             ],
         )
         result = get_checks_status(github_data)
-        assert result == "3✅"
+        assert result == "[✅:3]"
 
     def test_mixed_statuses_returns_all_counts(self) -> None:
         """Mixed check statuses should return all non-zero counts."""
@@ -284,7 +284,7 @@ class TestGetChecksStatus:
             ],
         )
         result = get_checks_status(github_data)
-        assert result == "3✅ 1🚫 2🔄"
+        assert result == "[✅:3 🚫:1 🔄:2]"
 
     def test_only_failures_shows_only_fail_count(self) -> None:
         """Only failures should show only fail count."""
@@ -305,7 +305,7 @@ class TestGetChecksStatus:
             ],
         )
         result = get_checks_status(github_data)
-        assert result == "1🚫"
+        assert result == "[🚫:1]"
 
     def test_pass_and_pending_shows_both(self) -> None:
         """Pass and pending should show both counts."""
@@ -338,7 +338,7 @@ class TestGetChecksStatus:
             ],
         )
         result = get_checks_status(github_data)
-        assert result == "2✅ 1🔄"
+        assert result == "[✅:2 🔄:1]"
 
 
 class TestBuildGhLabel:
