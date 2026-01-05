@@ -146,6 +146,11 @@ def _show_version_warning() -> None:
         # Show warning
         click.echo(format_version_warning(installed, required), err=True)
         click.echo(file=sys.stderr)
+    except RuntimeError as e:
+        # Silently ignore "not in a git repo" - expected for global commands
+        if "get repository root" in str(e):
+            return
+        logging.warning("Failed to check version: %s", e)
     except Exception as e:
         # Never let version checking break the CLI, but warn so issues can be diagnosed
         logging.warning("Failed to check version: %s", e)
