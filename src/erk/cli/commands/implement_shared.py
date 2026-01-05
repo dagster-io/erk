@@ -8,7 +8,7 @@ import shlex
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple
+from typing import NamedTuple, TypeVar
 
 import click
 
@@ -36,8 +36,10 @@ _MODEL_ALIASES: dict[str, str] = {
 }
 _VALID_MODELS = {"haiku", "sonnet", "opus"}
 
+F = TypeVar("F", bound=Callable[..., object])
 
-def implement_common_options[F: Callable[..., object]](fn: F) -> F:
+
+def implement_common_options(fn: F) -> F:
     """Decorator that applies common options shared between implement commands.
 
     This decorator applies the following options (in order from top to bottom in help):

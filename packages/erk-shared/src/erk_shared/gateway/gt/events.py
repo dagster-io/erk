@@ -7,7 +7,7 @@ Operations yield events instead of using click.echo directly, enabling:
 """
 
 from dataclasses import dataclass
-from typing import Literal, TypeVar
+from typing import Generic, Literal, TypeVar
 
 T = TypeVar("T")
 
@@ -29,7 +29,7 @@ class ProgressEvent:
 
 
 @dataclass(frozen=True)
-class CompletionEvent[T]:
+class CompletionEvent(Generic[T]):
     """Final result of an operation.
 
     Yielded as the last event by an operation. Contains the result

@@ -8,6 +8,8 @@ PlannerRegistry, PlanListService) are defined in erk_shared.core, enabling
 proper type hints without circular imports. Real implementations remain in erk.
 """
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 

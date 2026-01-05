@@ -158,7 +158,7 @@ def format_remote_run_cell(last_remote_impl_at: str | None) -> str:
     return relative_time if relative_time else "-"
 
 
-def plan_filter_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
+def plan_filter_options(f: Callable[P, T]) -> Callable[P, T]:
     """Shared filter options for plan list commands."""
     f = click.option(
         "--label",
@@ -198,7 +198,7 @@ def plan_filter_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
     return f
 
 
-def dash_options[**P, T](f: Callable[P, T]) -> Callable[P, T]:
+def dash_options(f: Callable[P, T]) -> Callable[P, T]:
     """TUI-specific options for dash command."""
     f = click.option(
         "--interval",

@@ -157,7 +157,7 @@ def _function_accepts_hook_ctx(func: Callable) -> bool:
     return "hook_ctx" in sig.parameters
 
 
-def logged_hook[F: Callable[..., None]](func: F) -> F:
+def logged_hook(func: F) -> F:
     """Decorator that logs hook execution for health monitoring.
 
     This decorator MUST be applied BEFORE @project_scoped so that logging

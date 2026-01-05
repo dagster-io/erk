@@ -1,5 +1,7 @@
 """Filter state types for TUI dashboard."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from enum import Enum, auto
 

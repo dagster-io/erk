@@ -124,7 +124,7 @@ class CommandWithHiddenOptions(click.Command):
                 formatter.write_dl(hidden_opts)
 
 
-def script_option[F: Callable[..., object]](fn: F) -> F:
+def script_option(fn: F) -> F:
     """Decorator that adds --script option with proper settings.
 
     Must be applied to a function decorated with @click.command(cls=CommandWithHiddenOptions).

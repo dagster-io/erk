@@ -1,5 +1,7 @@
 """Data models for status information."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
