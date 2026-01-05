@@ -21,12 +21,12 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.github.issues import IssueInfo
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.core import (
     create_submission_queued_block,
     find_metadata_block,
     render_erk_issue_event,
-    update_plan_header_dispatch,
 )
+from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 from erk_shared.github.parsing import (
     construct_pr_url,
     construct_workflow_run_url,

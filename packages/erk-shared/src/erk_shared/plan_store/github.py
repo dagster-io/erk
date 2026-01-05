@@ -15,7 +15,10 @@ from urllib.parse import urlparse
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues import GitHubIssues, IssueInfo
-from erk_shared.github.metadata import extract_plan_from_comment, extract_plan_header_comment_id
+from erk_shared.github.metadata.plan_header import (
+    extract_plan_from_comment,
+    extract_plan_header_comment_id,
+)
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.plan_store.backend import PlanBackend
@@ -346,13 +349,13 @@ class GitHubPlanStore(PlanBackend):
             RuntimeError: If provider fails or plan not found
         """
         # Import here to avoid circular imports
-        from erk_shared.github.metadata import (
-            MetadataBlock,
-            PlanHeaderSchema,
+        from erk_shared.github.metadata.core import (
             find_metadata_block,
             render_metadata_block,
             replace_metadata_block_in_body,
         )
+        from erk_shared.github.metadata.schemas import PlanHeaderSchema
+        from erk_shared.github.metadata.types import MetadataBlock
 
         issue_number = int(plan_id)
         issue_info = self._github_issues.get_issue(repo_root, issue_number)

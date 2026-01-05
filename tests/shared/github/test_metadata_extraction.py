@@ -6,7 +6,7 @@ Tests extraction functions that parse metadata blocks from issue bodies.
 
 import pytest
 
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.plan_header import (
     extract_plan_header_comment_id,
     extract_plan_header_dispatch_info,
     extract_plan_header_local_impl_at,

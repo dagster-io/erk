@@ -19,7 +19,7 @@ import click
 
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
-from erk_shared.github.metadata import find_metadata_block
+from erk_shared.github.metadata.core import find_metadata_block
 
 
 @dataclass(frozen=True)

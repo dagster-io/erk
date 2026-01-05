@@ -1,8 +1,10 @@
 """Tests for session content metadata block functions."""
 
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.constants import (
     CHUNK_SAFETY_BUFFER,
     GITHUB_COMMENT_SIZE_LIMIT,
+)
+from erk_shared.github.metadata.session import (
     chunk_session_content,
     render_session_content_block,
     render_session_content_blocks,

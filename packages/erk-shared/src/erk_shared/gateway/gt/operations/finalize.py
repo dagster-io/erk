@@ -11,7 +11,7 @@ from pathlib import Path
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
-from erk_shared.github.metadata import find_metadata_block
+from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import GitHubRepoId, PRNotFound

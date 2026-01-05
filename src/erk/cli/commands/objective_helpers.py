@@ -10,7 +10,7 @@ import click
 
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
-from erk_shared.github.metadata import extract_plan_header_objective_issue
+from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 

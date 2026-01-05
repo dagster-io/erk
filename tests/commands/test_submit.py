@@ -20,7 +20,8 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
 from erk_shared.github.issues.types import PRReference
-from erk_shared.github.metadata import MetadataBlock, render_metadata_block
+from erk_shared.github.metadata.core import render_metadata_block
+from erk_shared.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 

@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.update_dispatch_info import (
 from erk_shared.context import ErkContext
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata import find_metadata_block
+from erk_shared.github.metadata.core import find_metadata_block
 
 
 def make_plan_header_body(

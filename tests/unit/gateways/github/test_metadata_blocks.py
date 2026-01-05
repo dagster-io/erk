@@ -1090,7 +1090,7 @@ def test_render_erk_issue_event_with_plan_issue_block() -> None:
 
 def test_format_plan_issue_body_simple_basic() -> None:
     """Test format_plan_issue_body_simple produces correct collapsible format."""
-    from erk_shared.github.metadata import format_plan_issue_body_simple
+    from erk_shared.github.metadata.core import format_plan_issue_body_simple
 
     plan_content = "# My Plan\n1. Step one\n2. Step two"
     result = format_plan_issue_body_simple(plan_content)
@@ -1113,7 +1113,7 @@ def test_format_plan_issue_body_simple_basic() -> None:
 
 def test_format_plan_issue_body_simple_no_execution_commands() -> None:
     """Test format_plan_issue_body_simple does NOT include execution commands."""
-    from erk_shared.github.metadata import format_plan_issue_body_simple
+    from erk_shared.github.metadata.core import format_plan_issue_body_simple
 
     plan_content = "# Plan Content"
     result = format_plan_issue_body_simple(plan_content)
@@ -1128,7 +1128,7 @@ def test_format_plan_issue_body_simple_no_execution_commands() -> None:
 
 def test_format_plan_issue_body_simple_preserves_markdown() -> None:
     """Test that markdown formatting is preserved in simple body."""
-    from erk_shared.github.metadata import format_plan_issue_body_simple
+    from erk_shared.github.metadata.core import format_plan_issue_body_simple
 
     plan_content = """# Implementation Plan
 
@@ -1162,7 +1162,7 @@ def example():
 
 def test_replace_metadata_block_in_body_simple() -> None:
     """Test replacing a metadata block in body."""
-    from erk_shared.github.metadata import replace_metadata_block_in_body
+    from erk_shared.github.metadata.core import replace_metadata_block_in_body
 
     body = """Some preamble
 
@@ -1196,7 +1196,7 @@ new: value
 
 def test_replace_metadata_block_in_body_preserves_surrounding_content() -> None:
     """Test that content before and after block is preserved."""
-    from erk_shared.github.metadata import replace_metadata_block_in_body
+    from erk_shared.github.metadata.core import replace_metadata_block_in_body
 
     body = """# Plan Issue
 
@@ -1238,7 +1238,7 @@ schema_version: '3'
 
 def test_replace_metadata_block_not_found_raises() -> None:
     """Test that ValueError is raised when block not found."""
-    from erk_shared.github.metadata import replace_metadata_block_in_body
+    from erk_shared.github.metadata.core import replace_metadata_block_in_body
 
     body = "No metadata blocks here"
 
@@ -1248,7 +1248,7 @@ def test_replace_metadata_block_not_found_raises() -> None:
 
 def test_replace_metadata_block_handles_generic_closing_tag() -> None:
     """Test replacing block with generic closing tag (<!-- /erk:metadata-block -->)."""
-    from erk_shared.github.metadata import replace_metadata_block_in_body
+    from erk_shared.github.metadata.core import replace_metadata_block_in_body
 
     body = """<!-- erk:metadata-block:test-key -->
 content
@@ -1265,7 +1265,7 @@ content
 
 def test_update_plan_header_dispatch_basic() -> None:
     """Test update_plan_header_dispatch updates dispatch fields."""
-    from erk_shared.github.metadata import update_plan_header_dispatch
+    from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 
     body = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:plan-header -->
@@ -1318,7 +1318,7 @@ last_dispatched_at: null
 
 def test_update_plan_header_dispatch_no_block_raises() -> None:
     """Test update_plan_header_dispatch raises when no plan-header block."""
-    from erk_shared.github.metadata import update_plan_header_dispatch
+    from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 
     body = "No plan-header block here"
 
@@ -1333,7 +1333,7 @@ def test_update_plan_header_dispatch_no_block_raises() -> None:
 
 def test_update_plan_header_dispatch_returns_full_body() -> None:
     """Test that update_plan_header_dispatch returns full body, not just block."""
-    from erk_shared.github.metadata import update_plan_header_dispatch
+    from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 
     body = """Preamble content
 
@@ -1377,7 +1377,7 @@ Suffix content"""
 
 def test_format_plan_content_comment_produces_collapsible_block() -> None:
     """Test that format_plan_content_comment uses collapsible metadata block format."""
-    from erk_shared.github.metadata import format_plan_content_comment
+    from erk_shared.github.metadata.plan_header import format_plan_content_comment
 
     plan_content = "# My Plan\n1. Step one\n2. Step two"
     result = format_plan_content_comment(plan_content)
@@ -1400,7 +1400,7 @@ def test_format_plan_content_comment_produces_collapsible_block() -> None:
 
 def test_format_plan_content_comment_strips_whitespace() -> None:
     """Test that format_plan_content_comment strips leading/trailing whitespace."""
-    from erk_shared.github.metadata import format_plan_content_comment
+    from erk_shared.github.metadata.plan_header import format_plan_content_comment
 
     plan_content = "\n\n  # My Plan  \n\n"
     result = format_plan_content_comment(plan_content)
@@ -1415,7 +1415,7 @@ def test_format_plan_content_comment_strips_whitespace() -> None:
 
 def test_extract_plan_from_comment_new_format() -> None:
     """Test extracting plan from new collapsible metadata block format."""
-    from erk_shared.github.metadata import extract_plan_from_comment
+    from erk_shared.github.metadata.plan_header import extract_plan_from_comment
 
     comment_body = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:plan-body -->
@@ -1439,7 +1439,7 @@ def test_extract_plan_from_comment_new_format() -> None:
 
 def test_extract_plan_from_comment_old_format_backward_compatible() -> None:
     """Test extracting plan from old marker format (backward compatibility)."""
-    from erk_shared.github.metadata import extract_plan_from_comment
+    from erk_shared.github.metadata.plan_header import extract_plan_from_comment
 
     comment_body = """<!-- erk:plan-content -->
 
@@ -1459,7 +1459,7 @@ def test_extract_plan_from_comment_old_format_backward_compatible() -> None:
 
 def test_extract_plan_from_comment_returns_none_if_not_found() -> None:
     """Test that extract_plan_from_comment returns None if no plan markers found."""
-    from erk_shared.github.metadata import extract_plan_from_comment
+    from erk_shared.github.metadata.plan_header import extract_plan_from_comment
 
     comment_body = "Just some regular comment text without any plan markers."
 
@@ -1470,7 +1470,7 @@ def test_extract_plan_from_comment_returns_none_if_not_found() -> None:
 
 def test_format_and_extract_plan_round_trip() -> None:
     """Test round-trip: format -> extract should return original plan content."""
-    from erk_shared.github.metadata import (
+    from erk_shared.github.metadata.plan_header import (
         extract_plan_from_comment,
         format_plan_content_comment,
     )
@@ -1503,7 +1503,7 @@ def example():
 
 def test_extract_plan_prefers_new_format_over_old() -> None:
     """Test that new format is preferred when both formats are present."""
-    from erk_shared.github.metadata import extract_plan_from_comment
+    from erk_shared.github.metadata.plan_header import extract_plan_from_comment
 
     # Unlikely scenario: both formats present. New format should win.
     comment_body = """<!-- erk:plan-content -->
@@ -1532,7 +1532,7 @@ New format content
 
 def test_update_plan_header_local_impl_basic() -> None:
     """Test update_plan_header_local_impl updates local impl field."""
-    from erk_shared.github.metadata import update_plan_header_local_impl
+    from erk_shared.github.metadata.plan_header import update_plan_header_local_impl
 
     body = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:plan-header -->
@@ -1574,7 +1574,7 @@ last_local_impl_at: null
 
 def test_update_plan_header_local_impl_no_block_raises() -> None:
     """Test update_plan_header_local_impl raises when no plan-header block."""
-    from erk_shared.github.metadata import update_plan_header_local_impl
+    from erk_shared.github.metadata.plan_header import update_plan_header_local_impl
 
     body = "No plan-header block here"
 
@@ -1587,7 +1587,7 @@ def test_update_plan_header_local_impl_no_block_raises() -> None:
 
 def test_update_plan_header_local_impl_preserves_other_fields() -> None:
     """Test that update_plan_header_local_impl preserves other fields."""
-    from erk_shared.github.metadata import update_plan_header_local_impl
+    from erk_shared.github.metadata.plan_header import update_plan_header_local_impl
 
     body = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:plan-header -->

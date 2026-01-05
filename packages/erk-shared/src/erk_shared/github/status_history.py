@@ -3,7 +3,7 @@
 Pure functions for constructing status history from metadata blocks.
 """
 
-from erk_shared.github.metadata import parse_metadata_blocks
+from erk_shared.github.metadata.core import parse_metadata_blocks
 
 
 def extract_workflow_run_id(comment_bodies: list[str]) -> str | None:

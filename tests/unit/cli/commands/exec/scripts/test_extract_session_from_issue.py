@@ -17,7 +17,7 @@ from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata import render_session_content_block
+from erk_shared.github.metadata.session import render_session_content_block
 
 
 def make_issue_info(number: int) -> IssueInfo:

@@ -6,7 +6,7 @@ Tests all validator methods for all schema classes in metadata.py.
 
 import pytest
 
-from erk_shared.github.metadata import (
+from erk_shared.github.metadata.schemas import (
     ImplementationStatusSchema,
     PlanHeaderSchema,
     PlanSchema,

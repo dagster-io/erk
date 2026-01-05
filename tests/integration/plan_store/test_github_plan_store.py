@@ -821,7 +821,7 @@ def test_add_comment_issue_not_found() -> None:
 
 def test_update_metadata_worktree_name() -> None:
     """Test updating worktree_name metadata field."""
-    from erk_shared.github.metadata import format_plan_header_body
+    from erk_shared.github.metadata.plan_header import format_plan_header_body
 
     # Create issue with valid plan-header block
     metadata_body = format_plan_header_body(
@@ -847,7 +847,7 @@ def test_update_metadata_worktree_name() -> None:
 
 def test_update_metadata_whitelist_filter() -> None:
     """Test that only allowed fields are updated."""
-    from erk_shared.github.metadata import format_plan_header_body
+    from erk_shared.github.metadata.plan_header import format_plan_header_body
 
     # Create issue with valid plan-header block
     metadata_body = format_plan_header_body(

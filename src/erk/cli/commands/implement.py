@@ -54,7 +54,7 @@ from erk.core.worktree_pool import (
     save_pool_state,
     update_slot_objective,
 )
-from erk_shared.github.metadata import extract_plan_header_objective_issue
+from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
