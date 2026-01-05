@@ -32,7 +32,7 @@ REPO_SUBGROUPS: dict[str, set[str]] = {
 
 # Sub-group definitions for User Setup condensed display
 USER_SUBGROUPS: dict[str, set[str]] = {
-    "User checks": {"github-auth", "claude-hooks", "statusline"},
+    "User checks": {"github-auth", "claude-hooks", "statusline", "shell-integration"},
 }
 
 
@@ -135,7 +135,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
 
     # Group results by category
     prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}
-    user_check_names = {"github-auth", "claude-hooks", "statusline"}
+    user_check_names = {"github-auth", "claude-hooks", "statusline", "shell-integration"}
     repo_check_names = {
         "repository",
         "claude-settings",

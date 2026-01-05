@@ -27,6 +27,7 @@ from erk.core.claude_settings import (
     read_claude_settings,
 )
 from erk.core.context import ErkContext
+from erk.core.init_utils import has_shell_integration_in_rc
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
 from erk_shared.extraction.claude_installation import ClaudeInstallation
@@ -474,6 +475,53 @@ def check_statusline_configured(claude_installation: ClaudeInstallation) -> Chec
         message="erk-statusline not configured",
         details="Run 'erk init --statusline' to enable erk statusline",
         info=True,
+    )
+
+
+def check_shell_integration(shell: Shell) -> CheckResult:
+    """Check if shell integration is configured in user's shell RC file.
+
+    This is an info-level check - it always passes, but informs users
+    whether shell integration is configured for their shell.
+
+    Args:
+        shell: Shell implementation for detecting current shell
+
+    Returns:
+        CheckResult with info about shell integration status
+    """
+    shell_info = shell.detect_shell()
+    if shell_info is None:
+        return CheckResult(
+            name="shell-integration",
+            passed=True,
+            message="Shell not detected (unsupported shell)",
+            info=True,
+        )
+
+    shell_name, rc_path = shell_info
+
+    if not rc_path.exists():
+        return CheckResult(
+            name="shell-integration",
+            passed=True,
+            message=f"Shell RC file not found ({rc_path.name})",
+            info=True,
+        )
+
+    if has_shell_integration_in_rc(rc_path):
+        return CheckResult(
+            name="shell-integration",
+            passed=True,
+            message=f"Shell integration configured ({shell_name})",
+        )
+
+    return CheckResult(
+        name="shell-integration",
+        passed=True,
+        message=f"Shell integration not configured ({shell_name})",
+        info=True,
+        remediation="Run 'erk init' to add shell integration",
     )
 
 
@@ -1050,7 +1098,10 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
 
         # Add individual artifact names to verbose output
         for artifact_info in sorted(artifacts, key=lambda a: a.name):
-            status_indicator = "" if artifact_info.status == "up-to-date" else f" ({artifact_info.status})"
+            if artifact_info.status == "up-to-date":
+                status_indicator = ""
+            else:
+                status_indicator = f" ({artifact_info.status})"
             verbose_summaries.append(f"      {artifact_info.name}{status_indicator}")
 
     details = "\n".join(type_summaries)
@@ -1174,6 +1225,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         check_uv_version(shell),
         check_hooks_disabled(claude_installation),
         check_statusline_configured(claude_installation),
+        check_shell_integration(shell),
     ]
 
     # Add repository check
