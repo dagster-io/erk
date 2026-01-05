@@ -251,6 +251,7 @@ class ErkCommandGroup(click.Group):
             "land",
             "list",
             "up",
+            "upgrade",
         ]
         command_groups = [
             "admin",
