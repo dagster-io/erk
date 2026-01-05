@@ -6,7 +6,8 @@ from pathlib import Path
 from erk.cli.commands.submit import ERK_PLAN_LABEL
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk_shared.github.metadata import MetadataBlock, render_metadata_block
+from erk_shared.github.metadata.core import render_metadata_block
+from erk_shared.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 

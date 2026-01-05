@@ -8,7 +8,6 @@ from erk_shared.github.metadata_blocks import (
     render_erk_issue_event,
 )
 
-
 # === PlanIssueSchema Tests ===
 
 

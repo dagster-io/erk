@@ -11,7 +11,7 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
-from tests.commands.submit.conftest import create_plan, make_plan_body, setup_submit_context
+from tests.commands.submit.conftest import create_plan, make_plan_body
 
 
 def test_submit_with_custom_base_branch(tmp_path: Path) -> None:

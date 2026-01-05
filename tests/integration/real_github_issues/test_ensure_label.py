@@ -9,7 +9,6 @@ from pytest import MonkeyPatch
 from erk_shared.github.issues import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
-
 # ============================================================================
 # ensure_label_exists() tests
 # ============================================================================

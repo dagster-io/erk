@@ -12,7 +12,6 @@ from erk_shared.github.metadata_blocks import (
     parse_metadata_blocks,
 )
 
-
 # === Phase 1: Raw Block Extraction Tests ===
 
 

@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.metadata import update_plan_header_local_impl
+from erk_shared.github.metadata.plan_header import update_plan_header_local_impl
 
 
 def test_update_plan_header_local_impl_basic() -> None:

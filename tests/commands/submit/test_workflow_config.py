@@ -5,7 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.submit import load_workflow_config, submit_cmd
-from tests.commands.submit.conftest import create_plan, setup_submit_context
+from tests.commands.submit.conftest import create_plan
 
 
 def test_load_workflow_config_file_not_found(tmp_path: Path) -> None:

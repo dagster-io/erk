@@ -2,7 +2,7 @@
 
 import pytest
 
-from erk_shared.github.metadata import update_plan_header_dispatch
+from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 
 
 def test_update_plan_header_dispatch_basic() -> None:
