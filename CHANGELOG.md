@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-01-04 21:19 PT
+
+### Added
+
+- Add Python 3.11 support and fix forward reference compatibility
+
+### Changed
+
+- Implement always gets new slot for maximum parallelism
+
+### Fixed
+
+- Fix CI to use correct Python version in uv during unit tests
+
 ## [0.4.1] - 2026-01-04 19:40 PT
 
 ### Added
