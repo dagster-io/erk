@@ -4,6 +4,8 @@ Covers branch conflict/force flag, pre-existing slot directory, pool size config
 uncommitted changes detection, and implementing from managed slots.
 """
 
+from datetime import UTC, datetime
+
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -12,6 +14,8 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.metadata import format_plan_header_body
+from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -465,3 +469,193 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
         updated_state = load_pool_state(env.repo.pool_json_path)
         assert updated_state is not None
         assert len(updated_state.assignments) == 2  # Original + new
+
+
+# Objective Propagation Tests
+
+
+def _create_plan_with_objective(issue_number: str, objective_issue: int) -> Plan:
+    """Create a plan issue with objective_issue in plan-header metadata."""
+    body = format_plan_header_body(
+        created_at="2024-01-01T00:00:00+00:00",
+        created_by="testuser",
+        objective_issue=objective_issue,
+    )
+    return Plan(
+        plan_identifier=issue_number,
+        title="Plan With Objective",
+        body=body,
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{issue_number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={},
+    )
+
+
+def test_implement_from_issue_with_objective_propagates_to_slot() -> None:
+    """Test that objective_issue from plan metadata is saved to slot."""
+    plan_issue = _create_plan_with_objective("300", 42)
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"300": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#300", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        # Should show linked objective message
+        assert "objective #42" in result.output
+
+        # Verify slot was created with objective
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+
+        # Find the slot that was assigned
+        assigned_slot_name = updated_state.assignments[0].slot_name
+
+        # Find the SlotInfo for that slot
+        slot = next(
+            (s for s in updated_state.slots if s.name == assigned_slot_name),
+            None,
+        )
+        assert slot is not None
+        assert slot.last_objective_issue == 42
+
+
+def test_implement_from_issue_without_objective_does_not_create_slot_info() -> None:
+    """Test that issue without objective doesn't add spurious SlotInfo."""
+    plan_issue = create_sample_plan_issue("301")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"301": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#301", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        # Should NOT show linked objective message
+        assert "objective" not in result.output.lower()
+
+        # Verify no SlotInfo was created (only assignment exists)
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+        assert len(updated_state.assignments) == 1
+        # No slots should have been added for objective tracking
+        assigned_slot_name = updated_state.assignments[0].slot_name
+        slot = next(
+            (s for s in updated_state.slots if s.name == assigned_slot_name),
+            None,
+        )
+        # Either no slot exists, or if it does, it has no objective
+        if slot is not None:
+            assert slot.last_objective_issue is None
+
+
+def test_implement_from_file_does_not_propagate_objective() -> None:
+    """Test that file-based implementation doesn't have objective."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        ctx = build_workspace_test_context(env, git=git)
+
+        # Create plan file
+        plan_file = env.cwd / "my-plan.md"
+        plan_file.write_text("# Plan", encoding="utf-8")
+
+        result = runner.invoke(implement, [str(plan_file), "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        # Should NOT show linked objective message
+        assert "objective" not in result.output.lower()
+
+        # Verify no SlotInfo was created with objective
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+        # No objective tracking for file-based plans
+        assigned_slot_name = updated_state.assignments[0].slot_name
+        slot = next(
+            (s for s in updated_state.slots if s.name == assigned_slot_name),
+            None,
+        )
+        # Either no slot or no objective
+        if slot is not None:
+            assert slot.last_objective_issue is None
+
+
+def test_implement_objective_adds_new_slot_info() -> None:
+    """Test that objective creates new SlotInfo when slot doesn't exist in slots list.
+
+    When implementing on a fresh slot that has no prior SlotInfo, the implementation
+    should create a new SlotInfo with the objective.
+    """
+    plan_issue = _create_plan_with_objective("302", 99)
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"302": plan_issue})
+
+        # Slot-01 has an assignment (taking up slot 1)
+        # Slot-02 is completely fresh (no SlotInfo, no dir)
+        initial_slot1_assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="other-feature",
+            assigned_at="2024-01-01T00:00:00+00:00",
+            worktree_path=env.repo.worktrees_dir / "erk-managed-wt-01",
+        )
+        (env.repo.worktrees_dir / "erk-managed-wt-01").mkdir(parents=True)
+
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),  # No SlotInfo entries
+            assignments=(initial_slot1_assignment,),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#302", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should show new objective
+        assert "objective #99" in result.output
+        # Should use slot-02 (slot-01 is assigned)
+        assert "erk-managed-wt-02" in result.output
+
+        # Verify SlotInfo was created with objective
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+
+        # Should have one SlotInfo for slot-02 with the objective
+        slot02_infos = [s for s in updated_state.slots if s.name == "erk-managed-wt-02"]
+        assert len(slot02_infos) == 1
+        assert slot02_infos[0].last_objective_issue == 99

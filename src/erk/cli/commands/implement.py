@@ -49,9 +49,12 @@ from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk.core.worktree_pool import (
     PoolState,
     SlotAssignment,
+    SlotInfo,
     load_pool_state,
     save_pool_state,
+    update_slot_objective,
 )
+from erk_shared.github.metadata import extract_plan_header_objective_issue
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -90,6 +93,7 @@ def _create_worktree_with_plan_content(
     base_branch: str,
     model: str | None,
     force: bool,
+    objective_issue: int | None,
 ) -> WorktreeCreationResult | None:
     """Create worktree with plan content using slot assignment.
 
@@ -109,6 +113,7 @@ def _create_worktree_with_plan_content(
         base_branch: Base branch to use as ref for worktree creation
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         force: Whether to auto-unassign oldest slot if pool is full
+        objective_issue: Optional objective issue number from plan metadata
 
     Returns:
         WorktreeCreationResult with paths, or None if dry-run mode
@@ -294,6 +299,25 @@ def _create_worktree_with_plan_content(
     # Save state
     save_pool_state(repo.pool_json_path, new_state)
 
+    # Update slot with objective (if provided)
+    if objective_issue is not None:
+        # Check if slot exists in slots list
+        slot_exists = any(s.name == slot_name for s in new_state.slots)
+        if slot_exists:
+            # Update existing slot
+            new_state = update_slot_objective(new_state, slot_name, objective_issue)
+        else:
+            # Add new slot with objective
+            new_slot = SlotInfo(name=slot_name, last_objective_issue=objective_issue)
+            new_state = PoolState(
+                version=new_state.version,
+                pool_size=new_state.pool_size,
+                slots=(*new_state.slots, new_slot),
+                assignments=new_state.assignments,
+            )
+        save_pool_state(repo.pool_json_path, new_state)
+        ctx.feedback.info(f"Linked to objective #{objective_issue}")
+
     # Run post-worktree setup
     run_post_worktree_setup(ctx, config, wt_path, repo_root, slot_name)
 
@@ -380,6 +404,10 @@ def _implement_from_issue(
         ctx, repo.root, issue_number, base_branch=base_branch
     )
 
+    # Extract objective from plan metadata (if present)
+    plan = ctx.plan_store.get_plan(repo.root, issue_number)
+    objective_issue = extract_plan_header_objective_issue(plan.body)
+
     # Create worktree with plan content, using the branch name
     result = _create_worktree_with_plan_content(
         ctx,
@@ -392,6 +420,7 @@ def _implement_from_issue(
         base_branch=base_branch,
         model=model,
         force=force,
+        objective_issue=objective_issue,
     )
 
     # Early return for dry-run mode
@@ -478,6 +507,7 @@ def _implement_from_file(
     plan_source = prepare_plan_source_from_file(ctx, plan_file)
 
     # Create worktree with plan content
+    # File mode has no objective metadata
     result = _create_worktree_with_plan_content(
         ctx,
         plan_source=plan_source,
@@ -489,6 +519,7 @@ def _implement_from_file(
         base_branch=base_branch,
         model=model,
         force=force,
+        objective_issue=None,
     )
 
     # Early return for dry-run mode
