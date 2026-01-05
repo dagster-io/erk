@@ -1865,33 +1865,38 @@ def test_implement_uses_checkout_when_slot_directory_exists() -> None:
     1. A managed slot directory exists on disk (from pool initialization)
     2. But find_inactive_slot() returns None (slot not tracked in pool state)
 
-    The fix tracks initialized slots in state.slots so find_inactive_slot returns them.
-    When find_inactive_slot returns an initialized slot, checkout_branch is used.
+    The fix uses git.list_worktrees() to discover existing worktrees, so
+    find_inactive_slot returns them. When an inactive slot is found,
+    checkout_branch is used instead of add_worktree.
     """
     plan_issue = _create_sample_plan_issue()
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main"]},
-            default_branches={env.cwd: "main"},
-        )
-        store, _ = create_plan_store_with_plans({"42": plan_issue})
-        ctx = build_workspace_test_context(env, git=git, plan_store=store)
-
         # Pre-create the slot directory to simulate pool initialization
         slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
         slot_dir.mkdir(parents=True)
 
-        # Track the slot in pool state so find_inactive_slot() returns it
-        # This simulates proper pool initialization where slots are tracked
-        from erk.core.worktree_pool import PoolState, SlotInfo, save_pool_state
-
-        init_state = PoolState.test(
-            pool_size=4,
-            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),),
+        # Configure git to know about the worktree via list_worktrees()
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_dir, branch=None, is_root=False),
+                ]
+            },
         )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        # Pool state - find_inactive_slot now uses git.list_worktrees()
+        # instead of state.slots, so we just need pool_size configured
+        from erk.core.worktree_pool import PoolState, save_pool_state
+
+        init_state = PoolState.test(pool_size=4)
         save_pool_state(env.repo.pool_json_path, init_state)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
@@ -1994,24 +1999,27 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
         slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
         slot_dir.mkdir(parents=True)
 
+        # Configure git to know about the worktree and its dirty status
         git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
+            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
             local_branches={env.cwd: ["main"]},
             default_branches={env.cwd: "main"},
             # Configure the slot worktree to have uncommitted changes
             file_statuses={slot_dir: ([], ["modified_file.py"], [])},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_dir, branch=None, is_root=False),
+                ]
+            },
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
-        # Track the slot in pool state so find_inactive_slot() returns it
-        # This simulates proper pool initialization where slots are tracked
-        from erk.core.worktree_pool import PoolState, SlotInfo, save_pool_state
+        # Pool state - find_inactive_slot uses git.list_worktrees()
+        from erk.core.worktree_pool import PoolState, save_pool_state
 
-        init_state = PoolState.test(
-            pool_size=4,
-            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),),
-        )
+        init_state = PoolState.test(pool_size=4)
         save_pool_state(env.repo.pool_json_path, init_state)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)

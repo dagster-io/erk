@@ -128,10 +128,14 @@ class TestFindInactiveSlot:
         repo_root = tmp_path / "repo"
         wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
         wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
-        git = FakeGit(worktrees={repo_root: [
-            WorktreeInfo(path=wt1_path, branch="feature-a"),
-            WorktreeInfo(path=wt2_path, branch="feature-b"),
-        ]})
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+                ]
+            }
+        )
         state = PoolState.test(pool_size=4)
 
         result = find_inactive_slot(state, git, repo_root)
@@ -146,10 +150,14 @@ class TestFindInactiveSlot:
         repo_root = tmp_path / "repo"
         wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
         wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
-        git = FakeGit(worktrees={repo_root: [
-            WorktreeInfo(path=wt1_path, branch="feature-a"),
-            WorktreeInfo(path=wt2_path, branch="feature-b"),
-        ]})
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+                ]
+            }
+        )
         assignment1 = SlotAssignment(
             slot_name="erk-managed-wt-01",
             branch_name="feature-a",
@@ -174,11 +182,15 @@ class TestFindInactiveSlot:
         wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
         wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
         wt3_path = tmp_path / "worktrees" / "erk-managed-wt-03"
-        git = FakeGit(worktrees={repo_root: [
-            WorktreeInfo(path=wt1_path, branch="feature-a"),
-            WorktreeInfo(path=wt2_path, branch="feature-b"),
-            WorktreeInfo(path=wt3_path, branch="feature-c"),
-        ]})
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+                    WorktreeInfo(path=wt3_path, branch="feature-c"),
+                ]
+            }
+        )
         assignment1 = SlotAssignment(
             slot_name="erk-managed-wt-01",
             branch_name="feature-a",
@@ -204,9 +216,13 @@ class TestFindInactiveSlot:
         repo_root = tmp_path / "repo"
         wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
         # Git knows about this worktree
-        git = FakeGit(worktrees={repo_root: [
-            WorktreeInfo(path=wt1_path, branch="some-branch"),
-        ]})
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="some-branch"),
+                ]
+            }
+        )
         # But state.slots is empty (worktree not tracked in pool.json)
         state = PoolState.test(pool_size=4, slots=())
 
@@ -224,11 +240,15 @@ class TestFindInactiveSlot:
         root_wt = tmp_path / "repo"
         other_wt = tmp_path / "other-worktree"
         managed_wt = tmp_path / "worktrees" / "erk-managed-wt-01"
-        git = FakeGit(worktrees={repo_root: [
-            WorktreeInfo(path=root_wt, branch="main", is_root=True),
-            WorktreeInfo(path=other_wt, branch="feature"),
-            WorktreeInfo(path=managed_wt, branch="assigned-branch"),
-        ]})
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=root_wt, branch="main", is_root=True),
+                    WorktreeInfo(path=other_wt, branch="feature"),
+                    WorktreeInfo(path=managed_wt, branch="assigned-branch"),
+                ]
+            }
+        )
         # The managed slot is assigned
         assignment = SlotAssignment(
             slot_name="erk-managed-wt-01",
@@ -247,9 +267,13 @@ class TestFindInactiveSlot:
         """Ignores worktrees beyond pool_size."""
         repo_root = tmp_path / "repo"
         wt5_path = tmp_path / "worktrees" / "erk-managed-wt-05"
-        git = FakeGit(worktrees={repo_root: [
-            WorktreeInfo(path=wt5_path, branch="feature"),
-        ]})
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt5_path, branch="feature"),
+                ]
+            }
+        )
         # pool_size is 4, so slot 5 is beyond the limit
         state = PoolState.test(pool_size=4)
 
