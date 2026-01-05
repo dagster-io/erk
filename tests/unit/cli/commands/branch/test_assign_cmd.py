@@ -357,7 +357,7 @@ def test_branch_assign_pool_full_non_tty_fails() -> None:
         assert "--force" in result.output
 
 
-def testcleanup_worktree_artifacts_removes_impl_folder(tmp_path) -> None:
+def test_cleanup_worktree_artifacts_removes_impl_folder(tmp_path) -> None:
     """Test that cleanup removes .impl/ folder."""
     worktree_path = tmp_path / "worktree"
     worktree_path.mkdir()
@@ -371,7 +371,7 @@ def testcleanup_worktree_artifacts_removes_impl_folder(tmp_path) -> None:
     assert not impl_folder.exists()
 
 
-def testcleanup_worktree_artifacts_removes_scratch_folder(tmp_path) -> None:
+def test_cleanup_worktree_artifacts_removes_scratch_folder(tmp_path) -> None:
     """Test that cleanup removes .erk/scratch/ folder."""
     worktree_path = tmp_path / "worktree"
     worktree_path.mkdir()
@@ -389,7 +389,7 @@ def testcleanup_worktree_artifacts_removes_scratch_folder(tmp_path) -> None:
     assert erk_folder.exists()
 
 
-def testcleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
+def test_cleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
     """Test that cleanup doesn't fail if folders don't exist."""
     worktree_path = tmp_path / "worktree"
     worktree_path.mkdir()
