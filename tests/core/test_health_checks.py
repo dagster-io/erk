@@ -709,8 +709,9 @@ def test_check_post_plan_implement_ci_hook_exists(tmp_path: Path) -> None:
 
     assert result.name == "post-plan-implement-ci-hook"
     assert result.passed is True
-    assert result.info is True
+    assert result.info is False  # Green check, not info
     assert "CI instructions hook configured" in result.message
+    assert ".erk/prompt-hooks/post-plan-implement-ci.md" in result.message
     assert result.details is None
 
 
@@ -721,7 +722,8 @@ def test_check_post_plan_implement_ci_hook_missing(tmp_path: Path) -> None:
     assert result.name == "post-plan-implement-ci-hook"
     assert result.passed is True
     assert result.info is True
-    assert "No CI instructions hook configured" in result.message
+    assert "No CI instructions hook" in result.message
+    assert ".erk/prompt-hooks/post-plan-implement-ci.md" in result.message
     assert result.details is not None
     assert "post-plan-implement-ci.md" in result.details
     assert "CI instructions" in result.details
