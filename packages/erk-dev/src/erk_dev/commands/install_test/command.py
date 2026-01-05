@@ -43,7 +43,7 @@ def run_docker_command(args: list[str], repo_root: Path) -> None:
         "erk-install-test",
         *args,
     ]
-    subprocess.run(cmd, check=True)
+    subprocess.run(cmd, check=False)
 
 
 @click.group(name="install-test")

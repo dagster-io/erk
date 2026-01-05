@@ -232,8 +232,8 @@ def test_check_gitignore_entries_missing_scratch(tmp_path: Path) -> None:
     assert result.name == "gitignore"
     assert result.passed is False
     assert ".erk/scratch/" in result.message
-    assert result.details is not None
-    assert "erk init" in result.details
+    assert result.remediation is not None
+    assert "erk init" in result.remediation
 
 
 def test_check_gitignore_entries_missing_impl(tmp_path: Path) -> None:
@@ -246,8 +246,8 @@ def test_check_gitignore_entries_missing_impl(tmp_path: Path) -> None:
     assert result.name == "gitignore"
     assert result.passed is False
     assert ".impl/" in result.message
-    assert result.details is not None
-    assert "erk init" in result.details
+    assert result.remediation is not None
+    assert "erk init" in result.remediation
 
 
 def test_check_gitignore_entries_missing_both(tmp_path: Path) -> None:
@@ -261,8 +261,8 @@ def test_check_gitignore_entries_missing_both(tmp_path: Path) -> None:
     assert result.passed is False
     assert ".erk/scratch/" in result.message
     assert ".impl/" in result.message
-    assert result.details is not None
-    assert "erk init" in result.details
+    assert result.remediation is not None
+    assert "erk init" in result.remediation
 
 
 # --- UV Version Check Tests ---
@@ -647,7 +647,8 @@ def test_check_managed_artifacts_some_not_installed(
     assert "have issues" in result.message
     assert result.details is not None
     assert "commands" in result.details
-    assert "erk artifact sync" in result.details
+    assert result.remediation is not None
+    assert "erk artifact sync" in result.remediation
 
 
 def test_check_managed_artifacts_shows_type_summary(
