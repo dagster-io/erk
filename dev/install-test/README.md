@@ -28,7 +28,7 @@ setup_test_repo
 
 # 3. Test erk commands
 cd /home/testuser/test-repo
-erk status
+erk doctor
 erk wt list
 ```
 

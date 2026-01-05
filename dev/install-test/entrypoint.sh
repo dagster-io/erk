@@ -108,8 +108,8 @@ run_erk_tests() {
     erk --help || true
     echo ""
 
-    echo "--- erk status ---"
-    erk status || true
+    echo "--- erk doctor ---"
+    erk doctor || true
     echo ""
 
     echo "--- erk wt list ---"
