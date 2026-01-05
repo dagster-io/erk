@@ -1,0 +1,17 @@
+# Fixture: Current erk config format
+# This represents what a user's repo might have after using erk
+
+[env]
+# Environment variables set when activating worktrees
+# EXAMPLE_KEY = "{worktree_path}"
+
+[post_create]
+# Commands to run after creating a new worktree
+# shell = "bash"
+# commands = [
+#   "uv venv",
+#   "uv run make dev_install",
+# ]
+
+[pool]
+max_slots = 8

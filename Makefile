@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools install-test-image install-test-shell install-test-fresh install-test-upgrade
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -141,3 +141,27 @@ publish: build
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
+
+# === Installation Testing (Docker-based) ===
+
+# Build the installation test image
+install-test-image:
+	docker build -t erk-install-test dev/install-test/
+
+# Interactive shell for manual exploration
+install-test-shell:
+	docker run -it --rm \
+		-v $(PWD):/home/testuser/erk-source:ro \
+		erk-install-test shell
+
+# Test fresh install on repo with existing .erk config
+install-test-fresh:
+	docker run -it --rm \
+		-v $(PWD):/home/testuser/erk-source:ro \
+		erk-install-test fresh
+
+# Test upgrade scenario (install old version, then upgrade)
+install-test-upgrade:
+	docker run -it --rm \
+		-v $(PWD):/home/testuser/erk-source:ro \
+		erk-install-test upgrade
