@@ -62,6 +62,7 @@ from erk.cli.commands.exec.scripts.objective_save_to_issue import (
     objective_save_to_issue,
 )
 from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
+from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk.cli.commands.exec.scripts.post_extraction_comment import (
     post_extraction_comment,
 )
@@ -139,6 +140,7 @@ exec_group.add_command(mark_impl_started, name="mark-impl-started")
 exec_group.add_command(marker, name="marker")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
+exec_group.add_command(plan_update_issue, name="plan-update-issue")
 exec_group.add_command(post_extraction_comment, name="post-extraction-comment")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")

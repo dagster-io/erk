@@ -68,6 +68,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._closed_issues: list[int] = []
         self._added_reactions: list[tuple[int, str]] = []
         self._updated_bodies: list[tuple[int, str]] = []
+        self._updated_comments: list[tuple[int, str]] = []  # (comment_id, body)
         self._next_comment_id = 1000  # Start at 1000 to distinguish from issue numbers
 
     @property
@@ -125,6 +126,14 @@ class FakeGitHubIssues(GitHubIssues):
         Returns list of (issue_number, body) tuples.
         """
         return self._updated_bodies
+
+    @property
+    def updated_comments(self) -> list[tuple[int, str]]:
+        """Read-only access to updated comments for test assertions.
+
+        Returns list of (comment_id, body) tuples.
+        """
+        return self._updated_comments
 
     @property
     def target_repo(self) -> str | None:
@@ -415,3 +424,16 @@ class FakeGitHubIssues(GitHubIssues):
         if self._add_reaction_error is not None:
             raise RuntimeError(self._add_reaction_error)
         self._added_reactions.append((comment_id, reaction))
+
+    def update_comment(
+        self,
+        repo_root: Path,
+        comment_id: int,
+        body: str,
+    ) -> None:
+        """Record comment update in mutation tracking.
+
+        Note: Does not validate comment_id exists. Real API returns 404 for
+        non-existent comments.
+        """
+        self._updated_comments.append((comment_id, body))
