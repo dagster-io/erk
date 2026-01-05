@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-01-05 10:45 PT
+
+### Added
+
+- Add `--clear-hook-logs` option to `erk doctor` command
+- Add check counts to status line display
+- Add logging to statusline for debugging GitHub data fetches and cache behavior
+
+### Changed
+
+- Handle merge conflicts in erk-impl workflow by attempting rebase with Claude assistance
+- Clarify plan-save command output handling to preserve dangerous option in instructions
+
+### Fixed
+
+- Fix keyword argument passing to create_branch_manager factory function
+
 ## [0.4.3] - 2026-01-05 07:55 PT
 
 ### Added
