@@ -48,6 +48,40 @@ Add to `~/.claude/settings.json`:
 }
 ```
 
+## Debugging
+
+The statusline writes debug logs to help diagnose issues like missing `chks:` indicator, timeouts, or API failures.
+
+**Log location:** `~/.erk/logs/statusline/<session-id>.log`
+
+**To view logs for your current session:**
+
+```bash
+# Find recent logs
+ls -lt ~/.erk/logs/statusline/ | head
+
+# Tail the most recent log
+tail -f ~/.erk/logs/statusline/$(ls -t ~/.erk/logs/statusline/ | head -1)
+```
+
+**Example log output:**
+
+```
+2025-01-05 12:34:56 DEBUG Statusline invoked: session=abc123 cwd=/path/to/repo
+2025-01-05 12:34:56 DEBUG Fetching GitHub data for branch=feature-branch
+2025-01-05 12:34:56 DEBUG Fetching PR details: owner/repo #4225
+2025-01-05 12:34:56 DEBUG Fetching check runs: owner/repo sha=abc1234
+2025-01-05 12:34:57 DEBUG PR details fetched: owner/repo #4225 in 0.8s -> MERGEABLE
+2025-01-05 12:34:57 DEBUG Check runs fetched: owner/repo sha=abc1234 in 0.9s -> 5 checks
+2025-01-05 12:34:57 DEBUG Final result: branch=feature-branch pr=4225 checks=🔄
+```
+
+**Common issues to look for:**
+
+- **Timeout messages** - API calls taking too long (default timeout: 1.5s per call)
+- **Empty checks** - `Final result: ... checks=(empty)` means no check runs were returned
+- **Cache behavior** - Look for "Cache hit/miss" messages to understand caching
+
 ## Development
 
 ```bash

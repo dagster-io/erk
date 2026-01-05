@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import subprocess
 import sys
 import time
@@ -25,6 +26,27 @@ from erk_statusline.context import StatuslineContext
 # Cache configuration
 CACHE_DIR = Path("/tmp/erk-statusline-cache")
 CACHE_TTL_SECONDS = 30
+
+# Logging setup - file-based to avoid polluting stderr (which breaks status line)
+# Logs go to ~/.erk/logs/statusline/<session-id>.log for per-session isolation
+_logger = logging.getLogger("erk_statusline")
+_logger.setLevel(logging.DEBUG)
+_logging_initialized = False
+
+
+def _setup_logging(session_id: str) -> None:
+    """Setup logging for a specific session. Called once per session."""
+    global _logging_initialized
+    if _logging_initialized:
+        return
+
+    log_dir = Path.home() / ".erk" / "logs" / "statusline"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_file = log_dir / f"{session_id}.log"
+    handler = logging.FileHandler(log_file)
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+    _logger.addHandler(handler)
+    _logging_initialized = True
 
 
 def _get_cache_path(owner: str, repo: str, branch: str) -> Path:
@@ -44,11 +66,15 @@ def _get_cached_pr_info(owner: str, repo: str, branch: str) -> tuple[int, str] |
     """
     cache_path = _get_cache_path(owner, repo, branch)
     if not cache_path.exists():
+        _logger.debug("Cache miss: %s/%s branch=%s (no cache file)", owner, repo, branch)
         return None
 
     cache_stat = cache_path.stat()
     cache_age = time.time() - cache_stat.st_mtime
     if cache_age > CACHE_TTL_SECONDS:
+        _logger.debug(
+            "Cache miss: %s/%s branch=%s (expired, age=%.1fs)", owner, repo, branch, cache_age
+        )
         return None
 
     try:
@@ -57,9 +83,17 @@ def _get_cached_pr_info(owner: str, repo: str, branch: str) -> tuple[int, str] |
         pr_number = data.get("pr_number")
         head_sha = data.get("head_sha")
         if isinstance(pr_number, int) and isinstance(head_sha, str):
+            _logger.debug(
+                "Cache hit: %s/%s branch=%s -> pr=%d sha=%s",
+                owner,
+                repo,
+                branch,
+                pr_number,
+                head_sha[:7],
+            )
             return (pr_number, head_sha)
     except (json.JSONDecodeError, OSError, KeyError):
-        pass
+        _logger.debug("Cache miss: %s/%s branch=%s (parse error)", owner, repo, branch)
 
     return None
 
@@ -73,6 +107,14 @@ def _set_cached_pr_info(owner: str, repo: str, branch: str, pr_number: int, head
 
     cache_data = {"pr_number": pr_number, "head_sha": head_sha}
     cache_path.write_text(json.dumps(cache_data), encoding="utf-8")
+    _logger.debug(
+        "Cache write: %s/%s branch=%s -> pr=%d sha=%s",
+        owner,
+        repo,
+        branch,
+        pr_number,
+        head_sha[:7],
+    )
 
 
 class RepoInfo(NamedTuple):
@@ -368,6 +410,8 @@ def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: 
     Returns:
         Mergeable status: "MERGEABLE", "CONFLICTING", or "UNKNOWN".
     """
+    _logger.debug("Fetching PR details: %s/%s #%d", owner, repo, pr_number)
+    start_time = time.time()
     try:
         result = subprocess.run(
             ["gh", "api", f"repos/{owner}/{repo}/pulls/{pr_number}"],
@@ -377,7 +421,16 @@ def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: 
             timeout=timeout,
         )
 
+        elapsed = time.time() - start_time
         if result.returncode != 0:
+            _logger.debug(
+                "PR details fetch failed: %s/%s #%d returncode=%d in %.2fs",
+                owner,
+                repo,
+                pr_number,
+                result.returncode,
+                elapsed,
+            )
             return "UNKNOWN"
 
         pr_detail = json.loads(result.stdout)
@@ -386,15 +439,27 @@ def _fetch_pr_details(owner: str, repo: str, pr_number: int, cwd: str, timeout: 
 
         # Map REST mergeable fields to GraphQL-style values
         if mergeable_value is True:
-            return "MERGEABLE"
+            status = "MERGEABLE"
         elif mergeable_value is False:
-            if mergeable_state == "dirty":
-                return "CONFLICTING"
-            return "UNKNOWN"
-        # mergeable is null (GitHub hasn't computed yet)
-        return "UNKNOWN"
+            status = "CONFLICTING" if mergeable_state == "dirty" else "UNKNOWN"
+        else:
+            # mergeable is null (GitHub hasn't computed yet)
+            status = "UNKNOWN"
 
-    except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
+        _logger.debug(
+            "PR details fetched: %s/%s #%d in %.2fs -> %s", owner, repo, pr_number, elapsed, status
+        )
+        return status
+
+    except subprocess.TimeoutExpired:
+        elapsed = time.time() - start_time
+        _logger.debug("PR details timeout: %s/%s #%d after %.2fs", owner, repo, pr_number, elapsed)
+        return "UNKNOWN"
+    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+        elapsed = time.time() - start_time
+        _logger.debug(
+            "PR details error: %s/%s #%d in %.2fs - %s", owner, repo, pr_number, elapsed, e
+        )
         return "UNKNOWN"
 
 
@@ -406,6 +471,9 @@ def _fetch_check_runs(
     Returns:
         List of check context dicts with __typename, conclusion, status, name.
     """
+    sha_short = head_sha[:7] if head_sha else ""
+    _logger.debug("Fetching check runs: %s/%s sha=%s", owner, repo, sha_short)
+    start_time = time.time()
     try:
         result = subprocess.run(
             ["gh", "api", f"repos/{owner}/{repo}/commits/{head_sha}/check-runs"],
@@ -415,7 +483,16 @@ def _fetch_check_runs(
             timeout=timeout,
         )
 
+        elapsed = time.time() - start_time
         if result.returncode != 0:
+            _logger.debug(
+                "Check runs fetch failed: %s/%s sha=%s returncode=%d in %.2fs",
+                owner,
+                repo,
+                head_sha[:7] if head_sha else "",
+                result.returncode,
+                elapsed,
+            )
             return []
 
         check_runs_data = json.loads(result.stdout)
@@ -432,9 +509,36 @@ def _fetch_check_runs(
                 }
             )
 
+        _logger.debug(
+            "Check runs fetched: %s/%s sha=%s in %.2fs -> %d checks",
+            owner,
+            repo,
+            head_sha[:7] if head_sha else "",
+            elapsed,
+            len(check_contexts),
+        )
         return check_contexts
 
-    except (subprocess.TimeoutExpired, subprocess.SubprocessError, json.JSONDecodeError):
+    except subprocess.TimeoutExpired:
+        elapsed = time.time() - start_time
+        _logger.debug(
+            "Check runs timeout: %s/%s sha=%s after %.2fs",
+            owner,
+            repo,
+            head_sha[:7] if head_sha else "",
+            elapsed,
+        )
+        return []
+    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+        elapsed = time.time() - start_time
+        _logger.debug(
+            "Check runs error: %s/%s sha=%s in %.2fs - %s",
+            owner,
+            repo,
+            head_sha[:7] if head_sha else "",
+            elapsed,
+            e,
+        )
         return []
 
 
@@ -454,9 +558,13 @@ def fetch_github_data_via_gateway(
     Returns:
         GitHubData with PR info and checks, or None if unable to fetch.
     """
+    _logger.debug("Fetching GitHub data for branch=%s", branch)
+    start_time = time.time()
+
     # Get owner/repo from git remote
     repo_info = get_github_repo_via_gateway(ctx, repo_root)
     if repo_info is None:
+        _logger.debug("GitHub data fetch: no repo info found")
         return None
     owner, repo = repo_info
 
@@ -465,6 +573,7 @@ def fetch_github_data_via_gateway(
 
     if pr_info is None:
         # No PR for this branch
+        _logger.debug("GitHub data fetch: no PR for branch=%s", branch)
         return GitHubData(
             owner=owner,
             repo=repo,
@@ -476,6 +585,9 @@ def fetch_github_data_via_gateway(
         )
 
     pr_number, pr_state, is_draft = pr_info
+    _logger.debug(
+        "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
+    )
 
     # Get head SHA for check runs - need to use git gateway
     head_sha = ctx.git.get_branch_head(repo_root, branch)
@@ -494,8 +606,20 @@ def fetch_github_data_via_gateway(
             check_contexts = checks_future.result(timeout=2)
     except TimeoutError:
         # If parallel execution times out, use defaults
+        elapsed = time.time() - start_time
+        _logger.debug("GitHub data fetch: ThreadPoolExecutor timeout after %.2fs", elapsed)
         mergeable = "UNKNOWN"
         check_contexts = []
+
+    elapsed = time.time() - start_time
+    _logger.debug(
+        "GitHub data fetch complete: branch=%s pr=%d mergeable=%s checks=%d in %.2fs",
+        branch,
+        pr_number,
+        mergeable,
+        len(check_contexts),
+        elapsed,
+    )
 
     return GitHubData(
         owner=owner,
@@ -785,6 +909,11 @@ def main():
         data = json.load(sys.stdin)
         cwd = data.get("workspace", {}).get("current_dir", "")
 
+        # Setup logging with session ID
+        session_id = data.get("session_id", "unknown")
+        _setup_logging(session_id)
+        _logger.debug("Statusline invoked: session=%s cwd=%s", session_id, cwd)
+
         # Get git status and repo info
         branch = ""
         is_dirty = False
@@ -833,6 +962,15 @@ def main():
         if repo_info:
             repo_name = repo_info.repo
 
+        # Log final checks status for debugging
+        checks_status = get_checks_status(github_data)
+        _logger.debug(
+            "Final result: branch=%s pr=%s checks=%s",
+            branch,
+            repo_info.pr_number if repo_info else "",
+            checks_status if checks_status else "(empty)",
+        )
+
         # Build complete statusline as single TokenSeq
         statusline = TokenSeq(
             (
@@ -852,6 +990,7 @@ def main():
         print(statusline.join(" "), end="")
 
     except Exception as e:
+        _logger.exception("Statusline error: %s", e)
         print(f"➜  error │ {e}", end="")
 
 
