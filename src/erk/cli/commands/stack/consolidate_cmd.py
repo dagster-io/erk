@@ -6,12 +6,16 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import render_activation_script
+from erk.cli.commands.branch.unassign_cmd import execute_unassign
+from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option
 from erk.core.consolidation_utils import calculate_stack_range, create_consolidation_plan
 from erk.core.context import ErkContext, create_context
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk.core.worktree_pool import load_pool_state
+from erk_shared.git.abc import WorktreeInfo
 from erk_shared.output.output import user_confirm, user_output
 
 
@@ -59,15 +63,55 @@ def _format_consolidation_plan(
     return "\n".join(lines)
 
 
-def _format_removal_progress(removed_paths: list[Path]) -> str:
+def _format_removal_progress(removed_paths: list[Path], unassigned_slots: list[str]) -> str:
     """Format the removal execution output with grouped checkmarks."""
     lines: list[str] = []
 
-    lines.append(_format_section_header("🗑️  Removing worktrees..."))
-    for path in removed_paths:
-        lines.append(f"  ✓ {click.style(str(path), fg='green')}")
+    if removed_paths or unassigned_slots:
+        lines.append(_format_section_header("🗑️  Removing worktrees..."))
+        for path in removed_paths:
+            lines.append(f"  ✓ {click.style(str(path), fg='green')}")
+        for slot in unassigned_slots:
+            lines.append(f"  ✓ {click.style(slot, fg='cyan')} (slot unassigned)")
 
     return "\n".join(lines)
+
+
+def _remove_worktree_slot_aware(
+    ctx: ErkContext,
+    repo: RepoContext,
+    wt: WorktreeInfo,
+) -> tuple[Path | None, str | None]:
+    """Remove a worktree with slot awareness.
+
+    If worktree is a pool slot: unassigns slot (keeps directory for reuse).
+    If not a pool slot: removes worktree directory.
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        wt: WorktreeInfo for the worktree to remove
+
+    Returns:
+        Tuple of (removed_path, unassigned_slot_name):
+        - removed_path: Path if worktree was removed, None if slot unassigned
+        - unassigned_slot_name: Slot name if slot unassigned, None if worktree removed
+    """
+    state = load_pool_state(repo.pool_json_path)
+    assignment = None
+    if state is not None:
+        assignment = find_assignment_by_worktree_path(state, wt.path)
+
+    if assignment is not None:
+        # Slot worktree: unassign instead of remove
+        # state is guaranteed to be non-None since assignment was found in it
+        assert state is not None
+        execute_unassign(ctx, repo, state, assignment)
+        return (None, assignment.slot_name)
+    else:
+        # Non-slot worktree: remove normally
+        ctx.git.remove_worktree(repo.root, wt.path, force=True)
+        return (wt.path, None)
 
 
 @click.command("consolidate", cls=GraphiteCommandWithHiddenOptions)
@@ -372,15 +416,28 @@ def consolidate_stack(
 
     # Remove worktrees and collect paths for progress output
     removed_paths: list[Path] = []
+    unassigned_slots: list[str] = []
 
     for wt in worktrees_to_remove:
-        ctx.git.remove_worktree(repo.root, wt.path, force=True)
-        removed_paths.append(wt.path)
+        removed_path, slot_name = _remove_worktree_slot_aware(ctx, repo, wt)
+        if removed_path is not None:
+            removed_paths.append(removed_path)
+        if slot_name is not None:
+            unassigned_slots.append(slot_name)
 
     # Remove source worktree if a new worktree was created
     if name is not None:
-        ctx.git.remove_worktree(repo.root, current_worktree.resolve(), force=True)
-        removed_paths.append(current_worktree)
+        # Create a temporary WorktreeInfo for the source worktree
+        source_wt = WorktreeInfo(
+            path=current_worktree.resolve(),
+            branch=current_branch,
+            is_root=False,
+        )
+        removed_path, slot_name = _remove_worktree_slot_aware(ctx, repo, source_wt)
+        if removed_path is not None:
+            removed_paths.append(removed_path)
+        if slot_name is not None:
+            unassigned_slots.append(slot_name)
 
         # Delete temporary branch after source worktree is removed
         # (can't delete while it's checked out in the source worktree)
@@ -389,7 +446,7 @@ def consolidate_stack(
 
     # Display grouped removal progress
     user_output()
-    user_output(_format_removal_progress(removed_paths))
+    user_output(_format_removal_progress(removed_paths, unassigned_slots))
 
     # Prune stale worktree metadata after all removals
     # (explicit call now that remove_worktree no longer auto-prunes)

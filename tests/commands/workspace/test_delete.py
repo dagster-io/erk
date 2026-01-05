@@ -4,6 +4,7 @@ This file tests the delete command which removes a worktree workspace.
 """
 
 from datetime import UTC, datetime
+from pathlib import Path
 
 from click.testing import CliRunner
 
@@ -718,3 +719,88 @@ def test_delete_all_shows_merged_pr_status_in_confirmation() -> None:
         # Should show that PR is already merged in planning phase
         assert "PR #999 already" in result.output
         assert "merged" in result.output.lower()
+
+
+def test_delete_slot_aware_unassigns_slot() -> None:
+    """Test that delete unassigns slot instead of removing worktree directory."""
+    from erk.core.repo_discovery import RepoContext
+    from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Worktree path is a managed slot (erk-managed-wt-01)
+        slot_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        slot_path.mkdir(parents=True)
+
+        def _create_assignment(
+            slot_name: str,
+            branch_name: str,
+            worktree_path: "Path",
+        ) -> SlotAssignment:
+            return SlotAssignment(
+                slot_name=slot_name,
+                branch_name=branch_name,
+                assigned_at=datetime.now(UTC).isoformat(),
+                worktree_path=worktree_path,
+            )
+
+        # Build fake git ops with worktree info for the slot
+        fake_git = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_path, branch="feature-branch", is_root=False),
+                ]
+            },
+            git_common_dirs={env.cwd: env.git_dir, slot_path: env.git_dir},
+            current_branches={env.cwd: "main", slot_path: "feature-branch"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create pool state with assignment for the slot
+        assignment = _create_assignment("erk-managed-wt-01", "feature-branch", slot_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(
+            git=fake_git,
+            github=FakeGitHub(),
+            shell=FakeShell(),
+            repo=repo,
+        )
+
+        # Execute: erk wt delete with --force to skip confirmation
+        result = runner.invoke(
+            cli, ["wt", "delete", "erk-managed-wt-01", "-f"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert_cli_success(result)
+
+        # Assert: Slot was unassigned (placeholder branch checked out)
+        assert (
+            slot_path,
+            "__erk-slot-01-placeholder__",
+        ) in fake_git.checked_out_branches, "Slot should be checked out to placeholder"
+
+        # Assert: Worktree directory was NOT removed (slot stays for reuse)
+        assert slot_path not in fake_git.removed_worktrees, "Slot worktree should NOT be removed"
+
+        # Assert: Assignment was removed from pool state
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 0, "Assignment should be removed"
+
+        # Assert: Output indicates slot unassignment
+        assert "Unassigned slot" in result.output

@@ -5,10 +5,12 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import render_activation_script
+from erk.cli.commands.branch.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.debug import debug_log
 from erk_shared.git.abc import WorktreeInfo
@@ -140,6 +142,68 @@ def delete_branch_and_worktree(
     # Delete the branch using Git abstraction
     ctx.git.delete_branch_with_graphite(main_repo, branch, force=True)
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
+
+
+def find_assignment_by_worktree_path(
+    state: PoolState, worktree_path: Path
+) -> SlotAssignment | None:
+    """Find a slot assignment by its worktree path.
+
+    Args:
+        state: Current pool state
+        worktree_path: Path to the worktree to find
+
+    Returns:
+        SlotAssignment if the worktree is a pool slot, None otherwise
+    """
+    if not worktree_path.exists():
+        return None
+    resolved_path = worktree_path.resolve()
+    for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            continue
+        if assignment.worktree_path.resolve() == resolved_path:
+            return assignment
+    return None
+
+
+def unallocate_worktree_and_branch(
+    ctx: ErkContext,
+    repo: RepoContext,
+    branch: str,
+    worktree_path: Path,
+) -> None:
+    """Unallocate a worktree and delete its branch.
+
+    If worktree is a pool slot: unassigns slot (keeps directory for reuse), deletes branch.
+    If not a pool slot: removes worktree directory, deletes branch.
+
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        branch: Branch name to delete
+        worktree_path: Path to the worktree to unallocate
+    """
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Check if this is a slot worktree
+    state = load_pool_state(repo.pool_json_path)
+    assignment: SlotAssignment | None = None
+    if state is not None:
+        assignment = find_assignment_by_worktree_path(state, worktree_path)
+
+    if assignment is not None:
+        # Slot worktree: unassign instead of delete
+        # state is guaranteed to be non-None since assignment was found in it
+        assert state is not None
+        execute_unassign(ctx, repo, state, assignment)
+        ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+        user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
+    else:
+        # Non-slot worktree: delete both
+        ctx.git.remove_worktree(main_repo_root, worktree_path, force=True)
+        ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+        user_output(click.style("✓", fg="green") + " Removed worktree and deleted branch")
 
 
 def activate_root_repo(

@@ -4,8 +4,12 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.branch.unassign_cmd import execute_unassign
 from erk.cli.commands.completions import complete_worktree_names
-from erk.cli.commands.navigation_helpers import check_pending_extraction_marker
+from erk.cli.commands.navigation_helpers import (
+    check_pending_extraction_marker,
+    find_assignment_by_worktree_path,
+)
 from erk.cli.core import (
     discover_repo_context,
     validate_worktree_name_for_deletion,
@@ -13,7 +17,8 @@ from erk.cli.core import (
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, create_context, regenerate_context
-from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk.core.worktree_pool import load_pool_state
 from erk.core.worktree_utils import (
     find_worktree_containing_path,
     get_worktree_branch,
@@ -314,24 +319,48 @@ def _confirm_operations(force: bool, dry_run: bool) -> bool:
     return True
 
 
-def _delete_worktree_directory(ctx: ErkContext, repo_root: Path, wt_path: Path) -> None:
-    """Delete the worktree directory from filesystem.
+def _delete_worktree_directory(ctx: ErkContext, repo: RepoContext, wt_path: Path) -> bool:
+    """Delete the worktree directory from filesystem (slot-aware).
+
+    If worktree is a pool slot: unassigns slot (keeps directory for reuse).
+    If not a pool slot: removes worktree directory.
 
     First attempts git worktree remove, then manually deletes if still present.
     This function encapsulates the legitimate error boundary for shutil.rmtree
     because in pure test mode, the path may be a sentinel that doesn't exist
     on the real filesystem.
+
+    Returns:
+        True if this was a slot worktree (slot was unassigned), False otherwise.
     """
+    # Check if this is a slot worktree
+    state = load_pool_state(repo.pool_json_path)
+    assignment = None
+    if state is not None:
+        assignment = find_assignment_by_worktree_path(state, wt_path)
+
+    if assignment is not None:
+        # Slot worktree: unassign instead of delete
+        # state is guaranteed to be non-None since assignment was found in it
+        assert state is not None
+        execute_unassign(ctx, repo, state, assignment)
+        user_output(
+            click.style("✓", fg="green")
+            + f" Unassigned slot {click.style(assignment.slot_name, fg='cyan')}"
+        )
+        return True
+
+    # Non-slot worktree: delete normally
     # Try to delete via git first - this updates git's metadata when possible
-    _try_git_worktree_delete(ctx.git, repo_root, wt_path)
+    _try_git_worktree_delete(ctx.git, repo.root, wt_path)
 
     # Always manually delete directory if it still exists
     if not ctx.git.path_exists(wt_path):
-        return
+        return False
 
     if ctx.dry_run:
         user_output(f"[DRY RUN] Would delete directory: {wt_path}")
-        return
+        return False
 
     # Only call shutil.rmtree() if we're on a real filesystem.
     # In pure test mode, we skip the actual deletion since it's a sentinel path.
@@ -345,7 +374,8 @@ def _delete_worktree_directory(ctx: ErkContext, repo_root: Path, wt_path: Path) 
         pass
 
     # Prune worktree metadata to clean up any stale references
-    _prune_worktrees_safe(ctx.git, repo_root)
+    _prune_worktrees_safe(ctx.git, repo.root)
+    return False
 
 
 def _delete_branch_at_error_boundary(
@@ -477,7 +507,7 @@ def _delete_worktree(
         return
 
     # Order of operations: worktree delete → PR close → plan close → branch delete
-    _delete_worktree_directory(ctx, repo.root, wt_path)
+    was_slot = _delete_worktree_directory(ctx, repo, wt_path)
 
     if close_all and branch_to_delete:
         # Close PR for the branch (if exists and open)
@@ -492,7 +522,8 @@ def _delete_worktree(
             ctx, repo.root, branch_to_delete, force=True, dry_run=dry_run, graphite=ctx.graphite
         )
 
-    if not dry_run:
+    if not dry_run and not was_slot:
+        # Only show "Deleted worktree" message if not a slot (slot shows its own message)
         path_text = click.style(str(wt_path), fg="green")
         user_output(f"✅ Deleted worktree: {path_text}")
 
