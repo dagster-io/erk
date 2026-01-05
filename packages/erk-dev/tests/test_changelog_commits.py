@@ -116,3 +116,41 @@ class TestChangelogCommitsCommand:
             output = json.loads(result.output)
             assert output["success"] is False
             assert "No 'As of <commit>' marker found" in output["error"]
+
+    def test_since_bypasses_marker_requirement(self) -> None:
+        """Test that --since bypasses the CHANGELOG marker parsing."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            # CHANGELOG has no marker, but --since is provided
+            Path("CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n", encoding="utf-8")
+            # Use a fake commit hash - will fail at git verification, not marker parsing
+            result = runner.invoke(cli, ["changelog-commits", "--json-output", "--since", "abc123def"])
+            assert result.exit_code == 1
+            output = json.loads(result.output)
+            assert output["success"] is False
+            # Should fail at git verification, NOT at marker parsing
+            assert "Commit abc123def not found" in output["error"]
+            assert "No 'As of <commit>' marker found" not in output["error"]
+
+    def test_since_with_invalid_commit(self) -> None:
+        """Test that --since with invalid commit hash returns proper error."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            # Even without CHANGELOG, should fail at git verification
+            result = runner.invoke(cli, ["changelog-commits", "--json-output", "--since", "invalid123"])
+            # Note: Will fail either at "not in git repo" or "commit not found"
+            assert result.exit_code == 1
+            output = json.loads(result.output)
+            assert output["success"] is False
+
+    def test_since_does_not_require_changelog(self) -> None:
+        """Test that --since doesn't require CHANGELOG.md to exist."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            # No CHANGELOG.md at all, but --since is provided
+            result = runner.invoke(cli, ["changelog-commits", "--json-output", "--since", "abc123def"])
+            assert result.exit_code == 1
+            output = json.loads(result.output)
+            assert output["success"] is False
+            # Should fail at git verification, NOT at CHANGELOG not found
+            assert "CHANGELOG.md not found" not in output["error"]
