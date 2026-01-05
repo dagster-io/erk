@@ -19,6 +19,7 @@ from erk_dev.commands.completion.command import completion_command
 from erk_dev.commands.create_agents_symlinks.command import (
     create_agents_symlinks_command,
 )
+from erk_dev.commands.install_test.command import install_test_command
 from erk_dev.commands.publish_to_pypi.command import publish_to_pypi_command
 from erk_dev.commands.release_check.command import release_check_command
 from erk_dev.commands.release_info.command import release_info_command
@@ -51,6 +52,7 @@ cli.add_command(clean_cache_command)
 cli.add_command(codex_review_command)
 cli.add_command(completion_command)
 cli.add_command(create_agents_symlinks_command)
+cli.add_command(install_test_command)
 cli.add_command(publish_to_pypi_command)
 cli.add_command(release_check_command)
 cli.add_command(release_info_command)

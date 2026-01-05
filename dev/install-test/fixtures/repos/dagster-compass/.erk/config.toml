@@ -1,0 +1,12 @@
+# Fixture: dagster-compass erk config
+# Snapshot of real dagster-compass configuration for testing
+
+[env]
+# EXAMPLE_KEY = "{worktree_path}"
+
+[post_create]
+# shell = "bash"
+# commands = [
+#   "uv venv",
+#   "uv run make dev_install",
+# ]
