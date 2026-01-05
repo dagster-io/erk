@@ -2039,46 +2039,45 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
         assert len(git.checked_out_branches) == 0
 
 
-# Same-Slot Stacking Tests
+# Tests for Implementing from Managed Slots (Maximize Parallelism)
 
 
-def test_implement_from_managed_slot_stacks_on_current_branch() -> None:
-    """Test that implementing from within a managed slot stacks on current branch.
+def test_implement_from_managed_slot_gets_new_slot() -> None:
+    """Test that implementing from within a managed slot gets a new slot.
 
     When running `erk implement` from within a managed slot:
-    1. Detects we're in a managed slot
-    2. Creates new branch stacked on current branch
-    3. Updates slot assignment to new branch
-    4. Does NOT consume a new slot
+    1. Gets a fresh slot for the new branch
+    2. Parent branch stays assigned to its original slot
+    3. New branch is stacked on current branch (for graphite)
+    4. Pool state shows 2 assignments after implementation
     """
-
     plan_issue = _create_sample_plan_issue("200")
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Create a slot worktree directory
-        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
-        slot_dir.mkdir(parents=True)
+        # Create slot worktree directories
+        slot1_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot1_dir.mkdir(parents=True)
 
         # Configure git to recognize the slot as a managed worktree
         git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
+            git_common_dirs={env.cwd: env.git_dir, slot1_dir: env.git_dir},
             local_branches={env.cwd: ["main", "existing-feature"]},
             default_branches={env.cwd: "main"},
-            current_branches={slot_dir: "existing-feature"},
+            current_branches={slot1_dir: "existing-feature"},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
+                    WorktreeInfo(path=slot1_dir, branch="existing-feature", is_root=False),
                 ]
             },
         )
         store, _ = create_plan_store_with_plans({"200": plan_issue})
         fake_graphite = FakeGraphite()
 
-        # Create initial pool state with the slot assigned
+        # Create initial pool state with slot 01 assigned
         initial_state = PoolState(
             version="1.0",
             pool_size=4,
@@ -2088,7 +2087,7 @@ def test_implement_from_managed_slot_stacks_on_current_branch() -> None:
                     slot_name="erk-managed-wt-01",
                     branch_name="existing-feature",
                     assigned_at="2024-01-01T00:00:00+00:00",
-                    worktree_path=slot_dir,
+                    worktree_path=slot1_dir,
                 ),
             ),
         )
@@ -2101,7 +2100,7 @@ def test_implement_from_managed_slot_stacks_on_current_branch() -> None:
             plan_store=store,
             graphite=fake_graphite,
             use_graphite=True,
-            cwd=slot_dir,
+            cwd=slot1_dir,
         )
 
         # Run implement from within the slot
@@ -2109,94 +2108,31 @@ def test_implement_from_managed_slot_stacks_on_current_branch() -> None:
 
         assert result.exit_code == 0, f"Expected success but got: {result.output}"
 
-        # Verify stacking message
-        assert "Stacking" in result.output or "Stacked" in result.output
-
         # Verify a new branch was created
         assert len(git.created_branches) == 1
 
-        # Verify the branch was tracked with the current branch as parent
+        # Verify the branch was tracked with the current branch as parent (stacking)
         assert len(fake_graphite.track_branch_calls) == 1
-        _cwd, new_branch, parent_branch = fake_graphite.track_branch_calls[0]
+        _cwd, _new_branch, parent_branch = fake_graphite.track_branch_calls[0]
         assert parent_branch == "existing-feature"
 
-        # Verify NO new worktrees were created (same slot reused)
-        assert len(git.added_worktrees) == 0
+        # Verify we got a NEW slot (slot 02), not reusing slot 01
+        assert "erk-managed-wt-02" in result.output
 
-        # Verify the branch was checked out in the slot
-        assert len(git.checked_out_branches) == 1
+        # Verify pool state has 2 assignments (parent keeps its slot)
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+        assert len(updated_state.assignments) == 2
 
-
-def test_implement_from_managed_slot_requires_clean_worktree() -> None:
-    """Test that same-slot stacking fails if there are uncommitted changes.
-
-    Users must commit their work before starting a new stacked implementation
-    to avoid losing changes.
-    """
-    plan_issue = _create_sample_plan_issue("201")
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
-
-        # Create a slot worktree directory
-        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
-        slot_dir.mkdir(parents=True)
-
-        # Configure git with uncommitted changes in the slot
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-feature"]},
-            default_branches={env.cwd: "main"},
-            current_branches={slot_dir: "existing-feature"},
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
-                ]
-            },
-            # Slot has uncommitted changes
-            file_statuses={slot_dir: ([], ["modified.py"], [])},
+        # Verify original slot still has original branch
+        slot1_assignment = next(
+            a for a in updated_state.assignments if a.slot_name == "erk-managed-wt-01"
         )
-        store, _ = create_plan_store_with_plans({"201": plan_issue})
-
-        # Create initial pool state with the slot assigned
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            slots=(),
-            assignments=(
-                SlotAssignment(
-                    slot_name="erk-managed-wt-01",
-                    branch_name="existing-feature",
-                    assigned_at="2024-01-01T00:00:00+00:00",
-                    worktree_path=slot_dir,
-                ),
-            ),
-        )
-        save_pool_state(env.repo.pool_json_path, initial_state)
-
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            plan_store=store,
-            cwd=slot_dir,
-        )
-
-        result = runner.invoke(implement, ["#201", "--script"], obj=ctx)
-
-        # Should fail with error about uncommitted changes
-        assert result.exit_code != 0
-        assert "uncommitted changes" in result.output
-        assert "Commit your changes" in result.output
-        assert "git commit" in result.output
-
-        # Verify no branches were created
-        assert len(git.created_branches) == 0
+        assert slot1_assignment.branch_name == "existing-feature"
 
 
 def test_implement_from_managed_slot_dry_run() -> None:
-    """Test that dry-run mode shows same-slot stacking information."""
+    """Test that dry-run mode shows new slot assignment when running from a slot."""
     plan_issue = _create_sample_plan_issue("202")
 
     runner = CliRunner()
@@ -2247,80 +2183,12 @@ def test_implement_from_managed_slot_dry_run() -> None:
         assert result.exit_code == 0
         assert "Dry-run mode" in result.output
 
-        # Verify same-slot stacking info is shown
-        assert "stack" in result.output.lower()
-        assert "erk-managed-wt-01" in result.output
-        assert "existing-feature" in result.output
+        # Should show NEW slot assignment (slot 02), not same-slot stacking
+        assert "erk-managed-wt-02" in result.output
 
         # Verify no changes were made
         assert len(git.created_branches) == 0
         assert len(git.checked_out_branches) == 0
-
-
-def test_implement_from_managed_slot_updates_pool_state() -> None:
-    """Test that same-slot stacking updates the pool state with new branch."""
-    plan_issue = _create_sample_plan_issue("203")
-
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        env.setup_repo_structure()
-
-        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
-        slot_dir.mkdir(parents=True)
-
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
-            local_branches={env.cwd: ["main", "existing-feature"]},
-            default_branches={env.cwd: "main"},
-            current_branches={slot_dir: "existing-feature"},
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
-                ]
-            },
-        )
-        store, _ = create_plan_store_with_plans({"203": plan_issue})
-
-        initial_state = PoolState(
-            version="1.0",
-            pool_size=4,
-            slots=(),
-            assignments=(
-                SlotAssignment(
-                    slot_name="erk-managed-wt-01",
-                    branch_name="existing-feature",
-                    assigned_at="2024-01-01T00:00:00+00:00",
-                    worktree_path=slot_dir,
-                ),
-            ),
-        )
-        save_pool_state(env.repo.pool_json_path, initial_state)
-
-        ctx = build_workspace_test_context(
-            env,
-            git=git,
-            plan_store=store,
-            cwd=slot_dir,
-        )
-
-        result = runner.invoke(implement, ["#203", "--script"], obj=ctx)
-
-        assert result.exit_code == 0
-
-        # Load and verify pool state was updated
-        updated_state = load_pool_state(env.repo.pool_json_path)
-        assert updated_state is not None
-
-        # Should still have only 1 assignment (same slot, different branch)
-        assert len(updated_state.assignments) == 1
-
-        assignment = updated_state.assignments[0]
-        assert assignment.slot_name == "erk-managed-wt-01"
-        # Branch name should be updated to new branch
-        assert assignment.branch_name != "existing-feature"
-        # Worktree path should be the same
-        assert assignment.worktree_path == slot_dir
 
 
 def test_implement_not_from_slot_uses_new_slot() -> None:
