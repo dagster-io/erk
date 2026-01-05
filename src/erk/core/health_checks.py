@@ -860,12 +860,22 @@ def check_hook_health(repo_root: Path) -> CheckResult:
             )
 
     total_failures = error_count + exception_count
+    total_executions = success_count + blocked_count + error_count + exception_count
 
     if total_failures == 0:
+        # Build verbose details showing execution stats
+        verbose_lines = [f"{total_executions} executions in last 24h"]
+        if success_count > 0:
+            verbose_lines.append(f"  {success_count} successful")
+        if blocked_count > 0:
+            verbose_lines.append(f"  {blocked_count} blocked (expected behavior)")
+        verbose_details = "\n".join(verbose_lines)
+
         return CheckResult(
             name="hooks",
             passed=True,
             message="Hooks healthy",
+            verbose_details=verbose_details,
         )
 
     # Build failure details
@@ -1040,7 +1050,8 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
 
         # Add individual artifact names to verbose output
         for artifact_info in sorted(artifacts, key=lambda a: a.name):
-            verbose_summaries.append(f"      {artifact_info.name}")
+            status_indicator = "" if artifact_info.status == "up-to-date" else f" ({artifact_info.status})"
+            verbose_summaries.append(f"      {artifact_info.name}{status_indicator}")
 
     details = "\n".join(type_summaries)
     verbose_details = "\n".join(verbose_summaries)

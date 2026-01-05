@@ -31,12 +31,13 @@ REPO_SUBGROUPS: dict[str, set[str]] = {
 }
 
 
-def _format_check_result(result: CheckResult, indent: str = "") -> None:
+def _format_check_result(result: CheckResult, indent: str = "", verbose: bool = False) -> None:
     """Format and display a single check result.
 
     Args:
         result: The check result to format
         indent: Optional indentation prefix for nested display
+        verbose: If True and verbose_details exists, use it instead of details
     """
     if not result.passed:
         icon = click.style("❌", fg="red")
@@ -47,15 +48,18 @@ def _format_check_result(result: CheckResult, indent: str = "") -> None:
     else:
         icon = click.style("✅", fg="green")
 
-    if result.details and "\n" not in result.details:
+    # Use verbose_details in verbose mode if available, otherwise use details
+    details = result.verbose_details if verbose and result.verbose_details else result.details
+
+    if details and "\n" not in details:
         # Single-line details: show inline
-        styled_details = click.style(f" - {result.details}", dim=True)
+        styled_details = click.style(f" - {details}", dim=True)
         click.echo(f"{indent}{icon} {result.message}{styled_details}")
     else:
         click.echo(f"{indent}{icon} {result.message}")
-        if result.details:
+        if details:
             # Multi-line details: show with indentation
-            for line in result.details.split("\n"):
+            for line in details.split("\n"):
                 click.echo(click.style(f"{indent}   {line}", dim=True))
 
 
@@ -79,7 +83,7 @@ def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent
         # Always show all individual checks with sub-group header
         click.echo(click.style(f"{indent}  {name}", dim=True))
         for result in checks:
-            _format_check_result(result, indent=f"{indent}  ")
+            _format_check_result(result, indent=f"{indent}  ", verbose=True)
     elif all_passed:
         # Condensed: single line with count
         icon = click.style("✅", fg="green")
@@ -90,7 +94,7 @@ def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent
         click.echo(f"{indent}{icon} {name} ({passed}/{total} checks)")
         for result in checks:
             if not result.passed:
-                _format_check_result(result, indent=f"{indent}   ")
+                _format_check_result(result, indent=f"{indent}   ", verbose=False)
 
 
 @click.command("doctor")
@@ -163,7 +167,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
     # Display Prerequisites (always expanded - these are important)
     click.echo(click.style("Prerequisites", bold=True))
     for result in prerequisite_checks:
-        _format_check_result(result)
+        _format_check_result(result, verbose=verbose)
     click.echo("")
 
     # Display Repository Setup (with sub-groups)
@@ -184,21 +188,21 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
     if github_checks:
         click.echo(click.style("GitHub", bold=True))
         for result in github_checks:
-            _format_check_result(result)
+            _format_check_result(result, verbose=verbose)
         click.echo("")
 
     # Display Hooks checks
     if hooks_checks:
         click.echo(click.style("Hooks", bold=True))
         for result in hooks_checks:
-            _format_check_result(result)
+            _format_check_result(result, verbose=verbose)
         click.echo("")
 
     # Display Early Dogfooder checks (only when --dogfooder flag is passed)
     if dogfooder and early_dogfooder_checks:
         click.echo(click.style("Early Dogfooder", bold=True))
         for result in early_dogfooder_checks:
-            _format_check_result(result)
+            _format_check_result(result, verbose=verbose)
         click.echo("")
 
     # Display any uncategorized checks (defensive - catches missing categorization)
@@ -206,7 +210,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
     if other_checks:
         click.echo(click.style("Other Checks", bold=True))
         for result in other_checks:
-            _format_check_result(result)
+            _format_check_result(result, verbose=verbose)
         click.echo("")
 
     # Collect and display consolidated remediations for failing checks
