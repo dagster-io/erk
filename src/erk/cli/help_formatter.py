@@ -248,6 +248,7 @@ class ErkCommandGroup(click.Group):
             "doctor",
             "down",
             "implement",
+            "land",
             "list",
             "up",
         ]
@@ -268,6 +269,7 @@ class ErkCommandGroup(click.Group):
             "pr",
             "project",
             "run",
+            "slot",
             "stack",
             "wt",
         ]
