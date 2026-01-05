@@ -521,6 +521,40 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
     )
 
 
+def check_post_plan_implement_ci_hook(repo_root: Path) -> CheckResult:
+    """Check for post-plan-implement CI instructions hook.
+
+    This is an info-level check that detects whether the CI instructions
+    hook file exists and explains its purpose.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        CheckResult with info about CI hook status
+    """
+    hook_path = repo_root / ".erk" / "prompt-hooks" / "post-plan-implement-ci.md"
+
+    if hook_path.exists():
+        return CheckResult(
+            name="post-plan-implement-ci-hook",
+            passed=True,
+            message="CI instructions hook configured",
+            info=True,
+        )
+
+    return CheckResult(
+        name="post-plan-implement-ci-hook",
+        passed=True,
+        message="No CI instructions hook configured",
+        details=(
+            "Create .erk/prompt-hooks/post-plan-implement-ci.md "
+            "to add CI instructions for plan implementation"
+        ),
+        info=True,
+    )
+
+
 def check_legacy_prompt_hooks(repo_root: Path) -> CheckResult:
     """Check for legacy prompt hook files that should be migrated.
 
@@ -1116,6 +1150,7 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_gitignore_entries(repo_root))
         results.append(check_required_tool_version(repo_root))
         results.append(check_legacy_prompt_hooks(repo_root))
+        results.append(check_post_plan_implement_ci_hook(repo_root))
         # Hook health check
         results.append(check_hook_health(repo_root))
         # GitHub workflow permissions check (requires repo context)

@@ -12,6 +12,7 @@ from erk.core.health_checks import (
     check_gitignore_entries,
     check_hooks_disabled,
     check_managed_artifacts,
+    check_post_plan_implement_ci_hook,
     check_repository,
     check_uv_version,
 )
@@ -693,3 +694,34 @@ def test_check_managed_artifacts_shows_type_summary(
     assert "skills" in result.details
     assert "commands" in result.details
     assert "hooks" in result.details
+
+
+# --- Post-Plan-Implement CI Hook Tests ---
+
+
+def test_check_post_plan_implement_ci_hook_exists(tmp_path: Path) -> None:
+    """Test CI hook check when hook file exists."""
+    hook_dir = tmp_path / ".erk" / "prompt-hooks"
+    hook_dir.mkdir(parents=True)
+    (hook_dir / "post-plan-implement-ci.md").write_text("# CI instructions", encoding="utf-8")
+
+    result = check_post_plan_implement_ci_hook(tmp_path)
+
+    assert result.name == "post-plan-implement-ci-hook"
+    assert result.passed is True
+    assert result.info is True
+    assert "CI instructions hook configured" in result.message
+    assert result.details is None
+
+
+def test_check_post_plan_implement_ci_hook_missing(tmp_path: Path) -> None:
+    """Test CI hook check when hook file is missing."""
+    result = check_post_plan_implement_ci_hook(tmp_path)
+
+    assert result.name == "post-plan-implement-ci-hook"
+    assert result.passed is True
+    assert result.info is True
+    assert "No CI instructions hook configured" in result.message
+    assert result.details is not None
+    assert "post-plan-implement-ci.md" in result.details
+    assert "CI instructions" in result.details
