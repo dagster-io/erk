@@ -203,7 +203,7 @@ class TestFindNextAvailableSlot:
         """Returns slot 1 when no slots exist and no assignments."""
         state = PoolState.test(pool_size=4)
 
-        result = find_next_available_slot(state)
+        result = find_next_available_slot(state, None)
 
         assert result == 1
 
@@ -223,7 +223,7 @@ class TestFindNextAvailableSlot:
         )
         state = PoolState.test(pool_size=2, assignments=(assignment1, assignment2))
 
-        result = find_next_available_slot(state)
+        result = find_next_available_slot(state, None)
 
         assert result is None
 
@@ -237,7 +237,7 @@ class TestFindNextAvailableSlot:
         )
         state = PoolState.test(pool_size=4, assignments=(assignment,))
 
-        result = find_next_available_slot(state)
+        result = find_next_available_slot(state, None)
 
         assert result == 2
 
@@ -252,7 +252,7 @@ class TestFindNextAvailableSlot:
         slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
         state = PoolState.test(pool_size=4, slots=(slot1,))
 
-        result = find_next_available_slot(state)
+        result = find_next_available_slot(state, None)
 
         # Should return 2, not 1 (since 1 already exists on disk)
         assert result == 2
@@ -271,7 +271,7 @@ class TestFindNextAvailableSlot:
         )
         state = PoolState.test(pool_size=4, slots=(slot1, slot2), assignments=(assignment2,))
 
-        result = find_next_available_slot(state)
+        result = find_next_available_slot(state, None)
 
         # Should return 3, skipping both 1 (initialized) and 2 (assigned)
         assert result == 3
@@ -282,7 +282,55 @@ class TestFindNextAvailableSlot:
         slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
         state = PoolState.test(pool_size=2, slots=(slot1, slot2))
 
-        result = find_next_available_slot(state)
+        result = find_next_available_slot(state, None)
+
+        assert result is None
+
+    def test_skips_slot_with_orphaned_directory_on_disk(self, tmp_path: Path) -> None:
+        """Skips slot when directory exists on disk but not tracked in state.
+
+        This tests the bug fix for orphaned worktree directories that exist
+        on disk but aren't tracked in pool.json. Without this check, trying
+        to create a worktree in such a slot fails with:
+        'fatal: <path> already exists'
+        """
+        # Create orphaned directory for slot 1
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir()
+        (worktrees_dir / "erk-managed-wt-01").mkdir()
+
+        # State has no knowledge of slot 1
+        state = PoolState.test(pool_size=4)
+
+        result = find_next_available_slot(state, worktrees_dir)
+
+        # Should return 2, not 1 (since directory exists on disk)
+        assert result == 2
+
+    def test_skips_multiple_orphaned_directories(self, tmp_path: Path) -> None:
+        """Skips multiple orphaned directories."""
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir()
+        (worktrees_dir / "erk-managed-wt-01").mkdir()
+        (worktrees_dir / "erk-managed-wt-02").mkdir()
+
+        state = PoolState.test(pool_size=4)
+
+        result = find_next_available_slot(state, worktrees_dir)
+
+        # Should return 3, skipping both orphaned directories
+        assert result == 3
+
+    def test_returns_none_when_all_slots_have_orphaned_directories(self, tmp_path: Path) -> None:
+        """Returns None when all slots have orphaned directories."""
+        worktrees_dir = tmp_path / "worktrees"
+        worktrees_dir.mkdir()
+        (worktrees_dir / "erk-managed-wt-01").mkdir()
+        (worktrees_dir / "erk-managed-wt-02").mkdir()
+
+        state = PoolState.test(pool_size=2)
+
+        result = find_next_available_slot(state, worktrees_dir)
 
         assert result is None
 

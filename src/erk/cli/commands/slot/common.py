@@ -71,18 +71,20 @@ def generate_slot_name(slot_number: int) -> str:
     return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
 
 
-def find_next_available_slot(state: PoolState) -> int | None:
+def find_next_available_slot(state: PoolState, worktrees_dir: Path | None) -> int | None:
     """Find the next available slot number for on-demand worktree creation.
 
     This function finds a slot number that is:
     1. Not currently assigned to a branch (not in state.assignments)
     2. Not already initialized as a worktree (not in state.slots)
+    3. Does not have an orphaned directory on disk (if worktrees_dir provided)
 
     This ensures on-demand creation only targets slots where no worktree
     exists on disk.
 
     Args:
         state: Current pool state
+        worktrees_dir: Directory containing worktrees, or None to skip disk check
 
     Returns:
         1-based slot number if available, None if pool is full
@@ -93,6 +95,11 @@ def find_next_available_slot(state: PoolState) -> int | None:
     for slot_num in range(1, state.pool_size + 1):
         slot_name = generate_slot_name(slot_num)
         if slot_name not in assigned_slots and slot_name not in initialized_slots:
+            # Check if directory exists on disk (orphaned worktree)
+            if worktrees_dir is not None:
+                slot_path = worktrees_dir / slot_name
+                if slot_path.exists():
+                    continue  # Skip - directory exists but not tracked
             return slot_num
 
     return None

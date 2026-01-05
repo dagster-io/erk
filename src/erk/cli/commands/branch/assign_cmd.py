@@ -93,7 +93,7 @@ def branch_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
         raise SystemExit(1) from None
 
     # Find next available slot
-    slot_num = find_next_available_slot(state)
+    slot_num = find_next_available_slot(state, repo.worktrees_dir)
     if slot_num is None:
         # Pool is full - handle interactively or with --force
         to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
@@ -117,15 +117,12 @@ def branch_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
             + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
         )
 
-        # Retry finding a slot - should now succeed
-        slot_num = find_next_available_slot(state)
-        if slot_num is None:
-            # This shouldn't happen, but handle gracefully
-            user_output("Error: Failed to find available slot after unassigning")
-            raise SystemExit(1) from None
-
-    slot_name = generate_slot_name(slot_num)
-    worktree_path = repo.worktrees_dir / slot_name
+        # Use the slot we just unassigned (it has a worktree directory that can be reused)
+        slot_name = to_unassign.slot_name
+        worktree_path = to_unassign.worktree_path
+    else:
+        slot_name = generate_slot_name(slot_num)
+        worktree_path = repo.worktrees_dir / slot_name
 
     # Create worktree if it doesn't exist
     if not ctx.git.path_exists(worktree_path):

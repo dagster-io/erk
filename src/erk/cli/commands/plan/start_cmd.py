@@ -231,7 +231,7 @@ def plan_start(
         wt_path = repo.worktrees_dir / slot_name
     else:
         # Find next available slot number
-        slot_num = find_next_available_slot(state)
+        slot_num = find_next_available_slot(state, repo.worktrees_dir)
         if slot_num is None:
             # Pool is full - handle interactively or with --force
             to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
@@ -255,14 +255,12 @@ def plan_start(
                 + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
             )
 
-            # Retry finding a slot - should now succeed
-            slot_num = find_next_available_slot(state)
-            if slot_num is None:
-                user_output("Error: Failed to find available slot after unassigning")
-                raise SystemExit(1) from None
-
-        slot_name = generate_slot_name(slot_num)
-        wt_path = repo.worktrees_dir / slot_name
+            # Use the slot we just unassigned (it has a worktree directory that can be reused)
+            slot_name = to_unassign.slot_name
+            wt_path = to_unassign.worktree_path
+        else:
+            slot_name = generate_slot_name(slot_num)
+            wt_path = repo.worktrees_dir / slot_name
 
     # Handle dry-run mode
     if dry_run:

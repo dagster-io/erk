@@ -1865,7 +1865,8 @@ def test_implement_uses_checkout_when_slot_directory_exists() -> None:
     1. A managed slot directory exists on disk (from pool initialization)
     2. But find_inactive_slot() returns None (slot not tracked in pool state)
 
-    The fix checks if wt_path.exists() and uses checkout_branch instead of add_worktree.
+    The fix tracks initialized slots in state.slots so find_inactive_slot returns them.
+    When find_inactive_slot returns an initialized slot, checkout_branch is used.
     """
     plan_issue = _create_sample_plan_issue()
 
@@ -1880,9 +1881,18 @@ def test_implement_uses_checkout_when_slot_directory_exists() -> None:
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
 
         # Pre-create the slot directory to simulate pool initialization
-        # The slot path is in repo.worktrees_dir (e.g., .erk/repos/repo/worktrees/)
         slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
         slot_dir.mkdir(parents=True)
+
+        # Track the slot in pool state so find_inactive_slot() returns it
+        # This simulates proper pool initialization where slots are tracked
+        from erk.core.worktree_pool import PoolState, SlotInfo, save_pool_state
+
+        init_state = PoolState.test(
+            pool_size=4,
+            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),),
+        )
+        save_pool_state(env.repo.pool_json_path, init_state)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
@@ -1890,12 +1900,12 @@ def test_implement_uses_checkout_when_slot_directory_exists() -> None:
         assert "Assigned" in result.output
 
         # Key assertion: checkout_branch should be called (not add_worktree)
-        # because the slot directory already existed
+        # because the slot was returned by find_inactive_slot()
         assert len(git.checked_out_branches) == 1, (
             f"Expected 1 checkout_branch call, got {len(git.checked_out_branches)}"
         )
         assert len(git.added_worktrees) == 0, (
-            f"Expected 0 add_worktree calls (dir existed), got {len(git.added_worktrees)}: "
+            f"Expected 0 add_worktree calls (slot was inactive), got {len(git.added_worktrees)}: "
             f"{git.added_worktrees}"
         )
 
@@ -1993,6 +2003,16 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
         ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        # Track the slot in pool state so find_inactive_slot() returns it
+        # This simulates proper pool initialization where slots are tracked
+        from erk.core.worktree_pool import PoolState, SlotInfo, save_pool_state
+
+        init_state = PoolState.test(
+            pool_size=4,
+            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),),
+        )
+        save_pool_state(env.repo.pool_json_path, init_state)
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
