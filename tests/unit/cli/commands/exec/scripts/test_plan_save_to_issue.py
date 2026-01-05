@@ -154,11 +154,14 @@ def test_plan_save_to_issue_display_format() -> None:
     # Verify Next steps section with copy/pasteable commands
     assert "Next steps:" in result.output
     assert "View Issue: gh issue view 1 --web" in result.output
+    # Verify Claude Code slash command option
+    assert "In Claude Code: /erk:plan-submit" in result.output
+    # Verify exit Claude Code note and CLI commands
+    assert "OR exit Claude Code first, then run one of:" in result.output
     assert "Interactive: erk implement 1" in result.output
     assert "Dangerous Interactive: erk implement 1 --dangerous" in result.output
-    assert "Dangerous, Non-Interactive, Auto-Submit: erk implement 1 --yolo" in result.output
+    assert "Auto-Submit: erk implement 1 --yolo" in result.output
     assert "Submit to Queue: erk submit 1" in result.output
-    assert "/erk:plan-submit" in result.output
 
 
 def test_plan_save_to_issue_label_created() -> None:

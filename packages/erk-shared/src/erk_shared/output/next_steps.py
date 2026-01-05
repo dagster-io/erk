@@ -40,11 +40,14 @@ def format_next_steps_plain(issue_number: int) -> str:
     return f"""Next steps:
 
 View Issue: {s.view}
-Interactive: {s.implement}
-Dangerous Interactive: {s.implement_dangerous}
-Dangerous, Non-Interactive, Auto-Submit: {s.implement_yolo}
-Submit to Queue: {s.submit}
-  # Or use: {SUBMIT_SLASH_COMMAND}"""
+
+In Claude Code: {SUBMIT_SLASH_COMMAND}
+
+OR exit Claude Code first, then run one of:
+  Interactive: {s.implement}
+  Dangerous Interactive: {s.implement_dangerous}
+  Auto-Submit: {s.implement_yolo}
+  Submit to Queue: {s.submit}"""
 
 
 def format_next_steps_markdown(issue_number: int) -> str:
