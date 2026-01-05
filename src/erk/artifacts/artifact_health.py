@@ -27,9 +27,9 @@ from erk.core.claude_settings import (
 from erk.core.release_notes import get_current_version
 
 # Bundled artifacts that erk syncs to projects
-# Note: dignified-python is opt-in via --with-dignified-review flag
 BUNDLED_SKILLS = frozenset(
     {
+        "dignified-python",
         "learned-docs",
         "erk-diff-analysis",
     }
