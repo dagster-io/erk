@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of `a04ea4a41`
+
+### Major Changes
+
+- **Worktree Pool System**: Pre-initialized worktree slots replace ephemeral worktree creation. Creating and deleting worktrees on larger repositories caused significant problems: shells left on deleted working directories, an epidemic of git `index.lock` issues, and slow worktree operations. The pool system maintains a configurable number of persistent slots that are reused across assignments. Commands: `erk slot init`, `erk slot list`, `erk slot repair`, and `erk slot check`. (3958, 3968, 3973, 3975, 3980, 4011, 4012, 4013, 4017, 4036, 4038, 4061, 4083, 4099, 4117, 4123, 4135)
+
+- **`erk br` namespace for branch management**: Consolidated branch lifecycle commands (`create`, `assign`, `unassign`) under `erk br` (short alias for `branch`). The `slot` group now focuses exclusively on pool infrastructure. Includes `--no-slot` flag for creating branches without slot assignment. (f8f2ee34b)
+
+- **`erk pr fix-conflicts` command**: AI-powered merge conflict resolution. When rebasing causes conflicts, this command uses Claude to analyze and resolve conflicts automatically. (17c39096f)
+
+### Added
+
+- Detect uncommitted changes before checkout in slot assignment with user-friendly error messages (abf2caf76)
+- Add `erk slot repair` command to remove stale assignments from pool state (369ea416b)
+- Create `/erk:implement-stacked-plan` command for stacked branch implementation (a22e2cc41)
+- Add visible URL column to objective list command output (a2177fc87)
+- Add `pool.max_slots` configuration and worktree slot pre-initialization (413537a5d)
+
+### Changed
+
+- Clarify slot list UX with improved status ("available", "assigned", "error") and reason terminology (cd7336f71)
+- Simplify slot unassign to accept only worktree names (969292f2d)
+- Rename objective plan creation command from `objective-create-plan` to `objective-next-plan` (2626133bf)
+- Rename pooled sync to pooled check (819c05872)
+- Use `gt create` for branch creation when Graphite enabled (5f36144a2)
+- Update CI workflows to use claude-haiku-4 instead of claude-opus-4-5 (2705c84a7)
+
+### Fixed
+
+- Fix erk land UX issues: improve confirmation prompt clarity and prevent unwanted navigation (19a095b43)
+- Fix erk land to properly unassign pool slots instead of deleting them (0df5d56f7)
+- Fix pool_size config override when loading existing pool state (5e77a47b5)
+- Fix pooled implement shell integration registration (2373b1306)
+- Fix pooled unassign to checkout placeholder branch and validate worktree state (87c4d1e82)
+- Fix `erk pr land` failing when deleting remote branches from git worktrees (71856e3e7)
+- Fix UserPromptSubmit hook matcher to apply to all prompts (4ade80f2a)
+- Fix delete remote branch for landing PRs via gh pr merge --delete-branch (20452570a)
+- Suppress "branch not found" message during fork PR cleanup (d8955528f)
+- Fix erk land objective update flow and shell integration output routing (97f897d65)
+- Fix statusline detection to accept commands with or without uvx prefix (c8ea23a3e)
+- Fix CLI crash when running outside git repository (07cb9c39f)
+
+### Removed
+
+- Delete auto-restack feature and related infrastructure (665c0f66b)
+- Delete 9 dead erk exec commands (39755edc6)
+- Remove step progress tracking from implementation system - plans no longer require step metadata (4092, 4109)
+
 ## [0.3.3] - 2026-01-02 13:44 PT
 
 ### Changed

@@ -116,34 +116,47 @@ def get_commits_since_marker(
     is_flag=True,
     help="Output as JSON for machine consumption",
 )
-def changelog_commits_command(json_output: bool) -> None:
+@click.option(
+    "--since",
+    "since_commit",
+    help="Commit hash to get commits since (bypasses 'As of' marker parsing)",
+)
+def changelog_commits_command(json_output: bool, since_commit: str | None) -> None:
     """Get commits for changelog update since last 'As of' marker.
 
     Reads CHANGELOG.md, finds the 'As of <commit>' marker, and returns
     all commits since that point that should be considered for changelog entries.
+
+    Use --since to specify a commit directly (e.g., when no marker exists
+    and you want commits since a specific release).
     """
-    changelog_path = Path("CHANGELOG.md")
+    # Determine the base commit
+    if since_commit is not None:
+        # Use provided commit directly
+        marker_commit = since_commit
+    else:
+        # Parse marker from changelog
+        changelog_path = Path("CHANGELOG.md")
 
-    # Check changelog exists
-    if not changelog_path.exists():
-        error_msg = "CHANGELOG.md not found in current directory"
-        if json_output:
-            machine_output(json.dumps({"success": False, "error": error_msg}))
-        else:
-            user_output(f"Error: {error_msg}")
-        raise SystemExit(1)
+        # Check changelog exists
+        if not changelog_path.exists():
+            error_msg = "CHANGELOG.md not found in current directory"
+            if json_output:
+                machine_output(json.dumps({"success": False, "error": error_msg}))
+            else:
+                user_output(f"Error: {error_msg}")
+            raise SystemExit(1)
 
-    # Parse marker from changelog
-    marker_commit = parse_changelog_marker(changelog_path)
-    if marker_commit is None:
-        error_msg = "No 'As of <commit>' marker found in CHANGELOG.md Unreleased section"
-        if json_output:
-            machine_output(json.dumps({"success": False, "error": error_msg}))
-        else:
-            user_output(f"Error: {error_msg}")
-        raise SystemExit(1)
+        marker_commit = parse_changelog_marker(changelog_path)
+        if marker_commit is None:
+            error_msg = "No 'As of <commit>' marker found in CHANGELOG.md Unreleased section"
+            if json_output:
+                machine_output(json.dumps({"success": False, "error": error_msg}))
+            else:
+                user_output(f"Error: {error_msg}")
+            raise SystemExit(1)
 
-    # Verify marker commit exists
+    # Verify commit exists
     verify_result = subprocess.run(
         ["git", "cat-file", "-t", marker_commit],
         capture_output=True,
@@ -151,7 +164,7 @@ def changelog_commits_command(json_output: bool) -> None:
         check=False,
     )
     if verify_result.returncode != 0:
-        error_msg = f"Marker commit {marker_commit} not found in repository"
+        error_msg = f"Commit {marker_commit} not found in repository"
         if json_output:
             machine_output(json.dumps({"success": False, "error": error_msg}))
         else:

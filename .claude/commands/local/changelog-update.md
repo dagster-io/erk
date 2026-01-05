@@ -62,9 +62,12 @@ This command:
 
 If `success` is false and error indicates missing "As of" marker:
 
-1. Get the current HEAD commit hash via `git rev-parse --short HEAD`
-2. Add the marker line `As of \`{hash}\``immediately after`## [Unreleased]`
-3. Report "Added 'As of' marker to CHANGELOG.md (now as of {hash})" and exit
+1. Read the CHANGELOG.md to find the most recent release version (e.g., `## [0.3.3]`)
+2. Use `git log --oneline -1 --grep="X.Y.Z"` to find the release commit hash
+3. Get commits since that release using `erk-dev changelog-commits --since <release-hash> --json-output`
+4. Continue to Phase 3 to categorize and present those commits
+
+**Important:** A missing marker means the Unreleased section needs all commits since the last release, not just an empty marker at HEAD. The `--since` option allows you to specify a commit directly when no marker exists.
 
 If `success` is false for other reasons, display the error message and exit.
 
