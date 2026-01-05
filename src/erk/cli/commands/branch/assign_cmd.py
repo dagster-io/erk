@@ -1,13 +1,12 @@
 """Branch assign command - assign an existing branch to a worktree slot."""
 
-import shutil
 import sys
 from datetime import UTC, datetime
-from pathlib import Path
 
 import click
 
 from erk.cli.commands.slot.common import (
+    cleanup_worktree_artifacts,
     find_branch_assignment,
     find_next_available_slot,
     generate_slot_name,
@@ -25,22 +24,6 @@ from erk.core.worktree_pool import (
     save_pool_state,
 )
 from erk_shared.output.output import user_output
-
-
-def _cleanup_worktree_artifacts(worktree_path: Path) -> None:
-    """Remove stale artifacts from a worktree before reuse.
-
-    Cleans up .impl/ and .erk/scratch/ folders which persist across
-    branch switches since they are in .gitignore.
-    """
-    impl_folder = worktree_path / ".impl"
-    scratch_folder = worktree_path / ".erk" / "scratch"
-
-    if impl_folder.exists():
-        shutil.rmtree(impl_folder)
-
-    if scratch_folder.exists():
-        shutil.rmtree(scratch_folder)
 
 
 @click.command("assign")
@@ -143,7 +126,7 @@ def branch_assign(ctx: ErkContext, branch_name: str, force: bool) -> None:
             ctx.git.is_dir(worktree_path),
             f"Expected {worktree_path} to be a directory",
         )
-        _cleanup_worktree_artifacts(worktree_path)
+        cleanup_worktree_artifacts(worktree_path)
         ctx.git.checkout_branch(worktree_path, branch_name)
 
     # Create new assignment

@@ -1,5 +1,6 @@
 """Shared utilities for slot commands."""
 
+import shutil
 from pathlib import Path
 
 from erk.core.context import ErkContext
@@ -257,3 +258,22 @@ def handle_pool_full_interactive(
 
     user_output("Aborted.")
     return None
+
+
+def cleanup_worktree_artifacts(worktree_path: Path) -> None:
+    """Remove stale artifacts from a worktree before reuse.
+
+    Cleans up .impl/ and .erk/scratch/ folders which persist across
+    branch switches since they are in .gitignore.
+
+    Args:
+        worktree_path: Path to the worktree to clean up
+    """
+    impl_folder = worktree_path / ".impl"
+    scratch_folder = worktree_path / ".erk" / "scratch"
+
+    if impl_folder.exists():
+        shutil.rmtree(impl_folder)
+
+    if scratch_folder.exists():
+        shutil.rmtree(scratch_folder)

@@ -3,7 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.branch.assign_cmd import _cleanup_worktree_artifacts
+from erk.cli.commands.slot.common import cleanup_worktree_artifacts
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
@@ -366,7 +366,7 @@ def test_cleanup_worktree_artifacts_removes_impl_folder(tmp_path) -> None:
     impl_folder.mkdir()
     (impl_folder / "plan.md").write_text("test plan", encoding="utf-8")
 
-    _cleanup_worktree_artifacts(worktree_path)
+    cleanup_worktree_artifacts(worktree_path)
 
     assert not impl_folder.exists()
 
@@ -382,7 +382,7 @@ def test_cleanup_worktree_artifacts_removes_scratch_folder(tmp_path) -> None:
     scratch_folder.mkdir()
     (scratch_folder / "session-marker").write_text("test", encoding="utf-8")
 
-    _cleanup_worktree_artifacts(worktree_path)
+    cleanup_worktree_artifacts(worktree_path)
 
     assert not scratch_folder.exists()
     # .erk folder should still exist (only scratch is removed)
@@ -395,7 +395,7 @@ def test_cleanup_worktree_artifacts_handles_missing_folders(tmp_path) -> None:
     worktree_path.mkdir()
 
     # No .impl/ or .erk/scratch/ exists - should not raise
-    _cleanup_worktree_artifacts(worktree_path)
+    cleanup_worktree_artifacts(worktree_path)
 
     assert worktree_path.exists()
 
