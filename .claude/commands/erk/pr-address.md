@@ -351,12 +351,12 @@ If the user explicitly skipped any comments during the process, list them:
 
 ### Common Mistakes to Avoid
 
-| Mistake | Why It's Wrong | Correct Approach |
-|---------|----------------|------------------|
-| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread` |
-| Using `gh pr comment` | Doesn't resolve threads | Use `erk exec resolve-review-thread` |
-| Skipping resolution for outdated threads | Threads stay open in PR | Always resolve, even if already fixed |
-| Not re-fetching after resolution | Can't verify all threads resolved | Always run Step 4.1 verification |
+| Mistake                                        | Why It's Wrong                    | Correct Approach                      |
+| ---------------------------------------------- | --------------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve     | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads           | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR           | Always resolve, even if already fixed |
+| Not re-fetching after resolution               | Can't verify all threads resolved | Always run Step 4.1 verification      |
 
 ### Error Handling
 
