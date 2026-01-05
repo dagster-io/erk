@@ -5,9 +5,9 @@ from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
     check_pending_extraction_marker,
-    delete_branch_and_worktree,
     render_activation_script,
     resolve_down_navigation,
+    unallocate_worktree_and_branch,
     verify_pr_closed_or_merged,
 )
 from erk.cli.core import discover_repo_context
@@ -114,7 +114,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 user_output(f"Went to root repo: {root_path}")
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
-            delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
+            unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
 
             # Exit after cleanup
             raise SystemExit(0)
@@ -154,7 +154,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             user_output("\nOr use: source <(erk down --script)")
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
-        delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
+        unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
 
         # Exit after cleanup
         raise SystemExit(0)

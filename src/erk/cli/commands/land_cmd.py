@@ -23,6 +23,7 @@ from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
     delete_branch_and_worktree,
+    find_assignment_by_worktree_path,
 )
 from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
@@ -35,7 +36,6 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
-    PoolState,
     SlotAssignment,
     load_pool_state,
     save_pool_state,
@@ -146,29 +146,6 @@ def check_unresolved_comments(
             raise SystemExit(0)
 
 
-def _find_assignment_by_worktree_path(
-    state: PoolState, worktree_path: Path
-) -> SlotAssignment | None:
-    """Find a slot assignment by its worktree path.
-
-    Args:
-        state: Current pool state
-        worktree_path: Path to the worktree to find
-
-    Returns:
-        SlotAssignment if the worktree is a pool slot, None otherwise
-    """
-    if not worktree_path.exists():
-        return None
-    resolved_path = worktree_path.resolve()
-    for assignment in state.assignments:
-        if not assignment.worktree_path.exists():
-            continue
-        if assignment.worktree_path.resolve() == resolved_path:
-            return assignment
-    return None
-
-
 def _cleanup_and_navigate(
     ctx: ErkContext,
     repo: RepoContext,
@@ -204,7 +181,7 @@ def _cleanup_and_navigate(
         state = load_pool_state(repo.pool_json_path)
         assignment: SlotAssignment | None = None
         if state is not None:
-            assignment = _find_assignment_by_worktree_path(state, worktree_path)
+            assignment = find_assignment_by_worktree_path(state, worktree_path)
 
         if assignment is not None:
             # Slot worktree: unassign instead of delete

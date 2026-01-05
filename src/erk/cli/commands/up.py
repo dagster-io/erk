@@ -5,8 +5,8 @@ from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
     check_pending_extraction_marker,
-    delete_branch_and_worktree,
     resolve_up_navigation,
+    unallocate_worktree_and_branch,
     verify_pr_closed_or_merged,
 )
 from erk.cli.core import discover_repo_context
@@ -136,8 +136,8 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
             )
             user_output("\nOr use: source <(erk up --script)")
 
-        # Perform cleanup: delete branch and worktree
-        delete_branch_and_worktree(ctx, repo, current_branch, current_worktree_path)
+        # Perform cleanup: unallocate worktree (slot-aware) and delete branch
+        unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
 
         # Exit after cleanup
         raise SystemExit(0)

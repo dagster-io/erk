@@ -1,11 +1,13 @@
 """Tests for erk down command."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -13,6 +15,20 @@ from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+
+
+def _create_test_assignment(
+    slot_name: str,
+    branch_name: str,
+    worktree_path: Path,
+) -> SlotAssignment:
+    """Create a test assignment with current timestamp."""
+    return SlotAssignment(
+        slot_name=slot_name,
+        branch_name=branch_name,
+        assigned_at=datetime.now(UTC).isoformat(),
+        worktree_path=worktree_path,
+    )
 
 
 def test_down_with_existing_worktree() -> None:
@@ -973,3 +989,115 @@ def test_down_delete_current_trunk_in_root() -> None:
 
         # Assert: feature-1 branch was deleted
         assert "feature-1" in git_ops.deleted_branches
+
+
+def test_down_delete_current_slot_aware_unassigns_slot() -> None:
+    """Test --delete-current unassigns slot instead of removing worktree directory."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Worktree path is a managed slot (erk-managed-wt-01)
+        slot_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        slot_path.mkdir(parents=True)
+
+        # Set up worktrees with slot path for feature-2
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(
+                        path=repo_dir / "worktrees" / "feature-1",
+                        branch="feature-1",
+                        is_root=False,
+                    ),
+                    WorktreeInfo(path=slot_path, branch="feature-2", is_root=False),
+                ]
+            },
+            current_branches={env.cwd: "feature-2", slot_path: "feature-2"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, slot_path: env.git_dir},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
+            file_statuses={env.cwd: ([], [], []), slot_path: ([], [], [])},
+        )
+
+        # Set up stack: main -> feature-1 -> feature-2
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        # PR for feature-2 is merged
+        from erk_shared.github.fake import FakeGitHub
+        from erk_shared.github.types import PullRequestInfo
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-2": PullRequestInfo(
+                    number=123,
+                    state="MERGED",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 2",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create pool state with assignment for the slot
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-2", slot_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            cwd=slot_path,
+        )
+
+        # Execute: erk down --delete-current --script
+        result = runner.invoke(
+            cli, ["down", "--delete-current", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0, f"Expected success, got: {result.output}"
+
+        # Assert: Slot was unassigned (placeholder branch checked out)
+        assert (
+            slot_path,
+            "__erk-slot-01-placeholder__",
+        ) in git_ops.checked_out_branches, "Slot should be checked out to placeholder"
+
+        # Assert: Worktree directory was NOT removed (slot stays for reuse)
+        assert slot_path not in git_ops.removed_worktrees, "Slot worktree should NOT be removed"
+
+        # Assert: Branch was deleted
+        assert "feature-2" in git_ops.deleted_branches
+
+        # Assert: Assignment was removed from pool state
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 0, "Assignment should be removed"
+
+        # Assert: Output indicates slot unassignment
+        assert "Unassigned slot" in result.output
