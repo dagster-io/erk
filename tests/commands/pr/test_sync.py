@@ -637,3 +637,143 @@ def test_pr_sync_graphite_not_installed(tmp_path: Path) -> None:
         assert result.exit_code == 1
         assert "requires Graphite to be installed" in result.output
         assert "npm install -g @withgraphite/graphite-cli" in result.output
+
+
+def test_pr_sync_handles_restack_conflict_gracefully(tmp_path: Path) -> None:
+    """Test sync provides user-friendly error when restack hits merge conflicts."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info for branch lookup
+        pr_info = _make_pr_info(777, "conflict-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=777,
+            head_ref_name="conflict-branch",
+            title="Conflict Feature",
+        )
+        github = FakeGitHub(
+            prs={"conflict-branch": pr_info},
+            pr_details={777: pr_details},
+        )
+
+        # Configure graphite to raise RuntimeError with conflict message during restack
+        graphite = FakeGraphite(
+            branches={},
+            restack_raises=RuntimeError(
+                "CONFLICT (content): Merge conflict in file.py\n"
+                "error: could not apply abc123... commit message\n"
+                "hint: Resolve all conflicts manually"
+            ),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "conflict-branch"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+            commits_ahead={(env.cwd, "main"): 2},
+        )
+        git._commits.append((env.cwd, "Original message", []))
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        # Should exit with code 1, not a traceback
+        assert result.exit_code == 1
+        # Should show user-friendly conflict message
+        assert "Restack paused due to merge conflicts" in result.output
+        # Should provide guidance on resolution
+        assert "erk pr fix-conflicts --dangerous" in result.output
+        assert "gt continue" in result.output
+        # Should NOT show traceback
+        assert "Traceback" not in result.output
+
+
+def test_pr_sync_handles_restack_unmerged_files_gracefully(tmp_path: Path) -> None:
+    """Test sync detects 'unmerged files' pattern in restack errors."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(888, "unmerged-branch", title="Feature")
+        pr_details = _make_pr_details(
+            number=888,
+            head_ref_name="unmerged-branch",
+            title="Unmerged Feature",
+        )
+        github = FakeGitHub(
+            prs={"unmerged-branch": pr_info},
+            pr_details={888: pr_details},
+        )
+
+        # Configure graphite to raise with "unmerged files" pattern
+        graphite = FakeGraphite(
+            branches={},
+            restack_raises=RuntimeError(
+                "fatal: Unmerged files in working directory.\n"
+                "Please resolve and stage your changes."
+            ),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "unmerged-branch"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+            commits_ahead={(env.cwd, "main"): 2},
+        )
+        git._commits.append((env.cwd, "Original message", []))
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        # Should detect "unmerged files" pattern
+        assert result.exit_code == 1
+        assert "Restack paused due to merge conflicts" in result.output
+        assert "erk pr fix-conflicts --dangerous" in result.output
+
+
+def test_pr_sync_raises_non_conflict_restack_error(tmp_path: Path) -> None:
+    """Test sync re-raises restack errors that are NOT conflict-related."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(999, "error-branch", title="Feature")
+        pr_details = _make_pr_details(
+            number=999,
+            head_ref_name="error-branch",
+            title="Error Feature",
+        )
+        github = FakeGitHub(
+            prs={"error-branch": pr_info},
+            pr_details={999: pr_details},
+        )
+
+        # Configure graphite to raise NON-conflict RuntimeError
+        graphite = FakeGraphite(
+            branches={},
+            restack_raises=RuntimeError("Unexpected internal error during restack"),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "error-branch"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+            commits_ahead={(env.cwd, "main"): 2},
+        )
+        git._commits.append((env.cwd, "Original message", []))
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        # Non-conflict error should fail but with different message
+        assert result.exit_code == 1
+        # Should NOT show conflict guidance
+        assert "Restack paused due to merge conflicts" not in result.output
+        # Should show the actual error message wrapped in ClickException
+        assert "Unexpected internal error during restack" in result.output

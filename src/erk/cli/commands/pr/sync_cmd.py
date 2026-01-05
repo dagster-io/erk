@@ -25,7 +25,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations import execute_squash
-from erk_shared.gateway.gt.types import SquashError, SquashSuccess
+from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
 from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import user_output
 
@@ -156,7 +156,19 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Step 7: Restack with Graphite (manual conflict resolution if needed)
     user_output("Restacking branch...")
-    ctx.graphite.restack(repo.root, no_interactive=True, quiet=False)
+    restack_result = ctx.graphite.restack_idempotent(repo.root, no_interactive=True, quiet=False)
+    if isinstance(restack_result, RestackError):
+        if restack_result.error_type == "restack-conflict":
+            user_output(click.style("\nRestack paused due to merge conflicts.", fg="yellow"))
+            user_output("To resolve conflicts, run:")
+            user_output(click.style("  erk pr fix-conflicts --dangerous", fg="cyan"))
+            user_output("\nOr manually:")
+            user_output("  1. Resolve conflicts in the listed files")
+            user_output("  2. Run: gt add -A")
+            user_output("  3. Run: gt continue")
+            raise SystemExit(1)
+        # Non-conflict error
+        raise click.ClickException(restack_result.message)
     user_output(click.style("✓", fg="green") + " Branch restacked")
 
     # Step 8: Submit to link with Graphite

@@ -11,7 +11,7 @@ from erk_shared.git.abc import Git, WorktreeInfo
 from erk_shared.github.types import GitHubRepoId, PullRequestInfo
 
 if TYPE_CHECKING:
-    from erk_shared.gateway.gt.types import SquashError, SquashSuccess
+    from erk_shared.gateway.gt.types import RestackError, RestackSuccess, SquashError, SquashSuccess
 
 
 class Graphite(ABC):
@@ -406,4 +406,61 @@ class Graphite(ABC):
                 success=False,
                 error="squash-failed",
                 message=f"Failed to squash: {e}",
+            )
+
+    def restack_idempotent(
+        self, repo_root: Path, *, no_interactive: bool, quiet: bool
+    ) -> RestackSuccess | RestackError:
+        """Restack with structured result handling.
+
+        This method wraps restack() and handles exceptions to return a typed
+        result instead of raising. It encapsulates the exception-to-result
+        conversion at the gateway boundary, keeping CLI code LBYL-compliant.
+
+        This method catches RuntimeError from restack() and parses the error
+        message to detect conflict patterns. While parsing exception messages
+        is inherently fragile, this pattern is acceptable because:
+        1. It's encapsulated in the gateway layer (not CLI code)
+        2. The Graphite CLI doesn't provide structured error codes
+        3. False negatives (treating conflicts as generic errors) are safe
+
+        Args:
+            repo_root: Repository root directory
+            no_interactive: If True, pass --no-interactive flag to prevent prompts
+            quiet: If True, pass --quiet flag to gt restack for minimal output
+
+        Returns:
+            RestackSuccess if restack succeeded
+            RestackError if restack failed (with error_type distinguishing conflicts)
+
+        Example:
+            >>> result = graphite.restack_idempotent(repo_root, no_interactive=True, quiet=False)
+            >>> if isinstance(result, RestackSuccess):
+            ...     print(result.message)
+            >>> elif result.error_type == "restack-conflict":
+            ...     print("Resolve conflicts and run: gt continue")
+        """
+        # Import at runtime to avoid circular dependency
+        from erk_shared.gateway.gt.types import RestackError, RestackSuccess
+
+        try:
+            self.restack(repo_root, no_interactive=no_interactive, quiet=quiet)
+            return RestackSuccess(
+                success=True,
+                message="Branch restacked.",
+            )
+        except RuntimeError as e:
+            error_msg = str(e).lower()
+
+            # Detect conflict patterns from gt restack stderr
+            if "conflict" in error_msg or "unmerged files" in error_msg:
+                return RestackError(
+                    success=False,
+                    error_type="restack-conflict",
+                    message=str(e),
+                )
+            return RestackError(
+                success=False,
+                error_type="restack-failed",
+                message=f"Failed to restack: {e}",
             )
