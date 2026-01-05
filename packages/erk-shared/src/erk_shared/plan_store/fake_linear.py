@@ -245,8 +245,12 @@ class FakeLinearPlanBackend(PlanBackend):
         Returns:
             CreatePlanResult with UUID plan_id and url
         """
-        # Generate UUID-based ID
-        plan_id = f"{self._id_prefix}-{uuid.uuid4().hex[:8]}"
+        # Generate UUID-based ID with hex suffix guaranteed to have letters
+        hex_id = uuid.uuid4().hex[:8]
+        # Ensure at least one non-digit character by appending 'a' if all digits
+        if hex_id.isdigit():
+            hex_id = hex_id[:7] + "a"
+        plan_id = f"{self._id_prefix}-{hex_id}"
         self._id_counter += 1
 
         now = datetime.now(UTC)

@@ -124,7 +124,9 @@ class TestChangelogCommitsCommand:
             # CHANGELOG has no marker, but --since is provided
             Path("CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n", encoding="utf-8")
             # Use a fake commit hash - will fail at git verification, not marker parsing
-            result = runner.invoke(cli, ["changelog-commits", "--json-output", "--since", "abc123def"])
+            result = runner.invoke(
+                cli, ["changelog-commits", "--json-output", "--since", "abc123def"]
+            )
             assert result.exit_code == 1
             output = json.loads(result.output)
             assert output["success"] is False
@@ -137,7 +139,9 @@ class TestChangelogCommitsCommand:
         runner = CliRunner()
         with runner.isolated_filesystem():
             # Even without CHANGELOG, should fail at git verification
-            result = runner.invoke(cli, ["changelog-commits", "--json-output", "--since", "invalid123"])
+            result = runner.invoke(
+                cli, ["changelog-commits", "--json-output", "--since", "invalid123"]
+            )
             # Note: Will fail either at "not in git repo" or "commit not found"
             assert result.exit_code == 1
             output = json.loads(result.output)
@@ -148,7 +152,9 @@ class TestChangelogCommitsCommand:
         runner = CliRunner()
         with runner.isolated_filesystem():
             # No CHANGELOG.md at all, but --since is provided
-            result = runner.invoke(cli, ["changelog-commits", "--json-output", "--since", "abc123def"])
+            result = runner.invoke(
+                cli, ["changelog-commits", "--json-output", "--since", "abc123def"]
+            )
             assert result.exit_code == 1
             output = json.loads(result.output)
             assert output["success"] is False
