@@ -43,16 +43,20 @@ class CheckResult:
         passed: Whether the check passed
         message: Human-readable message describing the result
         details: Optional additional details (e.g., version info)
+        verbose_details: Extended details shown only in verbose mode
         warning: If True and passed=True, displays ⚠️ instead of ✅
         info: If True and passed=True, displays ℹ️ (informational, not success)
+        remediation: Optional command/action to fix a failing check
     """
 
     name: str
     passed: bool
     message: str
     details: str | None = None
+    verbose_details: str | None = None
     warning: bool = False
     info: bool = False
+    remediation: str | None = None
 
 
 def check_erk_version() -> CheckResult:
@@ -103,7 +107,7 @@ def check_required_tool_version(repo_root: Path) -> CheckResult:
             name="required-version",
             passed=False,
             message="Required version file missing (.erk/required-erk-uv-tool-version)",
-            details="Run 'erk init' to create this file",
+            remediation="Run 'erk init' to create this file",
         )
 
     installed_version = _get_installed_erk_version()
@@ -119,7 +123,7 @@ def check_required_tool_version(repo_root: Path) -> CheckResult:
             name="required-version",
             passed=False,
             message=f"Version mismatch: installed {installed_version}, required {required_version}",
-            details="Run 'uv tool upgrade erk' to update",
+            remediation="Run 'uv tool upgrade erk' to update",
         )
 
     return CheckResult(
@@ -273,7 +277,7 @@ def check_github_auth(shell: Shell, admin: GitHubAdmin) -> CheckResult:
             name="github-auth",
             passed=False,
             message="Not authenticated to GitHub",
-            details="Run: gh auth login",
+            remediation="Run 'gh auth login' to authenticate",
         )
 
 
@@ -511,7 +515,7 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
             name="gitignore",
             passed=False,
             message=f"Missing gitignore entries: {', '.join(missing_entries)}",
-            details="Run 'erk init' to add missing entries",
+            remediation="Run 'erk init' to add missing entries",
         )
 
     return CheckResult(
@@ -715,7 +719,7 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
             name="user-prompt-hook",
             passed=False,
             message="No .claude/settings.json found",
-            details="Run 'erk init' to create settings with the hook configured",
+            remediation="Run 'erk init' to create settings with the hook configured",
         )
     # File exists, so read_claude_settings won't return None
     settings = read_claude_settings(settings_path)
@@ -730,7 +734,7 @@ def check_user_prompt_hook(repo_root: Path) -> CheckResult:
             name="user-prompt-hook",
             passed=False,
             message="No UserPromptSubmit hook configured",
-            details="Add 'erk exec user-prompt-hook' hook to .claude/settings.json",
+            remediation="Add 'erk exec user-prompt-hook' hook to .claude/settings.json",
         )
 
     # Check if the unified hook is present (handles nested matcher structure)
@@ -784,7 +788,7 @@ def check_exit_plan_hook(repo_root: Path) -> CheckResult:
             name="exit-plan-hook",
             passed=False,
             message="No .claude/settings.json found",
-            details="Run 'erk init' to create settings with the hook configured",
+            remediation="Run 'erk init' to create settings with the hook configured",
         )
     # File exists, so read_claude_settings won't return None
     settings = read_claude_settings(settings_path)
@@ -801,7 +805,7 @@ def check_exit_plan_hook(repo_root: Path) -> CheckResult:
         name="exit-plan-hook",
         passed=False,
         message="ExitPlanMode hook not configured",
-        details="Run 'erk init' to add the hook to .claude/settings.json",
+        remediation="Run 'erk init' to add the hook to .claude/settings.json",
     )
 
 
@@ -946,43 +950,62 @@ def _status_description(status: ArtifactStatusType, count: int) -> str:
 
 def _build_erk_repo_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
     """Build CheckResult for erk repo case (all artifacts from source)."""
-    # Group artifacts by type (count only, all healthy)
-    by_type: dict[str, int] = {}
+    # Group artifacts by type, storing names
+    by_type: dict[str, list[str]] = {}
     for artifact in result.artifacts:
         artifact_type = _extract_artifact_type(artifact.name)
-        by_type[artifact_type] = by_type.get(artifact_type, 0) + 1
+        # Extract display name (e.g. "skills/dignified-python" -> "dignified-python")
+        display_name = artifact.name.split("/", 1)[1] if "/" in artifact.name else artifact.name
+        by_type.setdefault(artifact_type, []).append(display_name)
 
-    # Build per-type summary (all ✅)
+    # Build per-type summary (all ✅) and verbose details with individual names
     type_summaries: list[str] = []
+    verbose_summaries: list[str] = []
     type_order = ["skills", "commands", "agents", "workflows", "actions", "hooks"]
     for artifact_type in type_order:
         if artifact_type not in by_type:
             continue
-        count = by_type[artifact_type]
-        type_summaries.append(f"   ✅ {artifact_type} ({count})")
+        names = sorted(by_type[artifact_type])
+        type_summaries.append(f"   ✅ {artifact_type} ({len(names)})")
+        verbose_summaries.append(f"   ✅ {artifact_type} ({len(names)})")
+        for name in names:
+            verbose_summaries.append(f"      {name}")
 
     details = "\n".join(type_summaries)
+    verbose_details = "\n".join(verbose_summaries)
 
     return CheckResult(
         name="managed-artifacts",
         passed=True,
         message="Managed artifacts (from source)",
         details=details,
+        verbose_details=verbose_details,
     )
+
+
+@dataclass(frozen=True)
+class _ArtifactInfo:
+    """Internal: artifact name and status for grouping."""
+
+    name: str
+    status: ArtifactStatusType
 
 
 def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
     """Build CheckResult from ArtifactHealthResult."""
-    # Group artifacts by type
-    by_type: dict[str, list[ArtifactStatusType]] = {}
+    # Group artifacts by type, storing name and status
+    by_type: dict[str, list[_ArtifactInfo]] = {}
     for artifact in result.artifacts:
         artifact_type = _extract_artifact_type(artifact.name)
-        if artifact_type not in by_type:
-            by_type[artifact_type] = []
-        by_type[artifact_type].append(artifact.status)
+        # Extract display name (e.g. "skills/dignified-python" -> "dignified-python")
+        display_name = artifact.name.split("/", 1)[1] if "/" in artifact.name else artifact.name
+        by_type.setdefault(artifact_type, []).append(
+            _ArtifactInfo(name=display_name, status=artifact.status)
+        )
 
-    # Build per-type summary
+    # Build per-type summary and verbose details
     type_summaries: list[str] = []
+    verbose_summaries: list[str] = []
     overall_worst: ArtifactStatusType = "up-to-date"
     has_issues = False
 
@@ -992,7 +1015,8 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
         if artifact_type not in by_type:
             continue
 
-        statuses = by_type[artifact_type]
+        artifacts = by_type[artifact_type]
+        statuses: list[ArtifactStatusType] = [a.status for a in artifacts]
         count = len(statuses)
         worst = _worst_status(statuses)
 
@@ -1017,12 +1041,19 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
             line += f" - {desc}"
 
         type_summaries.append(line)
+        verbose_summaries.append(line)
+
+        # Add individual artifact names to verbose output
+        for artifact_info in sorted(artifacts, key=lambda a: a.name):
+            verbose_summaries.append(f"      {artifact_info.name}")
 
     details = "\n".join(type_summaries)
+    verbose_details = "\n".join(verbose_summaries)
 
-    # Add remediation hint if there are issues
+    # Determine remediation
+    remediation: str | None = None
     if overall_worst == "not-installed":
-        details += "\n\n   Run 'erk artifact sync' to restore missing artifacts"
+        remediation = "Run 'erk artifact sync' to restore missing artifacts"
 
     # Determine overall result
     if overall_worst == "not-installed":
@@ -1031,6 +1062,8 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
             passed=False,
             message="Managed artifacts have issues",
             details=details,
+            verbose_details=verbose_details,
+            remediation=remediation,
         )
     elif has_issues:
         return CheckResult(
@@ -1039,6 +1072,8 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
             warning=True,
             message="Managed artifacts have issues",
             details=details,
+            verbose_details=verbose_details,
+            remediation=remediation,
         )
     else:
         return CheckResult(
@@ -1046,6 +1081,7 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
             passed=True,
             message="Managed artifacts healthy",
             details=details,
+            verbose_details=verbose_details,
         )
 
 
