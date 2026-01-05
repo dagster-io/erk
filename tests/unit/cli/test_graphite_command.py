@@ -1,10 +1,10 @@
 """Tests for GraphiteCommand, GraphiteCommandWithHiddenOptions, and GraphiteGroup."""
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import click
 from click.testing import CliRunner
+from pytest import MonkeyPatch
 
 from erk.cli import help_formatter as help_formatter_module
 from erk.cli.graphite_command import (
@@ -22,9 +22,6 @@ from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
-
-if TYPE_CHECKING:
-    from pytest import MonkeyPatch
 
 # --- Helper function tests ---
 
