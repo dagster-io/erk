@@ -108,9 +108,7 @@ This builds and publishes all packages to PyPI in dependency order.
 After confirming the publish succeeded:
 
 ```bash
-git checkout master
-git merge release-X.Y.Z
-git push origin master --tags
+erk br co master && git merge release-X.Y.Z && git push origin master --tags
 ```
 
 Only merge to master after verifying the release works correctly.
