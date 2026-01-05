@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-01-04 19:40 PT
+
+### Added
+
+- Add `erk admin upgrade-repo` command to update repo to installed erk version
+- Add `erk doctor` check for post-plan-implement CI hook configuration
+
+### Fixed
+
+- Fix orphaned worktree discovery to use git instead of pool state
+- Fix branch creation with `--force` to reuse existing slots via checkout
+- Fix hook state tracking to record all installed hooks in `erk sync`
+
 ## [0.4.0] - 2026-01-04 18:09 PT
 
 ### Major Changes

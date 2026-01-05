@@ -75,13 +75,13 @@ make all-ci
 
 Verify all checks pass locally before pushing. This catches obvious issues early.
 
-### 6. Push Branch for GitHub CI
+### 6. Push Branch and Create PR for GitHub CI
 
 ```bash
-git push origin release-X.Y.Z
+erk pr submit
 ```
 
-Push the release branch to GitHub to run CI in the full environment. Review the GitHub Actions results to catch any environment-specific issues.
+This pushes the release branch and creates a PR for GitHub CI. Review the GitHub Actions results to catch any environment-specific issues.
 
 ### 7. Confirmation Checkpoint
 
