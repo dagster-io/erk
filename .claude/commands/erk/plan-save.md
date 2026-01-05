@@ -31,7 +31,12 @@ erk exec plan-save-to-issue --format display --session-id="<session-id-from-step
 
 ### Step 3: Display Results
 
-On success, display the command output verbatim. Do not summarize, reorder, or rewrite the next steps.
+On success, **copy the command output exactly as printed**. This is critical:
+
+- Do NOT paraphrase or summarize
+- Do NOT add bullet points or change formatting
+- Do NOT omit any lines (especially the `--dangerous` option)
+- Show the output in a code block to preserve formatting
 
 On failure, display the error message and suggest:
 
