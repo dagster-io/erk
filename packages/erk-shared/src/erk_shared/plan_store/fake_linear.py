@@ -50,6 +50,23 @@ from typing import Literal
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
 
+
+def _generate_hex_id() -> str:
+    """Generate an 8-character hex ID guaranteed to contain at least one letter.
+
+    UUID hex uses digits 0-9 and letters a-f. In rare cases, all 8 characters
+    can be digits (e.g., "52266404"). This function ensures at least one
+    non-digit character by appending 'a' if the result is all-numeric.
+
+    This is important for tests that validate Linear-style IDs are UUID-based
+    (not purely numeric like GitHub integer IDs).
+    """
+    hex_id = uuid.uuid4().hex[:8]
+    if hex_id.isdigit():
+        hex_id = hex_id[:7] + "a"
+    return hex_id
+
+
 # Linear uses a 5-state workflow
 LinearState = Literal["backlog", "todo", "in_progress", "done", "canceled"]
 
@@ -245,12 +262,7 @@ class FakeLinearPlanBackend(PlanBackend):
         Returns:
             CreatePlanResult with UUID plan_id and url
         """
-        # Generate UUID-based ID with hex suffix guaranteed to have letters
-        hex_id = uuid.uuid4().hex[:8]
-        # Ensure at least one non-digit character by appending 'a' if all digits
-        if hex_id.isdigit():
-            hex_id = hex_id[:7] + "a"
-        plan_id = f"{self._id_prefix}-{hex_id}"
+        plan_id = f"{self._id_prefix}-{_generate_hex_id()}"
         self._id_counter += 1
 
         now = datetime.now(UTC)
@@ -342,8 +354,7 @@ class FakeLinearPlanBackend(PlanBackend):
             msg = f"Linear issue {plan_id} not found"
             raise RuntimeError(msg)
 
-        # Generate UUID for comment
-        comment_id = f"comment-{uuid.uuid4().hex[:8]}"
+        comment_id = f"comment-{_generate_hex_id()}"
 
         comment = LinearComment(
             id=comment_id,
