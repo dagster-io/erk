@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of `c8114413e`
+
+### Added
+
+- Add `erk upgrade` command to update local installation to repo's required version
+- Display plan issue closure status after landing PR
+
+### Changed
+
+- Handle restack conflicts gracefully in `pr sync` with user-friendly guidance
+- Prioritize Claude Code `/erk:plan-submit` slash command in plan submission next steps
+- Condense `erk doctor` output with collapsible sub-groups and opt-in `--dogfooder` flag
+
 ## [0.4.2] - 2026-01-04 21:19 PT
 
 ### Added
