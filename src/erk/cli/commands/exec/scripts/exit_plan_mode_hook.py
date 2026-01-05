@@ -44,7 +44,6 @@ State Transitions:
 """
 
 import json
-import subprocess
 import sys
 from dataclasses import dataclass
 from enum import Enum
@@ -486,21 +485,6 @@ def _find_session_plan(
     return claude_installation.find_plan_for_session(repo_root, session_id)
 
 
-def _get_current_branch_within_hook() -> str | None:
-    """Get the current git branch name.
-
-    Returns:
-        Branch name, or None if detached HEAD
-    """
-    result = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-        capture_output=True,
-        text=True,
-        check=True,
-    )
-    return result.stdout.strip()
-
-
 def _get_worktree_name(git: Git, repo_root: Path) -> str | None:
     """Get the directory name of the current worktree.
 
@@ -633,7 +617,7 @@ def _gather_inputs(
         and not plan_saved_marker_exists
     )
     if needs_blocking_message:
-        current_branch = _get_current_branch_within_hook()
+        current_branch = git.get_current_branch(repo_root)
         worktree_name = _get_worktree_name(git, repo_root)
         plan_issue_number = _get_plan_issue_from_impl(repo_root)
         # Only lookup PR if we have a branch
@@ -716,7 +700,9 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     github_planning_enabled = global_config.github_planning if global_config is not None else True
 
     # Create branch manager for PR lookups
-    branch_manager = create_branch_manager(ctx.obj.git, ctx.obj.graphite, ctx.obj.github)
+    branch_manager = create_branch_manager(
+        git=ctx.obj.git, github=ctx.obj.github, graphite=ctx.obj.graphite
+    )
 
     # Gather all inputs (I/O layer)
     hook_input = _gather_inputs(

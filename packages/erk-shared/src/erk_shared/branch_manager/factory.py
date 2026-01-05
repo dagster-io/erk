@@ -12,6 +12,7 @@ from erk_shared.github.abc import GitHub
 
 
 def create_branch_manager(
+    *,
     git: Git,
     github: GitHub,
     graphite: Graphite,

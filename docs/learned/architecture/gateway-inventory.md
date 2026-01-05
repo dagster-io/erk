@@ -53,7 +53,7 @@ Dual-mode abstraction for branch operations that works transparently regardless 
 - `GraphiteBranchManager`: Uses Graphite gateway for stack-aware operations
 - `GitBranchManager`: Uses Git + GitHub gateways as fallback
 
-**Factory**: Use `create_branch_manager(git, github, graphite)` to get the appropriate implementation.
+**Factory**: Use `create_branch_manager(git=git, github=github, graphite=graphite)` to get the appropriate implementation.
 
 **Fake Features**: `FakeBranchManager` provides in-memory PR tracking and branch creation recording.
 

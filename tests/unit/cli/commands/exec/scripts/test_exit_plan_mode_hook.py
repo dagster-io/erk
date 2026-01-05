@@ -19,6 +19,9 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     extract_plan_title,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.context.testing import context_for_test
+from erk_shared.extraction.claude_installation import FakeClaudeInstallation
+from erk_shared.git.fake import FakeGit
 
 # ============================================================================
 # Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED
@@ -593,3 +596,60 @@ class TestHookIntegration:
         assert "Plan already saved to GitHub" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted
         assert not objective_context_marker.exists()  # Also deleted
+
+    def test_branch_manager_used_for_pr_lookup(self, tmp_path: Path) -> None:
+        """Verify branch_manager is created and used correctly for PR lookups.
+
+        Regression test for issue #4238: create_branch_manager was called with
+        swapped positional arguments (github and graphite were reversed), causing
+        AttributeError: 'RealGitHub' object has no attribute 'get_prs_from_graphite'.
+
+        This test exercises the code path where:
+        1. A plan file exists (needs_blocking_message is True)
+        2. No markers exist
+        3. A current branch is detected
+        4. branch_manager.get_pr_for_branch() is called
+
+        Before the fix, this would crash because GraphiteBranchManager received
+        a GitHub object where it expected Graphite.
+        """
+        runner = CliRunner()
+        session_id = "session-abc123"
+        plan_slug = "test-plan-slug"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create plans directory and plan file
+        plans_dir = tmp_path / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+        plan_file = plans_dir / f"{plan_slug}.md"
+        plan_file.write_text("# Test Plan\n\nSome content", encoding="utf-8")
+
+        # Create FakeClaudeInstallation that returns the plan file
+        claude_installation = FakeClaudeInstallation.for_test(
+            plans_dir_path=plans_dir,
+            session_slugs={session_id: [plan_slug]},
+            plans={plan_slug: "# Test Plan\n\nSome content"},
+        )
+
+        # Create FakeGit with current branch configured
+        git = FakeGit(current_branches={tmp_path: "feature-branch"})
+
+        # Create context with the configured fakes
+        ctx = context_for_test(
+            repo_root=tmp_path,
+            cwd=tmp_path,
+            git=git,
+            claude_installation=claude_installation,
+        )
+
+        stdin_data = json.dumps({"session_id": session_id})
+        result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
+
+        # The hook should block (exit code 2) with the plan save prompt
+        # The key assertion is that we didn't crash with AttributeError
+        assert result.exit_code == 2, f"Unexpected exit code. Output: {result.output}"
+        assert "PLAN SAVE PROMPT" in result.output
+        # Verify the branch context is included in the output
+        assert "(br:feature-branch)" in result.output
