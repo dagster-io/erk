@@ -119,3 +119,27 @@ def github_pr_setting(ctx: ErkContext, action: Literal["enable", "disable"] | No
         except RuntimeError as e:
             user_output(click.style("Error: ", fg="red") + str(e))
             raise SystemExit(1) from e
+
+
+@admin_group.command("upgrade-repo")
+@click.pass_obj
+def upgrade_repo(ctx: ErkContext) -> None:
+    """Upgrade repo to match installed erk version.
+
+    Updates .erk/required-erk-uv-tool-version and prints next steps.
+    """
+    from erk.core.release_notes import get_current_version
+
+    repo = discover_repo_context(ctx, ctx.cwd)
+    current_version = get_current_version()
+
+    # Update version file
+    version_file = repo.root / ".erk" / "required-erk-uv-tool-version"
+    version_file.write_text(f"{current_version}\n", encoding="utf-8")
+    user_output(f"Updated required version to {current_version}")
+
+    # Print next steps
+    user_output("")
+    user_output("Next steps:")
+    user_output("  erk artifact sync   # Sync skills, commands, hooks")
+    user_output("  erk doctor          # Verify the upgrade")
