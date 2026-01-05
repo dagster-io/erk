@@ -9,6 +9,7 @@ import click
 from erk.core.context import ErkContext
 from erk.core.health_checks import CheckResult, run_all_checks
 from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
+from erk_shared.hooks.logging import clear_hook_logs
 
 # Sub-group definitions for Repository Setup condensed display
 REPO_SUBGROUPS: dict[str, set[str]] = {
@@ -105,8 +106,11 @@ def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent
 @click.command("doctor")
 @click.option("-v", "--verbose", is_flag=True, help="Show all individual checks")
 @click.option("--dogfooder", is_flag=True, help="Include early dogfooder migration checks")
+@click.option(
+    "--clear-hook-logs", "clear_hook_logs_flag", is_flag=True, help="Clear all hook execution logs"
+)
 @click.pass_obj
-def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
+def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool, clear_hook_logs_flag: bool) -> None:
     """Run diagnostic checks on erk setup.
 
     Checks for:
@@ -126,7 +130,16 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool) -> None:
 
       # Include early dogfooder migration checks
       erk doctor --dogfooder
+
+      # Clear hook execution logs
+      erk doctor --clear-hook-logs
     """
+    # Handle --clear-hook-logs flag (clears logs and returns early)
+    if clear_hook_logs_flag:
+        deleted_count = clear_hook_logs(ctx.repo_root)
+        click.echo(f"Cleared {deleted_count} hook log(s)")
+        return
+
     click.echo(click.style("🔍 Checking erk setup...", bold=True))
     click.echo("")
 

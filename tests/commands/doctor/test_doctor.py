@@ -319,3 +319,56 @@ def test_doctor_subgroup_auto_expands_on_failure() -> None:
         # Should show the failing checks expanded (not just count)
         # When hooks are missing, should show specific failure messages
         assert "hook" in result.output.lower()
+
+
+def test_doctor_clear_hook_logs_clears_logs_and_shows_count() -> None:
+    """Test that --clear-hook-logs clears logs and shows the count."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create some hook log files
+        session_dir = env.cwd / ".erk" / "scratch" / "sessions" / "test-session"
+        hook_dir = session_dir / "hooks" / "my-hook"
+        hook_dir.mkdir(parents=True)
+        (hook_dir / "log1.json").write_text("{}", encoding="utf-8")
+        (hook_dir / "log2.json").write_text("{}", encoding="utf-8")
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, ["--clear-hook-logs"], obj=ctx)
+
+        # Should succeed
+        assert result.exit_code == 0
+        # Should show count of cleared logs
+        assert "Cleared 2 hook log(s)" in result.output
+        # Should NOT run normal diagnostics
+        assert "Checking erk setup" not in result.output
+        # Files should be deleted
+        assert not (hook_dir / "log1.json").exists()
+        assert not (hook_dir / "log2.json").exists()
+
+
+def test_doctor_clear_hook_logs_with_no_logs() -> None:
+    """Test that --clear-hook-logs with no logs shows '0 logs'."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # No hook logs exist
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        result = runner.invoke(doctor_cmd, ["--clear-hook-logs"], obj=ctx)
+
+        # Should succeed
+        assert result.exit_code == 0
+        # Should show zero count
+        assert "Cleared 0 hook log(s)" in result.output

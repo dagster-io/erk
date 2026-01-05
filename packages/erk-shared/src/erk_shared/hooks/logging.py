@@ -182,3 +182,51 @@ def truncate_string(s: str, max_bytes: int) -> str:
     # Decode, ignoring errors at the end
     decoded = truncated.decode("utf-8", errors="ignore")
     return decoded + "[truncated]"
+
+
+def clear_hook_logs(repo_root: Path) -> int:
+    """Clear all hook execution logs.
+
+    Removes all JSON log files from .erk/scratch/sessions/*/hooks/*/.
+    Also removes empty hook directories after clearing.
+
+    Args:
+        repo_root: Repository root path
+
+    Returns:
+        Number of log files deleted
+    """
+    sessions_dir = repo_root / ".erk" / "scratch" / "sessions"
+    if not sessions_dir.exists():
+        return 0
+
+    deleted_count = 0
+
+    # Walk session directories
+    for session_dir in sessions_dir.iterdir():
+        if not session_dir.is_dir():
+            continue
+
+        hooks_dir = session_dir / "hooks"
+        if not hooks_dir.exists():
+            continue
+
+        # Walk hook directories within session
+        for hook_dir in hooks_dir.iterdir():
+            if not hook_dir.is_dir():
+                continue
+
+            # Delete all JSON log files
+            for log_file in hook_dir.glob("*.json"):
+                log_file.unlink()
+                deleted_count += 1
+
+            # Remove empty hook directory
+            if not any(hook_dir.iterdir()):
+                hook_dir.rmdir()
+
+        # Remove empty hooks directory
+        if not any(hooks_dir.iterdir()):
+            hooks_dir.rmdir()
+
+    return deleted_count
