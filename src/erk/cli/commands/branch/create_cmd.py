@@ -87,11 +87,10 @@ def branch_create(ctx: ErkContext, branch_name: str, no_slot: bool, force: bool)
         user_output(f"Error: Branch '{branch_name}' already assigned to {existing.slot_name}")
         raise SystemExit(1) from None
 
-    # First, prefer pre-initialized slots (fast path)
-    inactive_slot = find_inactive_slot(state)
+    # First, prefer reusing existing worktrees (fast path)
+    inactive_slot = find_inactive_slot(state, ctx.git, repo.root)
     if inactive_slot is not None:
-        slot_name = inactive_slot.name
-        worktree_path = repo.worktrees_dir / slot_name
+        slot_name, worktree_path = inactive_slot
 
         # Checkout the branch in the existing worktree
         ctx.git.checkout_branch(worktree_path, branch_name)

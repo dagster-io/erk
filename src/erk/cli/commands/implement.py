@@ -360,11 +360,10 @@ def _create_worktree_with_plan_content(
     use_existing_branch = branch in local_branches
 
     # Find available slot
-    inactive_slot = find_inactive_slot(state)
+    inactive_slot = find_inactive_slot(state, ctx.git, repo_root)
     if inactive_slot is not None:
-        # Fast path: use pre-initialized slot
-        slot_name = inactive_slot.name
-        wt_path = repo.worktrees_dir / slot_name
+        # Fast path: reuse existing worktree
+        slot_name, wt_path = inactive_slot
     else:
         # Find next available slot number
         slot_num = find_next_available_slot(state, repo.worktrees_dir)

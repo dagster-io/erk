@@ -16,6 +16,7 @@ from erk.cli.commands.slot.common import (
 from erk.cli.config import LoadedConfig
 from erk.core.context import context_for_test
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
+from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 
 
@@ -112,64 +113,149 @@ class TestFindOldestAssignment:
 class TestFindInactiveSlot:
     """Tests for find_inactive_slot function."""
 
-    def test_returns_none_when_no_slots_initialized(self) -> None:
-        """Returns None when no slots are initialized."""
+    def test_returns_none_when_no_worktrees_exist(self, tmp_path: Path) -> None:
+        """Returns None when no worktrees exist in git."""
+        repo_root = tmp_path / "repo"
         state = PoolState.test()
+        git = FakeGit(worktrees={repo_root: []})
 
-        result = find_inactive_slot(state)
+        result = find_inactive_slot(state, git, repo_root)
 
         assert result is None
 
-    def test_returns_inactive_slot_when_available(self) -> None:
-        """Returns an inactive slot when available."""
-        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
-        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
-        state = PoolState.test(slots=(slot1, slot2))
+    def test_returns_inactive_slot_when_available(self, tmp_path: Path) -> None:
+        """Returns an unassigned slot when worktrees exist."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        git = FakeGit(worktrees={repo_root: [
+            WorktreeInfo(path=wt1_path, branch="feature-a"),
+            WorktreeInfo(path=wt2_path, branch="feature-b"),
+        ]})
+        state = PoolState.test(pool_size=4)
 
-        result = find_inactive_slot(state)
+        result = find_inactive_slot(state, git, repo_root)
 
         assert result is not None
-        assert result.name == "erk-managed-wt-01"
+        slot_name, worktree_path = result
+        assert slot_name == "erk-managed-wt-01"
+        assert worktree_path == wt1_path
 
-    def test_returns_none_when_all_slots_assigned(self) -> None:
-        """Returns None when all initialized slots have assignments."""
-        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
-        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+    def test_returns_none_when_all_slots_assigned(self, tmp_path: Path) -> None:
+        """Returns None when all worktrees have assignments."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        git = FakeGit(worktrees={repo_root: [
+            WorktreeInfo(path=wt1_path, branch="feature-a"),
+            WorktreeInfo(path=wt2_path, branch="feature-b"),
+        ]})
         assignment1 = SlotAssignment(
             slot_name="erk-managed-wt-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+            worktree_path=wt1_path,
         )
         assignment2 = SlotAssignment(
             slot_name="erk-managed-wt-02",
             branch_name="feature-b",
             assigned_at="2024-01-01T13:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-02"),
+            worktree_path=wt2_path,
         )
-        state = PoolState.test(slots=(slot1, slot2), assignments=(assignment1, assignment2))
+        state = PoolState.test(pool_size=2, assignments=(assignment1, assignment2))
 
-        result = find_inactive_slot(state)
+        result = find_inactive_slot(state, git, repo_root)
 
         assert result is None
 
-    def test_returns_first_inactive_slot(self) -> None:
-        """Returns the first slot that is not assigned."""
-        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
-        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
-        slot3 = SlotInfo(name="erk-managed-wt-03", last_objective_issue=None)
+    def test_returns_first_inactive_slot_by_number(self, tmp_path: Path) -> None:
+        """Returns the lowest-numbered unassigned slot."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        wt3_path = tmp_path / "worktrees" / "erk-managed-wt-03"
+        git = FakeGit(worktrees={repo_root: [
+            WorktreeInfo(path=wt1_path, branch="feature-a"),
+            WorktreeInfo(path=wt2_path, branch="feature-b"),
+            WorktreeInfo(path=wt3_path, branch="feature-c"),
+        ]})
         assignment1 = SlotAssignment(
             slot_name="erk-managed-wt-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+            worktree_path=wt1_path,
         )
-        state = PoolState.test(slots=(slot1, slot2, slot3), assignments=(assignment1,))
+        state = PoolState.test(pool_size=4, assignments=(assignment1,))
 
-        result = find_inactive_slot(state)
+        result = find_inactive_slot(state, git, repo_root)
 
         assert result is not None
-        assert result.name == "erk-managed-wt-02"
+        slot_name, worktree_path = result
+        assert slot_name == "erk-managed-wt-02"
+        assert worktree_path == wt2_path
+
+    def test_finds_orphaned_worktree_not_in_state(self, tmp_path: Path) -> None:
+        """Returns slot when worktree exists in git but not tracked in state.slots.
+
+        This is the key bug fix test: orphaned worktrees that exist
+        (git knows about them) but aren't in pool.json state.slots
+        should still be discovered and made available for reuse.
+        """
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        # Git knows about this worktree
+        git = FakeGit(worktrees={repo_root: [
+            WorktreeInfo(path=wt1_path, branch="some-branch"),
+        ]})
+        # But state.slots is empty (worktree not tracked in pool.json)
+        state = PoolState.test(pool_size=4, slots=())
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        # Should still find it via git
+        assert result is not None
+        slot_name, worktree_path = result
+        assert slot_name == "erk-managed-wt-01"
+        assert worktree_path == wt1_path
+
+    def test_ignores_non_managed_worktrees(self, tmp_path: Path) -> None:
+        """Ignores worktrees that don't match erk-managed-wt-XX pattern."""
+        repo_root = tmp_path / "repo"
+        root_wt = tmp_path / "repo"
+        other_wt = tmp_path / "other-worktree"
+        managed_wt = tmp_path / "worktrees" / "erk-managed-wt-01"
+        git = FakeGit(worktrees={repo_root: [
+            WorktreeInfo(path=root_wt, branch="main", is_root=True),
+            WorktreeInfo(path=other_wt, branch="feature"),
+            WorktreeInfo(path=managed_wt, branch="assigned-branch"),
+        ]})
+        # The managed slot is assigned
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="assigned-branch",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=managed_wt,
+        )
+        state = PoolState.test(pool_size=4, assignments=(assignment,))
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        # No managed slots available (the only managed one is assigned)
+        assert result is None
+
+    def test_respects_pool_size_limit(self, tmp_path: Path) -> None:
+        """Ignores worktrees beyond pool_size."""
+        repo_root = tmp_path / "repo"
+        wt5_path = tmp_path / "worktrees" / "erk-managed-wt-05"
+        git = FakeGit(worktrees={repo_root: [
+            WorktreeInfo(path=wt5_path, branch="feature"),
+        ]})
+        # pool_size is 4, so slot 5 is beyond the limit
+        state = PoolState.test(pool_size=4)
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        assert result is None
 
 
 class TestIsSlotInitialized:

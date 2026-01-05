@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
+from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.git.abc import Git
 from erk_shared.output.output import user_confirm, user_output
 
@@ -106,22 +106,43 @@ def find_next_available_slot(state: PoolState, worktrees_dir: Path | None) -> in
     return None
 
 
-def find_inactive_slot(state: PoolState) -> SlotInfo | None:
-    """Find an initialized slot without an active assignment.
+def find_inactive_slot(
+    state: PoolState,
+    git: Git,
+    repo_root: Path,
+) -> tuple[str, Path] | None:
+    """Find an available managed slot for reuse.
 
-    Prefers returning slots in order (lowest slot number first).
+    Searches for worktrees that exist but are not assigned.
+    Uses git as source of truth for which worktrees exist.
+    Prefers slots in order (lowest slot number first).
 
     Args:
         state: Current pool state
+        git: Git gateway for worktree operations
+        repo_root: Repository root path
 
     Returns:
-        SlotInfo for an inactive initialized slot, or None if none available
+        Tuple of (slot_name, worktree_path) for an available slot,
+        or None if no inactive slot found
     """
     assigned_slots = {a.slot_name for a in state.assignments}
 
-    for slot in state.slots:
-        if slot.name not in assigned_slots:
-            return slot
+    # Get all worktrees from git (source of truth)
+    worktrees = git.list_worktrees(repo_root)
+
+    # Build lookup of slot_name -> worktree_path for managed slots
+    managed_worktrees: dict[str, Path] = {}
+    for wt in worktrees:
+        slot_name = wt.path.name
+        if extract_slot_number(slot_name) is not None:
+            managed_worktrees[slot_name] = wt.path
+
+    # Find first unassigned slot (by slot number order)
+    for slot_num in range(1, state.pool_size + 1):
+        slot_name = generate_slot_name(slot_num)
+        if slot_name in managed_worktrees and slot_name not in assigned_slots:
+            return (slot_name, managed_worktrees[slot_name])
 
     return None
 
@@ -240,9 +261,8 @@ def handle_pool_full_interactive(
         return oldest
 
     if not is_tty:
-        slots = len(state.assignments)
         user_output(
-            f"Error: Pool is full ({slots} slots). "
+            f"Error: Pool is full ({state.pool_size} slots). "
             "Use --force to auto-unassign the oldest branch, "
             "or run `erk slot list` to see assignments."
         )
@@ -250,7 +270,7 @@ def handle_pool_full_interactive(
 
     # Interactive mode: show assignments and prompt
     display_pool_assignments(state)
-    user_output(f"Pool is full ({len(state.assignments)} slots).")
+    user_output(f"Pool is full ({state.pool_size} slots).")
     user_output(f"Oldest assignment: {oldest.branch_name} ({oldest.slot_name})")
 
     if user_confirm(f"Unassign '{oldest.branch_name}' to make room?", default=False):
