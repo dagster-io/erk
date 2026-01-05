@@ -129,6 +129,7 @@ def slot_list(ctx: ErkContext) -> None:
     table.add_column("Assigned", no_wrap=True)
     table.add_column("Status", no_wrap=True)
     table.add_column("Reason", no_wrap=True)
+    table.add_column("Changes", no_wrap=True)
 
     # Track counts for summary
     assigned_count = 0
@@ -182,6 +183,13 @@ def slot_list(ctx: ErkContext) -> None:
         }
         reason_display = reason_map[reason]
 
+        # Format changes display
+        changes_display: str
+        if worktree_exists and ctx.git.has_uncommitted_changes(worktree_path):
+            changes_display = "[yellow]dirty[/yellow]"
+        else:
+            changes_display = "[dim]-[/dim]"
+
         # Format objective display
         objective_display: str
         if slot_name in objectives_by_slot:
@@ -196,6 +204,7 @@ def slot_list(ctx: ErkContext) -> None:
             assigned_time,
             status_display,
             reason_display,
+            changes_display,
         )
 
         # Track counts
@@ -205,7 +214,8 @@ def slot_list(ctx: ErkContext) -> None:
             error_count += 1
 
     # Output table to stderr (consistent with user_output convention)
-    console = Console(stderr=True, force_terminal=True)
+    # Use width=200 to ensure proper display without truncation
+    console = Console(stderr=True, width=200, force_terminal=True)
     console.print(table)
 
     # Print summary
