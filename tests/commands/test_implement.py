@@ -9,7 +9,8 @@ from click.testing import CliRunner
 from erk.cli.commands.implement import implement
 from erk.cli.commands.implement_shared import detect_target_type, normalize_model_name
 from erk.cli.config import LoadedConfig
-from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.plan_store.types import Plan, PlanState
@@ -729,7 +730,6 @@ def test_implement_from_issue_skips_tracking_existing_branch_with_graphite() -> 
     2. The worktree was deleted but branch remains
     3. User runs `erk implement` again for the same issue
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     plan_issue = _create_sample_plan_issue("500")
 
@@ -1410,7 +1410,6 @@ def test_implement_from_worktree_stacks_on_current_branch_with_graphite() -> Non
     current branch (feature-branch), not trunk. This test uses file mode
     with a new branch (not pre-existing) so track_branch is called.
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -1478,7 +1477,6 @@ def test_implement_from_trunk_uses_trunk_with_graphite() -> None:
     The key verification is that the parent_branch in track_branch is trunk (main).
     This test uses file mode with a new branch (not pre-existing) so track_branch is called.
     """
-    from erk_shared.gateway.graphite.fake import FakeGraphite
 
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
@@ -2011,3 +2009,344 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
         # Verify no worktree operations were attempted after the check
         assert len(git.added_worktrees) == 0
         assert len(git.checked_out_branches) == 0
+
+
+# Same-Slot Stacking Tests
+
+
+def test_implement_from_managed_slot_stacks_on_current_branch() -> None:
+    """Test that implementing from within a managed slot stacks on current branch.
+
+    When running `erk implement` from within a managed slot:
+    1. Detects we're in a managed slot
+    2. Creates new branch stacked on current branch
+    3. Updates slot assignment to new branch
+    4. Does NOT consume a new slot
+    """
+
+    plan_issue = _create_sample_plan_issue("200")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Create a slot worktree directory
+        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True)
+
+        # Configure git to recognize the slot as a managed worktree
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
+            local_branches={env.cwd: ["main", "existing-feature"]},
+            default_branches={env.cwd: "main"},
+            current_branches={slot_dir: "existing-feature"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
+                ]
+            },
+        )
+        store, _ = create_plan_store_with_plans({"200": plan_issue})
+        fake_graphite = FakeGraphite()
+
+        # Create initial pool state with the slot assigned
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-managed-wt-01",
+                    branch_name="existing-feature",
+                    assigned_at="2024-01-01T00:00:00+00:00",
+                    worktree_path=slot_dir,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        # Build context with cwd set to the slot directory
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            graphite=fake_graphite,
+            use_graphite=True,
+            cwd=slot_dir,
+        )
+
+        # Run implement from within the slot
+        result = runner.invoke(implement, ["#200", "--script"], obj=ctx)
+
+        assert result.exit_code == 0, f"Expected success but got: {result.output}"
+
+        # Verify stacking message
+        assert "Stacking" in result.output or "Stacked" in result.output
+
+        # Verify a new branch was created
+        assert len(git.created_branches) == 1
+
+        # Verify the branch was tracked with the current branch as parent
+        assert len(fake_graphite.track_branch_calls) == 1
+        _cwd, new_branch, parent_branch = fake_graphite.track_branch_calls[0]
+        assert parent_branch == "existing-feature"
+
+        # Verify NO new worktrees were created (same slot reused)
+        assert len(git.added_worktrees) == 0
+
+        # Verify the branch was checked out in the slot
+        assert len(git.checked_out_branches) == 1
+
+
+def test_implement_from_managed_slot_requires_clean_worktree() -> None:
+    """Test that same-slot stacking fails if there are uncommitted changes.
+
+    Users must commit their work before starting a new stacked implementation
+    to avoid losing changes.
+    """
+    plan_issue = _create_sample_plan_issue("201")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Create a slot worktree directory
+        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True)
+
+        # Configure git with uncommitted changes in the slot
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
+            local_branches={env.cwd: ["main", "existing-feature"]},
+            default_branches={env.cwd: "main"},
+            current_branches={slot_dir: "existing-feature"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
+                ]
+            },
+            # Slot has uncommitted changes
+            file_statuses={slot_dir: ([], ["modified.py"], [])},
+        )
+        store, _ = create_plan_store_with_plans({"201": plan_issue})
+
+        # Create initial pool state with the slot assigned
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-managed-wt-01",
+                    branch_name="existing-feature",
+                    assigned_at="2024-01-01T00:00:00+00:00",
+                    worktree_path=slot_dir,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            cwd=slot_dir,
+        )
+
+        result = runner.invoke(implement, ["#201", "--script"], obj=ctx)
+
+        # Should fail with error about uncommitted changes
+        assert result.exit_code != 0
+        assert "uncommitted changes" in result.output
+        assert "Commit your changes" in result.output
+        assert "git commit" in result.output
+
+        # Verify no branches were created
+        assert len(git.created_branches) == 0
+
+
+def test_implement_from_managed_slot_dry_run() -> None:
+    """Test that dry-run mode shows same-slot stacking information."""
+    plan_issue = _create_sample_plan_issue("202")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
+            local_branches={env.cwd: ["main", "existing-feature"]},
+            default_branches={env.cwd: "main"},
+            current_branches={slot_dir: "existing-feature"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
+                ]
+            },
+        )
+        store, _ = create_plan_store_with_plans({"202": plan_issue})
+
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-managed-wt-01",
+                    branch_name="existing-feature",
+                    assigned_at="2024-01-01T00:00:00+00:00",
+                    worktree_path=slot_dir,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            cwd=slot_dir,
+        )
+
+        result = runner.invoke(implement, ["#202", "--dry-run"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Dry-run mode" in result.output
+
+        # Verify same-slot stacking info is shown
+        assert "stack" in result.output.lower()
+        assert "erk-managed-wt-01" in result.output
+        assert "existing-feature" in result.output
+
+        # Verify no changes were made
+        assert len(git.created_branches) == 0
+        assert len(git.checked_out_branches) == 0
+
+
+def test_implement_from_managed_slot_updates_pool_state() -> None:
+    """Test that same-slot stacking updates the pool state with new branch."""
+    plan_issue = _create_sample_plan_issue("203")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_dir: env.git_dir},
+            local_branches={env.cwd: ["main", "existing-feature"]},
+            default_branches={env.cwd: "main"},
+            current_branches={slot_dir: "existing-feature"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_dir, branch="existing-feature", is_root=False),
+                ]
+            },
+        )
+        store, _ = create_plan_store_with_plans({"203": plan_issue})
+
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-managed-wt-01",
+                    branch_name="existing-feature",
+                    assigned_at="2024-01-01T00:00:00+00:00",
+                    worktree_path=slot_dir,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            cwd=slot_dir,
+        )
+
+        result = runner.invoke(implement, ["#203", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Load and verify pool state was updated
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+
+        # Should still have only 1 assignment (same slot, different branch)
+        assert len(updated_state.assignments) == 1
+
+        assignment = updated_state.assignments[0]
+        assert assignment.slot_name == "erk-managed-wt-01"
+        # Branch name should be updated to new branch
+        assert assignment.branch_name != "existing-feature"
+        # Worktree path should be the same
+        assert assignment.worktree_path == slot_dir
+
+
+def test_implement_not_from_slot_uses_new_slot() -> None:
+    """Test that implementing from outside a managed slot uses a new slot.
+
+    This verifies the normal behavior still works when NOT running from a slot.
+    """
+    plan_issue = _create_sample_plan_issue("204")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Create an existing slot assignment
+        env.setup_repo_structure()
+        slot1_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot1_dir.mkdir(parents=True)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"204": plan_issue})
+
+        # Create pool state with one existing assignment
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(),
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-managed-wt-01",
+                    branch_name="other-feature",
+                    assigned_at="2024-01-01T00:00:00+00:00",
+                    worktree_path=slot1_dir,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        # Run from the main worktree (not a slot)
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+        )
+
+        result = runner.invoke(implement, ["#204", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Should assign to a NEW slot (slot 02)
+        assert "erk-managed-wt-02" in result.output
+
+        # Load pool state to verify
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+        assert len(updated_state.assignments) == 2  # Original + new

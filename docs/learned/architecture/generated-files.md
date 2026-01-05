@@ -113,6 +113,67 @@ Banner location varies by file type:
 
 This distinction matters because tripwires.md has its own frontmatter for the index system, while index files are pure navigation.
 
+## Adding a Tripwire: Full Workflow
+
+When asked to "add a tripwire", follow this complete workflow:
+
+### Step 1: Add Documentation
+
+First, document the issue in the appropriate source file (usually in `docs/learned/`):
+
+1. **Find or create the right doc file** - Match the topic to an existing doc or create a new one
+2. **Add a section explaining the pattern** - Include:
+   - What the problem is
+   - Wrong pattern (with code example)
+   - Correct pattern (with code example)
+   - Why the correct pattern works
+
+### Step 2: Add Tripwire to Frontmatter
+
+Add the tripwire to the document's YAML frontmatter:
+
+```yaml
+---
+title: Document Title
+read_when:
+  - "relevant condition"
+tripwires:
+  - action: "doing the problematic thing" # Action pattern agents recognize
+    warning: "Do this instead." # Concise guidance
+---
+```
+
+The `action` should describe what triggers the warning (in present participle form), and `warning` should give the corrective action.
+
+### Step 3: Regenerate
+
+Run the sync command to propagate the tripwire:
+
+```bash
+erk docs sync
+```
+
+This updates `docs/learned/tripwires.md` with all tripwires from all source files.
+
+### Complete Example
+
+To add a tripwire about path-based worktree detection:
+
+1. **Document in `erk-architecture.md`**:
+   - Add "Current Worktree Detection" section
+   - Show wrong pattern (path comparisons)
+   - Show correct pattern (git-based detection)
+
+2. **Add frontmatter tripwire**:
+
+   ```yaml
+   tripwires:
+     - action: "detecting current worktree using path comparisons on cwd"
+       warning: "Use git.get_repository_root(cwd) instead..."
+   ```
+
+3. **Regenerate**: `erk docs sync`
+
 ## The Meta-Tripwire Pattern
 
 The system protects itself through a self-documenting mechanism:

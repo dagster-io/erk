@@ -5,6 +5,7 @@ from pathlib import Path
 from erk.cli.commands.slot.common import (
     DEFAULT_POOL_SIZE,
     extract_slot_number,
+    find_assignment_by_worktree,
     find_inactive_slot,
     find_oldest_assignment,
     get_placeholder_branch_name,
@@ -14,6 +15,7 @@ from erk.cli.commands.slot.common import (
 from erk.cli.config import LoadedConfig
 from erk.core.context import context_for_test
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo
+from erk_shared.git.fake import FakeGit
 
 
 class TestGetPoolSize:
@@ -220,3 +222,95 @@ def test_get_placeholder_branch_name_invalid() -> None:
     """Returns None for invalid slot names."""
     assert get_placeholder_branch_name("invalid-name") is None
     assert get_placeholder_branch_name("erk-managed-wt-1") is None
+
+
+class TestFindAssignmentByWorktree:
+    """Tests for find_assignment_by_worktree function."""
+
+    def test_returns_none_for_empty_state(self, tmp_path: Path) -> None:
+        """Returns None when no assignments exist."""
+        state = PoolState.test()
+        cwd = tmp_path / "somewhere"
+        git = FakeGit(repository_roots={cwd: cwd})
+
+        result = find_assignment_by_worktree(state, git, cwd)
+
+        assert result is None
+
+    def test_returns_none_when_cwd_not_in_any_slot(self, tmp_path: Path) -> None:
+        """Returns None when cwd is not within any assigned slot."""
+        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        other_path = tmp_path / "other" / "location"
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+        # Git reports other_path as its own worktree root (not in a managed slot)
+        git = FakeGit(repository_roots={other_path: other_path})
+
+        result = find_assignment_by_worktree(state, git, other_path)
+
+        assert result is None
+
+    def test_returns_assignment_when_cwd_equals_worktree_path(self, tmp_path: Path) -> None:
+        """Returns assignment when cwd exactly matches worktree path."""
+        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+        # Git reports slot_path as the worktree root
+        git = FakeGit(repository_roots={slot_path: slot_path})
+
+        result = find_assignment_by_worktree(state, git, slot_path)
+
+        assert result == assignment
+
+    def test_returns_assignment_when_cwd_is_subdirectory(self, tmp_path: Path) -> None:
+        """Returns assignment when cwd is a subdirectory of worktree path."""
+        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        subdir = slot_path / "src" / "nested"
+        assignment = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot_path,
+        )
+        state = PoolState.test(assignments=(assignment,))
+        # Git reports slot_path as the worktree root for the subdirectory
+        git = FakeGit(repository_roots={subdir: slot_path})
+
+        result = find_assignment_by_worktree(state, git, subdir)
+
+        assert result == assignment
+
+    def test_returns_matching_assignment_for_slot(self, tmp_path: Path) -> None:
+        """Returns matching assignment when multiple slots exist."""
+        slot1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        assignment1 = SlotAssignment(
+            slot_name="erk-managed-wt-01",
+            branch_name="feature-a",
+            assigned_at="2024-01-01T12:00:00+00:00",
+            worktree_path=slot1_path,
+        )
+        assignment2 = SlotAssignment(
+            slot_name="erk-managed-wt-02",
+            branch_name="feature-b",
+            assigned_at="2024-01-01T13:00:00+00:00",
+            worktree_path=slot2_path,
+        )
+        state = PoolState.test(assignments=(assignment1, assignment2))
+        # Git reports slot2_path as the worktree root
+        git = FakeGit(repository_roots={slot2_path: slot2_path})
+
+        result = find_assignment_by_worktree(state, git, slot2_path)
+
+        assert result == assignment2
+        assert result.slot_name == "erk-managed-wt-02"
