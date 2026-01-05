@@ -156,7 +156,22 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Step 7: Restack with Graphite (manual conflict resolution if needed)
     user_output("Restacking branch...")
-    ctx.graphite.restack(repo.root, no_interactive=True, quiet=False)
+    try:
+        ctx.graphite.restack(repo.root, no_interactive=True, quiet=False)
+    except RuntimeError as e:
+        error_str = str(e)
+        # Detect conflict from Graphite stderr patterns
+        if "conflict" in error_str.lower() or "unmerged files" in error_str.lower():
+            user_output(click.style("\nRestack paused due to merge conflicts.", fg="yellow"))
+            user_output("To resolve conflicts, run:")
+            user_output(click.style("  erk pr fix-conflicts --dangerous", fg="cyan"))
+            user_output("\nOr manually:")
+            user_output("  1. Resolve conflicts in the listed files")
+            user_output("  2. Run: gt add -A")
+            user_output("  3. Run: gt continue")
+            raise SystemExit(1) from None
+        # Non-conflict error - re-raise with context
+        raise click.ClickException(str(e)) from e
     user_output(click.style("✓", fg="green") + " Branch restacked")
 
     # Step 8: Submit to link with Graphite
