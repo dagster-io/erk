@@ -97,7 +97,7 @@ include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/e
 exclude = [".claude/skills/"]
 
 [tool.ty.environment]
-python-version = "3.14"
+python-version = "3.11"
 python = ".venv"
 
 [tool.pytest.ini_options]
