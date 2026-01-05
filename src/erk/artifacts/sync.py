@@ -321,11 +321,17 @@ def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
     target_claude_dir.mkdir(parents=True, exist_ok=True)
     settings_path.write_text(json.dumps(updated_settings, indent=2), encoding="utf-8")
 
-    # Track added hooks
-    synced: list[SyncedArtifact] = []
+    # Count how many hooks were newly added
     added = 0
     if not had_user_prompt:
         added += 1
+    if not had_exit_plan:
+        added += 1
+
+    # ALWAYS record state for installed hooks (not just newly added)
+    # This ensures hooks from older erk versions get tracked in state.toml
+    synced: list[SyncedArtifact] = []
+    if has_user_prompt_hook(updated_settings):
         synced.append(
             SyncedArtifact(
                 key="hooks/user-prompt-hook",
@@ -333,8 +339,7 @@ def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
                 file_count=1,
             )
         )
-    if not had_exit_plan:
-        added += 1
+    if has_exit_plan_hook(updated_settings):
         synced.append(
             SyncedArtifact(
                 key="hooks/exit-plan-mode-hook",

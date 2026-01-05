@@ -450,6 +450,37 @@ def test_sync_hooks_skips_existing_hooks(tmp_path: Path) -> None:
     assert added == 0
 
 
+def test_sync_hooks_returns_synced_artifacts_for_existing_hooks(tmp_path: Path) -> None:
+    """_sync_hooks returns synced artifacts even when hooks already exist.
+
+    Regression test: Previously, hooks were only recorded in state.toml when
+    newly added. This caused 'erk doctor' to show hooks as changed after
+    running 'erk sync' on repos with pre-existing hooks from older versions.
+    """
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
+    target_claude_dir = tmp_path / ".claude"
+    target_claude_dir.mkdir(parents=True)
+
+    # Create settings with hooks already configured (simulates older erk install)
+    settings = add_erk_hooks({})
+    settings_path = target_claude_dir / "settings.json"
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    added, synced = _sync_hooks(target_claude_dir)
+
+    # No hooks should be added (they already exist)
+    assert added == 0
+
+    # BUT synced artifacts should still be returned for state tracking
+    assert len(synced) == 2
+    synced_keys = {artifact.key for artifact in synced}
+    assert "hooks/user-prompt-hook" in synced_keys
+    assert "hooks/exit-plan-mode-hook" in synced_keys
+
+
 def test_sync_artifacts_includes_hooks(tmp_path: Path) -> None:
     """sync_artifacts also syncs hooks to settings.json."""
     import json
