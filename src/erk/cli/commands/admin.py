@@ -7,6 +7,7 @@ from typing import Literal
 import click
 
 from erk.cli.core import discover_repo_context
+from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
@@ -264,57 +265,54 @@ def _base36_encode(num: int) -> str:
 
 def _create_test_issue(repo_slug: str) -> int:
     """Create a minimal test issue for workflow testing."""
-    # GH-API-AUDIT: GraphQL - create issue mutation
-    result = subprocess.run(
+    # GH-API-AUDIT: REST - POST repos/{owner}/{repo}/issues
+    result = run_with_error_reporting(
         [
             "gh",
-            "issue",
-            "create",
-            "--repo",
-            repo_slug,
-            "--title",
-            "Test workflow run",
-            "--body",
-            "This issue was created to test the erk-impl workflow. Safe to close.",
-            "--label",
-            "test",
+            "api",
+            f"repos/{repo_slug}/issues",
+            "-X",
+            "POST",
+            "-f",
+            "title=Test workflow run",
+            "-f",
+            "body=This issue was created to test the erk-impl workflow. Safe to close.",
+            "-f",
+            "labels[]=test",
+            "--jq",
+            ".number",
         ],
-        capture_output=True,
-        text=True,
-        check=True,
+        error_prefix="Failed to create test issue",
     )
-    # Output is like: https://github.com/owner/repo/issues/123
-    url = result.stdout.strip()
-    return int(url.split("/")[-1])
+    return int(result.stdout.strip())
 
 
 def _create_draft_pr(repo_slug: str, branch: str) -> int:
     """Create a draft PR for the test branch."""
-    # GH-API-AUDIT: GraphQL - create PR mutation
-    result = subprocess.run(
+    # GH-API-AUDIT: REST - POST repos/{owner}/{repo}/pulls
+    result = run_with_error_reporting(
         [
             "gh",
-            "pr",
-            "create",
-            "--repo",
-            repo_slug,
-            "--head",
-            branch,
-            "--base",
-            "master",
-            "--draft",
-            "--title",
-            "Test workflow run",
-            "--body",
-            "This PR was created to test the erk-impl workflow. Safe to close.",
+            "api",
+            f"repos/{repo_slug}/pulls",
+            "-X",
+            "POST",
+            "-f",
+            "title=Test workflow run",
+            "-f",
+            "body=This PR was created to test the erk-impl workflow. Safe to close.",
+            "-f",
+            f"head={branch}",
+            "-f",
+            "base=master",
+            "-F",
+            "draft=true",
+            "--jq",
+            ".number",
         ],
-        capture_output=True,
-        text=True,
-        check=True,
+        error_prefix="Failed to create draft PR",
     )
-    # Output is like: https://github.com/owner/repo/pull/123
-    url = result.stdout.strip()
-    return int(url.split("/")[-1])
+    return int(result.stdout.strip())
 
 
 def _trigger_workflow(
@@ -331,7 +329,7 @@ def _trigger_workflow(
 ) -> None:
     """Trigger the erk-impl workflow with the given parameters."""
     # GH-API-AUDIT: REST - POST actions/workflows/{workflow_id}/dispatches
-    subprocess.run(
+    run_with_error_reporting(
         [
             "gh",
             "workflow",
@@ -356,14 +354,14 @@ def _trigger_workflow(
             "-f",
             f"base_branch={base_branch}",
         ],
-        check=True,
+        error_prefix="Failed to trigger erk-impl workflow",
     )
 
 
 def _get_latest_run_url(repo_slug: str) -> str:
     """Get the URL of the latest erk-impl workflow run."""
     # GH-API-AUDIT: REST - GET actions/runs
-    result = subprocess.run(
+    result = run_with_error_reporting(
         [
             "gh",
             "run",
@@ -377,9 +375,7 @@ def _get_latest_run_url(repo_slug: str) -> str:
             "--json",
             "url",
         ],
-        capture_output=True,
-        text=True,
-        check=True,
+        error_prefix="Failed to get workflow run URL",
     )
     runs = json.loads(result.stdout)
     if runs:
