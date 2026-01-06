@@ -1,4 +1,4 @@
-"""Branch unassign command - remove a branch assignment from a pool slot."""
+"""Slot unassign command - remove a branch assignment from a pool slot."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -141,7 +141,7 @@ def _find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | Non
 @click.command("unassign")
 @click.argument("worktree", metavar="WORKTREE", required=False)
 @click.pass_obj
-def branch_unassign(ctx: ErkContext, worktree: str | None) -> None:
+def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
     """Remove a branch assignment from a pool slot.
 
     WORKTREE is the slot name (e.g., erk-managed-wt-01).
@@ -152,15 +152,15 @@ def branch_unassign(ctx: ErkContext, worktree: str | None) -> None:
     The worktree directory is kept for reuse with future assignments.
 
     Examples:
-        erk br unassign erk-managed-wt-01    # Unassign by worktree name
-        erk br unassign                      # Unassign current slot (from within pool worktree)
+        erk slot unassign erk-managed-wt-01    # Unassign by worktree name
+        erk slot unassign                      # Unassign current slot (from within pool worktree)
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Load pool state
     state = load_pool_state(repo.pool_json_path)
     if state is None:
-        user_output("Error: No pool configured. Run `erk br create` first.")
+        user_output("Error: No pool configured. Run `erk branch create` first.")
         raise SystemExit(1) from None
 
     # Find the assignment to remove
@@ -181,7 +181,7 @@ def branch_unassign(ctx: ErkContext, worktree: str | None) -> None:
         if assignment is None:
             user_output(
                 "Error: Not inside a pool slot. Specify worktree name.\n"
-                "Usage: erk br unassign WORKTREE"
+                "Usage: erk slot unassign WORKTREE"
             )
             raise SystemExit(1) from None
 

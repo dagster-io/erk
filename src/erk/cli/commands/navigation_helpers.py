@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import render_activation_script
-from erk.cli.commands.branch.unassign_cmd import execute_unassign
+from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
