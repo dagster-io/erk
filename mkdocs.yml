@@ -1,0 +1,37 @@
+site_name: Erk Documentation
+site_url: https://dagster-io.github.io/erk/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.expand
+    - search.highlight
+    - content.code.copy
+
+nav:
+  - Getting Started:
+      - index.md
+  - Concepts: []
+  - Guides: []
+  - Reference: []
+  - Troubleshooting: []
+
+exclude_docs: |
+  learned/
+  developer/
+  user/
+  public-content/

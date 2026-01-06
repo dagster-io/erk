@@ -1,4 +1,4 @@
-.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools
+.PHONY: format format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -138,6 +138,17 @@ reinstall-erk-tools:
 # Use erk-dev publish-to-pypi command instead (recommended)
 publish: build
 	erk-dev publish-to-pypi
+
+# === Documentation ===
+
+docs:
+	uv run mkdocs build
+
+docs-serve:
+	uv run mkdocs serve
+
+docs-deploy:
+	uv run mkdocs gh-deploy --force
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
