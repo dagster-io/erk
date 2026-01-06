@@ -11,7 +11,16 @@ from tests.commands.submit.conftest import create_plan, setup_submit_context
 def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     """Test submit creates linked branch, pushes, creates draft PR, triggers workflow."""
     plan = create_plan("123", "Implement feature X")
-    ctx, fake_git, fake_github, _, repo_root = setup_submit_context(tmp_path, {"123": plan})
+    repo_root = tmp_path / "repo"
+    ctx, fake_git, fake_github, _, repo_root = setup_submit_context(
+        tmp_path,
+        {"123": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "main"},
+            "trunk_branches": {repo_root: "master"},
+            "remote_branches": {repo_root: ["origin/main"]},
+        },
+    )
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)

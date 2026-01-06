@@ -95,3 +95,37 @@ def test_submit_from_non_placeholder_branch_uses_current(tmp_path: Path) -> None
     assert len(fake_github.created_prs) == 1
     _, _, _, base, _ = fake_github.created_prs[0]
     assert base == "feature/parent"  # Current branch, NOT trunk
+
+
+def test_submit_from_unpushed_branch_uses_trunk(tmp_path: Path) -> None:
+    """Test submit uses trunk as base when on a non-placeholder branch not pushed to remote."""
+    plan = create_plan("123", "Implement feature X")
+
+    repo_root = tmp_path / "repo"
+
+    ctx, fake_git, fake_github, _, _ = setup_submit_context(
+        tmp_path,
+        plans={"123": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "feature/local-only"},
+            "trunk_branches": {repo_root: "master"},
+            # Note: remote_branches does NOT include origin/feature/local-only
+            "remote_branches": {repo_root: []},
+        },
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+    assert "issue(s) submitted successfully!" in result.output
+
+    # Verify PR was created with trunk as base (not the unpushed branch)
+    assert len(fake_github.created_prs) == 1
+    _, _, _, base, _ = fake_github.created_prs[0]
+    assert base == "master"  # Should be trunk, NOT feature/local-only
+
+    # Verify branch was created from trunk
+    assert len(fake_git.created_branches) == 1
+    _, _, created_base = fake_git.created_branches[0]
+    assert created_base == "origin/master"
