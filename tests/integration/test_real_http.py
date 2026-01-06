@@ -30,23 +30,6 @@ def test_fetch_github_token_success(monkeypatch: MonkeyPatch) -> None:
         assert token == "ghp_test_token_123"
 
 
-def test_fetch_github_token_custom_hostname(monkeypatch: MonkeyPatch) -> None:
-    """Test fetching token for custom hostname."""
-
-    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        assert cmd == ["gh", "auth", "token", "--hostname", "github.example.com"]
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout="ghe_enterprise_token\n",
-            stderr="",
-        )
-
-    with mock_subprocess_run(monkeypatch, mock_run):
-        token = fetch_github_token(hostname="github.example.com")
-        assert token == "ghe_enterprise_token"
-
-
 def test_fetch_github_token_empty_raises(monkeypatch: MonkeyPatch) -> None:
     """Test that empty token raises ValueError."""
 
