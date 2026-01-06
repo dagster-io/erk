@@ -133,8 +133,16 @@ def upgrade_repo(ctx: ErkContext) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
     current_version = get_current_version()
 
+    # Check if this is an erk-managed repository
+    erk_dir = repo.root / ".erk"
+    if not erk_dir.exists():
+        user_output(click.style("Error: ", fg="red") + "Not an erk-managed repository")
+        user_output(f"The directory {repo.root} does not contain a .erk directory.")
+        user_output("This command only works in repositories initialized with erk.")
+        raise SystemExit(1)
+
     # Update version file
-    version_file = repo.root / ".erk" / "required-erk-uv-tool-version"
+    version_file = erk_dir / "required-erk-uv-tool-version"
     version_file.write_text(f"{current_version}\n", encoding="utf-8")
     user_output(f"Updated required version to {current_version}")
 

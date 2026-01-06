@@ -45,14 +45,24 @@ class RealGitHubIssues(GitHubIssues):
         If target_repo is set, inserts -R owner/repo after 'gh' in the command.
         The -R flag must come immediately after 'gh' for most gh subcommands.
 
+        Note: The -R flag is NOT supported by `gh api` - that subcommand uses
+        {owner}/{repo} placeholders in the endpoint instead. For `gh api`
+        commands, we substitute the placeholders with the target repo value.
+
         Args:
             base_cmd: Base command starting with 'gh'
 
         Returns:
-            Command with -R flag inserted if target_repo is set
+            Command with -R flag inserted if target_repo is set,
+            or with {owner}/{repo} substituted for gh api commands
         """
         if self._target_repo is None:
             return base_cmd
+        # gh api doesn't support -R flag - substitute {owner}/{repo} in endpoint
+        if len(base_cmd) > 1 and base_cmd[1] == "api":
+            return [
+                arg.replace("{owner}/{repo}", self._target_repo) for arg in base_cmd
+            ]
         # Insert -R owner/repo after 'gh' but before subcommand
         return [base_cmd[0], "-R", self._target_repo, *base_cmd[1:]]
 
