@@ -124,12 +124,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
     def execute_command_streaming(
         self,
+        *,
         command: str,
         worktree_path: Path,
         dangerous: bool,
-        verbose: bool = False,
-        debug: bool = False,
-        model: str | None = None,
+        verbose: bool,
+        debug: bool,
+        model: str | None,
     ) -> Iterator[ClaudeEvent]:
         """Track command execution and yield simulated typed events.
 

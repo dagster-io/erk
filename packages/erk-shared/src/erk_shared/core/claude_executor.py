@@ -172,12 +172,13 @@ class ClaudeExecutor(ABC):
     @abstractmethod
     def execute_command_streaming(
         self,
+        *,
         command: str,
         worktree_path: Path,
         dangerous: bool,
-        verbose: bool = False,
-        debug: bool = False,
-        model: str | None = None,
+        verbose: bool,
+        debug: bool,
+        model: str | None,
     ) -> Iterator[ClaudeEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
 
@@ -249,7 +250,12 @@ class ClaudeExecutor(ABC):
         success = True
 
         for event in self.execute_command_streaming(
-            command, worktree_path, dangerous, verbose, model=model
+            command=command,
+            worktree_path=worktree_path,
+            dangerous=dangerous,
+            verbose=verbose,
+            debug=False,
+            model=model,
         ):
             match event:
                 case TextEvent(content=text):

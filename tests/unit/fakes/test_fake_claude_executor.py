@@ -19,6 +19,9 @@ def test_fake_claude_executor_simulates_no_output() -> None:
             command="/test:command",
             worktree_path=Path("/fake/path"),
             dangerous=False,
+            verbose=False,
+            debug=False,
+            model=None,
         )
     )
 
@@ -38,6 +41,9 @@ def test_fake_claude_executor_simulates_process_error() -> None:
             command="/test:command",
             worktree_path=Path("/fake/path"),
             dangerous=False,
+            verbose=False,
+            debug=False,
+            model=None,
         )
     )
 
@@ -58,6 +64,9 @@ def test_fake_claude_executor_process_error_takes_precedence() -> None:
             command="/test:command",
             worktree_path=Path("/fake/path"),
             dangerous=False,
+            verbose=False,
+            debug=False,
+            model=None,
         )
     )
 
@@ -78,6 +87,9 @@ def test_fake_claude_executor_no_output_takes_precedence_over_command_fail() -> 
             command="/test:command",
             worktree_path=Path("/fake/path"),
             dangerous=False,
+            verbose=False,
+            debug=False,
+            model=None,
         )
     )
 

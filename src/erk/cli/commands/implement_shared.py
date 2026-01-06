@@ -247,6 +247,7 @@ def build_claude_command(slash_command: str, dangerous: bool, model: str | None)
 
 def execute_interactive_mode(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     worktree_path: Path,
     dangerous: bool,
@@ -336,6 +337,7 @@ def execute_non_interactive_mode(
                 worktree_path=worktree_path,
                 dangerous=dangerous,
                 model=model,
+                debug=False,
             )
 
         all_results.append(result)

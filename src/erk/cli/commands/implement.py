@@ -465,7 +465,14 @@ def _implement_from_issue(
         )
     else:
         # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=wt_path,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
 
 
 def _implement_from_file(
@@ -562,7 +569,14 @@ def _implement_from_file(
         )
     else:
         # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=wt_path,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
 
 
 @alias("impl")

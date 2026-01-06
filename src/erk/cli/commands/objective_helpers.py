@@ -118,6 +118,8 @@ def prompt_objective_update(
             command=cmd,
             worktree_path=repo_root,
             dangerous=True,
+            model=None,
+            debug=False,
         )
 
         # Add feedback AFTER streaming completes

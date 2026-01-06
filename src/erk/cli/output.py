@@ -120,11 +120,12 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
 
 def stream_command_with_feedback(
     executor: ClaudeExecutor,
+    *,
     command: str,
     worktree_path: Path,
     dangerous: bool,
-    model: str | None = None,
-    debug: bool = False,
+    model: str | None,
+    debug: bool,
 ) -> CommandResult:
     """Stream Claude command execution with live print-based feedback.
 
@@ -172,7 +173,12 @@ def stream_command_with_feedback(
 
     # Stream events in real-time
     event_stream = executor.execute_command_streaming(
-        command, worktree_path, dangerous, verbose=False, debug=debug, model=model
+        command=command,
+        worktree_path=worktree_path,
+        dangerous=dangerous,
+        verbose=False,
+        debug=debug,
+        model=model,
     )
     if debug:
         click.echo(click.style("[DEBUG] Starting event stream...", fg="yellow"), err=True)
@@ -287,6 +293,9 @@ def stream_fix_conflicts(
         command="/erk:fix-conflicts",
         worktree_path=worktree_path,
         dangerous=True,  # Conflict resolution modifies git state
+        verbose=False,
+        debug=False,
+        model=None,
     ):
         match event:
             case TextEvent(content=content):
