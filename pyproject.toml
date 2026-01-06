@@ -75,6 +75,8 @@ packages = ["src/erk"]
 # Optional feature: dignified-review (workflow + prompt)
 ".github/workflows/dignified-python-review.yml" = "erk/data/github/workflows/dignified-python-review.yml"
 ".github/prompts/dignified-python-review.md" = "erk/data/github/prompts/dignified-python-review.md"
+# CI autofix prompt (used by erk-impl workflow)
+".github/prompts/ci-autofix.md" = "erk/data/github/prompts/ci-autofix.md"
 
 [tool.ruff]
 target-version = "py311"
