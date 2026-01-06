@@ -37,7 +37,7 @@ BUNDLED_SKILLS = frozenset(
 BUNDLED_AGENTS = frozenset({"devrun"})
 BUNDLED_WORKFLOWS = frozenset({"erk-impl.yml"})
 # Actions (composite GitHub actions) that erk syncs
-BUNDLED_ACTIONS = frozenset({"setup-claude-erk"})
+BUNDLED_ACTIONS = frozenset({"setup-claude-code", "setup-claude-erk"})
 # Hook configurations that erk adds to settings.json
 BUNDLED_HOOKS = frozenset({"user-prompt-hook", "exit-plan-mode-hook"})
 

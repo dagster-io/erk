@@ -223,10 +223,9 @@ def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> N
     (bundled_skill / "SKILL.md").write_text("# Bundled Skill", encoding="utf-8")
 
     # Create a non-bundled skill (should NOT be synced)
-    # Note: dignified-python is now opt-in via --with-dignified-review
-    non_bundled_skill = source_dir / "dignified-python"
+    non_bundled_skill = source_dir / "some-custom-skill"
     non_bundled_skill.mkdir(parents=True)
-    (non_bundled_skill / "SKILL.md").write_text("# Opt-in Skill", encoding="utf-8")
+    (non_bundled_skill / "SKILL.md").write_text("# Custom Skill", encoding="utf-8")
 
     target_dir = tmp_path / "target" / "skills"
 
@@ -238,8 +237,8 @@ def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> N
     # Bundled skill should exist
     assert (target_dir / "learned-docs" / "SKILL.md").exists()
 
-    # Opt-in skill should NOT exist (dignified-python is now opt-in)
-    assert not (target_dir / "dignified-python").exists()
+    # Non-bundled skill should NOT exist
+    assert not (target_dir / "some-custom-skill").exists()
 
 
 def test_sync_directory_artifacts_only_syncs_bundled_agents(tmp_path: Path) -> None:
@@ -313,10 +312,10 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "SKILL.md").write_text("# Bundled", encoding="utf-8")
 
-    # Create non-bundled skill (dignified-python is now opt-in)
-    non_bundled_skill = bundled_claude / "skills" / "dignified-python"
+    # Create non-bundled skill (should NOT be synced)
+    non_bundled_skill = bundled_claude / "skills" / "some-custom-skill"
     non_bundled_skill.mkdir(parents=True)
-    (non_bundled_skill / "SKILL.md").write_text("# Opt-in", encoding="utf-8")
+    (non_bundled_skill / "SKILL.md").write_text("# Custom", encoding="utf-8")
 
     # Create bundled agent
     bundled_agent = bundled_claude / "agents" / "devrun"
@@ -358,8 +357,8 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     assert (target_dir / ".claude" / "agents" / "devrun" / "AGENT.md").exists()
     assert (target_dir / ".claude" / "commands" / "erk" / "plan-implement.md").exists()
 
-    # Non-bundled/opt-in artifacts should NOT exist
-    assert not (target_dir / ".claude" / "skills" / "dignified-python").exists()
+    # Non-bundled artifacts should NOT exist
+    assert not (target_dir / ".claude" / "skills" / "some-custom-skill").exists()
     assert not (target_dir / ".claude" / "agents" / "haiku-devrun").exists()
     assert not (target_dir / ".claude" / "commands" / "local").exists()
 
@@ -515,10 +514,14 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
     source_dir = tmp_path / "source"
     actions_dir = source_dir / "actions"
 
-    # Create a bundled action (setup-claude-erk is in BUNDLED_ACTIONS)
-    action_path = actions_dir / "setup-claude-erk"
-    action_path.mkdir(parents=True)
-    (action_path / "action.yml").write_text("name: Setup Claude Erk", encoding="utf-8")
+    # Create bundled actions (both are in BUNDLED_ACTIONS)
+    action_erk = actions_dir / "setup-claude-erk"
+    action_erk.mkdir(parents=True)
+    (action_erk / "action.yml").write_text("name: Setup Claude Erk", encoding="utf-8")
+
+    action_code = actions_dir / "setup-claude-code"
+    action_code.mkdir(parents=True)
+    (action_code / "action.yml").write_text("name: Setup Claude Code", encoding="utf-8")
 
     # Create a non-bundled action (should NOT be synced)
     non_bundled = actions_dir / "check-worker-impl"
@@ -529,18 +532,20 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
 
     copied, synced = _sync_actions(source_dir, target_dir)
 
-    # Should copy exactly 1 file
-    assert copied == 1
+    # Should copy exactly 2 files (both bundled actions)
+    assert copied == 2
 
-    # Bundled action should exist
+    # Both bundled actions should exist
     assert (target_dir / "setup-claude-erk" / "action.yml").exists()
+    assert (target_dir / "setup-claude-code" / "action.yml").exists()
 
     # Non-bundled action should NOT exist
     assert not (target_dir / "check-worker-impl").exists()
 
-    # Verify synced artifact has correct key
-    assert len(synced) == 1
-    assert synced[0].key == "actions/setup-claude-erk"
+    # Verify synced artifacts have correct keys
+    assert len(synced) == 2
+    synced_keys = {s.key for s in synced}
+    assert synced_keys == {"actions/setup-claude-erk", "actions/setup-claude-code"}
 
 
 def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
@@ -549,11 +554,15 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
     bundled_claude = tmp_path / "bundled"
     bundled_claude.mkdir()
 
-    # Create bundled .github/ with actions
+    # Create bundled .github/ with both bundled actions
     bundled_github = tmp_path / "bundled_github"
-    bundled_actions = bundled_github / "actions" / "setup-claude-erk"
-    bundled_actions.mkdir(parents=True)
-    (bundled_actions / "action.yml").write_text("name: Setup", encoding="utf-8")
+    action_erk = bundled_github / "actions" / "setup-claude-erk"
+    action_erk.mkdir(parents=True)
+    (action_erk / "action.yml").write_text("name: Setup Erk", encoding="utf-8")
+
+    action_code = bundled_github / "actions" / "setup-claude-code"
+    action_code.mkdir(parents=True)
+    (action_code / "action.yml").write_text("name: Setup Code", encoding="utf-8")
 
     # Create target directory
     target_dir = tmp_path / "project"
@@ -567,11 +576,12 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # 1 action + 2 hooks = 3 artifacts
-    assert result.artifacts_installed == 3
+    # 2 actions + 2 hooks = 4 artifacts
+    assert result.artifacts_installed == 4
 
-    # Verify action was copied
+    # Verify both actions were copied
     assert (target_dir / ".github" / "actions" / "setup-claude-erk" / "action.yml").exists()
+    assert (target_dir / ".github" / "actions" / "setup-claude-code" / "action.yml").exists()
 
 
 def test_sync_dignified_review_copies_all_artifacts(tmp_path: Path) -> None:
