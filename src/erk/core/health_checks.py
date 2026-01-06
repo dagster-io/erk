@@ -32,6 +32,8 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
 from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.shell.abc import Shell
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.plan_issues import get_erk_label_definitions
 from erk_shared.github_admin.abc import GitHubAdmin
 
 
@@ -690,6 +692,56 @@ def check_claude_erk_permission(repo_root: Path) -> CheckResult:
         )
 
 
+def check_plans_repo_labels(
+    repo_root: Path,
+    plans_repo: str,
+    github_issues: GitHubIssues,
+) -> CheckResult:
+    """Check that required erk labels exist in the plans repository.
+
+    When plans_repo is configured, issues are created in that repository.
+    This check verifies that all erk labels (erk-plan, erk-extraction,
+    erk-objective) exist in the target repository.
+
+    Args:
+        repo_root: Path to the working repository root (for gh CLI context)
+        plans_repo: Target repository in "owner/repo" format
+        github_issues: GitHubIssues interface (should be configured with target_repo)
+
+    Returns:
+        CheckResult indicating whether labels are present
+    """
+    labels = get_erk_label_definitions()
+    missing_labels: list[str] = []
+
+    # Check each label exists
+    for label in labels:
+        try:
+            github_issues.ensure_label_exists(
+                repo_root=repo_root,
+                label=label.name,
+                description=label.description,
+                color=label.color,
+            )
+        except RuntimeError:
+            # Label doesn't exist or we can't create it
+            missing_labels.append(label.name)
+
+    if missing_labels:
+        return CheckResult(
+            name="plans-repo-labels",
+            passed=False,
+            message=f"Missing labels in {plans_repo}: {', '.join(missing_labels)}",
+            remediation="Run 'erk init' to set up labels, or create them manually in GitHub",
+        )
+
+    return CheckResult(
+        name="plans-repo-labels",
+        passed=True,
+        message=f"Labels configured in {plans_repo}",
+    )
+
+
 def check_repository(ctx: ErkContext) -> CheckResult:
     """Check repository setup."""
     # First check if we're in a git repo using git_common_dir
@@ -1250,6 +1302,17 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         results.append(check_workflow_permissions(ctx, repo_root, admin))
         # Managed artifacts check (consolidated from orphaned + missing)
         results.append(check_managed_artifacts(repo_root))
+
+        # Check plans_repo labels if configured
+        from erk.cli.config import load_config as load_repo_config
+        from erk_shared.github.issues.real import RealGitHubIssues
+
+        repo_config = load_repo_config(repo_root)
+        if repo_config.plans_repo is not None:
+            github_issues = RealGitHubIssues(target_repo=repo_config.plans_repo)
+            results.append(
+                check_plans_repo_labels(repo_root, repo_config.plans_repo, github_issues)
+            )
 
         from erk.core.health_checks_dogfooder import run_early_dogfooder_checks
 

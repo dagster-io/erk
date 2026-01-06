@@ -356,3 +356,38 @@ def _ensure_labels_exist(
         return f"Failed to ensure labels exist: {e}"
 
     return None
+
+
+@dataclass(frozen=True)
+class LabelDefinition:
+    """Definition of a label with its properties."""
+
+    name: str
+    description: str
+    color: str
+
+
+def get_erk_label_definitions() -> list[LabelDefinition]:
+    """Get all erk label definitions.
+
+    Returns list of LabelDefinition for all erk labels (erk-plan,
+    erk-extraction, erk-objective). Used by init and doctor commands
+    to set up and verify labels in target issue repositories.
+    """
+    return [
+        LabelDefinition(
+            name=_LABEL_ERK_PLAN,
+            description=_LABEL_ERK_PLAN_DESC,
+            color=_LABEL_ERK_PLAN_COLOR,
+        ),
+        LabelDefinition(
+            name=_LABEL_ERK_EXTRACTION,
+            description=_LABEL_ERK_EXTRACTION_DESC,
+            color=_LABEL_ERK_EXTRACTION_COLOR,
+        ),
+        LabelDefinition(
+            name=_LABEL_ERK_OBJECTIVE,
+            description=_LABEL_ERK_OBJECTIVE_DESC,
+            color=_LABEL_ERK_OBJECTIVE_COLOR,
+        ),
+    ]
