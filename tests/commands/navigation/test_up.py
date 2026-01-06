@@ -770,12 +770,12 @@ def test_up_delete_current_force_with_open_pr_confirmed() -> None:
             git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
         )
 
-        # Simulate user confirming with 'y'
+        # Simulate user confirming delete with 'y', declining close PR with 'n'
         result = runner.invoke(
             cli,
             ["up", "--delete-current", "-f", "--script"],
             obj=test_ctx,
-            input="y\n",
+            input="y\nn\n",
             catch_exceptions=False,
         )
 
