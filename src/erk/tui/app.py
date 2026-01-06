@@ -696,7 +696,7 @@ class PlanDetailScreen(ModalScreen):
         elif command_id == "land_pr":
             if row.pr_number and self._repo_root is not None:
                 self.run_streaming_command(
-                    ["erk", "land", str(row.pr_number), "--script"],
+                    ["erk", "land", str(row.pr_number), "--no-activate"],
                     cwd=self._repo_root,
                     title=f"Landing PR #{row.pr_number}",
                 )
@@ -1370,7 +1370,7 @@ class ErkDashApp(App):
                 self.push_screen(detail_screen)
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "land", str(row.pr_number), "--script"],
+                        ["erk", "land", str(row.pr_number), "--no-activate"],
                         cwd=self._provider.repo_root,
                         title=f"Landing PR #{row.pr_number}",
                     )

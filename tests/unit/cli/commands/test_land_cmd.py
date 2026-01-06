@@ -241,6 +241,7 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
             branch="feature-branch",
             worktree_path=worktree_path,
             script=False,
+            no_activate=False,
             pull_flag=False,
             force=True,
             is_current_branch=False,
@@ -307,6 +308,7 @@ def test_cleanup_and_navigate_dry_run_shows_summary() -> None:
                 branch="feature-branch",
                 worktree_path=worktree_path,
                 script=False,
+                no_activate=False,
                 pull_flag=False,
                 force=True,
                 is_current_branch=False,
@@ -321,3 +323,108 @@ def test_cleanup_and_navigate_dry_run_shows_summary() -> None:
         # The dry-run summary is output via user_output which goes to stderr
         # Note: user_output uses click.echo which may not capture in StringIO
         # The test mainly verifies the function doesn't crash in dry-run mode
+
+
+def test_cleanup_and_navigate_no_activate_skips_navigation() -> None:
+    """Test that no_activate=True skips navigation and exits cleanly."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        worktree_path = env.erk_root / "repos" / env.cwd.name / "worktrees" / "feature-branch"
+
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            existing_paths={worktree_path, env.cwd, env.git_dir},
+        )
+
+        ctx = context_for_test(
+            git=fake_git,
+            graphite=FakeGraphite(),
+            cwd=worktree_path,
+            dry_run=False,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=env.erk_root / "repos" / env.cwd.name,
+            worktrees_dir=env.erk_root / "repos" / env.cwd.name / "worktrees",
+            pool_json_path=env.erk_root / "repos" / env.cwd.name / "pool.json",
+            github=GitHubRepoId(owner="owner", repo="repo"),
+        )
+
+        # Call with no_activate=True - should exit immediately without navigation
+        try:
+            _cleanup_and_navigate(
+                ctx=ctx,
+                repo=repo,
+                branch="feature-branch",
+                worktree_path=worktree_path,
+                script=False,
+                no_activate=True,
+                pull_flag=False,
+                force=True,
+                is_current_branch=True,
+                target_child_branch=None,
+                objective_number=None,
+            )
+        except SystemExit as e:
+            assert e.code == 0  # Should exit cleanly
+
+        # Verify that no navigation script was generated
+        # (script_writer was not called because we exited before navigation)
+        assert ctx.script_writer.written_scripts == {}
+
+
+def test_cleanup_and_navigate_no_activate_still_does_cleanup() -> None:
+    """Test that no_activate=True still performs worktree cleanup before exiting."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        worktree_path = env.erk_root / "repos" / env.cwd.name / "worktrees" / "feature-branch"
+
+        fake_git = FakeGit(
+            worktrees={env.cwd: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            existing_paths={worktree_path, env.cwd, env.git_dir},
+        )
+
+        ctx = context_for_test(
+            git=fake_git,
+            graphite=FakeGraphite(),
+            cwd=worktree_path,
+            dry_run=False,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=env.erk_root / "repos" / env.cwd.name,
+            worktrees_dir=env.erk_root / "repos" / env.cwd.name / "worktrees",
+            pool_json_path=env.erk_root / "repos" / env.cwd.name / "pool.json",
+            github=GitHubRepoId(owner="owner", repo="repo"),
+        )
+
+        # Call with no_activate=True and worktree_path
+        try:
+            _cleanup_and_navigate(
+                ctx=ctx,
+                repo=repo,
+                branch="feature-branch",
+                worktree_path=worktree_path,
+                script=False,
+                no_activate=True,
+                pull_flag=False,
+                force=True,
+                is_current_branch=True,
+                target_child_branch=None,
+                objective_number=None,
+            )
+        except SystemExit as e:
+            assert e.code == 0  # Should exit cleanly
+
+        # Verify worktree was removed as part of cleanup
+        assert worktree_path in fake_git.removed_worktrees

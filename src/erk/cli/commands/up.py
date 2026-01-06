@@ -12,7 +12,7 @@ from erk.cli.commands.navigation_helpers import (
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
-from erk.cli.help_formatter import script_option
+from erk.cli.help_formatter import no_activate_option, script_option
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.output.output import machine_output, user_output
@@ -20,6 +20,7 @@ from erk_shared.output.output import machine_output, user_output
 
 @click.command("up", cls=GraphiteCommandWithHiddenOptions)
 @script_option
+@no_activate_option
 @click.option(
     "--delete-current",
     is_flag=True,
@@ -32,7 +33,9 @@ from erk_shared.output.output import machine_output, user_output
     help="Force deletion even if marker exists or PR is open (prompts)",
 )
 @click.pass_obj
-def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
+def up_cmd(
+    ctx: ErkContext, script: bool, no_activate: bool, delete_current: bool, force: bool
+) -> None:
     """Move to child branch in worktree stack.
 
     With shell integration (recommended):
@@ -128,7 +131,7 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
                 comment=f"activate {target_wt_path.name}",
             )
             machine_output(str(result.path), nl=False)
-        else:
+        elif not no_activate:
             # Show user message for manual navigation
             user_output(
                 "Shell integration not detected. "
@@ -140,6 +143,9 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
 
         # Exit after cleanup
+        raise SystemExit(0)
+    elif no_activate:
+        # Skip navigation when --no-activate is passed (for TUI/CI use)
         raise SystemExit(0)
     else:
         # No cleanup needed, use standard activation

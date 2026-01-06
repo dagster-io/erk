@@ -231,6 +231,10 @@ def _cleanup_and_navigate(
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
 
+    # Skip navigation if --no-activate was passed (for TUI/CI use)
+    if no_activate:
+        raise SystemExit(0)
+
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
         _navigate_after_land(ctx, repo, script, pull_flag, target_child_branch)
@@ -386,14 +390,30 @@ def land(
     # Determine if landing current branch or a specific target
     if target is None:
         # Landing current branch's PR (original behavior)
-        _land_current_branch(ctx, repo, script, no_activate, up_flag, force, pull_flag)
+        _land_current_branch(
+            ctx,
+            repo,
+            script=script,
+            no_activate=no_activate,
+            up_flag=up_flag,
+            force=force,
+            pull_flag=pull_flag,
+        )
     else:
         # Parse the target argument
         parsed = parse_argument(target)
 
         if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
-            _land_by_branch(ctx, repo, script, no_activate, force, pull_flag, target)
+            _land_by_branch(
+                ctx,
+                repo,
+                script=script,
+                no_activate=no_activate,
+                force=force,
+                pull_flag=pull_flag,
+                branch_name=target,
+            )
         else:
             # Landing a specific PR by number or URL
             if parsed.pr_number is None:
@@ -402,12 +422,22 @@ def land(
                     "Expected a PR number (e.g., 123) or GitHub URL."
                 )
                 raise SystemExit(1)
-            _land_specific_pr(ctx, repo, script, no_activate, up_flag, force, pull_flag, parsed.pr_number)
+            _land_specific_pr(
+                ctx,
+                repo,
+                script=script,
+                no_activate=no_activate,
+                up_flag=up_flag,
+                force=force,
+                pull_flag=pull_flag,
+                pr_number=parsed.pr_number,
+            )
 
 
 def _land_current_branch(
     ctx: ErkContext,
     repo: RepoContext,
+    *,
     script: bool,
     no_activate: bool,
     up_flag: bool,
@@ -489,6 +519,7 @@ def _land_current_branch(
         current_branch,
         current_worktree_path,
         script,
+        no_activate,
         pull_flag,
         force,
         is_current_branch=True,
@@ -500,7 +531,9 @@ def _land_current_branch(
 def _land_specific_pr(
     ctx: ErkContext,
     repo: RepoContext,
+    *,
     script: bool,
+    no_activate: bool,
     up_flag: bool,
     force: bool,
     pull_flag: bool,
@@ -591,6 +624,7 @@ def _land_specific_pr(
         branch,
         worktree_path,
         script,
+        no_activate,
         pull_flag,
         force,
         is_current_branch,
@@ -602,7 +636,9 @@ def _land_specific_pr(
 def _land_by_branch(
     ctx: ErkContext,
     repo: RepoContext,
+    *,
     script: bool,
+    no_activate: bool,
     force: bool,
     pull_flag: bool,
     branch_name: str,
@@ -688,6 +724,7 @@ def _land_by_branch(
         branch_name,
         worktree_path,
         script,
+        no_activate,
         pull_flag,
         force,
         is_current_branch,
