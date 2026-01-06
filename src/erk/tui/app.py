@@ -625,6 +625,8 @@ class PlanDetailScreen(ModalScreen):
             return
 
         success = True
+        # Error boundary: catch all exceptions from HTTP operations to display
+        # them in the output panel rather than crashing the TUI.
         try:
             self.app.call_from_thread(panel.append_line, "Closing linked PRs...")
             closed_prs = self._executor.close_plan(issue_number, issue_url)
