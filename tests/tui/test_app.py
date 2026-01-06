@@ -817,3 +817,35 @@ class TestCommandPaletteFromMain:
             assert isinstance(detail_screen, PlanDetailScreen)
             # The flag should NOT be set (space = just detail, no palette)
             assert detail_screen._auto_open_palette is False
+
+
+class TestExecutePaletteCommandLandPR:
+    """Tests for execute_palette_command('land_pr').
+
+    Note: land_pr uses streaming output via subprocess. These tests verify
+    the guard conditions. The guard condition test (no PR) doesn't invoke
+    subprocess, so it can be tested without a real directory. Testing the
+    positive case with actual subprocess execution is done via integration tests.
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_land_pr_with_no_pr(self) -> None:
+        """Execute palette command land_pr does nothing if no PR."""
+        provider = FakePlanDataProvider(
+            [make_plan_row(123, "Test Plan")]  # No pr_number
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider, filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Execute land_pr command with no PR
+            app.execute_palette_command("land_pr")
+            await pilot.pause()
+
+            # Should not have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len

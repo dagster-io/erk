@@ -693,6 +693,14 @@ class PlanDetailScreen(ModalScreen):
                 )
                 # Don't dismiss - user must press Esc after completion
 
+        elif command_id == "land_pr":
+            if row.pr_number and self._repo_root is not None:
+                self.run_streaming_command(
+                    ["erk", "land", str(row.pr_number), "--script"],
+                    cwd=self._repo_root,
+                    title=f"Landing PR #{row.pr_number}",
+                )
+
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
         with Vertical(id="detail-dialog"):
@@ -1339,6 +1347,32 @@ class ErkDashApp(App):
                         ["erk", "plan", "submit", str(row.issue_number)],
                         cwd=self._provider.repo_root,
                         title=f"Submitting Plan #{row.issue_number}",
+                    )
+                )
+
+        elif command_id == "land_pr":
+            if row.pr_number:
+                executor = RealCommandExecutor(
+                    browser_launch=self._provider.browser.launch,
+                    clipboard_copy=self._provider.clipboard.copy,
+                    close_plan_fn=self._provider.close_plan,
+                    notify_fn=self.notify,
+                    refresh_fn=self.action_refresh,
+                    submit_to_queue_fn=self._provider.submit_to_queue,
+                )
+                detail_screen = PlanDetailScreen(
+                    row,
+                    clipboard=self._provider.clipboard,
+                    browser=self._provider.browser,
+                    executor=executor,
+                    repo_root=self._provider.repo_root,
+                )
+                self.push_screen(detail_screen)
+                detail_screen.call_after_refresh(
+                    lambda: detail_screen.run_streaming_command(
+                        ["erk", "land", str(row.pr_number), "--script"],
+                        cwd=self._provider.repo_root,
+                        title=f"Landing PR #{row.pr_number}",
                     )
                 )
 
