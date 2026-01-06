@@ -15,6 +15,7 @@ from erk_shared.core.fakes import (
     FakeScriptWriter,
 )
 from erk_shared.extraction.claude_installation import ClaudeInstallation
+from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -30,6 +31,7 @@ def context_for_test(
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
+    erk_installation: ErkInstallation | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -49,6 +51,7 @@ def context_for_test(
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+        erk_installation: Optional ErkInstallation. If None, creates FakeErkInstallation.
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
         cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -106,6 +109,9 @@ def context_for_test(
         pool_json_path=repo_dir / "pool.json",
     )
 
+    resolved_erk_installation: ErkInstallation = (
+        erk_installation if erk_installation is not None else FakeErkInstallation()
+    )
     fake_time = FakeTime()
     return ErkContext(
         git=resolved_git,
@@ -116,7 +122,7 @@ def context_for_test(
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
         time=fake_time,
-        erk_installation=FakeErkInstallation(),
+        erk_installation=resolved_erk_installation,
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
         claude_settings_store=FakeClaudeSettingsStore(),
         shell=FakeShell(),

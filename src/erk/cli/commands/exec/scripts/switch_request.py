@@ -20,14 +20,10 @@ Exit codes:
 """
 
 import json
-from pathlib import Path
 
 import click
 
-
-def _erk_root() -> Path:
-    """Get ~/.erk/ directory path."""
-    return Path.home() / ".erk"
+from erk_shared.context.helpers import require_erk_installation
 
 
 def _output_json(success: bool, message: str) -> None:
@@ -42,7 +38,8 @@ def _output_json(success: bool, message: str) -> None:
     "resume_command",
     help="Slash command to run after switching (e.g., /erk:plan-implement)",
 )
-def switch_request(target: str, resume_command: str | None) -> None:
+@click.pass_context
+def switch_request(ctx: click.Context, target: str, resume_command: str | None) -> None:
     """Write switch request markers for shell wrapper.
 
     TARGET is the issue number to implement (passed to `erk implement`).
@@ -63,7 +60,8 @@ def switch_request(target: str, resume_command: str | None) -> None:
       #   3. claude --continue /erk:plan-implement
       erk exec switch-request 123 --command /erk:plan-implement
     """
-    erk_root = _erk_root()
+    installation = require_erk_installation(ctx)
+    erk_root = installation.root()
 
     # Ensure ~/.erk/ exists
     if not erk_root.exists():
