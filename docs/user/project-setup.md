@@ -66,10 +66,10 @@ Prompt hooks let you customize how erk's AI-powered features behave. They live i
 
 ### Available Prompt Hooks
 
-| Hook File | Purpose |
-|-----------|---------|
-| `post-plan-implement-ci.md` | Custom CI workflow after plan implementation |
-| `commit-message-prompt.md` | Custom prompt for PR/commit message generation |
+| Hook File                   | Purpose                                        |
+| --------------------------- | ---------------------------------------------- |
+| `post-plan-implement-ci.md` | Custom CI workflow after plan implementation   |
+| `commit-message-prompt.md`  | Custom prompt for PR/commit message generation |
 
 ---
 
@@ -154,13 +154,14 @@ Customize how erk generates PR titles and commit messages. This hook completely 
 Generate a commit message following Conventional Commits format.
 
 ## Format
-
 ```
+
 <type>(<scope>): <description>
 
 [optional body]
 
 [optional footer(s)]
+
 ```
 
 ## Types
