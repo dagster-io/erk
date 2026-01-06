@@ -597,11 +597,9 @@ class PlanDetailScreen(ModalScreen):
         if process is None:
             return
 
-        # Kill the process (catch ProcessLookupError if already dead)
-        try:
+        # Kill the process if still running (LBYL pattern)
+        if process.poll() is None:
             process.kill()
-        except ProcessLookupError:
-            pass
 
         # Append timeout message to output panel
         panel = self._output_panel
