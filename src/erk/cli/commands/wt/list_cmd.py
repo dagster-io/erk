@@ -7,6 +7,7 @@ from rich.console import Console
 from rich.table import Table
 
 from erk.cli.alias import alias
+from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time, get_pr_status_emoji
@@ -182,7 +183,7 @@ def _format_last_commit_cell(
     return relative_time if relative_time else "-"
 
 
-def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
+def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool, show_all: bool) -> None:
     """List worktrees with fast local-only data.
 
     Shows a Rich table with columns:
@@ -191,6 +192,11 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
     - pr: PR emoji + number from Graphite cache
     - sync: Ahead/behind status
     - impl: Issue number from .impl/issue.json
+
+    Args:
+        ctx: Erk context
+        show_last_commit: Whether to show last commit time column
+        show_all: If False, filter out worktrees with placeholder branches (empty slots)
     """
     # Use ctx.repo if it's a valid RepoContext, otherwise discover
     if isinstance(ctx.repo, RepoContext):
@@ -202,6 +208,12 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
 
     # Get worktree info
     worktrees = ctx.git.list_worktrees(repo.root)
+
+    # Filter out empty slots (placeholder branches) unless --all is specified
+    if not show_all:
+        worktrees = [
+            wt for wt in worktrees if wt.branch is None or not is_placeholder_branch(wt.branch)
+        ]
 
     # Fetch all branch sync info in a single git call (batch operation for performance)
     all_sync_info = ctx.git.get_all_branch_sync_info(repo.root)
@@ -317,8 +329,15 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool = False) -> None:
 
 @alias("ls")
 @click.command("list")
+@click.option(
+    "-a",
+    "--all",
+    "show_all",
+    is_flag=True,
+    help="Show all worktrees including empty slots",
+)
 @click.pass_obj
-def list_wt(ctx: ErkContext) -> None:
+def list_wt(ctx: ErkContext, show_all: bool) -> None:
     """List worktrees with branch, PR, sync, and implementation info.
 
     Shows a fast local-only table with:
@@ -328,5 +347,8 @@ def list_wt(ctx: ErkContext) -> None:
     - sync: Ahead/behind status vs tracking branch
     - last: Last commit time
     - impl: Implementation issue number
+
+    By default, empty slots (worktrees with placeholder branches) are hidden.
+    Use --all to show them.
     """
-    _list_worktrees(ctx, show_last_commit=True)
+    _list_worktrees(ctx, show_last_commit=True, show_all=show_all)
