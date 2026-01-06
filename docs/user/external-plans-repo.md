@@ -1,11 +1,6 @@
----
-title: External Issues Repository Configuration
-read_when:
-  - "configuring plans to be stored in a separate repository"
-  - "setting up plans.repo in config.toml"
----
+# External Plans Repository
 
-# External Issues Repository Configuration
+> **Audience**: This guide is for **project maintainers** who want to store plan issues in a separate repository from their working code. If you're just getting started with erk, see [Project Setup](project-setup.md) first.
 
 Configure erk to store plan issues in a separate repository from your working repository.
 
