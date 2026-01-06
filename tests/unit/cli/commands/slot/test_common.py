@@ -11,6 +11,7 @@ from erk.cli.commands.slot.common import (
     find_oldest_assignment,
     get_placeholder_branch_name,
     get_pool_size,
+    is_placeholder_branch,
     is_slot_initialized,
 )
 from erk.cli.config import LoadedConfig
@@ -472,6 +473,30 @@ def test_get_placeholder_branch_name_invalid() -> None:
     """Returns None for invalid slot names."""
     assert get_placeholder_branch_name("invalid-name") is None
     assert get_placeholder_branch_name("erk-managed-wt-1") is None
+
+
+def test_is_placeholder_branch_valid() -> None:
+    """Returns True for valid placeholder branch names."""
+    assert is_placeholder_branch("__erk-slot-01-placeholder__") is True
+    assert is_placeholder_branch("__erk-slot-02-placeholder__") is True
+    assert is_placeholder_branch("__erk-slot-99-placeholder__") is True
+
+
+def test_is_placeholder_branch_invalid() -> None:
+    """Returns False for non-placeholder branch names."""
+    assert is_placeholder_branch("main") is False
+    assert is_placeholder_branch("master") is False
+    assert is_placeholder_branch("feature/my-branch") is False
+    # Missing underscores
+    assert is_placeholder_branch("erk-slot-01-placeholder") is False
+    # Wrong prefix
+    assert is_placeholder_branch("__erk-managed-wt-01__") is False
+    # Missing suffix
+    assert is_placeholder_branch("__erk-slot-01__") is False
+    # Extra content
+    assert is_placeholder_branch("__erk-slot-01-placeholder__-extra") is False
+    # Non-numeric slot
+    assert is_placeholder_branch("__erk-slot-xx-placeholder__") is False
 
 
 class TestFindAssignmentByWorktree:
