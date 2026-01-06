@@ -1,5 +1,8 @@
 ---
-read_when: configuring plans to be stored in a separate repository
+title: External Issues Repository Configuration
+read_when:
+  - "configuring plans to be stored in a separate repository"
+  - "setting up plans.repo in config.toml"
 ---
 
 # External Issues Repository Configuration
@@ -36,11 +39,11 @@ When `plans.repo` is set:
 
 Erk uses these labels to organize plan issues:
 
-| Label | Color | Description |
-|-------|-------|-------------|
-| `erk-plan` | `#0E8A16` (green) | Implementation plan for manual execution |
-| `erk-objective` | `#5319E7` (purple) | Multi-phase objective with roadmap |
-| `erk-extraction` | `#D93F0B` (orange) | Documentation extraction plan |
+| Label            | Color              | Description                              |
+| ---------------- | ------------------ | ---------------------------------------- |
+| `erk-plan`       | `#0E8A16` (green)  | Implementation plan for manual execution |
+| `erk-objective`  | `#5319E7` (purple) | Multi-phase objective with roadmap       |
+| `erk-extraction` | `#D93F0B` (orange) | Documentation extraction plan            |
 
 ### Automatic Label Setup
 

@@ -9,6 +9,7 @@
 - [ci/](ci/)
 - [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
 - [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+- [configuration/](configuration/)
 - [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
 - [erk-dev/](erk-dev/)
 - [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
