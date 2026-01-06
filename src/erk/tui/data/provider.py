@@ -319,7 +319,7 @@ class RealPlanDataProvider(PlanDataProvider):
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).
 
-        Uses PXXXX prefix matching on worktree names to associate worktrees
+        Uses PXXXX prefix matching on branch names to associate worktrees
         with issues. Branch names follow pattern: P{issue_number}-{slug}-{timestamp}
 
         Returns:
@@ -329,7 +329,9 @@ class RealPlanDataProvider(PlanDataProvider):
         worktree_by_issue: dict[int, tuple[str, str | None]] = {}
         worktrees = self._ctx.git.list_worktrees(self._location.root)
         for worktree in worktrees:
-            issue_number = extract_leading_issue_number(worktree.path.name)
+            issue_number = (
+                extract_leading_issue_number(worktree.branch) if worktree.branch else None
+            )
             if issue_number is not None:
                 if issue_number not in worktree_by_issue:
                     worktree_by_issue[issue_number] = (
