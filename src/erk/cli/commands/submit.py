@@ -714,6 +714,9 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         # If on a placeholder branch (local-only), use trunk as base
         if is_placeholder_branch(original_branch):
             target_branch = ctx.git.detect_trunk_branch(repo.root)
+        elif not ctx.git.branch_exists_on_remote(repo.root, "origin", original_branch):
+            # Current branch not pushed to remote - fall back to trunk
+            target_branch = ctx.git.detect_trunk_branch(repo.root)
         else:
             target_branch = original_branch
 
