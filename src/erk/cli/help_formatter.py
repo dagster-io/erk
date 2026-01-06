@@ -144,6 +144,30 @@ def script_option(fn: F) -> F:
     )(fn)
 
 
+def no_activate_option(fn: F) -> F:
+    """Decorator that adds --no-activate option.
+
+    Skips shell integration validation and activation script output.
+    Use for non-interactive contexts (TUI, CI, scripts) where directory
+    navigation isn't needed.
+
+    Must be applied alongside @script_option for commands that support both.
+
+    Example:
+        @click.command("land", cls=CommandWithHiddenOptions)
+        @script_option
+        @no_activate_option
+        def land_cmd(ctx: ErkContext, script: bool, no_activate: bool) -> None:
+            ...
+    """
+    return click.option(
+        "--no-activate",
+        is_flag=True,
+        hidden=True,
+        help="Skip activation/navigation. For non-interactive use.",
+    )(fn)
+
+
 class ErkCommandGroup(click.Group):
     """Click Group that organizes commands into logical sections in help output.
 

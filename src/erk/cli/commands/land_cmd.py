@@ -33,7 +33,7 @@ from erk.cli.commands.objective_helpers import (
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
-from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.help_formatter import CommandWithHiddenOptions, no_activate_option, script_option
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
@@ -153,6 +153,7 @@ def _cleanup_and_navigate(
     branch: str,
     worktree_path: Path | None,
     script: bool,
+    no_activate: bool,
     pull_flag: bool,
     force: bool,
     is_current_branch: bool,
@@ -169,6 +170,7 @@ def _cleanup_and_navigate(
         branch: Branch name to clean up
         worktree_path: Path to worktree (None if no worktree exists)
         script: Whether to output activation script
+        no_activate: Whether to skip navigation (for TUI/CI use)
         pull_flag: Whether to pull after landing
         force: Whether to skip cleanup confirmation
         is_current_branch: True if landing from the branch's worktree
@@ -298,6 +300,7 @@ def _navigate_after_land(
 
 @click.command("land", cls=CommandWithHiddenOptions)
 @script_option
+@no_activate_option
 @click.argument("target", required=False)
 @click.option(
     "--up",
@@ -326,6 +329,7 @@ def _navigate_after_land(
 def land(
     ctx: ErkContext,
     script: bool,
+    no_activate: bool,
     target: str | None,
     up_flag: bool,
     force: bool,
@@ -366,8 +370,9 @@ def land(
 
     repo = discover_repo_context(ctx, ctx.cwd)
 
-    # Validate shell integration for activation script output (skip in dry-run mode)
-    if not script and not ctx.dry_run:
+    # Validate shell integration for activation script output
+    # Skip validation in dry-run mode or when --no-activate is passed
+    if not script and not ctx.dry_run and not no_activate:
         user_output(
             click.style("Error: ", fg="red")
             + "This command requires shell integration for activation.\n\n"
@@ -381,14 +386,14 @@ def land(
     # Determine if landing current branch or a specific target
     if target is None:
         # Landing current branch's PR (original behavior)
-        _land_current_branch(ctx, repo, script, up_flag, force, pull_flag)
+        _land_current_branch(ctx, repo, script, no_activate, up_flag, force, pull_flag)
     else:
         # Parse the target argument
         parsed = parse_argument(target)
 
         if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
-            _land_by_branch(ctx, repo, script, force, pull_flag, target)
+            _land_by_branch(ctx, repo, script, no_activate, force, pull_flag, target)
         else:
             # Landing a specific PR by number or URL
             if parsed.pr_number is None:
@@ -397,13 +402,14 @@ def land(
                     "Expected a PR number (e.g., 123) or GitHub URL."
                 )
                 raise SystemExit(1)
-            _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, parsed.pr_number)
+            _land_specific_pr(ctx, repo, script, no_activate, up_flag, force, pull_flag, parsed.pr_number)
 
 
 def _land_current_branch(
     ctx: ErkContext,
     repo: RepoContext,
     script: bool,
+    no_activate: bool,
     up_flag: bool,
     force: bool,
     pull_flag: bool,
