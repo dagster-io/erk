@@ -95,6 +95,10 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str, fo
             )
             if not user_confirm("Delete branch anyway?", default=False):
                 raise SystemExit(1)
+            # Ask if user wants to close the PR
+            if user_confirm("Close the PR?", default=True):
+                ctx.github.close_pr(repo_root, pr_details.number)
+                user_output(f"✓ Closed PR #{pr_details.number}")
             return  # User confirmed, allow deletion
 
         # Block deletion for open PRs (active work in progress)
