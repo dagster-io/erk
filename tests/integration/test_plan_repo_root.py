@@ -84,7 +84,10 @@ def test_plan_issue_list_uses_repo_root_not_metadata_dir() -> None:
                 if captured_provider and captured_filters:
                     captured_provider.fetch_plans(captured_filters)
 
-        with patch("erk.cli.commands.plan.list_cmd.ErkDashApp", MockApp):
+        with (
+            patch("erk.cli.commands.plan.list_cmd.ErkDashApp", MockApp),
+            patch("erk.cli.commands.plan.list_cmd.fetch_github_token", return_value="fake-token"),
+        ):
             result = runner.invoke(dash, obj=ctx)
 
             # Assert: Command should succeed
