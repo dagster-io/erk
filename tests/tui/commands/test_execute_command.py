@@ -1,5 +1,7 @@
 """Tests for PlanDetailScreen.execute_command."""
 
+from pathlib import Path
+
 from erk.tui.app import PlanDetailScreen
 from erk.tui.data.types import PlanRowData
 from tests.fakes.command_executor import FakeCommandExecutor
@@ -247,7 +249,7 @@ class TestExecuteCommandLandPR:
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
         # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("land_pr")
         # No executor methods should be called (streaming is independent)
         assert executor.refresh_count == 0
@@ -256,7 +258,7 @@ class TestExecuteCommandLandPR:
         """land_pr does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor, repo_root="/some/path")
+        screen = PlanDetailScreen(row=row, executor=executor, repo_root=Path("/some/path"))
         screen.execute_command("land_pr")
         assert executor.refresh_count == 0
 

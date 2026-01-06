@@ -17,6 +17,7 @@ from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.events import Click
 from textual.screen import ModalScreen, Screen
+from textual.timer import Timer
 from textual.widgets import Header, Input, Label, Static
 
 from erk.tui.commands.executor import CommandExecutor
@@ -410,6 +411,8 @@ class PlanDetailScreen(ModalScreen):
         self._output_panel: CommandOutputPanel | None = None
         self._command_running = False
         self._auto_open_palette = auto_open_palette
+        self._running_process: subprocess.Popen[str] | None = None
+        self._stream_timeout_timer: Timer | None = None
 
     def on_mount(self) -> None:
         """Handle mount event - optionally open command palette."""
@@ -556,6 +559,8 @@ class PlanDetailScreen(ModalScreen):
         command: list[str],
         cwd: Path,
         title: str,
+        *,
+        timeout: float = 30.0,
     ) -> None:
         """Run command with live output in bottom panel.
 
@@ -563,6 +568,7 @@ class PlanDetailScreen(ModalScreen):
             command: Command to run as list of arguments
             cwd: Working directory for the command
             title: Title to display in the output panel
+            timeout: Timeout in seconds (default 30). Set to 0 to disable.
         """
         # Create and mount output panel
         self._output_panel = CommandOutputPanel(title)
@@ -570,8 +576,42 @@ class PlanDetailScreen(ModalScreen):
         dialog.mount(self._output_panel)
         self._command_running = True
 
+        # Set timeout timer if enabled
+        if timeout > 0:
+            self._stream_timeout_timer = self.set_timer(timeout, self._handle_stream_timeout)
+
         # Run subprocess in worker thread
         self._stream_subprocess(command, cwd)
+
+    def _handle_stream_timeout(self) -> None:
+        """Handle timeout of streaming command.
+
+        Called by Textual timer when the subprocess exceeds the timeout.
+        Kills the process and marks the command as failed.
+        """
+        # Clear timer reference since it has fired
+        self._stream_timeout_timer = None
+
+        # Check if process is still running
+        process = self._running_process
+        if process is None:
+            return
+
+        # Kill the process (catch ProcessLookupError if already dead)
+        try:
+            process.kill()
+        except ProcessLookupError:
+            pass
+
+        # Append timeout message to output panel
+        panel = self._output_panel
+        if panel is not None:
+            panel.append_line("")
+            panel.append_line("⏱️  Command timed out after 30 seconds")
+            panel.set_completed(success=False)
+
+        # Mark command as no longer running
+        self._command_running = False
 
     @work(thread=True)
     def _stream_subprocess(self, command: list[str], cwd: Path) -> None:
@@ -596,6 +636,9 @@ class PlanDetailScreen(ModalScreen):
             bufsize=1,
         )
 
+        # Store process reference for timeout handler
+        self._running_process = process
+
         if process.stdout is not None:
             for line in process.stdout:
                 self.app.call_from_thread(
@@ -604,9 +647,21 @@ class PlanDetailScreen(ModalScreen):
                 )
 
         return_code = process.wait()
-        success = return_code == 0
-        self.app.call_from_thread(panel.set_completed, success)
-        self._command_running = False
+
+        # Clear process reference
+        self._running_process = None
+
+        # Cancel timeout timer if still active
+        timer = self._stream_timeout_timer
+        if timer is not None:
+            timer.stop()
+            self._stream_timeout_timer = None
+
+        # Only mark complete if timeout handler hasn't already done so
+        if self._command_running:
+            success = return_code == 0
+            self.app.call_from_thread(panel.set_completed, success)
+            self._command_running = False
 
     def execute_command(self, command_id: str) -> None:
         """Execute a command from the palette.
