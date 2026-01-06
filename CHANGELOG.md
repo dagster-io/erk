@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of `7f5b08f3c`
+
+### Added
+
+- Add `erk branch delete` command with worktree-aware cleanup
+- Add HTTP client gateway for faster in-process plan closing in TUI
+- Add prompt to close open PR when deleting branch
+- Add 30-second timeout for streaming commands in TUI
+- Update upstack PR base branches to trunk when landing stacked PRs
+- Add MkDocs documentation build with GitHub Pages deployment
+- Bundle GitHub Actions and CI autofix prompt in package distribution for external repo erk-impl support
+- Add `erk doctor` health check for ERK_QUEUE_GH_PAT secret configuration
+
+### Changed
+
+- Restructure README into comprehensive documentation hub in `docs/`
+
 ## [0.4.5] - 2026-01-05 17:19 PT
 
 ### Changed
