@@ -42,6 +42,7 @@ from erk.core.worktree_pool import (
     save_pool_state,
     update_slot_objective,
 )
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -147,6 +148,70 @@ def check_unresolved_comments(
             raise SystemExit(0)
 
 
+def _execute_simple_land(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    branch: str,
+    pr_details: PRDetails,
+) -> int:
+    """Execute simple GitHub-only merge without Graphite stack validation.
+
+    This is the non-Graphite path for landing PRs. It performs:
+    1. PR state validation (must be OPEN)
+    2. Base branch validation (must target trunk)
+    3. GitHub merge API call
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root directory
+        branch: Branch name being landed
+        pr_details: PR details from GitHub
+
+    Returns:
+        PR number that was merged
+
+    Raises:
+        SystemExit(1) on validation or merge failure
+    """
+    pr_number = pr_details.number
+
+    # Validate PR state
+    if pr_details.state != "OPEN":
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Pull request #{pr_number} is not open (state: {pr_details.state})."
+        )
+        raise SystemExit(1)
+
+    # Validate PR base is trunk
+    trunk = ctx.git.detect_trunk_branch(repo_root)
+    if pr_details.base_ref_name != trunk:
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
+            + f"but should target '{trunk}'.\n\n"
+            + "The GitHub PR's base branch has diverged from your local stack.\n"
+            + "Update the PR base to trunk before landing."
+        )
+        raise SystemExit(1)
+
+    # Merge the PR via GitHub API
+    user_output(f"Merging PR #{pr_number}...")
+    subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
+    body = pr_details.body or None
+    merge_result = ctx.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
+
+    if merge_result is not True:
+        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+        user_output(
+            click.style("Error: ", fg="red") + f"Failed to merge PR #{pr_number}\n\n{error_detail}"
+        )
+        raise SystemExit(1)
+
+    return pr_number
+
+
 def _cleanup_and_navigate(
     ctx: ErkContext,
     *,
@@ -204,7 +269,10 @@ def _cleanup_and_navigate(
                 else:
                     save_pool_state(repo.pool_json_path, state)
             execute_unassign(ctx, repo, state, assignment)
-            ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+            if isinstance(ctx.graphite, GraphiteDisabled):
+                ctx.git.delete_branch(main_repo_root, branch, force=True)
+            else:
+                ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
             user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
         else:
             # Non-slot worktree: delete worktree and branch
@@ -221,7 +289,10 @@ def _cleanup_and_navigate(
         # No worktree - check if branch exists locally before deletion (LBYL)
         local_branches = ctx.git.list_local_branches(main_repo_root)
         if branch in local_branches:
-            ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+            if isinstance(ctx.graphite, GraphiteDisabled):
+                ctx.git.delete_branch(main_repo_root, branch, force=True)
+            else:
+                ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
             user_output(click.style("✓", fg="green") + f" Deleted branch '{branch}'")
         # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
 
@@ -364,9 +435,10 @@ def land(
       source <(erk land --script)
 
     Requires:
-    - Graphite enabled: 'erk config set use_graphite true'
     - PR must be open and ready to merge
-    - PR's base branch must be trunk (one level from trunk)
+    - PR's base branch must be trunk
+
+    Note: The --up flag requires Graphite for child branch tracking.
     """
     # Replace context with dry-run wrappers if needed
     if dry_run:
@@ -375,7 +447,6 @@ def land(
 
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
-    Ensure.graphite_available(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -444,6 +515,16 @@ def _land_current_branch(
     # Validate --up preconditions BEFORE any mutations (fail-fast)
     target_child_branch: str | None = None
     if up_flag:
+        # --up requires Graphite for child branch tracking
+        if isinstance(ctx.graphite, GraphiteDisabled):
+            user_output(
+                click.style("Error: ", fg="red")
+                + "--up flag requires Graphite for child branch tracking.\n\n"
+                + "To enable Graphite: erk config set use_graphite true\n\n"
+                + "Without --up, erk land will navigate to trunk after landing."
+            )
+            raise SystemExit(1)
+
         children = ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch)
         if len(children) == 0:
             user_output(
@@ -469,20 +550,33 @@ def _land_current_branch(
     if not isinstance(pr_details, PRNotFound):
         check_unresolved_comments(ctx, repo.root, pr_details.number, force)
 
-    # Step 1: Execute land-pr (merges the PR)
-    # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
-    result = render_events(execute_land_pr(ctx, ctx.cwd))
+    # Step 1: Execute land (merges the PR)
+    if isinstance(ctx.graphite, GraphiteDisabled):
+        # Simple GitHub-only merge path (no stack validation)
+        if isinstance(pr_details, PRNotFound):
+            user_output(
+                click.style("Error: ", fg="red")
+                + f"No pull request found for branch '{current_branch}'."
+            )
+            raise SystemExit(1)
+        merged_pr_number = _execute_simple_land(
+            ctx, repo_root=repo.root, branch=current_branch, pr_details=pr_details
+        )
+    else:
+        # Full Graphite-aware path with stack validation
+        # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
+        result = render_events(execute_land_pr(ctx, ctx.cwd))
 
-    if isinstance(result, LandPrError):
-        user_output(click.style("Error: ", fg="red") + result.message)
-        raise SystemExit(1)
+        if isinstance(result, LandPrError):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
 
-    # Success - PR was merged
-    success_result: LandPrSuccess = result
+        # Success - PR was merged
+        success_result: LandPrSuccess = result
+        merged_pr_number = success_result.pr_number
 
     user_output(
-        click.style("✓", fg="green")
-        + f" Merged PR #{success_result.pr_number} [{success_result.branch_name}]"
+        click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{current_branch}]"
     )
 
     # Check and display plan issue closure
@@ -496,7 +590,7 @@ def _land_current_branch(
             ctx,
             repo_root=main_repo_root,
             objective_number=objective_number,
-            pr_number=success_result.pr_number,
+            pr_number=merged_pr_number,
             branch=current_branch,
             force=force,
         )
