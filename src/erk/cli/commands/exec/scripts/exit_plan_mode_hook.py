@@ -44,6 +44,7 @@ State Transitions:
 """
 
 import json
+import os
 import sys
 from dataclasses import dataclass
 from enum import Enum
@@ -59,6 +60,31 @@ from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.git.abc import Git
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
+
+# Known terminal-based editors that cannot run inside Claude Code
+TERMINAL_EDITORS = frozenset(
+    {"vim", "vi", "nvim", "nano", "emacs", "pico", "ne", "micro", "jed", "mcedit", "joe", "ed"}
+)
+
+
+def is_terminal_editor(editor: str | None) -> bool:
+    """Check if editor is a terminal-based (TUI) editor.
+
+    Terminal editors like vim cannot run inside Claude Code because they
+    need exclusive terminal control which conflicts with Claude's UI.
+
+    Args:
+        editor: The EDITOR environment variable value, or None.
+
+    Returns:
+        True if editor is a known terminal-based editor.
+    """
+    if editor is None:
+        return False
+    # Extract basename in case of full path like /usr/bin/vim
+    editor_name = Path(editor).name
+    return editor_name in TERMINAL_EDITORS
+
 
 # ============================================================================
 # Data Classes for Pure Logic
@@ -89,6 +115,7 @@ class HookInput:
     worktree_name: str | None  # Directory name of current worktree
     pr_number: int | None  # PR number if exists for current branch
     plan_issue_number: int | None  # Issue number from .impl/issue.json
+    editor: str | None  # Value of EDITOR env var for TUI detection
 
     @classmethod
     def for_test(
@@ -107,6 +134,7 @@ class HookInput:
         worktree_name: str | None = None,
         pr_number: int | None = None,
         plan_issue_number: int | None = None,
+        editor: str | None = None,
     ) -> Self:
         """Create a HookInput with test defaults.
 
@@ -121,6 +149,7 @@ class HookInput:
         - worktree_name: None
         - pr_number: None
         - plan_issue_number: None
+        - editor: None
         """
         return cls(
             session_id=session_id,
@@ -136,6 +165,7 @@ class HookInput:
             worktree_name=worktree_name,
             pr_number=pr_number,
             plan_issue_number=plan_issue_number,
+            editor=editor,
         )
 
 
@@ -199,6 +229,7 @@ def build_blocking_message(
     worktree_name: str | None,
     pr_number: int | None,
     plan_issue_number: int | None,
+    editor: str | None,
 ) -> str:
     """Build the blocking message with AskUserQuestion instructions.
 
@@ -213,6 +244,7 @@ def build_blocking_message(
         worktree_name: Directory name of current worktree.
         pr_number: PR number if exists for current branch.
         plan_issue_number: Issue number from .impl/issue.json.
+        editor: Value of EDITOR env var for TUI detection.
     """
     # Build context lines for the question
     context_lines: list[str] = []
@@ -304,15 +336,30 @@ def build_blocking_message(
     )
 
     if plan_file_path is not None:
-        lines.extend(
-            [
-                "",
-                "If user chooses 'View/Edit the plan':",
-                f"  1. Run: ${{EDITOR:-code}} {plan_file_path}",
-                "  2. After user confirms they're done editing, ask the same question again",
-                "     (loop until user chooses Save, Implement, or Incremental)",
-            ]
-        )
+        if is_terminal_editor(editor):
+            # TUI editors can't run inside Claude Code
+            editor_name = Path(editor).name if editor else "your editor"
+            lines.extend(
+                [
+                    "",
+                    "If user chooses 'View/Edit the plan':",
+                    f"  1. Tell user: '{editor_name} is a terminal-based editor that cannot",
+                    "     run inside Claude Code. Please open the plan in a separate terminal:'",
+                    f"     {editor} {plan_file_path}",
+                    "  2. Wait for user to confirm they're done editing",
+                    "  3. Ask the same question again (loop until Save/Implement/Incremental)",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "",
+                    "If user chooses 'View/Edit the plan':",
+                    f"  1. Run: ${{EDITOR:-code}} {plan_file_path}",
+                    "  2. After user confirms they're done editing, ask the same question again",
+                    "     (loop until user chooses Save, Implement, or Incremental)",
+                ]
+            )
 
     return "\n".join(lines)
 
@@ -376,6 +423,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             hook_input.worktree_name,
             hook_input.pr_number,
             hook_input.plan_issue_number,
+            hook_input.editor,
         ),
     )
 
@@ -616,10 +664,13 @@ def _gather_inputs(
         and not incremental_plan_marker_exists
         and not plan_saved_marker_exists
     )
+    # Get EDITOR env var for TUI detection
+    editor: str | None = None
     if needs_blocking_message:
         current_branch = git.get_current_branch(repo_root)
         worktree_name = _get_worktree_name(git, repo_root)
         plan_issue_number = _get_plan_issue_from_impl(repo_root)
+        editor = os.environ.get("EDITOR")
         # Only lookup PR if we have a branch
         if current_branch is not None:
             pr_number = _get_pr_number_for_branch(branch_manager, repo_root, current_branch)
@@ -638,6 +689,7 @@ def _gather_inputs(
         worktree_name=worktree_name,
         pr_number=pr_number,
         plan_issue_number=plan_issue_number,
+        editor=editor,
     )
 
 

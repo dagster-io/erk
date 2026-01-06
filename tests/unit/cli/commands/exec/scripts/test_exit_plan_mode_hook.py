@@ -17,6 +17,7 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     determine_exit_action,
     exit_plan_mode_hook,
     extract_plan_title,
+    is_terminal_editor,
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
@@ -247,6 +248,59 @@ class TestExtractPlanTitle:
 
 
 # ============================================================================
+# Pure Logic Tests for is_terminal_editor() - NO MOCKING REQUIRED
+# ============================================================================
+
+
+class TestIsTerminalEditor:
+    """Tests for the pure is_terminal_editor() function."""
+
+    def test_vim_is_terminal_editor(self) -> None:
+        """vim is recognized as terminal editor."""
+        assert is_terminal_editor("vim") is True
+
+    def test_nvim_is_terminal_editor(self) -> None:
+        """nvim is recognized as terminal editor."""
+        assert is_terminal_editor("nvim") is True
+
+    def test_nano_is_terminal_editor(self) -> None:
+        """nano is recognized as terminal editor."""
+        assert is_terminal_editor("nano") is True
+
+    def test_emacs_is_terminal_editor(self) -> None:
+        """emacs is recognized as terminal editor."""
+        assert is_terminal_editor("emacs") is True
+
+    def test_vi_is_terminal_editor(self) -> None:
+        """vi is recognized as terminal editor."""
+        assert is_terminal_editor("vi") is True
+
+    def test_code_is_not_terminal_editor(self) -> None:
+        """code (VS Code) is not a terminal editor."""
+        assert is_terminal_editor("code") is False
+
+    def test_sublime_is_not_terminal_editor(self) -> None:
+        """subl (Sublime Text) is not a terminal editor."""
+        assert is_terminal_editor("subl") is False
+
+    def test_none_is_not_terminal_editor(self) -> None:
+        """None returns False."""
+        assert is_terminal_editor(None) is False
+
+    def test_full_path_vim_is_terminal_editor(self) -> None:
+        """Full path like /usr/bin/vim is recognized as terminal editor."""
+        assert is_terminal_editor("/usr/bin/vim") is True
+
+    def test_full_path_nvim_is_terminal_editor(self) -> None:
+        """Full path like /opt/homebrew/bin/nvim is recognized as terminal editor."""
+        assert is_terminal_editor("/opt/homebrew/bin/nvim") is True
+
+    def test_full_path_code_is_not_terminal_editor(self) -> None:
+        """Full path like /usr/local/bin/code is not a terminal editor."""
+        assert is_terminal_editor("/usr/local/bin/code") is False
+
+
+# ============================================================================
 # Pure Logic Tests for build_blocking_message() - NO MOCKING REQUIRED
 # ============================================================================
 
@@ -258,7 +312,7 @@ class TestBuildBlockingMessage:
         """Message contains all required elements."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
         )
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
@@ -282,7 +336,7 @@ class TestBuildBlockingMessage:
         """Warning shown when on main branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "main", plan_path, None, None, None, None, None
+            "session-123", "main", plan_path, None, None, None, None, None, None
         )
         assert "WARNING" in message
         assert "main" in message
@@ -293,7 +347,7 @@ class TestBuildBlockingMessage:
         """Warning shown when on master branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "master", plan_path, None, None, None, None, None
+            "session-123", "master", plan_path, None, None, None, None, None, None
         )
         assert "WARNING" in message
         assert "master" in message
@@ -303,7 +357,7 @@ class TestBuildBlockingMessage:
         """No warning when on feature branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -312,7 +366,7 @@ class TestBuildBlockingMessage:
         """No warning when branch is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", None, plan_path, None, None, None, None, None
+            "session-123", None, plan_path, None, None, None, None, None, None
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -321,16 +375,16 @@ class TestBuildBlockingMessage:
         """Third option 'View/Edit the plan' is included in message."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
         )
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
 
     def test_edit_plan_instructions_include_path(self) -> None:
-        """Edit plan instructions include the plan file path."""
+        """Edit plan instructions include the plan file path for GUI editors."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -340,7 +394,7 @@ class TestBuildBlockingMessage:
     def test_edit_plan_instructions_omitted_when_no_path(self) -> None:
         """Edit plan instructions omitted when plan_file_path is None."""
         message = build_blocking_message(
-            "session-123", "feature-branch", None, None, None, None, None, None
+            "session-123", "feature-branch", None, None, None, None, None, None, None
         )
         # The option is still listed (as it's hardcoded), but no instructions
         assert "View/Edit the plan" in message
@@ -350,7 +404,7 @@ class TestBuildBlockingMessage:
         """Save command includes --objective-issue when objective_issue is provided."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, 3679, None, None, None, None
+            "session-123", "feature-branch", plan_path, 3679, None, None, None, None, None
         )
         assert "/erk:plan-save --objective-issue=3679" in message
 
@@ -358,7 +412,7 @@ class TestBuildBlockingMessage:
         """Save command is plain when objective_issue is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
         )
         # Should have /erk:plan-save but not --objective-issue
         assert "/erk:plan-save" in message
@@ -373,6 +427,7 @@ class TestBuildBlockingMessage:
             plan_path,
             None,
             "Add Feature X",
+            None,
             None,
             None,
             None,
@@ -392,6 +447,7 @@ class TestBuildBlockingMessage:
             "erk-managed-wt-02",
             4230,
             4224,
+            None,
         )
         # Title should be present
         assert "📋 Add Feature X" in message
@@ -413,6 +469,7 @@ class TestBuildBlockingMessage:
             "erk-managed-wt-02",
             None,
             4224,
+            None,
         )
         # No title emoji
         assert "📋" not in message
@@ -424,13 +481,70 @@ class TestBuildBlockingMessage:
 
     def test_no_context_when_all_none(self) -> None:
         """Question has no context when all context fields are None."""
-        message = build_blocking_message("session-123", None, None, None, None, None, None, None)
+        message = build_blocking_message(
+            "session-123", None, None, None, None, None, None, None, None
+        )
         # Should still have the basic question
         assert "What would you like to do with this plan?" in message
         # But no context
         assert "📋" not in message
         assert "(wt:" not in message
         assert "(br:" not in message
+
+    def test_tui_editor_vim_shows_manual_instructions(self) -> None:
+        """When editor=vim, message tells user to open in separate terminal."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message(
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, "vim"
+        )
+        assert "If user chooses 'View/Edit the plan':" in message
+        assert "vim is a terminal-based editor that cannot" in message
+        assert "run inside Claude Code" in message
+        assert "Please open the plan in a separate terminal" in message
+        assert f"vim {plan_path}" in message
+        assert "Wait for user to confirm" in message
+        # Should NOT have the GUI editor instruction
+        assert "${EDITOR:-code}" not in message
+
+    def test_tui_editor_nvim_shows_manual_instructions(self) -> None:
+        """When editor=nvim (full path), message tells user to open in separate terminal."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message(
+            "session-123",
+            "feature-branch",
+            plan_path,
+            None,
+            None,
+            None,
+            None,
+            None,
+            "/opt/homebrew/bin/nvim",
+        )
+        assert "nvim is a terminal-based editor" in message
+        assert f"/opt/homebrew/bin/nvim {plan_path}" in message
+
+    def test_gui_editor_code_shows_run_instruction(self) -> None:
+        """When editor=code, message shows normal run instruction."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message(
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, "code"
+        )
+        assert "If user chooses 'View/Edit the plan':" in message
+        assert f"${{EDITOR:-code}} {plan_path}" in message
+        # Should NOT have the TUI editor warning
+        assert "terminal-based editor" not in message
+        assert "separate terminal" not in message
+
+    def test_none_editor_shows_run_instruction(self) -> None:
+        """When editor=None, message shows normal run instruction with fallback."""
+        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+        message = build_blocking_message(
+            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+        )
+        assert "If user chooses 'View/Edit the plan':" in message
+        assert f"${{EDITOR:-code}} {plan_path}" in message
+        # Should NOT have the TUI editor warning
+        assert "terminal-based editor" not in message
 
 
 # ============================================================================
