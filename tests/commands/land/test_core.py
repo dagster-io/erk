@@ -547,3 +547,134 @@ def test_land_does_not_call_safe_chdir() -> None:
         assert len(git_ops.chdir_history) == 0, (
             "Should NOT call safe_chdir (activation script handles cd)"
         )
+
+
+def test_land_updates_upstack_pr_base_branches() -> None:
+    """Test land updates upstack PR base branches before deleting remote.
+
+    When landing a PR with stacked branches upstack, the remote branch will be deleted.
+    GitHub automatically closes PRs whose base branch is deleted.
+    To prevent data loss, we update upstack PR base branches to target trunk first.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        # Setup: main -> feature-1 (landing) -> feature-2 (upstack with open PR)
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+                "feature-2": PullRequestInfo(
+                    number=456,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/456",
+                    is_draft=False,
+                    title="Feature 2",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+                456: PRDetails(
+                    number=456,
+                    url="https://github.com/owner/repo/pull/456",
+                    title="Feature 2",
+                    body="PR body 2",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="feature-1",
+                    head_ref_name="feature-2",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+            pr_bases={123: "main", 456: "feature-1"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Use --force to skip cleanup confirmation
+        result = runner.invoke(
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # Verify worktree was removed
+        assert feature_1_path in git_ops.removed_worktrees
+
+        # Verify branch was deleted
+        assert "feature-1" in git_ops.deleted_branches
+
+        # CRITICAL: Verify upstack PR base was updated to trunk before remote branch deletion
+        # This prevents GitHub from auto-closing PRs when their base branch is deleted
+        assert (456, "main") in github_ops.updated_pr_bases, (
+            "Upstack PR #456 should have its base updated to 'main' before remote deletion"
+        )

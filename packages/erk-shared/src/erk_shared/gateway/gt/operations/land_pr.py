@@ -180,6 +180,15 @@ def execute_land_pr(
 
     yield ProgressEvent(f"PR #{pr_number} merged successfully", style="success")
 
+    # Update upstack PR base branches before deleting the landed branch
+    # This prevents GitHub from auto-closing PRs when their base branch is deleted
+    if children:
+        yield ProgressEvent("Updating upstack PR base branches...")
+        for child_branch in children:
+            child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
+            if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
+                ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
+
     # Delete remote branch after successful merge
     # Note: We do this separately instead of using `gh pr merge --delete-branch`
     # because --delete-branch attempts local branch operations that fail from worktrees
