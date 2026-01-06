@@ -583,6 +583,66 @@ class PlanDetailScreen(ModalScreen):
         # Run subprocess in worker thread
         self._stream_subprocess(command, cwd)
 
+    def run_close_plan_in_process(
+        self,
+        issue_number: int,
+        issue_url: str,
+    ) -> None:
+        """Run close plan in-process using HTTP client directly.
+
+        This is much faster than spawning a subprocess because it uses
+        the HTTP client that was initialized at TUI startup.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL for PR linkage lookup
+        """
+        # Create and mount output panel
+        title = f"Closing Plan #{issue_number}"
+        self._output_panel = CommandOutputPanel(title)
+        dialog = self.query_one("#detail-dialog")
+        dialog.mount(self._output_panel)
+        self._command_running = True
+
+        # Run in-process worker (no timeout needed - HTTP has its own timeout)
+        self._run_close_plan_worker(issue_number, issue_url)
+
+    @work(thread=True)
+    def _run_close_plan_worker(
+        self,
+        issue_number: int,
+        issue_url: str,
+    ) -> None:
+        """Worker: close plan using executor's close_plan_fn.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL for PR linkage lookup
+        """
+        panel = self._output_panel
+        if panel is None or self._executor is None:
+            self._command_running = False
+            return
+
+        success = True
+        # Error boundary: catch all exceptions from HTTP operations to display
+        # them in the output panel rather than crashing the TUI.
+        try:
+            self.app.call_from_thread(panel.append_line, "Closing linked PRs...")
+            closed_prs = self._executor.close_plan(issue_number, issue_url)
+
+            if closed_prs:
+                pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+                self.app.call_from_thread(panel.append_line, f"Closed PRs: {pr_list}")
+
+            self.app.call_from_thread(panel.append_line, f"Closed plan #{issue_number}")
+        except Exception as e:
+            self.app.call_from_thread(panel.append_line, f"Error: {e}")
+            success = False
+
+        self.app.call_from_thread(panel.set_completed, success)
+        self._command_running = False
+
     def _handle_stream_timeout(self) -> None:
         """Handle timeout of streaming command.
 
@@ -725,14 +785,13 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "close_plan":
-            if row.issue_url and self._repo_root is not None:
-                # Use streaming output for close command
-                self.run_streaming_command(
-                    ["erk", "plan", "close", str(row.issue_number)],
-                    cwd=self._repo_root,
-                    title=f"Closing Plan #{row.issue_number}",
-                )
-                # Don't dismiss - user must press Esc after completion
+            if row.issue_url:
+                # Dismiss detail screen first, then run async close on main app
+                self.dismiss()
+                # Access parent app and trigger async close with toast
+                if isinstance(self.app, ErkDashApp):
+                    self.app.notify(f"Closing plan #{row.issue_number}...")
+                    self.app._close_plan_async(row.issue_number, row.issue_url)
 
         elif command_id == "submit_to_queue":
             if row.issue_url and self._repo_root is not None:
@@ -1121,6 +1180,35 @@ class ErkDashApp(App):
         if self._table is not None:
             self._table.populate(self._rows)
 
+    @work(thread=True)
+    def _close_plan_async(self, issue_number: int, issue_url: str) -> None:
+        """Close plan in background thread with toast notifications.
+
+        Args:
+            issue_number: The plan issue number
+            issue_url: The GitHub issue URL
+        """
+        # Error boundary: catch all exceptions from the close operation to display
+        # them as toast notifications rather than crashing the TUI.
+        try:
+            closed_prs = self._provider.close_plan(issue_number, issue_url)
+            # Success toast
+            if closed_prs:
+                msg = f"Closed plan #{issue_number} (and {len(closed_prs)} linked PRs)"
+            else:
+                msg = f"Closed plan #{issue_number}"
+            self.call_from_thread(self.notify, msg, timeout=3)
+            # Trigger data refresh
+            self.call_from_thread(self.action_refresh)
+        except Exception as e:
+            # Error toast
+            self.call_from_thread(
+                self.notify,
+                f"Failed to close plan #{issue_number}: {e}",
+                severity="error",
+                timeout=5,
+            )
+
     def action_show_detail(self) -> None:
         """Show plan detail modal for selected row."""
         row = self._get_selected_row()
@@ -1240,29 +1328,18 @@ class ErkDashApp(App):
         self._copy_checkout_command(row)
 
     def action_close_plan(self) -> None:
-        """Close the selected plan and its linked PRs."""
+        """Close the selected plan and its linked PRs (async with toast)."""
         row = self._get_selected_row()
         if row is None:
             return
 
         if row.issue_url is None:
-            if self._status_bar is not None:
-                self._status_bar.set_message("Cannot close plan: no issue URL")
+            self.notify("Cannot close plan: no issue URL", severity="warning")
             return
 
-        # Perform the close operation
-        closed_prs = self._provider.close_plan(row.issue_number, row.issue_url)
-
-        # Show status message
-        if self._status_bar is not None:
-            if closed_prs:
-                pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
-                self._status_bar.set_message(f"Closed plan #{row.issue_number} and PRs: {pr_list}")
-            else:
-                self._status_bar.set_message(f"Closed plan #{row.issue_number}")
-
-        # Refresh data to remove the closed plan from the list
-        self.action_refresh()
+        # Show starting toast and run async - no blocking
+        self.notify(f"Closing plan #{row.issue_number}...")
+        self._close_plan_async(row.issue_number, row.issue_url)
 
     def _copy_checkout_command(self, row: PlanRowData) -> None:
         """Copy appropriate checkout command based on row state.
@@ -1366,31 +1443,9 @@ class ErkDashApp(App):
 
         elif command_id == "close_plan":
             if row.issue_url:
-                # Open detail modal to show streaming output
-                executor = RealCommandExecutor(
-                    browser_launch=self._provider.browser.launch,
-                    clipboard_copy=self._provider.clipboard.copy,
-                    close_plan_fn=self._provider.close_plan,
-                    notify_fn=self.notify,
-                    refresh_fn=self.action_refresh,
-                    submit_to_queue_fn=self._provider.submit_to_queue,
-                )
-                detail_screen = PlanDetailScreen(
-                    row=row,
-                    clipboard=self._provider.clipboard,
-                    browser=self._provider.browser,
-                    executor=executor,
-                    repo_root=self._provider.repo_root,
-                )
-                self.push_screen(detail_screen)
-                # Trigger the streaming command after screen is mounted
-                detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        ["erk", "plan", "close", str(row.issue_number)],
-                        cwd=self._provider.repo_root,
-                        title=f"Closing Plan #{row.issue_number}",
-                    )
-                )
+                # Show starting toast and run async - no modal blocking
+                self.notify(f"Closing plan #{row.issue_number}...")
+                self._close_plan_async(row.issue_number, row.issue_url)
 
         elif command_id == "submit_to_queue":
             if row.issue_url:
