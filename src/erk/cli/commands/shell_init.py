@@ -15,14 +15,20 @@ import click
 SHELL_WRAPPER = r"""
 # erk shell integration: claude wrapper with worktree switching
 function claude() {
+    local _erk_resume_cmd=""
     while true; do
-        # Check for pending resume command
+        # Check for pending resume command (from worktree switch)
         if [[ -f ~/.erk/switch-request-command ]]; then
-            resume_cmd=$(cat ~/.erk/switch-request-command)
+            _erk_resume_cmd=$(cat ~/.erk/switch-request-command)
             rm ~/.erk/switch-request-command
-            command claude --continue "$resume_cmd"
+            command claude --continue "$_erk_resume_cmd"
+        elif [[ -n "$_erk_resume_cmd" ]]; then
+            # Continuing after worktree switch, use --continue
+            command claude --continue "$_erk_resume_cmd"
+            _erk_resume_cmd=""
         else
-            command claude --continue "$@"
+            # Normal invocation - pass through arguments as-is
+            command claude "$@"
         fi
         exit_code=$?
 
@@ -34,6 +40,7 @@ function claude() {
             if [[ -n "$wt_path" ]]; then
                 cd "$wt_path" || continue
                 [[ -f .venv/bin/activate ]] && source .venv/bin/activate 2>/dev/null
+                # Keep _erk_resume_cmd for next iteration if it was set
                 continue
             fi
         fi

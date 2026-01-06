@@ -58,3 +58,13 @@ def test_shell_init_activates_venv() -> None:
 
     assert result.exit_code == 0
     assert ".venv/bin/activate" in result.output
+
+
+def test_shell_init_normal_invocation_passes_args() -> None:
+    """shell-init output passes arguments to claude for normal invocations."""
+    runner = CliRunner()
+    result = runner.invoke(shell_init_cmd)
+
+    assert result.exit_code == 0
+    # Normal invocation should pass through args without --continue
+    assert 'command claude "$@"' in result.output
