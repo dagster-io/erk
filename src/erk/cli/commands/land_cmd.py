@@ -575,9 +575,7 @@ def _land_current_branch(
         success_result: LandPrSuccess = result
         merged_pr_number = success_result.pr_number
 
-    user_output(
-        click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{current_branch}]"
-    )
+    user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{current_branch}]")
 
     # Check and display plan issue closure
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
