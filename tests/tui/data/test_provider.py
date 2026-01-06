@@ -28,9 +28,7 @@ def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
 class TestBuildWorktreeMapping:
     """Tests for _build_worktree_mapping method."""
 
-    def test_pool_managed_worktree_extracts_from_branch_name(
-        self, tmp_path: Path
-    ) -> None:
+    def test_pool_managed_worktree_extracts_from_branch_name(self, tmp_path: Path) -> None:
         """Pool-managed worktree with generic directory name maps via branch.
 
         The directory name is 'erk-managed-wt-02' (no issue prefix),
@@ -82,9 +80,7 @@ class TestBuildWorktreeMapping:
         assert worktree_name == "erk-managed-wt-02"
         assert worktree_branch == branch_name
 
-    def test_issue_named_worktree_extracts_from_branch_name(
-        self, tmp_path: Path
-    ) -> None:
+    def test_issue_named_worktree_extracts_from_branch_name(self, tmp_path: Path) -> None:
         """Issue-named worktree with P-prefixed directory also extracts from branch.
 
         The directory name is 'P1234-feature-01-01-1200' (has issue prefix),
@@ -191,9 +187,7 @@ class TestBuildWorktreeMapping:
             worktrees={
                 repo_root: [
                     WorktreeInfo(path=repo_root, branch="main", is_root=True),
-                    WorktreeInfo(
-                        path=worktree_path, branch="feature-branch", is_root=False
-                    ),
+                    WorktreeInfo(path=worktree_path, branch="feature-branch", is_root=False),
                 ]
             },
             git_common_dirs={repo_root: repo_root / ".git"},
