@@ -1,5 +1,7 @@
 """Tests for PlanDetailScreen.execute_command."""
 
+from pathlib import Path
+
 from erk.tui.app import PlanDetailScreen
 from erk.tui.data.types import PlanRowData
 from tests.fakes.command_executor import FakeCommandExecutor
@@ -125,26 +127,22 @@ class TestExecuteCommandCopyCommands:
 
 
 class TestExecuteCommandClosePlan:
-    """Tests for close_plan command."""
+    """Tests for close_plan command.
 
-    def test_close_plan_closes_and_refreshes(self) -> None:
-        """close_plan closes the plan and triggers refresh."""
+    Note: close_plan now uses streaming output via subprocess when repo_root
+    is provided. These tests verify the guard conditions but actual streaming
+    behavior is tested via integration tests.
+    """
+
+    def test_close_plan_does_nothing_without_repo_root(self) -> None:
+        """close_plan does nothing if repo_root is not provided."""
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
+        # repo_root not provided - streaming command should not execute
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("close_plan")
-        assert executor.closed_plans == [(123, "https://github.com/test/repo/issues/123")]
-        assert executor.refresh_count == 1
-        assert "Closed plan #123" in executor.notifications
-
-    def test_close_plan_reports_closed_prs(self) -> None:
-        """close_plan reports PR numbers when PRs are closed."""
-        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
-        executor = FakeCommandExecutor()
-        executor.set_close_plan_return([456, 457])
-        screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("close_plan")
-        assert "Closed plan #123 and PRs: #456, #457" in executor.notifications
+        # No executor methods should be called (streaming is independent)
+        assert executor.refresh_count == 0
 
     def test_close_plan_does_nothing_without_issue_url(self) -> None:
         """close_plan does nothing if no issue URL."""
@@ -178,7 +176,6 @@ class TestExecuteCommandClosePlan:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("close_plan")
-        assert executor.closed_plans == []
         assert executor.refresh_count == 0
 
 
@@ -247,7 +244,7 @@ class TestExecuteCommandLandPR:
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
         # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("land_pr")
         # No executor methods should be called (streaming is independent)
         assert executor.refresh_count == 0
@@ -256,7 +253,7 @@ class TestExecuteCommandLandPR:
         """land_pr does nothing if no PR is associated with the plan."""
         row = make_plan_row(123, "Test")  # No pr_number
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor, repo_root="/some/path")
+        screen = PlanDetailScreen(row=row, executor=executor, repo_root=Path("/some/path"))
         screen.execute_command("land_pr")
         assert executor.refresh_count == 0
 
