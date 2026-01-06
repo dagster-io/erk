@@ -18,6 +18,7 @@ from erk.tui.data.types import PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
+from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata.plan_header import (
@@ -25,7 +26,6 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
-from erk_shared.github.parsing import github_repo_location_from_url
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
@@ -132,6 +132,7 @@ class RealPlanDataProvider(PlanDataProvider):
         location: GitHubRepoLocation,
         clipboard: Clipboard,
         browser: BrowserLauncher,
+        http_client: HttpClient,
     ) -> None:
         """Initialize with context and repository info.
 
@@ -140,11 +141,13 @@ class RealPlanDataProvider(PlanDataProvider):
             location: GitHub repository location (local root + repo identity)
             clipboard: Clipboard interface for copy operations
             browser: BrowserLauncher interface for opening URLs
+            http_client: HTTP client for direct API calls (faster than subprocess)
         """
         self._ctx = ctx
         self._location = location
         self._clipboard = clipboard
         self._browser = browser
+        self._http_client = http_client
 
     @property
     def repo_root(self) -> Path:
@@ -218,7 +221,10 @@ class RealPlanDataProvider(PlanDataProvider):
         return rows
 
     def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
-        """Close a plan and its linked PRs.
+        """Close a plan and its linked PRs using direct HTTP calls.
+
+        This method uses the HTTP client directly instead of subprocess calls
+        for significantly faster execution in the TUI.
 
         Args:
             issue_number: The issue number to close
@@ -227,34 +233,73 @@ class RealPlanDataProvider(PlanDataProvider):
         Returns:
             List of PR numbers that were also closed
         """
-        # Close linked PRs first
-        closed_prs = self._close_linked_prs(issue_number, issue_url)
+        # Parse owner/repo from issue URL
+        owner_repo = self._parse_owner_repo_from_url(issue_url)
+        if owner_repo is None:
+            return []
+        owner, repo = owner_repo
 
-        # Close the plan (issue)
-        self._ctx.plan_store.close_plan(self._location.root, str(issue_number))
+        # Close linked PRs first
+        closed_prs = self._close_linked_prs_http(issue_number, owner, repo)
+
+        # Close the plan (issue) via HTTP
+        self._http_client.patch(
+            f"repos/{owner}/{repo}/issues/{issue_number}",
+            data={"state": "closed"},
+        )
 
         return closed_prs
 
-    def _close_linked_prs(self, issue_number: int, issue_url: str) -> list[int]:
-        """Close all OPEN PRs linked to an issue.
+    def _parse_owner_repo_from_url(self, url: str) -> tuple[str, str] | None:
+        """Parse owner and repo from a GitHub URL.
+
+        Args:
+            url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
+
+        Returns:
+            Tuple of (owner, repo) or None if parsing fails
+        """
+        # URL format: https://github.com/owner/repo/...
+        parts = url.split("/")
+        # parts: ['https:', '', 'github.com', 'owner', 'repo', ...]
+        if len(parts) < 5:
+            return None
+        return (parts[3], parts[4])
+
+    def _close_linked_prs_http(
+        self,
+        issue_number: int,
+        owner: str,
+        repo: str,
+    ) -> list[int]:
+        """Close all OPEN PRs linked to an issue using HTTP.
+
+        Uses the GitHub REST API via HTTP client for fast execution.
 
         Args:
             issue_number: The issue number
-            issue_url: The issue URL for location lookup
+            owner: Repository owner
+            repo: Repository name
 
         Returns:
             List of PR numbers that were closed
         """
-        location = github_repo_location_from_url(self._location.root, issue_url)
-        if location is None:
-            return []
+        # Use the existing gateway to get PR linkages (still efficient for read)
+        location = GitHubRepoLocation(
+            root=self._location.root,
+            repo_id=GitHubRepoId(owner=owner, repo=repo),
+        )
         pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [issue_number])
         linked_prs = pr_linkages.get(issue_number, [])
 
         closed_prs: list[int] = []
         for pr in linked_prs:
             if pr.state == "OPEN":
-                self._ctx.github.close_pr(self._location.root, pr.number)
+                # Close via HTTP client for speed
+                self._http_client.patch(
+                    f"repos/{owner}/{repo}/pulls/{pr.number}",
+                    data={"state": "closed"},
+                )
                 closed_prs.append(pr.number)
 
         return closed_prs

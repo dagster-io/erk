@@ -129,20 +129,10 @@ class TestExecuteCommandCopyCommands:
 class TestExecuteCommandClosePlan:
     """Tests for close_plan command.
 
-    Note: close_plan now uses streaming output via subprocess when repo_root
-    is provided. These tests verify the guard conditions but actual streaming
-    behavior is tested via integration tests.
+    Note: close_plan now uses in-process HTTP client (no subprocess).
+    These tests verify the guard conditions. The HTTP client behavior
+    is tested in tests/tui/data/test_provider.py.
     """
-
-    def test_close_plan_does_nothing_without_repo_root(self) -> None:
-        """close_plan does nothing if repo_root is not provided."""
-        row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
-        executor = FakeCommandExecutor()
-        # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("close_plan")
-        # No executor methods should be called (streaming is independent)
-        assert executor.refresh_count == 0
 
     def test_close_plan_does_nothing_without_issue_url(self) -> None:
         """close_plan does nothing if no issue URL."""

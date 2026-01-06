@@ -26,6 +26,8 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.sorting.types import SortKey, SortState
 from erk_shared.gateway.browser.real import RealBrowserLauncher
 from erk_shared.gateway.clipboard.real import RealClipboard
+from erk_shared.gateway.http.auth import fetch_github_token
+from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata.plan_header import (
@@ -669,7 +671,18 @@ def _run_interactive_mode(
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
-    provider = RealPlanDataProvider(ctx, location=location, clipboard=clipboard, browser=browser)
+
+    # Fetch GitHub token once at startup for fast HTTP client
+    token = fetch_github_token()
+    http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+
+    provider = RealPlanDataProvider(
+        ctx,
+        location=location,
+        clipboard=clipboard,
+        browser=browser,
+        http_client=http_client,
+    )
     filters = PlanFilters(
         labels=labels,
         state=state,
