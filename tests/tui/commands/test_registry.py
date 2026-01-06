@@ -147,3 +147,75 @@ def test_close_plan_has_no_shortcut() -> None:
     commands = get_all_commands()
     close_plan = next(cmd for cmd in commands if cmd.id == "close_plan")
     assert close_plan.shortcut is None
+
+
+def test_land_pr_available_when_all_conditions_met() -> None:
+    """land_pr should be available when PR is open, remote run exists, no local worktree."""
+    row = make_plan_row(
+        123,
+        "Test",
+        pr_number=456,
+        pr_state="OPEN",
+        exists_locally=False,
+        run_url="https://github.com/test/repo/actions/runs/789",
+    )
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" in cmd_ids
+
+
+def test_land_pr_not_available_when_no_pr() -> None:
+    """land_pr should not be available when no PR."""
+    row = make_plan_row(123, "Test", run_url="https://github.com/test/repo/actions/runs/789")
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" not in cmd_ids
+
+
+def test_land_pr_not_available_when_pr_merged() -> None:
+    """land_pr should not be available when PR is already merged."""
+    row = make_plan_row(
+        123,
+        "Test",
+        pr_number=456,
+        pr_state="MERGED",
+        exists_locally=False,
+        run_url="https://github.com/test/repo/actions/runs/789",
+    )
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" not in cmd_ids
+
+
+def test_land_pr_not_available_when_exists_locally() -> None:
+    """land_pr should not be available when worktree exists locally."""
+    row = make_plan_row(
+        123,
+        "Test",
+        pr_number=456,
+        pr_state="OPEN",
+        exists_locally=True,
+        run_url="https://github.com/test/repo/actions/runs/789",
+    )
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" not in cmd_ids
+
+
+def test_land_pr_not_available_when_no_run() -> None:
+    """land_pr should not be available when no remote run."""
+    row = make_plan_row(
+        123,
+        "Test",
+        pr_number=456,
+        pr_state="OPEN",
+        exists_locally=False,
+    )
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "land_pr" not in cmd_ids

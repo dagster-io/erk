@@ -34,6 +34,18 @@ def get_all_commands() -> list[CommandDefinition]:
             shortcut="s",
             is_available=lambda ctx: ctx.row.issue_url is not None,
         ),
+        CommandDefinition(
+            id="land_pr",
+            name="Action: Land PR",
+            description="Merge PR and delete remote branch",
+            shortcut=None,
+            is_available=lambda ctx: (
+                ctx.row.pr_number is not None
+                and ctx.row.pr_state == "OPEN"
+                and not ctx.row.exists_locally
+                and ctx.row.run_url is not None
+            ),
+        ),
         # === OPENS ===
         CommandDefinition(
             id="open_browser",
