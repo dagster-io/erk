@@ -117,3 +117,40 @@ class RealGitHubAdmin(GitHubAdmin):
             return AuthStatus(authenticated=False, username=None, error="Auth check timed out")
         except OSError as e:
             return AuthStatus(authenticated=False, username=None, error=str(e))
+
+    def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
+        """Check if a repository secret exists using gh CLI.
+
+        Uses GET /repos/{owner}/{repo}/actions/secrets/{secret_name} endpoint.
+        Returns True if 200, False if 404, None on other errors.
+        """
+        repo_id = location.repo_id
+        # GH-API-AUDIT: REST - GET actions/secrets/{secret_name}
+        cmd = [
+            "gh",
+            "api",
+            "-H",
+            "Accept: application/vnd.github+json",
+            "-H",
+            "X-GitHub-Api-Version: 2022-11-28",
+            f"/repos/{repo_id.owner}/{repo_id.repo}/actions/secrets/{secret_name}",
+        ]
+
+        try:
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=10,
+                cwd=location.root,
+            )
+            if result.returncode == 0:
+                return True
+            # Check for 404 in stderr (secret not found)
+            if "404" in result.stderr or "Not Found" in result.stderr:
+                return False
+            # Other error (permissions, rate limit, etc.)
+            return None
+        except (subprocess.TimeoutExpired, OSError):
+            return None

@@ -128,3 +128,126 @@ def test_check_auth_status_output_in_stderr(monkeypatch: MonkeyPatch) -> None:
         assert result.authenticated is True
         assert result.username == "anotheruser"
         assert result.error is None
+
+
+# ============================================================================
+# secret_exists() Tests
+# ============================================================================
+
+
+def test_secret_exists_returns_true_when_secret_found(monkeypatch: MonkeyPatch) -> None:
+    """Test secret_exists returns True when secret is found."""
+    from pathlib import Path
+
+    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        # Verify command structure
+        assert cmd[:2] == ["gh", "api"]
+        assert "/repos/test-owner/test-repo/actions/secrets/MY_SECRET" in cmd[-1]
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout='{"name": "MY_SECRET", "created_at": "2024-01-01T00:00:00Z"}',
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.secret_exists(location, "MY_SECRET")
+
+        assert result is True
+
+
+def test_secret_exists_returns_false_when_secret_not_found(monkeypatch: MonkeyPatch) -> None:
+    """Test secret_exists returns False when secret returns 404."""
+    from pathlib import Path
+
+    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=1,
+            stdout="",
+            stderr="gh: Not Found (HTTP 404)",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.secret_exists(location, "NONEXISTENT_SECRET")
+
+        assert result is False
+
+
+def test_secret_exists_returns_none_on_permission_error(monkeypatch: MonkeyPatch) -> None:
+    """Test secret_exists returns None when user lacks permission."""
+    from pathlib import Path
+
+    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=1,
+            stdout="",
+            stderr="gh: Forbidden (HTTP 403)",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.secret_exists(location, "MY_SECRET")
+
+        assert result is None
+
+
+def test_secret_exists_returns_none_on_timeout(monkeypatch: MonkeyPatch) -> None:
+    """Test secret_exists returns None when gh command times out."""
+    from pathlib import Path
+
+    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise subprocess.TimeoutExpired(cmd, 10)
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.secret_exists(location, "MY_SECRET")
+
+        assert result is None
+
+
+def test_secret_exists_returns_none_on_os_error(monkeypatch: MonkeyPatch) -> None:
+    """Test secret_exists returns None when gh not found."""
+    from pathlib import Path
+
+    from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise OSError("No such file or directory: 'gh'")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        admin = RealGitHubAdmin()
+        location = GitHubRepoLocation(
+            root=Path("/test/repo"),
+            repo_id=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        result = admin.secret_exists(location, "MY_SECRET")
+
+        assert result is None

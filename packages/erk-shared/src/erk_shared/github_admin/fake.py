@@ -28,6 +28,8 @@ class FakeGitHubAdmin(GitHubAdmin):
         *,
         workflow_permissions: dict[str, Any] | None = None,
         auth_status: AuthStatus | None = None,
+        secrets: set[str] | None = None,
+        secret_check_error: bool = False,
     ) -> None:
         """Create FakeGitHubAdmin with pre-configured state.
 
@@ -37,6 +39,9 @@ class FakeGitHubAdmin(GitHubAdmin):
                                              "can_approve_pull_request_reviews": False}
             auth_status: AuthStatus to return from check_auth_status.
                         Defaults to authenticated with username "testuser".
+            secrets: Set of secret names that exist (for secret_exists checks).
+                    Defaults to empty set.
+            secret_check_error: If True, secret_exists returns None (simulates API error).
         """
         # Default permissions state (PR creation disabled)
         self._workflow_permissions = workflow_permissions or {
@@ -48,6 +53,10 @@ class FakeGitHubAdmin(GitHubAdmin):
         self._auth_status = auth_status or AuthStatus(
             authenticated=True, username="testuser", error=None
         )
+
+        # Secrets state
+        self._secrets = secrets or set()
+        self._secret_check_error = secret_check_error
 
         # Mutation tracking
         self._set_permission_calls: list[tuple[Path, bool]] = []
@@ -73,3 +82,12 @@ class FakeGitHubAdmin(GitHubAdmin):
     def check_auth_status(self) -> AuthStatus:
         """Return pre-configured auth status."""
         return self._auth_status
+
+    def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
+        """Check if secret exists in pre-configured secrets set.
+
+        Returns None if secret_check_error was set to True.
+        """
+        if self._secret_check_error:
+            return None
+        return secret_name in self._secrets
