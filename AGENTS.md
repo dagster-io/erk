@@ -176,6 +176,27 @@ When creating implementation plans, include a "Related Documentation" section li
 
 This ensures implementing agents have access to documentation you discovered during planning.
 
+## Documentation-First Exploration
+
+Before exploring any topic (whether directly or via Explore agent):
+
+1. **First** check `docs/learned/index.md` for existing documentation
+2. **Read** relevant docs to understand what's already documented
+3. **Only then** explore raw files or spawn Explore for gaps/validation
+
+| Topic Area               | Check First                                  |
+| ------------------------ | -------------------------------------------- |
+| Session logs, ~/.claude/ | `docs/learned/sessions/`                     |
+| CLI commands, Click      | `docs/learned/cli/`                          |
+| Testing patterns         | `docs/learned/testing/`                      |
+| Hooks                    | `docs/learned/hooks/`                        |
+| Planning, .impl/         | `docs/learned/planning/`                     |
+| Architecture patterns    | `docs/learned/architecture/`                 |
+| TUI, Textual             | `docs/learned/tui/`, `docs/learned/textual/` |
+
+**Anti-pattern:** Going straight to `~/.claude/projects/` to explore session files
+**Correct:** First reading `docs/learned/sessions/layout.md` and `jsonl-schema-reference.md`
+
 ## Worktree Stack Quick Reference
 
 - **UPSTACK** = away from trunk (toward leaves/top)
