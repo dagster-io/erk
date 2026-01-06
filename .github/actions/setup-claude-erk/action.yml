@@ -8,4 +8,8 @@ runs:
       shell: bash
       run: |
         cd $GITHUB_WORKSPACE
-        uv tool install --from . --with ./packages/erk-shared erk
+        if [ -d "./packages/erk-shared" ]; then
+          uv tool install --from . --with-editable ./packages/erk-shared erk
+        else
+          uv tool install --from . --with erk-shared erk
+        fi

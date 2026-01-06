@@ -68,7 +68,11 @@ jobs:
         run: |
           npm install -g prettier
           cd $GITHUB_WORKSPACE
-          uv tool install -e . --with-editable ./packages/erk-shared
+          if [ -d "./packages/erk-shared" ]; then
+            uv tool install -e . --with-editable ./packages/erk-shared
+          else
+            uv tool install -e . --with erk-shared
+          fi
 
       - name: Configure git
         env:

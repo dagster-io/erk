@@ -219,7 +219,12 @@ jobs:
       # about executing untrusted code from checkout in privileged workflow
       - name: Install erk
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
-        run: uv tool install --from . --with ./packages/erk-shared erk
+        run: |
+          if [ -d "./packages/erk-shared" ]; then
+            uv tool install --from . --with-editable ./packages/erk-shared erk
+          else
+            uv tool install --from . --with erk-shared erk
+          fi
 
       - uses: actions/setup-node@v4
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
