@@ -27,7 +27,7 @@ REPO_SUBGROUPS: dict[str, set[str]] = {
         "managed-artifacts",
         "post-plan-implement-ci-hook",
     },
-    "GitHub": {"workflow-permissions", "erk-queue-pat-secret"},
+    "GitHub": {"workflow-permissions", "erk-queue-pat-secret", "anthropic-api-secret"},
     "Hooks": {"hooks"},
 }
 
@@ -163,6 +163,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool, clear_hook_logs_
         "post-plan-implement-ci-hook",
         "workflow-permissions",
         "erk-queue-pat-secret",
+        "anthropic-api-secret",
         "hooks",
     }
 
