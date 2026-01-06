@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-01-05 17:19 PT
+
+### Changed
+
+- `erk init` now sets up plans repo labels and Claude permissions automatically
+
+### Fixed
+
+- Fix submit command to use trunk as base when on placeholder or unpushed branches
+- Handle `gh api` target repo substitution and validate erk-managed repos
+- Handle terminal editors (vim, nano, etc.) in plan edit flow
+- Silence version check warning outside git repos
+
 ## [0.4.4] - 2026-01-05 10:45 PT
 
 ### Added
