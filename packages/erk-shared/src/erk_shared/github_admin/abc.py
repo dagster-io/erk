@@ -70,3 +70,19 @@ class GitHubAdmin(ABC):
             - error: Error message if check failed
         """
         ...
+
+    @abstractmethod
+    def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
+        """Check if a repository secret exists.
+
+        Uses the GitHub Actions secrets API to check if a secret is defined.
+        Does NOT return the secret value (which is never accessible via API).
+
+        Args:
+            location: GitHub repository location (local root + repo identity)
+            secret_name: Name of the secret to check for
+
+        Returns:
+            True if secret exists, False if not, None if check failed (e.g., no permission)
+        """
+        ...

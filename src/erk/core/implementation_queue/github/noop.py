@@ -36,3 +36,7 @@ class NoopGitHubAdmin(GitHubAdmin):
     def check_auth_status(self) -> AuthStatus:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.check_auth_status()
+
+    def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.secret_exists(location, secret_name)

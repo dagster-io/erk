@@ -41,3 +41,7 @@ class PrintingGitHubAdmin(PrintingBase, GitHubAdmin):
     def check_auth_status(self) -> AuthStatus:
         """Check auth status (read-only, no printing)."""
         return self._wrapped.check_auth_status()
+
+    def secret_exists(self, location: GitHubRepoLocation, secret_name: str) -> bool | None:
+        """Check if secret exists (read-only, no printing)."""
+        return self._wrapped.secret_exists(location, secret_name)
