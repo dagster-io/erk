@@ -583,6 +583,64 @@ class PlanDetailScreen(ModalScreen):
         # Run subprocess in worker thread
         self._stream_subprocess(command, cwd)
 
+    def run_close_plan_in_process(
+        self,
+        issue_number: int,
+        issue_url: str,
+    ) -> None:
+        """Run close plan in-process using HTTP client directly.
+
+        This is much faster than spawning a subprocess because it uses
+        the HTTP client that was initialized at TUI startup.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL for PR linkage lookup
+        """
+        # Create and mount output panel
+        title = f"Closing Plan #{issue_number}"
+        self._output_panel = CommandOutputPanel(title)
+        dialog = self.query_one("#detail-dialog")
+        dialog.mount(self._output_panel)
+        self._command_running = True
+
+        # Run in-process worker (no timeout needed - HTTP has its own timeout)
+        self._run_close_plan_worker(issue_number, issue_url)
+
+    @work(thread=True)
+    def _run_close_plan_worker(
+        self,
+        issue_number: int,
+        issue_url: str,
+    ) -> None:
+        """Worker: close plan using executor's close_plan_fn.
+
+        Args:
+            issue_number: The issue number to close
+            issue_url: The issue URL for PR linkage lookup
+        """
+        panel = self._output_panel
+        if panel is None or self._executor is None:
+            self._command_running = False
+            return
+
+        success = True
+        try:
+            self.app.call_from_thread(panel.append_line, "Closing linked PRs...")
+            closed_prs = self._executor.close_plan(issue_number, issue_url)
+
+            if closed_prs:
+                pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
+                self.app.call_from_thread(panel.append_line, f"Closed PRs: {pr_list}")
+
+            self.app.call_from_thread(panel.append_line, f"Closed plan #{issue_number}")
+        except Exception as e:
+            self.app.call_from_thread(panel.append_line, f"Error: {e}")
+            success = False
+
+        self.app.call_from_thread(panel.set_completed, success)
+        self._command_running = False
+
     def _handle_stream_timeout(self) -> None:
         """Handle timeout of streaming command.
 
@@ -725,13 +783,9 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "close_plan":
-            if row.issue_url and self._repo_root is not None:
-                # Use streaming output for close command
-                self.run_streaming_command(
-                    ["erk", "plan", "close", str(row.issue_number)],
-                    cwd=self._repo_root,
-                    title=f"Closing Plan #{row.issue_number}",
-                )
+            if row.issue_url:
+                # Use in-process worker for fast close (no subprocess overhead)
+                self.run_close_plan_in_process(row.issue_number, row.issue_url)
                 # Don't dismiss - user must press Esc after completion
 
         elif command_id == "submit_to_queue":
@@ -1366,7 +1420,7 @@ class ErkDashApp(App):
 
         elif command_id == "close_plan":
             if row.issue_url:
-                # Open detail modal to show streaming output
+                # Open detail modal to show in-process close output
                 executor = RealCommandExecutor(
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,
@@ -1383,12 +1437,13 @@ class ErkDashApp(App):
                     repo_root=self._provider.repo_root,
                 )
                 self.push_screen(detail_screen)
-                # Trigger the streaming command after screen is mounted
+                # Trigger the in-process close after screen is mounted
+                # Capture issue_url as non-None (guard above ensures it's not None)
+                issue_url = row.issue_url
                 detail_screen.call_after_refresh(
-                    lambda: detail_screen.run_streaming_command(
-                        ["erk", "plan", "close", str(row.issue_number)],
-                        cwd=self._provider.repo_root,
-                        title=f"Closing Plan #{row.issue_number}",
+                    lambda: detail_screen.run_close_plan_in_process(
+                        row.issue_number,
+                        issue_url,  # type: ignore[arg-type]  # guarded by if row.issue_url above
                     )
                 )
 

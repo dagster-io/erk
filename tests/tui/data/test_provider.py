@@ -6,6 +6,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.tui.data.provider import RealPlanDataProvider
 from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
@@ -70,6 +71,7 @@ class TestBuildWorktreeMapping:
             location=location,
             clipboard=FakeClipboard(),
             browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
         )
 
         mapping = provider._build_worktree_mapping()
@@ -120,6 +122,7 @@ class TestBuildWorktreeMapping:
             location=location,
             clipboard=FakeClipboard(),
             browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
         )
 
         mapping = provider._build_worktree_mapping()
@@ -166,6 +169,7 @@ class TestBuildWorktreeMapping:
             location=location,
             clipboard=FakeClipboard(),
             browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
         )
 
         mapping = provider._build_worktree_mapping()
@@ -208,9 +212,188 @@ class TestBuildWorktreeMapping:
             location=location,
             clipboard=FakeClipboard(),
             browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
         )
 
         mapping = provider._build_worktree_mapping()
 
         # Non-plan branch should not produce an entry
         assert len(mapping) == 0
+
+
+class TestClosePlan:
+    """Tests for close_plan method using HTTP client."""
+
+    def test_close_plan_uses_http_client(self, tmp_path: Path) -> None:
+        """close_plan should use HTTP client to close issue via API."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        # Configure fake GitHub to return empty PR linkages
+        from erk_shared.github.fake import FakeGitHub
+
+        github = FakeGitHub(pr_issue_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        http_client = FakeHttpClient()
+        http_client.set_response(
+            "repos/test/repo/issues/123",
+            response={"state": "closed"},
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=http_client,
+        )
+
+        closed_prs = provider.close_plan(123, "https://github.com/test/repo/issues/123")
+
+        # Verify HTTP client was used to close the issue
+        assert len(http_client.requests) == 1
+        request = http_client.requests[0]
+        assert request.method == "PATCH"
+        assert request.endpoint == "repos/test/repo/issues/123"
+        assert request.data == {"state": "closed"}
+        assert closed_prs == []
+
+    def test_close_plan_closes_linked_prs(self, tmp_path: Path) -> None:
+        """close_plan should close linked PRs before closing issue."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        # Configure fake GitHub to return linked PRs
+        from erk_shared.github.fake import FakeGitHub
+        from erk_shared.github.types import PullRequestInfo
+
+        github = FakeGitHub(
+            pr_issue_linkages={
+                123: [
+                    PullRequestInfo(
+                        number=456,
+                        state="OPEN",
+                        url="https://github.com/test/repo/pulls/456",
+                        is_draft=False,
+                        title="Fix issue",
+                        checks_passing=None,
+                        owner="test",
+                        repo="repo",
+                    ),
+                ],
+            }
+        )
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        http_client = FakeHttpClient()
+        http_client.set_response(
+            "repos/test/repo/pulls/456",
+            response={"state": "closed"},
+        )
+        http_client.set_response(
+            "repos/test/repo/issues/123",
+            response={"state": "closed"},
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=http_client,
+        )
+
+        closed_prs = provider.close_plan(123, "https://github.com/test/repo/issues/123")
+
+        # Verify HTTP client was used to close PR first, then issue
+        assert len(http_client.requests) == 2
+        assert http_client.requests[0].endpoint == "repos/test/repo/pulls/456"
+        assert http_client.requests[1].endpoint == "repos/test/repo/issues/123"
+        assert closed_prs == [456]
+
+    def test_parse_owner_repo_from_url(self, tmp_path: Path) -> None:
+        """_parse_owner_repo_from_url should extract owner/repo from URL."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        ctx = create_test_context(
+            git=git,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        result = provider._parse_owner_repo_from_url("https://github.com/owner/repo/issues/123")
+        assert result == ("owner", "repo")
+
+        result = provider._parse_owner_repo_from_url("https://github.com/anthropic/erk/pulls/456")
+        assert result == ("anthropic", "erk")
+
+        # Invalid URL returns None
+        result = provider._parse_owner_repo_from_url("invalid")
+        assert result is None
