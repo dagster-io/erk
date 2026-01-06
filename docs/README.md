@@ -1,86 +1,68 @@
 # Erk Documentation
 
-**erk** is a CLI tool for plan-oriented agentic engineering—a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
-
-For the philosophy and design principles behind erk, see [The TAO of erk](../TAO.md).
+**erk** is a CLI tool for plan-oriented agentic engineering.
 
 ## Quick Start
 
 New to erk? Start here:
 
-1. [Prerequisites](getting-started/prerequisites.md) - Tools you need installed
-2. [Installation](getting-started/installation.md) - Install and configure erk
-3. [Your First Plan](getting-started/first-plan.md) - Complete tutorial from plan to PR
+1. [Prerequisites](tutorials/prerequisites.md)
+2. [Installation](tutorials/installation.md)
+3. [Your First Plan](tutorials/first-plan.md)
 
 ## Documentation Sections
 
-### [Getting Started](getting-started/)
+### [Tutorials](tutorials/) — *Learning-oriented*
 
-Setup guides and your first steps with erk.
+Step-by-step lessons that take you by the hand.
 
-- [Prerequisites](getting-started/prerequisites.md) - Required tools and versions
-- [Installation](getting-started/installation.md) - Installing and initializing erk
-- [Your First Plan](getting-started/first-plan.md) - End-to-end tutorial
-- [Shell Integration](getting-started/shell-integration.md) - Terminal setup for directory switching
+- [Prerequisites](tutorials/prerequisites.md)
+- [Installation](tutorials/installation.md)
+- [Your First Plan](tutorials/first-plan.md)
+- [Shell Integration](tutorials/shell-integration.md)
 
-### [Concepts](concepts/)
+### [Topics](topics/) — *Understanding-oriented*
 
-Core ideas that make erk work.
+Explanations of concepts and the "why" behind erk.
 
-- [Worktrees](concepts/worktrees.md) - Parallel development with git worktrees
-- [Stacked PRs](concepts/stacked-prs.md) - Building changes incrementally with Graphite
-- [Plan Mode](concepts/plan-mode.md) - Claude Code's planning workflow
-- [The Workflow](concepts/the-workflow.md) - From idea to merged PR
-- [Plan-Oriented Engineering](concepts/plan-oriented-engineering.md) - The philosophy behind erk
+- [Worktrees](topics/worktrees.md)
+- [Stacked PRs](topics/stacked-prs.md)
+- [Plan Mode](topics/plan-mode.md)
+- [The Workflow](topics/the-workflow.md)
+- [Plan-Oriented Engineering](topics/plan-oriented-engineering.md)
 
-### [Guides](guides/)
+### [How-to Guides](howto/) — *Goal-oriented*
 
-Step-by-step workflows for common tasks.
+Recipes for accomplishing specific tasks.
 
-- [Local Workflow](guides/local-workflow.md) - Plan, implement, and ship locally
-- [Remote Execution](guides/remote-execution.md) - Run implementations in GitHub Actions
-- [PR Checkout & Sync](guides/pr-checkout-sync.md) - Review and iterate on PRs
-- [Conflict Resolution](guides/conflict-resolution.md) - Handle merge conflicts with AI assistance
-- [Planless Workflow](guides/planless-workflow.md) - Quick changes without formal plans
-- [Documentation Extraction](guides/documentation-extraction.md) - Capture patterns for future agents
+- [How to Use the Local Workflow](howto/local-workflow.md)
+- [How to Run Remote Execution](howto/remote-execution.md)
+- [How to Checkout and Sync PRs](howto/pr-checkout-sync.md)
+- [How to Resolve Merge Conflicts](howto/conflict-resolution.md)
+- [How to Work Without Plans](howto/planless-workflow.md)
+- [How to Extract Documentation](howto/documentation-extraction.md)
 
-### [Reference](reference/)
+### [Reference](ref/) — *Information-oriented*
 
-Complete command and configuration reference.
+Technical reference for APIs and configuration.
 
-- [Commands](reference/commands.md) - All CLI commands
-- [Slash Commands](reference/slash-commands.md) - Claude Code slash commands
-- [Configuration](reference/configuration.md) - Config files and options
-- [File Locations](reference/file-locations.md) - Where erk stores data
+- [CLI Command Reference](ref/commands.md)
+- [Slash Command Reference](ref/slash-commands.md)
+- [Configuration Reference](ref/configuration.md)
+- [File Location Reference](ref/file-locations.md)
 
-### [Troubleshooting](troubleshooting/)
+### [FAQ](faq/)
 
-Common issues and solutions.
+Common questions and troubleshooting.
 
-- [Shell Integration](troubleshooting/shell-integration.md) - Directory switching problems
-- [Graphite Issues](troubleshooting/graphite-issues.md) - Stack and sync problems
-- [FAQ](troubleshooting/faq.md) - Frequently asked questions
-
-## Common User Journeys
-
-**"I want to start using erk"**
-→ [Prerequisites](getting-started/prerequisites.md) → [Installation](getting-started/installation.md) → [Your First Plan](getting-started/first-plan.md)
-
-**"I want to understand how erk works"**
-→ [The Workflow](concepts/the-workflow.md) → [Plan-Oriented Engineering](concepts/plan-oriented-engineering.md)
-
-**"I'm reviewing a teammate's PR"**
-→ [PR Checkout & Sync](guides/pr-checkout-sync.md)
-
-**"My rebase has conflicts"**
-→ [Conflict Resolution](guides/conflict-resolution.md)
-
-**"I need quick iteration without planning"**
-→ [Planless Workflow](guides/planless-workflow.md)
+- [Shell Integration Issues](faq/shell-integration.md)
+- [Graphite Issues](faq/graphite-issues.md)
+- [General FAQ](faq/general.md)
 
 ## Other Documentation
 
-| Directory                     | Audience     | Purpose                                  |
-| ----------------------------- | ------------ | ---------------------------------------- |
-| [docs/learned/](learned/)     | AI agents    | Agent-generated patterns and conventions |
-| [docs/developer/](developer/) | Contributors | Internal development docs                |
+| Directory | Audience | Purpose |
+|-----------|----------|---------|
+| [learned/](learned/) | AI agents | Agent-generated patterns |
+| [developer/](developer/) | Contributors | Internal development docs |
+| [contributing/](contributing/) | Contributors | How to contribute |
