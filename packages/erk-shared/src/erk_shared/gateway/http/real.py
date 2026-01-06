@@ -6,6 +6,8 @@ without subprocess overhead. Designed for TUI responsiveness.
 
 from typing import Any
 
+import httpx
+
 from erk_shared.gateway.http.abc import HttpClient, HttpError
 
 
@@ -53,9 +55,6 @@ class RealHttpClient(HttpClient):
         Raises:
             HttpError: If the request fails
         """
-        # Inline import: httpx is only needed at runtime and keeps module import fast
-        import httpx
-
         url = f"{self._base_url}/{endpoint.lstrip('/')}"
         response = httpx.patch(url, json=data, headers=self._build_headers(), timeout=30.0)
 
@@ -86,8 +85,6 @@ class RealHttpClient(HttpClient):
         Raises:
             HttpError: If the request fails
         """
-        import httpx
-
         url = f"{self._base_url}/{endpoint.lstrip('/')}"
         response = httpx.post(url, json=data, headers=self._build_headers(), timeout=30.0)
 
@@ -115,8 +112,6 @@ class RealHttpClient(HttpClient):
         Raises:
             HttpError: If the request fails
         """
-        import httpx
-
         url = f"{self._base_url}/{endpoint.lstrip('/')}"
         response = httpx.get(url, headers=self._build_headers(), timeout=30.0)
 

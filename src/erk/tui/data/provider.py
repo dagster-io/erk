@@ -260,6 +260,8 @@ class RealPlanDataProvider(PlanDataProvider):
             Tuple of (owner, repo) or None if parsing fails
         """
         # URL format: https://github.com/owner/repo/...
+        if not url.startswith("https://github.com/"):
+            return None
         parts = url.split("/")
         # parts: ['https:', '', 'github.com', 'owner', 'repo', ...]
         if len(parts) < 5:

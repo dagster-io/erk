@@ -4,7 +4,7 @@ This module provides functions to fetch GitHub tokens via the gh CLI,
 designed to be called once at startup to avoid repeated subprocess overhead.
 """
 
-import subprocess
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
 def fetch_github_token(hostname: str = "github.com") -> str:
@@ -20,14 +20,12 @@ def fetch_github_token(hostname: str = "github.com") -> str:
         GitHub authentication token
 
     Raises:
-        subprocess.CalledProcessError: If gh auth token fails
+        RuntimeError: If gh auth token fails
         ValueError: If token is empty
     """
-    result = subprocess.run(
-        ["gh", "auth", "token", "--hostname", hostname],
-        capture_output=True,
-        text=True,
-        check=True,
+    result = run_subprocess_with_context(
+        cmd=["gh", "auth", "token", "--hostname", hostname],
+        operation_context=f"fetch GitHub token for {hostname}",
     )
     token = result.stdout.strip()
     if not token:
