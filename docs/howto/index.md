@@ -20,3 +20,4 @@ How-to guides are **goal-oriented**. They provide practical steps to solve real-
 ### Advanced
 
 - [Extract Documentation](documentation-extraction.md) - Capture patterns for future agents
+- [Test GitHub Actions Workflows](test-workflows.md) - Test workflow changes before merging
