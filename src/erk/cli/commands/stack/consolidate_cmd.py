@@ -6,8 +6,8 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import render_activation_script
-from erk.cli.commands.branch.unassign_cmd import execute_unassign
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
+from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option

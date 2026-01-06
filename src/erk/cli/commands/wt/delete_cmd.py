@@ -4,12 +4,12 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.branch.unassign_cmd import execute_unassign
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.navigation_helpers import (
     check_pending_extraction_marker,
     find_assignment_by_worktree_path,
 )
+from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.core import (
     discover_repo_context,
     validate_worktree_name_for_deletion,
