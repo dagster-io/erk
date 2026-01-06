@@ -1,9 +1,9 @@
-"""Tests for get_erk_label_definitions().
+"""Tests for label definition functions.
 
 Pure unit tests (Layer 3) - no dependencies on fakes or external systems.
 """
 
-from erk_shared.github.plan_issues import get_erk_label_definitions
+from erk_shared.github.plan_issues import get_erk_label_definitions, get_required_erk_labels
 
 
 def test_get_erk_label_definitions_returns_three_labels() -> None:
@@ -62,3 +62,48 @@ def test_get_erk_label_definitions_returns_frozen_dataclasses() -> None:
         assert hasattr(label, "name")
         assert hasattr(label, "description")
         assert hasattr(label, "color")
+
+
+# Tests for get_required_erk_labels()
+
+
+def test_get_required_erk_labels_returns_two_labels() -> None:
+    """Test that get_required_erk_labels returns only two labels."""
+    labels = get_required_erk_labels()
+
+    assert len(labels) == 2
+
+
+def test_get_required_erk_labels_contains_erk_plan() -> None:
+    """Test that erk-plan label is included."""
+    labels = get_required_erk_labels()
+
+    label_names = [label.name for label in labels]
+    assert "erk-plan" in label_names
+
+
+def test_get_required_erk_labels_contains_erk_objective() -> None:
+    """Test that erk-objective label is included."""
+    labels = get_required_erk_labels()
+
+    label_names = [label.name for label in labels]
+    assert "erk-objective" in label_names
+
+
+def test_get_required_erk_labels_excludes_erk_extraction() -> None:
+    """Test that erk-extraction label is NOT included (optional for docs workflows)."""
+    labels = get_required_erk_labels()
+
+    label_names = [label.name for label in labels]
+    assert "erk-extraction" not in label_names
+
+
+def test_get_required_erk_labels_is_subset_of_all_definitions() -> None:
+    """Test that required labels are a subset of all label definitions."""
+    all_labels = get_erk_label_definitions()
+    required_labels = get_required_erk_labels()
+
+    all_names = {label.name for label in all_labels}
+    required_names = {label.name for label in required_labels}
+
+    assert required_names.issubset(all_names)

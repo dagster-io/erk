@@ -33,7 +33,7 @@ from erk.core.version_check import get_required_version, is_version_mismatch
 from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.plan_issues import get_erk_label_definitions
+from erk_shared.github.plan_issues import LabelDefinition, get_required_erk_labels
 from erk_shared.github_admin.abc import GitHubAdmin
 
 
@@ -700,8 +700,9 @@ def check_plans_repo_labels(
     """Check that required erk labels exist in the plans repository.
 
     When plans_repo is configured, issues are created in that repository.
-    This check verifies that all erk labels (erk-plan, erk-extraction,
-    erk-objective) exist in the target repository.
+    This check verifies that required erk labels (erk-plan, erk-objective)
+    exist in the target repository. Excludes erk-extraction which is
+    optional for documentation workflows.
 
     Args:
         repo_root: Path to the working repository root (for gh CLI context)
@@ -711,20 +712,27 @@ def check_plans_repo_labels(
     Returns:
         CheckResult indicating whether labels are present
     """
-    labels = get_erk_label_definitions()
-    missing_labels: list[str] = []
+    labels = get_required_erk_labels()
+    missing_labels: list[LabelDefinition] = []
 
     # Check each label exists (LBYL pattern - check before reporting)
     for label in labels:
         if not github_issues.label_exists(repo_root, label.name):
-            missing_labels.append(label.name)
+            missing_labels.append(label)
 
     if missing_labels:
+        # Build gh label create commands for remediation
+        commands = [
+            f'gh label create "{label.name}" --description "{label.description}" '
+            f'--color "{label.color}" -R {plans_repo}'
+            for label in missing_labels
+        ]
+        missing_names = ", ".join(label.name for label in missing_labels)
         return CheckResult(
             name="plans-repo-labels",
             passed=False,
-            message=f"Missing labels in {plans_repo}: {', '.join(missing_labels)}",
-            remediation="Run 'erk init' to set up labels, or create them manually in GitHub",
+            message=f"Missing labels in {plans_repo}: {missing_names}",
+            remediation="\n  ".join(commands),
         )
 
     return CheckResult(

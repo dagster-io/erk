@@ -371,8 +371,8 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
     """Get all erk label definitions.
 
     Returns list of LabelDefinition for all erk labels (erk-plan,
-    erk-extraction, erk-objective). Used by init and doctor commands
-    to set up and verify labels in target issue repositories.
+    erk-extraction, erk-objective). Used by init command to set up
+    labels in target issue repositories.
     """
     return [
         LabelDefinition(
@@ -384,6 +384,28 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
             name=_LABEL_ERK_EXTRACTION,
             description=_LABEL_ERK_EXTRACTION_DESC,
             color=_LABEL_ERK_EXTRACTION_COLOR,
+        ),
+        LabelDefinition(
+            name=_LABEL_ERK_OBJECTIVE,
+            description=_LABEL_ERK_OBJECTIVE_DESC,
+            color=_LABEL_ERK_OBJECTIVE_COLOR,
+        ),
+    ]
+
+
+def get_required_erk_labels() -> list[LabelDefinition]:
+    """Get erk labels required for doctor check.
+
+    Returns subset of labels checked by doctor command. Excludes
+    erk-extraction (optional, for documentation workflows).
+
+    Used by doctor command to verify required labels exist.
+    """
+    return [
+        LabelDefinition(
+            name=_LABEL_ERK_PLAN,
+            description=_LABEL_ERK_PLAN_DESC,
+            color=_LABEL_ERK_PLAN_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_OBJECTIVE,
