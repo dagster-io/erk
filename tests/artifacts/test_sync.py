@@ -223,10 +223,9 @@ def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> N
     (bundled_skill / "SKILL.md").write_text("# Bundled Skill", encoding="utf-8")
 
     # Create a non-bundled skill (should NOT be synced)
-    # Note: dignified-python is now opt-in via --with-dignified-review
-    non_bundled_skill = source_dir / "dignified-python"
+    non_bundled_skill = source_dir / "some-custom-skill"
     non_bundled_skill.mkdir(parents=True)
-    (non_bundled_skill / "SKILL.md").write_text("# Opt-in Skill", encoding="utf-8")
+    (non_bundled_skill / "SKILL.md").write_text("# Custom Skill", encoding="utf-8")
 
     target_dir = tmp_path / "target" / "skills"
 
@@ -238,8 +237,8 @@ def test_sync_directory_artifacts_only_syncs_bundled_skills(tmp_path: Path) -> N
     # Bundled skill should exist
     assert (target_dir / "learned-docs" / "SKILL.md").exists()
 
-    # Opt-in skill should NOT exist (dignified-python is now opt-in)
-    assert not (target_dir / "dignified-python").exists()
+    # Non-bundled skill should NOT exist
+    assert not (target_dir / "some-custom-skill").exists()
 
 
 def test_sync_directory_artifacts_only_syncs_bundled_agents(tmp_path: Path) -> None:
@@ -313,10 +312,10 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     bundled_skill.mkdir(parents=True)
     (bundled_skill / "SKILL.md").write_text("# Bundled", encoding="utf-8")
 
-    # Create non-bundled skill (dignified-python is now opt-in)
-    non_bundled_skill = bundled_claude / "skills" / "dignified-python"
+    # Create non-bundled skill (should NOT be synced)
+    non_bundled_skill = bundled_claude / "skills" / "some-custom-skill"
     non_bundled_skill.mkdir(parents=True)
-    (non_bundled_skill / "SKILL.md").write_text("# Opt-in", encoding="utf-8")
+    (non_bundled_skill / "SKILL.md").write_text("# Custom", encoding="utf-8")
 
     # Create bundled agent
     bundled_agent = bundled_claude / "agents" / "devrun"
@@ -358,8 +357,8 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     assert (target_dir / ".claude" / "agents" / "devrun" / "AGENT.md").exists()
     assert (target_dir / ".claude" / "commands" / "erk" / "plan-implement.md").exists()
 
-    # Non-bundled/opt-in artifacts should NOT exist
-    assert not (target_dir / ".claude" / "skills" / "dignified-python").exists()
+    # Non-bundled artifacts should NOT exist
+    assert not (target_dir / ".claude" / "skills" / "some-custom-skill").exists()
     assert not (target_dir / ".claude" / "agents" / "haiku-devrun").exists()
     assert not (target_dir / ".claude" / "commands" / "local").exists()
 
