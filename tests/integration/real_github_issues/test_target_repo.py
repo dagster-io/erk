@@ -19,8 +19,11 @@ def test_target_repo_property_returns_configured_value() -> None:
     assert issues_none.target_repo is None
 
 
-def test_create_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) -> None:
-    """Test create_issue includes -R flag when target_repo is set."""
+def test_create_issue_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPatch) -> None:
+    """Test create_issue substitutes {owner}/{repo} in endpoint when target_repo is set.
+
+    Note: gh api doesn't support -R flag - it uses {owner}/{repo} placeholders instead.
+    """
     created_commands: list[list[str]] = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -43,15 +46,19 @@ def test_create_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch)
         )
 
         cmd = created_commands[0]
-        # Verify -R flag is inserted after 'gh'
+        # gh api uses {owner}/{repo} substitution, not -R flag
         assert cmd[0] == "gh"
-        assert cmd[1] == "-R"
-        assert cmd[2] == "owner/plans-repo"
-        assert cmd[3] == "api"  # REST API command
+        assert cmd[1] == "api"
+        # Verify the endpoint has the substituted target repo
+        assert cmd[2] == "repos/owner/plans-repo/issues"
+        assert "{owner}/{repo}" not in " ".join(cmd)  # No placeholder remains
 
 
-def test_get_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) -> None:
-    """Test get_issue includes -R flag when target_repo is set."""
+def test_get_issue_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPatch) -> None:
+    """Test get_issue substitutes {owner}/{repo} in endpoint when target_repo is set.
+
+    Note: gh api doesn't support -R flag - it uses {owner}/{repo} placeholders instead.
+    """
     created_commands: list[list[str]] = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -81,14 +88,19 @@ def test_get_issue_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) ->
         issues.get_issue(Path("/repo"), 42)
 
         cmd = created_commands[0]
+        # gh api uses {owner}/{repo} substitution, not -R flag
         assert cmd[0] == "gh"
-        assert cmd[1] == "-R"
-        assert cmd[2] == "owner/plans-repo"
-        assert cmd[3] == "api"
+        assert cmd[1] == "api"
+        # Verify the endpoint has the substituted target repo
+        assert cmd[2] == "repos/owner/plans-repo/issues/42"
+        assert "{owner}/{repo}" not in " ".join(cmd)  # No placeholder remains
 
 
-def test_list_issues_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) -> None:
-    """Test list_issues includes -R flag when target_repo is set."""
+def test_list_issues_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPatch) -> None:
+    """Test list_issues substitutes {owner}/{repo} in endpoint when target_repo is set.
+
+    Note: gh api doesn't support -R flag - it uses {owner}/{repo} placeholders instead.
+    """
     created_commands: list[list[str]] = []
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
@@ -105,7 +117,9 @@ def test_list_issues_with_target_repo_includes_r_flag(monkeypatch: MonkeyPatch) 
         issues.list_issues(Path("/repo"), labels=["erk-plan"])
 
         cmd = created_commands[0]
+        # gh api uses {owner}/{repo} substitution, not -R flag
         assert cmd[0] == "gh"
-        assert cmd[1] == "-R"
-        assert cmd[2] == "owner/plans-repo"
-        assert cmd[3] == "api"
+        assert cmd[1] == "api"
+        # Verify the endpoint has the substituted target repo (with query params)
+        assert cmd[2].startswith("repos/owner/plans-repo/issues")
+        assert "{owner}/{repo}" not in " ".join(cmd)  # No placeholder remains

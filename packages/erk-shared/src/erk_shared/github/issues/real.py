@@ -60,9 +60,7 @@ class RealGitHubIssues(GitHubIssues):
             return base_cmd
         # gh api doesn't support -R flag - substitute {owner}/{repo} in endpoint
         if len(base_cmd) > 1 and base_cmd[1] == "api":
-            return [
-                arg.replace("{owner}/{repo}", self._target_repo) for arg in base_cmd
-            ]
+            return [arg.replace("{owner}/{repo}", self._target_repo) for arg in base_cmd]
         # Insert -R owner/repo after 'gh' but before subcommand
         return [base_cmd[0], "-R", self._target_repo, *base_cmd[1:]]
 
