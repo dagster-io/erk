@@ -121,3 +121,105 @@ def test_submit_with_invalid_base_branch(tmp_path: Path) -> None:
 
     # Verify workflow was NOT triggered (failure happened before workflow dispatch)
     assert len(fake_github.triggered_workflows) == 0
+
+
+def test_submit_passes_base_branch_in_workflow_inputs(tmp_path: Path) -> None:
+    """Test submit passes base_branch in workflow inputs for stacked branch support.
+
+    The base_branch is used by the remote worker to rebase onto the correct parent
+    branch (not always trunk) when resolving merge conflicts.
+    """
+    plan = create_plan("456", "Implement stacked feature")
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    from tests.test_utils.plan_helpers import create_plan_store_with_plans
+
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"456": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "feature-parent"},
+        trunk_branches={repo_root: "master"},
+        # Parent branch exists on remote
+        remote_branches={repo_root: ["origin/feature-parent"]},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+    ctx = context_for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    # Submit from feature-parent (current branch is used as base by default)
+    result = runner.invoke(submit_cmd, ["456"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify workflow was triggered with base_branch in inputs
+    assert len(fake_github.triggered_workflows) == 1
+    workflow, inputs = fake_github.triggered_workflows[0]
+    assert workflow == "erk-impl.yml"
+    assert inputs["issue_number"] == "456"
+    # CRITICAL: base_branch must be passed to workflow for stacked PR support
+    assert "base_branch" in inputs
+    assert inputs["base_branch"] == "feature-parent"
+
+
+def test_submit_with_custom_base_passes_in_workflow_inputs(tmp_path: Path) -> None:
+    """Test submit with --base passes custom base_branch in workflow inputs."""
+    plan = create_plan("789", "Implement child feature")
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    from tests.test_utils.plan_helpers import create_plan_store_with_plans
+
+    fake_plan_store, fake_github_issues = create_plan_store_with_plans({"789": plan})
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+        trunk_branches={repo_root: "master"},
+        # Custom parent branch exists on remote
+        remote_branches={repo_root: ["origin/feature-parent"]},
+    )
+    fake_github = FakeGitHub()
+
+    repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
+    repo = RepoContext(
+        root=repo_root,
+        repo_name="test-repo",
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+    ctx = context_for_test(
+        cwd=repo_root,
+        git=fake_git,
+        github=fake_github,
+        issues=fake_github_issues,
+        plan_store=fake_plan_store,
+        repo=repo,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["789", "--base", "feature-parent"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Verify workflow was triggered with custom base_branch
+    assert len(fake_github.triggered_workflows) == 1
+    workflow, inputs = fake_github.triggered_workflows[0]
+    # CRITICAL: Custom base_branch must be passed for stacked PR rebase support
+    assert inputs["base_branch"] == "feature-parent"

@@ -33,6 +33,10 @@ on:
         required: false
         type: string
         default: "claude-sonnet-4-5"
+      base_branch:
+        description: "Base branch for the implementation PR (may be stacked, not always trunk)"
+        required: true
+        type: string
 
 concurrency:
   group: implement-issue-${{ github.event.inputs.issue_number }}
@@ -212,7 +216,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           erk exec rebase-with-conflict-resolution \
-            --trunk-branch "${{ steps.trunk.outputs.trunk_branch }}" \
+            --target-branch "${{ inputs.base_branch }}" \
             --branch-name "${{ steps.find_pr.outputs.branch_name }}" \
             --model "${{ inputs.model_name }}"
 

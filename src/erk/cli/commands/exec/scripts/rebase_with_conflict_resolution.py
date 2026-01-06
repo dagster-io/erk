@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Rebase onto trunk and resolve conflicts with Claude.
+"""Rebase onto target branch and resolve conflicts with Claude.
 
 This command handles merge conflicts during CI workflows by:
-1. Fetching the trunk branch
+1. Fetching the target branch (trunk or parent branch for stacked PRs)
 2. Checking if the current branch is behind
 3. Starting a rebase
 4. Using Claude to resolve any conflicts
@@ -10,7 +10,7 @@ This command handles merge conflicts during CI workflows by:
 
 Usage:
     erk exec rebase-with-conflict-resolution \
-        --trunk-branch master \
+        --target-branch master \
         --branch-name feature-branch \
         --model claude-sonnet-4-5
 
@@ -22,14 +22,15 @@ Exit Codes:
     1: Error (conflict resolution failed after max attempts)
 
 Examples:
-    $ erk exec rebase-with-conflict-resolution --trunk-branch main --branch-name my-feature
+    $ erk exec rebase-with-conflict-resolution --target-branch main --branch-name my-feature
     {
       "success": true,
       "action": "rebased",
       "commits_behind": 3
     }
 
-    $ erk exec rebase-with-conflict-resolution --trunk-branch main --branch-name my-feature
+    $ erk exec rebase-with-conflict-resolution \
+        --target-branch feature-parent --branch-name my-feature
     {
       "success": true,
       "action": "already-up-to-date",
@@ -64,14 +65,14 @@ class RebaseError:
     message: str
 
 
-def _get_commits_behind(trunk_branch: str) -> int | None:
-    """Get number of commits behind trunk branch.
+def _get_commits_behind(target_branch: str) -> int | None:
+    """Get number of commits behind target branch.
 
     Returns:
         Number of commits behind, or None if command fails.
     """
     result = subprocess.run(
-        ["git", "rev-list", "--count", f"HEAD..origin/{trunk_branch}"],
+        ["git", "rev-list", "--count", f"HEAD..origin/{target_branch}"],
         capture_output=True,
         text=True,
         check=False,
@@ -121,15 +122,15 @@ def _invoke_claude_for_conflicts(model: str) -> bool:
 
 
 def _rebase_with_conflict_resolution_impl(
-    trunk_branch: str,
+    target_branch: str,
     branch_name: str,
     model: str,
     max_attempts: int,
 ) -> RebaseSuccess | RebaseError:
-    """Rebase onto trunk and resolve conflicts with Claude.
+    """Rebase onto target branch and resolve conflicts with Claude.
 
     Args:
-        trunk_branch: Trunk branch to rebase onto (e.g., 'main', 'master')
+        target_branch: Branch to rebase onto (trunk or parent branch for stacked PRs)
         branch_name: Current branch name for force push
         model: Claude model to use for conflict resolution
         max_attempts: Maximum number of conflict resolution attempts
@@ -137,9 +138,9 @@ def _rebase_with_conflict_resolution_impl(
     Returns:
         RebaseSuccess on success, RebaseError on failure
     """
-    # Fetch trunk branch
+    # Fetch target branch
     fetch_result = subprocess.run(
-        ["git", "fetch", "origin", trunk_branch],
+        ["git", "fetch", "origin", target_branch],
         capture_output=True,
         text=True,
         check=False,  # We check returncode explicitly below
@@ -148,16 +149,16 @@ def _rebase_with_conflict_resolution_impl(
         return RebaseError(
             success=False,
             error="fetch-failed",
-            message=f"Failed to fetch origin/{trunk_branch}: {fetch_result.stderr}",
+            message=f"Failed to fetch origin/{target_branch}: {fetch_result.stderr}",
         )
 
     # Check if behind
-    commits_behind = _get_commits_behind(trunk_branch)
+    commits_behind = _get_commits_behind(target_branch)
     if commits_behind is None:
         return RebaseError(
             success=False,
             error="fetch-failed",
-            message="Failed to determine commits behind trunk",
+            message="Failed to determine commits behind target branch",
         )
 
     if commits_behind == 0:
@@ -169,7 +170,7 @@ def _rebase_with_conflict_resolution_impl(
 
     # Start rebase (may fail with conflicts, which is expected)
     subprocess.run(
-        ["git", "rebase", f"origin/{trunk_branch}"],
+        ["git", "rebase", f"origin/{target_branch}"],
         capture_output=True,
         text=True,
         check=False,  # Conflicts expected - we check _is_rebase_in_progress()
@@ -215,9 +216,9 @@ def _rebase_with_conflict_resolution_impl(
 
 @click.command(name="rebase-with-conflict-resolution")
 @click.option(
-    "--trunk-branch",
+    "--target-branch",
     required=True,
-    help="Trunk branch to rebase onto (e.g., 'main', 'master')",
+    help="Branch to rebase onto (trunk or parent branch for stacked PRs)",
 )
 @click.option(
     "--branch-name",
@@ -236,19 +237,19 @@ def _rebase_with_conflict_resolution_impl(
     help="Maximum number of conflict resolution attempts",
 )
 def rebase_with_conflict_resolution(
-    trunk_branch: str,
+    target_branch: str,
     branch_name: str,
     model: str,
     max_attempts: int,
 ) -> None:
-    """Rebase onto trunk and resolve conflicts with Claude.
+    """Rebase onto target branch and resolve conflicts with Claude.
 
     This command is designed for CI workflows where push may fail due to
-    branch divergence. It fetches the trunk branch, rebases onto it,
-    and uses Claude to resolve any merge conflicts.
+    branch divergence. It fetches the target branch (trunk or parent for
+    stacked PRs), rebases onto it, and uses Claude to resolve any merge conflicts.
     """
     result = _rebase_with_conflict_resolution_impl(
-        trunk_branch=trunk_branch,
+        target_branch=target_branch,
         branch_name=branch_name,
         model=model,
         max_attempts=max_attempts,

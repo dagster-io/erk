@@ -572,6 +572,7 @@ def _submit_single_issue(
         "issue_title": issue.title,
         "branch_name": branch_name,
         "pr_number": str(pr_number),
+        "base_branch": base_branch,
         # Config-based inputs (from .erk/workflows/)
         **workflow_config,
     }
