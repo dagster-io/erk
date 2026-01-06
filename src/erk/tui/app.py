@@ -672,17 +672,14 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "close_plan":
-            if row.issue_url:
-                closed_prs = executor.close_plan(row.issue_number, row.issue_url)
-                if closed_prs:
-                    pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
-                    executor.notify(f"Closed plan #{row.issue_number} and PRs: {pr_list}")
-                else:
-                    executor.notify(f"Closed plan #{row.issue_number}")
-                executor.refresh_data()
-                # Close modal after closing plan (only when running in app context)
-                if self.is_attached:
-                    self.dismiss()
+            if row.issue_url and self._repo_root is not None:
+                # Use streaming output for close command
+                self.run_streaming_command(
+                    ["erk", "plan", "close", str(row.issue_number)],
+                    cwd=self._repo_root,
+                    title=f"Closing Plan #{row.issue_number}",
+                )
+                # Don't dismiss - user must press Esc after completion
 
         elif command_id == "submit_to_queue":
             if row.issue_url and self._repo_root is not None:
