@@ -10,6 +10,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
@@ -710,7 +711,11 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
             raise SystemExit(1)
         target_branch = base
     else:
-        target_branch = original_branch
+        # If on a placeholder branch (local-only), use trunk as base
+        if is_placeholder_branch(original_branch):
+            target_branch = ctx.git.detect_trunk_branch(repo.root)
+        else:
+            target_branch = original_branch
 
     # Get GitHub username (authentication already validated)
     _, username, _ = ctx.github.check_auth_status()

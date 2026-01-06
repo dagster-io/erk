@@ -1,5 +1,6 @@
 """Shared utilities for slot commands."""
 
+import re
 import shutil
 from pathlib import Path
 
@@ -44,6 +45,20 @@ def get_placeholder_branch_name(slot_name: str) -> str | None:
     if slot_number is None:
         return None
     return f"__erk-slot-{slot_number}-placeholder__"
+
+
+def is_placeholder_branch(branch_name: str) -> bool:
+    """Check if a branch name is an erk slot placeholder branch.
+
+    Placeholder branches have the format: __erk-slot-XX-placeholder__
+
+    Args:
+        branch_name: Branch name to check
+
+    Returns:
+        True if branch_name matches the placeholder pattern
+    """
+    return bool(re.match(r"^__erk-slot-\d+-placeholder__$", branch_name))
 
 
 def get_pool_size(ctx: ErkContext) -> int:
