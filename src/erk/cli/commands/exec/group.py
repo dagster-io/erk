@@ -93,6 +93,7 @@ from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
 from erk.cli.commands.exec.scripts.slot_objective import slot_objective
+from erk.cli.commands.exec.scripts.switch_request import switch_request
 from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
@@ -156,6 +157,7 @@ exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-co
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
 exec_group.add_command(slot_objective, name="slot-objective")
+exec_group.add_command(switch_request, name="switch-request")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(ci_update_pr_body)

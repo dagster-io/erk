@@ -392,6 +392,7 @@ def _implement_from_issue(
     verbose: bool,
     model: str | None,
     force: bool,
+    path_only: bool,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from GitHub issue.
@@ -407,6 +408,7 @@ def _implement_from_issue(
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         force: Whether to auto-unassign oldest slot if pool is full
+        path_only: Whether to output only the worktree path
         executor: Claude CLI executor for command execution
     """
     # Discover repo context for issue fetch
@@ -445,6 +447,11 @@ def _implement_from_issue(
         return
 
     wt_path = result.worktree_path
+
+    # Path-only mode: output worktree path and exit
+    if path_only:
+        click.echo(str(wt_path))
+        return
 
     # Save issue reference for PR linking (issue-specific)
     # Use impl_dir from result to handle monorepo project-root placement
@@ -504,6 +511,7 @@ def _implement_from_file(
     verbose: bool,
     model: str | None,
     force: bool,
+    path_only: bool,
     executor: ClaudeExecutor,
 ) -> None:
     """Implement feature from plan file.
@@ -519,6 +527,7 @@ def _implement_from_file(
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         force: Whether to auto-unassign oldest slot if pool is full
+        path_only: Whether to output only the worktree path
         executor: Claude CLI executor for command execution
     """
     # Discover repo context
@@ -551,6 +560,11 @@ def _implement_from_file(
         return
 
     wt_path = result.worktree_path
+
+    # Path-only mode: output worktree path and exit
+    if path_only:
+        click.echo(str(wt_path))
+        return
 
     # Delete original plan file (move semantics, file-specific)
     ctx.feedback.info(f"Removing original plan file: {plan_file.name}...")
@@ -607,6 +621,12 @@ def _implement_from_file(
     default=False,
     help="Auto-unassign oldest slot if pool is full (no interactive prompt).",
 )
+@click.option(
+    "--path-only",
+    is_flag=True,
+    default=False,
+    help="Output only the worktree path (machine-readable, for shell integration).",
+)
 @click.pass_obj
 def implement(
     ctx: ErkContext,
@@ -620,6 +640,7 @@ def implement(
     yolo: bool,
     verbose: bool,
     force: bool,
+    path_only: bool,
     model: str | None,
 ) -> None:
     """Create worktree from GitHub issue or plan file and execute implementation.
@@ -662,6 +683,10 @@ def implement(
     \b
       # Shell integration
       source <(erk implement 123 --script)
+
+    \b
+      # Path-only mode (for shell wrappers)
+      wt_path=$(erk implement 123 --path-only)
 
     \b
       # From plan file
@@ -707,6 +732,7 @@ def implement(
             verbose=verbose,
             model=model,
             force=force,
+            path_only=path_only,
             executor=ctx.claude_executor,
         )
     else:
@@ -723,5 +749,6 @@ def implement(
             verbose=verbose,
             model=model,
             force=force,
+            path_only=path_only,
             executor=ctx.claude_executor,
         )

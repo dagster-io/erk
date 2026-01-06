@@ -30,6 +30,7 @@ from erk.cli.commands.pr import pr_group
 from erk.cli.commands.prepare_cwd_recovery import prepare_cwd_recovery_cmd
 from erk.cli.commands.project import project_group
 from erk.cli.commands.run import run_group
+from erk.cli.commands.shell_init import shell_init_cmd
 from erk.cli.commands.shell_integration import hidden_shell_cmd
 from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
@@ -205,6 +206,7 @@ cli.add_command(upgrade_cmd)
 cli.add_command(wt_group)
 cli.add_command(hidden_shell_cmd)
 cli.add_command(prepare_cwd_recovery_cmd)
+cli.add_command(shell_init_cmd)
 
 # Additional command groups
 cli.add_command(docs_group)

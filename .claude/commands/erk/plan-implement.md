@@ -64,6 +64,35 @@ Parse the JSON output to get:
 
 If this fails, display the error and stop.
 
+### Step 3a: Seamless Worktree Switch (Optional)
+
+If `~/.erk/switch-request` marker file support is enabled (user has `source <(erk shell-init)` in their shell config), you can use the seamless switch flow:
+
+1. Write switch request markers:
+
+   ```bash
+   erk exec switch-request <issue-number> --command /erk:plan-implement
+   ```
+
+2. Inform user:
+   "Switching to implementation worktree..."
+
+3. Terminate Claude to trigger wrapper restart:
+   ```bash
+   kill -TERM $(ps -o ppid= -p $$)
+   ```
+
+The shell wrapper will:
+
+- Detect the switch-request marker
+- Run `erk implement <issue> --path-only` to set up the worktree
+- Change to the worktree directory
+- Restart Claude with `--continue /erk:plan-implement`
+
+When Claude resumes, Step 1 (impl-init check) will find `.impl/` already set up.
+
+**Note**: If the shell wrapper is not active or you prefer to stay in the current worktree, skip this step and continue with Step 3b.
+
 ### Step 3b: Create Branch and Setup .impl/
 
 Now set up the implementation environment using the saved issue:
