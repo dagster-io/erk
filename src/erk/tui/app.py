@@ -1363,7 +1363,7 @@ class ErkDashApp(App):
                     submit_to_queue_fn=self._provider.submit_to_queue,
                 )
                 detail_screen = PlanDetailScreen(
-                    row,
+                    row=row,
                     clipboard=self._provider.clipboard,
                     browser=self._provider.browser,
                     executor=executor,
