@@ -4,7 +4,7 @@ This exec command wraps the start/end signaling operations:
 - "started": Combines post-start-comment and mark-impl-started
 - "ended": Runs mark-impl-ended
 
-Provides a single entry point for /erk:plan-implement to signal events
+Provides a single entry point for /erk:system:impl-execute to signal events
 with graceful failure (always exits 0 for || true pattern).
 
 Usage:

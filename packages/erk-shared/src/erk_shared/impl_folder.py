@@ -371,7 +371,7 @@ erk br co {branch_name}
 
 To implement the plan:
 ```bash
-claude --permission-mode acceptEdits "/erk:plan-implement"
+claude --permission-mode acceptEdits "/erk:system:impl-execute"
 ```"""
 
     # Create comment with consistent format

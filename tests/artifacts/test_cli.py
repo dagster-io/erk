@@ -72,14 +72,14 @@ class TestListCommand:
         """Shows [erk] badge for erk: prefixed commands."""
         runner = CliRunner()
         with runner.isolated_filesystem(temp_dir=tmp_path):
-            cmd_dir = Path(".claude/commands/erk")
+            cmd_dir = Path(".claude/commands/erk/system")
             cmd_dir.mkdir(parents=True)
-            (cmd_dir / "plan-implement.md").write_text("# Cmd", encoding="utf-8")
+            (cmd_dir / "impl-execute.md").write_text("# Cmd", encoding="utf-8")
 
             result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "erk:plan-implement" in result.output
+        assert "erk:system:impl-execute" in result.output
         assert "[erk]" in result.output
 
     def test_list_shows_erk_indicator_for_bundled_skill(self, tmp_path: Path) -> None:
@@ -141,7 +141,7 @@ class TestIsErkManaged:
     def test_erk_command_is_managed(self) -> None:
         """Commands with erk: prefix are erk-managed."""
         artifact = InstalledArtifact(
-            name="erk:plan-implement",
+            name="erk:system:impl-execute",
             artifact_type="command",
             path=Path(".claude/commands/erk/plan-implement.md"),
             content_hash=None,
@@ -384,9 +384,9 @@ class TestCheckCommand:
             agent_dir.mkdir(parents=True)
             (agent_dir / "devrun.md").write_text("# Agent", encoding="utf-8")
 
-            cmd_dir = Path(".claude/commands/erk")
+            cmd_dir = Path(".claude/commands/erk/system")
             cmd_dir.mkdir(parents=True)
-            (cmd_dir / "plan-implement.md").write_text("# Command", encoding="utf-8")
+            (cmd_dir / "impl-execute.md").write_text("# Command", encoding="utf-8")
 
             with patch("erk.artifacts.staleness.get_current_version", return_value="1.0.0"):
                 result = runner.invoke(check_cmd)
@@ -395,7 +395,7 @@ class TestCheckCommand:
         assert "out of sync" in result.output
         # Should NOT show artifacts when version is mismatched
         assert "agents/devrun" not in result.output
-        assert "commands/erk/plan-implement.md" not in result.output
+        assert "commands/erk/system/impl-execute.md" not in result.output
 
     def test_check_with_orphans(self, tmp_path: Path) -> None:
         """Shows orphaned artifacts and fails when orphans found."""

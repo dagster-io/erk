@@ -43,12 +43,12 @@ Run from a worktree created for the issue:
 
 This analyzes the session XML and generates documentation suggestions.
 
-### Option 2: Manual via /erk:plan-implement
+### Option 2: Manual via /erk:system:impl-execute
 
 If an implementation plan already exists:
 
 ```bash
-/erk:plan-implement
+/erk:system:impl-execute
 ```
 
 This executes the extraction analysis framework directly.

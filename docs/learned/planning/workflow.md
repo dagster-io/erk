@@ -77,7 +77,7 @@ This command saves the plan from the current session as a GitHub issue with the 
 Save to GitHub AND immediately implement in the current worktree:
 
 ```bash
-/erk:plan-implement
+/erk:system:impl-execute
 ```
 
 This command:
@@ -311,5 +311,5 @@ gh run watch
 
 ### Implementation
 
-- `/erk:plan-implement` - Save plan to GitHub AND implement (full workflow: save → setup → implement → CI → PR)
+- `/erk:system:impl-execute` - Save plan to GitHub AND implement (full workflow: save → setup → implement → CI → PR)
 - `erk implement <issue>` - Create worktree and implement plan from existing GitHub issue

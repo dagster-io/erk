@@ -201,7 +201,7 @@ def build_command_sequence(submit: bool) -> list[str]:
     Returns:
         List of slash commands to execute in sequence
     """
-    commands = ["/erk:plan-implement"]
+    commands = ["/erk:system:impl-execute"]
     if submit:
         commands.extend(["/fast-ci", "/gt:pr-submit"])
     return commands
@@ -231,7 +231,7 @@ def build_claude_command(slash_command: str, dangerous: bool, model: str | None)
     """Build a Claude CLI invocation for interactive mode.
 
     Args:
-        slash_command: The slash command to execute (e.g., "/erk:plan-implement")
+        slash_command: The slash command to execute (e.g., "/erk:system:impl-execute")
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
@@ -658,12 +658,13 @@ def output_activation_instructions(
         user_output("\n" + click.style("Next steps:", fg="cyan", bold=True))
         user_output(f"  1. Change to worktree:  erk br co {branch}")
         if submit:
+            impl_cmd = build_claude_command("/erk:system:impl-execute", dangerous, model)
             user_output("  2. Run implementation, CI, and submit PR:")
-            user_output(f"     {build_claude_command('/erk:plan-implement', dangerous, model)}")
+            user_output(f"     {impl_cmd}")
             user_output(f"     {build_claude_command('/fast-ci', dangerous, model)}")
             user_output(f"     {build_claude_command('/gt:pr-submit', dangerous, model)}")
         else:
-            claude_cmd = build_claude_command("/erk:plan-implement", dangerous, model)
+            claude_cmd = build_claude_command("/erk:system:impl-execute", dangerous, model)
             user_output(f"  2. Run implementation:  {claude_cmd}")
         user_output("\n" + click.style("Shell integration not detected.", fg="yellow"))
         user_output("To activate environment and run commands, use:")

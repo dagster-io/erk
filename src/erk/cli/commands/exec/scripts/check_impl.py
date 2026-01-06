@@ -110,9 +110,9 @@ Plan loaded from .impl/plan.md
 {tracking_msg}
 
 To implement:
-  claude --permission-mode acceptEdits "/erk:plan-implement"
+  claude --permission-mode acceptEdits "/erk:system:impl-execute"
 
-The /erk:plan-implement slash command will:
+The /erk:system:impl-execute slash command will:
   1. Execute implementation steps
   2. Update progress.md as steps complete"""
 

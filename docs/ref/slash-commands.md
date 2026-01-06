@@ -10,7 +10,7 @@ Claude Code slash commands for in-session use.
 
 ## Implementation Commands
 
-<!-- TODO: /erk:plan-implement, /erk:plan-save, /erk:plan-implement-here -->
+<!-- TODO: /erk:system:impl-execute, /erk:plan-save, /erk:plan-implement-here -->
 
 ## PR Commands
 

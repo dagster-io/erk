@@ -79,7 +79,7 @@ After erk completes a plan implementation, it runs CI validation. You can custom
 
 **How It Works:**
 
-1. When `/erk:plan-implement` finishes implementing a plan, it checks for this file
+1. When `/erk:system:impl-execute` finishes implementing a plan, it checks for this file
 2. If found, erk follows the instructions in that file for CI validation
 3. If not found, erk skips automated CI and prompts you to run it manually
 

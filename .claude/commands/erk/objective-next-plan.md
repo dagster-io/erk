@@ -60,7 +60,7 @@ gh issue view <issue-number> --json number,title,body,labels
 **Validate this is an objective:**
 
 1. Check for `erk-objective` label
-2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:plan-implement` instead."
+2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:system:impl-execute` instead."
 3. If neither label: warn but proceed
 
 ### Step 2.5: Create Objective Context Marker
@@ -204,7 +204,7 @@ Or simply close the incorrectly-created issue and re-run Step 8 with the correct
 | Scenario                                | Action                                          |
 | --------------------------------------- | ----------------------------------------------- |
 | Issue not found                         | Report error and exit                           |
-| Issue is erk-plan                       | Redirect to `/erk:plan-implement`               |
+| Issue is erk-plan                       | Redirect to `/erk:system:impl-execute`          |
 | No pending steps                        | Report all steps complete, suggest closing      |
 | Invalid argument format                 | Prompt for valid issue number                   |
 | Roadmap not parseable                   | Ask user to specify which step to plan          |

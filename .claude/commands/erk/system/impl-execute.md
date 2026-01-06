@@ -2,7 +2,7 @@
 description: Save plan to GitHub and execute implementation in current worktree
 ---
 
-# /erk:plan-implement
+# /erk:system:impl-execute
 
 User-facing command to save a plan to GitHub and immediately implement it.
 

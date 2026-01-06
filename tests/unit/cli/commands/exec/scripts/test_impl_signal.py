@@ -1,6 +1,6 @@
 """Tests for impl-signal kit CLI command.
 
-Tests the started/ended event signaling for /erk:plan-implement.
+Tests the started/ended event signaling for /erk:system:impl-execute.
 
 Note: This command requires GitHub context and git worktree environment,
 so most tests focus on error handling paths that don't require those dependencies.

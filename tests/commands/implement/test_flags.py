@@ -118,7 +118,7 @@ def test_implement_submit_in_script_mode() -> None:
         script_content = script_path.read_text(encoding="utf-8")
 
         # Verify script content contains chained commands
-        assert "/erk:plan-implement" in script_content
+        assert "/erk:system:impl-execute" in script_content
         assert "/fast-ci" in script_content
         assert "/gt:pr-submit" in script_content
 
@@ -151,7 +151,7 @@ def test_implement_submit_with_dry_run() -> None:
         assert "Execution mode: non-interactive" in result.output
 
         # Verify all three commands shown in dry-run output
-        assert "/erk:plan-implement" in result.output
+        assert "/erk:system:impl-execute" in result.output
         assert "/fast-ci" in result.output
         assert "/gt:pr-submit" in result.output
 
@@ -192,7 +192,7 @@ def test_implement_with_dangerous_flag_in_script_mode() -> None:
         assert "--dangerously-skip-permissions" in script_content
         expected_cmd = (
             "claude --permission-mode acceptEdits "
-            "--dangerously-skip-permissions /erk:plan-implement"
+            "--dangerously-skip-permissions /erk:system:impl-execute"
         )
         assert expected_cmd in script_content
 
@@ -226,7 +226,7 @@ def test_implement_without_dangerous_flag_in_script_mode() -> None:
         # Verify --dangerously-skip-permissions flag is NOT present
         assert "--dangerously-skip-permissions" not in script_content
         # But standard flags should be present
-        assert "claude --permission-mode acceptEdits /erk:plan-implement" in script_content
+        assert "claude --permission-mode acceptEdits /erk:system:impl-execute" in script_content
 
 
 def test_implement_with_dangerous_and_submit_flags() -> None:
@@ -259,7 +259,7 @@ def test_implement_with_dangerous_and_submit_flags() -> None:
         assert script_content.count("--dangerously-skip-permissions") == 3
         expected_implement = (
             "claude --permission-mode acceptEdits "
-            "--dangerously-skip-permissions /erk:plan-implement"
+            "--dangerously-skip-permissions /erk:system:impl-execute"
         )
         expected_ci = "claude --permission-mode acceptEdits --dangerously-skip-permissions /fast-ci"
         expected_submit = (
@@ -293,7 +293,7 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
         assert "--dangerously-skip-permissions" in result.output
         expected_cmd = (
             "claude --permission-mode acceptEdits "
-            "--dangerously-skip-permissions /erk:plan-implement"
+            "--dangerously-skip-permissions /erk:system:impl-execute"
         )
         assert expected_cmd in result.output
 

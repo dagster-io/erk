@@ -237,7 +237,7 @@ wc -c .claude/commands/my-command.md
 erk dev kit-build
 ```
 
-## Case Study: /erk:plan-implement
+## Case Study: /erk:system:impl-execute
 
 **Before**: 13,397 chars loaded every invocation
 

@@ -202,7 +202,7 @@ def test_non_interactive_executes_single_command() -> None:
         # Verify one command execution
         assert len(executor.executed_commands) == 1
         command, worktree_path, dangerous, verbose, model = executor.executed_commands[0]
-        assert command == "/erk:plan-implement"
+        assert command == "/erk:system:impl-execute"
         assert dangerous is False
         assert verbose is False
         assert model is None
@@ -234,7 +234,7 @@ def test_non_interactive_with_submit_runs_all_commands() -> None:
         # Verify three command executions
         assert len(executor.executed_commands) == 3
         commands = [cmd for cmd, _, _, _, _ in executor.executed_commands]
-        assert commands[0] == "/erk:plan-implement"
+        assert commands[0] == "/erk:system:impl-execute"
         assert commands[1] == "/fast-ci"
         assert commands[2] == "/gt:pr-submit"
 
@@ -314,7 +314,7 @@ def test_dry_run_shows_command_sequence() -> None:
 
         assert result.exit_code == 0
         assert "Command sequence:" in result.output
-        assert "/erk:plan-implement" in result.output
+        assert "/erk:system:impl-execute" in result.output
         assert "/fast-ci" not in result.output
 
         # With --submit (three commands)
@@ -324,7 +324,7 @@ def test_dry_run_shows_command_sequence() -> None:
 
         assert result.exit_code == 0
         assert "Command sequence:" in result.output
-        assert "/erk:plan-implement" in result.output
+        assert "/erk:system:impl-execute" in result.output
         assert "/fast-ci" in result.output
         assert "/gt:pr-submit" in result.output
 
@@ -354,7 +354,7 @@ def test_yolo_flag_sets_all_flags() -> None:
         # Verify three command executions (submit mode)
         assert len(executor.executed_commands) == 3
         commands = [cmd for cmd, _, dangerous, _, _ in executor.executed_commands]
-        assert commands[0] == "/erk:plan-implement"
+        assert commands[0] == "/erk:system:impl-execute"
         assert commands[1] == "/fast-ci"
         assert commands[2] == "/gt:pr-submit"
 
@@ -387,7 +387,7 @@ def test_yolo_flag_in_dry_run() -> None:
 
         # Verify all three commands shown with dangerous flag
         assert result.output.count("--dangerously-skip-permissions") == 3
-        assert "/erk:plan-implement" in result.output
+        assert "/erk:system:impl-execute" in result.output
         assert "/fast-ci" in result.output
         assert "/gt:pr-submit" in result.output
 

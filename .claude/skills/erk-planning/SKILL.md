@@ -137,13 +137,13 @@ The `plan-update-issue` command finds plan content from:
 
 ## Related Commands
 
-| Command                 | Purpose                                 |
-| ----------------------- | --------------------------------------- |
-| `/erk:plan-save`        | Create new plan issue from current plan |
-| `/local:plan-update`    | Update existing plan issue              |
-| `/erk:plan-implement`   | Save plan and immediately implement     |
-| `/local:replan`         | Analyze and recreate obsolete plan      |
-| `erk implement <issue>` | Implement a saved plan                  |
+| Command                    | Purpose                                 |
+| -------------------------- | --------------------------------------- |
+| `/erk:plan-save`           | Create new plan issue from current plan |
+| `/local:plan-update`       | Update existing plan issue              |
+| `/erk:system:impl-execute` | Save plan and immediately implement     |
+| `/local:replan`            | Analyze and recreate obsolete plan      |
+| `erk implement <issue>`    | Implement a saved plan                  |
 
 ## Resources
 

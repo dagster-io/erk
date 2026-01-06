@@ -84,6 +84,7 @@ def _discover_commands(claude_dir: Path) -> list[InstalledArtifact]:
     Commands can be:
     - Top-level: commands/<command>.md (no namespace)
     - Namespaced: commands/<namespace>/<command>.md
+    - Nested namespaced: commands/<namespace>/<subnamespace>/<command>.md
     """
     commands_dir = claude_dir / "commands"
     if not commands_dir.exists():
@@ -91,32 +92,31 @@ def _discover_commands(claude_dir: Path) -> list[InstalledArtifact]:
 
     artifacts: list[InstalledArtifact] = []
 
-    # Discover top-level commands (no namespace)
-    for cmd_file in commands_dir.glob("*.md"):
+    # Discover all commands recursively
+    for cmd_file in commands_dir.rglob("*.md"):
+        # Get relative path from commands_dir to build namespace
+        rel_path = cmd_file.relative_to(commands_dir)
+
+        # Build name from path: dir1/dir2/file.md -> dir1:dir2:file
+        # Top-level commands have no namespace, just the stem
+        parts = list(rel_path.parent.parts) + [cmd_file.stem]
+
+        # Join with colons - handles both "cmd" and "ns:cmd" and "ns:sub:cmd"
+        if rel_path.parent == Path("."):
+            # Top-level command (no namespace)
+            name = cmd_file.stem
+        else:
+            # Namespaced command (join all parts with colons)
+            name = ":".join(parts)
+
         artifacts.append(
             InstalledArtifact(
-                name=cmd_file.stem,
+                name=name,
                 artifact_type="command",
                 path=cmd_file,
                 content_hash=_compute_content_hash(cmd_file),
             )
         )
-
-    # Discover namespaced commands
-    for namespace_dir in commands_dir.iterdir():
-        if not namespace_dir.is_dir():
-            continue
-        for cmd_file in namespace_dir.glob("*.md"):
-            # Name includes namespace: "local:fast-ci" or "erk:plan-implement"
-            name = f"{namespace_dir.name}:{cmd_file.stem}"
-            artifacts.append(
-                InstalledArtifact(
-                    name=name,
-                    artifact_type="command",
-                    path=cmd_file,
-                    content_hash=_compute_content_hash(cmd_file),
-                )
-            )
     return artifacts
 
 

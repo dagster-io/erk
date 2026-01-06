@@ -1,6 +1,6 @@
 """Initialize implementation by validating .impl/ folder.
 
-This exec command validates .impl/ folder for /erk:plan-implement:
+This exec command validates .impl/ folder for /erk:system:impl-execute:
 - Validates .impl/ folder structure (plan.md exists)
 - Checks for GitHub issue tracking (issue.json)
 - Parses "Related Documentation" section for skills and docs
@@ -126,7 +126,7 @@ def _extract_related_docs(plan_content: str) -> dict[str, list[str]]:
 def impl_init(json_output: bool) -> None:
     """Initialize implementation by validating .impl/ folder.
 
-    Validates .impl/ folder for /erk:plan-implement.
+    Validates .impl/ folder for /erk:system:impl-execute.
     Returns structured JSON with validation status and related documentation.
     """
     # Validate folder structure

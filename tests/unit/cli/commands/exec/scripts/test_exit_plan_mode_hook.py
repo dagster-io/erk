@@ -338,7 +338,7 @@ class TestBuildBlockingMessage:
         assert "exit-plan-mode-hook.implement-now" in message
         # Verify the Implement option runs plan-save first, then creates marker
         assert "If user chooses 'Implement':" in message
-        assert "/erk:plan-implement" in message
+        assert "/erk:system:impl-execute" in message
 
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""

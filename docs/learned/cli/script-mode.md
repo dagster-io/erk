@@ -43,7 +43,7 @@ Creating worktree 'add-authentication-feature'...
 
 Next steps:
   1. Change to worktree:  erk br co add-authentication-feature
-  2. Run implementation:  claude --permission-mode acceptEdits "/erk:plan-implement"
+  2. Run implementation:  claude --permission-mode acceptEdits "/erk:system:impl-execute"
 ```
 
 The shell integration handler can't parse this - it needs only the script path.
@@ -172,7 +172,7 @@ Running erk br co...
 
 Next steps:
   1. Change to worktree:  erk br co add-authentication-feature
-  2. Run implementation:  claude --permission-mode acceptEdits "/erk:plan-implement"
+  2. Run implementation:  claude --permission-mode acceptEdits "/erk:system:impl-execute"
 
 Shell integration not detected.
 To activate environment and run implementation, use:

@@ -41,7 +41,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
     Examples:
         # Test with Claude available and successful execution
         >>> executor = FakeClaudeExecutor(claude_available=True)
-        >>> executor.execute_command("/erk:plan-implement", Path("/repo"), False)
+        >>> executor.execute_command("/erk:system:impl-execute", Path("/repo"), False)
         >>> assert len(executor.executed_commands) == 1
 
         # Test with Claude not available

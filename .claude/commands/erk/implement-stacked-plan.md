@@ -18,7 +18,7 @@ Create a graphite-stacked branch from a saved plan issue and implement it in the
 
 ❌ **Don't use when**:
 
-- You just finished planning and want to save + implement → Use `/erk:plan-implement`
+- You just finished planning and want to save + implement → Use `/erk:system:impl-execute`
 - You want to implement in a new worktree → Use `erk implement <issue-number>`
 
 ## Prerequisites
@@ -81,7 +81,7 @@ This makes the branch part of the graphite stack for proper PR management.
 Invoke the standard implementation workflow:
 
 ```
-/erk:plan-implement
+/erk:system:impl-execute
 ```
 
 This handles all remaining steps: reading the plan, loading context, executing phases, running CI, and creating the PR.

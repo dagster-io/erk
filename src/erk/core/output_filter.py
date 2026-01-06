@@ -312,8 +312,8 @@ def determine_spinner_status(tool_use: dict | None, command: str, worktree_path:
         Status message for spinner
 
     Example:
-        >>> determine_spinner_status(None, "/erk:plan-implement", Path("/repo"))
-        'Running /erk:plan-implement...'
+        >>> determine_spinner_status(None, "/erk:system:impl-execute", Path("/repo"))
+        'Running /erk:system:impl-execute...'
     """
     if tool_use is None:
         return f"Running {command}..."

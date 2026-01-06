@@ -124,7 +124,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            "/erk:plan-implement"
+            "/erk:system:impl-execute"
 
           if [ $? -eq 0 ]; then
             echo "implementation_success=true" >> $GITHUB_OUTPUT

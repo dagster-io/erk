@@ -178,7 +178,7 @@ def test_check_impl_normal_mode_with_tracking(impl_folder: Path, monkeypatch) ->
     assert result.exit_code == 0
     assert "Plan loaded from .impl/plan.md" in result.output
     assert "GitHub tracking: ENABLED (issue #456)" in result.output
-    assert "/erk:plan-implement" in result.output
+    assert "/erk:system:impl-execute" in result.output
 
 
 def test_check_impl_normal_mode_without_tracking(impl_folder: Path, monkeypatch) -> None:
@@ -194,4 +194,4 @@ def test_check_impl_normal_mode_without_tracking(impl_folder: Path, monkeypatch)
     assert result.exit_code == 0
     assert "Plan loaded from .impl/plan.md" in result.output
     assert "GitHub tracking: DISABLED (no issue.json)" in result.output
-    assert "/erk:plan-implement" in result.output
+    assert "/erk:system:impl-execute" in result.output

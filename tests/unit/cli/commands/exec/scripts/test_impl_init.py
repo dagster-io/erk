@@ -1,6 +1,6 @@
 """Tests for impl-init kit CLI command.
 
-Tests the initialization and validation for /erk:plan-implement.
+Tests the initialization and validation for /erk:system:impl-execute.
 """
 
 import json

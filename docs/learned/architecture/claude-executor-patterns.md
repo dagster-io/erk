@@ -30,7 +30,7 @@ Use when Claude should take over completely and the current command has no more 
 executor.execute_interactive(
     worktree_path=Path("/repos/my-project"),
     dangerous=False,
-    command="/erk:plan-implement",
+    command="/erk:system:impl-execute",
     target_subpath=None,
 )
 # This line NEVER runs - process is replaced
@@ -58,7 +58,7 @@ Use when you need to execute a slash command and capture metadata (PR URLs, issu
 ```python
 # Good: Capture PR metadata from automated execution
 result = executor.execute_command(
-    "/erk:plan-implement",
+    "/erk:system:impl-execute",
     worktree_path=Path("/repos/my-project"),
     dangerous=False,
 )
@@ -73,7 +73,7 @@ Use when you need real-time progress updates during command execution.
 ```python
 # Good: Display progress as it happens
 for event in executor.execute_command_streaming(
-    "/erk:plan-implement",
+    "/erk:system:impl-execute",
     worktree_path=Path("/repos/my-project"),
     dangerous=False,
 ):

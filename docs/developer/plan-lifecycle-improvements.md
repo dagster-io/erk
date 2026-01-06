@@ -594,7 +594,7 @@ jobs:
         run: erk plan reconstruct --issue ${{ inputs.issue_number }}
 
       - name: Run implementation
-        run: claude --print "/erk:plan-implement"
+        run: claude --print "/erk:system:impl-execute"
 
       - name: Create PR
         run: |

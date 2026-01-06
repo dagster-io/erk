@@ -194,6 +194,21 @@ def test_discover_top_level_commands(tmp_path: Path) -> None:
     assert result[0].path == cmd_file
 
 
+def test_discover_nested_namespaced_commands(tmp_path: Path) -> None:
+    """Discovers commands with nested namespaces (e.g., erk:system:impl-execute)."""
+    cmd_dir = tmp_path / ".claude" / "commands" / "erk" / "system"
+    cmd_dir.mkdir(parents=True)
+    cmd_file = cmd_dir / "impl-execute.md"
+    cmd_file.write_text("# Command", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    assert len(result) == 1
+    assert result[0].name == "erk:system:impl-execute"
+    assert result[0].artifact_type == "command"
+    assert result[0].path == cmd_file
+
+
 def test_discover_workflows_finds_all_workflows(tmp_path: Path) -> None:
     """Discovers all workflows from .github/workflows/."""
     workflows_dir = tmp_path / ".github" / "workflows"
