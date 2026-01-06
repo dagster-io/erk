@@ -33,7 +33,8 @@ def test_interactive_mode_calls_executor() -> None:
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
         # Interactive mode is the default (no --no-interactive flag)
-        result = runner.invoke(implement, ["#42"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -66,7 +67,8 @@ def test_interactive_mode_with_dangerous_flag() -> None:
         executor = FakeClaudeExecutor(claude_available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -95,7 +97,8 @@ def test_interactive_mode_from_plan_file() -> None:
         plan_file = env.cwd / "my-feature-plan.md"
         plan_file.write_text(plan_content, encoding="utf-8")
 
-        result = runner.invoke(implement, [str(plan_file)], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, [str(plan_file)], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -126,7 +129,8 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
         executor = FakeClaudeExecutor(claude_available=False)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         # Should fail with error about Claude CLI not found
         assert result.exit_code != 0
