@@ -312,7 +312,15 @@ class TestBuildBlockingMessage:
         """Message contains all required elements."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
@@ -336,7 +344,15 @@ class TestBuildBlockingMessage:
         """Warning shown when on main branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "main", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="main",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "WARNING" in message
         assert "main" in message
@@ -347,7 +363,15 @@ class TestBuildBlockingMessage:
         """Warning shown when on master branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "master", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="master",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "WARNING" in message
         assert "master" in message
@@ -357,7 +381,15 @@ class TestBuildBlockingMessage:
         """No warning when on feature branch."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -366,7 +398,15 @@ class TestBuildBlockingMessage:
         """No warning when branch is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", None, plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch=None,
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "WARNING" not in message
         assert "trunk branch" not in message
@@ -375,7 +415,15 @@ class TestBuildBlockingMessage:
         """Third option 'View/Edit the plan' is included in message."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
@@ -384,7 +432,15 @@ class TestBuildBlockingMessage:
         """Edit plan instructions include the plan file path for GUI editors."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -394,7 +450,15 @@ class TestBuildBlockingMessage:
     def test_edit_plan_instructions_omitted_when_no_path(self) -> None:
         """Edit plan instructions omitted when plan_file_path is None."""
         message = build_blocking_message(
-            "session-123", "feature-branch", None, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=None,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         # The option is still listed (as it's hardcoded), but no instructions
         assert "View/Edit the plan" in message
@@ -404,7 +468,15 @@ class TestBuildBlockingMessage:
         """Save command includes --objective-issue when objective_issue is provided."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, 3679, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=3679,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "/erk:plan-save --objective-issue=3679" in message
 
@@ -412,7 +484,15 @@ class TestBuildBlockingMessage:
         """Save command is plain when objective_issue is None."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         # Should have /erk:plan-save but not --objective-issue
         assert "/erk:plan-save" in message
@@ -422,15 +502,15 @@ class TestBuildBlockingMessage:
         """Question includes title when available."""
         plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
         message = build_blocking_message(
-            "session-123",
-            "feature-branch",
-            plan_path,
-            None,
-            "Add Feature X",
-            None,
-            None,
-            None,
-            None,
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title="Add Feature X",
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "📋 Add Feature X" in message
         assert "What would you like to do with this plan?" in message
@@ -439,15 +519,15 @@ class TestBuildBlockingMessage:
         """Question includes statusline-style context with all fields."""
         plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
         message = build_blocking_message(
-            "session-123",
-            "P4224-add-feature",
-            plan_path,
-            None,
-            "Add Feature X",
-            "erk-managed-wt-02",
-            4230,
-            4224,
-            None,
+            session_id="session-123",
+            current_branch="P4224-add-feature",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title="Add Feature X",
+            worktree_name="erk-managed-wt-02",
+            pr_number=4230,
+            plan_issue_number=4224,
+            editor=None,
         )
         # Title should be present
         assert "📋 Add Feature X" in message
@@ -461,15 +541,15 @@ class TestBuildBlockingMessage:
         """Question includes partial statusline context when some fields are None."""
         plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
         message = build_blocking_message(
-            "session-123",
-            "feature-branch",
-            plan_path,
-            None,
-            None,
-            "erk-managed-wt-02",
-            None,
-            4224,
-            None,
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name="erk-managed-wt-02",
+            pr_number=None,
+            plan_issue_number=4224,
+            editor=None,
         )
         # No title emoji
         assert "📋" not in message
@@ -482,7 +562,15 @@ class TestBuildBlockingMessage:
     def test_no_context_when_all_none(self) -> None:
         """Question has no context when all context fields are None."""
         message = build_blocking_message(
-            "session-123", None, None, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch=None,
+            plan_file_path=None,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         # Should still have the basic question
         assert "What would you like to do with this plan?" in message
@@ -495,7 +583,15 @@ class TestBuildBlockingMessage:
         """When editor=vim, message tells user to open in separate terminal."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, "vim"
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor="vim",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert "vim is a terminal-based editor that cannot" in message
@@ -510,15 +606,15 @@ class TestBuildBlockingMessage:
         """When editor=nvim (full path), message tells user to open in separate terminal."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message(
-            "session-123",
-            "feature-branch",
-            plan_path,
-            None,
-            None,
-            None,
-            None,
-            None,
-            "/opt/homebrew/bin/nvim",
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor="/opt/homebrew/bin/nvim",
         )
         assert "nvim is a terminal-based editor" in message
         assert f"/opt/homebrew/bin/nvim {plan_path}" in message
@@ -527,7 +623,15 @@ class TestBuildBlockingMessage:
         """When editor=code, message shows normal run instruction."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, "code"
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor="code",
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message
@@ -539,7 +643,15 @@ class TestBuildBlockingMessage:
         """When editor=None, message shows normal run instruction with fallback."""
         plan_path = Path("/home/user/.claude/plans/my-plan.md")
         message = build_blocking_message(
-            "session-123", "feature-branch", plan_path, None, None, None, None, None, None
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
         )
         assert "If user chooses 'View/Edit the plan':" in message
         assert f"${{EDITOR:-code}} {plan_path}" in message

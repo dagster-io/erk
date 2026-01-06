@@ -221,6 +221,7 @@ def extract_plan_title(plan_file_path: Path | None) -> str | None:
 
 
 def build_blocking_message(
+    *,
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
@@ -415,15 +416,15 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     return HookOutput(
         ExitAction.BLOCK,
         build_blocking_message(
-            hook_input.session_id,
-            hook_input.current_branch,
-            hook_input.plan_file_path,
-            hook_input.objective_issue,
-            hook_input.plan_title,
-            hook_input.worktree_name,
-            hook_input.pr_number,
-            hook_input.plan_issue_number,
-            hook_input.editor,
+            session_id=hook_input.session_id,
+            current_branch=hook_input.current_branch,
+            plan_file_path=hook_input.plan_file_path,
+            objective_issue=hook_input.objective_issue,
+            plan_title=hook_input.plan_title,
+            worktree_name=hook_input.worktree_name,
+            pr_number=hook_input.pr_number,
+            plan_issue_number=hook_input.plan_issue_number,
+            editor=hook_input.editor,
         ),
     )
 
