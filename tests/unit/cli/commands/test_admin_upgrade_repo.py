@@ -70,3 +70,20 @@ def test_upgrade_repo_outputs_updated_version_message() -> None:
 
         # Output should contain update confirmation
         assert "Updated required version to" in result.output
+
+
+def test_upgrade_repo_fails_without_erk_directory() -> None:
+    """Test that upgrade-repo fails with clear error when .erk directory is missing."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Intentionally do NOT create .erk directory
+
+        ctx = env.build_context()
+
+        result = runner.invoke(cli, ["admin", "upgrade-repo"], obj=ctx)
+
+        # Should fail with exit code 1
+        assert result.exit_code == 1, f"Expected exit code 1, got {result.exit_code}"
+
+        # Output should contain the error message
+        assert "Not an erk-managed repository" in result.output
