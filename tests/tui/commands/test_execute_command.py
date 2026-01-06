@@ -234,6 +234,33 @@ class TestExecuteCommandSubmitToQueue:
         assert executor.refresh_count == 0
 
 
+class TestExecuteCommandLandPR:
+    """Tests for land_pr command.
+
+    Note: land_pr uses streaming output via subprocess when repo_root is provided
+    and pr_number exists. These tests verify the guard conditions but actual
+    streaming behavior is tested via integration tests.
+    """
+
+    def test_land_pr_does_nothing_without_repo_root(self) -> None:
+        """land_pr does nothing if repo_root is not provided."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        # repo_root not provided - streaming command should not execute
+        screen = PlanDetailScreen(row, executor=executor)
+        screen.execute_command("land_pr")
+        # No executor methods should be called (streaming is independent)
+        assert executor.refresh_count == 0
+
+    def test_land_pr_does_nothing_without_pr_number(self) -> None:
+        """land_pr does nothing if no PR is associated with the plan."""
+        row = make_plan_row(123, "Test")  # No pr_number
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row, executor=executor, repo_root="/some/path")
+        screen.execute_command("land_pr")
+        assert executor.refresh_count == 0
+
+
 class TestExecuteCommandNoExecutor:
     """Tests for behavior when no executor is provided."""
 
@@ -246,3 +273,4 @@ class TestExecuteCommandNoExecutor:
         screen.execute_command("copy_implement")
         screen.execute_command("close_plan")
         screen.execute_command("submit_to_queue")
+        screen.execute_command("land_pr")
