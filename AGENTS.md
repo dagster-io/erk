@@ -7,94 +7,11 @@
 
 **Erk** is a CLI tool for plan-oriented agentic engineering: a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
 
-**Status**: Unreleased, completely private software. We can break backwards compatibility at will based on developer preferences.
+**Status**: Unreleased, completely private software. We can break backwards compatibility at will.
 
-## Core Architecture
+## CRITICAL: Before Writing Any Code
 
-**Tech Stack:**
-
-- Python 3.10+ (managed with `uv`)
-- Git worktrees for parallel development
-- Graphite (`gt`) for stacked PRs
-- GitHub CLI (`gh`) for PR management
-- Claude Code for AI-driven development
-
-**Project Structure:**
-
-```
-erk/
-├── .claude/          # Claude Code commands, skills, hooks
-├── .erk/             # Erk configuration, scratch storage
-├── docs/learned/     # Agent-generated documentation
-├── src/erk/          # Core implementation
-└── tests/            # Test suite (5-layer fake-driven architecture)
-```
-
-**Design Principles:**
-
-- **Plan-first workflow**: Create plans → implement → ship (often without IDE)
-- **Worktree isolation**: Each feature branch gets its own worktree
-- **Agent-driven**: Claude Code executes implementation plans autonomously
-- **Documentation as code**: Agents extract reusable patterns into `docs/learned/`
-
-## How Agents Work on This Project
-
-**Routing Model**: This file (AGENTS.md) is a routing document. It doesn't contain all information—it directs you to load the right skills and documentation based on the task.
-
-**Key Skills** (loaded on-demand):
-
-- `dignified-python`: Python coding standards (LBYL, frozen dataclasses, modern types)
-- `fake-driven-testing`: 5-layer test architecture with comprehensive fakes
-- `gt-graphite`: Worktree stack mental model
-- `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
-
-**Documentation Index**: See [docs/learned/index.md](docs/learned/index.md) for complete document registry with "read when..." conditions.
-
-## Claude Environment Manipulation
-
-Erk hooks interact with Claude Code to control agent behavior. Understanding these patterns prevents common mistakes.
-
-### Session ID Injection
-
-Hooks receive the session ID via **stdin JSON** from Claude Code, NOT from environment variables.
-
-**Key rule:** When generating instructions for Claude to run commands, **interpolate the actual session ID value**:
-
-```python
-# CORRECT - Claude receives the actual value
-f"erk exec marker create --session-id {session_id} ..."
-
-# WRONG - Claude can't expand this variable
-"erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID ..."
-```
-
-**Why:** `$CLAUDE_CODE_SESSION_ID` is available to hooks (via stdin JSON), but NOT in Claude's bash environment. Claude cannot expand shell variables it doesn't have.
-
-### Hook → Claude Communication
-
-Hook stdout becomes system reminders in Claude's context. Use this to:
-
-- Inject session IDs (see above)
-- Provide contextual instructions
-- Block or allow tool calls (via exit codes)
-
-### Modified Plan Mode Behavior
-
-Erk modifies Claude Code's default plan mode workflow to add a save-or-implement decision point. When Claude tries to exit plan mode after writing a plan:
-
-1. **Claude is prompted** to ask the user: "Save the plan to GitHub, or implement now?"
-2. **If "Save"**: Claude runs `/erk:plan-save` to create a GitHub issue, then stops (stays in plan mode)
-3. **If "Implement now"**: Claude proceeds to implementation in the current worktree
-
-This ensures plans aren't lost—they either become tracked GitHub issues or get implemented immediately. The hook provides Claude with the session ID needed to signal its choice back to the system.
-
----
-
-# Erk Coding Standards
-
-## ⚠️ CRITICAL: Before Writing Any Code
-
-<!-- These are BEHAVIORAL TRIGGERS: rules that detect action patterns and route to documentation -->
+<!-- BEHAVIORAL TRIGGERS: rules that detect action patterns and route to documentation -->
 
 **CRITICAL: NEVER search, read, or access `/Users/schrockn/` directory**
 
@@ -112,73 +29,109 @@ This ensures plans aren't lost—they either become tracked GitHub issues or get
 - **Test code** → `fake-driven-testing` skill (5-layer architecture, test placement)
 - **Dev tools** → Use `devrun` agent (NOT direct Bash for pytest/ty/ruff/prettier/make/gt)
 
-## Skill Loading Behavior
+## Core Architecture
 
-**Skills persist for the entire session.** Once loaded, they remain in context.
+**Tech Stack:** Python 3.10+ (uv), Git worktrees, Graphite (gt), GitHub CLI (gh), Claude Code
 
-- **DO NOT reload skills already loaded in this session**
-- Hook reminders fire as safety nets, not commands
-- If you see a reminder for an already-loaded skill, acknowledge and continue
+**Project Structure:**
 
-**Check if loaded**: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
+```
+erk/
+├── .claude/          # Claude Code commands, skills, hooks
+├── .erk/             # Erk configuration, scratch storage
+├── docs/learned/     # Agent-generated documentation
+├── src/erk/          # Core implementation
+└── tests/            # Test suite (5-layer fake-driven architecture)
+```
 
-## Routing: What to Load Before Writing Code
+**Design Principles:** Plan-first workflow, worktree isolation, agent-driven development, documentation as code.
 
-### Tier 1: Mandatory Skills (ALWAYS Load First)
+## How Agents Work
 
-These fundamentally change how you write code. Load before ANY code work:
+This file routes to skills and docs; it doesn't contain everything.
 
-- **Writing Python** → Load `dignified-python` skill
-- **Writing or modifying tests** → Load `fake-driven-testing` skill
+**Key Skills** (loaded on-demand):
 
-### Tier 2: Context-Specific Skills
+- `dignified-python`: Python coding standards (LBYL, frozen dataclasses, modern types)
+- `fake-driven-testing`: 5-layer test architecture with comprehensive fakes
+- `gt-graphite`: Worktree stack mental model
+- `devrun`: READ-ONLY agent for running pytest/ty/ruff/make
 
-Load when the context applies:
+**Documentation Index**: [docs/learned/index.md](docs/learned/index.md) - complete registry with "read when..." conditions.
 
-- **Worktree stacks, `gt` commands** → Load `gt-graphite` skill
-- **Writing agent documentation** → Load `learned-docs` skill
+## Claude Environment Manipulation
 
-### Tier 3: Tool Routing
+### Session ID Injection
 
-Use agents instead of direct Bash:
+Hooks receive session ID via **stdin JSON**, NOT environment variables. When generating commands for Claude, interpolate the actual value:
 
-- **pytest, ty, ruff, prettier, make, gt** → Use `devrun` agent (Task tool)
+```python
+# CORRECT - Claude receives the actual value
+f"erk exec marker create --session-id {session_id} ..."
 
-#### devrun Agent - Prompt Restrictions
+# WRONG - Claude can't expand this variable
+"erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID ..."
+```
 
-**FORBIDDEN prompts to devrun:**
+### Hook → Claude Communication
 
-- ❌ "fix any errors that arise"
-- ❌ "make the tests pass"
-- ❌ "update the imports"
-- ❌ "correct the issues"
-- ❌ Any prompt implying devrun should modify files
+- Hook stdout becomes system reminders in Claude's context
+- Exit codes block or allow tool calls
 
-**REQUIRED prompt pattern:**
+### Modified Plan Mode Behavior
 
-- ✅ "Run [command] and report results"
-- ✅ "Execute [command] and parse output"
+Erk modifies plan mode to add a save-or-implement decision:
+
+1. Claude is prompted: "Save the plan to GitHub, or implement now?"
+2. **Save**: Claude runs `/erk:plan-save` to create a GitHub issue
+3. **Implement now**: Claude proceeds to implementation
+
+---
+
+# Erk Coding Standards
+
+## Before You Code
+
+**Mandatory skills:**
+
+- **Python** → `dignified-python` skill
+- **Tests** → `fake-driven-testing` skill
+
+**Context-specific:**
+
+- **Worktrees/gt** → `gt-graphite` skill
+- **Agent docs** → `learned-docs` skill
+
+**Tool routing:**
+
+- **pytest/ty/ruff/prettier/make/gt** → `devrun` agent (not direct Bash)
+
+### devrun Agent Restrictions
+
+**FORBIDDEN prompts:**
+
+- "fix any errors that arise"
+- "make the tests pass"
+- Any prompt implying devrun should modify files
+
+**REQUIRED pattern:**
+
+- "Run [command] and report results"
+- "Execute [command] and parse output"
 
 devrun is READ-ONLY. It runs commands and reports. Parent agent handles all fixes.
 
-### Tier 4: Documentation Lookup
+## Skill Loading Behavior
 
-For detailed reference, consult the documentation index which maps each document to specific "read when..." conditions:
+Skills persist for the entire session. Once loaded, they remain in context.
 
-→ **[docs/learned/index.md](docs/learned/index.md)** - Complete document registry (auto-generated, always current)
-
-#### Including Documentation in Plans
-
-When creating implementation plans, include a "Related Documentation" section listing:
-
-- Skills to load before implementing
-- Docs relevant to the implementation approach
-
-This ensures implementing agents have access to documentation you discovered during planning.
+- DO NOT reload skills already loaded in this session
+- Hook reminders fire as safety nets, not commands
+- Check if loaded: Look for `<command-message>The "{name}" skill is loading</command-message>` earlier in conversation
 
 ## Documentation-First Exploration
 
-Before exploring any topic (whether directly or via Explore agent):
+Before exploring any topic:
 
 1. **First** check `docs/learned/index.md` for existing documentation
 2. **Read** relevant docs to understand what's already documented
@@ -197,28 +150,15 @@ Before exploring any topic (whether directly or via Explore agent):
 **Anti-pattern:** Going straight to `~/.claude/projects/` to explore session files
 **Correct:** First reading `docs/learned/sessions/layout.md` and `jsonl-schema-reference.md`
 
+### Including Documentation in Plans
+
+When creating implementation plans, include a "Related Documentation" section listing skills to load and docs relevant to the implementation approach.
+
 ## Worktree Stack Quick Reference
 
 - **UPSTACK** = away from trunk (toward leaves/top)
 - **DOWNSTACK** = toward trunk (main at BOTTOM)
 - **Full details**: Load `gt-graphite` skill for complete visualization and mental model
-
-## Erk-Specific Architecture
-
-Core patterns for this codebase:
-
-- **Dry-run via dependency injection** (not boolean flags)
-- **Context regeneration** (after os.chdir or worktree removal)
-- **Two-layer subprocess wrappers** (integration vs CLI boundaries)
-- **Protocol vs ABC**: Use Protocol for composite interfaces that existing types should satisfy without inheritance; use ABC for interfaces that require explicit implementation
-
-**Protocol vs ABC Decision:**
-
-- **Use Protocol** when you want structural typing (duck typing) - any object with matching attributes works without explicit inheritance. Ideal for composite interfaces like `GtKit` that `ErkContext` already satisfies.
-- **Use ABC** when you want nominal typing with explicit inheritance. Ideal for implementation contracts like `Git`, `GitHub`, `Graphite` where you want to enforce that classes explicitly declare they implement the interface.
-- **Protocol with `@property`**: When a Protocol needs to accept frozen dataclasses (read-only attributes), use `@property` decorators instead of bare attributes. A read-only consumer accepts both read-only and read-write providers.
-
-**Full guide**: [Architecture](docs/learned/architecture/)
 
 ## Project Naming Conventions
 
@@ -229,31 +169,30 @@ Core patterns for this codebase:
 - **Claude artifacts**: `kebab-case` (commands, skills, agents, hooks in `.claude/`)
 - **Brand names**: `GitHub` (not Github)
 
-**Claude Artifacts:** All files in `.claude/` (commands, skills, agents, hooks) MUST use `kebab-case`. Use hyphens, NOT underscores. Example: `/my-command` not `/my_command`. Python scripts within artifacts may use `snake_case` (they're code, not artifacts).
+**Claude Artifacts:** All files in `.claude/` MUST use `kebab-case`. Use hyphens, NOT underscores. Example: `/my-command` not `/my_command`.
 
-**Worktree Terminology:** Use "root worktree" (not "main worktree") to refer to the primary git worktree created with `git init`. This ensures "main" unambiguously refers to the branch name, since trunk branches can be named either "main" or "master". In code, use the `is_root` field to identify the root worktree.
+**Worktree Terminology:** Use "root worktree" (not "main worktree") to refer to the primary git worktree. In code, use the `is_root` field.
 
-**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs are grouped under `erk wt`, stack verbs under `erk stack`. This follows the "plan is dominant noun" principle for ergonomic access to high-frequency operations. See [CLI Development](docs/learned/cli/) for complete decision framework.
+**CLI Command Organization:** Plan verbs are top-level (create, get, implement), worktree verbs under `erk wt`, stack verbs under `erk stack`. See [CLI Development](docs/learned/cli/) for complete decision framework.
 
 ## Project Constraints
 
 **No time estimates in plans:**
 
-- 🔴 **FORBIDDEN**: Time estimates (hours, days, weeks)
-- 🔴 **FORBIDDEN**: Velocity predictions or completion dates
-- 🔴 **FORBIDDEN**: Effort quantification
+- FORBIDDEN: Time estimates (hours, days, weeks)
+- FORBIDDEN: Velocity predictions or completion dates
+- FORBIDDEN: Effort quantification
 
 **Test discipline:**
 
-- 🔴 **FORBIDDEN**: Writing tests for speculative or "maybe later" features
-- ✅ **ALLOWED**: TDD workflow (write test → implement feature → refactor)
-- 🔴 **MUST**: Only test actively implemented code
+- FORBIDDEN: Writing tests for speculative or "maybe later" features
+- ALLOWED: TDD workflow (write test → implement feature → refactor)
+- MUST: Only test actively implemented code
 
 **CHANGELOG discipline:**
 
-- 🔴 **FORBIDDEN**: Modifying CHANGELOG.md directly
-- ✅ **ALLOWED**: Use `/local:changelog-update` to sync after merges to master
-- CHANGELOG updates happen post-merge, not during PR development
+- FORBIDDEN: Modifying CHANGELOG.md directly
+- ALLOWED: Use `/local:changelog-update` to sync after merges to master
 
 ## Documentation Hub
 
