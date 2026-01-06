@@ -835,7 +835,7 @@ class TestExecutePaletteCommandLandPR:
             [make_plan_row(123, "Test Plan")]  # No pr_number
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()

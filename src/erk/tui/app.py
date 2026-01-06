@@ -1313,13 +1313,31 @@ class ErkDashApp(App):
 
         elif command_id == "close_plan":
             if row.issue_url:
-                closed_prs = self._provider.close_plan(row.issue_number, row.issue_url)
-                if closed_prs:
-                    pr_list = ", ".join(f"#{pr}" for pr in closed_prs)
-                    self.notify(f"Closed plan #{row.issue_number} and PRs: {pr_list}")
-                else:
-                    self.notify(f"Closed plan #{row.issue_number}")
-                self.action_refresh()
+                # Open detail modal to show streaming output
+                executor = RealCommandExecutor(
+                    browser_launch=self._provider.browser.launch,
+                    clipboard_copy=self._provider.clipboard.copy,
+                    close_plan_fn=self._provider.close_plan,
+                    notify_fn=self.notify,
+                    refresh_fn=self.action_refresh,
+                    submit_to_queue_fn=self._provider.submit_to_queue,
+                )
+                detail_screen = PlanDetailScreen(
+                    row=row,
+                    clipboard=self._provider.clipboard,
+                    browser=self._provider.browser,
+                    executor=executor,
+                    repo_root=self._provider.repo_root,
+                )
+                self.push_screen(detail_screen)
+                # Trigger the streaming command after screen is mounted
+                detail_screen.call_after_refresh(
+                    lambda: detail_screen.run_streaming_command(
+                        ["erk", "plan", "close", str(row.issue_number)],
+                        cwd=self._provider.repo_root,
+                        title=f"Closing Plan #{row.issue_number}",
+                    )
+                )
 
         elif command_id == "submit_to_queue":
             if row.issue_url:
