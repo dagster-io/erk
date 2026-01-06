@@ -12,7 +12,7 @@ New to erk? Start here:
 
 ## Documentation Sections
 
-### [Tutorials](tutorials/) — *Learning-oriented*
+### [Tutorials](tutorials/) — _Learning-oriented_
 
 Step-by-step lessons that take you by the hand.
 
@@ -21,7 +21,7 @@ Step-by-step lessons that take you by the hand.
 - [Your First Plan](tutorials/first-plan.md)
 - [Shell Integration](tutorials/shell-integration.md)
 
-### [Topics](topics/) — *Understanding-oriented*
+### [Topics](topics/) — _Understanding-oriented_
 
 Explanations of concepts and the "why" behind erk.
 
@@ -31,7 +31,7 @@ Explanations of concepts and the "why" behind erk.
 - [The Workflow](topics/the-workflow.md)
 - [Plan-Oriented Engineering](topics/plan-oriented-engineering.md)
 
-### [How-to Guides](howto/) — *Goal-oriented*
+### [How-to Guides](howto/) — _Goal-oriented_
 
 Recipes for accomplishing specific tasks.
 
@@ -42,7 +42,7 @@ Recipes for accomplishing specific tasks.
 - [How to Work Without Plans](howto/planless-workflow.md)
 - [How to Extract Documentation](howto/documentation-extraction.md)
 
-### [Reference](ref/) — *Information-oriented*
+### [Reference](ref/) — _Information-oriented_
 
 Technical reference for APIs and configuration.
 
@@ -61,8 +61,8 @@ Common questions and troubleshooting.
 
 ## Other Documentation
 
-| Directory | Audience | Purpose |
-|-----------|----------|---------|
-| [learned/](learned/) | AI agents | Agent-generated patterns |
-| [developer/](developer/) | Contributors | Internal development docs |
-| [contributing/](contributing/) | Contributors | How to contribute |
+| Directory                      | Audience     | Purpose                   |
+| ------------------------------ | ------------ | ------------------------- |
+| [learned/](learned/)           | AI agents    | Agent-generated patterns  |
+| [developer/](developer/)       | Contributors | Internal development docs |
+| [contributing/](contributing/) | Contributors | How to contribute         |

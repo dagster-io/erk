@@ -2,7 +2,7 @@
 
 Topic guides aim to explain a concept or subject at a fairly high level.
 
-These pages help you understand *why* things work the way they do, providing background context that helps connect new concepts to things you already know.
+These pages help you understand _why_ things work the way they do, providing background context that helps connect new concepts to things you already know.
 
 ## Available Topics
 

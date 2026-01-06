@@ -30,7 +30,7 @@ Providing background context helps a newcomer connect the topic to things
 that they already know.
 
 **Title patterns**: Noun phrases ("Worktrees", "The Workflow")
-**Test**: Does this help someone understand *why*, not *how*?
+**Test**: Does this help someone understand _why_, not _how_?
 
 ### Reference (`ref/`)
 
