@@ -5,6 +5,8 @@ Tests the PR summary generation from PR diff using Claude.
 Uses fake-driven testing with injected dependencies via DotAgentContext.
 """
 
+from pathlib import Path
+
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.generate_pr_summary import (
@@ -14,13 +16,13 @@ from erk.cli.commands.exec.scripts.generate_pr_summary import (
 from erk_shared.context import ErkContext
 
 
-def test_build_prompt_contains_diff_and_context() -> None:
+def test_build_prompt_contains_diff_and_context(tmp_path: Path) -> None:
     """Test that _build_prompt includes diff content and branch context."""
     diff_content = "+added line\n-removed line"
     current_branch = "feature-branch"
     parent_branch = "main"
 
-    prompt = _build_prompt(diff_content, current_branch, parent_branch)
+    prompt = _build_prompt(diff_content, current_branch, parent_branch, tmp_path)
 
     # Should include diff
     assert "+added line" in prompt
@@ -35,9 +37,9 @@ def test_build_prompt_contains_diff_and_context() -> None:
     assert "commit messages were written" not in prompt
 
 
-def test_build_prompt_uses_commit_message_system_prompt() -> None:
+def test_build_prompt_uses_commit_message_system_prompt(tmp_path: Path) -> None:
     """Test that _build_prompt uses the shared commit message prompt."""
-    prompt = _build_prompt("diff", "branch", "main")
+    prompt = _build_prompt("diff", "branch", "main", tmp_path)
 
     # Should include the system prompt content
     assert "commit message generator" in prompt.lower()

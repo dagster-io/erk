@@ -26,6 +26,8 @@ Examples:
     ...
 """
 
+from pathlib import Path
+
 import click
 
 from erk_shared.context.helpers import (
@@ -34,10 +36,12 @@ from erk_shared.context.helpers import (
     require_prompt_executor,
     require_repo_root,
 )
-from erk_shared.gateway.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT, truncate_diff
+from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
 
 
-def _build_prompt(diff_content: str, current_branch: str, parent_branch: str) -> str:
+def _build_prompt(
+    diff_content: str, current_branch: str, parent_branch: str, repo_root: Path
+) -> str:
     """Build prompt for PR summary generation.
 
     Note: We deliberately do NOT include commit messages here, unlike
@@ -49,7 +53,8 @@ def _build_prompt(diff_content: str, current_branch: str, parent_branch: str) ->
 - Current branch: {current_branch}
 - Parent branch: {parent_branch}"""
 
-    return f"""{COMMIT_MESSAGE_SYSTEM_PROMPT}
+    system_prompt = get_commit_message_prompt(repo_root)
+    return f"""{system_prompt}
 
 {context_section}
 
@@ -101,7 +106,7 @@ def generate_pr_summary(ctx: click.Context, pr_number: int) -> None:
     parent_branch = git.detect_trunk_branch(repo_root)
 
     # Build prompt and run Claude via injected executor
-    prompt = _build_prompt(diff_content, current_branch, parent_branch)
+    prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
     result = executor.execute_prompt(prompt, model="haiku", cwd=repo_root)
 
     if not result.success:

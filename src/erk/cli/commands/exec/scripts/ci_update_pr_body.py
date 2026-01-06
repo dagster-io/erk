@@ -51,7 +51,7 @@ from erk_shared.context.helpers import (
     require_prompt_executor,
     require_repo_root,
 )
-from erk_shared.gateway.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT, truncate_diff
+from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.pr_footer import build_pr_body_footer, build_remote_execution_note
@@ -84,7 +84,9 @@ class UpdateError:
     stderr: str | None
 
 
-def _build_prompt(diff_content: str, current_branch: str, parent_branch: str) -> str:
+def _build_prompt(
+    diff_content: str, current_branch: str, parent_branch: str, repo_root: Path
+) -> str:
     """Build prompt for PR summary generation.
 
     Note: We deliberately do NOT include commit messages here. The commit messages
@@ -95,7 +97,8 @@ def _build_prompt(diff_content: str, current_branch: str, parent_branch: str) ->
 - Current branch: {current_branch}
 - Parent branch: {parent_branch}"""
 
-    return f"""{COMMIT_MESSAGE_SYSTEM_PROMPT}
+    system_prompt = get_commit_message_prompt(repo_root)
+    return f"""{system_prompt}
 
 {context_section}
 
@@ -218,7 +221,7 @@ def _update_pr_body_impl(
     parent_branch = git.detect_trunk_branch(repo_root)
 
     # Generate summary using Claude
-    prompt = _build_prompt(diff_content, current_branch, parent_branch)
+    prompt = _build_prompt(diff_content, current_branch, parent_branch, repo_root)
     result = executor.execute_prompt(prompt, model="haiku", cwd=repo_root)
 
     # Separate failure modes for better diagnostics

@@ -30,13 +30,13 @@ from erk_shared.prompt_executor.fake import FakePromptExecutor
 # ============================================================================
 
 
-def test_build_prompt_contains_diff_and_context() -> None:
+def test_build_prompt_contains_diff_and_context(tmp_path: Path) -> None:
     """Test that _build_prompt includes diff content and branch context."""
     diff_content = "+added line\n-removed line"
     current_branch = "feature-branch"
     parent_branch = "main"
 
-    prompt = _build_prompt(diff_content, current_branch, parent_branch)
+    prompt = _build_prompt(diff_content, current_branch, parent_branch, tmp_path)
 
     # Should include diff
     assert "+added line" in prompt

@@ -13,7 +13,7 @@ from pathlib import Path
 
 from erk.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.gateway.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT
+from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 
 
 @dataclass(frozen=True)
@@ -120,6 +120,7 @@ class CommitMessageGenerator:
             diff_content=diff_content,
             current_branch=request.current_branch,
             parent_branch=request.parent_branch,
+            repo_root=request.repo_root,
             commit_messages=request.commit_messages,
         )
 
@@ -160,6 +161,7 @@ class CommitMessageGenerator:
         diff_content: str,
         current_branch: str,
         parent_branch: str,
+        repo_root: Path,
         commit_messages: list[str] | None = None,
     ) -> str:
         """Build the full prompt with diff and context."""
@@ -182,7 +184,8 @@ The following commit messages were written by the developer during implementatio
 Use these commit messages as additional context. They describe the developer's intent
 and may contain details not visible in the diff alone."""
 
-        return f"""{COMMIT_MESSAGE_SYSTEM_PROMPT}
+        system_prompt = get_commit_message_prompt(repo_root)
+        return f"""{system_prompt}
 
 {context_section}
 
