@@ -8,6 +8,7 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import NamedTuple
 
 from erk_shared.core.claude_executor import (
     ClaudeEvent,
@@ -20,13 +21,33 @@ from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.github.types import GitHubRepoLocation
 
 
+class InteractiveCall(NamedTuple):
+    """Record of an execute_interactive call."""
+
+    worktree_path: Path
+    dangerous: bool
+    command: str
+    target_subpath: Path | None
+    model: str | None
+
+
+class PromptCall(NamedTuple):
+    """Record of an execute_prompt call."""
+
+    prompt: str
+    model: str
+    tools: list[str] | None
+    cwd: Path | None
+    system_prompt: str | None
+
+
 class FakeClaudeExecutor(ClaudeExecutor):
     """Fake ClaudeExecutor for testing.
 
     Attributes:
         is_available: Whether Claude CLI should appear available
-        interactive_calls: List of (worktree_path, dangerous, command, target_subpath, model) tuples
-        prompt_calls: List of (prompt, model, tools, cwd, system_prompt) tuples
+        interactive_calls: List of InteractiveCall records
+        prompt_calls: List of PromptCall records
         prompt_results: Queue of PromptResult to return from execute_prompt
         streaming_events: Events to yield from execute_command_streaming
     """
@@ -39,8 +60,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         streaming_events: list[ClaudeEvent] | None = None,
     ) -> None:
         self.is_available_value = is_available
-        self.interactive_calls: list[tuple[Path, bool, str, Path | None, str | None]] = []
-        self.prompt_calls: list[tuple[str, str, list[str] | None, Path | None, str | None]] = []
+        self.interactive_calls: list[InteractiveCall] = []
+        self.prompt_calls: list[PromptCall] = []
         self.prompt_results = list(prompt_results) if prompt_results else []
         self.streaming_events = list(streaming_events) if streaming_events else []
         self._prompt_result_index = 0
@@ -69,18 +90,34 @@ class FakeClaudeExecutor(ClaudeExecutor):
         target_subpath: Path | None,
         model: str | None = None,
     ) -> None:
-        self.interactive_calls.append((worktree_path, dangerous, command, target_subpath, model))
+        self.interactive_calls.append(
+            InteractiveCall(
+                worktree_path=worktree_path,
+                dangerous=dangerous,
+                command=command,
+                target_subpath=target_subpath,
+                model=model,
+            )
+        )
 
     def execute_prompt(
         self,
         prompt: str,
         *,
-        model: str = "haiku",
-        tools: list[str] | None = None,
-        cwd: Path | None = None,
-        system_prompt: str | None = None,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path | None,
+        system_prompt: str | None,
     ) -> PromptResult:
-        self.prompt_calls.append((prompt, model, tools, cwd, system_prompt))
+        self.prompt_calls.append(
+            PromptCall(
+                prompt=prompt,
+                model=model,
+                tools=tools,
+                cwd=cwd,
+                system_prompt=system_prompt,
+            )
+        )
         if self._prompt_result_index < len(self.prompt_results):
             result = self.prompt_results[self._prompt_result_index]
             self._prompt_result_index += 1

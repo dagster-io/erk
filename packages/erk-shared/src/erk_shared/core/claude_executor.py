@@ -343,10 +343,10 @@ class ClaudeExecutor(ABC):
         self,
         prompt: str,
         *,
-        model: str = "haiku",
-        tools: list[str] | None = None,
-        cwd: Path | None = None,
-        system_prompt: str | None = None,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path | None,
+        system_prompt: str | None,
     ) -> PromptResult:
         """Execute a single prompt and return the result.
 
@@ -356,10 +356,10 @@ class ClaudeExecutor(ABC):
 
         Args:
             prompt: The prompt text to send to Claude
-            model: Model to use (default "haiku" for speed/cost)
-            tools: Optional list of allowed tools (e.g., ["Read", "Bash"])
-            cwd: Optional working directory for the command
-            system_prompt: Optional system prompt to replace Claude Code's default.
+            model: Model to use (e.g., "haiku" for speed/cost)
+            tools: List of allowed tools (e.g., ["Read", "Bash"]) or None
+            cwd: Working directory for the command or None
+            system_prompt: System prompt to replace Claude Code's default, or None.
                 When provided, uses --system-prompt flag to completely replace
                 the default system prompt, enabling more deterministic behavior
                 for narrow, single-shot tasks.

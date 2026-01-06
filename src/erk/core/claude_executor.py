@@ -469,10 +469,10 @@ class RealClaudeExecutor(ClaudeExecutor):
         self,
         prompt: str,
         *,
-        model: str = "haiku",
-        tools: list[str] | None = None,
-        cwd: Path | None = None,
-        system_prompt: str | None = None,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path | None,
+        system_prompt: str | None,
     ) -> PromptResult:
         """Execute a single prompt and return the result.
 

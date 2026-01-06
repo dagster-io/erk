@@ -133,6 +133,7 @@ class CommitMessageGenerator:
             result = self._executor.execute_prompt(
                 user_prompt,
                 model=self._model,
+                tools=None,
                 cwd=request.repo_root,
                 system_prompt=get_commit_message_prompt(request.repo_root),
             )
@@ -148,7 +149,9 @@ class CommitMessageGenerator:
             result = self._executor.execute_prompt(
                 prompt,
                 model=self._model,
+                tools=None,
                 cwd=request.repo_root,
+                system_prompt=None,
             )
 
         if not result.success:
