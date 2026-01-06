@@ -11,6 +11,8 @@ tripwires:
     warning: "Re-export modules are forbidden. Import directly from where code is defined."
   - action: "adding --force flag to a CLI command"
     warning: 'Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)'
+  - action: "adding a function with 5+ parameters"
+    warning: "Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures."
 ---
 
 # Code Conventions
