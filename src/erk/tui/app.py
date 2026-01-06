@@ -1370,7 +1370,7 @@ class ErkDashApp(App):
                 self.push_screen(detail_screen)
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "land", str(row.pr_number)],
+                        ["erk", "land", str(row.pr_number), "--script"],
                         cwd=self._provider.repo_root,
                         title=f"Landing PR #{row.pr_number}",
                     )
