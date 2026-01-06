@@ -149,6 +149,7 @@ class ErkContext:
 
     @staticmethod
     def for_test(
+        *,
         github_issues: GitHubIssues | None = None,
         git: Git | None = None,
         github: GitHub | None = None,

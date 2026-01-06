@@ -64,6 +64,7 @@ from erk_shared.github.metadata.plan_header import format_plan_content_comment
 @click.pass_context
 def plan_update_issue(
     ctx: click.Context,
+    *,
     issue_number: int,
     output_format: str,
     plan_path: Path | None,

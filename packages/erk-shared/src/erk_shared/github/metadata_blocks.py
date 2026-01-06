@@ -299,6 +299,7 @@ def render_erk_issue_event(
 
 
 def create_implementation_status_block(
+    *,
     status: str,
     completed_steps: int,
     total_steps: int,
@@ -323,6 +324,7 @@ def create_implementation_status_block(
 
 
 def create_worktree_creation_block(
+    *,
     worktree_name: str,
     branch_name: str,
     timestamp: str,

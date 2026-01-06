@@ -284,6 +284,7 @@ def format_branch_without_worktree(
 
 
 def format_worktree_line(
+    *,
     name: str,
     branch: str | None,
     pr_info: str | None,
@@ -396,11 +397,7 @@ def format_worktree_line(
 
 
 def format_plan_display(
-    plan_identifier: str,
-    state: str,
-    title: str,
-    labels: list[str],
-    url: str | None = None,
+    *, plan_identifier: str, state: str, title: str, labels: list[str], url: str | None = None
 ) -> str:
     """Format a plan for display in lists.
 

@@ -88,6 +88,7 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
 @click.pass_context
 def plan_save_to_issue(
     ctx: click.Context,
+    *,
     output_format: str,
     plan_file: Path | None,
     session_id: str | None,

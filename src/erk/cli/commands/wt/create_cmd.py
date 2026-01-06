@@ -34,11 +34,7 @@ from erk_shared.plan_store.types import Plan
 
 
 def run_post_worktree_setup(
-    ctx: ErkContext,
-    config: LoadedConfig,
-    worktree_path: Path,
-    repo_root: Path,
-    name: str,
+    ctx: ErkContext, *, config: LoadedConfig, worktree_path: Path, repo_root: Path, name: str
 ) -> None:
     """Run post-worktree-creation setup: .env file and post-create commands.
 
@@ -219,7 +215,9 @@ def ensure_worktree_for_branch(
     user_output(click.style(f"✓ Created worktree: {name}", fg="green"))
 
     # Run post-worktree setup (.env and post-create commands)
-    run_post_worktree_setup(ctx, config, wt_path, repo.root, name)
+    run_post_worktree_setup(
+        ctx, config=config, worktree_path=wt_path, repo_root=repo.root, name=name
+    )
 
     return wt_path, True
 
@@ -494,6 +492,7 @@ def _create_json_response(
 @click.pass_obj
 def create_wt(
     ctx: ErkContext,
+    *,
     name: str | None,
     branch: str | None,
     ref: str | None,

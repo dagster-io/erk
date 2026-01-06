@@ -65,6 +65,7 @@ class PostError:
 
 
 def _build_workflow_started_comment(
+    *,
     issue_number: int,
     branch_name: str,
     pr_number: int,
@@ -128,6 +129,7 @@ Setup completed successfully.
 @click.pass_context
 def post_workflow_started_comment(
     ctx: click.Context,
+    *,
     issue_number: int,
     branch_name: str,
     pr_number: int,

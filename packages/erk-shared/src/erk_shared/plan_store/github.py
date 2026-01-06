@@ -180,7 +180,7 @@ class GitHubPlanStore(PlanBackend):
 
         # Use GitHubIssues native limit support for efficient querying
         issues = self._github_issues.list_issues(
-            repo_root,
+            repo_root=repo_root,
             labels=query.labels,
             state=state_str,
             limit=query.limit,
@@ -218,6 +218,7 @@ class GitHubPlanStore(PlanBackend):
 
     def create_plan(
         self,
+        *,
         repo_root: Path,
         title: str,
         content: str,

@@ -124,6 +124,7 @@ def _build_claude_command(dangerous: bool, model: str | None) -> str:
 @click.pass_obj
 def plan_start(
     ctx: ErkContext,
+    *,
     name: str | None,
     dry_run: bool,
     dangerous: bool,
@@ -216,7 +217,15 @@ def plan_start(
             return
 
         # Execute planning session
-        _execute_planning(ctx, repo_root, wt_path, branch, dangerous, model, script)
+        _execute_planning(
+            ctx,
+            repo_root=repo_root,
+            wt_path=wt_path,
+            branch=branch,
+            dangerous=dangerous,
+            model=model,
+            script=script,
+        )
         return
 
     # Check if branch already exists locally
@@ -336,10 +345,20 @@ def plan_start(
     save_pool_state(repo.pool_json_path, new_state)
 
     # Run post-worktree setup
-    run_post_worktree_setup(ctx, config, wt_path, repo_root, slot_name)
+    run_post_worktree_setup(
+        ctx, config=config, worktree_path=wt_path, repo_root=repo_root, name=slot_name
+    )
 
     # Execute planning session
-    _execute_planning(ctx, repo_root, wt_path, branch, dangerous, model, script)
+    _execute_planning(
+        ctx,
+        repo_root=repo_root,
+        wt_path=wt_path,
+        branch=branch,
+        dangerous=dangerous,
+        model=model,
+        script=script,
+    )
 
 
 def _show_dry_run_output(
@@ -362,6 +381,7 @@ def _show_dry_run_output(
 
 def _execute_planning(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     wt_path: Path,
     branch: str,
@@ -382,18 +402,18 @@ def _execute_planning(
     """
     if script:
         # Script mode - output activation script
-        _output_activation_script(ctx, wt_path, branch, dangerous, model)
+        _output_activation_script(
+            ctx, wt_path=wt_path, branch=branch, dangerous=dangerous, model=model
+        )
     else:
         # Interactive mode - launch Claude
-        _launch_claude_interactive(ctx, repo_root, wt_path, dangerous, model)
+        _launch_claude_interactive(
+            ctx, repo_root=repo_root, wt_path=wt_path, dangerous=dangerous, model=model
+        )
 
 
 def _output_activation_script(
-    ctx: ErkContext,
-    wt_path: Path,
-    branch: str,
-    dangerous: bool,
-    model: str | None,
+    ctx: ErkContext, *, wt_path: Path, branch: str, dangerous: bool, model: str | None
 ) -> None:
     """Output activation script for shell integration.
 
@@ -426,11 +446,7 @@ def _output_activation_script(
 
 
 def _launch_claude_interactive(
-    ctx: ErkContext,
-    repo_root: Path,
-    wt_path: Path,
-    dangerous: bool,
-    model: str | None,
+    ctx: ErkContext, *, repo_root: Path, wt_path: Path, dangerous: bool, model: str | None
 ) -> None:
     """Launch Claude in interactive mode for planning.
 
@@ -449,10 +465,12 @@ def _launch_claude_interactive(
         # Launch Claude without a slash command (empty string)
         # The executor handles empty command by not appending it to args
         ctx.claude_executor.execute_interactive(
-            wt_path,
-            dangerous,
-            "",  # No slash command - user will drive the planning session
-            compute_relative_path_in_worktree(ctx.git.list_worktrees(repo_root), ctx.cwd),
+            worktree_path=wt_path,
+            dangerous=dangerous,
+            command="",  # No slash command - user will drive the planning session
+            target_subpath=compute_relative_path_in_worktree(
+                ctx.git.list_worktrees(repo_root), ctx.cwd
+            ),
             model=model,
         )
     except RuntimeError as e:

@@ -51,6 +51,7 @@ from erk_shared.scratch.scratch import write_scratch_file
 @click.pass_context
 def extract_session_from_issue(
     ctx: click.Context,
+    *,
     issue_number: int,
     output: Path | None,
     session_id: str | None,

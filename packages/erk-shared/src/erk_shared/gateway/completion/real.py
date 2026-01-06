@@ -22,7 +22,7 @@ class RealCompletion(Completion):
         env = os.environ.copy()
         env["_ERK_COMPLETE"] = "bash_source"
         result = run_subprocess_with_context(
-            [erk_exe],
+            cmd=[erk_exe],
             operation_context="generate bash completion script",
             env=env,
         )
@@ -39,7 +39,7 @@ class RealCompletion(Completion):
         env = os.environ.copy()
         env["_ERK_COMPLETE"] = "zsh_source"
         result = run_subprocess_with_context(
-            [erk_exe],
+            cmd=[erk_exe],
             operation_context="generate zsh completion script",
             env=env,
         )
@@ -56,7 +56,7 @@ class RealCompletion(Completion):
         env = os.environ.copy()
         env["_ERK_COMPLETE"] = "fish_source"
         result = run_subprocess_with_context(
-            [erk_exe],
+            cmd=[erk_exe],
             operation_context="generate fish completion script",
             env=env,
         )

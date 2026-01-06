@@ -312,6 +312,7 @@ def _validate_issue_for_submit(
 
 def _create_branch_and_pr(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     validated: ValidatedIssue,
     branch_name: str,
@@ -416,6 +417,7 @@ def _create_branch_and_pr(
 
 def _submit_single_issue(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     validated: ValidatedIssue,
     submitted_by: str,
@@ -751,7 +753,14 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         else:
             user_output(f"Submitting issue #{v.number}...")
         user_output("")
-        result = _submit_single_issue(ctx, repo, v, submitted_by, original_branch, target_branch)
+        result = _submit_single_issue(
+            ctx,
+            repo=repo,
+            validated=v,
+            submitted_by=submitted_by,
+            original_branch=original_branch,
+            base_branch=target_branch,
+        )
         results.append(result)
         user_output("")
 

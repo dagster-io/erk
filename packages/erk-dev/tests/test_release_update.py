@@ -34,7 +34,13 @@ def test_insert_release_notes_adds_version_section(tmp_path: Path) -> None:
 ### Fixed
 - Bug fix Z"""
 
-    result = insert_release_notes(changelog, "0.2.1", "2025-12-11", notes, dry_run=False)
+    result = insert_release_notes(
+        changelog_path=changelog,
+        version="0.2.1",
+        date="2025-12-11",
+        notes=notes,
+        dry_run=False,
+    )
 
     assert result is True
     content = changelog.read_text(encoding="utf-8")
@@ -63,7 +69,13 @@ def test_insert_release_notes_handles_unreleased_at_end(tmp_path: Path) -> None:
 
     notes = "- Initial release"
 
-    result = insert_release_notes(changelog, "0.1.0", "2025-01-01", notes, dry_run=False)
+    result = insert_release_notes(
+        changelog_path=changelog,
+        version="0.1.0",
+        date="2025-01-01",
+        notes=notes,
+        dry_run=False,
+    )
 
     assert result is True
     content = changelog.read_text(encoding="utf-8")
@@ -85,7 +97,13 @@ def test_insert_release_notes_dry_run_does_not_modify(tmp_path: Path) -> None:
 """
     changelog.write_text(original, encoding="utf-8")
 
-    result = insert_release_notes(changelog, "0.2.1", "2025-12-11", "- New stuff", dry_run=True)
+    result = insert_release_notes(
+        changelog_path=changelog,
+        version="0.2.1",
+        date="2025-12-11",
+        notes="- New stuff",
+        dry_run=True,
+    )
 
     assert result is True
     assert changelog.read_text(encoding="utf-8") == original
@@ -105,7 +123,13 @@ def test_insert_release_notes_returns_false_when_no_unreleased(tmp_path: Path) -
         encoding="utf-8",
     )
 
-    result = insert_release_notes(changelog, "0.2.1", "2025-12-11", "- New stuff", dry_run=False)
+    result = insert_release_notes(
+        changelog_path=changelog,
+        version="0.2.1",
+        date="2025-12-11",
+        notes="- New stuff",
+        dry_run=False,
+    )
 
     assert result is False
 
@@ -114,7 +138,13 @@ def test_insert_release_notes_returns_false_when_no_file(tmp_path: Path) -> None
     """Test that False is returned when changelog doesn't exist."""
     changelog = tmp_path / "CHANGELOG.md"
 
-    result = insert_release_notes(changelog, "0.2.1", "2025-12-11", "- New stuff", dry_run=False)
+    result = insert_release_notes(
+        changelog_path=changelog,
+        version="0.2.1",
+        date="2025-12-11",
+        notes="- New stuff",
+        dry_run=False,
+    )
 
     assert result is False
 

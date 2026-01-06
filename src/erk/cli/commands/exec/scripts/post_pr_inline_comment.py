@@ -86,11 +86,7 @@ def _get_pr_head_sha(repo_root: Path, pr_number: int) -> str:
 @click.option("--body", required=True, help="Comment body text")
 @click.pass_context
 def post_pr_inline_comment(
-    ctx: click.Context,
-    pr_number: int,
-    path: str,
-    line: int,
-    body: str,
+    ctx: click.Context, *, pr_number: int, path: str, line: int, body: str
 ) -> None:
     """Post an inline review comment on a PR.
 
@@ -120,12 +116,12 @@ def post_pr_inline_comment(
     # Create the inline comment
     try:
         comment_id = github.create_pr_review_comment(
-            repo_root,
-            pr_number,
-            body,
-            commit_sha,
-            path,
-            line,
+            repo_root=repo_root,
+            pr_number=pr_number,
+            body=body,
+            commit_sha=commit_sha,
+            path=path,
+            line=line,
         )
         result_success = InlineCommentSuccess(
             success=True,

@@ -479,11 +479,7 @@ def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
 
 
 def update_plan_header_local_impl_event(
-    issue_body: str,
-    local_impl_at: str,
-    event: str,
-    session_id: str | None,
-    user: str,
+    *, issue_body: str, local_impl_at: str, event: str, session_id: str | None, user: str
 ) -> str:
     """Update local implementation event fields in plan-header metadata block.
 

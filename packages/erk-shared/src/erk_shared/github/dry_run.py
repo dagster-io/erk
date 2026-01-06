@@ -61,11 +61,7 @@ class DryRunGitHub(GitHub):
         return True
 
     def trigger_workflow(
-        self,
-        repo_root: Path,
-        workflow: str,
-        inputs: dict[str, str],
-        ref: str | None = None,
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> str:
         """No-op for triggering workflow in dry-run mode.
 
@@ -127,6 +123,7 @@ class DryRunGitHub(GitHub):
 
     def poll_for_workflow_run(
         self,
+        *,
         repo_root: Path,
         workflow: str,
         branch_name: str,
@@ -135,7 +132,11 @@ class DryRunGitHub(GitHub):
     ) -> str | None:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.poll_for_workflow_run(
-            repo_root, workflow, branch_name, timeout, poll_interval
+            repo_root=repo_root,
+            workflow=workflow,
+            branch_name=branch_name,
+            timeout=timeout,
+            poll_interval=poll_interval,
         )
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
@@ -156,6 +157,7 @@ class DryRunGitHub(GitHub):
 
     def get_issues_with_pr_linkages(
         self,
+        *,
         location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
@@ -164,7 +166,7 @@ class DryRunGitHub(GitHub):
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issues_with_pr_linkages(
-            location, labels, state=state, limit=limit, creator=creator
+            location=location, labels=labels, state=state, limit=limit, creator=creator
         )
 
     def get_pr(self, repo_root: Path, pr_number: int) -> PRDetails | PRNotFound:
@@ -184,7 +186,7 @@ class DryRunGitHub(GitHub):
         return self._wrapped.get_pr_body(repo_root, pr_number)
 
     def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
         """No-op for updating PR title and body in dry-run mode."""
         pass
@@ -245,13 +247,7 @@ class DryRunGitHub(GitHub):
         return True
 
     def create_pr_review_comment(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        body: str,
-        commit_sha: str,
-        path: str,
-        line: int,
+        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
     ) -> int:
         """No-op for creating PR review comment in dry-run mode.
 

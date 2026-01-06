@@ -55,7 +55,7 @@ def test_list_issues_all(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        result = issues.list_issues(Path("/repo"))
+        result = issues.list_issues(repo_root=Path("/repo"))
 
         assert len(result) == 2
         assert result[0].number == 1
@@ -80,7 +80,7 @@ def test_list_issues_with_state_filter(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        issues.list_issues(Path("/repo"), state="open")
+        issues.list_issues(repo_root=Path("/repo"), state="open")
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
@@ -106,7 +106,7 @@ def test_list_issues_with_labels_filter(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        issues.list_issues(Path("/repo"), labels=["plan", "erk"])
+        issues.list_issues(repo_root=Path("/repo"), labels=["plan", "erk"])
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
@@ -132,7 +132,7 @@ def test_list_issues_with_both_filters(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        issues.list_issues(Path("/repo"), labels=["bug"], state="closed")
+        issues.list_issues(repo_root=Path("/repo"), labels=["bug"], state="closed")
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
@@ -158,7 +158,7 @@ def test_list_issues_rest_api_endpoint(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        issues.list_issues(Path("/repo"))
+        issues.list_issues(repo_root=Path("/repo"))
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"
@@ -179,7 +179,7 @@ def test_list_issues_command_failure(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="not authenticated"):
-            issues.list_issues(Path("/repo"))
+            issues.list_issues(repo_root=Path("/repo"))
 
 
 def test_list_issues_empty_response(monkeypatch: MonkeyPatch) -> None:
@@ -195,7 +195,7 @@ def test_list_issues_empty_response(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        result = issues.list_issues(Path("/repo"))
+        result = issues.list_issues(repo_root=Path("/repo"))
 
         assert result == []
 
@@ -228,7 +228,7 @@ def test_list_issues_null_body(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        result = issues.list_issues(Path("/repo"))
+        result = issues.list_issues(repo_root=Path("/repo"))
 
         assert len(result) == 1
         assert result[0].body == ""  # null converted to empty string
@@ -266,7 +266,7 @@ def test_list_issues_parses_all_fields(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        result = issues.list_issues(Path("/repo"))
+        result = issues.list_issues(repo_root=Path("/repo"))
 
         assert len(result) == 1
         issue = result[0]
@@ -293,7 +293,7 @@ def test_list_issues_with_limit(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        issues.list_issues(Path("/repo"), limit=10)
+        issues.list_issues(repo_root=Path("/repo"), limit=10)
 
         cmd = created_commands[0]
         assert cmd[0] == "gh"

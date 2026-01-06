@@ -512,6 +512,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
 @click.pass_obj
 def init_cmd(
     ctx: ErkContext,
+    *,
     force: bool,
     preset: str,
     list_presets: bool,

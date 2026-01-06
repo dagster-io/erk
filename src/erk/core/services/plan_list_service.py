@@ -60,8 +60,8 @@ class RealPlanListService(PlanListService):
         """
         # Always use unified path: issues + PR linkages in one API call (~600ms)
         issues, pr_linkages = self._github.get_issues_with_pr_linkages(
-            location,
-            labels,
+            location=location,
+            labels=labels,
             state=state,
             limit=limit,
             creator=creator,

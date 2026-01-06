@@ -208,6 +208,7 @@ def unallocate_worktree_and_branch(
 
 def activate_root_repo(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     script: bool,
     command_name: str,
@@ -371,6 +372,7 @@ def resolve_up_navigation(
 
 def resolve_down_navigation(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     current_branch: str,
     worktrees: list[WorktreeInfo],

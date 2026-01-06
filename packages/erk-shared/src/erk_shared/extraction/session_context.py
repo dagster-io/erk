@@ -32,6 +32,7 @@ class SessionContextResult:
 
 
 def collect_session_context(
+    *,
     git: Git,
     cwd: Path,
     claude_installation: ClaudeInstallation,

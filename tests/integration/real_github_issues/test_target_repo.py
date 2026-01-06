@@ -39,7 +39,7 @@ def test_create_issue_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyP
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo="owner/plans-repo")
         issues.create_issue(
-            Path("/repo"),
+            repo_root=Path("/repo"),
             title="Test Issue",
             body="Test body",
             labels=["plan"],
@@ -114,7 +114,7 @@ def test_list_issues_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPa
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo="owner/plans-repo")
-        issues.list_issues(Path("/repo"), labels=["erk-plan"])
+        issues.list_issues(repo_root=Path("/repo"), labels=["erk-plan"])
 
         cmd = created_commands[0]
         # gh api uses {owner}/{repo} substitution, not -R flag

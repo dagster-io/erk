@@ -217,7 +217,9 @@ def test_full_consolidation_plan() -> None:
     stack = ["main", "feat-1", "feat-2"]
     target = Path("/repo")
 
-    plan = create_consolidation_plan(worktrees, stack, None, target)
+    plan = create_consolidation_plan(
+        all_worktrees=worktrees, stack_branches=stack, end_branch=None, target_worktree_path=target
+    )
 
     assert plan.stack_branches == stack
     assert plan.stack_to_consolidate == stack  # Full stack
@@ -237,7 +239,12 @@ def test_partial_consolidation_plan() -> None:
     stack = ["main", "feat-1", "feat-2", "feat-3"]
     target = Path("/repo/feat-1")
 
-    plan = create_consolidation_plan(worktrees, stack, "feat-2", target)
+    plan = create_consolidation_plan(
+        all_worktrees=worktrees,
+        stack_branches=stack,
+        end_branch="feat-2",
+        target_worktree_path=target,
+    )
 
     assert plan.stack_branches == stack  # Full stack for context
     assert plan.stack_to_consolidate == ["main", "feat-1", "feat-2"]  # Partial
@@ -257,7 +264,13 @@ def test_plan_with_new_worktree_creation() -> None:
     target = Path("/repo/new")
     source = Path("/repo/current")
 
-    plan = create_consolidation_plan(worktrees, stack, None, target, source)
+    plan = create_consolidation_plan(
+        all_worktrees=worktrees,
+        stack_branches=stack,
+        end_branch=None,
+        target_worktree_path=target,
+        source_worktree_path=source,
+    )
 
     assert plan.target_worktree_path == target
     assert plan.source_worktree_path == source
@@ -274,7 +287,12 @@ def test_plan_validates_branch_argument() -> None:
     target = Path("/repo")
 
     with pytest.raises(ValueError, match="Branch 'unknown' not in stack"):
-        create_consolidation_plan(worktrees, stack, "unknown", target)
+        create_consolidation_plan(
+            all_worktrees=worktrees,
+            stack_branches=stack,
+            end_branch="unknown",
+            target_worktree_path=target,
+        )
 
 
 def test_immutable_plan_object() -> None:
@@ -283,7 +301,9 @@ def test_immutable_plan_object() -> None:
     stack = ["main"]
     target = Path("/repo")
 
-    plan = create_consolidation_plan(worktrees, stack, None, target)
+    plan = create_consolidation_plan(
+        all_worktrees=worktrees, stack_branches=stack, end_branch=None, target_worktree_path=target
+    )
 
     # Verify frozen dataclass
     with pytest.raises(AttributeError):

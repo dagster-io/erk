@@ -39,7 +39,7 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
         issues.ensure_label_exists(
-            Path("/repo"),
+            repo_root=Path("/repo"),
             label="erk-plan",
             description="Implementation plan",
             color="0E8A16",
@@ -83,7 +83,7 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
         issues.ensure_label_exists(
-            Path("/repo"),
+            repo_root=Path("/repo"),
             label="erk-plan",
             description="Implementation plan",
             color="0E8A16",
@@ -107,7 +107,9 @@ def test_ensure_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="not authenticated"):
-            issues.ensure_label_exists(Path("/repo"), "label", "desc", "color")
+            issues.ensure_label_exists(
+                repo_root=Path("/repo"), label="label", description="desc", color="color"
+            )
 
 
 # ============================================================================

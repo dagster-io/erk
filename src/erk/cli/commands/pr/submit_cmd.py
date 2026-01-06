@@ -120,7 +120,9 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 
     # Phase 2: Get diff for AI
     click.echo(click.style("Phase 2: Getting diff", bold=True))
-    diff_file = _run_diff_extraction(ctx, cwd, core_result.pr_number, session_id, debug)
+    diff_file = _run_diff_extraction(
+        ctx, cwd=cwd, pr_number=core_result.pr_number, session_id=session_id, debug=debug
+    )
 
     if diff_file is None:
         raise click.ClickException("Failed to extract diff for AI analysis")
@@ -144,7 +146,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     click.echo(click.style("Phase 3: Generating PR description", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
     msg_result = _run_commit_message_generation(
-        msg_gen,
+        generator=msg_gen,
         diff_file=diff_file,
         repo_root=Path(repo_root),
         current_branch=current_branch,
@@ -162,7 +164,9 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     graphite_url: str | None = None
     if use_graphite:
         click.echo(click.style("Phase 4: Graphite enhancement", bold=True))
-        graphite_result = _run_graphite_enhance(ctx, cwd, core_result.pr_number, debug, force)
+        graphite_result = _run_graphite_enhance(
+            ctx, cwd=cwd, pr_number=core_result.pr_number, debug=debug, force=force
+        )
 
         if isinstance(graphite_result, GraphiteEnhanceResult):
             graphite_url = graphite_result.graphite_url
@@ -180,7 +184,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     click.echo(click.style("Phase 5: Updating PR metadata", bold=True))
     finalize_result = _run_finalize(
         ctx,
-        cwd,
+        cwd=cwd,
         pr_number=core_result.pr_number,
         title=msg_result.title or "Update",
         body=msg_result.body or "",
@@ -237,11 +241,7 @@ def _run_core_submit(
 
 
 def _run_diff_extraction(
-    ctx: ErkContext,
-    cwd: Path,
-    pr_number: int,
-    session_id: str,
-    debug: bool,
+    ctx: ErkContext, *, cwd: Path, pr_number: int, session_id: str, debug: bool
 ) -> Path | None:
     """Run diff extraction phase."""
     result: Path | None = None
@@ -257,11 +257,7 @@ def _run_diff_extraction(
 
 
 def _run_graphite_enhance(
-    ctx: ErkContext,
-    cwd: Path,
-    pr_number: int,
-    debug: bool,
-    force: bool,
+    ctx: ErkContext, *, cwd: Path, pr_number: int, debug: bool, force: bool
 ) -> GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped:
     """Run Graphite enhancement phase."""
     result: GraphiteEnhanceResult | GraphiteEnhanceError | GraphiteSkipped | None = None
@@ -285,6 +281,7 @@ def _run_graphite_enhance(
 
 def _run_finalize(
     ctx: ErkContext,
+    *,
     cwd: Path,
     pr_number: int,
     title: str,
@@ -297,8 +294,8 @@ def _run_finalize(
 
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
     for event in execute_finalize(
-        ctx,
-        cwd,
+        ops=ctx,
+        cwd=cwd,
         pr_number=pr_number,
         pr_title=title,
         pr_body=body,
@@ -324,6 +321,7 @@ def _run_finalize(
 
 
 def _run_commit_message_generation(
+    *,
     generator: CommitMessageGenerator,
     diff_file: Path,
     repo_root: Path,

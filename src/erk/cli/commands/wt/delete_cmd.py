@@ -240,6 +240,7 @@ def _collect_branch_to_delete(
 
 
 def _display_planned_operations(
+    *,
     wt_path: Path,
     branch_to_delete: str | None,
     close_all: bool,
@@ -379,12 +380,7 @@ def _delete_worktree_directory(ctx: ErkContext, repo: RepoContext, wt_path: Path
 
 
 def _delete_branch_at_error_boundary(
-    ctx: ErkContext,
-    repo_root: Path,
-    branch: str,
-    force: bool,
-    dry_run: bool,
-    graphite: Graphite,
+    ctx: ErkContext, *, repo_root: Path, branch: str, force: bool, dry_run: bool, graphite: Graphite
 ) -> None:
     """Delete a branch after its worktree has been removed.
 
@@ -453,6 +449,7 @@ def _handle_branch_deletion_error(e: RuntimeError, branch: str, force: bool) -> 
 
 def _delete_worktree(
     ctx: ErkContext,
+    *,
     name: str,
     force: bool,
     delete_branch: bool,
@@ -501,7 +498,13 @@ def _delete_worktree(
         plan_info = _get_plan_info_for_worktree(ctx, repo.root, name)
 
     if not quiet:
-        _display_planned_operations(wt_path, branch_to_delete, close_all, pr_info, plan_info)
+        _display_planned_operations(
+            wt_path=wt_path,
+            branch_to_delete=branch_to_delete,
+            close_all=close_all,
+            pr_info=pr_info,
+            plan_info=plan_info,
+        )
 
     if not _confirm_operations(force, dry_run):
         return
@@ -519,7 +522,12 @@ def _delete_worktree(
         # User already confirmed via _confirm_operations(), so force=True for branch deletion
         # to avoid redundant Graphite prompt
         _delete_branch_at_error_boundary(
-            ctx, repo.root, branch_to_delete, force=True, dry_run=dry_run, graphite=ctx.graphite
+            ctx,
+            repo_root=repo.root,
+            branch=branch_to_delete,
+            force=True,
+            dry_run=dry_run,
+            graphite=ctx.graphite,
         )
 
     if not dry_run and not was_slot:
@@ -553,12 +561,7 @@ def _delete_worktree(
 )
 @click.pass_obj
 def delete_wt(
-    ctx: ErkContext,
-    name: str,
-    force: bool,
-    branch: bool,
-    close_all: bool,
-    dry_run: bool,
+    ctx: ErkContext, *, name: str, force: bool, branch: bool, close_all: bool, dry_run: bool
 ) -> None:
     """Delete the worktree directory.
 
@@ -570,4 +573,6 @@ def delete_wt(
     # --all implies --branch
     if close_all:
         branch = True
-    _delete_worktree(ctx, name, force, branch, dry_run, close_all=close_all)
+    _delete_worktree(
+        ctx, name=name, force=force, delete_branch=branch, dry_run=dry_run, close_all=close_all
+    )

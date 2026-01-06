@@ -224,6 +224,7 @@ def execute_swap(
 @click.pass_obj
 def move_stack(
     ctx: ErkContext,
+    *,
     current: bool,
     branch: str | None,
     worktree: str | None,

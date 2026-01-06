@@ -247,6 +247,7 @@ def build_claude_command(slash_command: str, dangerous: bool, model: str | None)
 
 def execute_interactive_mode(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     worktree_path: Path,
     dangerous: bool,
@@ -272,10 +273,12 @@ def execute_interactive_mode(
     click.echo("Entering interactive implementation mode...", err=True)
     try:
         executor.execute_interactive(
-            worktree_path,
-            dangerous,
-            "/erk:plan-implement",
-            compute_relative_path_in_worktree(ctx.git.list_worktrees(repo_root), ctx.cwd),
+            worktree_path=worktree_path,
+            dangerous=dangerous,
+            command="/erk:plan-implement",
+            target_subpath=compute_relative_path_in_worktree(
+                ctx.git.list_worktrees(repo_root), ctx.cwd
+            ),
             model=model,
         )
     except RuntimeError as e:
@@ -326,7 +329,11 @@ def execute_non_interactive_mode(
             # Verbose mode - simple output, no spinner
             click.echo(f"Running {cmd}...", err=True)
             result = executor.execute_command(
-                cmd, worktree_path, dangerous, verbose=True, model=model
+                command=cmd,
+                worktree_path=worktree_path,
+                dangerous=dangerous,
+                verbose=True,
+                model=model,
             )
         else:
             # Filtered mode - streaming with live print-based feedback

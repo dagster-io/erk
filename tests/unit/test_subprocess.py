@@ -21,7 +21,7 @@ def test_success_case_returns_completed_process() -> None:
 
         # Execute
         result = run_subprocess_with_context(
-            ["git", "status"],
+            cmd=["git", "status"],
             operation_context="check git status",
             cwd=Path("/repo"),
         )
@@ -58,7 +58,7 @@ def test_failure_with_stderr_includes_stderr_in_error() -> None:
         # Execute and verify exception
         with pytest.raises(RuntimeError) as exc_info:
             run_subprocess_with_context(
-                ["git", "checkout", "nonexistent"],
+                cmd=["git", "checkout", "nonexistent"],
                 operation_context="checkout branch 'nonexistent'",
                 cwd=Path("/repo"),
             )
@@ -88,7 +88,7 @@ def test_failure_without_stderr_handles_gracefully() -> None:
         # Execute and verify exception
         with pytest.raises(RuntimeError) as exc_info:
             run_subprocess_with_context(
-                ["nonexistent-command"],
+                cmd=["nonexistent-command"],
                 operation_context="run nonexistent command",
             )
 
@@ -115,7 +115,7 @@ def test_failure_with_empty_stderr_omits_stderr_line() -> None:
         # Execute and verify exception
         with pytest.raises(RuntimeError) as exc_info:
             run_subprocess_with_context(
-                ["command"],
+                cmd=["command"],
                 operation_context="run command",
             )
 
@@ -141,7 +141,7 @@ def test_exception_chaining_preserved() -> None:
         # Execute and verify exception chaining
         with pytest.raises(RuntimeError) as exc_info:
             run_subprocess_with_context(
-                ["git", "status"],
+                cmd=["git", "status"],
                 operation_context="check git status",
             )
 
@@ -160,7 +160,7 @@ def test_parameter_pass_through() -> None:
 
         # Execute with custom kwargs
         run_subprocess_with_context(
-            ["echo", "test"],
+            cmd=["echo", "test"],
             operation_context="echo test",
             cwd=Path("/tmp"),
             timeout=30,
@@ -193,7 +193,7 @@ def test_check_false_behavior_no_exception() -> None:
 
         # Execute with check=False - should NOT raise
         result = run_subprocess_with_context(
-            ["command"],
+            cmd=["command"],
             operation_context="run command",
             check=False,
         )
@@ -213,7 +213,7 @@ def test_custom_encoding_parameter() -> None:
 
         # Execute with custom encoding
         run_subprocess_with_context(
-            ["cat", "file.txt"],
+            cmd=["cat", "file.txt"],
             operation_context="read file",
             encoding="latin-1",
         )
@@ -233,7 +233,7 @@ def test_capture_output_false_parameter() -> None:
 
         # Execute with capture_output=False
         run_subprocess_with_context(
-            ["echo", "test"],
+            cmd=["echo", "test"],
             operation_context="echo test",
             capture_output=False,
         )
@@ -253,7 +253,7 @@ def test_text_false_parameter() -> None:
 
         # Execute with text=False
         run_subprocess_with_context(
-            ["command"],
+            cmd=["command"],
             operation_context="run command",
             text=False,
         )
@@ -278,7 +278,7 @@ def test_explicit_stderr_with_default_capture_output() -> None:
 
         # Execute with explicit stderr parameter - should NOT raise ValueError
         result = run_subprocess_with_context(
-            ["gt", "sync"],
+            cmd=["gt", "sync"],
             operation_context="sync with Graphite",
             stderr=subprocess.PIPE,
         )
@@ -303,7 +303,7 @@ def test_explicit_stdout_and_stderr_both_disable_capture_output() -> None:
 
         # Execute with both stdout and stderr explicit
         result = run_subprocess_with_context(
-            ["gt", "sync"],
+            cmd=["gt", "sync"],
             operation_context="sync with Graphite",
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
@@ -333,7 +333,7 @@ def test_failure_with_stdout_includes_stdout_in_error() -> None:
         # Execute and verify exception
         with pytest.raises(RuntimeError) as exc_info:
             run_subprocess_with_context(
-                ["gt", "delete", "branch"],
+                cmd=["gt", "delete", "branch"],
                 operation_context="delete branch 'branch' with Graphite",
                 cwd=Path("/repo"),
             )
@@ -361,7 +361,7 @@ def test_failure_with_both_stdout_and_stderr_includes_both() -> None:
         # Execute and verify exception
         with pytest.raises(RuntimeError) as exc_info:
             run_subprocess_with_context(
-                ["command", "arg"],
+                cmd=["command", "arg"],
                 operation_context="run command",
                 cwd=Path("/repo"),
             )

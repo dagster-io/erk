@@ -72,6 +72,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
 
 def prompt_objective_update(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     objective_number: int,
     pr_number: int,

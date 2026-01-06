@@ -23,7 +23,7 @@ class RealGit(Git):
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository."""
         result = run_subprocess_with_context(
-            ["git", "worktree", "list", "--porcelain"],
+            cmd=["git", "worktree", "list", "--porcelain"],
             operation_context="list worktrees",
             cwd=repo_root,
         )
@@ -141,7 +141,7 @@ class RealGit(Git):
     def list_local_branches(self, repo_root: Path) -> list[str]:
         """List all local branch names in the repository."""
         result = run_subprocess_with_context(
-            ["git", "branch", "--format=%(refname:short)"],
+            cmd=["git", "branch", "--format=%(refname:short)"],
             operation_context="list local branches",
             cwd=repo_root,
         )
@@ -151,7 +151,7 @@ class RealGit(Git):
     def list_remote_branches(self, repo_root: Path) -> list[str]:
         """List all remote branch names in the repository."""
         result = run_subprocess_with_context(
-            ["git", "branch", "-r", "--format=%(refname:short)"],
+            cmd=["git", "branch", "-r", "--format=%(refname:short)"],
             operation_context="list remote branches",
             cwd=repo_root,
         )
@@ -160,7 +160,7 @@ class RealGit(Git):
     def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
         """Create a local tracking branch from a remote branch."""
         run_subprocess_with_context(
-            ["git", "branch", "--track", branch, remote_ref],
+            cmd=["git", "branch", "--track", branch, remote_ref],
             operation_context=f"create tracking branch '{branch}' from '{remote_ref}'",
             cwd=repo_root,
         )
@@ -265,13 +265,13 @@ class RealGit(Git):
             cmd = ["git", "worktree", "add", str(path), base_ref]
             context = f"add worktree at {path}"
 
-        run_subprocess_with_context(cmd, operation_context=context, cwd=repo_root)
+        run_subprocess_with_context(cmd=cmd, operation_context=context, cwd=repo_root)
 
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Move a worktree to a new location."""
         cmd = ["git", "worktree", "move", str(old_path), str(new_path)]
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"move worktree from {old_path} to {new_path}",
             cwd=repo_root,
         )
@@ -287,7 +287,7 @@ class RealGit(Git):
             cmd.append("--force")
         cmd.append(str(path))
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"remove worktree at {path}",
             cwd=repo_root,
         )
@@ -296,7 +296,7 @@ class RealGit(Git):
         # This prunes stale administrative files left behind after worktree removal
         # Use main_git_dir for prune - repo_root may have been deleted
         run_subprocess_with_context(
-            ["git", "worktree", "prune"],
+            cmd=["git", "worktree", "prune"],
             operation_context="prune worktree metadata",
             cwd=main_git_dir,
         )
@@ -308,7 +308,7 @@ class RealGit(Git):
         For main repos, returns repo_root unchanged.
         """
         result = run_subprocess_with_context(
-            ["git", "rev-parse", "--git-common-dir"],
+            cmd=["git", "rev-parse", "--git-common-dir"],
             operation_context="find main git directory",
             cwd=repo_root,
         )
@@ -327,7 +327,7 @@ class RealGit(Git):
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         """Checkout a branch in the given directory."""
         run_subprocess_with_context(
-            ["git", "checkout", branch],
+            cmd=["git", "checkout", branch],
             operation_context=f"checkout branch '{branch}'",
             cwd=cwd,
         )
@@ -335,7 +335,7 @@ class RealGit(Git):
     def checkout_detached(self, cwd: Path, ref: str) -> None:
         """Checkout a detached HEAD at the given ref."""
         run_subprocess_with_context(
-            ["git", "checkout", "--detach", ref],
+            cmd=["git", "checkout", "--detach", ref],
             operation_context=f"checkout detached HEAD at '{ref}'",
             cwd=cwd,
         )
@@ -343,7 +343,7 @@ class RealGit(Git):
     def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
         """Create a new branch without checking it out."""
         run_subprocess_with_context(
-            ["git", "branch", branch_name, start_point],
+            cmd=["git", "branch", branch_name, start_point],
             operation_context=f"create branch '{branch_name}' from '{start_point}'",
             cwd=cwd,
         )
@@ -352,7 +352,7 @@ class RealGit(Git):
         """Delete a local branch."""
         flag = "-D" if force else "-d"
         run_subprocess_with_context(
-            ["git", "branch", flag, branch_name],
+            cmd=["git", "branch", flag, branch_name],
             operation_context=f"delete branch '{branch_name}'",
             cwd=cwd,
         )
@@ -363,7 +363,7 @@ class RealGit(Git):
         if force:
             cmd.insert(2, "-f")
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"delete branch '{branch}' with Graphite",
             cwd=repo_root,
         )
@@ -371,7 +371,7 @@ class RealGit(Git):
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata."""
         run_subprocess_with_context(
-            ["git", "worktree", "prune"],
+            cmd=["git", "worktree", "prune"],
             operation_context="prune worktree metadata",
             cwd=repo_root,
         )
@@ -438,7 +438,7 @@ class RealGit(Git):
     def get_file_status(self, cwd: Path) -> tuple[list[str], list[str], list[str]]:
         """Get lists of staged, modified, and untracked files."""
         result = run_subprocess_with_context(
-            ["git", "status", "--porcelain"],
+            cmd=["git", "status", "--porcelain"],
             operation_context="get file status",
             cwd=cwd,
         )
@@ -487,7 +487,7 @@ class RealGit(Git):
 
         # Get ahead/behind counts
         result = run_subprocess_with_context(
-            ["git", "rev-list", "--left-right", "--count", f"{upstream}...HEAD"],
+            cmd=["git", "rev-list", "--left-right", "--count", f"{upstream}...HEAD"],
             operation_context=f"get ahead/behind counts for branch '{branch}'",
             cwd=cwd,
         )
@@ -549,7 +549,7 @@ class RealGit(Git):
     def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
         """Get recent commit information."""
         result = run_subprocess_with_context(
-            [
+            cmd=[
                 "git",
                 "log",
                 f"-{limit}",
@@ -580,7 +580,7 @@ class RealGit(Git):
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch a specific branch from a remote."""
         run_subprocess_with_context(
-            ["git", "fetch", remote, branch],
+            cmd=["git", "fetch", remote, branch],
             operation_context=f"fetch branch '{branch}' from remote '{remote}'",
             cwd=repo_root,
         )
@@ -593,7 +593,7 @@ class RealGit(Git):
         cmd.extend([remote, branch])
 
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"pull branch '{branch}' from remote '{remote}'",
             cwd=repo_root,
         )
@@ -618,13 +618,15 @@ class RealGit(Git):
 
         return extract_leading_issue_number(branch)
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
+    def fetch_pr_ref(
+        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
+    ) -> None:
         """Fetch a PR ref into a local branch.
 
         Uses GitHub's special refs/pull/<number>/head reference.
         """
         run_subprocess_with_context(
-            ["git", "fetch", remote, f"pull/{pr_number}/head:{local_branch}"],
+            cmd=["git", "fetch", remote, f"pull/{pr_number}/head:{local_branch}"],
             operation_context=f"fetch PR #{pr_number} into branch '{local_branch}'",
             cwd=repo_root,
         )
@@ -632,7 +634,7 @@ class RealGit(Git):
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage specific files for commit."""
         run_subprocess_with_context(
-            ["git", "add", *paths],
+            cmd=["git", "add", *paths],
             operation_context=f"stage files: {', '.join(paths)}",
             cwd=cwd,
         )
@@ -640,7 +642,7 @@ class RealGit(Git):
     def commit(self, cwd: Path, message: str) -> None:
         """Create a commit with staged changes."""
         run_subprocess_with_context(
-            ["git", "commit", "--allow-empty", "-m", message],
+            cmd=["git", "commit", "--allow-empty", "-m", message],
             operation_context="create commit",
             cwd=cwd,
         )
@@ -663,7 +665,7 @@ class RealGit(Git):
         cmd.extend([remote, branch])
 
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"push branch '{branch}' to remote '{remote}'",
             cwd=cwd,
         )
@@ -685,7 +687,7 @@ class RealGit(Git):
     def add_all(self, cwd: Path) -> None:
         """Stage all changes for commit (git add -A)."""
         run_subprocess_with_context(
-            ["git", "add", "-A"],
+            cmd=["git", "add", "-A"],
             operation_context="stage all changes",
             cwd=cwd,
         )
@@ -693,7 +695,7 @@ class RealGit(Git):
     def amend_commit(self, cwd: Path, message: str) -> None:
         """Amend the current commit with a new message."""
         run_subprocess_with_context(
-            ["git", "commit", "--amend", "-m", message],
+            cmd=["git", "commit", "--amend", "-m", message],
             operation_context="amend commit",
             cwd=cwd,
         )
@@ -717,7 +719,7 @@ class RealGit(Git):
     def get_repository_root(self, cwd: Path) -> Path:
         """Get the repository root directory."""
         result = run_subprocess_with_context(
-            ["git", "rev-parse", "--show-toplevel"],
+            cmd=["git", "rev-parse", "--show-toplevel"],
             operation_context="get repository root",
             cwd=cwd,
         )
@@ -726,7 +728,7 @@ class RealGit(Git):
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
         """Get diff between branch and HEAD."""
         result = run_subprocess_with_context(
-            ["git", "diff", f"{branch}...HEAD"],
+            cmd=["git", "diff", f"{branch}...HEAD"],
             operation_context=f"get diff to branch '{branch}'",
             cwd=cwd,
         )
@@ -823,7 +825,7 @@ class RealGit(Git):
     def config_set(self, cwd: Path, key: str, value: str, *, scope: str = "local") -> None:
         """Set a git configuration value."""
         run_subprocess_with_context(
-            ["git", "config", f"--{scope}", key, value],
+            cmd=["git", "config", f"--{scope}", key, value],
             operation_context=f"set git config {key}",
             cwd=cwd,
         )
@@ -902,7 +904,7 @@ class RealGit(Git):
     def create_tag(self, repo_root: Path, tag_name: str, message: str) -> None:
         """Create an annotated git tag."""
         run_subprocess_with_context(
-            ["git", "tag", "-a", tag_name, "-m", message],
+            cmd=["git", "tag", "-a", tag_name, "-m", message],
             operation_context=f"create tag '{tag_name}'",
             cwd=repo_root,
         )
@@ -910,7 +912,7 @@ class RealGit(Git):
     def push_tag(self, repo_root: Path, remote: str, tag_name: str) -> None:
         """Push a tag to a remote."""
         run_subprocess_with_context(
-            ["git", "push", remote, tag_name],
+            cmd=["git", "push", remote, tag_name],
             operation_context=f"push tag '{tag_name}' to remote '{remote}'",
             cwd=repo_root,
         )
@@ -975,7 +977,7 @@ class RealGit(Git):
     def rebase_abort(self, cwd: Path) -> None:
         """Abort an in-progress rebase operation."""
         run_subprocess_with_context(
-            ["git", "rebase", "--abort"],
+            cmd=["git", "rebase", "--abort"],
             operation_context="abort rebase",
             cwd=cwd,
         )
@@ -983,7 +985,7 @@ class RealGit(Git):
     def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
         """Pull and rebase from remote branch."""
         run_subprocess_with_context(
-            ["git", "pull", "--rebase", remote, branch],
+            cmd=["git", "pull", "--rebase", remote, branch],
             operation_context=f"pull --rebase {remote} {branch}",
             cwd=cwd,
         )

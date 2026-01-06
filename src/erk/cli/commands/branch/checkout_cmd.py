@@ -58,11 +58,7 @@ def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) ->
 
 
 def _ensure_graphite_tracking(
-    ctx: ErkContext,
-    repo_root: Path,
-    target_path: Path,
-    branch: str,
-    script: bool,
+    ctx: ErkContext, *, repo_root: Path, target_path: Path, branch: str, script: bool
 ) -> None:
     """Ensure branch is tracked by Graphite (idempotent), with user confirmation.
 
@@ -168,7 +164,9 @@ def _perform_checkout(
         ctx.git.checkout_branch(target_path, branch)
 
     # Ensure branch is tracked with Graphite (idempotent)
-    _ensure_graphite_tracking(ctx, repo_root, target_path, branch, script)
+    _ensure_graphite_tracking(
+        ctx, repo_root=repo_root, target_path=target_path, branch=branch, script=script
+    )
 
     if need_checkout:
         # Show stack context

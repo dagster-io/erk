@@ -138,6 +138,7 @@ def render_erk_issue_event(
 
 
 def create_implementation_status_block(
+    *,
     status: str,
     timestamp: str,
     summary: str | None = None,
@@ -187,6 +188,7 @@ def create_implementation_status_block(
 
 
 def create_worktree_creation_block(
+    *,
     worktree_name: str,
     branch_name: str,
     timestamp: str,
@@ -260,6 +262,7 @@ def create_plan_block(
 
 
 def create_submission_queued_block(
+    *,
     queued_at: str,
     submitted_by: str,
     issue_number: int,
@@ -297,6 +300,7 @@ def create_submission_queued_block(
 
 
 def create_workflow_started_block(
+    *,
     started_at: str,
     workflow_run_id: str,
     workflow_run_url: str,

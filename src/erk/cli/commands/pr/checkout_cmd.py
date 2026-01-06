@@ -97,7 +97,9 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
     # For same-repo PRs, check if branch exists locally first
     if pr.is_cross_repository:
         # Fetch PR ref directly
-        ctx.git.fetch_pr_ref(repo.root, "origin", pr_number, branch_name)
+        ctx.git.fetch_pr_ref(
+            repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
+        )
     else:
         # Check if branch exists locally or on remote
         local_branches = ctx.git.list_local_branches(repo.root)
@@ -113,7 +115,12 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
                 ctx.git.create_tracking_branch(repo.root, branch_name, remote_ref)
             else:
                 # Branch not on remote (maybe local-only PR?), fetch via PR ref
-                ctx.git.fetch_pr_ref(repo.root, "origin", pr_number, branch_name)
+                ctx.git.fetch_pr_ref(
+                    repo_root=repo.root,
+                    remote="origin",
+                    pr_number=pr_number,
+                    local_branch=branch_name,
+                )
 
     # Create worktree
     worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)

@@ -130,6 +130,7 @@ def identify_splittable_branches(
 
 
 def create_split_plan(
+    *,
     stack_branches: list[str],
     trunk_branch: str,
     current_branch: str | None,

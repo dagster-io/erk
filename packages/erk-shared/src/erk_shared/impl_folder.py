@@ -339,11 +339,7 @@ def read_last_dispatched_run_id(impl_dir: Path) -> str | None:
 
 
 def add_worktree_creation_comment(
-    github_issues,
-    repo_root: Path,
-    issue_number: int,
-    worktree_name: str,
-    branch_name: str,
+    *, github_issues, repo_root: Path, issue_number: int, worktree_name: str, branch_name: str
 ) -> None:
     """Add a comment to the GitHub issue documenting worktree creation.
 
@@ -428,11 +424,7 @@ def read_local_run_state(impl_dir: Path) -> LocalRunState | None:
 
 
 def write_local_run_state(
-    impl_dir: Path,
-    last_event: str,
-    timestamp: str,
-    user: str,
-    session_id: str | None = None,
+    *, impl_dir: Path, last_event: str, timestamp: str, user: str, session_id: str | None = None
 ) -> None:
     """Write local implementation run state to .impl/local-run-state.json.
 

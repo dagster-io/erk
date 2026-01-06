@@ -156,6 +156,7 @@ class CommitMessageGenerator:
 
     def _build_prompt(
         self,
+        *,
         diff_content: str,
         current_branch: str,
         parent_branch: str,

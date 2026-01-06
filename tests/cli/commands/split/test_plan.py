@@ -148,14 +148,14 @@ def test_create_split_plan_full_stack() -> None:
         return name.lower().replace("/", "-")
 
     plan = create_split_plan(
-        stack_branches,
-        trunk_branch,
-        current_branch,
-        all_worktrees,
-        repo_dir,
-        sanitize_name,
-        Path("/repo"),
-        Path("/repo"),  # repo_root
+        stack_branches=stack_branches,
+        trunk_branch=trunk_branch,
+        current_branch=current_branch,
+        all_worktrees=all_worktrees,
+        worktrees_dir=repo_dir,
+        sanitize_worktree_name=sanitize_name,
+        source_worktree_path=Path("/repo"),
+        repo_root=Path("/repo"),
     )
 
     assert plan.branches_to_split == ["feat-1", "feat-2"]
@@ -181,14 +181,14 @@ def test_create_split_plan_with_exclusions() -> None:
         return name
 
     plan = create_split_plan(
-        stack_branches,
-        trunk_branch,
-        current_branch,
-        all_worktrees,
-        repo_dir,
-        sanitize_name,
-        Path("/repo/erks/feat-2"),
-        Path("/repo"),  # repo_root
+        stack_branches=stack_branches,
+        trunk_branch=trunk_branch,
+        current_branch=current_branch,
+        all_worktrees=all_worktrees,
+        worktrees_dir=repo_dir,
+        sanitize_worktree_name=sanitize_name,
+        source_worktree_path=Path("/repo/erks/feat-2"),
+        repo_root=Path("/repo"),
     )
 
     assert plan.branches_to_split == ["feat-3"]
@@ -209,14 +209,14 @@ def test_create_split_plan_generates_correct_paths() -> None:
         return name.replace("/", "-").lower()
 
     plan = create_split_plan(
-        stack_branches,
-        trunk_branch,
-        current_branch,
-        all_worktrees,
-        repo_dir,
-        sanitize_name,
-        Path("/repo"),
-        Path("/repo"),  # repo_root
+        stack_branches=stack_branches,
+        trunk_branch=trunk_branch,
+        current_branch=current_branch,
+        all_worktrees=all_worktrees,
+        worktrees_dir=repo_dir,
+        sanitize_worktree_name=sanitize_name,
+        source_worktree_path=Path("/repo"),
+        repo_root=Path("/repo"),
     )
 
     assert plan.target_paths["feature/test-branch"] == Path("/repo/.erks/feature-test-branch")
@@ -238,14 +238,14 @@ def test_create_split_plan_empty_branches_to_split() -> None:
         return name
 
     plan = create_split_plan(
-        stack_branches,
-        trunk_branch,
-        current_branch,
-        all_worktrees,
-        repo_dir,
-        sanitize_name,
-        Path("/repo/erks/feat-1"),
-        Path("/repo"),  # repo_root
+        stack_branches=stack_branches,
+        trunk_branch=trunk_branch,
+        current_branch=current_branch,
+        all_worktrees=all_worktrees,
+        worktrees_dir=repo_dir,
+        sanitize_worktree_name=sanitize_name,
+        source_worktree_path=Path("/repo/erks/feat-1"),
+        repo_root=Path("/repo"),
     )
 
     assert len(plan.branches_to_split) == 0

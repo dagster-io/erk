@@ -217,7 +217,7 @@ def test_list_sessions_finds_all_sessions(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=0
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
     )
     assert len(sessions) == 3
     assert filtered_count == 0
@@ -245,7 +245,7 @@ def test_list_sessions_sorted_by_mtime(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=0
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
     )
     assert len(sessions) == 2
     assert sessions[0].session_id == "new"  # Newest first
@@ -271,7 +271,7 @@ def test_list_sessions_respects_limit(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=5, min_size=0
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=5, min_size=0
     )
     assert len(sessions) == 5
     assert filtered_count == 0
@@ -299,7 +299,11 @@ def test_list_sessions_marks_current(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, "current123", limit=10, min_size=0
+        claude_installation=fake_store,
+        cwd=tmp_path,
+        current_session_id="current123",
+        limit=10,
+        min_size=0,
     )
 
     current = next(s for s in sessions if s.session_id == "current123")
@@ -315,7 +319,7 @@ def test_list_sessions_empty_project(tmp_path: Path) -> None:
     fake_store = FakeClaudeInstallation.for_test(projects={tmp_path: FakeProject(sessions={})})
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=0
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
     )
     assert sessions == []
     assert filtered_count == 0
@@ -326,7 +330,7 @@ def test_list_sessions_nonexistent_project(tmp_path: Path) -> None:
     fake_store = FakeClaudeInstallation.for_test()  # No projects
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=0
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
     )
     assert sessions == []
     assert filtered_count == 0
@@ -348,7 +352,9 @@ def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
         }
     )
 
-    sessions, _ = _list_sessions_from_store(fake_store, tmp_path, None, limit=10, min_size=0)
+    sessions, _ = _list_sessions_from_store(
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
+    )
     assert len(sessions) == 1
     assert sessions[0].summary == "Hello world"
 
@@ -625,7 +631,11 @@ def test_list_sessions_min_size_filters_tiny_sessions(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=100
+        claude_installation=fake_store,
+        cwd=tmp_path,
+        current_session_id=None,
+        limit=10,
+        min_size=100,
     )
 
     assert len(sessions) == 1
@@ -655,7 +665,7 @@ def test_list_sessions_min_size_zero_no_filtering(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=0
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
     )
 
     assert len(sessions) == 2
@@ -684,7 +694,11 @@ def test_list_sessions_all_filtered(tmp_path: Path) -> None:
     )
 
     sessions, filtered_count = _list_sessions_from_store(
-        fake_store, tmp_path, None, limit=10, min_size=1000
+        claude_installation=fake_store,
+        cwd=tmp_path,
+        current_session_id=None,
+        limit=10,
+        min_size=1000,
     )
 
     assert len(sessions) == 0

@@ -94,6 +94,7 @@ class PlanBackend(PlanStore):
     @abstractmethod
     def create_plan(
         self,
+        *,
         repo_root: Path,
         title: str,
         content: str,

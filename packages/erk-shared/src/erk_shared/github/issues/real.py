@@ -65,7 +65,7 @@ class RealGitHubIssues(GitHubIssues):
         return [base_cmd[0], "-R", self._target_repo, *base_cmd[1:]]
 
     def create_issue(
-        self, repo_root: Path, title: str, body: str, labels: list[str]
+        self, *, repo_root: Path, title: str, body: str, labels: list[str]
     ) -> CreateIssueResult:
         """Create a new GitHub issue using gh CLI REST API.
 
@@ -187,6 +187,7 @@ class RealGitHubIssues(GitHubIssues):
 
     def list_issues(
         self,
+        *,
         repo_root: Path,
         labels: list[str] | None = None,
         state: str | None = None,
@@ -316,11 +317,7 @@ class RealGitHubIssues(GitHubIssues):
         ]
 
     def ensure_label_exists(
-        self,
-        repo_root: Path,
-        label: str,
-        description: str,
-        color: str,
+        self, *, repo_root: Path, label: str, description: str, color: str
     ) -> None:
         """Ensure label exists in repository, creating it if needed.
 

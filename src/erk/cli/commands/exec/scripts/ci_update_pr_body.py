@@ -109,6 +109,7 @@ Generate a commit message for this diff:"""
 
 
 def _build_pr_body(
+    *,
     summary: str,
     pr_number: int,
     issue_number: int,
@@ -144,6 +145,7 @@ def _build_pr_body(
 
 
 def _update_pr_body_impl(
+    *,
     git: Git,
     github: GitHub,
     executor: PromptExecutor,
@@ -240,7 +242,14 @@ def _update_pr_body_impl(
         )
 
     # Build full PR body
-    pr_body = _build_pr_body(result.output, pr_number, issue_number, run_id, run_url, plans_repo)
+    pr_body = _build_pr_body(
+        summary=result.output,
+        pr_number=pr_number,
+        issue_number=issue_number,
+        run_id=run_id,
+        run_url=run_url,
+        plans_repo=plans_repo,
+    )
 
     # Update PR body
     try:
@@ -283,7 +292,14 @@ def ci_update_pr_body(
     plans_repo = config.plans_repo
 
     result = _update_pr_body_impl(
-        git, github, executor, repo_root, issue_number, run_id, run_url, plans_repo
+        git=git,
+        github=github,
+        executor=executor,
+        repo_root=repo_root,
+        issue_number=issue_number,
+        run_id=run_id,
+        run_url=run_url,
+        plans_repo=plans_repo,
     )
 
     # Output JSON result

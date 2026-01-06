@@ -777,7 +777,9 @@ class FakeGit(Git):
 
         return extract_leading_issue_number(branch)
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
+    def fetch_pr_ref(
+        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
+    ) -> None:
         """Record PR ref fetch in fake storage (mutates internal state).
 
         Simulates fetching a PR ref by creating a local branch. In real git,

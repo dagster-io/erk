@@ -146,6 +146,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 
 
 def context_for_test(
+    *,
     git: Git | None = None,
     github: GitHub | None = None,
     github_admin: GitHubAdmin | None = None,

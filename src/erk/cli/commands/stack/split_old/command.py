@@ -136,13 +136,7 @@ def apply_stack_filter(
     help="Only split downstack (trunk to current branch). Default is entire stack.",
 )
 @click.pass_obj
-def split_cmd(
-    ctx: ErkContext,
-    force: bool,
-    dry_run: bool,
-    up: bool,
-    down: bool,
-) -> None:
+def split_cmd(ctx: ErkContext, *, force: bool, dry_run: bool, up: bool, down: bool) -> None:
     """Split a stack into individual worktrees per branch.
 
     This is the inverse of consolidate - it creates individual worktrees for each

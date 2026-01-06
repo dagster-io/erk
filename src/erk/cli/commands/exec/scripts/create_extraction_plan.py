@@ -76,6 +76,7 @@ from erk_shared.scratch.scratch import write_scratch_file
 @click.pass_context
 def create_extraction_plan(
     ctx: click.Context,
+    *,
     plan_file: Path | None,
     plan_content: str | None,
     session_id: str | None,

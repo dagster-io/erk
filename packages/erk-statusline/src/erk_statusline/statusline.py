@@ -98,7 +98,9 @@ def _get_cached_pr_info(owner: str, repo: str, branch: str) -> tuple[int, str] |
     return None
 
 
-def _set_cached_pr_info(owner: str, repo: str, branch: str, pr_number: int, head_sha: str) -> None:
+def _set_cached_pr_info(
+    *, owner: str, repo: str, branch: str, pr_number: int, head_sha: str
+) -> None:
     """Cache PR info for a branch."""
     cache_path = _get_cache_path(owner, repo, branch)
 
@@ -412,7 +414,7 @@ class PRDetailsResult(NamedTuple):
 
 
 def _fetch_pr_details(
-    owner: str, repo: str, pr_number: int, cwd: str, timeout: float
+    *, owner: str, repo: str, pr_number: int, cwd: str, timeout: float
 ) -> PRDetailsResult:
     """Fetch PR details for mergeable status and head SHA.
 
@@ -487,7 +489,7 @@ def _fetch_pr_details(
 
 
 def _fetch_check_runs(
-    owner: str, repo: str, ref: str, cwd: str, timeout: float
+    *, owner: str, repo: str, ref: str, cwd: str, timeout: float
 ) -> list[dict[str, str]]:
     """Fetch check runs for a git ref.
 
@@ -627,8 +629,14 @@ def fetch_github_data_via_gateway(
     cwd = str(ctx.cwd)
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
-            pr_future = executor.submit(_fetch_pr_details, owner, repo, pr_number, cwd, 1.5)
-            checks_future = executor.submit(_fetch_check_runs, owner, repo, branch, cwd, 1.5)
+            pr_future = executor.submit(
+                lambda: _fetch_pr_details(
+                    owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
+                )
+            )
+            checks_future = executor.submit(
+                lambda: _fetch_check_runs(owner=owner, repo=repo, ref=branch, cwd=cwd, timeout=1.5)
+            )
 
             # Wait for both with combined timeout
             pr_details = pr_future.result(timeout=2)
@@ -793,7 +801,7 @@ def get_repo_info(github_data: GitHubData | None) -> RepoInfo:
 
 
 def build_context_labels(
-    repo_name: str, is_linked_worktree: bool, worktree_name: str, branch: str, relative_cwd: str
+    *, repo_name: str, is_linked_worktree: bool, worktree_name: str, branch: str, relative_cwd: str
 ) -> list[TokenSeq]:
     """Build hierarchical context labels.
 
@@ -1003,7 +1011,11 @@ def main():
             (
                 Token("➜ ", color=Color.GRAY),
                 *build_context_labels(
-                    repo_name, is_linked_worktree, worktree_name, branch, relative_cwd
+                    repo_name=repo_name,
+                    is_linked_worktree=is_linked_worktree,
+                    worktree_name=worktree_name,
+                    branch=branch,
+                    relative_cwd=relative_cwd,
                 ),
                 *([build_plan_label()] if git_root and has_plan_file(git_root) else []),
                 *([build_new_plan_label(new_plan_file)] if new_plan_file else []),

@@ -25,7 +25,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         FileNotFoundError: If gh is not installed
     """
     result = run_subprocess_with_context(
-        cmd,
+        cmd=cmd,
         operation_context="execute gh command",
         cwd=cwd,
     )

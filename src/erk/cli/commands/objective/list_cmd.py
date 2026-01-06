@@ -19,7 +19,7 @@ def list_objectives(ctx: ErkContext) -> None:
 
     # Fetch objectives via issues interface
     issues = ctx.issues.list_issues(
-        repo.root,
+        repo_root=repo.root,
         labels=["erk-objective"],
         state="open",
     )

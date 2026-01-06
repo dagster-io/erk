@@ -36,6 +36,7 @@ def _build_timing_description(cmd: Sequence[str]) -> str:
 
 
 def run_subprocess_with_context(
+    *,
     cmd: Sequence[str],
     operation_context: str,
     cwd: Path | None = None,
@@ -139,7 +140,7 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
     """
     timing_desc = _build_timing_description(cmd)
     result = run_subprocess_with_context(
-        cmd,
+        cmd=cmd,
         operation_context=f"execute gh command '{timing_desc}'",
         cwd=cwd,
     )

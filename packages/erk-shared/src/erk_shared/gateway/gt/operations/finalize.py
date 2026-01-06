@@ -50,6 +50,7 @@ def is_extraction_plan(impl_dir: Path) -> bool:
 
 
 def execute_finalize(
+    *,
     ops: GtKit,
     cwd: Path,
     pr_number: int,
@@ -117,7 +118,9 @@ def execute_finalize(
 
     # Update PR metadata
     yield ProgressEvent("Updating PR metadata... (gh pr edit)")
-    ops.github.update_pr_title_and_body(repo_root, pr_number, pr_title, final_body)
+    ops.github.update_pr_title_and_body(
+        repo_root=repo_root, pr_number=pr_number, title=pr_title, body=final_body
+    )
     yield ProgressEvent("PR metadata updated", style="success")
 
     # Add extraction skip label if this is an extraction plan

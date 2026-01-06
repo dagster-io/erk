@@ -27,7 +27,7 @@ def test_create_issue_success(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
         result = issues.create_issue(
-            Path("/repo"),
+            repo_root=Path("/repo"),
             title="Test Issue",
             body="Test body content",
             labels=["plan", "erk"],
@@ -72,7 +72,7 @@ def test_create_issue_multiple_labels(monkeypatch: MonkeyPatch) -> None:
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
         issues.create_issue(
-            Path("/repo"),
+            repo_root=Path("/repo"),
             title="Title",
             body="Body",
             labels=["label1", "label2", "label3"],
@@ -101,7 +101,7 @@ def test_create_issue_no_labels(monkeypatch: MonkeyPatch) -> None:
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
-        issues.create_issue(Path("/repo"), title="Title", body="Body", labels=[])
+        issues.create_issue(repo_root=Path("/repo"), title="Title", body="Body", labels=[])
 
         cmd = created_commands[0]
         # No labels[] flags should be present
@@ -118,4 +118,6 @@ def test_create_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
         issues = RealGitHubIssues(target_repo=None)
 
         with pytest.raises(RuntimeError, match="not authenticated"):
-            issues.create_issue(Path("/repo"), "Title", "Body", ["label"])
+            issues.create_issue(
+                repo_root=Path("/repo"), title="Title", body="Body", labels=["label"]
+            )

@@ -85,11 +85,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def trigger_workflow(
-        self,
-        repo_root: Path,
-        workflow: str,
-        inputs: dict[str, str],
-        ref: str | None = None,
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> str:
         """Trigger a GitHub Actions workflow via gh CLI.
 
@@ -234,6 +230,7 @@ class GitHub(ABC):
     @abstractmethod
     def poll_for_workflow_run(
         self,
+        *,
         repo_root: Path,
         workflow: str,
         branch_name: str,
@@ -318,6 +315,7 @@ class GitHub(ABC):
     @abstractmethod
     def get_issues_with_pr_linkages(
         self,
+        *,
         location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
@@ -403,7 +401,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
         """Update PR title and body.
 
@@ -551,13 +549,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def create_pr_review_comment(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        body: str,
-        commit_sha: str,
-        path: str,
-        line: int,
+        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
     ) -> int:
         """Create an inline review comment on a specific line of a PR.
 

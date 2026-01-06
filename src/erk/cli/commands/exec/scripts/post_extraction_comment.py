@@ -182,6 +182,7 @@ def _format_no_changes_comment() -> str:
 @click.pass_context
 def post_extraction_comment(
     ctx: click.Context,
+    *,
     issue_number: int,
     status: str,
     workflow_run_url: str | None,

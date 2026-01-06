@@ -130,9 +130,9 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
             # Assert - Should pass state filter to interactive mode
             assert result.exit_code == 0
             assert mock_run.called
-            # Verify state filter was passed (second positional arg after ctx)
+            # Verify state filter was passed as keyword argument
             call_args = mock_run.call_args
-            assert call_args[0][2] == "open"  # state argument
+            assert call_args.kwargs["state"] == "open"
 
 
 def test_top_level_get_command_works() -> None:

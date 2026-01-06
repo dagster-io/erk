@@ -52,7 +52,7 @@ def _list_runs(ctx: ErkContext, show_all: bool = False) -> None:
             issue_numbers.append(issue_num)
 
     # 3. Fetch issues for titles (using issues interface)
-    issues = ctx.issues.list_issues(repo.root, labels=["erk-plan"])
+    issues = ctx.issues.list_issues(repo_root=repo.root, labels=["erk-plan"])
     issue_map = {issue.number: issue for issue in issues}
 
     # Second filtering pass - remove runs where we can't display title

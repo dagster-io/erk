@@ -149,6 +149,7 @@ def check_unresolved_comments(
 
 def _cleanup_and_navigate(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     branch: str,
     worktree_path: Path | None,
@@ -231,7 +232,13 @@ def _cleanup_and_navigate(
 
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
-        _navigate_after_land(ctx, repo, script, pull_flag, target_child_branch)
+        _navigate_after_land(
+            ctx,
+            repo=repo,
+            script=script,
+            pull_flag=pull_flag,
+            target_child_branch=target_child_branch,
+        )
     else:
         # Command succeeded but no navigation needed - exit cleanly
         raise SystemExit(0)
@@ -239,6 +246,7 @@ def _cleanup_and_navigate(
 
 def _navigate_after_land(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     script: bool,
     pull_flag: bool,
@@ -291,7 +299,11 @@ def _navigate_after_land(
             ]
         # Output activation script pointing to trunk/root repo
         activate_root_repo(
-            ctx, post_deletion_repo, script, command_name="land", post_cd_commands=post_commands
+            ctx,
+            repo=post_deletion_repo,
+            script=script,
+            command_name="land",
+            post_cd_commands=post_commands,
         )
         # activate_root_repo raises SystemExit(0)
 
@@ -325,6 +337,7 @@ def _navigate_after_land(
 @click.pass_obj
 def land(
     ctx: ErkContext,
+    *,
     script: bool,
     target: str | None,
     up_flag: bool,
@@ -381,14 +394,18 @@ def land(
     # Determine if landing current branch or a specific target
     if target is None:
         # Landing current branch's PR (original behavior)
-        _land_current_branch(ctx, repo, script, up_flag, force, pull_flag)
+        _land_current_branch(
+            ctx, repo=repo, script=script, up_flag=up_flag, force=force, pull_flag=pull_flag
+        )
     else:
         # Parse the target argument
         parsed = parse_argument(target)
 
         if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
-            _land_by_branch(ctx, repo, script, force, pull_flag, target)
+            _land_by_branch(
+                ctx, repo=repo, script=script, force=force, pull_flag=pull_flag, branch_name=target
+            )
         else:
             # Landing a specific PR by number or URL
             if parsed.pr_number is None:
@@ -397,16 +414,19 @@ def land(
                     "Expected a PR number (e.g., 123) or GitHub URL."
                 )
                 raise SystemExit(1)
-            _land_specific_pr(ctx, repo, script, up_flag, force, pull_flag, parsed.pr_number)
+            _land_specific_pr(
+                ctx,
+                repo=repo,
+                script=script,
+                up_flag=up_flag,
+                force=force,
+                pull_flag=pull_flag,
+                pr_number=parsed.pr_number,
+            )
 
 
 def _land_current_branch(
-    ctx: ErkContext,
-    repo: RepoContext,
-    script: bool,
-    up_flag: bool,
-    force: bool,
-    pull_flag: bool,
+    ctx: ErkContext, *, repo: RepoContext, script: bool, up_flag: bool, force: bool, pull_flag: bool
 ) -> None:
     """Land the current branch's PR (original behavior)."""
     check_clean_working_tree(ctx)
@@ -473,18 +493,23 @@ def _land_current_branch(
     objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
     if objective_number is not None:
         prompt_objective_update(
-            ctx, main_repo_root, objective_number, success_result.pr_number, current_branch, force
+            ctx,
+            repo_root=main_repo_root,
+            objective_number=objective_number,
+            pr_number=success_result.pr_number,
+            branch=current_branch,
+            force=force,
         )
 
     # Step 2: Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
-        repo,
-        current_branch,
-        current_worktree_path,
-        script,
-        pull_flag,
-        force,
+        repo=repo,
+        branch=current_branch,
+        worktree_path=current_worktree_path,
+        script=script,
+        pull_flag=pull_flag,
+        force=force,
         is_current_branch=True,
         target_child_branch=target_child_branch,
         objective_number=objective_number,
@@ -493,6 +518,7 @@ def _land_current_branch(
 
 def _land_specific_pr(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     script: bool,
     up_flag: bool,
@@ -576,18 +602,25 @@ def _land_specific_pr(
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
     if objective_number is not None:
-        prompt_objective_update(ctx, main_repo_root, objective_number, pr_number, branch, force)
+        prompt_objective_update(
+            ctx,
+            repo_root=main_repo_root,
+            objective_number=objective_number,
+            pr_number=pr_number,
+            branch=branch,
+            force=force,
+        )
 
     # Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
-        repo,
-        branch,
-        worktree_path,
-        script,
-        pull_flag,
-        force,
-        is_current_branch,
+        repo=repo,
+        branch=branch,
+        worktree_path=worktree_path,
+        script=script,
+        pull_flag=pull_flag,
+        force=force,
+        is_current_branch=is_current_branch,
         target_child_branch=None,
         objective_number=objective_number,
     )
@@ -595,6 +628,7 @@ def _land_specific_pr(
 
 def _land_by_branch(
     ctx: ErkContext,
+    *,
     repo: RepoContext,
     script: bool,
     force: bool,
@@ -672,19 +706,24 @@ def _land_by_branch(
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
     if objective_number is not None:
         prompt_objective_update(
-            ctx, main_repo_root, objective_number, pr_number, branch_name, force
+            ctx,
+            repo_root=main_repo_root,
+            objective_number=objective_number,
+            pr_number=pr_number,
+            branch=branch_name,
+            force=force,
         )
 
     # Cleanup and navigate (uses shared function)
     _cleanup_and_navigate(
         ctx,
-        repo,
-        branch_name,
-        worktree_path,
-        script,
-        pull_flag,
-        force,
-        is_current_branch,
+        repo=repo,
+        branch=branch_name,
+        worktree_path=worktree_path,
+        script=script,
+        pull_flag=pull_flag,
+        force=force,
+        is_current_branch=is_current_branch,
         target_child_branch=None,
         objective_number=objective_number,
     )

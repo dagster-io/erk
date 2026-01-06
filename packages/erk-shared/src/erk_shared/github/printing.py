@@ -98,11 +98,7 @@ class PrintingGitHub(PrintingBase, GitHub):
         )
 
     def trigger_workflow(
-        self,
-        repo_root: Path,
-        workflow: str,
-        inputs: dict[str, str],
-        ref: str | None = None,
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> str:
         """Trigger workflow with printed output.
 
@@ -113,7 +109,9 @@ class PrintingGitHub(PrintingBase, GitHub):
         input_args = " ".join(f"-f {key}={value}" for key, value in inputs.items())
         self._emit(self._format_command(f"gh workflow run {workflow} {ref_arg}{input_args}"))
         self._emit(f"   Polling for run (max {15} attempts)...")
-        run_id = self._wrapped.trigger_workflow(repo_root, workflow, inputs, ref=ref)
+        run_id = self._wrapped.trigger_workflow(
+            repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
+        )
         self._emit(f"-> Run ID: {click.style(run_id, fg='green')}")
         return run_id
 
@@ -150,6 +148,7 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     def poll_for_workflow_run(
         self,
+        *,
         repo_root: Path,
         workflow: str,
         branch_name: str,
@@ -158,7 +157,11 @@ class PrintingGitHub(PrintingBase, GitHub):
     ) -> str | None:
         """Poll for workflow run (read-only, no printing)."""
         return self._wrapped.poll_for_workflow_run(
-            repo_root, workflow, branch_name, timeout, poll_interval
+            repo_root=repo_root,
+            workflow=workflow,
+            branch_name=branch_name,
+            timeout=timeout,
+            poll_interval=poll_interval,
         )
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
@@ -194,11 +197,13 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.get_pr_body(repo_root, pr_number)
 
     def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
         """Update PR title and body with printed output."""
         self._emit(self._format_command(f"gh pr edit {pr_number} --title <title> --body <body>"))
-        self._wrapped.update_pr_title_and_body(repo_root, pr_number, title, body)
+        self._wrapped.update_pr_title_and_body(
+            repo_root=repo_root, pr_number=pr_number, title=title, body=body
+        )
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
         """Mark PR as ready with printed output."""
@@ -215,6 +220,7 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     def get_issues_with_pr_linkages(
         self,
+        *,
         location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
@@ -223,7 +229,7 @@ class PrintingGitHub(PrintingBase, GitHub):
     ) -> tuple[list[IssueInfo], dict[int, list[PullRequestInfo]]]:
         """Get issues with PR linkages (read-only, no printing)."""
         return self._wrapped.get_issues_with_pr_linkages(
-            location, labels, state=state, limit=limit, creator=creator
+            location=location, labels=labels, state=state, limit=limit, creator=creator
         )
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
@@ -258,20 +264,19 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.add_review_thread_reply(repo_root, thread_id, body)
 
     def create_pr_review_comment(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        body: str,
-        commit_sha: str,
-        path: str,
-        line: int,
+        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
     ) -> int:
         """Create PR review comment with printed output."""
         self._emit(
             self._format_command(f"gh api repos/.../pulls/{pr_number}/comments (line {line})")
         )
         return self._wrapped.create_pr_review_comment(
-            repo_root, pr_number, body, commit_sha, path, line
+            repo_root=repo_root,
+            pr_number=pr_number,
+            body=body,
+            commit_sha=commit_sha,
+            path=path,
+            line=line,
         )
 
     def find_pr_comment_by_marker(

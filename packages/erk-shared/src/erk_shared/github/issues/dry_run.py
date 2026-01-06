@@ -30,7 +30,7 @@ class DryRunGitHubIssues(GitHubIssues):
         self._wrapped = wrapped
 
     def create_issue(
-        self, repo_root: Path, title: str, body: str, labels: list[str]
+        self, *, repo_root: Path, title: str, body: str, labels: list[str]
     ) -> CreateIssueResult:
         """No-op for creating issue in dry-run mode.
 
@@ -54,13 +54,16 @@ class DryRunGitHubIssues(GitHubIssues):
 
     def list_issues(
         self,
+        *,
         repo_root: Path,
         labels: list[str] | None = None,
         state: str | None = None,
         limit: int | None = None,
     ) -> list[IssueInfo]:
         """Delegate read operation to wrapped implementation."""
-        return self._wrapped.list_issues(repo_root, labels=labels, state=state, limit=limit)
+        return self._wrapped.list_issues(
+            repo_root=repo_root, labels=labels, state=state, limit=limit
+        )
 
     def get_issue_comments(self, repo_root: Path, number: int) -> list[str]:
         """Delegate read operation to wrapped implementation."""
@@ -75,11 +78,7 @@ class DryRunGitHubIssues(GitHubIssues):
         return self._wrapped.get_comment_by_id(repo_root, comment_id)
 
     def ensure_label_exists(
-        self,
-        repo_root: Path,
-        label: str,
-        description: str,
-        color: str,
+        self, *, repo_root: Path, label: str, description: str, color: str
     ) -> None:
         """No-op for ensuring label exists in dry-run mode."""
 

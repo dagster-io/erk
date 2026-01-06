@@ -182,6 +182,7 @@ def log_command_end(entry_id: str | None, exit_code: int) -> None:
 
 
 def read_log_entries(
+    *,
     since: datetime | None,
     until: datetime | None,
     command_filter: str | None,

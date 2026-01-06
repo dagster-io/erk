@@ -128,6 +128,7 @@ class RealPlanDataProvider(PlanDataProvider):
     def __init__(
         self,
         ctx: ErkContext,
+        *,
         location: GitHubRepoLocation,
         clipboard: Clipboard,
         browser: BrowserLauncher,

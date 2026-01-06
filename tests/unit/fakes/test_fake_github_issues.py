@@ -17,7 +17,7 @@ def test_fake_github_issues_initialization() -> None:
     """Test that FakeGitHubIssues initializes with empty state."""
     issues = FakeGitHubIssues()
 
-    result = issues.list_issues(sentinel_path())
+    result = issues.list_issues(repo_root=sentinel_path())
     assert result == []
 
 
@@ -26,7 +26,7 @@ def test_fake_github_issues_create_issue_returns_number() -> None:
     issues = FakeGitHubIssues(next_issue_number=42)
 
     result = issues.create_issue(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         title="Test Issue",
         body="Test body",
         labels=["plan", "erk"],
@@ -40,9 +40,15 @@ def test_fake_github_issues_create_issue_increments_number() -> None:
     """Test create_issue increments issue numbers sequentially."""
     issues = FakeGitHubIssues(next_issue_number=1)
 
-    result1 = issues.create_issue(sentinel_path(), "Issue 1", "Body 1", ["label1"])
-    result2 = issues.create_issue(sentinel_path(), "Issue 2", "Body 2", ["label2"])
-    result3 = issues.create_issue(sentinel_path(), "Issue 3", "Body 3", ["label3"])
+    result1 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 1", body="Body 1", labels=["label1"]
+    )
+    result2 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 2", body="Body 2", labels=["label2"]
+    )
+    result3 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 3", body="Body 3", labels=["label3"]
+    )
 
     assert result1.number == 1
     assert result2.number == 2
@@ -53,8 +59,12 @@ def test_fake_github_issues_create_issue_tracks_mutation() -> None:
     """Test create_issue tracks created issues in mutation list."""
     issues = FakeGitHubIssues()
 
-    issues.create_issue(sentinel_path(), "Title 1", "Body 1", ["label1", "label2"])
-    issues.create_issue(sentinel_path(), "Title 2", "Body 2", ["label3"])
+    issues.create_issue(
+        repo_root=sentinel_path(), title="Title 1", body="Body 1", labels=["label1", "label2"]
+    )
+    issues.create_issue(
+        repo_root=sentinel_path(), title="Title 2", body="Body 2", labels=["label3"]
+    )
 
     assert issues.created_issues == [
         ("Title 1", "Body 1", ["label1", "label2"]),
@@ -72,7 +82,7 @@ def test_fake_github_issues_created_issues_empty_initially() -> None:
 def test_fake_github_issues_created_issues_read_only() -> None:
     """Test created_issues property returns list that can be read."""
     issues = FakeGitHubIssues()
-    issues.create_issue(sentinel_path(), "Title", "Body", ["label"])
+    issues.create_issue(repo_root=sentinel_path(), title="Title", body="Body", labels=["label"])
 
     # Should be able to read the list
     created = issues.created_issues
@@ -107,7 +117,7 @@ def test_fake_github_issues_get_issue_created() -> None:
     issues = FakeGitHubIssues(next_issue_number=10)
 
     created = issues.create_issue(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         title="Created Issue",
         body="Created body",
         labels=["test"],
@@ -227,7 +237,7 @@ def test_fake_github_issues_list_issues_empty() -> None:
     """Test list_issues returns empty list when no issues exist."""
     issues = FakeGitHubIssues()
 
-    result = issues.list_issues(sentinel_path())
+    result = issues.list_issues(repo_root=sentinel_path())
 
     assert result == []
 
@@ -241,7 +251,7 @@ def test_fake_github_issues_list_issues_all() -> None:
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    result = issues.list_issues(sentinel_path())
+    result = issues.list_issues(repo_root=sentinel_path())
 
     assert len(result) == 3
     assert result[0].number == 1
@@ -258,7 +268,7 @@ def test_fake_github_issues_list_issues_filter_open() -> None:
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    result = issues.list_issues(sentinel_path(), state="open")
+    result = issues.list_issues(repo_root=sentinel_path(), state="open")
 
     assert len(result) == 2
     assert result[0].number == 1
@@ -276,7 +286,7 @@ def test_fake_github_issues_list_issues_filter_closed() -> None:
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    result = issues.list_issues(sentinel_path(), state="closed")
+    result = issues.list_issues(repo_root=sentinel_path(), state="closed")
 
     assert len(result) == 2
     assert result[0].number == 2
@@ -293,7 +303,7 @@ def test_fake_github_issues_list_issues_state_all() -> None:
     }
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    result = issues.list_issues(sentinel_path(), state="all")
+    result = issues.list_issues(repo_root=sentinel_path(), state="all")
 
     assert len(result) == 2
 
@@ -302,9 +312,11 @@ def test_fake_github_issues_list_issues_includes_created() -> None:
     """Test list_issues includes issues created via create_issue."""
     issues = FakeGitHubIssues(next_issue_number=1)
 
-    issues.create_issue(sentinel_path(), "Created Issue", "Body", ["label"])
+    issues.create_issue(
+        repo_root=sentinel_path(), title="Created Issue", body="Body", labels=["label"]
+    )
 
-    result = issues.list_issues(sentinel_path())
+    result = issues.list_issues(repo_root=sentinel_path())
 
     assert len(result) == 1
     assert result[0].number == 1
@@ -320,7 +332,7 @@ def test_fake_github_issues_full_workflow() -> None:
 
     # Create new issue
     new_result = issues.create_issue(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         title="New Issue",
         body="New body",
         labels=["plan", "erk"],
@@ -337,7 +349,7 @@ def test_fake_github_issues_full_workflow() -> None:
     issues.add_comment(sentinel_path(), 200, "Comment on new")
 
     # List all issues
-    all_issues = issues.list_issues(sentinel_path())
+    all_issues = issues.list_issues(repo_root=sentinel_path())
     assert len(all_issues) == 2
 
     # Verify mutation tracking
@@ -353,7 +365,7 @@ def test_fake_github_issues_empty_labels() -> None:
     """Test create_issue with empty labels list."""
     issues = FakeGitHubIssues()
 
-    result = issues.create_issue(sentinel_path(), "Title", "Body", [])
+    result = issues.create_issue(repo_root=sentinel_path(), title="Title", body="Body", labels=[])
 
     assert result.number == 1
     assert issues.created_issues == [("Title", "Body", [])]
@@ -370,7 +382,7 @@ def test_fake_github_issues_label_filtering_implemented() -> None:
     issues = FakeGitHubIssues(issues=pre_configured)
 
     # Filter for issues with a label that exists on issue 1 but not issue 2
-    result = issues.list_issues(sentinel_path(), labels=["erk-plan", "bug"])
+    result = issues.list_issues(repo_root=sentinel_path(), labels=["erk-plan", "bug"])
 
     # Only issue 1 has both labels
     assert len(result) == 1
@@ -386,7 +398,7 @@ def test_fake_github_issues_label_filtering_returns_none_when_no_match() -> None
     issues = FakeGitHubIssues(issues=pre_configured)
 
     # Filter for a label that doesn't exist on any issue
-    result = issues.list_issues(sentinel_path(), labels=["nonexistent"])
+    result = issues.list_issues(repo_root=sentinel_path(), labels=["nonexistent"])
 
     # No issues have this label
     assert len(result) == 0
@@ -401,7 +413,7 @@ def test_fake_github_issues_state_case_sensitivity() -> None:
     issues = FakeGitHubIssues(issues=pre_configured)
 
     # Lowercase "open" should match uppercase "OPEN" state
-    result = issues.list_issues(sentinel_path(), state="open")
+    result = issues.list_issues(repo_root=sentinel_path(), state="open")
 
     assert len(result) == 1
     assert result[0].state == "OPEN"
@@ -412,8 +424,12 @@ def test_fake_github_issues_mutation_tracking_independent() -> None:
     issues = FakeGitHubIssues(next_issue_number=1)
 
     # Create issues
-    result1 = issues.create_issue(sentinel_path(), "Issue 1", "Body 1", ["label1"])
-    result2 = issues.create_issue(sentinel_path(), "Issue 2", "Body 2", ["label2"])
+    result1 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 1", body="Body 1", labels=["label1"]
+    )
+    result2 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 2", body="Body 2", labels=["label2"]
+    )
 
     # Add comments
     comment_id1 = issues.add_comment(sentinel_path(), result1.number, "Comment 1")
@@ -436,7 +452,9 @@ def test_fake_github_issues_pre_configured_and_created_coexist() -> None:
     issues = FakeGitHubIssues(issues=pre_configured, next_issue_number=1)
 
     # Create new issue
-    new_result = issues.create_issue(sentinel_path(), "New", "Body", ["label"])
+    new_result = issues.create_issue(
+        repo_root=sentinel_path(), title="New", body="Body", labels=["label"]
+    )
 
     # Both should be retrievable
     pre_issue = issues.get_issue(sentinel_path(), 100)
@@ -446,7 +464,7 @@ def test_fake_github_issues_pre_configured_and_created_coexist() -> None:
     assert new_issue.title == "New"
 
     # List should include both
-    all_issues = issues.list_issues(sentinel_path())
+    all_issues = issues.list_issues(repo_root=sentinel_path())
     assert len(all_issues) == 2
 
 
@@ -454,7 +472,7 @@ def test_fake_github_issues_url_generation() -> None:
     """Test that created issues get properly formatted URLs."""
     issues = FakeGitHubIssues(next_issue_number=42)
 
-    result = issues.create_issue(sentinel_path(), "Title", "Body", [])
+    result = issues.create_issue(repo_root=sentinel_path(), title="Title", body="Body", labels=[])
 
     created_issue = issues.get_issue(sentinel_path(), result.number)
 
@@ -465,7 +483,7 @@ def test_fake_github_issues_created_state_always_open() -> None:
     """Test that created issues always have OPEN state."""
     issues = FakeGitHubIssues()
 
-    result = issues.create_issue(sentinel_path(), "Title", "Body", [])
+    result = issues.create_issue(repo_root=sentinel_path(), title="Title", body="Body", labels=[])
 
     created_issue = issues.get_issue(sentinel_path(), result.number)
 
@@ -534,7 +552,7 @@ def test_fake_github_issues_ensure_label_exists_creates_new() -> None:
     issues = FakeGitHubIssues()
 
     issues.ensure_label_exists(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         label="erk-plan",
         description="Implementation plan created by erk",
         color="0E8A16",
@@ -549,7 +567,7 @@ def test_fake_github_issues_ensure_label_exists_idempotent() -> None:
     issues = FakeGitHubIssues(labels={"erk-plan"})
 
     issues.ensure_label_exists(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         label="erk-plan",
         description="Implementation plan created by erk",
         color="0E8A16",
@@ -564,9 +582,15 @@ def test_fake_github_issues_ensure_label_exists_multiple() -> None:
     """Test ensure_label_exists tracks multiple label creations."""
     issues = FakeGitHubIssues()
 
-    issues.ensure_label_exists(sentinel_path(), "label1", "Description 1", "FF0000")
-    issues.ensure_label_exists(sentinel_path(), "label2", "Description 2", "00FF00")
-    issues.ensure_label_exists(sentinel_path(), "label3", "Description 3", "0000FF")
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(), label="label1", description="Description 1", color="FF0000"
+    )
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(), label="label2", description="Description 2", color="00FF00"
+    )
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(), label="label3", description="Description 3", color="0000FF"
+    )
 
     assert "label1" in issues.labels
     assert "label2" in issues.labels
@@ -582,8 +606,12 @@ def test_fake_github_issues_ensure_label_exists_mixed_existing_new() -> None:
     """Test ensure_label_exists with mix of existing and new labels."""
     issues = FakeGitHubIssues(labels={"existing-label"})
 
-    issues.ensure_label_exists(sentinel_path(), "existing-label", "Desc 1", "111111")
-    issues.ensure_label_exists(sentinel_path(), "new-label", "Desc 2", "222222")
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(), label="existing-label", description="Desc 1", color="111111"
+    )
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(), label="new-label", description="Desc 2", color="222222"
+    )
 
     # Only new label should be in created_labels
     assert "existing-label" in issues.labels
@@ -613,7 +641,12 @@ def test_fake_github_issues_created_labels_empty_initially() -> None:
 def test_fake_github_issues_created_labels_read_only() -> None:
     """Test created_labels property returns list that can be read."""
     issues = FakeGitHubIssues()
-    issues.ensure_label_exists(sentinel_path(), "test-label", "Test description", "000000")
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(),
+        label="test-label",
+        description="Test description",
+        color="000000",
+    )
 
     # Should be able to read the list
     created = issues.created_labels
@@ -650,11 +683,11 @@ def test_list_issues_respects_limit() -> None:
     fake = FakeGitHubIssues(issues=issues_dict)
 
     # Test limit=2 returns only 2 issues
-    result = fake.list_issues(sentinel_path(), limit=2)
+    result = fake.list_issues(repo_root=sentinel_path(), limit=2)
     assert len(result) == 2
 
     # Test limit=None returns all issues
-    result = fake.list_issues(sentinel_path(), limit=None)
+    result = fake.list_issues(repo_root=sentinel_path(), limit=None)
     assert len(result) == 3
 
 
@@ -980,7 +1013,9 @@ def test_label_exists_after_ensure_label_exists() -> None:
     assert issues.label_exists(sentinel_path(), "new-label") is False
 
     # Create it
-    issues.ensure_label_exists(sentinel_path(), "new-label", "Description", "FF0000")
+    issues.ensure_label_exists(
+        repo_root=sentinel_path(), label="new-label", description="Description", color="FF0000"
+    )
 
     # Now it exists
     assert issues.label_exists(sentinel_path(), "new-label") is True

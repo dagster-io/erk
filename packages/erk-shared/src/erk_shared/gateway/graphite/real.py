@@ -66,7 +66,7 @@ class RealGraphite(Graphite):
             cmd.append("--quiet")
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context="sync with Graphite (gt sync)",
             cwd=repo_root,
             stdout=DEVNULL if quiet else sys.stdout,
@@ -102,7 +102,7 @@ class RealGraphite(Graphite):
             cmd.append("--quiet")
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context="restack with Graphite (gt restack)",
             cwd=repo_root,
             stdout=DEVNULL if quiet else sys.stdout,
@@ -232,7 +232,7 @@ class RealGraphite(Graphite):
             parent_branch: Name of the parent branch in the stack
         """
         run_subprocess_with_context(
-            ["gt", "track", "--branch", branch_name, "--parent", parent_branch],
+            cmd=["gt", "track", "--branch", branch_name, "--parent", parent_branch],
             operation_context=f"track branch '{branch_name}' with Graphite",
             cwd=cwd,
         )
@@ -261,7 +261,7 @@ class RealGraphite(Graphite):
             cmd.append("--quiet")
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"submit branch '{branch_name}' with Graphite",
             cwd=repo_root,
             stdout=DEVNULL if quiet else sys.stdout,
@@ -327,7 +327,7 @@ class RealGraphite(Graphite):
         cmd = ["gt", "squash", "--no-edit", "--no-interactive"]
 
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context="squash branch commits with Graphite",
             cwd=repo_root,
             stdout=DEVNULL if quiet else sys.stdout,
@@ -395,7 +395,7 @@ class RealGraphite(Graphite):
         cmd = ["gt", "continue"]
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context="continue restack with Graphite (gt continue)",
             cwd=repo_root,
             stdout=DEVNULL if quiet else subprocess.PIPE,

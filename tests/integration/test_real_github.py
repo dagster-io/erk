@@ -599,9 +599,9 @@ def test_trigger_workflow_handles_empty_list_during_polling(monkeypatch: MonkeyP
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
         run_id = ops.trigger_workflow(
-            repo_root,
-            "test-workflow.yml",
-            {"issue_number": "1"},
+            repo_root=repo_root,
+            workflow="test-workflow.yml",
+            inputs={"issue_number": "1"},
         )
 
         # Should successfully find run ID after empty list
@@ -637,9 +637,9 @@ def test_trigger_workflow_errors_on_invalid_json_structure(monkeypatch: MonkeyPa
         # Should raise error for invalid response format
         with pytest.raises(RuntimeError) as exc_info:
             ops.trigger_workflow(
-                repo_root,
-                "test-workflow.yml",
-                {"issue_number": "1"},
+                repo_root=repo_root,
+                workflow="test-workflow.yml",
+                inputs={"issue_number": "1"},
             )
 
         error_msg = str(exc_info.value)
@@ -677,9 +677,9 @@ def test_trigger_workflow_timeout_after_max_attempts(monkeypatch: MonkeyPatch) -
         # Should raise error after max attempts
         with pytest.raises(RuntimeError) as exc_info:
             ops.trigger_workflow(
-                repo_root,
-                "test-workflow.yml",
-                {"issue_number": "1"},
+                repo_root=repo_root,
+                workflow="test-workflow.yml",
+                inputs={"issue_number": "1"},
             )
 
         error_msg = str(exc_info.value)
@@ -756,9 +756,9 @@ def test_trigger_workflow_skips_cancelled_runs(monkeypatch: MonkeyPatch) -> None
     with mock_subprocess_run(monkeypatch, mock_run):
         ops = RealGitHub(FakeTime())
         run_id = ops.trigger_workflow(
-            repo_root,
-            "test-workflow.yml",
-            {"issue_number": "1"},
+            repo_root=repo_root,
+            workflow="test-workflow.yml",
+            inputs={"issue_number": "1"},
         )
 
         # Should find the non-skipped/cancelled run

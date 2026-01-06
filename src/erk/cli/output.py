@@ -119,6 +119,7 @@ def format_implement_summary(results: list[CommandResult], total_duration: float
 
 
 def stream_command_with_feedback(
+    *,
     executor: ClaudeExecutor,
     command: str,
     worktree_path: Path,
@@ -172,7 +173,12 @@ def stream_command_with_feedback(
 
     # Stream events in real-time
     event_stream = executor.execute_command_streaming(
-        command, worktree_path, dangerous, verbose=False, debug=debug, model=model
+        command=command,
+        worktree_path=worktree_path,
+        dangerous=dangerous,
+        verbose=False,
+        debug=debug,
+        model=model,
     )
     if debug:
         click.echo(click.style("[DEBUG] Starting event stream...", fg="yellow"), err=True)

@@ -711,7 +711,7 @@ def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path
     # Act: Call activate_root_repo with script=True
     # It should raise SystemExit(0) on success
     with pytest.raises(SystemExit) as exc_info:
-        activate_root_repo(ctx, repo, script=True, command_name="test", post_cd_commands=None)
+        activate_root_repo(ctx, repo=repo, script=True, command_name="test", post_cd_commands=None)
 
     # Assert: Function exited successfully
     assert exc_info.value.code == 0

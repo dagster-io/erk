@@ -141,7 +141,7 @@ class FakeGitHubIssues(GitHubIssues):
         return self._target_repo
 
     def create_issue(
-        self, repo_root: Path, title: str, body: str, labels: list[str]
+        self, *, repo_root: Path, title: str, body: str, labels: list[str]
     ) -> CreateIssueResult:
         """Create issue in fake storage and track mutation."""
         issue_number = self._next_issue_number
@@ -225,6 +225,7 @@ class FakeGitHubIssues(GitHubIssues):
 
     def list_issues(
         self,
+        *,
         repo_root: Path,
         labels: list[str] | None = None,
         state: str | None = None,
@@ -296,11 +297,7 @@ class FakeGitHubIssues(GitHubIssues):
         return self._comments_with_urls.get(number, [])
 
     def ensure_label_exists(
-        self,
-        repo_root: Path,
-        label: str,
-        description: str,
-        color: str,
+        self, *, repo_root: Path, label: str, description: str, color: str
     ) -> None:
         """Ensure label exists in fake storage, creating if needed."""
         if label not in self._labels:

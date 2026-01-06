@@ -647,7 +647,12 @@ def discover_planning_agent_logs(session_log_path: Path, parent_session_id: str)
     help="Output XML to stdout instead of temp file",
 )
 def preprocess_session(
-    log_path: Path, session_id: str | None, include_agents: bool, no_filtering: bool, stdout: bool
+    *,
+    log_path: Path,
+    session_id: str | None,
+    include_agents: bool,
+    no_filtering: bool,
+    stdout: bool,
 ) -> None:
     """Preprocess session log JSONL to compressed XML format.
 

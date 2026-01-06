@@ -207,6 +207,7 @@ class WorkflowRun:
 
     def __init__(
         self,
+        *,
         run_id: str,
         status: WorkflowRunStatus,
         conclusion: WorkflowRunConclusion | None,

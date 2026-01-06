@@ -244,6 +244,7 @@ class FakeLinearPlanBackend(PlanBackend):
 
     def create_plan(
         self,
+        *,
         repo_root: Path,
         title: str,
         content: str,

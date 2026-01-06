@@ -498,7 +498,9 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
+    def fetch_pr_ref(
+        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
+    ) -> None:
         """Fetch a PR ref into a local branch.
 
         Uses GitHub's special refs/pull/<number>/head reference to fetch

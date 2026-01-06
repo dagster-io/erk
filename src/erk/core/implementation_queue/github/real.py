@@ -42,7 +42,7 @@ class RealGitHubAdmin(GitHubAdmin):
         ]
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"get workflow permissions for {repo_id.owner}/{repo_id.repo}",
             cwd=location.root,
         )
@@ -81,7 +81,7 @@ class RealGitHubAdmin(GitHubAdmin):
         ]
 
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"set workflow PR permissions for {repo_id.owner}/{repo_id.repo}",
             cwd=location.root,
         )

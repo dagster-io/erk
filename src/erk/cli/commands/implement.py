@@ -162,7 +162,14 @@ def _create_worktree_with_plan_content(
 
         # Handle dry-run mode
         if dry_run:
-            _show_dry_run_output(slot_name, plan_source, submit, dangerous, no_interactive, model)
+            _show_dry_run_output(
+                slot_name=slot_name,
+                plan_source=plan_source,
+                submit=submit,
+                dangerous=dangerous,
+                no_interactive=no_interactive,
+                model=model,
+            )
             return None
 
         # Just update .impl/ folder with new plan content
@@ -223,7 +230,14 @@ def _create_worktree_with_plan_content(
 
     # Handle dry-run mode
     if dry_run:
-        _show_dry_run_output(slot_name, plan_source, submit, dangerous, no_interactive, model)
+        _show_dry_run_output(
+            slot_name=slot_name,
+            plan_source=plan_source,
+            submit=submit,
+            dangerous=dangerous,
+            no_interactive=no_interactive,
+            model=model,
+        )
         return None
 
     # Create worktree at slot path
@@ -319,7 +333,9 @@ def _create_worktree_with_plan_content(
         ctx.feedback.info(f"Linked to objective #{objective_issue}")
 
     # Run post-worktree setup
-    run_post_worktree_setup(ctx, config, wt_path, repo_root, slot_name)
+    run_post_worktree_setup(
+        ctx, config=config, worktree_path=wt_path, repo_root=repo_root, name=slot_name
+    )
 
     # Create .impl/ folder with plan content at worktree root
     ctx.feedback.info("Creating .impl/ folder with plan...")
@@ -337,6 +353,7 @@ def _create_worktree_with_plan_content(
 
 
 def _show_dry_run_output(
+    *,
     slot_name: str,
     plan_source: PlanSource,
     submit: bool,
@@ -465,7 +482,14 @@ def _implement_from_issue(
         )
     else:
         # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=wt_path,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
 
 
 def _implement_from_file(
@@ -562,7 +586,14 @@ def _implement_from_file(
         )
     else:
         # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(ctx, repo.root, wt_path, dangerous, model, executor)
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=wt_path,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
 
 
 @alias("impl")
@@ -579,6 +610,7 @@ def _implement_from_file(
 @click.pass_obj
 def implement(
     ctx: ErkContext,
+    *,
     target: str,
     dry_run: bool,
     submit: bool,

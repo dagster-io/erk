@@ -711,7 +711,7 @@ class TestPrInfoCache:
         """Non-existent cache should return None."""
         with tempfile.TemporaryDirectory() as tmpdir:
             with patch("erk_statusline.statusline.CACHE_DIR", Path(tmpdir) / "cache"):
-                result = _get_cached_pr_info("owner", "repo", "branch")
+                result = _get_cached_pr_info(owner="owner", repo="repo", branch="branch")
                 assert result is None
 
     def test_cache_hit_returns_data(self) -> None:
@@ -720,10 +720,16 @@ class TestPrInfoCache:
             cache_dir = Path(tmpdir) / "cache"
             with patch("erk_statusline.statusline.CACHE_DIR", cache_dir):
                 # Set cache
-                _set_cached_pr_info("owner", "repo", "feature-branch", 123, "abc123def")
+                _set_cached_pr_info(
+                    owner="owner",
+                    repo="repo",
+                    branch="feature-branch",
+                    pr_number=123,
+                    head_sha="abc123def",
+                )
 
                 # Read cache
-                result = _get_cached_pr_info("owner", "repo", "feature-branch")
+                result = _get_cached_pr_info(owner="owner", repo="repo", branch="feature-branch")
                 assert result is not None
                 assert result == (123, "abc123def")
 
@@ -733,7 +739,13 @@ class TestPrInfoCache:
             cache_dir = Path(tmpdir) / "cache"
             with patch("erk_statusline.statusline.CACHE_DIR", cache_dir):
                 # Set cache
-                _set_cached_pr_info("owner", "repo", "old-branch", 456, "old123sha")
+                _set_cached_pr_info(
+                    owner="owner",
+                    repo="repo",
+                    branch="old-branch",
+                    pr_number=456,
+                    head_sha="old123sha",
+                )
 
                 # Get cache path and backdate the file modification time
                 cache_path = _get_cache_path("owner", "repo", "old-branch")
@@ -743,7 +755,7 @@ class TestPrInfoCache:
                 os.utime(cache_path, (old_time, old_time))
 
                 # Read cache - should be expired
-                result = _get_cached_pr_info("owner", "repo", "old-branch")
+                result = _get_cached_pr_info(owner="owner", repo="repo", branch="old-branch")
                 assert result is None
 
     def test_cache_write_creates_file(self) -> None:
@@ -751,7 +763,13 @@ class TestPrInfoCache:
         with tempfile.TemporaryDirectory() as tmpdir:
             cache_dir = Path(tmpdir) / "cache"
             with patch("erk_statusline.statusline.CACHE_DIR", cache_dir):
-                _set_cached_pr_info("owner", "repo", "new-branch", 789, "newsha456")
+                _set_cached_pr_info(
+                    owner="owner",
+                    repo="repo",
+                    branch="new-branch",
+                    pr_number=789,
+                    head_sha="newsha456",
+                )
 
                 cache_path = _get_cache_path("owner", "repo", "new-branch")
                 assert cache_path.exists()
@@ -781,7 +799,7 @@ class TestPrInfoCache:
                 cache_path = _get_cache_path("owner", "repo", "broken-branch")
                 cache_path.write_text("not valid json", encoding="utf-8")
 
-                result = _get_cached_pr_info("owner", "repo", "broken-branch")
+                result = _get_cached_pr_info(owner="owner", repo="repo", branch="broken-branch")
                 assert result is None
 
 
@@ -802,7 +820,9 @@ class TestFetchPrDetails:
             ),
         )
 
-        result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
+        result = _fetch_pr_details(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
 
         assert result.mergeable == "MERGEABLE"
         assert result.head_sha == "abc123def"
@@ -821,7 +841,9 @@ class TestFetchPrDetails:
             ),
         )
 
-        result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
+        result = _fetch_pr_details(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
 
         assert result.mergeable == "CONFLICTING"
         assert result.head_sha == "def456"
@@ -831,7 +853,9 @@ class TestFetchPrDetails:
         """Should return UNKNOWN on API failure."""
         mock_run.return_value = MagicMock(returncode=1, stdout="")
 
-        result = _fetch_pr_details("owner", "repo", 123, "/cwd", 1.5)
+        result = _fetch_pr_details(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
 
         assert result.mergeable == "UNKNOWN"
         assert result.head_sha == ""
@@ -851,7 +875,9 @@ class TestFetchCheckRuns:
         }
         mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(check_runs_response))
 
-        result = _fetch_check_runs("owner", "repo", "sha123", "/cwd", 1.5)
+        result = _fetch_check_runs(
+            owner="owner", repo="repo", ref="sha123", cwd="/cwd", timeout=1.5
+        )
 
         assert len(result) == 2
         assert result[0]["__typename"] == "CheckRun"
@@ -864,7 +890,9 @@ class TestFetchCheckRuns:
         """Should return empty list on API failure."""
         mock_run.return_value = MagicMock(returncode=1, stdout="")
 
-        result = _fetch_check_runs("owner", "repo", "sha123", "/cwd", 1.5)
+        result = _fetch_check_runs(
+            owner="owner", repo="repo", ref="sha123", cwd="/cwd", timeout=1.5
+        )
 
         assert result == []
 

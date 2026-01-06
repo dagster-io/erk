@@ -244,7 +244,7 @@ class RealGitHub(GitHub):
 
         try:
             result = run_subprocess_with_context(
-                cmd,
+                cmd=cmd,
                 operation_context=f"merge PR #{pr_number}",
                 cwd=repo_root,
             )
@@ -268,11 +268,7 @@ class RealGitHub(GitHub):
         return "".join(secrets.choice(base36_chars) for _ in range(6))
 
     def trigger_workflow(
-        self,
-        repo_root: Path,
-        workflow: str,
-        inputs: dict[str, str],
-        ref: str | None = None,
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> str:
         """Trigger GitHub Actions workflow via gh CLI.
 
@@ -308,7 +304,7 @@ class RealGitHub(GitHub):
 
         debug_log(f"trigger_workflow: executing command: {' '.join(cmd)}")
         run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"trigger workflow '{workflow}'",
             cwd=repo_root,
         )
@@ -336,7 +332,7 @@ class RealGitHub(GitHub):
             ]
 
             runs_result = run_subprocess_with_context(
-                runs_cmd,
+                cmd=runs_cmd,
                 operation_context=f"get run ID for workflow '{workflow}'",
                 cwd=repo_root,
             )
@@ -464,7 +460,7 @@ class RealGitHub(GitHub):
             cmd.extend(["-f", f"base={base}"])
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"create pull request for branch '{branch}'",
             cwd=repo_root,
         )
@@ -510,7 +506,7 @@ class RealGitHub(GitHub):
             cmd.extend(["--user", user])
 
         result = run_subprocess_with_context(
-            cmd,
+            cmd=cmd,
             operation_context=f"list workflow runs for '{workflow}'",
             cwd=repo_root,
         )
@@ -587,7 +583,7 @@ class RealGitHub(GitHub):
         """Get logs for a workflow run using gh CLI."""
         # GH-API-AUDIT: REST - gh run view uses REST
         result = run_subprocess_with_context(
-            ["gh", "run", "view", run_id, "--log"],
+            cmd=["gh", "run", "view", run_id, "--log"],
             operation_context=f"fetch logs for run {run_id}",
             cwd=repo_root,
         )
@@ -843,6 +839,7 @@ query {{
 
     def poll_for_workflow_run(
         self,
+        *,
         repo_root: Path,
         workflow: str,
         branch_name: str,
@@ -884,7 +881,7 @@ query {{
 
             try:
                 runs_result = run_subprocess_with_context(
-                    runs_cmd,
+                    cmd=runs_cmd,
                     operation_context=(
                         f"poll for workflow run (workflow: {workflow}, branch: {branch_name})"
                     ),
@@ -952,7 +949,7 @@ query {{
         """
         # GH-API-AUDIT: REST - auth validation
         result = run_subprocess_with_context(
-            ["gh", "auth", "status"],
+            cmd=["gh", "auth", "status"],
             operation_context="check GitHub authentication status",
             capture_output=True,
             check=False,
@@ -1104,6 +1101,7 @@ query {{
 
     def get_issues_with_pr_linkages(
         self,
+        *,
         location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
@@ -1470,7 +1468,7 @@ query {{
         return body if body else None
 
     def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
         """Update PR title and body on GitHub.
 
@@ -1521,7 +1519,7 @@ query {{
         """
         # GH-API-AUDIT: REST - gh pr diff uses REST Accept header
         result = run_subprocess_with_context(
-            ["gh", "pr", "diff", str(pr_number)],
+            cmd=["gh", "pr", "diff", str(pr_number)],
             operation_context=f"get diff for PR #{pr_number}",
             cwd=repo_root,
         )
@@ -1769,13 +1767,7 @@ query {{
         return comment_data is not None
 
     def create_pr_review_comment(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        body: str,
-        commit_sha: str,
-        path: str,
-        line: int,
+        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
     ) -> int:
         """Create an inline review comment on a specific line of a PR.
 
@@ -1903,7 +1895,7 @@ query {{
 
         try:
             run_subprocess_with_context(
-                cmd,
+                cmd=cmd,
                 operation_context=f"delete remote branch '{branch}'",
                 cwd=repo_root,
             )

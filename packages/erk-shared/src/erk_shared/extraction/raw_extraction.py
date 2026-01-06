@@ -117,6 +117,7 @@ def get_raw_extraction_body(branch_name: str) -> str:
 
 
 def create_raw_extraction_plan(
+    *,
     github_issues: GitHubIssues,
     git: Git,
     claude_installation: ClaudeInstallation,

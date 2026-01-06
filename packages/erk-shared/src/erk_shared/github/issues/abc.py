@@ -19,7 +19,7 @@ class GitHubIssues(ABC):
 
     @abstractmethod
     def create_issue(
-        self, repo_root: Path, title: str, body: str, labels: list[str]
+        self, *, repo_root: Path, title: str, body: str, labels: list[str]
     ) -> CreateIssueResult:
         """Create a new GitHub issue.
 
@@ -87,6 +87,7 @@ class GitHubIssues(ABC):
     @abstractmethod
     def list_issues(
         self,
+        *,
         repo_root: Path,
         labels: list[str] | None = None,
         state: str | None = None,
@@ -158,11 +159,7 @@ class GitHubIssues(ABC):
 
     @abstractmethod
     def ensure_label_exists(
-        self,
-        repo_root: Path,
-        label: str,
-        description: str,
-        color: str,
+        self, *, repo_root: Path, label: str, description: str, color: str
     ) -> None:
         """Ensure a label exists in the repository, creating it if needed.
 

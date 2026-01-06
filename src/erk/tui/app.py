@@ -383,6 +383,7 @@ class PlanDetailScreen(ModalScreen):
 
     def __init__(
         self,
+        *,
         row: PlanRowData,
         clipboard: Clipboard | None = None,
         browser: BrowserLauncher | None = None,
@@ -861,6 +862,7 @@ class ErkDashApp(App):
 
     def __init__(
         self,
+        *,
         provider: PlanDataProvider,
         filters: PlanFilters,
         refresh_interval: float = 15.0,
@@ -1087,7 +1089,7 @@ class ErkDashApp(App):
 
         self.push_screen(
             PlanDetailScreen(
-                row,
+                row=row,
                 clipboard=self._provider.clipboard,
                 browser=self._provider.browser,
                 executor=executor,
@@ -1334,7 +1336,7 @@ class ErkDashApp(App):
                     submit_to_queue_fn=self._provider.submit_to_queue,
                 )
                 detail_screen = PlanDetailScreen(
-                    row,
+                    row=row,
                     clipboard=self._provider.clipboard,
                     browser=self._provider.browser,
                     executor=executor,

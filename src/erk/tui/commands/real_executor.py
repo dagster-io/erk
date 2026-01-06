@@ -14,6 +14,7 @@ class RealCommandExecutor(CommandExecutor):
 
     def __init__(
         self,
+        *,
         browser_launch: Callable[[str], Any],
         clipboard_copy: Callable[[str], Any],
         close_plan_fn: Callable[[int, str], list[int]],

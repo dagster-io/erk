@@ -36,10 +36,10 @@ def extract_docs(ctx: ErkContext, identifier: str) -> None:
     # Ensure label exists in repo (create if needed)
     try:
         ctx.issues.ensure_label_exists(
-            repo_root,
-            DOCS_EXTRACTED_LABEL,
-            DOCS_EXTRACTED_LABEL_DESCRIPTION,
-            DOCS_EXTRACTED_LABEL_COLOR,
+            repo_root=repo_root,
+            label=DOCS_EXTRACTED_LABEL,
+            description=DOCS_EXTRACTED_LABEL_DESCRIPTION,
+            color=DOCS_EXTRACTED_LABEL_COLOR,
         )
     except RuntimeError as e:
         raise click.ClickException(f"Failed to ensure label exists: {e}") from e

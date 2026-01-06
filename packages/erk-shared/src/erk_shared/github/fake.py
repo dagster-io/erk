@@ -167,11 +167,7 @@ class FakeGitHub(GitHub):
         return "Merge failed (configured to fail in test)"
 
     def trigger_workflow(
-        self,
-        repo_root: Path,
-        workflow: str,
-        inputs: dict[str, str],
-        ref: str | None = None,
+        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None = None
     ) -> str:
         """Record workflow trigger in mutation tracking list.
 
@@ -365,6 +361,7 @@ class FakeGitHub(GitHub):
 
     def poll_for_workflow_run(
         self,
+        *,
         repo_root: Path,
         workflow: str,
         branch_name: str,
@@ -468,6 +465,7 @@ class FakeGitHub(GitHub):
 
     def get_issues_with_pr_linkages(
         self,
+        *,
         location: GitHubRepoLocation,
         labels: list[str],
         state: str | None = None,
@@ -567,7 +565,7 @@ class FakeGitHub(GitHub):
         return self._pr_bodies_by_number.get(pr_number)
 
     def update_pr_title_and_body(
-        self, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
         """Record PR title and body update in mutation tracking lists.
 
@@ -717,13 +715,7 @@ class FakeGitHub(GitHub):
         return self._thread_replies
 
     def create_pr_review_comment(
-        self,
-        repo_root: Path,
-        pr_number: int,
-        body: str,
-        commit_sha: str,
-        path: str,
-        line: int,
+        self, *, repo_root: Path, pr_number: int, body: str, commit_sha: str, path: str, line: int
     ) -> int:
         """Record PR review comment in mutation tracking list.
 

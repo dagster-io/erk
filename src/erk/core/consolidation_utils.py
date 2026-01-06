@@ -135,6 +135,7 @@ def identify_removable_worktrees(
 
 
 def create_consolidation_plan(
+    *,
     all_worktrees: list[WorktreeInfo],
     stack_branches: list[str],
     end_branch: str | None,

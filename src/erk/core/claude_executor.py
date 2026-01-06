@@ -47,6 +47,7 @@ class RealClaudeExecutor(ClaudeExecutor):
 
     def execute_command_streaming(
         self,
+        *,
         command: str,
         worktree_path: Path,
         dangerous: bool,
@@ -396,6 +397,7 @@ class RealClaudeExecutor(ClaudeExecutor):
 
     def execute_interactive(
         self,
+        *,
         worktree_path: Path,
         dangerous: bool,
         command: str,

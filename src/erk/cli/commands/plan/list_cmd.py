@@ -211,6 +211,7 @@ def dash_options(f: Callable[P, T]) -> Callable[P, T]:
 
 def _build_plans_table(
     ctx: ErkContext,
+    *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
@@ -492,6 +493,7 @@ def _build_plans_table(
 
 def _list_plans_impl(
     ctx: ErkContext,
+    *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
@@ -502,7 +504,14 @@ def _list_plans_impl(
 ) -> None:
     """Implementation logic for listing plans with optional filters."""
     table, plan_count = _build_plans_table(
-        ctx, label, state, run_state, runs, limit, all_users, sort
+        ctx,
+        label=label,
+        state=state,
+        run_state=run_state,
+        runs=runs,
+        limit=limit,
+        all_users=all_users,
+        sort=sort,
     )
 
     if table is None:
@@ -521,6 +530,7 @@ def _list_plans_impl(
 
 
 def _build_watch_content(
+    *,
     table: Table | None,
     count: int,
     last_update: str,
@@ -582,7 +592,11 @@ def _run_watch_loop(
         while True:
             # Update display with current countdown
             content = _build_watch_content(
-                table, count, last_update, seconds_remaining, fetch_duration_secs
+                table=table,
+                count=count,
+                last_update=last_update,
+                seconds_remaining=seconds_remaining,
+                fetch_duration_secs=fetch_duration_secs,
             )
             live_display.update(content)
 
@@ -605,6 +619,7 @@ def _run_watch_loop(
 
 def _run_interactive_mode(
     ctx: ErkContext,
+    *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
@@ -654,7 +669,7 @@ def _run_interactive_mode(
     location = GitHubRepoLocation(root=repo_root, repo_id=GitHubRepoId(owner, repo_name))
     clipboard = RealClipboard()
     browser = RealBrowserLauncher()
-    provider = RealPlanDataProvider(ctx, location, clipboard, browser)
+    provider = RealPlanDataProvider(ctx, location=location, clipboard=clipboard, browser=browser)
     filters = PlanFilters(
         labels=labels,
         state=state,
@@ -671,7 +686,9 @@ def _run_interactive_mode(
     )
 
     # Run the TUI app
-    app = ErkDashApp(provider, filters, refresh_interval=interval, initial_sort=initial_sort)
+    app = ErkDashApp(
+        provider=provider, filters=filters, refresh_interval=interval, initial_sort=initial_sort
+    )
     app.run()
 
 
@@ -687,6 +704,7 @@ def _run_interactive_mode(
 @click.pass_obj
 def list_plans(
     ctx: ErkContext,
+    *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
@@ -711,7 +729,16 @@ def list_plans(
         erk plan list --runs
         erk plan list --sort activity    # Sort by recent branch activity
     """
-    _list_plans_impl(ctx, label, state, run_state, runs, limit, all_users, sort)
+    _list_plans_impl(
+        ctx,
+        label=label,
+        state=state,
+        run_state=run_state,
+        runs=runs,
+        limit=limit,
+        all_users=all_users,
+        sort=sort,
+    )
 
 
 @click.command("dash")
@@ -720,12 +747,13 @@ def list_plans(
 @click.pass_obj
 def dash(
     ctx: ErkContext,
+    *,
     label: tuple[str, ...],
     state: str | None,
     run_state: str | None,
     limit: int | None,
     all_users: bool,
-    sort: str,  # noqa: ARG001  # Accepted from shared options but not used by TUI
+    sort: str,
     interval: float,
 ) -> None:
     """Interactive plan dashboard (TUI).
@@ -751,4 +779,15 @@ def dash(
     prs = True  # Always show PRs
     runs = True  # Default to showing runs
 
-    _run_interactive_mode(ctx, label, state, run_state, runs, prs, limit, interval, all_users, sort)
+    _run_interactive_mode(
+        ctx,
+        label=label,
+        state=state,
+        run_state=run_state,
+        runs=runs,
+        prs=prs,
+        limit=limit,
+        interval=interval,
+        all_users=all_users,
+        sort=sort,
+    )

@@ -89,6 +89,7 @@ def _format_entry_line(entry: CommandLogEntry, show_cwd: bool, show_full: bool) 
 @click.option("--full", is_flag=True, help="Show full timestamps and details")
 @click.option("--show-cwd", is_flag=True, help="Show working directory for each entry")
 def log_cmd(
+    *,
     since: str | None,
     command_filter: str | None,
     cwd_filter: str | None,

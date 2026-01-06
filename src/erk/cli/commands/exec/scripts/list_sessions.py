@@ -157,6 +157,7 @@ def format_display_time(mtime: float) -> str:
 
 
 def _list_sessions_from_store(
+    *,
     claude_installation: ClaudeInstallation,
     cwd: Path,
     current_session_id: str | None,
@@ -272,9 +273,9 @@ def list_sessions(ctx: click.Context, limit: int, min_size: int, session_id: str
 
     # List sessions from store
     sessions, filtered_count = _list_sessions_from_store(
-        claude_installation,
-        cwd,
-        session_id,
+        claude_installation=claude_installation,
+        cwd=cwd,
+        current_session_id=session_id,
         limit=limit,
         min_size=min_size,
     )

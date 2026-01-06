@@ -434,7 +434,7 @@ def test_fake_github_get_issues_with_pr_linkages_empty() -> None:
     ops = FakeGitHub()
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
-        TEST_LOCATION,
+        location=TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -472,7 +472,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
     ops = FakeGitHub(issues=[issue1, issue2])
 
     issues, _ = ops.get_issues_with_pr_linkages(
-        TEST_LOCATION,
+        location=TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -510,7 +510,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
     ops = FakeGitHub(issues=[open_issue, closed_issue])
 
     issues, _ = ops.get_issues_with_pr_linkages(
-        TEST_LOCATION,
+        location=TEST_LOCATION,
         labels=["erk-plan"],
         state="open",
     )
@@ -550,7 +550,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
     )
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
-        TEST_LOCATION,
+        location=TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -580,7 +580,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
     ops = FakeGitHub(issues=issues)
 
     result_issues, _ = ops.get_issues_with_pr_linkages(
-        TEST_LOCATION,
+        location=TEST_LOCATION,
         labels=["erk-plan"],
         limit=3,
     )
@@ -632,7 +632,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
     )
 
     issues, pr_linkages = ops.get_issues_with_pr_linkages(
-        TEST_LOCATION,
+        location=TEST_LOCATION,
         labels=["erk-plan"],
     )
 
@@ -850,7 +850,7 @@ def test_fake_github_create_pr_review_comment_returns_int_id() -> None:
     ops = FakeGitHub()
 
     result = ops.create_pr_review_comment(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         pr_number=123,
         body="**Dignified Python**: Use LBYL pattern",
         commit_sha="abc123",
@@ -868,7 +868,7 @@ def test_fake_github_create_pr_review_comment_tracks_mutation() -> None:
     ops = FakeGitHub()
 
     ops.create_pr_review_comment(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         pr_number=123,
         body="Comment body",
         commit_sha="abc123",
@@ -883,8 +883,22 @@ def test_fake_github_create_pr_review_comment_increments_ids() -> None:
     """Test create_pr_review_comment returns unique incrementing IDs."""
     ops = FakeGitHub()
 
-    id1 = ops.create_pr_review_comment(sentinel_path(), 123, "First", "sha1", "file1.py", 1)
-    id2 = ops.create_pr_review_comment(sentinel_path(), 123, "Second", "sha2", "file2.py", 2)
+    id1 = ops.create_pr_review_comment(
+        repo_root=sentinel_path(),
+        pr_number=123,
+        body="First",
+        commit_sha="sha1",
+        path="file1.py",
+        line=1,
+    )
+    id2 = ops.create_pr_review_comment(
+        repo_root=sentinel_path(),
+        pr_number=123,
+        body="Second",
+        commit_sha="sha2",
+        path="file2.py",
+        line=2,
+    )
 
     assert id2 > id1
     assert len(ops.pr_review_comments) == 2

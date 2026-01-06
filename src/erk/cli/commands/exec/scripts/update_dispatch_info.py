@@ -47,11 +47,7 @@ class UpdateError:
 @click.argument("dispatched_at")
 @click.pass_context
 def update_dispatch_info(
-    ctx: click.Context,
-    issue_number: int,
-    run_id: str,
-    node_id: str,
-    dispatched_at: str,
+    ctx: click.Context, *, issue_number: int, run_id: str, node_id: str, dispatched_at: str
 ) -> None:
     """Update dispatch info in GitHub issue plan-header metadata.
 

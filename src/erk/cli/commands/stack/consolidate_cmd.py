@@ -27,6 +27,7 @@ def _format_section_header(text: str, separator_length: int = 59) -> str:
 
 
 def _format_consolidation_plan(
+    *,
     stack_branches: list[str],
     current_branch: str,
     consolidated_branches: list[str],
@@ -138,6 +139,7 @@ def _remove_worktree_slot_aware(
 @click.pass_obj
 def consolidate_stack(
     ctx: ErkContext,
+    *,
     branch: str | None,
     name: str | None,
     force: bool,

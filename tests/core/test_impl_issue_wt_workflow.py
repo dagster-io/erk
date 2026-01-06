@@ -94,7 +94,9 @@ Test the workflow.
 
     # Step 2: Create issue (simulates gh issue create)
     issues = FakeGitHubIssues(next_issue_number=123)
-    result = issues.create_issue(sentinel_path(), "Test Plan", plan_content, ["erk-plan"])
+    result = issues.create_issue(
+        repo_root=sentinel_path(), title="Test Plan", body=plan_content, labels=["erk-plan"]
+    )
 
     assert result.number == 123
 
@@ -116,7 +118,7 @@ def test_workflow_issue_creation_tracks_erk_plan_label() -> None:
     issues = FakeGitHubIssues()
 
     issues.create_issue(
-        sentinel_path(),
+        repo_root=sentinel_path(),
         title="Implementation Plan",
         body="Plan content here",
         labels=["erk-plan"],
@@ -137,7 +139,9 @@ def test_workflow_get_issue_after_creation() -> None:
     )
 
     # Create issue
-    result = issues.create_issue(sentinel_path(), "Test Issue", "Body content", ["erk-plan"])
+    result = issues.create_issue(
+        repo_root=sentinel_path(), title="Test Issue", body="Body content", labels=["erk-plan"]
+    )
 
     # Retrieve issue info
     info = issues.get_issue(sentinel_path(), result.number)
@@ -153,9 +157,15 @@ def test_workflow_multiple_issues_increment_numbers() -> None:
     """Test that multiple issue creations increment issue numbers."""
     issues = FakeGitHubIssues(next_issue_number=10)
 
-    result1 = issues.create_issue(sentinel_path(), "Issue 1", "Body 1", ["label1"])
-    result2 = issues.create_issue(sentinel_path(), "Issue 2", "Body 2", ["label2"])
-    result3 = issues.create_issue(sentinel_path(), "Issue 3", "Body 3", ["label3"])
+    result1 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 1", body="Body 1", labels=["label1"]
+    )
+    result2 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 2", body="Body 2", labels=["label2"]
+    )
+    result3 = issues.create_issue(
+        repo_root=sentinel_path(), title="Issue 3", body="Body 3", labels=["label3"]
+    )
 
     assert result1.number == 10
     assert result2.number == 11

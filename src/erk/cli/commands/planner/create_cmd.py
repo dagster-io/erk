@@ -56,11 +56,7 @@ def _find_codespace_by_display_name(display_name: str) -> dict | None:
 )
 @click.pass_obj
 def create_planner(
-    ctx: ErkContext,
-    name: str,
-    repo: str | None,
-    branch: str | None,
-    run: bool,
+    ctx: ErkContext, *, name: str, repo: str | None, branch: str | None, run: bool
 ) -> None:
     """Create a new GitHub Codespace for use as a planner.
 

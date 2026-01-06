@@ -198,10 +198,14 @@ class PrintingGit(PrintingBase, Git):
         """Get branch issue (read-only, no printing)."""
         return self._wrapped.get_branch_issue(repo_root, branch)
 
-    def fetch_pr_ref(self, repo_root: Path, remote: str, pr_number: int, local_branch: str) -> None:
+    def fetch_pr_ref(
+        self, *, repo_root: Path, remote: str, pr_number: int, local_branch: str
+    ) -> None:
         """Fetch PR ref with printed output."""
         self._emit(self._format_command(f"git fetch {remote} pull/{pr_number}/head:{local_branch}"))
-        self._wrapped.fetch_pr_ref(repo_root, remote, pr_number, local_branch)
+        self._wrapped.fetch_pr_ref(
+            repo_root=repo_root, remote=remote, pr_number=pr_number, local_branch=local_branch
+        )
 
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage files with printed output."""

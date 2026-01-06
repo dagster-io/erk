@@ -11,9 +11,9 @@ def test_trigger_workflow_tracks_call() -> None:
     repo_root = Path("/repo")
 
     run_id = github.trigger_workflow(
-        repo_root,
-        "implement-plan.yml",
-        {"branch-name": "feature"},
+        repo_root=repo_root,
+        workflow="implement-plan.yml",
+        inputs={"branch-name": "feature"},
     )
 
     assert run_id == "1234567890"
@@ -28,8 +28,12 @@ def test_trigger_workflow_tracks_multiple_calls() -> None:
     github = FakeGitHub()
     repo_root = Path("/repo")
 
-    run_id1 = github.trigger_workflow(repo_root, "workflow1.yml", {"key": "value1"})
-    run_id2 = github.trigger_workflow(repo_root, "workflow2.yml", {"key": "value2"})
+    run_id1 = github.trigger_workflow(
+        repo_root=repo_root, workflow="workflow1.yml", inputs={"key": "value1"}
+    )
+    run_id2 = github.trigger_workflow(
+        repo_root=repo_root, workflow="workflow2.yml", inputs={"key": "value2"}
+    )
 
     assert run_id1 == "1234567890"
     assert run_id2 == "1234567890"

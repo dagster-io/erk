@@ -11,11 +11,7 @@ from erk_dev.commands.bump_version.command import find_repo_root
 
 
 def insert_release_notes(
-    changelog_path: Path,
-    version: str,
-    date: str,
-    notes: str,
-    dry_run: bool,
+    *, changelog_path: Path, version: str, date: str, notes: str, dry_run: bool
 ) -> bool:
     """Insert release notes into CHANGELOG.md under a new version header.
 
@@ -80,6 +76,7 @@ def insert_release_notes(
 @click.option("--date", "date_str", help="Release date/time (YYYY-MM-DD HH:MM PT)")
 @click.option("--dry-run", is_flag=True, help="Show what would change without modifying files")
 def release_update_command(
+    *,
     version: str,
     notes_file: str | None,
     notes_text: str | None,
@@ -125,7 +122,13 @@ def release_update_command(
         click.echo(f"  Date: {date}")
         click.echo(f"  Notes preview: {notes[:100]}...")
     else:
-        success = insert_release_notes(changelog_path, version, date, notes, dry_run=False)
+        success = insert_release_notes(
+            changelog_path=changelog_path,
+            version=version,
+            date=date,
+            notes=notes,
+            dry_run=False,
+        )
         if success:
             click.echo(f"Updated CHANGELOG.md with version {version}")
         else:

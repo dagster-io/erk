@@ -172,6 +172,7 @@ class ClaudeExecutor(ABC):
     @abstractmethod
     def execute_command_streaming(
         self,
+        *,
         command: str,
         worktree_path: Path,
         dangerous: bool,
@@ -207,6 +208,7 @@ class ClaudeExecutor(ABC):
 
     def execute_command(
         self,
+        *,
         command: str,
         worktree_path: Path,
         dangerous: bool,
@@ -249,7 +251,11 @@ class ClaudeExecutor(ABC):
         success = True
 
         for event in self.execute_command_streaming(
-            command, worktree_path, dangerous, verbose, model=model
+            command=command,
+            worktree_path=worktree_path,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
         ):
             match event:
                 case TextEvent(content=text):
@@ -294,6 +300,7 @@ class ClaudeExecutor(ABC):
     @abstractmethod
     def execute_interactive(
         self,
+        *,
         worktree_path: Path,
         dangerous: bool,
         command: str,

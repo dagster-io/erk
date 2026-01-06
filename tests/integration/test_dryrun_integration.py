@@ -295,7 +295,9 @@ def test_noop_github_issues_create_returns_fake_number() -> None:
     fake = FakeGitHubIssues()
     noop = DryRunGitHubIssues(fake)
 
-    result = noop.create_issue(sentinel_path(), "Title", "Body", ["label"])
+    result = noop.create_issue(
+        repo_root=sentinel_path(), title="Title", body="Body", labels=["label"]
+    )
 
     # Should return fake result with number 1 without calling wrapped implementation
     assert result.number == 1
@@ -339,7 +341,7 @@ def test_noop_github_issues_list_issues_delegates() -> None:
     fake = FakeGitHubIssues(issues=pre_configured)
     noop = DryRunGitHubIssues(fake)
 
-    result = noop.list_issues(sentinel_path())
+    result = noop.list_issues(repo_root=sentinel_path())
 
     # Should delegate to wrapped implementation
     assert len(result) == 2
@@ -356,7 +358,7 @@ def test_noop_github_issues_list_with_filters_delegates() -> None:
     fake = FakeGitHubIssues(issues=pre_configured)
     noop = DryRunGitHubIssues(fake)
 
-    result = noop.list_issues(sentinel_path(), labels=["plan"], state="open")
+    result = noop.list_issues(repo_root=sentinel_path(), labels=["plan"], state="open")
 
     # Should delegate to wrapped implementation with both state and label filtering
     assert len(result) == 1
@@ -370,7 +372,9 @@ def test_noop_github_issues_write_operations_blocked() -> None:
     noop = DryRunGitHubIssues(fake)
 
     # Create issue - should return fake result without mutating wrapped fake
-    result = noop.create_issue(sentinel_path(), "Title", "Body", ["label"])
+    result = noop.create_issue(
+        repo_root=sentinel_path(), title="Title", body="Body", labels=["label"]
+    )
     assert result.number == 1  # Fake number
     assert len(fake.created_issues) == 0  # Wrapped fake not mutated
 
@@ -393,7 +397,7 @@ def test_noop_github_issues_read_operations_work() -> None:
     assert issue.number == 42
     assert issue.title == "Test Issue"
 
-    all_issues = noop.list_issues(sentinel_path())
+    all_issues = noop.list_issues(repo_root=sentinel_path())
     assert len(all_issues) == 2
 
 
@@ -443,7 +447,9 @@ def test_noop_github_issues_ensure_label_exists_noop() -> None:
     noop = DryRunGitHubIssues(fake)
 
     # Should not raise error
-    noop.ensure_label_exists(sentinel_path(), "new-label", "description", "FF0000")
+    noop.ensure_label_exists(
+        repo_root=sentinel_path(), label="new-label", description="description", color="FF0000"
+    )
 
     # Wrapped fake should not have created the label
     assert "new-label" not in fake.labels

@@ -81,7 +81,11 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
 
     # Resolve navigation to get target branch or 'root' (may auto-create worktree)
     target_name, was_created = resolve_down_navigation(
-        ctx, repo, current_branch, worktrees, trunk_branch
+        ctx,
+        repo=repo,
+        current_branch=current_branch,
+        worktrees=worktrees,
+        trunk_branch=trunk_branch,
     )
 
     # Show creation message if worktree was just created
@@ -120,7 +124,9 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             raise SystemExit(0)
         else:
             # No cleanup needed, use standard activation
-            activate_root_repo(ctx, repo, script, "down", post_cd_commands=None)
+            activate_root_repo(
+                ctx, repo=repo, script=script, command_name="down", post_cd_commands=None
+            )
 
     # Resolve target branch to actual worktree path
     target_wt_path = Ensure.not_none(

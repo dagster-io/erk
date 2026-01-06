@@ -18,7 +18,7 @@ class TestErkDashAppCompose:
         """App composes all required widgets."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test():
             # Check for PlanDataTable
@@ -43,7 +43,7 @@ class TestErkDashAppDataLoading:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             # Wait for async data load
@@ -61,7 +61,7 @@ class TestErkDashAppNavigation:
         """Pressing q quits the app."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.press("q")
@@ -72,7 +72,7 @@ class TestErkDashAppNavigation:
         """Pressing escape quits the app."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.press("escape")
@@ -83,7 +83,7 @@ class TestErkDashAppNavigation:
         """Pressing ? shows help screen."""
         provider = FakePlanDataProvider()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.press("?")
@@ -104,7 +104,7 @@ class TestErkDashAppRefresh:
         """Pressing r refreshes data."""
         provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             # Wait for initial load
@@ -171,7 +171,7 @@ class TestClosePlanViaCommandPalette:
             ],
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             # Wait for data to load
@@ -198,7 +198,7 @@ class TestFilterMode:
         """Pressing '/' shows filter input and focuses it."""
         provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -225,7 +225,7 @@ class TestFilterMode:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -248,7 +248,7 @@ class TestFilterMode:
         """First escape clears text, second exits filter mode."""
         provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -284,7 +284,7 @@ class TestFilterMode:
         """Pressing Enter in filter input returns focus to table."""
         provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -316,7 +316,7 @@ class TestFilterMode:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -340,7 +340,7 @@ class TestFilterMode:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -372,7 +372,7 @@ class TestOpenRow:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -400,7 +400,7 @@ class TestOpenRow:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -424,7 +424,7 @@ class TestPlanDetailScreen:
             [make_plan_row(123, "Test Plan", pr_number=456, pr_title="Test PR")]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -444,7 +444,7 @@ class TestPlanDetailScreen:
         """Detail modal closes when pressing escape."""
         provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -470,7 +470,7 @@ class TestPlanDetailScreen:
         """Detail modal closes when pressing q."""
         provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -492,7 +492,7 @@ class TestPlanDetailScreen:
         """Detail modal closes when pressing space again."""
         provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -518,7 +518,7 @@ class TestPlanDetailScreen:
         )
         provider = FakePlanDataProvider([make_plan_row(123, long_title)])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -549,7 +549,7 @@ class TestPlanDetailScreen:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -578,7 +578,7 @@ class TestPlanDetailScreenCopyActions:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -604,7 +604,7 @@ class TestPlanDetailScreenCopyActions:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -628,7 +628,7 @@ class TestPlanDetailScreenCopyActions:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -652,7 +652,7 @@ class TestPlanDetailScreenCopyActions:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -683,7 +683,7 @@ class TestPlanDetailScreenCopyActions:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -714,7 +714,7 @@ class TestPlanDetailScreenCopyActions:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -746,7 +746,7 @@ class TestCommandPaletteFromMain:
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -768,7 +768,7 @@ class TestCommandPaletteFromMain:
             ]
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -785,7 +785,7 @@ class TestCommandPaletteFromMain:
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider([], clipboard=clipboard)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -802,7 +802,7 @@ class TestCommandPaletteFromMain:
         """Space opens detail screen without palette."""
         provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider, filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()

@@ -71,6 +71,7 @@ class ShellIntegrationResult:
 
 
 def process_command_result(
+    *,
     exit_code: int,
     stdout: str | None,
     stderr: str | None,

@@ -606,6 +606,7 @@ def _get_plan_issue_from_impl(repo_root: Path) -> int | None:
 
 
 def _gather_inputs(
+    *,
     session_id: str | None,
     repo_root: Path,
     github_planning_enabled: bool,
@@ -759,12 +760,12 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
 
     # Gather all inputs (I/O layer)
     hook_input = _gather_inputs(
-        hook_ctx.session_id,
-        hook_ctx.repo_root,
-        github_planning_enabled,
-        ctx.obj.claude_installation,
-        ctx.obj.git,
-        branch_manager,
+        session_id=hook_ctx.session_id,
+        repo_root=hook_ctx.repo_root,
+        github_planning_enabled=github_planning_enabled,
+        claude_installation=ctx.obj.claude_installation,
+        git=ctx.obj.git,
+        branch_manager=branch_manager,
     )
 
     # Pure decision logic (no I/O)

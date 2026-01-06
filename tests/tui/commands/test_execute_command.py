@@ -18,7 +18,7 @@ class TestExecuteCommandBrowserCommands:
             issue_url="https://github.com/test/repo/issues/123",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_browser")
         assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
 
@@ -26,7 +26,7 @@ class TestExecuteCommandBrowserCommands:
         """open_browser opens issue URL when no PR is available."""
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_browser")
         assert executor.opened_urls == ["https://github.com/test/repo/issues/123"]
 
@@ -34,7 +34,7 @@ class TestExecuteCommandBrowserCommands:
         """open_issue opens the issue URL."""
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_issue")
         assert executor.opened_urls == ["https://github.com/test/repo/issues/123"]
         assert "Opened issue #123" in executor.notifications
@@ -48,7 +48,7 @@ class TestExecuteCommandBrowserCommands:
             pr_url="https://github.com/test/repo/pull/456",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_pr")
         assert executor.opened_urls == ["https://github.com/test/repo/pull/456"]
         assert "Opened PR #456" in executor.notifications
@@ -61,7 +61,7 @@ class TestExecuteCommandBrowserCommands:
             run_url="https://github.com/test/repo/actions/runs/789",
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("open_run")
         assert executor.opened_urls == ["https://github.com/test/repo/actions/runs/789"]
 
@@ -73,7 +73,7 @@ class TestExecuteCommandCopyCommands:
         """copy_checkout copies the checkout command."""
         row = make_plan_row(123, "Test", worktree_name="feature-123", exists_locally=True)
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_checkout")
         assert executor.copied_texts == ["erk co feature-123"]
         assert "Copied: erk co feature-123" in executor.notifications
@@ -82,7 +82,7 @@ class TestExecuteCommandCopyCommands:
         """copy_pr_checkout copies the PR checkout command."""
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_pr_checkout")
         assert executor.copied_texts == ["erk pr co 456"]
         assert "Copied: erk pr co 456" in executor.notifications
@@ -91,7 +91,7 @@ class TestExecuteCommandCopyCommands:
         """copy_implement copies the implement command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_implement")
         assert executor.copied_texts == ["erk implement 123"]
         assert "Copied: erk implement 123" in executor.notifications
@@ -100,7 +100,7 @@ class TestExecuteCommandCopyCommands:
         """copy_implement_dangerous copies the dangerous implement command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_implement_dangerous")
         assert executor.copied_texts == ["erk implement 123 --dangerous"]
         assert "Copied: erk implement 123 --dangerous" in executor.notifications
@@ -109,7 +109,7 @@ class TestExecuteCommandCopyCommands:
         """copy_implement_yolo copies the yolo implement command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_implement_yolo")
         assert executor.copied_texts == ["erk implement 123 --yolo"]
         assert "Copied: erk implement 123 --yolo" in executor.notifications
@@ -118,7 +118,7 @@ class TestExecuteCommandCopyCommands:
         """copy_submit copies the submit command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_submit")
         assert executor.copied_texts == ["erk plan submit 123"]
         assert "Copied: erk plan submit 123" in executor.notifications
@@ -131,7 +131,7 @@ class TestExecuteCommandClosePlan:
         """close_plan closes the plan and triggers refresh."""
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("close_plan")
         assert executor.closed_plans == [(123, "https://github.com/test/repo/issues/123")]
         assert executor.refresh_count == 1
@@ -142,7 +142,7 @@ class TestExecuteCommandClosePlan:
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         executor.set_close_plan_return([456, 457])
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("close_plan")
         assert "Closed plan #123 and PRs: #456, #457" in executor.notifications
 
@@ -176,7 +176,7 @@ class TestExecuteCommandClosePlan:
             log_entries=(),
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("close_plan")
         assert executor.closed_plans == []
         assert executor.refresh_count == 0
@@ -195,7 +195,7 @@ class TestExecuteCommandSubmitToQueue:
         row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
         executor = FakeCommandExecutor()
         # repo_root not provided - streaming command should not execute
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("submit_to_queue")
         # No executor methods should be called (streaming is independent)
         assert executor.refresh_count == 0
@@ -229,7 +229,7 @@ class TestExecuteCommandSubmitToQueue:
             log_entries=(),
         )
         executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row, executor=executor)
+        screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("submit_to_queue")
         assert executor.refresh_count == 0
 
@@ -267,7 +267,7 @@ class TestExecuteCommandNoExecutor:
     def test_does_nothing_without_executor(self) -> None:
         """Commands do nothing when no executor is provided."""
         row = make_plan_row(123, "Test")
-        screen = PlanDetailScreen(row)  # No executor
+        screen = PlanDetailScreen(row=row)  # No executor
         # Should not raise
         screen.execute_command("open_browser")
         screen.execute_command("copy_implement")

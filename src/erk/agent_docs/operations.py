@@ -506,7 +506,7 @@ def _format_with_prettier(content: str, file_path: Path) -> str:
         Formatted content.
     """
     result = run_subprocess_with_context(
-        ["prettier", "--stdin-filepath", str(file_path)],
+        cmd=["prettier", "--stdin-filepath", str(file_path)],
         operation_context="format markdown with prettier",
         input=content,
     )
@@ -514,6 +514,7 @@ def _format_with_prettier(content: str, file_path: Path) -> str:
 
 
 def _update_index_file(
+    *,
     index_path: Path,
     content: str,
     created: list[str],
@@ -553,6 +554,7 @@ def _update_index_file(
 
 
 def _update_generated_file(
+    *,
     file_path: Path,
     content: str,
     created: list[str],
@@ -627,7 +629,14 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
     # Generate root index
     root_index_path = agent_docs_root / "index.md"
     root_content = generate_root_index(uncategorized, categories)
-    _update_index_file(root_index_path, root_content, created, updated, unchanged, dry_run)
+    _update_index_file(
+        index_path=root_index_path,
+        content=root_content,
+        created=created,
+        updated=updated,
+        unchanged=unchanged,
+        dry_run=dry_run,
+    )
 
     # Generate category indexes (only for categories with 2+ docs)
     for category in categories:
@@ -637,7 +646,12 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
         category_index_path = agent_docs_root / category.name / "index.md"
         category_content = generate_category_index(category)
         _update_index_file(
-            category_index_path, category_content, created, updated, unchanged, dry_run
+            index_path=category_index_path,
+            content=category_content,
+            created=created,
+            updated=updated,
+            unchanged=unchanged,
+            dry_run=dry_run,
         )
 
     # Collect and generate tripwires
@@ -648,13 +662,13 @@ def sync_agent_docs(project_root: Path, *, dry_run: bool) -> SyncResult:
         tripwires_path = agent_docs_root / "tripwires.md"
         tripwires_content = generate_tripwires_doc(tripwires)
         _update_generated_file(
-            tripwires_path,
-            tripwires_content,
-            created,
-            updated,
-            unchanged,
-            dry_run,
-            agent_docs_root,
+            file_path=tripwires_path,
+            content=tripwires_content,
+            created=created,
+            updated=updated,
+            unchanged=unchanged,
+            dry_run=dry_run,
+            agent_docs_root=agent_docs_root,
         )
 
     return SyncResult(
