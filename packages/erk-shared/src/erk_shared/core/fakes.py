@@ -26,7 +26,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
     Attributes:
         is_available: Whether Claude CLI should appear available
         interactive_calls: List of (worktree_path, dangerous, command, target_subpath, model) tuples
-        prompt_calls: List of (prompt, model, tools, cwd) tuples
+        prompt_calls: List of (prompt, model, tools, cwd, system_prompt) tuples
         prompt_results: Queue of PromptResult to return from execute_prompt
         streaming_events: Events to yield from execute_command_streaming
     """
@@ -40,7 +40,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
     ) -> None:
         self.is_available_value = is_available
         self.interactive_calls: list[tuple[Path, bool, str, Path | None, str | None]] = []
-        self.prompt_calls: list[tuple[str, str, list[str] | None, Path | None]] = []
+        self.prompt_calls: list[tuple[str, str, list[str] | None, Path | None, str | None]] = []
         self.prompt_results = list(prompt_results) if prompt_results else []
         self.streaming_events = list(streaming_events) if streaming_events else []
         self._prompt_result_index = 0
@@ -78,8 +78,9 @@ class FakeClaudeExecutor(ClaudeExecutor):
         model: str = "haiku",
         tools: list[str] | None = None,
         cwd: Path | None = None,
+        system_prompt: str | None = None,
     ) -> PromptResult:
-        self.prompt_calls.append((prompt, model, tools, cwd))
+        self.prompt_calls.append((prompt, model, tools, cwd, system_prompt))
         if self._prompt_result_index < len(self.prompt_results):
             result = self.prompt_results[self._prompt_result_index]
             self._prompt_result_index += 1

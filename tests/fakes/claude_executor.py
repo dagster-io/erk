@@ -116,7 +116,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_no_work_events = simulated_no_work_events
         self._executed_commands: list[tuple[str, Path, bool, bool, str | None]] = []
         self._interactive_calls: list[tuple[Path, bool, str, Path | None, str | None]] = []
-        self._prompt_calls: list[str] = []
+        self._prompt_calls: list[tuple[str, str | None]] = []
 
     def is_claude_available(self) -> bool:
         """Return the availability configured at construction time."""
@@ -124,6 +124,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
     def execute_command_streaming(
         self,
+        *,
         command: str,
         worktree_path: Path,
         dangerous: bool,
@@ -206,7 +207,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
             yield IssueNumberEvent(number=self._simulated_issue_number)
 
     def execute_command(
-        self, command: str, worktree_path: Path, dangerous: bool, verbose: bool = False
+        self,
+        *,
+        command: str,
+        worktree_path: Path,
+        dangerous: bool,
+        verbose: bool = False,
+        model: str | None = None,
     ) -> CommandResult:
         """Track command execution without running subprocess.
 
@@ -218,6 +225,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
             worktree_path: Path to worktree directory
             dangerous: Whether to skip permission prompts
             verbose: Whether to show raw output or filtered output
+            model: Optional model name (ignored in fake)
 
         Returns:
             CommandResult with success status
@@ -225,7 +233,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         Raises:
             RuntimeError: If command_should_fail was set to True
         """
-        self._executed_commands.append((command, worktree_path, dangerous, verbose))
+        self._executed_commands.append((command, worktree_path, dangerous, verbose, model))
 
         if self._command_should_fail:
             return CommandResult(
@@ -252,6 +260,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
 
     def execute_interactive(
         self,
+        *,
         worktree_path: Path,
         dangerous: bool,
         command: str,
@@ -299,10 +308,11 @@ class FakeClaudeExecutor(ClaudeExecutor):
         model: str = "haiku",
         tools: list[str] | None = None,
         cwd: Path | None = None,
+        system_prompt: str | None = None,
     ) -> PromptResult:
         """Track prompt execution and return simulated result.
 
-        This method records the prompt for test assertions.
+        This method records the prompt and system_prompt for test assertions.
         It does not execute any actual subprocess operations.
 
         Args:
@@ -310,11 +320,12 @@ class FakeClaudeExecutor(ClaudeExecutor):
             model: Model to use (ignored in fake)
             tools: Optional list of allowed tools (ignored in fake)
             cwd: Optional working directory (ignored in fake)
+            system_prompt: Optional system prompt (tracked for test assertions)
 
         Returns:
             PromptResult with simulated output or error
         """
-        self._prompt_calls.append(prompt)
+        self._prompt_calls.append((prompt, system_prompt))
 
         if self._simulated_prompt_error is not None:
             return PromptResult(
@@ -335,10 +346,10 @@ class FakeClaudeExecutor(ClaudeExecutor):
         )
 
     @property
-    def prompt_calls(self) -> list[str]:
+    def prompt_calls(self) -> list[tuple[str, str | None]]:
         """Get the list of execute_prompt() calls that were made.
 
-        Returns list of prompt strings.
+        Returns list of (prompt, system_prompt) tuples.
 
         This property is for test assertions only.
         """

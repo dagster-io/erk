@@ -475,7 +475,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
 
         # Verify commit message was generated
         assert len(claude_executor.prompt_calls) == 1
-        prompt = claude_executor.prompt_calls[0]
+        prompt, system_prompt = claude_executor.prompt_calls[0]
         assert "feature" in prompt  # Branch name in context
         assert "main" in prompt  # Parent branch in context
 
@@ -606,7 +606,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
         # Verify the commit messages passed to Claude only include branch-2's commits
         # NOT the entire stack's commits
         assert len(claude_executor.prompt_calls) == 1
-        prompt = claude_executor.prompt_calls[0]
+        prompt, system_prompt = claude_executor.prompt_calls[0]
 
         # Should contain branch-2's commit message
         assert "feat: add feature 2 (from branch-2)" in prompt

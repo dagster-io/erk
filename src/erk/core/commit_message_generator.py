@@ -15,6 +15,11 @@ from erk.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 
+# Feature flag: Use --system-prompt to replace Claude Code's default system prompt
+# When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
+# When False: Legacy behavior (system prompt concatenated with user prompt)
+USE_SYSTEM_PROMPT_REPLACEMENT = True
+
 
 @dataclass(frozen=True)
 class CommitMessageRequest:
@@ -116,20 +121,35 @@ class CommitMessageGenerator:
         # Build prompt with context
         yield ProgressEvent("Analyzing changes with Claude...")
 
-        prompt = self._build_prompt(
-            diff_content=diff_content,
-            current_branch=request.current_branch,
-            parent_branch=request.parent_branch,
-            repo_root=request.repo_root,
-            commit_messages=request.commit_messages,
-        )
-
         # Execute prompt via Claude CLI
-        result = self._executor.execute_prompt(
-            prompt,
-            model=self._model,
-            cwd=request.repo_root,
-        )
+        if USE_SYSTEM_PROMPT_REPLACEMENT:
+            # Use --system-prompt flag for more deterministic behavior
+            user_prompt = self._build_user_prompt(
+                diff_content=diff_content,
+                current_branch=request.current_branch,
+                parent_branch=request.parent_branch,
+                commit_messages=request.commit_messages,
+            )
+            result = self._executor.execute_prompt(
+                user_prompt,
+                model=self._model,
+                cwd=request.repo_root,
+                system_prompt=get_commit_message_prompt(request.repo_root),
+            )
+        else:
+            # Legacy: system prompt concatenated with user prompt
+            prompt = self._build_prompt(
+                diff_content=diff_content,
+                current_branch=request.current_branch,
+                parent_branch=request.parent_branch,
+                repo_root=request.repo_root,
+                commit_messages=request.commit_messages,
+            )
+            result = self._executor.execute_prompt(
+                prompt,
+                model=self._model,
+                cwd=request.repo_root,
+            )
 
         if not result.success:
             yield CompletionEvent(
@@ -155,16 +175,14 @@ class CommitMessageGenerator:
             )
         )
 
-    def _build_prompt(
+    def _build_context_section(
         self,
         *,
-        diff_content: str,
         current_branch: str,
         parent_branch: str,
-        repo_root: Path,
         commit_messages: list[str] | None = None,
     ) -> str:
-        """Build the full prompt with diff and context."""
+        """Build the context section with branch info and optional commit messages."""
         context_section = f"""## Context
 
 - Current branch: {current_branch}
@@ -183,6 +201,55 @@ The following commit messages were written by the developer during implementatio
 
 Use these commit messages as additional context. They describe the developer's intent
 and may contain details not visible in the diff alone."""
+
+        return context_section
+
+    def _build_user_prompt(
+        self,
+        *,
+        diff_content: str,
+        current_branch: str,
+        parent_branch: str,
+        commit_messages: list[str] | None = None,
+    ) -> str:
+        """Build user prompt with context and diff only (no system prompt).
+
+        Used when system prompt is passed separately via --system-prompt flag.
+        """
+        context_section = self._build_context_section(
+            current_branch=current_branch,
+            parent_branch=parent_branch,
+            commit_messages=commit_messages,
+        )
+
+        return f"""{context_section}
+
+## Diff
+
+```diff
+{diff_content}
+```
+
+Generate a commit message for this diff:"""
+
+    def _build_prompt(
+        self,
+        *,
+        diff_content: str,
+        current_branch: str,
+        parent_branch: str,
+        repo_root: Path,
+        commit_messages: list[str] | None = None,
+    ) -> str:
+        """Build the full prompt with system prompt, diff and context.
+
+        Legacy mode: Used when system prompt is concatenated with user prompt.
+        """
+        context_section = self._build_context_section(
+            current_branch=current_branch,
+            parent_branch=parent_branch,
+            commit_messages=commit_messages,
+        )
 
         system_prompt = get_commit_message_prompt(repo_root)
         return f"""{system_prompt}

@@ -65,8 +65,9 @@ def test_generate_success(tmp_path: Path) -> None:
 
     # Verify prompt was called
     assert len(executor.prompt_calls) == 1
-    assert "feature-branch" in executor.prompt_calls[0]
-    assert "main" in executor.prompt_calls[0]
+    prompt, system_prompt = executor.prompt_calls[0]
+    assert "feature-branch" in prompt
+    assert "main" in prompt
 
 
 def test_generate_with_multiline_body(tmp_path: Path) -> None:
@@ -312,7 +313,7 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
     assert result.success is True
     # Verify commit messages were included in the prompt
     assert len(executor.prompt_calls) == 1
-    prompt = executor.prompt_calls[0]
+    prompt, system_prompt = executor.prompt_calls[0]
     assert "Initial implementation" in prompt
     assert "Added basic structure" in prompt
     assert "Fix bug in parsing" in prompt
@@ -343,5 +344,51 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
     assert result.success is True
     # Prompt should not mention Developer's Commit Messages
     assert len(executor.prompt_calls) == 1
-    prompt = executor.prompt_calls[0]
+    prompt, system_prompt = executor.prompt_calls[0]
     assert "Developer's Commit Messages" not in prompt
+
+
+def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
+    """Test that system prompt is passed via --system-prompt flag.
+
+    When USE_SYSTEM_PROMPT_REPLACEMENT is True, the generator should:
+    1. Pass the system prompt separately (not in the user prompt)
+    2. The user prompt should contain only context and diff (not system prompt)
+    """
+    from erk_shared.gateway.gt.prompts import COMMIT_MESSAGE_SYSTEM_PROMPT
+
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
+
+    executor = FakeClaudeExecutor(
+        claude_available=True,
+        simulated_prompt_output="Add new feature\n\nThis adds a new feature.",
+    )
+    generator = CommitMessageGenerator(executor)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="feature-branch",
+        parent_branch="main",
+    )
+
+    result, _ = _consume_generator(generator, request)
+
+    assert result.success is True
+
+    # Verify system_prompt was passed separately
+    assert len(executor.prompt_calls) == 1
+    prompt, system_prompt = executor.prompt_calls[0]
+
+    # System prompt should be passed separately
+    assert system_prompt is not None
+    assert system_prompt == COMMIT_MESSAGE_SYSTEM_PROMPT
+
+    # User prompt should NOT contain the system prompt text
+    # (since it's passed separately)
+    assert COMMIT_MESSAGE_SYSTEM_PROMPT not in prompt
+
+    # User prompt should still contain context and diff
+    assert "feature-branch" in prompt
+    assert "main" in prompt
+    assert "diff --git" in prompt

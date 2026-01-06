@@ -472,11 +472,14 @@ class RealClaudeExecutor(ClaudeExecutor):
         model: str = "haiku",
         tools: list[str] | None = None,
         cwd: Path | None = None,
+        system_prompt: str | None = None,
     ) -> PromptResult:
         """Execute a single prompt and return the result.
 
         Implementation details:
         - Uses subprocess.run with --print and --output-format text
+        - When system_prompt is provided, uses --system-prompt to replace
+          Claude Code's default system prompt
         - Returns PromptResult with success status and output
         """
         cmd = [
@@ -487,6 +490,8 @@ class RealClaudeExecutor(ClaudeExecutor):
             "--model",
             model,
         ]
+        if system_prompt is not None:
+            cmd.extend(["--system-prompt", system_prompt])
         if tools is not None:
             cmd.extend(["--allowedTools", ",".join(tools)])
         cmd.append(prompt)
