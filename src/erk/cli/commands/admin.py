@@ -1,5 +1,7 @@
 """Admin commands for repository configuration."""
 
+import json
+import subprocess
 from typing import Literal
 
 import click
@@ -151,3 +153,235 @@ def upgrade_repo(ctx: ErkContext) -> None:
     user_output("Next steps:")
     user_output("  erk artifact sync   # Sync skills, commands, hooks")
     user_output("  erk doctor          # Verify the upgrade")
+
+
+@admin_group.command("test-erk-impl-gh-workflow")
+@click.option("--issue", "-i", type=int, help="Existing issue number to use")
+@click.option("--watch", "-w", is_flag=True, help="Watch the workflow run after triggering")
+@click.pass_obj
+def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -> None:
+    """Test the erk-impl.yml GitHub Actions workflow.
+
+    This command automates testing of erk-impl workflow changes by:
+
+    \b
+    1. Ensuring the current branch exists on remote
+    2. Finding or creating a test issue
+    3. Creating a test branch and draft PR
+    4. Triggering the workflow with --ref set to your branch
+    5. Outputting the run URL
+
+    Use this when modifying .github/workflows/erk-impl.yml to test changes.
+    """
+    repo = discover_repo_context(ctx, ctx.cwd)
+
+    if repo.github is None:
+        user_output(click.style("Error: ", fg="red") + "Not a GitHub repository")
+        raise SystemExit(1)
+
+    # Convert GitHubRepoId to string format for gh CLI
+    repo_slug = f"{repo.github.owner}/{repo.github.repo}"
+
+    current_branch = ctx.git.get_current_branch(repo.root)
+    if current_branch is None:
+        user_output(click.style("Error: ", fg="red") + "Not on a branch (detached HEAD)")
+        raise SystemExit(1)
+
+    # Step 1: Ensure current branch exists on remote
+    user_output(f"Ensuring branch '{current_branch}' exists on remote...")
+    ctx.git.push_to_remote(repo.root, "origin", current_branch, set_upstream=True)
+    user_output(click.style("✓", fg="green") + f" Branch '{current_branch}' pushed to origin")
+
+    # Step 2: Find or create test issue
+    if issue is not None:
+        issue_number = issue
+        user_output(f"Using existing issue #{issue_number}")
+    else:
+        issue_number = _create_test_issue(repo_slug)
+        user_output(click.style("✓", fg="green") + f" Created test issue #{issue_number}")
+
+    # Step 3: Create test branch for implementation
+    timestamp = int(ctx.time.now().timestamp())
+    distinct_id = _base36_encode(timestamp)
+    test_branch = f"test-workflow-{distinct_id}"
+
+    user_output(f"Creating test branch '{test_branch}'...")
+    # Push master to the test branch using refspec syntax
+    ctx.git.push_to_remote(repo.root, "origin", f"master:{test_branch}")
+    user_output(click.style("✓", fg="green") + f" Test branch '{test_branch}' created")
+
+    # Step 4: Create draft PR
+    pr_number = _create_draft_pr(repo_slug, test_branch)
+    user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
+
+    # Step 5: Trigger workflow
+    username = ctx.issues.get_current_username()
+    if username is None:
+        user_output(click.style("Error: ", fg="red") + "Not authenticated with GitHub")
+        raise SystemExit(1)
+
+    user_output(f"Triggering erk-impl workflow from '{current_branch}'...")
+    _trigger_workflow(
+        repo_slug=repo_slug,
+        ref=current_branch,
+        issue_number=issue_number,
+        submitted_by=username,
+        distinct_id=distinct_id,
+        issue_title="Test workflow run",
+        branch_name=test_branch,
+        pr_number=pr_number,
+        base_branch="master",
+    )
+
+    # Step 6: Get run URL
+    ctx.time.sleep(2)  # Give GitHub a moment to create the run
+    run_url = _get_latest_run_url(repo_slug)
+
+    user_output("")
+    user_output(click.style("Workflow triggered successfully!", fg="green", bold=True))
+    user_output("")
+    user_output(f"Run URL: {run_url}")
+    user_output(f"Test branch: {test_branch}")
+    user_output(f"Draft PR: https://github.com/{repo_slug}/pull/{pr_number}")
+
+    if watch:
+        user_output("")
+        user_output("Watching run... (Ctrl+C to stop)")
+        subprocess.run(["gh", "run", "watch", "--repo", repo_slug], check=False)
+
+
+def _base36_encode(num: int) -> str:
+    """Encode a number to base36 string."""
+    chars = "0123456789abcdefghijklmnopqrstuvwxyz"
+    if num == 0:
+        return "0"
+    result = []
+    while num:
+        result.append(chars[num % 36])
+        num //= 36
+    return "".join(reversed(result))
+
+
+def _create_test_issue(repo_slug: str) -> int:
+    """Create a minimal test issue for workflow testing."""
+    # GH-API-AUDIT: GraphQL - create issue mutation
+    result = subprocess.run(
+        [
+            "gh",
+            "issue",
+            "create",
+            "--repo",
+            repo_slug,
+            "--title",
+            "Test workflow run",
+            "--body",
+            "This issue was created to test the erk-impl workflow. Safe to close.",
+            "--label",
+            "test",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    # Output is like: https://github.com/owner/repo/issues/123
+    url = result.stdout.strip()
+    return int(url.split("/")[-1])
+
+
+def _create_draft_pr(repo_slug: str, branch: str) -> int:
+    """Create a draft PR for the test branch."""
+    # GH-API-AUDIT: GraphQL - create PR mutation
+    result = subprocess.run(
+        [
+            "gh",
+            "pr",
+            "create",
+            "--repo",
+            repo_slug,
+            "--head",
+            branch,
+            "--base",
+            "master",
+            "--draft",
+            "--title",
+            "Test workflow run",
+            "--body",
+            "This PR was created to test the erk-impl workflow. Safe to close.",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    # Output is like: https://github.com/owner/repo/pull/123
+    url = result.stdout.strip()
+    return int(url.split("/")[-1])
+
+
+def _trigger_workflow(
+    *,
+    repo_slug: str,
+    ref: str,
+    issue_number: int,
+    submitted_by: str,
+    distinct_id: str,
+    issue_title: str,
+    branch_name: str,
+    pr_number: int,
+    base_branch: str,
+) -> None:
+    """Trigger the erk-impl workflow with the given parameters."""
+    # GH-API-AUDIT: REST - POST actions/workflows/{workflow_id}/dispatches
+    subprocess.run(
+        [
+            "gh",
+            "workflow",
+            "run",
+            "erk-impl.yml",
+            "--repo",
+            repo_slug,
+            "--ref",
+            ref,
+            "-f",
+            f"issue_number={issue_number}",
+            "-f",
+            f"submitted_by={submitted_by}",
+            "-f",
+            f"distinct_id={distinct_id}",
+            "-f",
+            f"issue_title={issue_title}",
+            "-f",
+            f"branch_name={branch_name}",
+            "-f",
+            f"pr_number={pr_number}",
+            "-f",
+            f"base_branch={base_branch}",
+        ],
+        check=True,
+    )
+
+
+def _get_latest_run_url(repo_slug: str) -> str:
+    """Get the URL of the latest erk-impl workflow run."""
+    # GH-API-AUDIT: REST - GET actions/runs
+    result = subprocess.run(
+        [
+            "gh",
+            "run",
+            "list",
+            "--repo",
+            repo_slug,
+            "--workflow",
+            "erk-impl.yml",
+            "--limit",
+            "1",
+            "--json",
+            "url",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    runs = json.loads(result.stdout)
+    if runs:
+        return runs[0]["url"]
+    return f"https://github.com/{repo_slug}/actions/workflows/erk-impl.yml"
