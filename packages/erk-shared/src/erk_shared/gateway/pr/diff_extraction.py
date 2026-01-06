@@ -5,6 +5,7 @@ It is part of the two-layer PR submission architecture, called after core_submit
 to get the diff for AI-powered commit message generation.
 """
 
+import re
 from collections.abc import Generator
 from pathlib import Path
 
@@ -12,6 +13,71 @@ from erk_shared.context.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import truncate_diff
 from erk_shared.scratch.scratch import write_scratch_file
+
+# Lock files that are auto-generated and add no value to PR descriptions.
+# These are filtered out before sending diffs to AI for analysis.
+EXCLUDED_LOCK_FILES = frozenset(
+    {
+        "uv.lock",
+        "package-lock.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "Cargo.lock",
+        "poetry.lock",
+        "Pipfile.lock",
+        "composer.lock",
+        "Gemfile.lock",
+    }
+)
+
+# Pattern to extract file path from diff header: "diff --git a/path/to/file b/path/to/file"
+_DIFF_FILE_PATH_PATTERN = re.compile(r"^diff --git a/(.+?) b/")
+
+
+def filter_diff_excluded_files(diff: str) -> str:
+    """Filter out lock files and other auto-generated files from a diff.
+
+    Splits the diff by 'diff --git' markers and removes sections where
+    the filename (basename) is in EXCLUDED_LOCK_FILES.
+
+    Args:
+        diff: The full diff string from git/GitHub
+
+    Returns:
+        Filtered diff with excluded file sections removed
+    """
+    if not diff:
+        return diff
+
+    # Split by "diff --git" while preserving the delimiter
+    # The first element will be empty or contain any content before the first diff
+    sections = re.split(r"(?=^diff --git )", diff, flags=re.MULTILINE)
+
+    filtered_sections: list[str] = []
+    for section in sections:
+        # Skip empty sections
+        if not section.strip():
+            continue
+
+        # Check if this section starts with a diff header
+        if not section.startswith("diff --git "):
+            # This is content before the first diff (usually empty), keep it
+            filtered_sections.append(section)
+            continue
+
+        # Extract the file path from the diff header
+        match = _DIFF_FILE_PATH_PATTERN.match(section)
+        if match:
+            file_path = match.group(1)
+            filename = Path(file_path).name
+
+            # Skip this section if the filename is in the excluded set
+            if filename in EXCLUDED_LOCK_FILES:
+                continue
+
+        filtered_sections.append(section)
+
+    return "".join(filtered_sections)
 
 
 def execute_diff_extraction(
@@ -42,6 +108,9 @@ def execute_diff_extraction(
     pr_diff = ctx.github.get_pr_diff(repo_root, pr_number)
     diff_lines = len(pr_diff.splitlines())
     yield ProgressEvent(f"PR diff retrieved ({diff_lines} lines)", style="success")
+
+    # Filter out lock files before truncation
+    pr_diff = filter_diff_excluded_files(pr_diff)
 
     # Truncate diff if needed
     diff_content, was_truncated = truncate_diff(pr_diff)
