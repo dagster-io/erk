@@ -137,6 +137,48 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
         assert "Claude CLI not found" in result.output
 
 
+def test_interactive_mode_uses_subshell_fallback_without_shell_integration() -> None:
+    """Verify interactive mode uses subshell fallback when ERK_SHELL is not set.
+
+    Without shell integration, execute_interactive_mode should call
+    spawn_worktree_subshell() instead of executor.execute_interactive().
+    """
+    from unittest.mock import MagicMock, patch
+
+    plan_issue = create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+
+        # Mock spawn_worktree_subshell to avoid actual subprocess execution
+        # and sys.exit to prevent test from exiting
+        mock_spawn = MagicMock(return_value=0)
+        with (
+            patch("erk.cli.commands.implement_shared.spawn_worktree_subshell", mock_spawn),
+            patch("erk.cli.commands.implement_shared.sys.exit"),
+        ):
+            # Do NOT set ERK_SHELL - this triggers subshell fallback path
+            runner.invoke(implement, ["#42"], obj=ctx)
+
+        # Verify spawn_worktree_subshell was called instead of executor.execute_interactive
+        assert mock_spawn.call_count == 1
+        assert len(executor.interactive_calls) == 0
+
+        # Verify the spawn call arguments
+        spawn_kwargs = mock_spawn.call_args[1]
+        assert "worktree_path" in spawn_kwargs
+        assert spawn_kwargs["claude_command"] == "/erk:plan-implement"
+        assert spawn_kwargs["dangerous"] is False
+
+
 # Non-Interactive Mode Tests
 
 

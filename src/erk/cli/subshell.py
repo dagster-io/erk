@@ -9,6 +9,8 @@ import os
 import subprocess
 from pathlib import Path
 
+import click
+
 
 def is_shell_integration_active() -> bool:
     """Check if ERK_SHELL env var is set (indicates shell wrapper is active)."""
@@ -100,8 +102,8 @@ def spawn_worktree_subshell(
 
     # Print welcome message
     welcome_msg = format_subshell_welcome_message(worktree_path, branch)
-    print(welcome_msg)
-    print()
+    click.echo(welcome_msg)
+    click.echo()
 
     # Build shell invocation
     # We use shell -i to get an interactive shell with user's configs
@@ -123,6 +125,9 @@ def spawn_worktree_subshell(
             f"{claude_cmd_str}; exec {user_shell}",
         ]
 
+    # Intentionally omit check=True: We want to capture and return the exit code
+    # from the subshell rather than raise an exception. The exit code propagates
+    # to the caller (sys.exit in execute_interactive_mode) for proper status.
     result = subprocess.run(
         shell_args,
         cwd=worktree_path,
