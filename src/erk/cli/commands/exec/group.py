@@ -98,6 +98,9 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
 )
 from erk.cli.commands.exec.scripts.update_dispatch_info import update_dispatch_info
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
+from erk.cli.commands.exec.scripts.validate_claude_credentials import (
+    validate_claude_credentials,
+)
 from erk.cli.commands.exec.scripts.validate_plan_content import (
     validate_plan_content,
 )
@@ -160,5 +163,6 @@ exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
+exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
 exec_group.add_command(validate_plan_content, name="validate-plan-content")
 exec_group.add_command(wrap_plan_in_metadata_block, name="wrap-plan-in-metadata-block")

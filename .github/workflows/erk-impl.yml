@@ -64,28 +64,17 @@ jobs:
       - name: Install Claude Code
         uses: ./.github/actions/setup-claude-code
 
-      - name: Validate Claude credentials
-        env:
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          # Check that at least one credential is set
-          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ] && [ -z "$ANTHROPIC_API_KEY" ]; then
-            echo "::error::Neither CLAUDE_CODE_OAUTH_TOKEN nor ANTHROPIC_API_KEY is set"
-            exit 1
-          fi
-          # Validate the credential by making a minimal API call
-          if ! claude --print --max-turns 1 "respond with ok" > /dev/null 2>&1; then
-            echo "::error::Claude authentication failed - API key may be expired or invalid"
-            exit 1
-          fi
-          echo "Claude credentials validated successfully"
-
       - name: Setup remaining tools
         run: |
           npm install -g prettier
           cd $GITHUB_WORKSPACE
           uv tool install -e . --with-editable ./packages/erk-shared
+
+      - name: Validate Claude credentials
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: erk exec validate-claude-credentials
 
       - name: Configure git
         env:
