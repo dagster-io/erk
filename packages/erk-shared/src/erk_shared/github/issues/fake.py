@@ -307,6 +307,10 @@ class FakeGitHubIssues(GitHubIssues):
             self._labels.add(label)
             self._created_labels.append((label, description, color))
 
+    def label_exists(self, repo_root: Path, label: str) -> bool:
+        """Check if label exists in fake storage (read-only)."""
+        return label in self._labels
+
     def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """Ensure label is present on issue in fake storage (idempotent).
 

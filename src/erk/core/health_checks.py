@@ -714,17 +714,9 @@ def check_plans_repo_labels(
     labels = get_erk_label_definitions()
     missing_labels: list[str] = []
 
-    # Check each label exists
+    # Check each label exists (LBYL pattern - check before reporting)
     for label in labels:
-        try:
-            github_issues.ensure_label_exists(
-                repo_root=repo_root,
-                label=label.name,
-                description=label.description,
-                color=label.color,
-            )
-        except RuntimeError:
-            # Label doesn't exist or we can't create it
+        if not github_issues.label_exists(repo_root, label.name):
             missing_labels.append(label.name)
 
     if missing_labels:

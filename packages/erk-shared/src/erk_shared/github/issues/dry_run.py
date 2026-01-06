@@ -83,6 +83,10 @@ class DryRunGitHubIssues(GitHubIssues):
     ) -> None:
         """No-op for ensuring label exists in dry-run mode."""
 
+    def label_exists(self, repo_root: Path, label: str) -> bool:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.label_exists(repo_root, label)
+
     def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """No-op for ensuring label in dry-run mode (idempotent)."""
 

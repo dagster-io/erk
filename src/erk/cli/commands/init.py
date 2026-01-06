@@ -43,6 +43,7 @@ from erk.core.shell import Shell
 from erk_shared.context.types import GlobalConfig
 from erk_shared.extraction.claude_installation import RealClaudeInstallation
 from erk_shared.git.real import RealGit
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
 from erk_shared.output.output import user_confirm, user_output
@@ -344,6 +345,34 @@ def offer_claude_hook_setup(repo_root: Path) -> None:
     user_output(click.style("✓", fg="green") + " Added erk hooks")
 
 
+def create_plans_repo_labels(
+    repo_root: Path,
+    plans_repo: str,
+    github_issues: GitHubIssues,
+) -> str | None:
+    """Create erk labels in the target issues repository.
+
+    Args:
+        repo_root: Path to the working repository root (used for gh CLI context)
+        plans_repo: Target repository in "owner/repo" format
+        github_issues: GitHubIssues interface for label operations
+
+    Returns:
+        None on success, error message string on failure
+    """
+    labels = get_erk_label_definitions()
+
+    for label in labels:
+        github_issues.ensure_label_exists(
+            repo_root=repo_root,
+            label=label.name,
+            description=label.description,
+            color=label.color,
+        )
+
+    return None
+
+
 def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
     """Offer to set up erk labels in the target issues repository.
 
@@ -363,16 +392,9 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
         return
 
     github_issues = RealGitHubIssues(target_repo=plans_repo)
-    labels = get_erk_label_definitions()
 
     try:
-        for label in labels:
-            github_issues.ensure_label_exists(
-                repo_root=repo_root,
-                label=label.name,
-                description=label.description,
-                color=label.color,
-            )
+        create_plans_repo_labels(repo_root, plans_repo, github_issues)
         user_output(click.style("✓", fg="green") + f" Labels configured in {plans_repo}")
     except RuntimeError as e:
         warning = click.style("⚠️  Warning: ", fg="yellow")

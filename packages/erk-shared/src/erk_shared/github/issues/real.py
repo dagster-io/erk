@@ -363,6 +363,37 @@ class RealGitHubIssues(GitHubIssues):
         # Cache newly created label
         self._label_cache.add(label)
 
+    def label_exists(self, repo_root: Path, label: str) -> bool:
+        """Check if label exists in repository (read-only).
+
+        Uses the label cache if available to avoid redundant API calls.
+        """
+        # Lazily initialize cache on first use
+        if self._label_cache is None:
+            self._label_cache = RealLabelCache(repo_root)
+
+        # Fast path: if cached, we know it exists
+        if self._label_cache.has(label):
+            return True
+
+        # GH-API-AUDIT: REST - GET labels
+        base_check_cmd = [
+            "gh",
+            "api",
+            "repos/{owner}/{repo}/labels",
+            "--jq",
+            f'.[] | select(.name == "{label}") | .name',
+        ]
+        check_cmd = self._build_gh_command(base_check_cmd)
+        stdout = execute_gh_command(check_cmd, repo_root)
+
+        if stdout.strip():
+            # Label exists - cache it for future calls
+            self._label_cache.add(label)
+            return True
+
+        return False
+
     def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """Ensure label is present on issue using gh CLI REST API (idempotent).
 

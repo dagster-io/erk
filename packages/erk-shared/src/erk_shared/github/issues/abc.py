@@ -178,6 +178,22 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
+    def label_exists(self, repo_root: Path, label: str) -> bool:
+        """Check if a label exists in the repository (read-only).
+
+        Args:
+            repo_root: Repository root directory
+            label: Label name to check
+
+        Returns:
+            True if label exists, False otherwise
+
+        Raises:
+            RuntimeError: If gh CLI fails (not installed, not authenticated, or command error)
+        """
+        ...
+
+    @abstractmethod
     def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """Ensure a label is present on an existing issue (idempotent).
 

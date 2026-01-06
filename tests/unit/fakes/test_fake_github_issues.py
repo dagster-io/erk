@@ -943,3 +943,44 @@ def test_get_prs_referencing_issue_different_issue_numbers() -> None:
     assert len(result_20) == 1
     assert result_20[0].number == 200
     assert result_30 == []  # No PRs configured for issue 30
+
+
+# ============================================================================
+# label_exists() tests
+# ============================================================================
+
+
+def test_label_exists_returns_true_for_existing_label() -> None:
+    """Test label_exists returns True when label exists in fake storage."""
+    issues = FakeGitHubIssues(labels={"erk-plan", "erk-objective"})
+
+    assert issues.label_exists(sentinel_path(), "erk-plan") is True
+    assert issues.label_exists(sentinel_path(), "erk-objective") is True
+
+
+def test_label_exists_returns_false_for_missing_label() -> None:
+    """Test label_exists returns False when label doesn't exist."""
+    issues = FakeGitHubIssues(labels={"erk-plan"})
+
+    assert issues.label_exists(sentinel_path(), "nonexistent") is False
+
+
+def test_label_exists_empty_labels() -> None:
+    """Test label_exists returns False when no labels configured."""
+    issues = FakeGitHubIssues()
+
+    assert issues.label_exists(sentinel_path(), "any-label") is False
+
+
+def test_label_exists_after_ensure_label_exists() -> None:
+    """Test label_exists returns True after ensure_label_exists creates it."""
+    issues = FakeGitHubIssues()
+
+    # Initially doesn't exist
+    assert issues.label_exists(sentinel_path(), "new-label") is False
+
+    # Create it
+    issues.ensure_label_exists(sentinel_path(), "new-label", "Description", "FF0000")
+
+    # Now it exists
+    assert issues.label_exists(sentinel_path(), "new-label") is True
