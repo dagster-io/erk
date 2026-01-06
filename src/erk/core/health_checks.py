@@ -346,9 +346,7 @@ def check_workflow_permissions(ctx: ErkContext, repo_root: Path, admin: GitHubAd
         )
 
 
-def check_erk_queue_pat_secret(
-    ctx: ErkContext, repo_root: Path, admin: GitHubAdmin
-) -> CheckResult:
+def check_erk_queue_pat_secret(ctx: ErkContext, repo_root: Path, admin: GitHubAdmin) -> CheckResult:
     """Check if ERK_QUEUE_GH_PAT secret exists in the repository.
 
     This secret is required for erk's remote implementation queue feature.

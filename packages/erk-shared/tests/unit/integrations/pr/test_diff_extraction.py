@@ -16,7 +16,6 @@ from erk_shared.gateway.pr.diff_extraction import (
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 
-
 # --- Tests for filter_diff_excluded_files ---
 
 
