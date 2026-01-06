@@ -1188,6 +1188,8 @@ class ErkDashApp(App):
             issue_number: The plan issue number
             issue_url: The GitHub issue URL
         """
+        # Error boundary: catch all exceptions from the close operation to display
+        # them as toast notifications rather than crashing the TUI.
         try:
             closed_prs = self._provider.close_plan(issue_number, issue_url)
             # Success toast
