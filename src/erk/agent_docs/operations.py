@@ -33,6 +33,10 @@ CATEGORY_DESCRIPTIONS: dict[str, str] = {
         "Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). "
         "Add docs here for cross-cutting technical patterns."
     ),
+    "documentation": (
+        "Explore when structuring or writing documentation. "
+        "Add docs here for documentation methodology and best practices."
+    ),
     "cli": (
         "Explore when building CLI commands or output formatting. "
         "Add docs here for Click patterns and terminal UX."
