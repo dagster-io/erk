@@ -1,0 +1,63 @@
+site_name: Erk Documentation
+site_url: https://dagster-io.github.io/erk/
+repo_url: https://github.com/dagster-io/erk
+repo_name: dagster-io/erk
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+  palette:
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+docs_dir: docs
+
+nav:
+  - Home: README.md
+  - Getting Started:
+      - getting-started/README.md
+      - Prerequisites: getting-started/prerequisites.md
+      - Installation: getting-started/installation.md
+      - Your First Plan: getting-started/first-plan.md
+      - Shell Integration: getting-started/shell-integration.md
+  - Concepts:
+      - concepts/README.md
+      - Worktrees: concepts/worktrees.md
+      - Stacked PRs: concepts/stacked-prs.md
+      - Plan Mode: concepts/plan-mode.md
+      - The Workflow: concepts/the-workflow.md
+      - Plan-Oriented Engineering: concepts/plan-oriented-engineering.md
+  - Guides:
+      - guides/README.md
+      - Local Workflow: guides/local-workflow.md
+      - Remote Execution: guides/remote-execution.md
+      - PR Checkout & Sync: guides/pr-checkout-sync.md
+      - Conflict Resolution: guides/conflict-resolution.md
+      - Planless Workflow: guides/planless-workflow.md
+      - Documentation Extraction: guides/documentation-extraction.md
+  - Reference:
+      - reference/README.md
+      - Commands: reference/commands.md
+      - Slash Commands: reference/slash-commands.md
+      - Configuration: reference/configuration.md
+      - File Locations: reference/file-locations.md
+  - Troubleshooting:
+      - troubleshooting/README.md
+      - Shell Integration: troubleshooting/shell-integration.md
+      - Graphite Issues: troubleshooting/graphite-issues.md
+      - FAQ: troubleshooting/faq.md
+
+exclude_docs: |
+  learned/
+  developer/
+  user/
+  public-content/
