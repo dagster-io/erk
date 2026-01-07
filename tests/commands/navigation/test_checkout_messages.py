@@ -8,6 +8,8 @@ generation business logic.
 import os
 from unittest.mock import patch
 
+import pytest
+
 from erk.cli.commands.branch.checkout_cmd import _perform_checkout
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -62,15 +64,21 @@ def test_message_case_1_already_on_target_branch_in_current_worktree() -> None:
         # Build context with cwd=feature_wt (already in target location)
         test_ctx = env.build_context(git=git_ops, cwd=feature_wt)
 
+        worktrees = [WorktreeInfo(path=feature_wt, branch="feature-1")]
+
         # Call _perform_checkout in script mode
-        _perform_checkout(
-            ctx=test_ctx,
-            repo_root=env.cwd,
-            target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
-            branch="feature-1",
-            script=True,
-            is_newly_created=False,
-        )
+        # navigate_to_worktree calls sys.exit(0) after writing the script
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
+                branch="feature-1",
+                script=True,
+                is_newly_created=False,
+                worktrees=worktrees,
+            )
+        assert exc_info.value.code == 0
 
         # Verify script was written
         assert env.script_writer.last_script is not None
@@ -113,15 +121,24 @@ def test_message_case_2_switched_to_existing_worktree_standard_naming() -> None:
         # Build context with cwd=env.cwd (root worktree, different from target)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=feature_wt, branch="feature-1"),
+        ]
+
         # Call _perform_checkout in script mode
-        _perform_checkout(
-            ctx=test_ctx,
-            repo_root=env.cwd,
-            target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
-            branch="feature-1",
-            script=True,
-            is_newly_created=False,
-        )
+        # navigate_to_worktree calls sys.exit(0) after writing the script
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
+                branch="feature-1",
+                script=True,
+                is_newly_created=False,
+                worktrees=worktrees,
+            )
+        assert exc_info.value.code == 0
 
         # Verify script was written
         assert env.script_writer.last_script is not None
@@ -165,15 +182,24 @@ def test_message_case_2_switched_to_existing_worktree_nonstandard_naming() -> No
         # Build context with cwd=env.cwd (root worktree, different from target)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=feature_wt, branch="feature-1"),
+        ]
+
         # Call _perform_checkout in script mode
-        _perform_checkout(
-            ctx=test_ctx,
-            repo_root=env.cwd,
-            target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
-            branch="feature-1",
-            script=True,
-            is_newly_created=False,
-        )
+        # navigate_to_worktree calls sys.exit(0) after writing the script
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
+                branch="feature-1",
+                script=True,
+                is_newly_created=False,
+                worktrees=worktrees,
+            )
+        assert exc_info.value.code == 0
 
         # Verify script was written
         assert env.script_writer.last_script is not None
@@ -216,15 +242,24 @@ def test_message_case_3_switched_and_checked_out_branch() -> None:
         # Build context with cwd=env.cwd (root worktree)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=feature_wt, branch="other-branch"),
+        ]
+
         # Call _perform_checkout in script mode - will checkout feature-1
-        _perform_checkout(
-            ctx=test_ctx,
-            repo_root=env.cwd,
-            target_worktree=WorktreeInfo(path=feature_wt, branch="other-branch"),
-            branch="feature-1",
-            script=True,
-            is_newly_created=False,
-        )
+        # navigate_to_worktree calls sys.exit(0) after writing the script
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=feature_wt, branch="other-branch"),
+                branch="feature-1",
+                script=True,
+                is_newly_created=False,
+                worktrees=worktrees,
+            )
+        assert exc_info.value.code == 0
 
         # Verify git checkout was called
         assert len(git_ops.checked_out_branches) == 1
@@ -269,15 +304,24 @@ def test_message_case_4_switched_to_newly_created_worktree() -> None:
         # Build context with cwd=env.cwd (root worktree)
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=new_wt, branch="new-feature"),
+        ]
+
         # Call _perform_checkout with is_newly_created=True
-        _perform_checkout(
-            ctx=test_ctx,
-            repo_root=env.cwd,
-            target_worktree=WorktreeInfo(path=new_wt, branch="new-feature"),
-            branch="new-feature",
-            script=True,
-            is_newly_created=True,
-        )
+        # navigate_to_worktree calls sys.exit(0) after writing the script
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=new_wt, branch="new-feature"),
+                branch="new-feature",
+                script=True,
+                is_newly_created=True,
+                worktrees=worktrees,
+            )
+        assert exc_info.value.code == 0
 
         # Verify script was written
         assert env.script_writer.last_script is not None
@@ -316,15 +360,24 @@ def test_message_colorization_applied() -> None:
 
         test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
 
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=feature_wt, branch="feature-1"),
+        ]
+
         # Call _perform_checkout in script mode
-        _perform_checkout(
-            ctx=test_ctx,
-            repo_root=env.cwd,
-            target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
-            branch="feature-1",
-            script=True,
-            is_newly_created=False,
-        )
+        # navigate_to_worktree calls sys.exit(0) after writing the script
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
+                branch="feature-1",
+                script=True,
+                is_newly_created=False,
+                worktrees=worktrees,
+            )
+        assert exc_info.value.code == 0
 
         # Verify script was written
         assert env.script_writer.last_script is not None
@@ -368,6 +421,8 @@ def test_message_non_script_mode_case_1() -> None:
         graphite = _graphite_with_branch_tracked("feature-1")
         test_ctx = env.build_context(git=git_ops, graphite=graphite, cwd=feature_wt)
 
+        worktrees = [WorktreeInfo(path=feature_wt, branch="feature-1")]
+
         # Capture stderr (where user_output writes)
         captured_stderr = StringIO()
         old_stderr = sys.stderr
@@ -385,6 +440,7 @@ def test_message_non_script_mode_case_1() -> None:
                     branch="feature-1",
                     script=False,
                     is_newly_created=False,
+                    worktrees=worktrees,
                 )
         finally:
             sys.stderr = old_stderr
@@ -429,6 +485,11 @@ def test_message_non_script_mode_case_4() -> None:
         graphite = _graphite_with_branch_tracked("new-feature")
         test_ctx = env.build_context(git=git_ops, graphite=graphite, cwd=env.cwd)
 
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=new_wt, branch="new-feature"),
+        ]
+
         # Capture stderr (where user_output writes)
         captured_stderr = StringIO()
         old_stderr = sys.stderr
@@ -446,6 +507,7 @@ def test_message_non_script_mode_case_4() -> None:
                     branch="new-feature",
                     script=False,
                     is_newly_created=True,
+                    worktrees=worktrees,
                 )
         finally:
             sys.stderr = old_stderr

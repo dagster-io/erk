@@ -3,17 +3,14 @@
 This command fetches PR code and creates a worktree for local review/testing.
 """
 
-import sys
-
 import click
 
-from erk.cli.activation import render_activation_script
 from erk.cli.alias import alias
+from erk.cli.commands.checkout_helpers import navigate_to_worktree
 from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
-from erk.cli.subshell import is_shell_integration_active, spawn_simple_subshell
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.types import PRNotFound
@@ -75,31 +72,18 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
     existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
     if existing_worktree is not None:
         # Branch already exists in a worktree - activate it
-        if script:
-            activation_script = render_activation_script(
-                worktree_path=existing_worktree,
-                target_subpath=None,
-                post_cd_commands=None,
-                final_message=f'echo "Went to existing worktree for PR #{pr_number}"',
-                comment="work activate-script",
-            )
-            result = ctx.script_writer.write_activation_script(
-                activation_script,
-                command_name="pr-checkout",
-                comment=f"activate PR #{pr_number}",
-            )
-            result.output_for_shell_integration()
-        elif not is_shell_integration_active():
-            # Spawn subshell for navigation
-            exit_code = spawn_simple_subshell(
-                ctx.shell,
-                worktree_path=existing_worktree,
-                branch=branch_name,
-                shell=None,
-            )
-            sys.exit(exit_code)
-        else:
-            styled_path = click.style(str(existing_worktree), fg="cyan", bold=True)
+        styled_path = click.style(str(existing_worktree), fg="cyan", bold=True)
+        should_output = navigate_to_worktree(
+            ctx,
+            worktree_path=existing_worktree,
+            branch=branch_name,
+            script=script,
+            command_name="pr-checkout",
+            script_message=f'echo "Went to existing worktree for PR #{pr_number}"',
+            relative_path=None,
+            post_cd_commands=None,
+        )
+        if should_output:
             user_output(f"PR #{pr_number} already checked out at {styled_path}")
         return
 
@@ -160,30 +144,17 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
-    # Output based on mode
-    if script:
-        activation_script = render_activation_script(
-            worktree_path=worktree_path,
-            target_subpath=None,
-            post_cd_commands=None,
-            final_message=f'echo "Checked out PR #{pr_number} at $(pwd)"',
-            comment="work activate-script",
-        )
-        result = ctx.script_writer.write_activation_script(
-            activation_script,
-            command_name="pr-checkout",
-            comment=f"activate PR #{pr_number}",
-        )
-        result.output_for_shell_integration()
-    elif not is_shell_integration_active():
-        # Spawn subshell for navigation
-        exit_code = spawn_simple_subshell(
-            ctx.shell,
-            worktree_path=worktree_path,
-            branch=branch_name,
-            shell=None,
-        )
-        sys.exit(exit_code)
-    else:
-        styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
+    # Navigate to the new worktree
+    styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
+    should_output = navigate_to_worktree(
+        ctx,
+        worktree_path=worktree_path,
+        branch=branch_name,
+        script=script,
+        command_name="pr-checkout",
+        script_message=f'echo "Checked out PR #{pr_number} at $(pwd)"',
+        relative_path=None,
+        post_cd_commands=None,
+    )
+    if should_output:
         user_output(f"Created worktree for PR #{pr_number} at {styled_path}")

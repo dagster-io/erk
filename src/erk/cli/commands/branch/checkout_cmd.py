@@ -1,18 +1,16 @@
 """Checkout command - find and switch to a worktree by branch name."""
 
-import sys
 from pathlib import Path
 
 import click
 
-from erk.cli.activation import render_activation_script
 from erk.cli.alias import alias
+from erk.cli.commands.checkout_helpers import navigate_to_worktree
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
-from erk.cli.subshell import is_shell_integration_active, spawn_simple_subshell
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
@@ -136,8 +134,8 @@ def _perform_checkout(
     target_worktree: WorktreeInfo,
     branch: str,
     script: bool,
-    is_newly_created: bool = False,
-    worktrees: list[WorktreeInfo] | None = None,
+    is_newly_created: bool,
+    worktrees: list[WorktreeInfo] | None,
 ) -> None:
     """Perform the actual checkout and switch to a worktree.
 
@@ -147,7 +145,7 @@ def _perform_checkout(
         target_worktree: The worktree to switch to
         branch: Target branch name
         script: Whether to output only the activation script
-        is_newly_created: Whether the worktree was just created (default False)
+        is_newly_created: Whether the worktree was just created
         worktrees: Optional list of worktrees (for relative path computation)
     """
     target_path = target_worktree.path
@@ -162,7 +160,6 @@ def _perform_checkout(
 
     # If we need to checkout, do it before generating the activation script
     if need_checkout:
-        # Checkout the branch in the target worktree
         ctx.git.checkout_branch(target_path, branch)
 
     # Ensure branch is tracked with Graphite (idempotent)
@@ -170,95 +167,54 @@ def _perform_checkout(
         ctx, repo_root=repo_root, target_path=target_path, branch=branch, script=script
     )
 
-    if need_checkout:
-        # Show stack context
-        if not script:
-            stack = ctx.graphite.get_branch_stack(ctx.git, repo_root, branch)
-            if stack:
-                user_output(f"Stack: {' -> '.join(stack)}")
-            user_output(f"Checked out '{branch}' in worktree")
+    if need_checkout and not script:
+        # Show stack context in non-script mode
+        stack = ctx.graphite.get_branch_stack(ctx.git, repo_root, branch)
+        if stack:
+            user_output(f"Stack: {' -> '.join(stack)}")
+        user_output(f"Checked out '{branch}' in worktree")
 
-    # Generate activation script
-    if script:
-        # Script mode: always generate script (for shell integration or manual sourcing)
-        is_switching_location = current_cwd != target_path
+    # Compute four-case message for script and user output
+    worktree_name = target_path.name
+    is_switching_location = current_cwd != target_path
 
-        # Determine worktree name from path
-        worktree_name = target_path.name
+    # Generate styled script message (used for script mode and as basis for user output)
+    styled_wt = click.style(worktree_name, fg="cyan", bold=True)
+    styled_branch = click.style(branch, fg="yellow")
 
-        # Four-case message logic:
-        if is_newly_created:
-            # Case 4: Switched to newly created worktree
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            switch_message = f'echo "Switched to new worktree {styled_wt}"'
-        elif not is_switching_location:
-            # Case 1: Already on target branch in current worktree
-            styled_branch = click.style(branch, fg="yellow")
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            switch_message = f'echo "Already on branch {styled_branch} in worktree {styled_wt}"'
-        elif not need_checkout:
-            # Case 2: Switched to existing worktree with branch already checked out
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            if worktree_name == branch:
-                # Standard naming
-                switch_message = f'echo "Switched to worktree {styled_wt}"'
-            else:
-                # Edge case: non-standard naming
-                styled_branch = click.style(branch, fg="yellow")
-                switch_message = f'echo "Switched to worktree {styled_wt} (branch {styled_branch})"'
+    if is_newly_created:
+        script_message = f'echo "Switched to new worktree {styled_wt}"'
+        user_message = f"Switched to new worktree {styled_wt}"
+    elif not is_switching_location:
+        script_message = f'echo "Already on branch {styled_branch} in worktree {styled_wt}"'
+        user_message = f"Already on branch {styled_branch} in worktree {styled_wt}"
+    elif not need_checkout:
+        if worktree_name == branch:
+            script_message = f'echo "Switched to worktree {styled_wt}"'
+            user_message = f"Switched to worktree {styled_wt}"
         else:
-            # Case 3: Switched to existing worktree and checked out branch
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            styled_branch = click.style(branch, fg="yellow")
-            switch_message = (
-                f'echo "Switched to worktree {styled_wt} and checked out branch {styled_branch}"'
-            )
-
-        script_content = render_activation_script(
-            worktree_path=target_path,
-            target_subpath=relative_path,
-            post_cd_commands=None,
-            final_message=switch_message,
-            comment="work activate-script",
-        )
-
-        result = ctx.script_writer.write_activation_script(
-            script_content,
-            command_name="checkout",
-            comment=f"checkout {branch}",
-        )
-        result.output_for_shell_integration()
-    elif not is_shell_integration_active():
-        # Non-script mode without shell integration: spawn subshell
-        exit_code = spawn_simple_subshell(
-            ctx.shell,
-            worktree_path=target_path,
-            branch=branch,
-            shell=None,
-        )
-        sys.exit(exit_code)
+            script_message = f'echo "Switched to worktree {styled_wt} (branch {styled_branch})"'
+            user_message = f"Switched to worktree {styled_wt} (branch {styled_branch})"
     else:
-        # Non-script mode with shell integration: Apply same four-case logic with user_output()
-        worktree_name = target_path.name
+        script_message = (
+            f'echo "Switched to worktree {styled_wt} and checked out branch {styled_branch}"'
+        )
+        user_message = f"Switched to worktree {styled_wt} and checked out branch {styled_branch}"
 
-        if is_newly_created:
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            user_output(f"Switched to new worktree {styled_wt}")
-        elif ctx.cwd == target_path:
-            styled_branch = click.style(branch, fg="yellow")
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            user_output(f"Already on branch {styled_branch} in worktree {styled_wt}")
-        elif current_branch_in_worktree == branch:
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            if worktree_name == branch:
-                user_output(f"Switched to worktree {styled_wt}")
-            else:
-                styled_branch = click.style(branch, fg="yellow")
-                user_output(f"Switched to worktree {styled_wt} (branch {styled_branch})")
-        else:
-            styled_wt = click.style(worktree_name, fg="cyan", bold=True)
-            styled_branch = click.style(branch, fg="yellow")
-            user_output(f"Switched to worktree {styled_wt} and checked out branch {styled_branch}")
+    # Use consolidated navigation function
+    should_output_message = navigate_to_worktree(
+        ctx,
+        worktree_path=target_path,
+        branch=branch,
+        script=script,
+        command_name="checkout",
+        script_message=script_message,
+        relative_path=relative_path,
+        post_cd_commands=None,
+    )
+
+    if should_output_message:
+        user_output(user_message)
 
 
 @alias("co")
