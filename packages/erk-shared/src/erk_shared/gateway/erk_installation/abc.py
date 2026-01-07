@@ -4,10 +4,14 @@ This module defines the abstract interface for all ~/.erk/ filesystem operations
 Consolidates ConfigStore and command history path access into a single gateway.
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from erk_shared.context.types import GlobalConfig
+if TYPE_CHECKING:
+    from erk_shared.context.types import GlobalConfig
 
 
 class ErkInstallation(ABC):
