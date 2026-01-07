@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from erk.cli.subshell import (
     build_claude_command_string,
+    build_prompt_setup_command,
     detect_user_shell,
     format_subshell_welcome_message,
     is_shell_integration_active,
@@ -41,16 +42,6 @@ def test_detect_user_shell_returns_default_when_shell_not_set() -> None:
         assert detect_user_shell() == "/bin/sh"
 
 
-def test_format_subshell_welcome_message_contains_worktree_path(tmp_path: Path) -> None:
-    """Welcome message includes worktree path."""
-    worktree_path = tmp_path / "slot-01"
-    worktree_path.mkdir()
-
-    result = format_subshell_welcome_message(worktree_path, branch="feature-branch")
-
-    assert str(worktree_path) in result
-
-
 def test_format_subshell_welcome_message_contains_branch(tmp_path: Path) -> None:
     """Welcome message includes branch name."""
     worktree_path = tmp_path / "slot-01"
@@ -61,20 +52,6 @@ def test_format_subshell_welcome_message_contains_branch(tmp_path: Path) -> None
     assert "my-feature-branch" in result
 
 
-def test_format_subshell_welcome_message_contains_prompt_hint(tmp_path: Path) -> None:
-    """Welcome message includes prompt customization hint."""
-    worktree_path = tmp_path / "slot-01"
-    worktree_path.mkdir()
-
-    result = format_subshell_welcome_message(worktree_path, branch="feature")
-
-    # Check for key prompt customization elements
-    assert "ERK_SUBSHELL" in result
-    assert "ERK_WORKTREE_NAME" in result
-    assert "PS1" in result
-    assert ".bashrc" in result or ".zshrc" in result
-
-
 def test_format_subshell_welcome_message_contains_exit_instruction(tmp_path: Path) -> None:
     """Welcome message includes exit instruction."""
     worktree_path = tmp_path / "slot-01"
@@ -83,6 +60,20 @@ def test_format_subshell_welcome_message_contains_exit_instruction(tmp_path: Pat
     result = format_subshell_welcome_message(worktree_path, branch="feature")
 
     assert "exit" in result
+
+
+def test_format_subshell_welcome_message_is_concise(tmp_path: Path) -> None:
+    """Welcome message is concise (no manual prompt configuration hints)."""
+    worktree_path = tmp_path / "slot-01"
+    worktree_path.mkdir()
+
+    result = format_subshell_welcome_message(worktree_path, branch="feature")
+
+    # Should NOT contain manual prompt configuration hints since we auto-modify prompt
+    assert ".bashrc" not in result
+    assert ".zshrc" not in result
+    # Should say "worktree subshell" to indicate where we are
+    assert "worktree subshell" in result
 
 
 # build_claude_command_string tests
@@ -122,6 +113,52 @@ def test_build_claude_command_string_with_model() -> None:
 
     assert "--model" in result
     assert "opus" in result
+
+
+# build_prompt_setup_command tests
+
+
+def test_build_prompt_setup_command_for_bash() -> None:
+    """build_prompt_setup_command generates correct PS1 export for bash."""
+    result = build_prompt_setup_command("/bin/bash")
+
+    assert result == 'export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"'
+
+
+def test_build_prompt_setup_command_for_zsh() -> None:
+    """build_prompt_setup_command generates correct PS1 export for zsh."""
+    result = build_prompt_setup_command("/usr/local/bin/zsh")
+
+    assert result == 'export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"'
+
+
+def test_build_prompt_setup_command_for_sh() -> None:
+    """build_prompt_setup_command generates correct PS1 export for sh."""
+    result = build_prompt_setup_command("/bin/sh")
+
+    assert result == 'export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"'
+
+
+def test_build_prompt_setup_command_for_fish_returns_empty() -> None:
+    """build_prompt_setup_command returns empty for fish (different syntax)."""
+    result = build_prompt_setup_command("/usr/local/bin/fish")
+
+    assert result == ""
+
+
+def test_build_prompt_setup_command_for_unknown_shell_returns_empty() -> None:
+    """build_prompt_setup_command returns empty for unknown shells."""
+    result = build_prompt_setup_command("/usr/local/bin/exotic-shell")
+
+    assert result == ""
+
+
+def test_build_prompt_setup_command_returns_empty_when_opt_out_set() -> None:
+    """build_prompt_setup_command respects ERK_NO_PROMPT_MODIFY."""
+    with patch.dict(os.environ, {"ERK_NO_PROMPT_MODIFY": "1"}):
+        result = build_prompt_setup_command("/bin/bash")
+
+    assert result == ""
 
 
 # spawn_worktree_subshell tests using FakeShell
@@ -299,3 +336,105 @@ def test_spawn_worktree_subshell_passes_shell_path(tmp_path: Path) -> None:
 
     call = shell.subshell_calls[0]
     assert call.shell_path == "/bin/zsh"
+
+
+def test_spawn_worktree_subshell_includes_prompt_setup(tmp_path: Path) -> None:
+    """spawn_worktree_subshell includes prompt setup command for bash."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    # Ensure opt-out is NOT set
+    env_copy = {k: v for k, v in os.environ.items() if k != "ERK_NO_PROMPT_MODIFY"}
+    with patch.dict(os.environ, env_copy, clear=True):
+        spawn_worktree_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            claude_command="/erk:plan-implement",
+            dangerous=False,
+            model=None,
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should start with prompt setup
+    assert call.command.startswith('export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"')
+    # And still include the claude command
+    assert "/erk:plan-implement" in call.command
+
+
+def test_spawn_worktree_subshell_skips_prompt_setup_when_opt_out(tmp_path: Path) -> None:
+    """spawn_worktree_subshell skips prompt setup when ERK_NO_PROMPT_MODIFY is set."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    with patch.dict(os.environ, {"ERK_NO_PROMPT_MODIFY": "1"}):
+        spawn_worktree_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            claude_command="/erk:plan-implement",
+            dangerous=False,
+            model=None,
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should NOT contain prompt setup
+    assert "export PS1" not in call.command
+    # But still include the claude command
+    assert "/erk:plan-implement" in call.command
+
+
+def test_spawn_worktree_subshell_passes_opt_out_env_variable(tmp_path: Path) -> None:
+    """spawn_worktree_subshell passes ERK_NO_PROMPT_MODIFY to subshell env."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    with patch.dict(os.environ, {"ERK_NO_PROMPT_MODIFY": "1"}):
+        spawn_worktree_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            claude_command="/erk:plan-implement",
+            dangerous=False,
+            model=None,
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Verify ERK_NO_PROMPT_MODIFY is passed in environment
+    assert call.env.get("ERK_NO_PROMPT_MODIFY") == "1"
+
+
+def test_spawn_worktree_subshell_skips_prompt_setup_for_fish(tmp_path: Path) -> None:
+    """spawn_worktree_subshell skips prompt setup for fish shell."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    # Ensure opt-out is NOT set
+    env_copy = {k: v for k, v in os.environ.items() if k != "ERK_NO_PROMPT_MODIFY"}
+    with patch.dict(os.environ, env_copy, clear=True):
+        spawn_worktree_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            claude_command="/erk:plan-implement",
+            dangerous=False,
+            model=None,
+            shell="/usr/local/bin/fish",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should NOT contain prompt setup for fish
+    assert "export PS1" not in call.command
+    # But still include the claude command
+    assert "/erk:plan-implement" in call.command

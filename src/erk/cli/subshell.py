@@ -23,8 +23,38 @@ def detect_user_shell() -> str:
     return os.environ.get("SHELL", "/bin/sh")
 
 
+def build_prompt_setup_command(shell_path: str) -> str:
+    """Build shell command to modify PS1 for visual indicator.
+
+    Returns empty string if ERK_NO_PROMPT_MODIFY is set or for unsupported shells.
+
+    Args:
+        shell_path: Path to the shell executable (e.g., /bin/bash, /bin/zsh)
+
+    Returns:
+        Shell command to set PS1, or empty string if opt-out or unsupported shell.
+    """
+    # Check opt-out
+    if os.environ.get("ERK_NO_PROMPT_MODIFY") is not None:
+        return ""
+
+    # Detect shell type from path
+    shell_name = Path(shell_path).name
+
+    # Fish has different syntax and fish users typically use custom prompts
+    if shell_name == "fish":
+        return ""
+
+    # bash, zsh, sh all support the same PS1 syntax
+    if shell_name in ("bash", "zsh", "sh"):
+        return 'export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"'
+
+    # Unknown shell - skip prompt modification
+    return ""
+
+
 def format_subshell_welcome_message(worktree_path: Path, branch: str) -> str:
-    """Format welcome banner with prompt customization hint.
+    """Format welcome banner for worktree subshell.
 
     Args:
         worktree_path: Path to the worktree directory
@@ -33,19 +63,10 @@ def format_subshell_welcome_message(worktree_path: Path, branch: str) -> str:
     Returns:
         Formatted welcome message string
     """
-    prompt_hint = """\
-To show this in your prompt, add to ~/.bashrc or ~/.zshrc:
-  if [ -n "$ERK_SUBSHELL" ]; then
-    PS1="(erk:$ERK_WORKTREE_NAME) $PS1"
-  fi"""
-
     return f"""\
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-You are now in a subshell at: {worktree_path}
+You are now in a worktree subshell.
 Branch: {branch}
-
-{prompt_hint}
-
 Type 'exit' to return to your original directory.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"""
 
@@ -96,6 +117,7 @@ def spawn_worktree_subshell(
     Uses the Shell gateway to spawn user's shell with:
     - cwd set to worktree_path
     - ERK_SUBSHELL=1 and ERK_WORKTREE_NAME in environment
+    - Automatic PS1 modification for visual indicator (unless ERK_NO_PROMPT_MODIFY is set)
     - Shell command to launch Claude with provided args
 
     Args:
@@ -120,11 +142,25 @@ def spawn_worktree_subshell(
         model=model,
     )
 
+    # Build prompt setup command (may be empty if opt-out or unsupported shell)
+    prompt_setup = build_prompt_setup_command(user_shell)
+
+    # Combine prompt setup with Claude command
+    if prompt_setup:
+        full_command = f"{prompt_setup}; {claude_cmd_str}"
+    else:
+        full_command = claude_cmd_str
+
     # Build environment for subshell
-    subshell_env = {
+    subshell_env: dict[str, str] = {
         "ERK_SUBSHELL": "1",
         "ERK_WORKTREE_NAME": worktree_path.name,
     }
+
+    # Pass through ERK_NO_PROMPT_MODIFY if set (so nested subshells respect it)
+    opt_out_value = os.environ.get("ERK_NO_PROMPT_MODIFY")
+    if opt_out_value is not None:
+        subshell_env["ERK_NO_PROMPT_MODIFY"] = opt_out_value
 
     # Print welcome message
     welcome_msg = format_subshell_welcome_message(worktree_path, branch)
@@ -135,6 +171,6 @@ def spawn_worktree_subshell(
     return shell_gateway.spawn_subshell(
         cwd=worktree_path,
         shell_path=user_shell,
-        command=claude_cmd_str,
+        command=full_command,
         env=subshell_env,
     )
