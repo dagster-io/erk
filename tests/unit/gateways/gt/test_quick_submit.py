@@ -213,6 +213,7 @@ class TestQuickSubmitGraphiteDisabled:
         assert push_call.remote == "origin"
         assert push_call.branch == "feature-branch"
         assert push_call.set_upstream is True
+        assert push_call.force is True  # force=True for parity with Graphite
 
     def test_quick_submit_graphite_disabled_with_staged_changes(self, tmp_repo: Path) -> None:
         """Test quick-submit commits and pushes when Graphite is disabled."""
