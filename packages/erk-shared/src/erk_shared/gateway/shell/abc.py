@@ -99,3 +99,37 @@ class Shell(ABC):
             ...     print(f"Graphite version: {version}")
         """
         ...
+
+    @abstractmethod
+    def spawn_subshell(
+        self,
+        *,
+        cwd: Path,
+        shell_path: str,
+        command: str,
+        env: dict[str, str],
+    ) -> int:
+        """Spawn an interactive subshell that executes a command then remains open.
+
+        Used by erk implement to spawn a subshell in a worktree directory that
+        auto-launches Claude and then remains interactive for the user.
+
+        Args:
+            cwd: Working directory for the subshell
+            shell_path: Path to shell executable (e.g., "/bin/bash", "/bin/zsh")
+            command: Shell command string to execute before staying interactive
+            env: Environment variables to pass to the subshell
+
+        Returns:
+            Exit code from the subshell when user exits
+
+        Example:
+            >>> shell_ops = RealShell()
+            >>> exit_code = shell_ops.spawn_subshell(
+            ...     cwd=Path("/worktree"),
+            ...     shell_path="/bin/bash",
+            ...     command="claude --print '/erk:plan-implement'",
+            ...     env={"ERK_SUBSHELL": "1"},
+            ... )
+        """
+        ...

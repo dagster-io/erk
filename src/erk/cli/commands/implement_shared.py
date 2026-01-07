@@ -302,6 +302,7 @@ def execute_interactive_mode(
         if branch is None:
             branch = worktree_path.name
         exit_code = spawn_worktree_subshell(
+            ctx.shell,
             worktree_path=worktree_path,
             branch=branch,
             claude_command="/erk:plan-implement",

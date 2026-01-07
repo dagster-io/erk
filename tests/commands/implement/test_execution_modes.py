@@ -141,9 +141,11 @@ def test_interactive_mode_uses_subshell_fallback_without_shell_integration() -> 
     """Verify interactive mode uses subshell fallback when ERK_SHELL is not set.
 
     Without shell integration, execute_interactive_mode should call
-    spawn_worktree_subshell() instead of executor.execute_interactive().
+    spawn_worktree_subshell() via the Shell gateway instead of executor.execute_interactive().
     """
-    from unittest.mock import MagicMock, patch
+    from unittest.mock import patch
+
+    from erk_shared.gateway.shell import FakeShell
 
     plan_issue = create_sample_plan_issue()
 
@@ -156,27 +158,23 @@ def test_interactive_mode_uses_subshell_fallback_without_shell_integration() -> 
         )
         store, _ = create_plan_store_with_plans({"42": plan_issue})
         executor = FakeClaudeExecutor(claude_available=True)
-        ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
+        shell = FakeShell(subshell_exit_code=0)
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, claude_executor=executor, shell=shell
+        )
 
-        # Mock spawn_worktree_subshell to avoid actual subprocess execution
-        # and sys.exit to prevent test from exiting
-        mock_spawn = MagicMock(return_value=0)
-        with (
-            patch("erk.cli.commands.implement_shared.spawn_worktree_subshell", mock_spawn),
-            patch("erk.cli.commands.implement_shared.sys.exit"),
-        ):
+        # Patch sys.exit to prevent test from exiting
+        with patch("erk.cli.commands.implement_shared.sys.exit"):
             # Do NOT set ERK_SHELL - this triggers subshell fallback path
             runner.invoke(implement, ["#42"], obj=ctx)
 
-        # Verify spawn_worktree_subshell was called instead of executor.execute_interactive
-        assert mock_spawn.call_count == 1
+        # Verify spawn_subshell was called via the Shell gateway
+        assert len(shell.subshell_calls) == 1
         assert len(executor.interactive_calls) == 0
 
         # Verify the spawn call arguments
-        spawn_kwargs = mock_spawn.call_args[1]
-        assert "worktree_path" in spawn_kwargs
-        assert spawn_kwargs["claude_command"] == "/erk:plan-implement"
-        assert spawn_kwargs["dangerous"] is False
+        call = shell.subshell_calls[0]
+        assert "/erk:plan-implement" in call.command
 
 
 # Non-Interactive Mode Tests
