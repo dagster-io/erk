@@ -69,6 +69,14 @@ System browser launch abstraction.
 
 **Fake Features**: Success mode toggle, launch call tracking via `launched_urls` property.
 
+### ClaudeInstallation (`extraction/claude_installation/`)
+
+Gateway for `~/.claude/` filesystem operations (sessions, settings, plans).
+
+**Fake Features**: Configurable session data, project directory injection, in-memory settings.
+
+**When to use**: Any code that needs to read from or write to `~/.claude/` paths should use this gateway instead of `Path.home()` directly.
+
 ### Clipboard (`clipboard/`)
 
 System clipboard abstraction.
@@ -92,6 +100,14 @@ Graphite stack management operations.
 Erk worktree kit operations.
 
 **Fake Features**: In-memory worktree state, deletion tracking.
+
+### ErkInstallation (`gateway/erk_installation/`)
+
+Gateway for `~/.erk/` filesystem operations (config, command history, planners).
+
+**Fake Features**: In-memory config storage, configurable paths.
+
+**When to use**: Any code that needs to read from or write to `~/.erk/` paths should use this gateway instead of `Path.home()` directly.
 
 ### Session Store (`extraction/claude_code_session_store/`)
 
