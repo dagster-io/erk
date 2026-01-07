@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.slot.check_cmd import SyncIssue, run_sync_diagnostics
+from erk.cli.commands.slot.diagnostics import SyncIssue, run_sync_diagnostics
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
@@ -150,7 +150,6 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     Repairs all detectable issues by removing the stale assignment:
     orphan-state, missing-branch, branch-mismatch, and git-registry-missing.
 
-    Use `erk slot check` to see issues without repairing them.
     Use --force to skip the confirmation prompt.
     Use --dry-run to see what would be repaired without making changes.
     """

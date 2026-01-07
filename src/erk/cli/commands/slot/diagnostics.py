@@ -1,19 +1,14 @@
-"""Slot check command - check pool state consistency with disk and git."""
+"""Slot diagnostics - check pool state consistency with disk and git."""
 
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-import click
-from rich.console import Console
-from rich.table import Table
-
 from erk.cli.commands.slot.common import generate_slot_name
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.git.abc import Git, WorktreeInfo
-from erk_shared.output.output import user_output
 
 # Type alias for sync issue codes - using Literal for type safety
 SyncIssueCode = Literal[
@@ -86,7 +81,7 @@ def _check_orphan_states(
         ctx: Erk context (for git.path_exists)
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     issues: list[SyncIssue] = []
     for assignment in assignments:
@@ -111,7 +106,7 @@ def _check_orphan_dirs(
         fs_slots: Set of slot names found on filesystem
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     # Generate known slots from pool_size (same logic as slot list command)
     known_slots = {generate_slot_name(i) for i in range(1, state.pool_size + 1)}
@@ -141,7 +136,7 @@ def _check_missing_branches(
         repo_root: Path to the repository root
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     issues: list[SyncIssue] = []
     for assignment in assignments:
@@ -163,7 +158,7 @@ def _check_git_worktree_mismatch(
         git_slots: Dict of slot names to WorktreeInfo from git
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     issues: list[SyncIssue] = []
 
@@ -198,87 +193,6 @@ def _check_git_worktree_mismatch(
     return issues
 
 
-@dataclass(frozen=True)
-class SlotCheckResult:
-    """Result of checking a single slot."""
-
-    slot_name: str
-    assigned_branch: str | None
-    issues: tuple[SyncIssue, ...]
-
-
-# Human-readable descriptions for issue codes
-_ISSUE_DESCRIPTIONS: dict[SyncIssueCode, str] = {
-    "orphan-state": "dir missing",
-    "orphan-dir": "not in pool",
-    "missing-branch": "branch deleted",
-    "branch-mismatch": "branch mismatch",
-    "git-registry-missing": "not in git registry",
-    "untracked-worktree": "untracked",
-}
-
-
-def _extract_slot_name_from_issue(issue: SyncIssue) -> str | None:
-    """Extract slot name from issue message.
-
-    Returns None if slot name cannot be extracted.
-    """
-    # Issue messages follow patterns like:
-    # "Slot erk-managed-wt-01: ..."
-    # "Directory erk-managed-wt-05: ..."
-    msg = issue.message
-    if msg.startswith("Slot "):
-        return msg.split(":")[0].replace("Slot ", "")
-    if msg.startswith("Directory "):
-        return msg.split(":")[0].replace("Directory ", "")
-    return None
-
-
-def _build_slot_results(
-    *,
-    state: PoolState,
-    all_issues: list[SyncIssue],
-) -> tuple[SlotCheckResult, ...]:
-    """Build per-slot check results.
-
-    Args:
-        state: Pool state
-        all_issues: All issues found by diagnostics
-
-    Returns:
-        Tuple of SlotCheckResult for each slot in the pool
-    """
-    # Build lookup of slot_name -> assigned_branch
-    assignments_by_slot: dict[str, str] = {
-        a.slot_name: a.branch_name for a in state.assignments
-    }
-
-    # Group issues by slot name
-    issues_by_slot: dict[str, list[SyncIssue]] = {}
-    for issue in all_issues:
-        slot_name = _extract_slot_name_from_issue(issue)
-        if slot_name is not None:
-            if slot_name not in issues_by_slot:
-                issues_by_slot[slot_name] = []
-            issues_by_slot[slot_name].append(issue)
-
-    # Build results for all slots
-    results: list[SlotCheckResult] = []
-    for slot_num in range(1, state.pool_size + 1):
-        slot_name = generate_slot_name(slot_num)
-        assigned_branch = assignments_by_slot.get(slot_name)
-        slot_issues = tuple(issues_by_slot.get(slot_name, []))
-        results.append(
-            SlotCheckResult(
-                slot_name=slot_name,
-                assigned_branch=assigned_branch,
-                issues=slot_issues,
-            )
-        )
-
-    return tuple(results)
-
-
 def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> list[SyncIssue]:
     """Run all sync diagnostics and return issues found.
 
@@ -288,7 +202,7 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
         repo_root: Repository root path
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     repo = discover_repo_context(ctx, repo_root)
 
@@ -307,78 +221,3 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     issues.extend(_check_git_worktree_mismatch(state, git_slots))
 
     return issues
-
-
-@click.command("check")
-@click.pass_obj
-def slot_check(ctx: ErkContext) -> None:
-    """Check pool state consistency with disk and git.
-
-    Reports drift between:
-    - Pool state (pool.json)
-    - Filesystem (worktree directories)
-    - Git worktree registry
-
-    This is a diagnostic command - it does not modify anything.
-    """
-    repo = discover_repo_context(ctx, ctx.cwd)
-
-    # Load pool state
-    state = load_pool_state(repo.pool_json_path)
-    if state is None:
-        user_output("Error: No pool configured. Run `erk slot create` first.")
-        raise SystemExit(1) from None
-
-    # Run all diagnostics
-    issues = run_sync_diagnostics(ctx, state, repo.root)
-
-    # Build per-slot results
-    slot_results = _build_slot_results(state=state, all_issues=issues)
-
-    # Create Rich table
-    table = Table(show_header=True, header_style="bold", box=None)
-    table.add_column("Slot", style="cyan", no_wrap=True)
-    table.add_column("Branch", style="yellow", no_wrap=True)
-    table.add_column("Status", no_wrap=True)
-    table.add_column("Issues", no_wrap=True)
-
-    # Track counts for summary
-    ok_count = 0
-    error_count = 0
-
-    # Add rows for all slots
-    for result in slot_results:
-        # Format branch display
-        branch_display: str
-        if result.assigned_branch is not None:
-            branch_display = result.assigned_branch
-        else:
-            branch_display = "[dim]-[/dim]"
-
-        # Format status and issues
-        if result.issues:
-            status_display = "[red]error[/red]"
-            # Build comma-separated issue descriptions
-            issue_descriptions = [
-                _ISSUE_DESCRIPTIONS[issue.code] for issue in result.issues
-            ]
-            issues_display = f"[red]{', '.join(issue_descriptions)}[/red]"
-            error_count += 1
-        else:
-            status_display = "[green]ok[/green]"
-            issues_display = "[dim]-[/dim]"
-            ok_count += 1
-
-        table.add_row(
-            result.slot_name,
-            branch_display,
-            status_display,
-            issues_display,
-        )
-
-    # Output table to stderr (consistent with user_output convention)
-    console = Console(stderr=True, width=200, force_terminal=True)
-    console.print(table)
-
-    # Print summary
-    console.print(f"\nPool: {state.pool_size} slots | {ok_count} ok | {error_count} errors")
