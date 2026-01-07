@@ -79,11 +79,13 @@ def slot_repair(ctx: ErkContext, dry_run: bool) -> None:
 ```
 
 **When to use CLI preview flag:**
+
 - Command has a single mutating operation (e.g., save to file, delete record)
 - The "dry-run" behavior is just "don't execute the final step"
 - No complex multi-step workflows with rollback concerns
 
 **When to use dependency injection:**
+
 - Command performs multiple operations that should all be dry-run
 - Operations span multiple gateways (git + github + filesystem)
 - You need consistent dry-run behavior across the entire operation
