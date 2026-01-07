@@ -60,6 +60,22 @@ def _create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
     )
 
 
+def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_number: int) -> None:
+    """Create marker file storing the issue number of the saved plan.
+
+    This marker enables automatic plan updates - when user says "update plan",
+    Claude can read this marker to find the issue number and invoke /local:plan-update.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+        issue_number: The GitHub issue number where the plan was saved.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "plan-saved-issue.marker"
+    marker_file.write_text(str(issue_number), encoding="utf-8")
+
+
 @click.command(name="plan-save-to-issue")
 @click.option(
     "--format",
@@ -211,10 +227,16 @@ def plan_save_to_issue(
     session_context_chunks = 0
     session_ids: list[str] = []
 
-    # Step 9: Create marker file to indicate plan was saved
+    # Step 9: Create marker files to indicate plan was saved
     snapshot_result = None
     if effective_session_id:
         _create_plan_saved_marker(effective_session_id, repo_root)
+
+        # Step 9.0.1: Also store the issue number in a separate marker
+        # This enables automatic plan updates - when user says "update plan",
+        # Claude can read this marker to find the issue number
+        if result.issue_number is not None:
+            _create_plan_saved_issue_marker(effective_session_id, repo_root, result.issue_number)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
         # Determine plan file path

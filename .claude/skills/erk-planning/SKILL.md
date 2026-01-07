@@ -8,6 +8,23 @@ description: >
 
 # Erk Planning Skill
 
+## When to Load
+
+Load this skill when user mentions:
+
+- "update plan", "update the plan", "update issue"
+- "modify the plan", "change the plan"
+- "edit the issue", "update the issue"
+
+**When these triggers fire and a plan was saved in this session:**
+
+1. Check for `plan-saved-issue.marker` in session scratch:
+   ```bash
+   erk exec marker read --session-id <session-id> plan-saved-issue
+   ```
+2. If found (exit code 0), invoke `/local:plan-update <issue-number>` with the marker content
+3. If not found (exit code 1), ask user for issue number
+
 ## Overview
 
 Erk-plans are GitHub issues that track implementation plans. They have a two-part structure:
