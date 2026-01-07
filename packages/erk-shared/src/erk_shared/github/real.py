@@ -1452,7 +1452,8 @@ query {{
         try:
             stdout = execute_gh_command(cmd, repo_root)
         except RuntimeError:
-            # API call failed - return empty dict
+            # API call failed - return empty dict for graceful degradation
+            # This allows callers to proceed without PR data rather than crashing
             return {}
 
         data = json.loads(stdout)
