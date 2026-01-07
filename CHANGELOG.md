@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of ec69401d5 -->
+<!-- As of 74819a14e -->
 
 ### Major Changes
 
@@ -19,16 +19,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate Claude credentials in erk-impl workflow before execution (47ec0bf79)
 - Add Anthropic API authentication secret health check to `erk doctor` (aa5f943c1)
 - Add conditional erk-shared installation for monorepo flexibility (213823ebb)
+- Add `--dry-run` flag to `erk slot repair` for previewing repairs; repair now automatically fixes all four issue types (c827a5249)
 
 ### Changed
 
 - Support `erk land` without Graphite enabled (1f78eab5d)
+- Migrate diff extraction from GitHub API to local git to handle large diffs exceeding GitHub's ~20k line limit (74819a14e)
 
 ### Fixed
 
 - Fix CI autofix prompt variable substitution (b95cac421)
 - Fix statusline crash when creating RealGitHub instances without repo_info (25a7c2e51)
 - Fix GitHub integration by properly resolving Graphite implementation based on config (71c4bd811)
+- Improve plan issue closure detection with retry logic and closing reference validation (09dd785de)
+
+### Removed
+
+- Remove `erk slot check` command; functionality merged into `erk slot repair` (c827a5249)
+- Remove `show_pr_info` configuration flag; PR info now always fetched efficiently (86d6ccef7)
 
 ## [0.4.6] - 2026-01-06 12:21 PT
 
