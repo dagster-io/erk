@@ -8,6 +8,8 @@ get_issues_with_pr_linkages() to fetch issues + PR linkages in a single API call
 instead of separate calls for issues (~500ms) and PR linkages (~1500ms).
 """
 
+import logging
+
 from erk_shared.core.plan_list_service import PlanListData as PlanListData
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.github.abc import GitHub
@@ -87,10 +89,10 @@ class RealPlanListService(PlanListService):
                     for node_id, run in runs_by_node_id.items():
                         issue_number = node_id_to_issue[node_id]
                         workflow_runs[issue_number] = run
-                except Exception:
+                except Exception as e:
                     # Network/API failure - continue without workflow run data
                     # Dashboard will show "-" for run columns, which is acceptable
-                    pass
+                    logging.warning("Failed to fetch workflow runs: %s", e)
 
         return PlanListData(
             issues=issues,

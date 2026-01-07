@@ -19,6 +19,7 @@ class FakePlanDataProvider(PlanDataProvider):
 
     def __init__(
         self,
+        *,
         plans: list[PlanRowData] | None = None,
         clipboard: Clipboard | None = None,
         browser: BrowserLauncher | None = None,
