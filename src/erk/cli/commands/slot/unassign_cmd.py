@@ -105,7 +105,7 @@ def _find_assignment_by_slot(state: PoolState, slot_name: str) -> SlotAssignment
 
     Args:
         state: Current pool state
-        slot_name: A slot name (e.g., "erk-managed-wt-01")
+        slot_name: A slot name (e.g., "erk-slot-01")
 
     Returns:
         SlotAssignment if found, None otherwise
@@ -144,7 +144,7 @@ def _find_assignment_by_cwd(state: PoolState, cwd: Path) -> SlotAssignment | Non
 def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
     """Remove a branch assignment from a pool slot.
 
-    WORKTREE is the slot name (e.g., erk-managed-wt-01).
+    WORKTREE is the slot name (e.g., erk-slot-01).
 
     If no argument is provided, the current pool slot is detected from the
     working directory.
@@ -152,8 +152,8 @@ def slot_unassign(ctx: ErkContext, worktree: str | None) -> None:
     The worktree directory is kept for reuse with future assignments.
 
     Examples:
-        erk slot unassign erk-managed-wt-01    # Unassign by worktree name
-        erk slot unassign                      # Unassign current slot (from within pool worktree)
+        erk slot unassign erk-slot-01    # Unassign by worktree name
+        erk slot unassign                # Unassign current slot (from within pool worktree)
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 

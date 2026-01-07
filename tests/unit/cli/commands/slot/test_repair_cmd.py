@@ -73,7 +73,7 @@ def test_slot_repair_no_stale_assignments() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Build worktrees list including the slot worktree in git registry
@@ -101,7 +101,7 @@ def test_slot_repair_no_stale_assignments() -> None:
         )
 
         # Create pool state with a valid assignment (worktree exists)
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -122,7 +122,7 @@ def test_slot_repair_removes_stale_with_force() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory - simulates stale assignment
 
         git_ops = FakeGit(
@@ -144,7 +144,7 @@ def test_slot_repair_removes_stale_with_force() -> None:
         )
 
         # Create pool state with a stale assignment (worktree doesn't exist)
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -156,7 +156,7 @@ def test_slot_repair_removes_stale_with_force() -> None:
 
         assert result.exit_code == 0
         assert "Found 1 repairable issue" in result.output
-        assert "erk-managed-wt-01" in result.output
+        assert "erk-slot-01" in result.output
         assert "feature-test" in result.output
         assert "Removed 1 stale assignment" in result.output
 
@@ -172,9 +172,9 @@ def test_slot_repair_preserves_valid_assignments() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create two worktree paths - one exists, one doesn't
-        valid_wt_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        valid_wt_path = repo_dir / "worktrees" / "erk-slot-01"
         valid_wt_path.mkdir(parents=True)
-        stale_wt_path = repo_dir / "worktrees" / "erk-managed-wt-02"
+        stale_wt_path = repo_dir / "worktrees" / "erk-slot-02"
         # Do NOT create stale_wt_path
 
         # Build worktrees list including the valid slot worktree in git registry
@@ -201,8 +201,8 @@ def test_slot_repair_preserves_valid_assignments() -> None:
         )
 
         # Create pool state with one valid and one stale assignment
-        valid_assignment = _create_test_assignment("erk-managed-wt-01", "feature-a", valid_wt_path)
-        stale_assignment = _create_test_assignment("erk-managed-wt-02", "feature-b", stale_wt_path)
+        valid_assignment = _create_test_assignment("erk-slot-01", "feature-a", valid_wt_path)
+        stale_assignment = _create_test_assignment("erk-slot-02", "feature-b", stale_wt_path)
         initial_state = PoolState.test(assignments=(valid_assignment, stale_assignment))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -212,14 +212,14 @@ def test_slot_repair_preserves_valid_assignments() -> None:
 
         assert result.exit_code == 0
         assert "Found 1 repairable issue" in result.output
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-02" in result.output
         assert "feature-b" in result.output
 
         # Verify only stale assignment was removed
         state = erk_install.current_pool_state
         assert state is not None
         assert len(state.assignments) == 1
-        assert state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert state.assignments[0].slot_name == "erk-slot-01"
         assert state.assignments[0].branch_name == "feature-a"
 
 
@@ -228,7 +228,7 @@ def test_slot_repair_confirmation_required_without_force() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory
 
         git_ops = FakeGit(
@@ -248,7 +248,7 @@ def test_slot_repair_confirmation_required_without_force() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -273,7 +273,7 @@ def test_slot_repair_confirmation_yes() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory
 
         git_ops = FakeGit(
@@ -293,7 +293,7 @@ def test_slot_repair_confirmation_yes() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -317,7 +317,7 @@ def test_slot_repair_repairs_branch_mismatch() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Git registry shows different branch than pool.json
@@ -344,7 +344,7 @@ def test_slot_repair_repairs_branch_mismatch() -> None:
         )
 
         # Pool.json says expected-branch but git says actual-branch
-        assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "expected-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -368,11 +368,11 @@ def test_slot_repair_repairs_multiple_issues() -> None:
         repo_dir = env.setup_repo_structure()
 
         # One worktree with branch-mismatch (exists but wrong branch)
-        mismatch_wt_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        mismatch_wt_path = repo_dir / "worktrees" / "erk-slot-01"
         mismatch_wt_path.mkdir(parents=True)
 
         # One worktree that doesn't exist (orphan-state)
-        stale_wt_path = repo_dir / "worktrees" / "erk-managed-wt-02"
+        stale_wt_path = repo_dir / "worktrees" / "erk-slot-02"
         # Do NOT create stale_wt_path
 
         # Git registry shows slot-01 with wrong branch, slot-02 not in registry
@@ -403,11 +403,9 @@ def test_slot_repair_repairs_multiple_issues() -> None:
 
         # Create pool state with both issues
         mismatch_assignment = _create_test_assignment(
-            "erk-managed-wt-01", "expected-branch", mismatch_wt_path
+            "erk-slot-01", "expected-branch", mismatch_wt_path
         )
-        stale_assignment = _create_test_assignment(
-            "erk-managed-wt-02", "stale-branch", stale_wt_path
-        )
+        stale_assignment = _create_test_assignment("erk-slot-02", "stale-branch", stale_wt_path)
         initial_state = PoolState.test(assignments=(mismatch_assignment, stale_assignment))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -431,7 +429,7 @@ def test_slot_repair_repairs_missing_branch() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Build worktrees list including the slot worktree in git registry
@@ -457,7 +455,7 @@ def test_slot_repair_repairs_missing_branch() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -478,7 +476,7 @@ def test_slot_repair_repairs_git_registry_missing() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Worktree directory exists but NOT in git registry
@@ -499,7 +497,7 @@ def test_slot_repair_repairs_git_registry_missing() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -520,7 +518,7 @@ def test_slot_repair_dry_run_does_not_modify_state() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         # Do NOT create the directory - simulates stale assignment (orphan-state)
 
         git_ops = FakeGit(
@@ -540,7 +538,7 @@ def test_slot_repair_dry_run_does_not_modify_state() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -558,7 +556,7 @@ def test_slot_repair_dry_run_does_not_modify_state() -> None:
         # Verify state was NOT modified
         assert erk_install.current_pool_state is not None
         assert len(erk_install.current_pool_state.assignments) == 1
-        assert erk_install.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert erk_install.current_pool_state.assignments[0].slot_name == "erk-slot-01"
 
 
 def test_slot_repair_dry_run_branch_mismatch() -> None:
@@ -566,7 +564,7 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Git registry shows different branch than pool.json (branch-mismatch)
@@ -592,7 +590,7 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
         )
 
         # Pool.json says expected-branch but git says actual-branch
-        assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "expected-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
@@ -610,4 +608,4 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
         # Verify state was NOT modified
         assert erk_install.current_pool_state is not None
         assert len(erk_install.current_pool_state.assignments) == 1
-        assert erk_install.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert erk_install.current_pool_state.assignments[0].slot_name == "erk-slot-01"

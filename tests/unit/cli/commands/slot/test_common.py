@@ -71,10 +71,10 @@ class TestFindOldestAssignment:
     def test_returns_only_assignment(self) -> None:
         """Returns the single assignment when only one exists."""
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+            worktree_path=Path("/worktrees/erk-slot-01"),
         )
         state = PoolState.test(assignments=(assignment,))
 
@@ -85,22 +85,22 @@ class TestFindOldestAssignment:
     def test_returns_oldest_by_timestamp(self) -> None:
         """Returns assignment with earliest assigned_at timestamp."""
         oldest = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-old",
             assigned_at="2024-01-01T10:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+            worktree_path=Path("/worktrees/erk-slot-01"),
         )
         middle = SlotAssignment(
-            slot_name="erk-managed-wt-02",
+            slot_name="erk-slot-02",
             branch_name="feature-mid",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-02"),
+            worktree_path=Path("/worktrees/erk-slot-02"),
         )
         newest = SlotAssignment(
-            slot_name="erk-managed-wt-03",
+            slot_name="erk-slot-03",
             branch_name="feature-new",
             assigned_at="2024-01-01T14:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-03"),
+            worktree_path=Path("/worktrees/erk-slot-03"),
         )
         # Assignments in non-chronological order to test sorting
         state = PoolState.test(assignments=(newest, oldest, middle))
@@ -127,8 +127,8 @@ class TestFindInactiveSlot:
     def test_returns_inactive_slot_when_available(self, tmp_path: Path) -> None:
         """Returns an unassigned slot when worktrees exist."""
         repo_root = tmp_path / "repo"
-        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
-        wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        wt2_path = tmp_path / "worktrees" / "erk-slot-02"
         git = FakeGit(
             worktrees={
                 repo_root: [
@@ -143,14 +143,14 @@ class TestFindInactiveSlot:
 
         assert result is not None
         slot_name, worktree_path = result
-        assert slot_name == "erk-managed-wt-01"
+        assert slot_name == "erk-slot-01"
         assert worktree_path == wt1_path
 
     def test_returns_none_when_all_slots_assigned(self, tmp_path: Path) -> None:
         """Returns None when all worktrees have assignments."""
         repo_root = tmp_path / "repo"
-        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
-        wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        wt2_path = tmp_path / "worktrees" / "erk-slot-02"
         git = FakeGit(
             worktrees={
                 repo_root: [
@@ -160,13 +160,13 @@ class TestFindInactiveSlot:
             }
         )
         assignment1 = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=wt1_path,
         )
         assignment2 = SlotAssignment(
-            slot_name="erk-managed-wt-02",
+            slot_name="erk-slot-02",
             branch_name="feature-b",
             assigned_at="2024-01-01T13:00:00+00:00",
             worktree_path=wt2_path,
@@ -180,9 +180,9 @@ class TestFindInactiveSlot:
     def test_returns_first_inactive_slot_by_number(self, tmp_path: Path) -> None:
         """Returns the lowest-numbered unassigned slot."""
         repo_root = tmp_path / "repo"
-        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
-        wt2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
-        wt3_path = tmp_path / "worktrees" / "erk-managed-wt-03"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        wt2_path = tmp_path / "worktrees" / "erk-slot-02"
+        wt3_path = tmp_path / "worktrees" / "erk-slot-03"
         git = FakeGit(
             worktrees={
                 repo_root: [
@@ -193,7 +193,7 @@ class TestFindInactiveSlot:
             }
         )
         assignment1 = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=wt1_path,
@@ -204,7 +204,7 @@ class TestFindInactiveSlot:
 
         assert result is not None
         slot_name, worktree_path = result
-        assert slot_name == "erk-managed-wt-02"
+        assert slot_name == "erk-slot-02"
         assert worktree_path == wt2_path
 
     def test_finds_orphaned_worktree_not_in_state(self, tmp_path: Path) -> None:
@@ -215,7 +215,7 @@ class TestFindInactiveSlot:
         should still be discovered and made available for reuse.
         """
         repo_root = tmp_path / "repo"
-        wt1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
         # Git knows about this worktree
         git = FakeGit(
             worktrees={
@@ -232,15 +232,15 @@ class TestFindInactiveSlot:
         # Should still find it via git
         assert result is not None
         slot_name, worktree_path = result
-        assert slot_name == "erk-managed-wt-01"
+        assert slot_name == "erk-slot-01"
         assert worktree_path == wt1_path
 
     def test_ignores_non_managed_worktrees(self, tmp_path: Path) -> None:
-        """Ignores worktrees that don't match erk-managed-wt-XX pattern."""
+        """Ignores worktrees that don't match erk-slot-XX pattern."""
         repo_root = tmp_path / "repo"
         root_wt = tmp_path / "repo"
         other_wt = tmp_path / "other-worktree"
-        managed_wt = tmp_path / "worktrees" / "erk-managed-wt-01"
+        managed_wt = tmp_path / "worktrees" / "erk-slot-01"
         git = FakeGit(
             worktrees={
                 repo_root: [
@@ -252,7 +252,7 @@ class TestFindInactiveSlot:
         )
         # The managed slot is assigned
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="assigned-branch",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=managed_wt,
@@ -267,7 +267,7 @@ class TestFindInactiveSlot:
     def test_respects_pool_size_limit(self, tmp_path: Path) -> None:
         """Ignores worktrees beyond pool_size."""
         repo_root = tmp_path / "repo"
-        wt5_path = tmp_path / "worktrees" / "erk-managed-wt-05"
+        wt5_path = tmp_path / "worktrees" / "erk-slot-05"
         git = FakeGit(
             worktrees={
                 repo_root: [
@@ -290,21 +290,21 @@ class TestIsSlotInitialized:
         """Returns False when no slots are initialized."""
         state = PoolState.test()
 
-        assert is_slot_initialized(state, "erk-managed-wt-01") is False
+        assert is_slot_initialized(state, "erk-slot-01") is False
 
     def test_returns_true_when_slot_exists(self) -> None:
         """Returns True when the slot is in the initialized list."""
-        slot = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot = SlotInfo(name="erk-slot-01", last_objective_issue=None)
         state = PoolState.test(slots=(slot,))
 
-        assert is_slot_initialized(state, "erk-managed-wt-01") is True
+        assert is_slot_initialized(state, "erk-slot-01") is True
 
     def test_returns_false_for_different_slot(self) -> None:
         """Returns False when checking for a slot not in the list."""
-        slot = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot = SlotInfo(name="erk-slot-01", last_objective_issue=None)
         state = PoolState.test(slots=(slot,))
 
-        assert is_slot_initialized(state, "erk-managed-wt-02") is False
+        assert is_slot_initialized(state, "erk-slot-02") is False
 
 
 class TestFindNextAvailableSlot:
@@ -321,16 +321,16 @@ class TestFindNextAvailableSlot:
     def test_returns_none_when_pool_full_with_assignments(self) -> None:
         """Returns None when all slots are assigned."""
         assignment1 = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+            worktree_path=Path("/worktrees/erk-slot-01"),
         )
         assignment2 = SlotAssignment(
-            slot_name="erk-managed-wt-02",
+            slot_name="erk-slot-02",
             branch_name="feature-b",
             assigned_at="2024-01-01T13:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-02"),
+            worktree_path=Path("/worktrees/erk-slot-02"),
         )
         state = PoolState.test(pool_size=2, assignments=(assignment1, assignment2))
 
@@ -341,10 +341,10 @@ class TestFindNextAvailableSlot:
     def test_skips_assigned_slot(self) -> None:
         """Returns next available slot, skipping assigned ones."""
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-01"),
+            worktree_path=Path("/worktrees/erk-slot-01"),
         )
         state = PoolState.test(pool_size=4, assignments=(assignment,))
 
@@ -360,7 +360,7 @@ class TestFindNextAvailableSlot:
         find_next_available_slot should NOT return that slot number.
         """
         # Slot 1 exists on disk but has no assignment
-        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
         state = PoolState.test(pool_size=4, slots=(slot1,))
 
         result = find_next_available_slot(state, None)
@@ -371,14 +371,14 @@ class TestFindNextAvailableSlot:
     def test_skips_both_assigned_and_initialized_slots(self) -> None:
         """Returns first slot that is neither assigned nor initialized."""
         # Slot 1: initialized but not assigned
-        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
+        slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
         # Slot 2: initialized AND assigned
-        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
         assignment2 = SlotAssignment(
-            slot_name="erk-managed-wt-02",
+            slot_name="erk-slot-02",
             branch_name="feature-b",
             assigned_at="2024-01-01T12:00:00+00:00",
-            worktree_path=Path("/worktrees/erk-managed-wt-02"),
+            worktree_path=Path("/worktrees/erk-slot-02"),
         )
         state = PoolState.test(pool_size=4, slots=(slot1, slot2), assignments=(assignment2,))
 
@@ -389,8 +389,8 @@ class TestFindNextAvailableSlot:
 
     def test_returns_none_when_all_slots_initialized(self) -> None:
         """Returns None when all slots are initialized (even without assignments)."""
-        slot1 = SlotInfo(name="erk-managed-wt-01", last_objective_issue=None)
-        slot2 = SlotInfo(name="erk-managed-wt-02", last_objective_issue=None)
+        slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
         state = PoolState.test(pool_size=2, slots=(slot1, slot2))
 
         result = find_next_available_slot(state, None)
@@ -408,7 +408,7 @@ class TestFindNextAvailableSlot:
         # Create orphaned directory for slot 1
         worktrees_dir = tmp_path / "worktrees"
         worktrees_dir.mkdir()
-        (worktrees_dir / "erk-managed-wt-01").mkdir()
+        (worktrees_dir / "erk-slot-01").mkdir()
 
         # State has no knowledge of slot 1
         state = PoolState.test(pool_size=4)
@@ -422,8 +422,8 @@ class TestFindNextAvailableSlot:
         """Skips multiple orphaned directories."""
         worktrees_dir = tmp_path / "worktrees"
         worktrees_dir.mkdir()
-        (worktrees_dir / "erk-managed-wt-01").mkdir()
-        (worktrees_dir / "erk-managed-wt-02").mkdir()
+        (worktrees_dir / "erk-slot-01").mkdir()
+        (worktrees_dir / "erk-slot-02").mkdir()
 
         state = PoolState.test(pool_size=4)
 
@@ -436,8 +436,8 @@ class TestFindNextAvailableSlot:
         """Returns None when all slots have orphaned directories."""
         worktrees_dir = tmp_path / "worktrees"
         worktrees_dir.mkdir()
-        (worktrees_dir / "erk-managed-wt-01").mkdir()
-        (worktrees_dir / "erk-managed-wt-02").mkdir()
+        (worktrees_dir / "erk-slot-01").mkdir()
+        (worktrees_dir / "erk-slot-02").mkdir()
 
         state = PoolState.test(pool_size=2)
 
@@ -448,38 +448,38 @@ class TestFindNextAvailableSlot:
 
 def test_extract_slot_number_valid() -> None:
     """Extracts slot number from valid slot name."""
-    assert extract_slot_number("erk-managed-wt-01") == "01"
-    assert extract_slot_number("erk-managed-wt-03") == "03"
-    assert extract_slot_number("erk-managed-wt-99") == "99"
+    assert extract_slot_number("erk-slot-01") == "01"
+    assert extract_slot_number("erk-slot-03") == "03"
+    assert extract_slot_number("erk-slot-99") == "99"
 
 
 def test_extract_slot_number_invalid() -> None:
     """Returns None for invalid slot names."""
     assert extract_slot_number("invalid-name") is None
-    assert extract_slot_number("erk-managed-wt-1") is None  # Single digit
-    assert extract_slot_number("erk-managed-wt-001") is None  # Three digits
-    assert extract_slot_number("erk-managed-wt-ab") is None  # Non-numeric
+    assert extract_slot_number("erk-slot-1") is None  # Single digit
+    assert extract_slot_number("erk-slot-001") is None  # Three digits
+    assert extract_slot_number("erk-slot-ab") is None  # Non-numeric
     assert extract_slot_number("") is None
 
 
 def test_get_placeholder_branch_name_valid() -> None:
     """Returns correct placeholder branch name for valid slot."""
-    assert get_placeholder_branch_name("erk-managed-wt-01") == "__erk-slot-01-placeholder__"
-    assert get_placeholder_branch_name("erk-managed-wt-03") == "__erk-slot-03-placeholder__"
-    assert get_placeholder_branch_name("erk-managed-wt-99") == "__erk-slot-99-placeholder__"
+    assert get_placeholder_branch_name("erk-slot-01") == "__erk-slot-01-br-stub__"
+    assert get_placeholder_branch_name("erk-slot-03") == "__erk-slot-03-br-stub__"
+    assert get_placeholder_branch_name("erk-slot-99") == "__erk-slot-99-br-stub__"
 
 
 def test_get_placeholder_branch_name_invalid() -> None:
     """Returns None for invalid slot names."""
     assert get_placeholder_branch_name("invalid-name") is None
-    assert get_placeholder_branch_name("erk-managed-wt-1") is None
+    assert get_placeholder_branch_name("erk-slot-1") is None
 
 
 def test_is_placeholder_branch_valid() -> None:
     """Returns True for valid placeholder branch names."""
-    assert is_placeholder_branch("__erk-slot-01-placeholder__") is True
-    assert is_placeholder_branch("__erk-slot-02-placeholder__") is True
-    assert is_placeholder_branch("__erk-slot-99-placeholder__") is True
+    assert is_placeholder_branch("__erk-slot-01-br-stub__") is True
+    assert is_placeholder_branch("__erk-slot-02-br-stub__") is True
+    assert is_placeholder_branch("__erk-slot-99-br-stub__") is True
 
 
 def test_is_placeholder_branch_invalid() -> None:
@@ -490,13 +490,13 @@ def test_is_placeholder_branch_invalid() -> None:
     # Missing underscores
     assert is_placeholder_branch("erk-slot-01-placeholder") is False
     # Wrong prefix
-    assert is_placeholder_branch("__erk-managed-wt-01__") is False
+    assert is_placeholder_branch("__erk-slot-01__") is False
     # Missing suffix
     assert is_placeholder_branch("__erk-slot-01__") is False
     # Extra content
-    assert is_placeholder_branch("__erk-slot-01-placeholder__-extra") is False
+    assert is_placeholder_branch("__erk-slot-01-br-stub__-extra") is False
     # Non-numeric slot
-    assert is_placeholder_branch("__erk-slot-xx-placeholder__") is False
+    assert is_placeholder_branch("__erk-slot-xx-br-stub__") is False
 
 
 class TestFindAssignmentByWorktree:
@@ -514,10 +514,10 @@ class TestFindAssignmentByWorktree:
 
     def test_returns_none_when_cwd_not_in_any_slot(self, tmp_path: Path) -> None:
         """Returns None when cwd is not within any assigned slot."""
-        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot_path = tmp_path / "worktrees" / "erk-slot-01"
         other_path = tmp_path / "other" / "location"
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=slot_path,
@@ -532,9 +532,9 @@ class TestFindAssignmentByWorktree:
 
     def test_returns_assignment_when_cwd_equals_worktree_path(self, tmp_path: Path) -> None:
         """Returns assignment when cwd exactly matches worktree path."""
-        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot_path = tmp_path / "worktrees" / "erk-slot-01"
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=slot_path,
@@ -549,10 +549,10 @@ class TestFindAssignmentByWorktree:
 
     def test_returns_assignment_when_cwd_is_subdirectory(self, tmp_path: Path) -> None:
         """Returns assignment when cwd is a subdirectory of worktree path."""
-        slot_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+        slot_path = tmp_path / "worktrees" / "erk-slot-01"
         subdir = slot_path / "src" / "nested"
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=slot_path,
@@ -567,16 +567,16 @@ class TestFindAssignmentByWorktree:
 
     def test_returns_matching_assignment_for_slot(self, tmp_path: Path) -> None:
         """Returns matching assignment when multiple slots exist."""
-        slot1_path = tmp_path / "worktrees" / "erk-managed-wt-01"
-        slot2_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        slot1_path = tmp_path / "worktrees" / "erk-slot-01"
+        slot2_path = tmp_path / "worktrees" / "erk-slot-02"
         assignment1 = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="feature-a",
             assigned_at="2024-01-01T12:00:00+00:00",
             worktree_path=slot1_path,
         )
         assignment2 = SlotAssignment(
-            slot_name="erk-managed-wt-02",
+            slot_name="erk-slot-02",
             branch_name="feature-b",
             assigned_at="2024-01-01T13:00:00+00:00",
             worktree_path=slot2_path,
@@ -588,4 +588,4 @@ class TestFindAssignmentByWorktree:
         result = find_assignment_by_worktree(state, git, slot2_path)
 
         assert result == assignment2
-        assert result.slot_name == "erk-managed-wt-02"
+        assert result.slot_name == "erk-slot-02"

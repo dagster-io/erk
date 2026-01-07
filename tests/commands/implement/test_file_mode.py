@@ -28,7 +28,7 @@ def test_implement_from_plan_file() -> None:
 
         assert result.exit_code == 0
         assert "Assigned" in result.output
-        assert "erk-managed-wt-" in result.output
+        assert "erk-slot-" in result.output
 
         # Verify worktree created
         assert len(git.added_worktrees) == 1
@@ -63,11 +63,11 @@ def test_implement_from_plan_file_assigns_to_slot() -> None:
         assert result.exit_code == 0
         # Should show slot assignment message
         assert "Assigned" in result.output
-        assert "erk-managed-wt-" in result.output
+        assert "erk-slot-" in result.output
 
         # Verify worktree was created in slot path
         worktree_path, _ = git.added_worktrees[0]
-        assert "erk-managed-wt-" in str(worktree_path)
+        assert "erk-slot-" in str(worktree_path)
 
 
 def test_implement_from_plan_file_strips_plan_suffix() -> None:

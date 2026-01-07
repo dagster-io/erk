@@ -42,14 +42,14 @@ def test_slot_assign_assigns_existing_branch(tmp_path) -> None:
         )
 
         assert result.exit_code == 0
-        assert "Assigned feature-test to erk-managed-wt-01" in result.output
+        assert "Assigned feature-test to erk-slot-01" in result.output
 
         # Verify state was persisted
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "feature-test"
-        assert state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert state.assignments[0].slot_name == "erk-slot-01"
 
 
 def test_slot_assign_fails_if_branch_does_not_exist() -> None:
@@ -120,7 +120,7 @@ def test_slot_assign_second_slot() -> None:
             cli, ["slot", "assign", "feature-b"], obj=test_ctx, catch_exceptions=False
         )
         assert result2.exit_code == 0
-        assert "Assigned feature-b to erk-managed-wt-02" in result2.output
+        assert "Assigned feature-b to erk-slot-02" in result2.output
 
         # Verify state
         state = load_pool_state(repo.pool_json_path)
@@ -210,7 +210,7 @@ def test_slot_assign_force_unassigns_oldest() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Build worktrees including the pool slot worktree
@@ -239,7 +239,7 @@ def test_slot_assign_force_unassigns_oldest() -> None:
             pool_size=1,
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="old-branch",
                     assigned_at="2024-01-01T10:00:00+00:00",
                     worktree_path=worktree_path,
@@ -275,7 +275,7 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Build worktrees including the pool slot worktree
@@ -303,7 +303,7 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
             pool_size=1,
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="old-branch",
                     assigned_at="2024-01-01T10:00:00+00:00",
                     worktree_path=worktree_path,
@@ -375,7 +375,7 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory with stale artifacts
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Create stale .impl/ folder
@@ -412,7 +412,7 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
             pool_size=1,
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="old-branch",
                     assigned_at="2024-01-01T10:00:00+00:00",
                     worktree_path=worktree_path,

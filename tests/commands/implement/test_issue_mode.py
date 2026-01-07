@@ -33,7 +33,7 @@ def test_implement_from_plain_issue_number() -> None:
         assert result.exit_code == 0
         assert "Assigned" in result.output
         # Slot-based path
-        assert "erk-managed-wt-" in result.output
+        assert "erk-slot-" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -64,7 +64,7 @@ def test_implement_from_issue_number() -> None:
         assert result.exit_code == 0
         assert "Assigned" in result.output
         # Slot-based path
-        assert "erk-managed-wt-" in result.output
+        assert "erk-slot-" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -124,12 +124,12 @@ def test_implement_assigns_to_pool_slot() -> None:
         assert result.exit_code == 0
         # Should show slot assignment message instead of worktree creation
         assert "Assigned" in result.output
-        assert "erk-managed-wt-" in result.output
+        assert "erk-slot-" in result.output
 
         # Verify worktree was created in slot path
         assert len(git.added_worktrees) == 1
         worktree_path, _ = git.added_worktrees[0]
-        assert "erk-managed-wt-" in str(worktree_path)
+        assert "erk-slot-" in str(worktree_path)
 
 
 def test_implement_from_issue_fails_without_erk_plan_label() -> None:

@@ -42,14 +42,14 @@ def test_branch_create_creates_new_branch_and_assignment(tmp_path) -> None:
 
         assert result.exit_code == 0
         assert "Created branch: feature-test" in result.output
-        assert "Assigned feature-test to erk-managed-wt-01" in result.output
+        assert "Assigned feature-test to erk-slot-01" in result.output
 
         # Verify state was persisted
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "feature-test"
-        assert state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert state.assignments[0].slot_name == "erk-slot-01"
 
 
 def test_branch_create_with_br_alias(tmp_path) -> None:
@@ -82,7 +82,7 @@ def test_branch_create_with_br_alias(tmp_path) -> None:
 
         assert result.exit_code == 0
         assert "Created branch: feature-test" in result.output
-        assert "Assigned feature-test to erk-managed-wt-01" in result.output
+        assert "Assigned feature-test to erk-slot-01" in result.output
 
 
 def test_branch_create_no_slot_only_creates_branch() -> None:
@@ -164,7 +164,7 @@ def test_branch_create_second_slot() -> None:
             cli, ["br", "create", "feature-b"], obj=test_ctx, catch_exceptions=False
         )
         assert result2.exit_code == 0
-        assert "Assigned feature-b to erk-managed-wt-02" in result2.output
+        assert "Assigned feature-b to erk-slot-02" in result2.output
 
         # Verify state
         state = load_pool_state(repo.pool_json_path)
@@ -254,7 +254,7 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Pre-create worktree directory so we can configure FakeGit with it
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Build worktrees including the pool slot worktree
@@ -285,7 +285,7 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
             pool_size=1,
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="old-branch",
                     assigned_at="2024-01-01T10:00:00+00:00",
                     worktree_path=worktree_path,
@@ -325,4 +325,4 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "new-branch"
-        assert state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert state.assignments[0].slot_name == "erk-slot-01"

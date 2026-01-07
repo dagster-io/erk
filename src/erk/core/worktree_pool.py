@@ -19,7 +19,7 @@ class SlotInfo:
     ready for assignment to feature branches.
 
     Attributes:
-        name: The pool slot identifier (e.g., "erk-managed-wt-01")
+        name: The pool slot identifier (e.g., "erk-slot-01")
         last_objective_issue: Issue number of the last objective worked on in this slot.
             Persists across assignment cycles so /erk:objective-next-plan can default to it.
     """
@@ -33,7 +33,7 @@ class SlotAssignment:
     """Represents a branch assignment to a worktree slot.
 
     Attributes:
-        slot_name: The pool slot identifier (e.g., "erk-managed-wt-01")
+        slot_name: The pool slot identifier (e.g., "erk-slot-01")
         branch_name: The git branch assigned to this slot
         assigned_at: ISO timestamp when the assignment was made
         worktree_path: Filesystem path to the worktree directory

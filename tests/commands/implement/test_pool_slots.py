@@ -101,7 +101,7 @@ def test_implement_uses_checkout_when_slot_directory_exists() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Pre-create the slot directory to simulate pool initialization
-        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir = env.repo.worktrees_dir / "erk-slot-01"
         slot_dir.mkdir(parents=True)
 
         # Configure git to know about the worktree via list_worktrees()
@@ -172,10 +172,10 @@ def test_implement_respects_config_pool_size_over_stored_state() -> None:
         old_pool_size = 4
         assignments = tuple(
             SlotAssignment(
-                slot_name=f"erk-managed-wt-{i:02d}",
+                slot_name=f"erk-slot-{i:02d}",
                 branch_name=f"existing-branch-{i}",
                 assigned_at="2024-01-01T00:00:00+00:00",
-                worktree_path=repo.worktrees_dir / f"erk-managed-wt-{i:02d}",
+                worktree_path=repo.worktrees_dir / f"erk-slot-{i:02d}",
             )
             for i in range(1, old_pool_size + 1)
         )
@@ -202,7 +202,7 @@ def test_implement_respects_config_pool_size_over_stored_state() -> None:
         assert "Assigned" in result.output
 
         # Should have assigned to slot 5 (first available after slots 1-4)
-        assert "erk-managed-wt-05" in result.output
+        assert "erk-slot-05" in result.output
 
 
 # Uncommitted Changes Detection Tests
@@ -221,7 +221,7 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Pre-create the slot directory with uncommitted changes
-        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir = env.repo.worktrees_dir / "erk-slot-01"
         slot_dir.mkdir(parents=True)
 
         # Configure git to know about the worktree and its dirty status
@@ -252,7 +252,7 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
 
         # Verify error message contains remediation options
         assert "uncommitted changes" in result.output
-        assert "erk-managed-wt-01" in result.output
+        assert "erk-slot-01" in result.output
         assert "git stash" in result.output
         assert "git commit" in result.output
         assert "erk slot unassign" in result.output
@@ -281,7 +281,7 @@ def test_implement_from_managed_slot_gets_new_slot() -> None:
         env.setup_repo_structure()
 
         # Create slot worktree directories
-        slot1_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot1_dir = env.repo.worktrees_dir / "erk-slot-01"
         slot1_dir.mkdir(parents=True)
 
         # Configure git to recognize the slot as a managed worktree
@@ -307,7 +307,7 @@ def test_implement_from_managed_slot_gets_new_slot() -> None:
             slots=(),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="existing-feature",
                     assigned_at="2024-01-01T00:00:00+00:00",
                     worktree_path=slot1_dir,
@@ -340,7 +340,7 @@ def test_implement_from_managed_slot_gets_new_slot() -> None:
         assert parent_branch == "existing-feature"
 
         # Verify we got a NEW slot (slot 02), not reusing slot 01
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-02" in result.output
 
         # Verify pool state has 2 assignments (parent keeps its slot)
         updated_state = load_pool_state(env.repo.pool_json_path)
@@ -349,7 +349,7 @@ def test_implement_from_managed_slot_gets_new_slot() -> None:
 
         # Verify original slot still has original branch
         slot1_assignment = next(
-            a for a in updated_state.assignments if a.slot_name == "erk-managed-wt-01"
+            a for a in updated_state.assignments if a.slot_name == "erk-slot-01"
         )
         assert slot1_assignment.branch_name == "existing-feature"
 
@@ -362,7 +362,7 @@ def test_implement_from_managed_slot_dry_run() -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        slot_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot_dir = env.repo.worktrees_dir / "erk-slot-01"
         slot_dir.mkdir(parents=True)
 
         git = FakeGit(
@@ -385,7 +385,7 @@ def test_implement_from_managed_slot_dry_run() -> None:
             slots=(),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="existing-feature",
                     assigned_at="2024-01-01T00:00:00+00:00",
                     worktree_path=slot_dir,
@@ -407,7 +407,7 @@ def test_implement_from_managed_slot_dry_run() -> None:
         assert "Dry-run mode" in result.output
 
         # Should show NEW slot assignment (slot 02), not same-slot stacking
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-02" in result.output
 
         # Verify no changes were made
         assert len(git.created_branches) == 0
@@ -425,7 +425,7 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
     with erk_isolated_fs_env(runner) as env:
         # Create an existing slot assignment
         env.setup_repo_structure()
-        slot1_dir = env.repo.worktrees_dir / "erk-managed-wt-01"
+        slot1_dir = env.repo.worktrees_dir / "erk-slot-01"
         slot1_dir.mkdir(parents=True)
 
         git = FakeGit(
@@ -442,7 +442,7 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
             slots=(),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="other-feature",
                     assigned_at="2024-01-01T00:00:00+00:00",
                     worktree_path=slot1_dir,
@@ -463,7 +463,7 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
         assert result.exit_code == 0
 
         # Should assign to a NEW slot (slot 02)
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-02" in result.output
 
         # Load pool state to verify
         updated_state = load_pool_state(env.repo.pool_json_path)
@@ -626,12 +626,12 @@ def test_implement_objective_adds_new_slot_info() -> None:
         # Slot-01 has an assignment (taking up slot 1)
         # Slot-02 is completely fresh (no SlotInfo, no dir)
         initial_slot1_assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             branch_name="other-feature",
             assigned_at="2024-01-01T00:00:00+00:00",
-            worktree_path=env.repo.worktrees_dir / "erk-managed-wt-01",
+            worktree_path=env.repo.worktrees_dir / "erk-slot-01",
         )
-        (env.repo.worktrees_dir / "erk-managed-wt-01").mkdir(parents=True)
+        (env.repo.worktrees_dir / "erk-slot-01").mkdir(parents=True)
 
         initial_state = PoolState(
             version="1.0",
@@ -649,13 +649,13 @@ def test_implement_objective_adds_new_slot_info() -> None:
         # Should show new objective
         assert "objective #99" in result.output
         # Should use slot-02 (slot-01 is assigned)
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-02" in result.output
 
         # Verify SlotInfo was created with objective
         updated_state = load_pool_state(env.repo.pool_json_path)
         assert updated_state is not None
 
         # Should have one SlotInfo for slot-02 with the objective
-        slot02_infos = [s for s in updated_state.slots if s.name == "erk-managed-wt-02"]
+        slot02_infos = [s for s in updated_state.slots if s.name == "erk-slot-02"]
         assert len(slot02_infos) == 1
         assert slot02_infos[0].last_objective_issue == 99

@@ -106,7 +106,7 @@ def test_consolidate_slot_aware_unassigns_slot() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Worktree paths - one is a slot, one is regular
-        slot_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        slot_path = repo_dir / "worktrees" / "erk-slot-01"
         slot_path.mkdir(parents=True)
         regular_path = repo_dir / "worktrees" / "feature-a"
         regular_path.mkdir(parents=True)
@@ -168,7 +168,7 @@ def test_consolidate_slot_aware_unassigns_slot() -> None:
         )
 
         # Create pool state with assignment for the slot
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-b", slot_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-b", slot_path)
         initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -190,7 +190,7 @@ def test_consolidate_slot_aware_unassigns_slot() -> None:
         # Assert: Slot was unassigned (placeholder branch checked out)
         assert (
             slot_path,
-            "__erk-slot-01-placeholder__",
+            "__erk-slot-01-br-stub__",
         ) in git_ops.checked_out_branches, "Slot should be checked out to placeholder"
 
         # Assert: Regular worktree WAS removed

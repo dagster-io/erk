@@ -31,7 +31,7 @@ def test_plan_start_assigns_slot() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Assigned" in result.output
-        assert "erk-managed-wt-" in result.output
+        assert "erk-slot-" in result.output
 
         # Verify worktree was created
         assert len(git.added_worktrees) == 1
@@ -97,7 +97,7 @@ def test_plan_start_interactive_calls_executor() -> None:
         # Verify execute_interactive was called with empty command
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
-        assert "erk-managed-wt-" in str(worktree_path)
+        assert "erk-slot-" in str(worktree_path)
         assert dangerous is False
         assert command == ""  # No slash command for planning
         assert model is None
@@ -280,10 +280,10 @@ def test_plan_start_force_flag_unassigns_oldest() -> None:
         pool_size = 4
         assignments = tuple(
             SlotAssignment(
-                slot_name=f"erk-managed-wt-{i:02d}",
+                slot_name=f"erk-slot-{i:02d}",
                 branch_name=f"existing-branch-{i}",
                 assigned_at=f"2024-01-0{i}T00:00:00+00:00",
-                worktree_path=repo.worktrees_dir / f"erk-managed-wt-{i:02d}",
+                worktree_path=repo.worktrees_dir / f"erk-slot-{i:02d}",
             )
             for i in range(1, pool_size + 1)
         )
@@ -318,7 +318,7 @@ def test_plan_start_existing_branch_reuses_slot() -> None:
         ctx = build_workspace_test_context(env, git=git, claude_executor=executor)
 
         # Create pool with my-feature already assigned
-        wt_path = repo.worktrees_dir / "erk-managed-wt-01"
+        wt_path = repo.worktrees_dir / "erk-slot-01"
         wt_path.mkdir(parents=True, exist_ok=True)
         existing_state = PoolState(
             version="1.0",
@@ -326,7 +326,7 @@ def test_plan_start_existing_branch_reuses_slot() -> None:
             slots=(),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="my-feature",
                     assigned_at="2024-01-01T00:00:00+00:00",
                     worktree_path=wt_path,

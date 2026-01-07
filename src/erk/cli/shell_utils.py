@@ -60,7 +60,7 @@ def render_navigation_script(
       - Changes directory
       - Creates/activates virtual environment
       - Loads .env file
-      - Required for erk-managed worktrees
+      - Required for pool slots
 
     Args:
         target_path: Directory to navigate to

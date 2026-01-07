@@ -28,7 +28,7 @@ def _determine_slot_status(
     """Determine the status of a worktree slot.
 
     Args:
-        slot_name: The slot identifier (e.g., "erk-managed-wt-01")
+        slot_name: The slot identifier (e.g., "erk-slot-01")
         assigned_slots: Set of slot names that have assignments in pool.json
         reason: The reason code from _get_slot_reason (indicates any problems)
 

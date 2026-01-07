@@ -11,14 +11,14 @@ from erk_shared.output.output import user_confirm, user_output
 
 # Default pool configuration
 DEFAULT_POOL_SIZE = 4
-SLOT_NAME_PREFIX = "erk-managed-wt"
+SLOT_NAME_PREFIX = "erk-slot"
 
 
 def extract_slot_number(slot_name: str) -> str | None:
     """Extract slot number from slot name.
 
     Args:
-        slot_name: Slot name like "erk-managed-wt-03"
+        slot_name: Slot name like "erk-slot-03"
 
     Returns:
         Two-digit slot number (e.g., "03") or None if not in expected format
@@ -35,22 +35,22 @@ def get_placeholder_branch_name(slot_name: str) -> str | None:
     """Get placeholder branch name for a slot.
 
     Args:
-        slot_name: Slot name like "erk-managed-wt-03"
+        slot_name: Slot name like "erk-slot-03"
 
     Returns:
-        Placeholder branch name like "__erk-slot-03-placeholder__",
+        Placeholder branch name like "__erk-slot-03-br-stub__",
         or None if slot_name is not in expected format
     """
     slot_number = extract_slot_number(slot_name)
     if slot_number is None:
         return None
-    return f"__erk-slot-{slot_number}-placeholder__"
+    return f"__erk-slot-{slot_number}-br-stub__"
 
 
 def is_placeholder_branch(branch_name: str) -> bool:
     """Check if a branch name is an erk slot placeholder branch.
 
-    Placeholder branches have the format: __erk-slot-XX-placeholder__
+    Placeholder branches have the format: __erk-slot-XX-br-stub__
 
     Args:
         branch_name: Branch name to check
@@ -58,7 +58,7 @@ def is_placeholder_branch(branch_name: str) -> bool:
     Returns:
         True if branch_name matches the placeholder pattern
     """
-    return bool(re.match(r"^__erk-slot-\d+-placeholder__$", branch_name))
+    return bool(re.match(r"^__erk-slot-\d+-br-stub__$", branch_name))
 
 
 def get_pool_size(ctx: ErkContext) -> int:
@@ -82,7 +82,7 @@ def generate_slot_name(slot_number: int) -> str:
         slot_number: 1-based slot number
 
     Returns:
-        Formatted slot name like "erk-managed-wt-01"
+        Formatted slot name like "erk-slot-01"
     """
     return f"{SLOT_NAME_PREFIX}-{slot_number:02d}"
 

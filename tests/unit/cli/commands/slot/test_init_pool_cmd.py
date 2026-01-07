@@ -89,7 +89,7 @@ def test_init_pool_dry_run_shows_slot_count() -> None:
         assert result.exit_code == 0
 
         # Check that slot name is mentioned in the output
-        assert "erk-managed-wt-01" in result.output
+        assert "erk-slot-01" in result.output
         # Check for either the per-slot message or the summary message
         assert "Would initialize" in result.output
 
@@ -131,14 +131,14 @@ def test_init_pool_creates_worktrees_without_dry_run() -> None:
 
         # Verify success message (not dry-run)
         assert "[DRY RUN]" not in result.output
-        assert "Initialized erk-managed-wt-01" in result.output
+        assert "Initialized erk-slot-01" in result.output
 
         # Verify worktree directory was created
-        slot1_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        slot1_path = repo_dir / "worktrees" / "erk-slot-01"
         assert slot1_path.exists()
 
         # Verify pool state was saved
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
         assert len(state.slots) == 1
-        assert state.slots[0].name == "erk-managed-wt-01"
+        assert state.slots[0].name == "erk-slot-01"

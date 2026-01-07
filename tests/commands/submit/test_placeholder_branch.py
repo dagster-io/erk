@@ -19,7 +19,7 @@ def test_submit_from_placeholder_branch_uses_trunk(tmp_path: Path) -> None:
         tmp_path,
         plans={"123": plan},
         git_kwargs={
-            "current_branches": {repo_root: "__erk-slot-02-placeholder__"},
+            "current_branches": {repo_root: "__erk-slot-02-br-stub__"},
             "trunk_branches": {repo_root: "master"},
         },
     )
@@ -33,7 +33,7 @@ def test_submit_from_placeholder_branch_uses_trunk(tmp_path: Path) -> None:
     # Verify PR was created with trunk as base (not the placeholder branch)
     assert len(fake_github.created_prs) == 1
     _, _, _, base, _ = fake_github.created_prs[0]
-    assert base == "master"  # Should be trunk, NOT __erk-slot-02-placeholder__
+    assert base == "master"  # Should be trunk, NOT __erk-slot-02-br-stub__
 
     # Verify branch was created from trunk
     assert len(fake_git.created_branches) == 1
@@ -52,7 +52,7 @@ def test_submit_from_placeholder_branch_with_explicit_base(tmp_path: Path) -> No
         tmp_path,
         plans={"123": plan},
         git_kwargs={
-            "current_branches": {repo_root: "__erk-slot-02-placeholder__"},
+            "current_branches": {repo_root: "__erk-slot-02-br-stub__"},
             "trunk_branches": {repo_root: "master"},
             "remote_branches": {repo_root: ["origin/feature/custom-base"]},
         },

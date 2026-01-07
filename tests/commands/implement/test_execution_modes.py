@@ -44,7 +44,7 @@ def test_interactive_mode_calls_executor() -> None:
 
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         # Slot-based path
-        assert "erk-managed-wt-" in str(worktree_path)
+        assert "erk-slot-" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:system:impl-execute"
         # No relative path preservation when running from worktree root
@@ -105,7 +105,7 @@ def test_interactive_mode_from_plan_file() -> None:
         # Verify execute_interactive was called
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
-        assert "erk-managed-wt-" in str(worktree_path)
+        assert "erk-slot-" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:system:impl-execute"
         assert model is None

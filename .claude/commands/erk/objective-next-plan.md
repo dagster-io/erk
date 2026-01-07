@@ -38,7 +38,7 @@ erk exec slot-objective
 This returns JSON like:
 
 ```json
-{ "objective_issue": 123, "slot_name": "erk-managed-wt-01" }
+{ "objective_issue": 123, "slot_name": "erk-slot-01" }
 ```
 
 Or if not in a slot or no objective:

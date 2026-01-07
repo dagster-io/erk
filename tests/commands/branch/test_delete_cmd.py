@@ -108,7 +108,7 @@ def test_delete_branch_with_slot_worktree_unassigns_slot() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        slot_wt = repo_dir / "worktrees" / "erk-managed-wt-01"
+        slot_wt = repo_dir / "worktrees" / "erk-slot-01"
         slot_wt.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -118,7 +118,7 @@ def test_delete_branch_with_slot_worktree_unassigns_slot() -> None:
                     WorktreeInfo(path=slot_wt, branch="feature-slot", is_root=False),
                 ]
             },
-            local_branches={env.cwd: ["main", "feature-slot", "__erk-slot-01-placeholder__"]},
+            local_branches={env.cwd: ["main", "feature-slot", "__erk-slot-01-br-stub__"]},
             default_branches={env.cwd: "main"},
             git_common_dirs={env.cwd: env.git_dir, slot_wt: env.git_dir},
         )
@@ -134,7 +134,7 @@ def test_delete_branch_with_slot_worktree_unassigns_slot() -> None:
         # Create pool state with an assignment and save it to file
         # SlotAssignment has: slot_name, branch_name, assigned_at, worktree_path
         assignment = SlotAssignment(
-            slot_name="erk-managed-wt-01",
+            slot_name="erk-slot-01",
             worktree_path=slot_wt,
             branch_name="feature-slot",
             assigned_at=datetime.now(UTC).isoformat(),
@@ -158,7 +158,7 @@ def test_delete_branch_with_slot_worktree_unassigns_slot() -> None:
         assert slot_wt not in git_ops.removed_worktrees
         # Check that slot was unassigned (placeholder branch checked out)
         # checked_out_branches is a list of (Path, str) tuples
-        assert (slot_wt, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
+        assert (slot_wt, "__erk-slot-01-br-stub__") in git_ops.checked_out_branches
 
 
 def test_delete_branch_nonexistent_branch_fails() -> None:

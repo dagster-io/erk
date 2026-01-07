@@ -31,7 +31,7 @@ def test_slot_unassign_by_slot_name() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -52,20 +52,20 @@ def test_slot_unassign_by_slot_name() -> None:
         )
 
         # Create initial pool state with an assignment
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-slot-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
         assert "Unassigned" in result.output
         assert "feature-test" in result.output
-        assert "erk-managed-wt-01" in result.output
+        assert "erk-slot-01" in result.output
         assert "Switched to placeholder branch" in result.output
         assert "erk wt co root" in result.output
 
@@ -75,10 +75,10 @@ def test_slot_unassign_by_slot_name() -> None:
         assert len(state.assignments) == 0
 
         # Verify placeholder branch was checked out
-        assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
+        assert (worktree_path, "__erk-slot-01-br-stub__") in git_ops.checked_out_branches
 
         # Verify placeholder branch was created from trunk
-        assert (env.cwd, "__erk-slot-01-placeholder__", "main") in git_ops.created_branches
+        assert (env.cwd, "__erk-slot-01-br-stub__", "main") in git_ops.created_branches
 
 
 def test_slot_unassign_not_found() -> None:
@@ -156,9 +156,9 @@ def test_slot_unassign_preserves_other_assignments() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create pool state with two assignments
-        wt_path_1 = repo_dir / "worktrees" / "erk-managed-wt-01"
+        wt_path_1 = repo_dir / "worktrees" / "erk-slot-01"
         wt_path_1.mkdir(parents=True)
-        wt_path_2 = repo_dir / "worktrees" / "erk-managed-wt-02"
+        wt_path_2 = repo_dir / "worktrees" / "erk-slot-02"
         wt_path_2.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -178,8 +178,8 @@ def test_slot_unassign_preserves_other_assignments() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment1 = _create_test_assignment("erk-managed-wt-01", "feature-a", wt_path_1)
-        assignment2 = _create_test_assignment("erk-managed-wt-02", "feature-b", wt_path_2)
+        assignment1 = _create_test_assignment("erk-slot-01", "feature-a", wt_path_1)
+        assignment2 = _create_test_assignment("erk-slot-02", "feature-b", wt_path_2)
         initial_state = PoolState.test(assignments=(assignment1, assignment2))
         save_pool_state(repo.pool_json_path, initial_state)
 
@@ -187,7 +187,7 @@ def test_slot_unassign_preserves_other_assignments() -> None:
 
         # Unassign first one by slot name
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-slot-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -197,7 +197,7 @@ def test_slot_unassign_preserves_other_assignments() -> None:
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "feature-b"
-        assert state.assignments[0].slot_name == "erk-managed-wt-02"
+        assert state.assignments[0].slot_name == "erk-slot-02"
 
 
 def test_slot_unassign_fails_with_uncommitted_changes() -> None:
@@ -205,7 +205,7 @@ def test_slot_unassign_fails_with_uncommitted_changes() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -227,14 +227,14 @@ def test_slot_unassign_fails_with_uncommitted_changes() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-slot-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 1
@@ -254,7 +254,7 @@ def test_slot_unassign_uses_existing_placeholder_branch() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         # Placeholder branch already exists
@@ -264,7 +264,7 @@ def test_slot_unassign_uses_existing_placeholder_branch() -> None:
             git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
             trunk_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "feature-test", "__erk-slot-01-placeholder__"]},
+            local_branches={env.cwd: ["main", "feature-test", "__erk-slot-01-br-stub__"]},
         )
 
         repo = RepoContext(
@@ -275,20 +275,20 @@ def test_slot_unassign_uses_existing_placeholder_branch() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        assignment = _create_test_assignment("erk-slot-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
         save_pool_state(repo.pool_json_path, initial_state)
 
         test_ctx = env.build_context(git=git_ops, repo=repo)
 
         result = runner.invoke(
-            cli, ["slot", "unassign", "erk-managed-wt-01"], obj=test_ctx, catch_exceptions=False
+            cli, ["slot", "unassign", "erk-slot-01"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
 
         # Verify placeholder branch was checked out
-        assert (worktree_path, "__erk-slot-01-placeholder__") in git_ops.checked_out_branches
+        assert (worktree_path, "__erk-slot-01-br-stub__") in git_ops.checked_out_branches
 
         # Verify NO branch was created (placeholder already existed)
         assert len(git_ops.created_branches) == 0
