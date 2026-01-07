@@ -27,12 +27,13 @@ from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.extraction.claude_installation import ClaudeInstallation
-from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
+from erk_shared.gateway.claude_settings.abc import UserLevelClaudeSettingsStore
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+from erk_shared.gateway.repo_state.abc import RepoLevelStateStore
 from erk_shared.gateway.shell import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
@@ -76,7 +77,8 @@ class ErkContext:
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     plan_store: PlanStore
     prompt_executor: PromptExecutor  # From DotAgentContext
-    claude_settings_store: ClaudeSettingsStore  # Claude Code settings file operations
+    claude_settings_store: UserLevelClaudeSettingsStore  # Claude Code settings file operations
+    repo_state_store: RepoLevelStateStore  # Repo-level state file operations (pool.json)
 
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell

@@ -1,19 +1,23 @@
-"""Abstract base class for Claude settings file operations."""
+"""Abstract base class for user-level Claude settings file operations."""
 
 from abc import ABC, abstractmethod
 from pathlib import Path
 
 
-class ClaudeSettingsStore(ABC):
-    """Abstract interface for Claude settings file operations.
+class UserLevelClaudeSettingsStore(ABC):
+    """Abstract interface for user-level Claude settings file operations.
 
     This gateway provides access to Claude settings files, primarily the global
     settings at ~/.claude/settings.json. The gateway pattern ensures tests use
-    FakeClaudeSettingsStore which never accesses the real home directory.
+    FakeUserLevelClaudeSettingsStore which never accesses the real home directory.
+
+    Naming convention:
+    - User-level: ~/.claude/ -> UserLevelClaudeSettingsStore
+    - Repo-level: ~/.erk/repos/<repo>/ -> RepoLevelStateStore (separate gateway)
 
     Two implementations:
-    - RealClaudeSettingsStore: Production - reads/writes real filesystem
-    - FakeClaudeSettingsStore: Testing - in-memory storage, never touches disk
+    - RealUserLevelClaudeSettingsStore: Production - reads/writes real filesystem
+    - FakeUserLevelClaudeSettingsStore: Testing - in-memory storage, never touches disk
     """
 
     @abstractmethod

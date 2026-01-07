@@ -1,12 +1,12 @@
-"""Real implementation of ClaudeSettingsStore - reads/writes real filesystem."""
+"""Real implementation of UserLevelClaudeSettingsStore - reads/writes real filesystem."""
 
 import json
 from pathlib import Path
 
-from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
+from erk_shared.gateway.claude_settings.abc import UserLevelClaudeSettingsStore
 
 
-class RealClaudeSettingsStore(ClaudeSettingsStore):
+class RealUserLevelClaudeSettingsStore(UserLevelClaudeSettingsStore):
     """Production implementation - reads/writes real filesystem.
 
     This is the only implementation that should access Path.home() or the
