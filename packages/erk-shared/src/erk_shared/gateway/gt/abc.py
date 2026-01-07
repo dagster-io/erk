@@ -17,6 +17,7 @@ GitHub operations use the main GitHub ABC from erk_shared.github.
 
 from typing import Protocol
 
+from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
@@ -61,4 +62,9 @@ class GtKit(Protocol):
     @property
     def time(self) -> Time:
         """Time operations interface for testable sleep/timing."""
+        ...
+
+    @property
+    def branch_manager(self) -> BranchManager:
+        """Branch manager for Graphite/Git-agnostic operations."""
         ...

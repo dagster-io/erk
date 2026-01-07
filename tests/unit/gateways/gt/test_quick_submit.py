@@ -185,3 +185,57 @@ class TestQuickSubmitMutationTracking:
         # call is (repo_root, publish, restack, quiet, force)
         assert call[3] is True  # quiet
         assert call[4] is True  # force
+
+
+class TestQuickSubmitGraphiteDisabled:
+    """Tests for quick-submit when Graphite is disabled (git push fallback)."""
+
+    def test_quick_submit_uses_git_push_when_graphite_disabled(self, tmp_repo: Path) -> None:
+        """Test that quick-submit uses git push when Graphite is disabled."""
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_repo))
+            .with_branch("feature-branch", parent="main")
+            .with_clean_working_tree()
+            .with_pr(123, url="https://github.com/org/repo/pull/123")
+            .with_graphite_disabled()
+        )
+
+        result = render_events(execute_quick_submit(ops, tmp_repo))
+
+        assert isinstance(result, QuickSubmitSuccess)
+        assert result.success is True
+        # Verify git push was called instead of graphite submit
+        git = ops.git
+        assert isinstance(git, FakeGit)
+        assert len(git.pushed_branches) == 1
+        push_call = git.pushed_branches[0]
+        assert push_call.remote == "origin"
+        assert push_call.branch == "feature-branch"
+        assert push_call.set_upstream is True
+
+    def test_quick_submit_graphite_disabled_with_staged_changes(self, tmp_repo: Path) -> None:
+        """Test quick-submit commits and pushes when Graphite is disabled."""
+        ops = (
+            FakeGtKitOps()
+            .with_repo_root(str(tmp_repo))
+            .with_branch("feature-branch", parent="main")
+            .with_staged_changes()
+            .with_pr(456, url="https://github.com/org/repo/pull/456")
+            .with_graphite_disabled()
+        )
+
+        result = render_events(execute_quick_submit(ops, tmp_repo))
+
+        assert isinstance(result, QuickSubmitSuccess)
+        assert result.success is True
+        assert result.committed is True
+        assert result.pr_url == "https://github.com/org/repo/pull/456"
+
+        # Verify commit was called
+        git = ops.git
+        assert isinstance(git, FakeGit)
+        assert len(git.commits) == 1
+
+        # Verify git push was called (not graphite submit)
+        assert len(git.pushed_branches) == 1
