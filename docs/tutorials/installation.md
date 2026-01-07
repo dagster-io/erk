@@ -36,6 +36,5 @@ This configures Claude Code hooks and settings for erk workflows.
 
 ## Next Steps
 
-- [Prerequisites](prerequisites.md) - Tools to install first
-- [Shell Integration](shell-integration.md) - Enable directory switching
-- [First Steps](first-steps.md) - Create your first plan in 5 minutes
+- [Your First Plan](first-plan.md) - Create your first plan and land a PR
+- [Prerequisites](prerequisites.md) - Tools to install first (if you skipped ahead)
