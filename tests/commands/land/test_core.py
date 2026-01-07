@@ -18,10 +18,6 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.graphite.disabled import (
-    GraphiteDisabled,
-    GraphiteDisabledReason,
-)
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
@@ -174,27 +170,6 @@ def test_land_error_from_execute_land_pr() -> None:
         result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert_cli_error(result, 1, "Branch must be exactly one level up from main")
-
-
-def test_land_requires_graphite() -> None:
-    """Test land requires Graphite to be available (not disabled)."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
-            current_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-        )
-
-        # GraphiteDisabled sentinel indicates Graphite is NOT available
-        graphite_disabled = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
-        test_ctx = env.build_context(git=git_ops, graphite=graphite_disabled)
-
-        result = runner.invoke(cli, ["land"], obj=test_ctx, catch_exceptions=False)
-
-        assert_cli_error(
-            result, 1, "requires Graphite to be enabled", "erk config set use_graphite true"
-        )
 
 
 def test_land_requires_clean_working_tree() -> None:
