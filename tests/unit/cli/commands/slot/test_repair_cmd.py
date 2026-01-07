@@ -436,3 +436,222 @@ def test_slot_repair_shows_both_repairable_and_informational() -> None:
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].slot_name == "erk-managed-wt-01"
+
+
+def test_slot_repair_fix_repairs_missing_branch() -> None:
+    """Test --fix repairs missing-branch issues."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Build worktrees list including the slot worktree in git registry
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "feature-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Branch does NOT exist in git - missing-branch issue
+            branch_heads={},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        # Without --fix, should show as informational
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "requiring manual intervention" in result.output
+        assert "missing-branch" in result.output
+        # Assignment should still exist
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+
+        # With --fix, should repair
+        result = runner.invoke(
+            cli, ["slot", "repair", "--fix", "-f"], obj=test_ctx, catch_exceptions=False
+        )
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 0
+
+
+def test_slot_repair_fix_repairs_branch_mismatch() -> None:
+    """Test --fix repairs branch-mismatch issues."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Git registry shows different branch than pool.json
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "actual-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "actual-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Both branches exist
+            branch_heads={"expected-branch": "abc123", "actual-branch": "def456"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pool.json says expected-branch but git says actual-branch
+        assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        # With --fix, should repair the branch-mismatch
+        result = runner.invoke(
+            cli, ["slot", "repair", "--fix", "-f"], obj=test_ctx, catch_exceptions=False
+        )
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 0
+
+
+def test_slot_repair_fix_repairs_git_registry_missing() -> None:
+    """Test --fix repairs git-registry-missing issues."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Worktree directory exists but NOT in git registry
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),  # No slot worktree in registry
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},  # Directory exists
+            branch_heads={"feature-branch": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        # Without --fix, should show as informational
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "requiring manual intervention" in result.output
+        assert "git-registry-missing" in result.output
+        # Assignment should still exist
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+
+        # With --fix, should repair
+        result = runner.invoke(
+            cli, ["slot", "repair", "--fix", "-f"], obj=test_ctx, catch_exceptions=False
+        )
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 0
+
+
+def test_slot_repair_without_fix_shows_extended_as_informational() -> None:
+    """Test that without --fix, extended issues show as informational."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Git registry shows different branch than pool.json (branch-mismatch)
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "actual-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "actual-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            branch_heads={"expected-branch": "abc123", "actual-branch": "def456"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        save_pool_state(repo.pool_json_path, initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        # Without --fix, branch-mismatch should show as informational (not repairable)
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "requiring manual intervention" in result.output
+        assert "branch-mismatch" in result.output
+        # Should NOT prompt for repair (no auto-repairable issues)
+        assert "repairable issue" not in result.output
+
+        # State should be unchanged
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1

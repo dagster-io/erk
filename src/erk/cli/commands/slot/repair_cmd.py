@@ -13,6 +13,16 @@ from erk_shared.output.output import user_confirm, user_output
 # Issue codes that can be auto-repaired by removing the assignment
 AUTO_REPAIRABLE_CODES = frozenset({"orphan-state"})
 
+# Extended issue codes repaired with --fix flag
+EXTENDED_REPAIRABLE_CODES = frozenset(
+    {
+        "orphan-state",
+        "missing-branch",
+        "git-registry-missing",
+        "branch-mismatch",
+    }
+)
+
 
 def _extract_slot_name(issue: SyncIssue) -> str:
     """Extract slot name from issue message.
@@ -55,19 +65,22 @@ def _format_remediation(issue: SyncIssue, worktrees_dir: Path) -> list[str]:
 def find_stale_assignments(
     state: PoolState,
     issues: list[SyncIssue],
+    *,
+    repairable_codes: frozenset[str],
 ) -> list[SlotAssignment]:
     """Find assignments that can be auto-repaired.
 
     Args:
         state: Pool state to check
         issues: List of sync issues from run_sync_diagnostics
+        repairable_codes: Set of issue codes that should be auto-repaired
 
     Returns:
-        List of stale SlotAssignments (orphan-state issues)
+        List of stale SlotAssignments matching the repairable codes
     """
-    # Collect the slot names that have auto-repairable issues
+    # Collect the slot names that have repairable issues
     stale_slot_names = {
-        _extract_slot_name(issue) for issue in issues if issue.code in AUTO_REPAIRABLE_CODES
+        _extract_slot_name(issue) for issue in issues if issue.code in repairable_codes
     }
 
     # Return the actual assignments that are stale
@@ -101,14 +114,17 @@ def execute_repair(
 def _display_informational_issues(
     issues: list[SyncIssue],
     worktrees_dir: Path,
+    *,
+    repairable_codes: frozenset[str],
 ) -> None:
     """Display informational issues that require manual intervention.
 
     Args:
-        issues: List of non-auto-repairable issues
+        issues: List of sync issues
         worktrees_dir: Path to worktrees directory (for path display)
+        repairable_codes: Set of issue codes being auto-repaired (excluded from display)
     """
-    informational = [i for i in issues if i.code not in AUTO_REPAIRABLE_CODES]
+    informational = [i for i in issues if i.code not in repairable_codes]
     if not informational:
         return
 
@@ -125,8 +141,13 @@ def _display_informational_issues(
 
 @click.command("repair")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
+@click.option(
+    "--fix",
+    is_flag=True,
+    help="Also repair issues that normally require manual intervention",
+)
 @click.pass_obj
-def slot_repair(ctx: ErkContext, force: bool) -> None:
+def slot_repair(ctx: ErkContext, force: bool, fix: bool) -> None:
     """Remove stale assignments from pool state.
 
     Finds assignments where the worktree directory no longer exists
@@ -136,6 +157,8 @@ def slot_repair(ctx: ErkContext, force: bool) -> None:
     manual intervention with suggested remediation commands.
 
     Use --force to skip the confirmation prompt.
+    Use --fix to also repair missing-branch, branch-mismatch, and
+    git-registry-missing issues (all repairs = remove the assignment).
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -145,17 +168,20 @@ def slot_repair(ctx: ErkContext, force: bool) -> None:
         user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
 
+    # Determine which codes to repair based on --fix flag
+    repairable_codes = EXTENDED_REPAIRABLE_CODES if fix else AUTO_REPAIRABLE_CODES
+
     # Run full diagnostics to get all issues
     all_issues = run_sync_diagnostics(ctx, state, repo.root)
 
-    # Find stale (auto-repairable) assignments
-    stale_assignments = find_stale_assignments(state, all_issues)
+    # Find stale (repairable) assignments
+    stale_assignments = find_stale_assignments(state, all_issues, repairable_codes=repairable_codes)
 
-    # Display informational issues (non-auto-repairable)
-    _display_informational_issues(all_issues, repo.worktrees_dir)
+    # Display informational issues (non-repairable with current settings)
+    _display_informational_issues(all_issues, repo.worktrees_dir, repairable_codes=repairable_codes)
 
     if not stale_assignments:
-        if not any(i.code not in AUTO_REPAIRABLE_CODES for i in all_issues):
+        if not any(i.code not in repairable_codes for i in all_issues):
             user_output(click.style("✓ No issues found", fg="green"))
         return
 
