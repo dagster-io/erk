@@ -1,6 +1,6 @@
 """Tests for diff extraction operation.
 
-Tests the execute_diff_extraction function that gets PR diff from GitHub API
+Tests the execute_diff_extraction function that computes local git diff
 and writes it to a scratch file for AI analysis.
 """
 
@@ -10,7 +10,6 @@ from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import (
-    _is_diff_too_large_error,
     execute_diff_extraction,
     filter_diff_excluded_files,
 )
@@ -168,20 +167,24 @@ index abc123..def456 100644
 
 
 def test_execute_diff_extraction_success(tmp_path: Path) -> None:
-    """Test successful diff extraction."""
+    """Test successful diff extraction using local git diff."""
     # Create repo root structure
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     scratch_dir = repo_root / ".tmp" / "test-session"
     scratch_dir.mkdir(parents=True)
 
+    local_diff = "diff --git a/file.py b/file.py\n+new line"
+
     git = FakeGit(
         git_common_dirs={tmp_path: repo_root},
         repository_roots={tmp_path: str(repo_root)},
+        trunk_branches={repo_root: "main"},
+        diff_to_branch={(tmp_path, "main"): local_diff},
     )
 
     github = FakeGitHub(
-        pr_diffs={123: "diff --git a/file.py b/file.py\n+new line"},
+        pr_bases={123: "main"},
     )
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
@@ -193,7 +196,7 @@ def test_execute_diff_extraction_success(tmp_path: Path) -> None:
     progress_events = [e for e in events if isinstance(e, ProgressEvent)]
     completion_events = [e for e in events if isinstance(e, CompletionEvent)]
 
-    assert len(progress_events) >= 2  # "Getting PR diff..." and "Diff written to..."
+    assert len(progress_events) >= 2  # "Getting diff..." and "Diff written to..."
     assert len(completion_events) == 1
 
     # Check result is a Path
@@ -214,16 +217,18 @@ def test_execute_diff_extraction_truncates_large_diff(tmp_path: Path) -> None:
     scratch_dir = repo_root / ".tmp" / "test-session"
     scratch_dir.mkdir(parents=True)
 
-    git = FakeGit(
-        git_common_dirs={tmp_path: repo_root},
-        repository_roots={tmp_path: str(repo_root)},
-    )
-
     # Create a very large diff (over 1M chars - the MAX_DIFF_CHARS threshold)
     large_diff = "diff --git a/file.py b/file.py\n" + "+" + "a" * 1_100_000
 
+    git = FakeGit(
+        git_common_dirs={tmp_path: repo_root},
+        repository_roots={tmp_path: str(repo_root)},
+        trunk_branches={repo_root: "main"},
+        diff_to_branch={(tmp_path, "main"): large_diff},
+    )
+
     github = FakeGitHub(
-        pr_diffs={123: large_diff},
+        pr_bases={123: "main"},
     )
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
@@ -250,13 +255,17 @@ def test_execute_diff_extraction_progress_messages(tmp_path: Path) -> None:
     scratch_dir = repo_root / ".tmp" / "test-session"
     scratch_dir.mkdir(parents=True)
 
+    local_diff = "diff content\nline 2\nline 3"
+
     git = FakeGit(
         git_common_dirs={tmp_path: repo_root},
         repository_roots={tmp_path: str(repo_root)},
+        trunk_branches={repo_root: "main"},
+        diff_to_branch={(tmp_path, "main"): local_diff},
     )
 
     github = FakeGitHub(
-        pr_diffs={123: "diff content\nline 2\nline 3"},
+        pr_bases={123: "main"},
     )
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
@@ -267,92 +276,15 @@ def test_execute_diff_extraction_progress_messages(tmp_path: Path) -> None:
     messages = [e.message for e in progress_events]
 
     # Should report getting diff
-    assert any("Getting PR diff" in m for m in messages)
+    assert any("Getting diff" in m for m in messages)
     # Should report diff retrieved with line count
     assert any("3 lines" in m for m in messages)
     # Should report diff written
     assert any("Diff written" in m for m in messages)
 
 
-# --- Tests for _is_diff_too_large_error ---
-
-
-def test_is_diff_too_large_error_detects_406() -> None:
-    """Test that HTTP 406 error is detected."""
-    error = RuntimeError("Exit code: 1\nstderr: HTTP 406")
-    assert _is_diff_too_large_error(error) is True
-
-
-def test_is_diff_too_large_error_detects_too_large() -> None:
-    """Test that 'too_large' error message is detected."""
-    error = RuntimeError("Error: too_large: Diff is too large")
-    assert _is_diff_too_large_error(error) is True
-
-
-def test_is_diff_too_large_error_detects_not_acceptable() -> None:
-    """Test that 'Not Acceptable' error message is detected."""
-    error = RuntimeError("Exit code: 22\nstderr: HTTP 406 Not Acceptable")
-    assert _is_diff_too_large_error(error) is True
-
-
-def test_is_diff_too_large_error_ignores_other_errors() -> None:
-    """Test that other errors are not detected as size errors."""
-    error = RuntimeError("Network timeout")
-    assert _is_diff_too_large_error(error) is False
-
-    auth_error = RuntimeError("Authentication failed")
-    assert _is_diff_too_large_error(auth_error) is False
-
-
-# --- Tests for fallback behavior ---
-
-
-def test_execute_diff_extraction_fallback_on_406(tmp_path: Path) -> None:
-    """Test fallback to local git diff when GitHub returns HTTP 406."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    scratch_dir = repo_root / ".tmp" / "test-session"
-    scratch_dir.mkdir(parents=True)
-
-    local_diff = "diff --git a/big_file.py b/big_file.py\n+local diff content"
-
-    git = FakeGit(
-        git_common_dirs={tmp_path: repo_root},
-        repository_roots={tmp_path: str(repo_root)},
-        trunk_branches={repo_root: "main"},
-        diff_to_branch={(tmp_path, "main"): local_diff},
-    )
-
-    github = FakeGitHub(
-        pr_diff_error="Exit code: 1\nstderr: HTTP 406 Not Acceptable",
-        pr_bases={123: "main"},
-    )
-
-    ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
-
-    events = list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
-
-    progress_events = [e for e in events if isinstance(e, ProgressEvent)]
-    warning_events = [e for e in progress_events if e.style == "warning"]
-
-    # Should have warning about fallback
-    assert len(warning_events) >= 1
-    assert any("too large" in e.message.lower() for e in warning_events)
-
-    # Should succeed with local diff
-    completion_events = [e for e in events if isinstance(e, CompletionEvent)]
-    assert len(completion_events) == 1
-
-    result = completion_events[0].result
-    assert isinstance(result, Path)
-    assert result.exists()
-
-    content = result.read_text(encoding="utf-8")
-    assert "local diff content" in content
-
-
-def test_execute_diff_extraction_fallback_uses_pr_base_branch(tmp_path: Path) -> None:
-    """Test that fallback uses PR's base branch, not trunk."""
+def test_execute_diff_extraction_uses_pr_base_branch(tmp_path: Path) -> None:
+    """Test that diff uses PR's base branch, not trunk."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     scratch_dir = repo_root / ".tmp" / "test-session"
@@ -372,7 +304,6 @@ def test_execute_diff_extraction_fallback_uses_pr_base_branch(tmp_path: Path) ->
     )
 
     github = FakeGitHub(
-        pr_diff_error="HTTP 406",
         pr_bases={123: "feature-base"},
     )
 
@@ -390,8 +321,8 @@ def test_execute_diff_extraction_fallback_uses_pr_base_branch(tmp_path: Path) ->
     assert "trunk diff" not in content
 
 
-def test_execute_diff_extraction_fallback_uses_trunk_when_no_pr_base(tmp_path: Path) -> None:
-    """Test that fallback uses trunk branch when PR base is not available."""
+def test_execute_diff_extraction_uses_trunk_when_no_pr_base(tmp_path: Path) -> None:
+    """Test that diff uses trunk branch when PR base is not available."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     scratch_dir = repo_root / ".tmp" / "test-session"
@@ -407,7 +338,6 @@ def test_execute_diff_extraction_fallback_uses_trunk_when_no_pr_base(tmp_path: P
     )
 
     github = FakeGitHub(
-        pr_diff_error="HTTP 406",
         # No pr_bases configured - get_pr_base_branch returns None
     )
 
@@ -422,26 +352,3 @@ def test_execute_diff_extraction_fallback_uses_trunk_when_no_pr_base(tmp_path: P
     content = result.read_text(encoding="utf-8")
     # Should fall back to trunk branch
     assert "trunk diff content" in content
-
-
-def test_execute_diff_extraction_reraises_non_size_errors(tmp_path: Path) -> None:
-    """Test that non-size-related errors are re-raised."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-
-    git = FakeGit(
-        git_common_dirs={tmp_path: repo_root},
-        repository_roots={tmp_path: str(repo_root)},
-    )
-
-    github = FakeGitHub(
-        pr_diff_error="Authentication failed: invalid token",
-    )
-
-    ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
-
-    try:
-        list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
-        raise AssertionError("Should have raised RuntimeError")
-    except RuntimeError as e:
-        assert "Authentication failed" in str(e)
