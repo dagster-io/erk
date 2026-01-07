@@ -4,9 +4,11 @@ Tests for behavior when PRs have unresolved review comments:
 - Warning shown with prompt to continue
 - --force skips the warning
 - User can confirm to proceed despite warning
+- Non-interactive mode fails with error when unresolved comments exist
 """
 
 from dataclasses import replace
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -114,14 +116,16 @@ def test_land_warns_on_unresolved_comments() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # User declines to continue when prompted about unresolved comments
-        result = runner.invoke(
-            cli,
-            ["land", "123", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-            input="n\n",
-        )
+        # Mock _is_interactive_terminal to return True (simulate interactive terminal)
+        with patch("erk.cli.commands.land_cmd._is_interactive_terminal", return_value=True):
+            # User declines to continue when prompted about unresolved comments
+            result = runner.invoke(
+                cli,
+                ["land", "123", "--script"],
+                obj=test_ctx,
+                catch_exceptions=False,
+                input="n\n",
+            )
 
         # Should exit cleanly (user chose not to continue)
         assert result.exit_code == 0
@@ -326,14 +330,16 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # User confirms with "y\n" for unresolved comments, then "y\n" for cleanup
-        result = runner.invoke(
-            cli,
-            ["land", "123", "--script"],
-            obj=test_ctx,
-            catch_exceptions=False,
-            input="y\ny\n",
-        )
+        # Mock _is_interactive_terminal to return True (simulate interactive terminal)
+        with patch("erk.cli.commands.land_cmd._is_interactive_terminal", return_value=True):
+            # User confirms with "y\n" for unresolved comments, then "y\n" for cleanup
+            result = runner.invoke(
+                cli,
+                ["land", "123", "--script"],
+                obj=test_ctx,
+                catch_exceptions=False,
+                input="y\ny\n",
+            )
 
         assert result.exit_code == 0
 
@@ -444,3 +450,115 @@ def test_land_handles_rate_limit_gracefully() -> None:
 
         # Worktree should have been removed
         assert feature_1_path in git_ops.removed_worktrees
+
+
+def test_land_fails_non_interactive_with_unresolved_comments() -> None:
+    """Test land fails in non-interactive mode when PR has unresolved comments.
+
+    When running in a non-TTY context (e.g., from TUI or CI), land should fail
+    with an error message instead of hanging waiting for user input.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+            # Configure unresolved review threads
+            pr_review_threads={
+                123: [
+                    PRReviewThread(
+                        id="thread1",
+                        path="src/main.py",
+                        line=10,
+                        is_resolved=False,
+                        is_outdated=False,
+                        comments=(),
+                    ),
+                ]
+            },
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        # Run in non-interactive mode (sys.stdin.isatty() returns False)
+        # CliRunner by default simulates non-TTY, so no mock needed here
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Should fail with exit code 1
+        assert result.exit_code == 1
+
+        # Should show warning about unresolved comments
+        assert "has 1 unresolved review comment(s)" in result.output
+
+        # Should show error about non-interactive mode
+        assert "Cannot prompt for confirmation in non-interactive mode" in result.output
+        assert "Use --force to skip this check" in result.output
+
+        # PR should NOT have been merged
+        assert len(github_ops.merged_prs) == 0
