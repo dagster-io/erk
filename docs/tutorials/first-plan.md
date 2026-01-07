@@ -1,73 +1,79 @@
 # Your First Plan
 
-This tutorial walks you through erk's complete workflow: creating a plan, saving it to GitHub, implementing it, and landing the PR. By the end, you'll understand how plan-oriented engineering works in practice.
-
-**Time to complete:** 15-20 minutes
+This tutorial walks you through erk's complete workflow: creating a plan, saving it to GitHub, implementing it, and landing the PR. You'll build a simple CLI chatbot and add features to it.
 
 **Prerequisites:** Complete [Installation](installation.md) and verify with `erk doctor`.
 
-## The Scenario
+## Step 1: Clone the Starter Project
 
-We'll add a simple feature to an existing project. The specific change doesn't matter—what matters is learning the workflow. Pick any small feature you've been meaning to add, like:
+Clone the tutorial starter repo using the GitHub CLI. This front-loads authentication—if there are any issues, you'll discover them now:
 
-- Adding a new CLI command
-- Creating a utility function
-- Adding a configuration option
+```bash
+gh repo create say --template dagster-io/erk-tutorial --public --clone
+cd say
+```
 
-For this tutorial, we'll use "add a greeting command" as our example.
+If prompted to authenticate, follow the instructions.
 
-## Step 1: Start a Claude Code Session
+The starter is a Python project using modern tools: uv, ruff, ty, pytest, and, of course, erk.
 
-Open your terminal in your project directory and start Claude Code:
+Verify the setup:
+
+```bash
+uv run say
+```
+
+You should see a `>` prompt. Type something and press Enter—it echoes back. Press Ctrl+C to exit.
+
+## Step 2: Plan Your First Feature
+
+Erk is built around a **plan → implement** cycle. We believe explicit planning is critical for agentic engineering: you get better outcomes, more precise control, and can perform larger units of work more confidently and autonomously.
+
+We'll demonstrate this using Plan Mode in Claude Code to add a simple feature.
+
+Start a new session:
 
 ```bash
 claude
 ```
 
-You'll see the Claude Code prompt, ready to accept your request.
-
-## Step 2: Enter Plan Mode
-
-Ask Claude to help you plan the feature. When you mention planning, erk's hooks will guide Claude into plan mode:
+Ask Claude to plan adding a `/quit` command:
 
 ```
-I want to add a "greet" command that prints a welcome message. Let's plan this out.
+I want to add a /quit command that exits the loop gracefully with a "bye" message. Let's plan this.
 ```
 
-Claude will enter plan mode and begin exploring your codebase to understand:
+Claude enters plan mode. You can also enter plan mode anytime by pressing **Shift+Tab** to cycle through modes (Auto → Plan → Auto).
 
-- Where CLI commands are defined
-- What patterns existing commands follow
-- What tests exist for commands
+You'll see Claude exploring the codebase—reading files, understanding the CLI structure, finding where the input loop lives, and identifying patterns to follow. When it finishes exploring, it presents a plan for your review.
 
-## Step 3: Develop Your Plan
+## Step 3: Develop the Plan
 
-Work with Claude to refine the plan. Good plans include:
-
-- **What** you're building (the feature)
-- **Where** the changes go (specific files)
-- **How** it fits existing patterns (conventions to follow)
-- **Tests** to verify it works
-
-Claude will write the plan to a file. Review it and suggest changes:
-
-```
-Can we also add a --name flag to personalize the greeting?
-```
-
-Keep iterating until the plan covers everything needed.
+This is a simple feature, so the plan should be straightforward: modify the input loop to check for `/quit`, print "bye", and exit. Review what Claude proposes and continue when you're satisfied.
 
 ## Step 4: Save the Plan to GitHub
 
-When you're satisfied with the plan, tell Claude you're ready:
+When the plan is ready, Claude prompts you for next steps.
+
+### Erk Extends Plan Mode
+
+Standard Claude Code plan mode shows this menu when you approve:
 
 ```
-The plan looks good. Let's save it.
+○ Start implementation
+○ Edit the plan
 ```
 
-Erk prompts you to save the plan to GitHub as an issue. Choose "Save" when prompted.
+Erk extends this with additional options:
 
-Claude runs `/erk:plan-save`, which:
+```
+○ Save the plan          # Save as GitHub issue, stop here
+○ Implement              # Save to GitHub, then implement
+○ Incremental            # Implement directly (for quick iterations)
+○ View/Edit the plan
+```
+
+Choose **Save the plan**. Claude runs `/erk:plan-save`, which:
 
 1. Creates a GitHub issue with your plan
 2. Adds the `erk-plan` label
@@ -76,92 +82,84 @@ Claude runs `/erk:plan-save`, which:
 You'll see output like:
 
 ```
-Plan saved as issue #42
+Plan saved as issue #1
 ```
 
-**Note the issue number**—you'll use it next.
+### Why Save to GitHub?
 
-## Step 5: Exit Claude Code
+When you develop a plan in Claude Code, it normally lives only in the conversation—easy to lose when you close the session. By saving as a GitHub issue:
 
-Exit the Claude Code session:
+- **The plan persists** beyond your session
+- **Anyone can implement it**—you, a teammate, or a CI agent
+- **Progress is tracked effortlessly** through GitHub's issue system
+
+## Step 5: Implement the Plan
+
+The standard erk workflow implements each plan in its own **worktree**, which is ideal for organizing and parallelizing your work.
+
+### What's a Worktree?
+
+Git worktrees let you have multiple branches checked out simultaneously in separate directories. Instead of switching branches in your main directory, erk creates a new directory with the feature branch—completely isolated.
+
+This isolation is powerful: an agent can implement your plan in one worktree while you continue working in another.
+
+To switch to the new worktree, we first exit Claude Code:
 
 ```
 /exit
 ```
 
-You're back at your terminal. The plan is now tracked in GitHub, separate from any implementation.
-
-## Step 6: Implement the Plan
-
-Run `erk implement` with your issue number:
+Now run `erk implement`:
 
 ```bash
-erk implement 42
+erk implement 1
 ```
 
 This command:
 
 1. **Creates a worktree** with a new feature branch
-2. **Changes to that directory** (shell integration required)
-3. **Starts Claude Code** with the plan loaded
-4. **Claude implements** each step from the plan
+2. **Starts Claude Code** in that worktree with the plan loaded
+3. **Claude implements** each step from the plan
 
-Watch as Claude:
+Your plan is now implementing. While Claude works, let's see what else we can do.
 
-- Creates the command file
-- Adds the `--name` flag
-- Writes tests
-- Runs the test suite
+### Work in Parallel
 
-## Step 7: Review the Implementation
-
-When Claude finishes, it reports what was done. Review the changes:
+Open a **new terminal** and return to your main worktree:
 
 ```bash
-git diff
+cd ~/say
 ```
 
-Check that:
+From here, you can monitor progress with the erk dashboard:
 
-- The command works: `your-cli greet --name "World"`
-- Tests pass: `pytest`
-- Code follows project conventions
-
-If something needs adjustment, iterate with Claude:
-
-```
-The greeting should be more enthusiastic. Can you add an exclamation point?
+```bash
+erk dash
 ```
 
-## Step 8: Submit the PR
+This launches an interactive TUI showing all your plans and their implementation status. You can watch progress here, or start planning something else entirely—the implementation continues in its own worktree.
 
-When you're satisfied with the implementation, submit the PR:
+## Step 6: Submit the PR
+
+When the implementation finishes, switch back to the worktree:
+
+```bash
+erk br co P1-quit-command
+```
+
+(Your branch name will match the issue title.)
+
+Now submit the PR:
 
 ```bash
 erk pr submit
 ```
 
-Or from within Claude Code:
-
-```
-/erk:pr-submit
-```
-
 This creates a pull request linked to the original issue.
 
-## Step 9: Address Review Feedback
+## Step 7: Land the PR
 
-After reviewers comment on your PR, address their feedback:
-
-```
-/erk:pr-address
-```
-
-Claude reads the PR comments and makes the requested changes. Repeat until approved.
-
-## Step 10: Land the PR
-
-Once approved, merge and clean up:
+For this tutorial, you can merge your own PR. Once ready:
 
 ```bash
 erk pr land
@@ -170,9 +168,12 @@ erk pr land
 This:
 
 1. Merges the PR
-2. Deletes the feature branch
-3. Removes the worktree
-4. Returns you to the main worktree
+2. Closes the linked issue
+3. Deletes the feature branch
+4. Frees the worktree for reuse
+5. Returns you to the main worktree
+
+<!-- TODO: Link to worktree management guide explaining slots -->
 
 ## What You've Learned
 
@@ -184,33 +185,21 @@ You've completed the full erk workflow:
 | **Save**      | Stored the plan as a GitHub issue for tracking     |
 | **Implement** | Executed the plan in an isolated worktree          |
 | **Submit**    | Created a PR linked to the original issue          |
-| **Iterate**   | Addressed review feedback with AI assistance       |
 | **Land**      | Merged and cleaned up automatically                |
-
-The entire workflow—from planning to merged PR—happened without opening an IDE.
-
-## Tips for Effective Planning
-
-1. **Be specific about patterns**: "Follow the pattern in `existing_command.py`"
-2. **Include test requirements**: "Add unit tests for the new function"
-3. **Mention edge cases**: "Handle the case where name is empty"
-4. **Reference existing code**: "Use the same error handling as `other_function`"
-
-## Next Steps
-
-- [Use the Local Workflow](../howto/local-workflow.md) - More details on daily usage
-- [The Workflow](../topics/the-workflow.md) - Conceptual understanding
-- [Work Without Plans](../howto/planless-workflow.md) - When you don't need a full plan
-- [CLI Command Reference](../ref/commands.md) - All available commands
 
 ## Quick Reference
 
-| Task             | Command                 |
-| ---------------- | ----------------------- |
-| Start Claude     | `claude`                |
-| Save plan        | `/erk:plan-save`        |
-| Exit Claude      | `/exit`                 |
-| Implement plan   | `erk implement <issue>` |
-| Submit PR        | `erk pr submit`         |
-| Address feedback | `/erk:pr-address`       |
-| Land PR          | `erk pr land`           |
+| Task           | Command                 |
+| -------------- | ----------------------- |
+| Start Claude   | `claude`                |
+| Save plan      | `/erk:plan-save`        |
+| Exit Claude    | `/exit`                 |
+| Implement plan | `erk implement <issue>` |
+| Monitor plans  | `erk dash`              |
+| Submit PR      | `erk pr submit`         |
+| Land PR        | `erk pr land`           |
+
+## Next Steps
+
+- [The Workflow](../topics/the-workflow.md) - Conceptual understanding of plan-oriented development
+- [CLI Command Reference](../ref/commands.md) - All available commands
