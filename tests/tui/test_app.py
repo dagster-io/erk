@@ -54,6 +54,31 @@ class TestErkDashAppDataLoading:
             # Provider should have been called
             assert provider.fetch_count >= 1
 
+    @pytest.mark.asyncio
+    async def test_api_error_shows_notification_and_empty_table(self) -> None:
+        """App shows error notification and empty table when API fails."""
+        provider = FakePlanDataProvider(
+            fetch_error="Network unreachable",
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            # Wait for async data load attempt
+            await pilot.pause()
+            await pilot.pause()
+
+            # Provider should have been called
+            assert provider.fetch_count >= 1
+
+            # Table should be empty (no crash)
+            assert len(app._rows) == 0
+
+            # App should still be running (not crashed)
+            # and table should be visible (meaning load completed, even with error)
+            table = app.query_one(PlanDataTable)
+            assert table.display is True
+
 
 class TestErkDashAppNavigation:
     """Tests for keyboard navigation."""

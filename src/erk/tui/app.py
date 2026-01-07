@@ -1032,14 +1032,22 @@ class ErkDashApp(App):
         # Track fetch timing
         start_time = time.monotonic()
 
-        # Run sync fetch in executor to avoid blocking
-        loop = asyncio.get_running_loop()
-        rows = await loop.run_in_executor(None, self._provider.fetch_plans, self._plan_filters)
+        try:
+            # Run sync fetch in executor to avoid blocking
+            loop = asyncio.get_running_loop()
+            rows = await loop.run_in_executor(None, self._provider.fetch_plans, self._plan_filters)
 
-        # If sorting by activity, also fetch activity data
-        if self._sort_state.key == SortKey.BRANCH_ACTIVITY:
-            activity = await loop.run_in_executor(None, self._provider.fetch_branch_activity, rows)
-            self._activity_by_issue = activity
+            # If sorting by activity, also fetch activity data
+            if self._sort_state.key == SortKey.BRANCH_ACTIVITY:
+                activity = await loop.run_in_executor(
+                    None, self._provider.fetch_branch_activity, rows
+                )
+                self._activity_by_issue = activity
+
+        except Exception as e:
+            # GitHub API failure, network error, etc.
+            self.notify(f"Failed to load plans: {e}", severity="error", timeout=5)
+            rows = []
 
         # Calculate duration
         duration = time.monotonic() - start_time

@@ -51,6 +51,7 @@ class FakeGitHub(GitHub):
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
         review_threads_rate_limited: bool = False,
         pr_diff_error: str | None = None,
+        workflow_runs_error: str | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -79,6 +80,8 @@ class FakeGitHub(GitHub):
                 RuntimeError simulating GraphQL rate limit
             pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
                 Use to simulate HTTP 406 "diff too large" errors.
+            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+                RuntimeError with this message. Use to simulate API failures.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -102,6 +105,7 @@ class FakeGitHub(GitHub):
         self._pr_review_threads = pr_review_threads or {}
         self._review_threads_rate_limited = review_threads_rate_limited
         self._pr_diff_error = pr_diff_error
+        self._workflow_runs_error = workflow_runs_error
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -433,6 +437,8 @@ class FakeGitHub(GitHub):
 
         Looks up each node_id in the pre-configured workflow_runs_by_node_id mapping.
 
+        Raises RuntimeError if workflow_runs_error is set, simulating API failures.
+
         Args:
             repo_root: Repository root directory (ignored in fake)
             node_ids: List of GraphQL node IDs to lookup
@@ -440,6 +446,8 @@ class FakeGitHub(GitHub):
         Returns:
             Mapping of node_id -> WorkflowRun or None if not found
         """
+        if self._workflow_runs_error is not None:
+            raise RuntimeError(self._workflow_runs_error)
         return {node_id: self._workflow_runs_by_node_id.get(node_id) for node_id in node_ids}
 
     def get_workflow_run_node_id(self, repo_root: Path, run_id: str) -> str | None:

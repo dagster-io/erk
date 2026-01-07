@@ -79,13 +79,18 @@ class RealPlanListService(PlanListService):
 
             # Batch fetch workflow runs via GraphQL nodes(ids: [...])
             if node_id_to_issue:
-                runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
-                    location.root,
-                    list(node_id_to_issue.keys()),
-                )
-                for node_id, run in runs_by_node_id.items():
-                    issue_number = node_id_to_issue[node_id]
-                    workflow_runs[issue_number] = run
+                try:
+                    runs_by_node_id = self._github.get_workflow_runs_by_node_ids(
+                        location.root,
+                        list(node_id_to_issue.keys()),
+                    )
+                    for node_id, run in runs_by_node_id.items():
+                        issue_number = node_id_to_issue[node_id]
+                        workflow_runs[issue_number] = run
+                except Exception:
+                    # Network/API failure - continue without workflow run data
+                    # Dashboard will show "-" for run columns, which is acceptable
+                    pass
 
         return PlanListData(
             issues=issues,

@@ -372,6 +372,52 @@ last_dispatched_node_id: 'WFR_nonexistent'
         assert 42 in result.workflow_runs
         assert result.workflow_runs[42] is None
 
+    def test_workflow_run_api_failure_returns_empty_runs(self) -> None:
+        """Service continues with empty workflow runs when API fails."""
+        now = datetime.now(UTC)
+        issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+last_dispatched_node_id: 'WFR_abc123'
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+        issue = IssueInfo(
+            number=42,
+            title="Test Plan",
+            body=issue_body,
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/42",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="test-user",
+        )
+        # Configure GitHub to raise an error when fetching workflow runs
+        fake_issues = FakeGitHubIssues(issues={42: issue})
+        fake_github = FakeGitHub(
+            issues=[issue],
+            workflow_runs_error="Network unreachable",
+        )
+
+        service = RealPlanListService(fake_github, fake_issues)
+        result = service.get_plan_list_data(
+            location=TEST_LOCATION,
+            labels=["erk-plan"],
+        )
+
+        # Issues should still be returned
+        assert len(result.issues) == 1
+        assert result.issues[0].number == 42
+        # Workflow runs should be empty due to API failure
+        assert result.workflow_runs == {}
+
 
 class TestPlanListData:
     """Tests for PlanListData dataclass."""

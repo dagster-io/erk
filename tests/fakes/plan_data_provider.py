@@ -23,6 +23,7 @@ class FakePlanDataProvider(PlanDataProvider):
         clipboard: Clipboard | None = None,
         browser: BrowserLauncher | None = None,
         repo_root: Path | None = None,
+        fetch_error: str | None = None,
     ) -> None:
         """Initialize with optional canned plan data.
 
@@ -31,12 +32,15 @@ class FakePlanDataProvider(PlanDataProvider):
             clipboard: Clipboard interface, defaults to FakeClipboard()
             browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
             repo_root: Repository root path, defaults to Path("/fake/repo")
+            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+                Use to simulate API failures.
         """
         self._plans = plans or []
         self._fetch_count = 0
         self._clipboard = clipboard if clipboard is not None else FakeClipboard()
         self._browser = browser if browser is not None else FakeBrowserLauncher()
         self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
+        self._fetch_error = fetch_error
 
     @property
     def repo_root(self) -> Path:
@@ -61,8 +65,13 @@ class FakePlanDataProvider(PlanDataProvider):
 
         Returns:
             List of canned PlanRowData
+
+        Raises:
+            RuntimeError: If fetch_error is set
         """
         self._fetch_count += 1
+        if self._fetch_error is not None:
+            raise RuntimeError(self._fetch_error)
         return self._plans
 
     @property
