@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.gateway.terminal.fake import FakeTerminal
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.metadata.core import find_metadata_block
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -58,7 +59,10 @@ def test_create_from_stdin() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues()
-        ctx = build_workspace_test_context(env, issues=issues)
+        # Terminal must be non-interactive so stdin is read as piped data
+        ctx = build_workspace_test_context(
+            env, issues=issues, terminal=FakeTerminal(is_interactive=False)
+        )
 
         # Act
         result = runner.invoke(cli, ["plan", "create"], input=plan_content, obj=ctx)
@@ -151,8 +155,28 @@ def test_create_fails_with_no_input() -> None:
         issues = FakeGitHubIssues()
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act (CliRunner provides empty stdin by default, not TTY)
-        # Empty stdin will be read successfully but content will be empty
+        # Act - With interactive terminal (default), no input is detected
+        result = runner.invoke(cli, ["plan", "create"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 1
+        assert "Error" in result.output
+        # Interactive terminal with no --file shows "No input provided" error
+        assert "No input provided" in result.output
+
+
+def test_create_fails_with_empty_stdin() -> None:
+    """Test error when stdin is piped but empty."""
+    # Arrange
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        issues = FakeGitHubIssues()
+        # Terminal must be non-interactive so stdin is read as piped data
+        ctx = build_workspace_test_context(
+            env, issues=issues, terminal=FakeTerminal(is_interactive=False)
+        )
+
+        # Act (CliRunner provides empty stdin by default when no input provided)
         result = runner.invoke(cli, ["plan", "create"], obj=ctx)
 
         # Assert

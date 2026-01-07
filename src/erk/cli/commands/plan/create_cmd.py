@@ -56,7 +56,7 @@ def create_plan(
         except OSError as e:
             user_output(click.style("Error: ", fg="red") + f"Failed to read file: {e}")
             raise SystemExit(1) from e
-    elif not sys.stdin.isatty():
+    elif not ctx.terminal.is_stdin_interactive():
         # Use stdin input (piped data)
         try:
             content = sys.stdin.read()

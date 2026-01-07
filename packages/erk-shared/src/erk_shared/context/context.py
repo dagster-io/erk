@@ -33,6 +33,7 @@ from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.terminal.abc import Terminal
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -70,6 +71,7 @@ class ErkContext:
     github_admin: GitHubAdmin  # GitHub Actions admin operations
     issues: GitHubIssues  # Note: ErkContext naming (was github_issues in DotAgentContext)
     graphite: Graphite
+    terminal: Terminal  # TTY detection for interactive prompts
     time: Time
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)

@@ -11,7 +11,6 @@ Usage:
 """
 
 import re
-import sys
 from dataclasses import replace
 from pathlib import Path
 from typing import Literal, NamedTuple
@@ -49,16 +48,6 @@ from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_confirm, user_output
-
-
-def _is_interactive_terminal() -> bool:
-    """Check if stdin is an interactive terminal.
-
-    This function exists to make TTY detection mockable in tests.
-    CliRunner replaces sys.stdin during test execution, making direct
-    mocking of sys.stdin.isatty() unreliable.
-    """
-    return sys.stdin.isatty()
 
 
 class ParsedArgument(NamedTuple):
@@ -124,7 +113,6 @@ def check_unresolved_comments(
     pr_number: int,
     *,
     force: bool,
-    is_tty: bool,
 ) -> None:
     """Check for unresolved review threads and prompt if any exist.
 
@@ -133,7 +121,6 @@ def check_unresolved_comments(
         repo_root: Repository root directory
         pr_number: PR number to check
         force: If True, skip confirmation prompt
-        is_tty: Whether running in an interactive terminal
 
     Raises:
         SystemExit(0) if user declines to continue
@@ -159,7 +146,7 @@ def check_unresolved_comments(
             click.style("⚠ ", fg="yellow")
             + f"PR #{pr_number} has {len(threads)} unresolved review comment(s)."
         )
-        if not is_tty:
+        if not ctx.terminal.is_stdin_interactive():
             user_output(
                 click.style("Error: ", fg="red")
                 + "Cannot prompt for confirmation in non-interactive mode.\n"
@@ -564,9 +551,7 @@ def _land_current_branch(
     # Look up PR for current branch to check unresolved comments BEFORE merge
     pr_details = ctx.github.get_pr_for_branch(repo.root, current_branch)
     if not isinstance(pr_details, PRNotFound):
-        check_unresolved_comments(
-            ctx, repo.root, pr_details.number, force=force, is_tty=_is_interactive_terminal()
-        )
+        check_unresolved_comments(ctx, repo.root, pr_details.number, force=force)
 
     # Step 1: Execute land (merges the PR)
     if isinstance(ctx.graphite, GraphiteDisabled):
@@ -692,9 +677,7 @@ def _land_specific_pr(
         raise SystemExit(1)
 
     # Check for unresolved comments BEFORE merge
-    check_unresolved_comments(
-        ctx, main_repo_root, pr_number, force=force, is_tty=_is_interactive_terminal()
-    )
+    check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
     # Merge the PR via GitHub API
     user_output(f"Merging PR #{pr_number}...")
@@ -797,9 +780,7 @@ def _land_by_branch(
         raise SystemExit(1)
 
     # Check for unresolved comments BEFORE merge
-    check_unresolved_comments(
-        ctx, main_repo_root, pr_number, force=force, is_tty=_is_interactive_terminal()
-    )
+    check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
     # Merge the PR via GitHub API
     user_output(f"Merging PR #{pr_number} for branch '{branch_name}'...")

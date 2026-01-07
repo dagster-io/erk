@@ -8,7 +8,6 @@ Tests for behavior when PRs have unresolved review comments:
 """
 
 from dataclasses import replace
-from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -16,6 +15,7 @@ from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.gateway.terminal.fake import FakeTerminal
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -112,20 +112,24 @@ def test_land_warns_on_unresolved_comments() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            terminal=FakeTerminal(is_interactive=True),
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Mock _is_interactive_terminal to return True (simulate interactive terminal)
-        with patch("erk.cli.commands.land_cmd._is_interactive_terminal", return_value=True):
-            # User declines to continue when prompted about unresolved comments
-            result = runner.invoke(
-                cli,
-                ["land", "123", "--script"],
-                obj=test_ctx,
-                catch_exceptions=False,
-                input="n\n",
-            )
+        # User declines to continue when prompted about unresolved comments
+        # (FakeTerminal configured as interactive)
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+            input="n\n",
+        )
 
         # Should exit cleanly (user chose not to continue)
         assert result.exit_code == 0
@@ -326,20 +330,24 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            terminal=FakeTerminal(is_interactive=True),
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Mock _is_interactive_terminal to return True (simulate interactive terminal)
-        with patch("erk.cli.commands.land_cmd._is_interactive_terminal", return_value=True):
-            # User confirms with "y\n" for unresolved comments, then "y\n" for cleanup
-            result = runner.invoke(
-                cli,
-                ["land", "123", "--script"],
-                obj=test_ctx,
-                catch_exceptions=False,
-                input="y\ny\n",
-            )
+        # User confirms with "y\n" for unresolved comments, then "y\n" for cleanup
+        # (FakeTerminal configured as interactive)
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+            input="y\ny\n",
+        )
 
         assert result.exit_code == 0
 
@@ -537,12 +545,16 @@ def test_land_fails_non_interactive_with_unresolved_comments() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            terminal=FakeTerminal(is_interactive=False),
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Run in non-interactive mode (sys.stdin.isatty() returns False)
-        # CliRunner by default simulates non-TTY, so no mock needed here
+        # Run in non-interactive mode (FakeTerminal configured as non-interactive)
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],

@@ -1,0 +1,20 @@
+"""Terminal operations abstraction for testing.
+
+This module provides an ABC for terminal/TTY detection to enable
+fast tests that don't rely on actual terminal state.
+"""
+
+from abc import ABC, abstractmethod
+
+
+class Terminal(ABC):
+    """Abstract terminal operations for dependency injection."""
+
+    @abstractmethod
+    def is_stdin_interactive(self) -> bool:
+        """Check if stdin is connected to an interactive terminal (TTY).
+
+        Returns:
+            True if stdin is a TTY, False otherwise
+        """
+        ...

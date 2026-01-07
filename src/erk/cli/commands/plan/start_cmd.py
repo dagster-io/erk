@@ -4,7 +4,6 @@ This command assigns a pool slot and launches Claude for planning,
 without requiring a pre-existing plan file or GitHub issue.
 """
 
-import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -242,7 +241,9 @@ def plan_start(
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
         if slot_num is None:
             # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
+            to_unassign = handle_pool_full_interactive(
+                state, force, ctx.terminal.is_stdin_interactive()
+            )
             if to_unassign is None:
                 raise SystemExit(1) from None
 

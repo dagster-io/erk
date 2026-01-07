@@ -69,6 +69,7 @@ def context_for_test(
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.terminal.fake import FakeTerminal
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -106,6 +107,7 @@ def context_for_test(
     )
 
     fake_time = FakeTime()
+    fake_terminal = FakeTerminal(is_interactive=True)
     return ErkContext(
         git=resolved_git,
         github=resolved_github,
@@ -114,6 +116,7 @@ def context_for_test(
         claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
+        terminal=fake_terminal,
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         plan_store=GitHubPlanStore(resolved_issues, fake_time),

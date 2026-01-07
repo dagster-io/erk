@@ -1,6 +1,5 @@
 """Branch create command - create a new branch with optional slot assignment."""
 
-import sys
 from datetime import UTC, datetime
 
 import click
@@ -99,7 +98,9 @@ def branch_create(ctx: ErkContext, branch_name: str, no_slot: bool, force: bool)
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
         if slot_num is None:
             # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
+            to_unassign = handle_pool_full_interactive(
+                state, force, ctx.terminal.is_stdin_interactive()
+            )
             if to_unassign is None:
                 raise SystemExit(1) from None
 

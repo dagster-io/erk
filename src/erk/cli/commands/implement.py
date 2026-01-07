@@ -8,7 +8,6 @@ Both modes assign a pool slot and invoke Claude for implementation.
 Can be run from any location, including from within pool slots.
 """
 
-import sys
 from pathlib import Path
 
 import click
@@ -200,7 +199,9 @@ def _create_worktree_with_plan_content(
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
         if slot_num is None:
             # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(state, force, sys.stdin.isatty())
+            to_unassign = handle_pool_full_interactive(
+                state, force, ctx.terminal.is_stdin_interactive()
+            )
             if to_unassign is None:
                 raise SystemExit(1) from None
 

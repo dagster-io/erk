@@ -56,6 +56,8 @@ from erk_shared.gateway.graphite.disabled import (
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.terminal.abc import Terminal
+from erk_shared.gateway.terminal.real import RealTerminal
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
@@ -103,6 +105,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.terminal.fake import FakeTerminal
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
@@ -112,6 +115,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
     fake_graphite = FakeGraphite()
+    fake_terminal = FakeTerminal(is_interactive=True)
     fake_time = FakeTime()
     return ErkContext(
         git=git,
@@ -120,6 +124,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         issues=fake_issues,
         plan_store=GitHubPlanStore(fake_issues, fake_time),
         graphite=fake_graphite,
+        terminal=fake_terminal,
         shell=FakeShell(),
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
@@ -149,6 +154,7 @@ def context_for_test(
     issues: GitHubIssues | None = None,
     plan_store: PlanStore | None = None,
     graphite: Graphite | None = None,
+    terminal: Terminal | None = None,
     shell: Shell | None = None,
     claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
@@ -214,6 +220,7 @@ def context_for_test(
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.terminal.fake import FakeTerminal
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -251,6 +258,9 @@ def context_for_test(
             graphite = FakeGraphite()
         else:
             graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+
+    if terminal is None:
+        terminal = FakeTerminal(is_interactive=True)
 
     if shell is None:
         shell = FakeShell()
@@ -315,6 +325,7 @@ def context_for_test(
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
+        terminal=terminal,
         shell=shell,
         claude_executor=claude_executor,
         completion=completion,
@@ -450,8 +461,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         global_config = None
 
     # 4. Create integration classes (need git for repo discovery)
-    # Create time first so it can be injected into other classes
+    # Create time and terminal first
     time: Time = RealTime()
+    terminal: Terminal = RealTerminal()
     git: Git = RealGit()
 
     # Create Graphite based on config and availability
@@ -529,6 +541,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
+        terminal=terminal,
         shell=RealShell(),
         claude_executor=RealClaudeExecutor(),
         completion=RealCompletion(),

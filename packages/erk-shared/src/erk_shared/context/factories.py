@@ -117,6 +117,8 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         )
 
     # Use fake implementations for erk-specific services that erk-kits doesn't need
+    from erk_shared.gateway.terminal.real import RealTerminal
+
     fake_graphite = FakeGraphite()
     github_issues = RealGitHubIssues(target_repo=None)
     time = RealTime()
@@ -129,6 +131,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         claude_installation=RealClaudeInstallation(),
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,
+        terminal=RealTerminal(),
         time=fake_time,
         erk_installation=erk_installation,
         plan_store=GitHubPlanStore(github_issues, fake_time),
