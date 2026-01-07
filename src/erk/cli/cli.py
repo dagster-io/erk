@@ -127,8 +127,13 @@ def _show_version_warning() -> None:
         return
 
     try:
-        # Find git repo root (if in a git repo)
+        # Check if we're in a git repo using LBYL pattern
+        # (get_git_common_dir returns None gracefully, get_repository_root raises)
         git = RealGit()
+        git_dir = git.get_git_common_dir(Path.cwd())
+        if git_dir is None:
+            return
+
         repo_root = git.get_repository_root(Path.cwd())
         if repo_root is None:
             return
@@ -146,12 +151,6 @@ def _show_version_warning() -> None:
         # Show warning
         click.echo(format_version_warning(installed, required), err=True)
         click.echo(file=sys.stderr)
-    except RuntimeError as e:
-        # Expected for global commands outside git repos
-        if "get repository root" in str(e):
-            logging.debug("Version check skipped: not in git repo")
-            return
-        logging.warning("Failed to check version: %s", e)
     except Exception as e:
         # Never let version checking break the CLI, but warn so issues can be diagnosed
         logging.warning("Failed to check version: %s", e)
