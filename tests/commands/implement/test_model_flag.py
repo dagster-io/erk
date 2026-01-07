@@ -28,7 +28,10 @@ def test_model_flag_in_interactive_mode() -> None:
         executor = FakeClaudeExecutor(claude_available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42", "--model", "opus"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(
+            implement, ["#42", "--model", "opus"], obj=ctx, env={"ERK_SHELL": "bash"}
+        )
 
         assert result.exit_code == 0
 
@@ -53,7 +56,10 @@ def test_model_flag_short_form_in_interactive_mode() -> None:
         executor = FakeClaudeExecutor(claude_available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42", "-m", "sonnet"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(
+            implement, ["#42", "-m", "sonnet"], obj=ctx, env={"ERK_SHELL": "bash"}
+        )
 
         assert result.exit_code == 0
 
@@ -78,7 +84,8 @@ def test_model_alias_in_interactive_mode() -> None:
         executor = FakeClaudeExecutor(claude_available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42", "-m", "h"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42", "-m", "h"], obj=ctx, env={"ERK_SHELL": "bash"})
 
         assert result.exit_code == 0
 

@@ -43,6 +43,7 @@ from erk.cli.commands.wt.create_cmd import run_post_worktree_setup
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions
+from erk.cli.subshell import is_shell_integration_active, spawn_worktree_subshell
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
@@ -481,15 +482,31 @@ def _implement_from_issue(
             executor=executor,
         )
     else:
-        # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(
-            ctx,
-            repo_root=repo.root,
-            worktree_path=wt_path,
-            dangerous=dangerous,
-            model=model,
-            executor=executor,
-        )
+        # Interactive mode
+        if is_shell_integration_active():
+            # Shell integration handles activation - use existing flow
+            execute_interactive_mode(
+                ctx,
+                repo_root=repo.root,
+                worktree_path=wt_path,
+                dangerous=dangerous,
+                model=model,
+                executor=executor,
+            )
+        else:
+            # No shell integration - spawn subshell with Claude
+            branch = ctx.git.get_current_branch(wt_path)
+            if branch is None:
+                branch = wt_path.name
+            exit_code = spawn_worktree_subshell(
+                worktree_path=wt_path,
+                branch=branch,
+                claude_command="/erk:plan-implement",
+                dangerous=dangerous,
+                model=model,
+                shell=None,
+            )
+            sys.exit(exit_code)
 
 
 def _implement_from_file(
@@ -585,15 +602,31 @@ def _implement_from_file(
             executor=executor,
         )
     else:
-        # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(
-            ctx,
-            repo_root=repo.root,
-            worktree_path=wt_path,
-            dangerous=dangerous,
-            model=model,
-            executor=executor,
-        )
+        # Interactive mode
+        if is_shell_integration_active():
+            # Shell integration handles activation - use existing flow
+            execute_interactive_mode(
+                ctx,
+                repo_root=repo.root,
+                worktree_path=wt_path,
+                dangerous=dangerous,
+                model=model,
+                executor=executor,
+            )
+        else:
+            # No shell integration - spawn subshell with Claude
+            branch = ctx.git.get_current_branch(wt_path)
+            if branch is None:
+                branch = wt_path.name
+            exit_code = spawn_worktree_subshell(
+                worktree_path=wt_path,
+                branch=branch,
+                claude_command="/erk:plan-implement",
+                dangerous=dangerous,
+                model=model,
+                shell=None,
+            )
+            sys.exit(exit_code)
 
 
 @alias("impl")
