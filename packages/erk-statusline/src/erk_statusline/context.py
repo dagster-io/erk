@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -81,8 +82,6 @@ def create_context(cwd: str) -> StatuslineContext:
     Returns:
         StatuslineContext configured with real gateways
     """
-    import subprocess
-
     git = RealGit()
     cwd_path = Path(cwd)
 
