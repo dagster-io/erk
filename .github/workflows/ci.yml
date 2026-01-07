@@ -288,8 +288,24 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          # Get the embedded prompt and substitute placeholders
-          prompt=$(erk exec get-embedded-prompt ci-autofix)
+          # Get embedded prompt with error handling and debugging
+          echo "Debug: Getting ci-autofix prompt..."
+          echo "Debug: erk location: $(which erk || echo 'not found')"
+          echo "Debug: erk version: $(erk --version 2>&1 || echo 'version failed')"
+
+          if ! prompt=$(erk exec get-embedded-prompt ci-autofix 2>&1); then
+            echo "Error: Failed to get ci-autofix prompt"
+            echo "Command output: $prompt"
+            exit 1
+          fi
+
+          # Verify prompt is not empty
+          if [ -z "$prompt" ]; then
+            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+            exit 1
+          fi
+
+          echo "Debug: Got prompt (${#prompt} chars)"
           prompt="${prompt//\$\{\{ needs.format.result \}\}/${{ needs.format.result }}}"
           prompt="${prompt//\$\{\{ needs.lint.result \}\}/${{ needs.lint.result }}}"
           prompt="${prompt//\$\{\{ needs.prettier.result \}\}/${{ needs.prettier.result }}}"
