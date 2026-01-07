@@ -7,12 +7,7 @@ import click
 from erk.cli.commands.slot.check_cmd import SyncIssue, run_sync_diagnostics
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import (
-    PoolState,
-    SlotAssignment,
-    load_pool_state,
-    save_pool_state,
-)
+from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.output.output import user_confirm, user_output
 
 # Issue codes that can be auto-repaired by removing the assignment
@@ -145,7 +140,7 @@ def slot_repair(ctx: ErkContext, force: bool) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Load pool state
-    state = load_pool_state(repo.pool_json_path)
+    state = ctx.repo_state_store.load_pool_state(repo.pool_json_path)
     if state is None:
         user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
@@ -182,7 +177,7 @@ def slot_repair(ctx: ErkContext, force: bool) -> None:
 
     # Execute repair
     new_state = execute_repair(state, stale_assignments)
-    save_pool_state(repo.pool_json_path, new_state)
+    ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
 
     user_output("")
     user_output(

@@ -1,11 +1,11 @@
-"""Fake implementation of ClaudeSettingsStore for testing."""
+"""Fake implementation of UserLevelClaudeSettingsStore for testing."""
 
 from pathlib import Path
 
-from erk_shared.gateway.claude_settings.abc import ClaudeSettingsStore
+from erk_shared.gateway.claude_settings.abc import UserLevelClaudeSettingsStore
 
 
-class FakeClaudeSettingsStore(ClaudeSettingsStore):
+class FakeUserLevelClaudeSettingsStore(UserLevelClaudeSettingsStore):
     """Test implementation - in-memory storage, no filesystem access.
 
     This fake provides:
@@ -19,10 +19,10 @@ class FakeClaudeSettingsStore(ClaudeSettingsStore):
 
     Usage:
         # Basic usage - empty store with fake path
-        store = FakeClaudeSettingsStore()
+        store = FakeUserLevelClaudeSettingsStore()
 
         # Pre-populated with initial settings
-        store = FakeClaudeSettingsStore(
+        store = FakeUserLevelClaudeSettingsStore(
             initial_settings={
                 Path("/fake/.claude/settings.json"): {"permissions": {"allow": []}}
             }

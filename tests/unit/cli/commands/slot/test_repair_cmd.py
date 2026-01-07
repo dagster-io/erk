@@ -7,7 +7,8 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
-from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk.core.worktree_pool import PoolState, SlotAssignment
+from erk_shared.gateway.repo_state.fake import FakeRepoLevelStateStore
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -102,9 +103,9 @@ def test_slot_repair_no_stale_assignments() -> None:
         # Create pool state with a valid assignment (worktree exists)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
 
@@ -112,9 +113,8 @@ def test_slot_repair_no_stale_assignments() -> None:
         assert "No issues found" in result.output
 
         # Verify state unchanged
-        state = load_pool_state(repo.pool_json_path)
-        assert state is not None
-        assert len(state.assignments) == 1
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 1
 
 
 def test_slot_repair_removes_stale_with_force() -> None:
@@ -146,9 +146,9 @@ def test_slot_repair_removes_stale_with_force() -> None:
         # Create pool state with a stale assignment (worktree doesn't exist)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         result = runner.invoke(
             cli, ["slot", "repair", "--force"], obj=test_ctx, catch_exceptions=False
@@ -161,9 +161,8 @@ def test_slot_repair_removes_stale_with_force() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Verify assignment was removed
-        state = load_pool_state(repo.pool_json_path)
-        assert state is not None
-        assert len(state.assignments) == 0
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_preserves_valid_assignments() -> None:
@@ -205,9 +204,9 @@ def test_slot_repair_preserves_valid_assignments() -> None:
         valid_assignment = _create_test_assignment("erk-managed-wt-01", "feature-a", valid_wt_path)
         stale_assignment = _create_test_assignment("erk-managed-wt-02", "feature-b", stale_wt_path)
         initial_state = PoolState.test(assignments=(valid_assignment, stale_assignment))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
@@ -217,7 +216,7 @@ def test_slot_repair_preserves_valid_assignments() -> None:
         assert "feature-b" in result.output
 
         # Verify only stale assignment was removed
-        state = load_pool_state(repo.pool_json_path)
+        state = repo_state_store.current_pool_state
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].slot_name == "erk-managed-wt-01"
@@ -251,9 +250,9 @@ def test_slot_repair_confirmation_required_without_force() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         # Simulate user saying 'n' to confirmation
         result = runner.invoke(
@@ -265,9 +264,8 @@ def test_slot_repair_confirmation_required_without_force() -> None:
         assert "Aborted" in result.output
 
         # Verify assignment was NOT removed (user declined)
-        state = load_pool_state(repo.pool_json_path)
-        assert state is not None
-        assert len(state.assignments) == 1
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 1
 
 
 def test_slot_repair_confirmation_yes() -> None:
@@ -297,9 +295,9 @@ def test_slot_repair_confirmation_yes() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         # Simulate user saying 'y' to confirmation
         result = runner.invoke(
@@ -310,9 +308,8 @@ def test_slot_repair_confirmation_yes() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Verify assignment was removed
-        state = load_pool_state(repo.pool_json_path)
-        assert state is not None
-        assert len(state.assignments) == 0
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_shows_branch_mismatch_info() -> None:
@@ -349,9 +346,9 @@ def test_slot_repair_shows_branch_mismatch_info() -> None:
         # Pool.json says expected-branch but git says actual-branch
         assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
 
@@ -368,9 +365,8 @@ def test_slot_repair_shows_branch_mismatch_info() -> None:
         assert "Remove" not in result.output
 
         # State should be unchanged
-        state = load_pool_state(repo.pool_json_path)
-        assert state is not None
-        assert len(state.assignments) == 1
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 1
 
 
 def test_slot_repair_shows_both_repairable_and_informational() -> None:
@@ -421,9 +417,9 @@ def test_slot_repair_shows_both_repairable_and_informational() -> None:
             "erk-managed-wt-02", "stale-branch", stale_wt_path
         )
         initial_state = PoolState.test(assignments=(mismatch_assignment, stale_assignment))
-        save_pool_state(repo.pool_json_path, initial_state)
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
@@ -436,7 +432,7 @@ def test_slot_repair_shows_both_repairable_and_informational() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Only the stale assignment should be removed
-        state = load_pool_state(repo.pool_json_path)
+        state = repo_state_store.current_pool_state
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].slot_name == "erk-managed-wt-01"
