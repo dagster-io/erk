@@ -22,6 +22,8 @@ tripwires:
     warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
   - action: "detecting current worktree using path comparisons on cwd"
     warning: "Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile."
+  - action: "checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code"
+    warning: "Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager."
 ---
 
 # Erk Architecture Patterns
@@ -779,6 +781,99 @@ if wt.is_root:
 if not wt.is_root:
     # Only show non-root worktrees in picker
     worktree_options.append(wt)
+```
+
+## BranchManager for Graphite vs Git Operations
+
+**ALWAYS use `BranchManager` abstraction when implementing operations that differ between Graphite and plain Git.**
+
+### The Problem
+
+When Graphite is disabled (`use_graphite=false` in config), commands that use Graphite operations fail. The common anti-pattern is checking `isinstance(ctx.graphite, GraphiteDisabled)` inline in each command:
+
+```python
+# WRONG: Inline GraphiteDisabled checks scattered throughout commands
+def execute_quick_submit(ctx: ErkContext) -> None:
+    if isinstance(ctx.graphite, GraphiteDisabled):
+        # Git path
+        ctx.git.push_to_remote(...)
+    else:
+        # Graphite path
+        ctx.graphite.submit_stack(...)
+```
+
+This scatters Graphite vs Git branching logic throughout the codebase, making it harder to maintain and test.
+
+### Correct Pattern: BranchManager Abstraction
+
+`BranchManager` is an ABC that abstracts Graphite vs Git differences:
+
+- **`GraphiteBranchManager`**: Uses Graphite operations
+- **`GitBranchManager`**: Uses plain Git operations
+- **`FakeBranchManager`**: For testing
+
+```python
+# CORRECT: Use BranchManager abstraction
+def execute_quick_submit(ctx: ErkContext) -> None:
+    # BranchManager handles the Graphite vs Git difference
+    ctx.branch_manager.submit_branch(repo_root, branch)
+```
+
+### How BranchManager is Created
+
+`ErkContext.branch_manager` property automatically selects the right implementation:
+
+```python
+@property
+def branch_manager(self) -> BranchManager:
+    if isinstance(self.graphite, GraphiteDisabled):
+        return GitBranchManager(git=self.git, github=self.github)
+    return GraphiteBranchManager(git=self.git, graphite=self.graphite)
+```
+
+### Adding New Operations to BranchManager
+
+When you need an operation that differs between Graphite and Git:
+
+1. **Add abstract method to `BranchManager` ABC** (`branch_manager/abc.py`)
+2. **Implement in `GraphiteBranchManager`** (`branch_manager/graphite.py`)
+3. **Implement in `GitBranchManager`** (`branch_manager/git.py`)
+4. **Add to `FakeBranchManager`** (`branch_manager/fake.py`) for testing
+
+### Existing BranchManager Methods
+
+| Method                  | GraphiteBranchManager                   | GitBranchManager     |
+| ----------------------- | --------------------------------------- | -------------------- |
+| `create_branch()`       | `gt branch create`                      | `git checkout -b`    |
+| `delete_branch()`       | `git branch -D` (with graphite cleanup) | `git branch -D`      |
+| `submit_branch()`       | `gt submit --force --quiet`             | `git push -u origin` |
+| `get_pr_for_branch()`   | GitHub API lookup                       | GitHub API lookup    |
+| `is_graphite_managed()` | `True`                                  | `False`              |
+
+### When to Use BranchManager vs Direct Gateway
+
+**Use BranchManager when:**
+
+- Operation differs between Graphite and Git modes
+- Operation involves branch workflow (create, delete, submit, navigate)
+- You would otherwise check `isinstance(ctx.graphite, GraphiteDisabled)`
+
+**Use gateway directly when:**
+
+- Operation is the same regardless of Graphite mode
+- Operation is purely Git or purely GitHub (not workflow-dependent)
+- Operation doesn't involve branch management
+
+### Testing with FakeBranchManager
+
+```python
+def test_quick_submit_tracks_submission() -> None:
+    fake_branch_manager = FakeBranchManager()
+    ctx = ErkContext.for_test(branch_manager=fake_branch_manager)
+
+    execute_quick_submit(ctx, repo_root, "feature-branch")
+
+    assert fake_branch_manager.submitted_branches == ["feature-branch"]
 ```
 
 ## Design Principles
