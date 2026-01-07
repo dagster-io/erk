@@ -72,6 +72,17 @@ class GitBranchManager(BranchManager):
         """
         self.git.delete_branch(repo_root, branch, force=True)
 
+    def submit_branch(self, repo_root: Path, branch: str) -> None:
+        """Submit branch via git push.
+
+        Uses `git push -u origin <branch>` to push with upstream tracking.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to push
+        """
+        self.git.push_to_remote(repo_root, "origin", branch, set_upstream=True)
+
     def is_graphite_managed(self) -> bool:
         """Returns False - this implementation uses plain Git."""
         return False

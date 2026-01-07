@@ -1,7 +1,7 @@
 """Quick commit and submit operation for rapid iteration.
 
 This operation stages all changes, commits with "update" message if there are changes,
-then submits via Graphite. Returns the PR URL for easy access.
+then submits via Graphite or git push. Returns the PR URL for easy access.
 """
 
 from collections.abc import Generator
@@ -20,7 +20,8 @@ def execute_quick_submit(
     """Execute the quick-submit workflow.
 
     Stages all changes, commits with "update" message if there are changes,
-    then runs gt submit. Returns the PR URL after successful submit.
+    then submits via BranchManager (Graphite or git push). Returns the PR URL
+    after successful submit.
 
     Args:
         ops: GtKit operations interface.
@@ -65,17 +66,34 @@ def execute_quick_submit(
             )
             return
 
-    # Step 4: Run gt submit
-    yield ProgressEvent("Submitting to Graphite...")
+    # Step 4: Submit via BranchManager (Graphite or git push)
     repo_root = ops.git.get_repository_root(cwd)
-    try:
-        ops.graphite.submit_stack(repo_root, quiet=True, force=True)
-    except Exception as e:
+    current_branch = ops.git.get_current_branch(cwd)
+
+    if current_branch is None:
         yield CompletionEvent(
             QuickSubmitError(
                 success=False,
                 error_type="submit-failed",
-                message=f"Failed to submit: {e}",
+                message="Failed to determine current branch",
+            )
+        )
+        return
+
+    if ops.branch_manager.is_graphite_managed():
+        yield ProgressEvent("Submitting to Graphite...")
+    else:
+        yield ProgressEvent("Pushing to remote...")
+
+    try:
+        ops.branch_manager.submit_branch(repo_root, current_branch)
+    except Exception as e:
+        error_verb = "submit" if ops.branch_manager.is_graphite_managed() else "push"
+        yield CompletionEvent(
+            QuickSubmitError(
+                success=False,
+                error_type="submit-failed",
+                message=f"Failed to {error_verb}: {e}",
             )
         )
         return
@@ -83,7 +101,6 @@ def execute_quick_submit(
     # Step 5: Get PR URL after successful submit
     yield ProgressEvent("Getting PR URL...")
     pr_url: str | None = None
-    current_branch = ops.git.get_current_branch(cwd)
     if current_branch:
         pr_details = ops.github.get_pr_for_branch(repo_root, current_branch)
         if not isinstance(pr_details, PRNotFound):

@@ -66,6 +66,19 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def submit_branch(self, repo_root: Path, branch: str) -> None:
+        """Submit a branch to remote.
+
+        For Graphite: Uses `gt submit --force --quiet` to submit the stack.
+        For Git: Uses `git push -u origin <branch>` to push with upstream tracking.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to submit
+        """
+        ...
+
+    @abstractmethod
     def is_graphite_managed(self) -> bool:
         """Returns True if using Graphite for branch operations.
 

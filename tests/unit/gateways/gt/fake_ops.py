@@ -17,7 +17,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.branch_manager.git import GitBranchManager
+from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.gateway.time.abc import Time
@@ -286,6 +290,17 @@ class FakeGtKitOps:
     def time(self) -> Time:
         """Get the Time operations interface."""
         return self._main_time
+
+    @property
+    def branch_manager(self) -> BranchManager:
+        """Get the BranchManager interface.
+
+        Returns GraphiteBranchManager when using FakeGraphite,
+        GitBranchManager when using GraphiteDisabled.
+        """
+        if isinstance(self._main_graphite, GraphiteDisabled):
+            return GitBranchManager(git=self.git, github=self.github)
+        return GraphiteBranchManager(git=self.git, graphite=self._main_graphite)
 
     # Declarative setup methods
 
@@ -631,6 +646,21 @@ class FakeGtKitOps:
             auth_repo_info=None,
             branches=existing_branches,
         )
+        return self
+
+    def with_graphite_disabled(self) -> FakeGtKitOps:
+        """Configure Graphite as disabled.
+
+        This makes branch_manager return GitBranchManager instead of
+        GraphiteBranchManager, causing submit operations to use git push
+        instead of gt submit.
+
+        Returns:
+            Self for chaining
+        """
+        from erk_shared.gateway.graphite.disabled import GraphiteDisabledReason
+
+        self._main_graphite = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
         return self
 
     def with_gh_unauthenticated(self) -> FakeGtKitOps:

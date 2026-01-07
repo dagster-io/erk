@@ -79,6 +79,17 @@ class GraphiteBranchManager(BranchManager):
         """
         self.git.delete_branch_with_graphite(repo_root, branch, force=True)
 
+    def submit_branch(self, repo_root: Path, branch: str) -> None:
+        """Submit branch via Graphite.
+
+        Uses `gt submit --force --quiet` to submit the stack.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to submit (unused - Graphite submits current stack)
+        """
+        self.graphite.submit_stack(repo_root, quiet=True, force=True)
+
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""
         return True
