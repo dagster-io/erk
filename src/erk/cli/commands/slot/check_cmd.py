@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import Literal
 
 import click
+from rich.console import Console
+from rich.table import Table
 
 from erk.cli.commands.slot.common import generate_slot_name
 from erk.cli.core import discover_repo_context
@@ -196,6 +198,87 @@ def _check_git_worktree_mismatch(
     return issues
 
 
+@dataclass(frozen=True)
+class SlotCheckResult:
+    """Result of checking a single slot."""
+
+    slot_name: str
+    assigned_branch: str | None
+    issues: tuple[SyncIssue, ...]
+
+
+# Human-readable descriptions for issue codes
+_ISSUE_DESCRIPTIONS: dict[SyncIssueCode, str] = {
+    "orphan-state": "dir missing",
+    "orphan-dir": "not in pool",
+    "missing-branch": "branch deleted",
+    "branch-mismatch": "branch mismatch",
+    "git-registry-missing": "not in git registry",
+    "untracked-worktree": "untracked",
+}
+
+
+def _extract_slot_name_from_issue(issue: SyncIssue) -> str | None:
+    """Extract slot name from issue message.
+
+    Returns None if slot name cannot be extracted.
+    """
+    # Issue messages follow patterns like:
+    # "Slot erk-managed-wt-01: ..."
+    # "Directory erk-managed-wt-05: ..."
+    msg = issue.message
+    if msg.startswith("Slot "):
+        return msg.split(":")[0].replace("Slot ", "")
+    if msg.startswith("Directory "):
+        return msg.split(":")[0].replace("Directory ", "")
+    return None
+
+
+def _build_slot_results(
+    *,
+    state: PoolState,
+    all_issues: list[SyncIssue],
+) -> tuple[SlotCheckResult, ...]:
+    """Build per-slot check results.
+
+    Args:
+        state: Pool state
+        all_issues: All issues found by diagnostics
+
+    Returns:
+        Tuple of SlotCheckResult for each slot in the pool
+    """
+    # Build lookup of slot_name -> assigned_branch
+    assignments_by_slot: dict[str, str] = {
+        a.slot_name: a.branch_name for a in state.assignments
+    }
+
+    # Group issues by slot name
+    issues_by_slot: dict[str, list[SyncIssue]] = {}
+    for issue in all_issues:
+        slot_name = _extract_slot_name_from_issue(issue)
+        if slot_name is not None:
+            if slot_name not in issues_by_slot:
+                issues_by_slot[slot_name] = []
+            issues_by_slot[slot_name].append(issue)
+
+    # Build results for all slots
+    results: list[SlotCheckResult] = []
+    for slot_num in range(1, state.pool_size + 1):
+        slot_name = generate_slot_name(slot_num)
+        assigned_branch = assignments_by_slot.get(slot_name)
+        slot_issues = tuple(issues_by_slot.get(slot_name, []))
+        results.append(
+            SlotCheckResult(
+                slot_name=slot_name,
+                assigned_branch=assigned_branch,
+                issues=slot_issues,
+            )
+        )
+
+    return tuple(results)
+
+
 def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> list[SyncIssue]:
     """Run all sync diagnostics and return issues found.
 
@@ -246,32 +329,56 @@ def slot_check(ctx: ErkContext) -> None:
         user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
 
-    # Get git worktrees
-    worktrees = ctx.git.list_worktrees(repo.root)
-    git_slots = _get_git_managed_slots(worktrees, repo.worktrees_dir)
+    # Run all diagnostics
+    issues = run_sync_diagnostics(ctx, state, repo.root)
 
-    # Get filesystem state
-    fs_slots = _find_erk_managed_dirs(repo.worktrees_dir, ctx.git)
+    # Build per-slot results
+    slot_results = _build_slot_results(state=state, all_issues=issues)
 
-    # Run all checks
-    issues: list[SyncIssue] = []
-    issues.extend(_check_orphan_states(state.assignments, ctx))
-    issues.extend(_check_orphan_dirs(state, fs_slots))
-    issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))
-    issues.extend(_check_git_worktree_mismatch(state, git_slots))
+    # Create Rich table
+    table = Table(show_header=True, header_style="bold", box=None)
+    table.add_column("Slot", style="cyan", no_wrap=True)
+    table.add_column("Branch", style="yellow", no_wrap=True)
+    table.add_column("Status", no_wrap=True)
+    table.add_column("Issues", no_wrap=True)
 
-    # Print report
-    user_output("Pool Check Report")
-    user_output("================")
-    user_output("")
-    user_output(f"Pool state: {len(state.assignments)} assignments")
-    user_output(f"Git worktrees: {len(worktrees)} registered ({len(git_slots)} erk-managed)")
-    user_output(f"Filesystem: {len(fs_slots)} slot directories")
-    user_output("")
+    # Track counts for summary
+    ok_count = 0
+    error_count = 0
 
-    if issues:
-        user_output("Issues Found:")
-        for issue in issues:
-            user_output(f"  [{issue.code}] {issue.message}")
-    else:
-        user_output(click.style("✓ No issues found", fg="green"))
+    # Add rows for all slots
+    for result in slot_results:
+        # Format branch display
+        branch_display: str
+        if result.assigned_branch is not None:
+            branch_display = result.assigned_branch
+        else:
+            branch_display = "[dim]-[/dim]"
+
+        # Format status and issues
+        if result.issues:
+            status_display = "[red]error[/red]"
+            # Build comma-separated issue descriptions
+            issue_descriptions = [
+                _ISSUE_DESCRIPTIONS[issue.code] for issue in result.issues
+            ]
+            issues_display = f"[red]{', '.join(issue_descriptions)}[/red]"
+            error_count += 1
+        else:
+            status_display = "[green]ok[/green]"
+            issues_display = "[dim]-[/dim]"
+            ok_count += 1
+
+        table.add_row(
+            result.slot_name,
+            branch_display,
+            status_display,
+            issues_display,
+        )
+
+    # Output table to stderr (consistent with user_output convention)
+    console = Console(stderr=True, width=200, force_terminal=True)
+    console.print(table)
+
+    # Print summary
+    console.print(f"\nPool: {state.pool_size} slots | {ok_count} ok | {error_count} errors")

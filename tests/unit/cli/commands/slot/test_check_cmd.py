@@ -99,9 +99,13 @@ def test_slot_check_no_issues() -> None:
         result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Pool Check Report" in result.output
-        assert "1 assignments" in result.output
-        assert "No issues found" in result.output
+        # Check for table output with slot names
+        assert "erk-managed-wt-01" in result.output
+        assert "feature-test" in result.output
+        assert "ok" in result.output
+        # Check summary line (use partial match to handle ANSI codes around numbers)
+        assert "slots" in result.output
+        assert "errors" in result.output
 
 
 def test_slot_check_orphan_state() -> None:
@@ -142,13 +146,19 @@ def test_slot_check_orphan_state() -> None:
         result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Issues Found:" in result.output
-        assert "[orphan-state]" in result.output
-        assert "directory does not exist" in result.output
+        assert "erk-managed-wt-01" in result.output
+        assert "error" in result.output
+        assert "dir missing" in result.output
 
 
 def test_slot_check_orphan_dir() -> None:
-    """Test check detects orphan directory (directory outside pool size range)."""
+    """Test check detects orphan directory (directory outside pool size range).
+
+    Note: orphan-dir issues are for directories outside the pool size range.
+    Since they're not pool slots, they don't appear in the per-slot table.
+    This test verifies the diagnostic runs correctly but the orphan-dir
+    won't appear in the slot table (it's outside pool_size).
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -182,10 +192,13 @@ def test_slot_check_orphan_dir() -> None:
         result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Issues Found:" in result.output
-        assert "[orphan-dir]" in result.output
-        assert "erk-managed-wt-05" in result.output
-        assert "not in pool state" in result.output
+        # orphan-dir is for directories outside pool range - they won't appear in slot table
+        # but the command should still run successfully showing all 4 pool slots
+        assert "erk-managed-wt-01" in result.output
+        assert "erk-managed-wt-04" in result.output
+        # The summary should show slots (use partial match to handle ANSI codes around numbers)
+        assert "slots" in result.output
+        assert "errors" in result.output
 
 
 def test_slot_check_missing_branch() -> None:
@@ -226,10 +239,10 @@ def test_slot_check_missing_branch() -> None:
         result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Issues Found:" in result.output
-        assert "[missing-branch]" in result.output
+        assert "erk-managed-wt-01" in result.output
         assert "feature-deleted" in result.output
-        assert "deleted" in result.output
+        assert "error" in result.output
+        assert "branch deleted" in result.output
 
 
 def test_slot_check_git_registry_mismatch() -> None:
@@ -273,10 +286,10 @@ def test_slot_check_git_registry_mismatch() -> None:
         result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Issues Found:" in result.output
-        assert "[branch-mismatch]" in result.output
-        assert "pool says 'feature-test'" in result.output
-        assert "git says 'different-branch'" in result.output
+        assert "erk-managed-wt-01" in result.output
+        assert "feature-test" in result.output
+        assert "error" in result.output
+        assert "branch mismatch" in result.output
 
 
 def test_slot_check_empty_pool() -> None:
@@ -309,6 +322,9 @@ def test_slot_check_empty_pool() -> None:
         result = runner.invoke(cli, ["slot", "check"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "Pool Check Report" in result.output
-        assert "0 assignments" in result.output
-        assert "No issues found" in result.output
+        # Check for table output with slot names (default pool_size is 4)
+        assert "erk-managed-wt-01" in result.output
+        assert "erk-managed-wt-04" in result.output
+        # All slots should show ok status with no issues (use partial match for ANSI codes)
+        assert "slots" in result.output
+        assert "errors" in result.output

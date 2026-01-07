@@ -10,11 +10,8 @@ from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.output.output import user_confirm, user_output
 
-# Issue codes that can be auto-repaired by removing the assignment
-AUTO_REPAIRABLE_CODES = frozenset({"orphan-state"})
-
-# Extended issue codes repaired with --fix flag
-EXTENDED_REPAIRABLE_CODES = frozenset(
+# Issue codes that can be repaired by removing the assignment
+REPAIRABLE_CODES = frozenset(
     {
         "orphan-state",
         "missing-branch",
@@ -142,23 +139,20 @@ def _display_informational_issues(
 @click.command("repair")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
 @click.option(
-    "--fix",
+    "--dry-run",
     is_flag=True,
-    help="Also repair issues that normally require manual intervention",
+    help="Print what would be done without executing repairs.",
 )
 @click.pass_obj
-def slot_repair(ctx: ErkContext, force: bool, fix: bool) -> None:
+def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     """Remove stale assignments from pool state.
 
-    Finds assignments where the worktree directory no longer exists
-    and removes them from pool.json.
+    Repairs all detectable issues by removing the stale assignment:
+    orphan-state, missing-branch, branch-mismatch, and git-registry-missing.
 
-    Also displays other issues (like branch-mismatch) that require
-    manual intervention with suggested remediation commands.
-
+    Use `erk slot check` to see issues without repairing them.
     Use --force to skip the confirmation prompt.
-    Use --fix to also repair missing-branch, branch-mismatch, and
-    git-registry-missing issues (all repairs = remove the assignment).
+    Use --dry-run to see what would be repaired without making changes.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -168,20 +162,19 @@ def slot_repair(ctx: ErkContext, force: bool, fix: bool) -> None:
         user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
 
-    # Determine which codes to repair based on --fix flag
-    repairable_codes = EXTENDED_REPAIRABLE_CODES if fix else AUTO_REPAIRABLE_CODES
-
     # Run full diagnostics to get all issues
     all_issues = run_sync_diagnostics(ctx, state, repo.root)
 
-    # Find stale (repairable) assignments
-    stale_assignments = find_stale_assignments(state, all_issues, repairable_codes=repairable_codes)
+    # Find repairable assignments
+    stale_assignments = find_stale_assignments(
+        state, all_issues, repairable_codes=REPAIRABLE_CODES
+    )
 
-    # Display informational issues (non-repairable with current settings)
-    _display_informational_issues(all_issues, repo.worktrees_dir, repairable_codes=repairable_codes)
+    # Display informational issues (non-repairable)
+    _display_informational_issues(all_issues, repo.worktrees_dir, repairable_codes=REPAIRABLE_CODES)
 
     if not stale_assignments:
-        if not any(i.code not in repairable_codes for i in all_issues):
+        if not any(i.code not in REPAIRABLE_CODES for i in all_issues):
             user_output(click.style("✓ No issues found", fg="green"))
         return
 
@@ -195,17 +188,24 @@ def slot_repair(ctx: ErkContext, force: bool, fix: bool) -> None:
             f"(worktree missing)"
         )
 
-    # Prompt for confirmation unless --force
-    if not force:
+    # Prompt for confirmation unless --force or --dry-run
+    if not force and not dry_run:
         if not user_confirm("\nRemove these stale assignments?", default=True):
             user_output("Aborted.")
             return
 
     # Execute repair
     new_state = execute_repair(state, stale_assignments)
-    ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
 
-    user_output("")
-    user_output(
-        click.style("✓ ", fg="green") + f"Removed {len(stale_assignments)} stale assignment(s)"
-    )
+    if dry_run:
+        user_output("")
+        user_output(
+            click.style("[DRY RUN] ", fg="yellow", bold=True)
+            + f"Would remove {len(stale_assignments)} stale assignment(s)"
+        )
+    else:
+        ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
+        user_output("")
+        user_output(
+            click.style("✓ ", fg="green") + f"Removed {len(stale_assignments)} stale assignment(s)"
+        )
