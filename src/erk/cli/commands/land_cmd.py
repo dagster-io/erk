@@ -556,6 +556,7 @@ def _land_current_branch(
         merged_pr_number = _execute_simple_land(
             ctx, repo_root=repo.root, branch=current_branch, pr_details=pr_details
         )
+        pr_body = pr_details.body or ""
     else:
         # Full Graphite-aware path with stack validation
         # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
@@ -568,12 +569,14 @@ def _land_current_branch(
         # Success - PR was merged
         success_result: LandPrSuccess = result
         merged_pr_number = success_result.pr_number
+        # For Graphite path, we need to fetch PR details to get body
+        pr_body = pr_details.body if not isinstance(pr_details, PRNotFound) else ""
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{current_branch}]")
 
     # Check and display plan issue closure
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    check_and_display_plan_issue_closure(ctx, main_repo_root, current_branch)
+    check_and_display_plan_issue_closure(ctx, main_repo_root, current_branch, pr_body=pr_body)
 
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
@@ -683,7 +686,7 @@ def _land_specific_pr(
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
 
     # Check and display plan issue closure
-    check_and_display_plan_issue_closure(ctx, main_repo_root, branch)
+    check_and_display_plan_issue_closure(ctx, main_repo_root, branch, pr_body=pr_details.body or "")
 
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
@@ -786,7 +789,9 @@ def _land_by_branch(
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
 
     # Check and display plan issue closure
-    check_and_display_plan_issue_closure(ctx, main_repo_root, branch_name)
+    check_and_display_plan_issue_closure(
+        ctx, main_repo_root, branch_name, pr_body=pr_details.body or ""
+    )
 
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
