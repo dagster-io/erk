@@ -1,8 +1,10 @@
-"""Synchronize current PR branch with Graphite.
+"""Synchronize current PR branch with remote base.
 
-This command registers a checked-out PR branch with Graphite so it can be managed
-using gt commands (gt merge, gt pr, etc.). Useful after checking out a PR from a
-remote source (like GitHub Actions).
+This command has two modes:
+
+**With Graphite enabled:**
+Registers a checked-out PR branch with Graphite so it can be managed
+using gt commands (gt pr, gt land, etc.). Requires --dangerous flag.
 
 Flow:
 1. Validate preconditions (gh/gt auth, on branch, PR exists and is OPEN)
@@ -13,6 +15,16 @@ Flow:
 6. Update local commit message with PR title/body from GitHub
 7. Restack: gt restack (manual conflict resolution if needed)
 8. Submit: gt submit --no-edit --no-interactive (force-push to link with Graphite)
+
+**Without Graphite (git-only mode):**
+Rebases the current branch onto its PR base branch and force pushes.
+
+Flow:
+1. Validate preconditions (gh auth, on branch, PR exists and is OPEN)
+2. Check PR is not from a fork
+3. Fetch base branch from origin
+4. Rebase onto origin/<base>
+5. Force push to origin
 """
 
 from pathlib import Path
@@ -20,7 +32,6 @@ from pathlib import Path
 import click
 
 from erk.cli.ensure import Ensure
-from erk.cli.graphite_command import GraphiteCommand
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.gt.events import CompletionEvent
@@ -59,43 +70,90 @@ def _update_commit_message_from_pr(ctx: ErkContext, repo_root: Path, pr_number: 
         user_output(click.style("✓", fg="green") + " Commit message updated")
 
 
-@click.command("sync", cls=GraphiteCommand)
+def _git_only_sync(
+    ctx: ErkContext,
+    repo: RepoContext,
+    current_branch: str,
+    base_branch: str,
+    pr_number: int,
+) -> None:
+    """Execute git-only sync: fetch base → rebase → force push.
+
+    This is the non-Graphite path for syncing PR branches.
+
+    Args:
+        ctx: ErkContext
+        repo: Repository context
+        current_branch: Current branch name
+        base_branch: PR base branch from GitHub
+        pr_number: PR number for output messages
+    """
+    # Fetch the base branch
+    user_output(f"Fetching origin/{base_branch}...")
+    ctx.git.fetch_branch(repo.root, "origin", base_branch)
+    user_output(click.style("✓", fg="green") + f" Fetched origin/{base_branch}")
+
+    # Rebase onto origin/<base>
+    user_output(f"Rebasing onto origin/{base_branch}...")
+    rebase_result = ctx.git.rebase_onto(repo.root, f"origin/{base_branch}")
+
+    if not rebase_result.success:
+        # Conflict occurred - provide instructions
+        user_output(click.style("\nRebase paused due to merge conflicts.", fg="yellow"))
+        if rebase_result.conflict_files:
+            user_output("Conflicted files:")
+            for file in rebase_result.conflict_files:
+                user_output(f"  - {file}")
+        user_output("\nTo resolve conflicts:")
+        user_output("  1. Resolve conflicts in the listed files")
+        user_output("  2. Run: git add <files>")
+        user_output("  3. Run: git rebase --continue")
+        user_output("  4. Run: git push --force origin " + current_branch)
+        raise SystemExit(1)
+
+    user_output(click.style("✓", fg="green") + " Rebase complete")
+
+    # Force push to origin
+    user_output(f"Force pushing to origin/{current_branch}...")
+    ctx.git.push_to_remote(repo.root, "origin", current_branch, force=True)
+    user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized")
+
+    user_output(f"\nBranch '{current_branch}' is now up to date with origin/{base_branch}.")
+
+
+@click.command("sync")
 @click.option(
     "--dangerous",
     is_flag=True,
-    required=True,
-    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    help="Required for Graphite mode (invokes Claude with --dangerously-skip-permissions).",
 )
 @click.pass_obj
 def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
-    """Synchronize current PR branch with Graphite.
+    """Synchronize current PR branch with remote base.
 
-    Registers the current PR branch with Graphite for stack management.
-    After syncing, you can use standard gt commands (gt merge, gt pr, etc.).
+    With Graphite enabled (requires --dangerous):
+        Registers the current PR branch with Graphite for stack management.
+        After syncing, you can use standard gt commands (gt pr, gt land, etc.).
 
-    This is typically used after 'erk pr checkout' to enable Graphite workflows
-    on a PR that was created elsewhere (like from a GitHub Actions run).
+    Without Graphite (git-only mode):
+        Fetches the PR base branch, rebases onto it, and force pushes.
+        This is the simpler mode for teams not using Graphite.
 
     Examples:
 
-        # Checkout and sync a PR
-        erk pr checkout 1973
-        erk pr sync --dangerous
+        # Git-only sync (no Graphite)
+        erk pr sync
 
-        # Now you can use Graphite commands
-        gt pr
-        gt merge
+        # Graphite sync
+        erk pr sync --dangerous
 
     Requirements:
     - On a branch (not detached HEAD)
     - PR exists and is OPEN
     - PR is not from a fork (cross-repo PRs cannot be tracked)
     """
-    # dangerous flag is required to indicate acknowledgment
-    _ = dangerous
-    # Step 1: Validate preconditions
+    # Step 1: Validate common preconditions
     Ensure.gh_authenticated(ctx)
-    Ensure.gt_authenticated(ctx)
     Ensure.invariant(
         not isinstance(ctx.repo, NoRepoSentinel),
         "Not in a git repository",
@@ -127,8 +185,31 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # Check if PR is from a fork (cross-repo)
     Ensure.invariant(
         not pr.is_cross_repository,
-        "Cannot sync fork PRs - Graphite cannot track branches from forks",
+        "Cannot sync fork PRs - branches from forks cannot be synced",
     )
+
+    # Get PR base branch from GitHub
+    base_branch = pr.base_ref_name
+
+    # Determine which mode to use based on Graphite availability
+    if not ctx.branch_manager.is_graphite_managed():
+        # Git-only mode: fetch → rebase → force push
+        user_output(f"Base branch: {base_branch}")
+        _git_only_sync(ctx, repo, current_branch, base_branch, pr_number)
+        return
+
+    # Graphite mode: requires --dangerous flag
+    if not dangerous:
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Graphite mode requires --dangerous flag.\n\n"
+            + "This command invokes Claude with --dangerously-skip-permissions.\n\n"
+            + "Run with --dangerous to proceed with Graphite sync."
+        )
+        raise SystemExit(1)
+
+    # Validate Graphite auth
+    Ensure.gt_authenticated(ctx)
 
     # Step 3: Check if already tracked by Graphite (idempotent)
     parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
@@ -139,8 +220,6 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
         )
         return
 
-    # Step 4: Get PR base branch from GitHub (use same PRDetails object)
-    base_branch = pr.base_ref_name
     user_output(f"Base branch: {base_branch}")
 
     # Step 5: Track with Graphite
