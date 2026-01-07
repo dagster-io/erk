@@ -50,6 +50,7 @@ class FakeGitHub(GitHub):
         pr_update_should_succeed: bool = True,
         pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
         review_threads_rate_limited: bool = False,
+        pr_diff_error: str | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -76,6 +77,8 @@ class FakeGitHub(GitHub):
             pr_review_threads: Mapping of pr_number -> list[PRReviewThread]
             review_threads_rate_limited: Whether get_pr_review_threads() should raise
                 RuntimeError simulating GraphQL rate limit
+            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+                Use to simulate HTTP 406 "diff too large" errors.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -98,6 +101,7 @@ class FakeGitHub(GitHub):
         self._pr_update_should_succeed = pr_update_should_succeed
         self._pr_review_threads = pr_review_threads or {}
         self._review_threads_rate_limited = review_threads_rate_limited
+        self._pr_diff_error = pr_diff_error
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -607,9 +611,13 @@ class FakeGitHub(GitHub):
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get the diff for a PR from configured state or return default.
 
-        First checks explicit pr_diffs storage. Returns a simple default
+        First checks if pr_diff_error is set and raises RuntimeError.
+        Then checks explicit pr_diffs storage. Returns a simple default
         diff if not configured.
         """
+        if self._pr_diff_error is not None:
+            raise RuntimeError(self._pr_diff_error)
+
         if pr_number in self._pr_diffs:
             return self._pr_diffs[pr_number]
 
