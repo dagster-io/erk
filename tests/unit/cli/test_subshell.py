@@ -10,6 +10,7 @@ from erk.cli.subshell import (
     detect_user_shell,
     format_subshell_welcome_message,
     is_shell_integration_active,
+    spawn_simple_subshell,
     spawn_worktree_subshell,
 )
 from erk_shared.gateway.shell import FakeShell
@@ -438,3 +439,206 @@ def test_spawn_worktree_subshell_skips_prompt_setup_for_fish(tmp_path: Path) -> 
     assert "export PS1" not in call.command
     # But still include the claude command
     assert "/erk:plan-implement" in call.command
+
+
+# spawn_simple_subshell tests using FakeShell
+
+
+def test_spawn_simple_subshell_calls_gateway(tmp_path: Path) -> None:
+    """spawn_simple_subshell calls shell gateway spawn_subshell."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    exit_code = spawn_simple_subshell(
+        shell,
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        shell="/bin/bash",
+    )
+
+    assert exit_code == 0
+    assert len(shell.subshell_calls) == 1
+
+
+def test_spawn_simple_subshell_sets_environment_variables(tmp_path: Path) -> None:
+    """spawn_simple_subshell sets ERK_SUBSHELL and ERK_WORKTREE_NAME in env."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    spawn_simple_subshell(
+        shell,
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        shell="/bin/bash",
+    )
+
+    assert len(shell.subshell_calls) == 1
+    call = shell.subshell_calls[0]
+
+    # Verify environment variables
+    assert call.env["ERK_SUBSHELL"] == "1"
+    assert call.env["ERK_WORKTREE_NAME"] == "test-worktree"
+
+
+def test_spawn_simple_subshell_sets_cwd_to_worktree(tmp_path: Path) -> None:
+    """spawn_simple_subshell passes cwd to shell gateway."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    spawn_simple_subshell(
+        shell,
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        shell="/bin/bash",
+    )
+
+    call = shell.subshell_calls[0]
+    assert call.cwd == worktree_path
+
+
+def test_spawn_simple_subshell_returns_exit_code(tmp_path: Path) -> None:
+    """spawn_simple_subshell returns the gateway exit code."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=42)
+
+    exit_code = spawn_simple_subshell(
+        shell,
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        shell="/bin/bash",
+    )
+
+    assert exit_code == 42
+
+
+def test_spawn_simple_subshell_does_not_include_claude_command(tmp_path: Path) -> None:
+    """spawn_simple_subshell does NOT include claude command (unlike spawn_worktree_subshell)."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    # Ensure opt-out is NOT set
+    env_copy = {k: v for k, v in os.environ.items() if k != "ERK_NO_PROMPT_MODIFY"}
+    with patch.dict(os.environ, env_copy, clear=True):
+        spawn_simple_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should NOT contain any claude command
+    assert "claude" not in call.command if call.command else True
+    assert "/erk:plan-implement" not in (call.command or "")
+
+
+def test_spawn_simple_subshell_includes_prompt_setup(tmp_path: Path) -> None:
+    """spawn_simple_subshell includes prompt setup command for bash."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    # Ensure opt-out is NOT set
+    env_copy = {k: v for k, v in os.environ.items() if k != "ERK_NO_PROMPT_MODIFY"}
+    with patch.dict(os.environ, env_copy, clear=True):
+        spawn_simple_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should contain only prompt setup (no claude command)
+    assert call.command == 'export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"'
+
+
+def test_spawn_simple_subshell_passes_noop_command_when_opt_out(tmp_path: Path) -> None:
+    """spawn_simple_subshell passes no-op command when ERK_NO_PROMPT_MODIFY is set."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    with patch.dict(os.environ, {"ERK_NO_PROMPT_MODIFY": "1"}):
+        spawn_simple_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should be ":" (no-op) when prompt setup is opted out
+    assert call.command == ":"
+
+
+def test_spawn_simple_subshell_passes_shell_path(tmp_path: Path) -> None:
+    """spawn_simple_subshell passes correct shell path to gateway."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    spawn_simple_subshell(
+        shell,
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        shell="/bin/zsh",
+    )
+
+    call = shell.subshell_calls[0]
+    assert call.shell_path == "/bin/zsh"
+
+
+def test_spawn_simple_subshell_passes_opt_out_env_variable(tmp_path: Path) -> None:
+    """spawn_simple_subshell passes ERK_NO_PROMPT_MODIFY to subshell env."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    with patch.dict(os.environ, {"ERK_NO_PROMPT_MODIFY": "1"}):
+        spawn_simple_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            shell="/bin/bash",
+        )
+
+    call = shell.subshell_calls[0]
+    # Verify ERK_NO_PROMPT_MODIFY is passed in environment
+    assert call.env.get("ERK_NO_PROMPT_MODIFY") == "1"
+
+
+def test_spawn_simple_subshell_passes_noop_command_for_fish(tmp_path: Path) -> None:
+    """spawn_simple_subshell passes no-op command for fish shell (no prompt setup)."""
+    worktree_path = tmp_path / "test-worktree"
+    worktree_path.mkdir()
+
+    shell = FakeShell(subshell_exit_code=0)
+
+    # Ensure opt-out is NOT set
+    env_copy = {k: v for k, v in os.environ.items() if k != "ERK_NO_PROMPT_MODIFY"}
+    with patch.dict(os.environ, env_copy, clear=True):
+        spawn_simple_subshell(
+            shell,
+            worktree_path=worktree_path,
+            branch="feature-branch",
+            shell="/usr/local/bin/fish",
+        )
+
+    call = shell.subshell_calls[0]
+    # Command should be ":" (no-op) for fish (no prompt setup)
+    assert call.command == ":"

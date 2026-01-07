@@ -3,6 +3,8 @@
 This command fetches PR code and creates a worktree for local review/testing.
 """
 
+import sys
+
 import click
 
 from erk.cli.activation import render_activation_script
@@ -11,6 +13,7 @@ from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.subshell import is_shell_integration_active, spawn_simple_subshell
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.types import PRNotFound
@@ -86,11 +89,18 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
                 comment=f"activate PR #{pr_number}",
             )
             result.output_for_shell_integration()
+        elif not is_shell_integration_active():
+            # Spawn subshell for navigation
+            exit_code = spawn_simple_subshell(
+                ctx.shell,
+                worktree_path=existing_worktree,
+                branch=branch_name,
+                shell=None,
+            )
+            sys.exit(exit_code)
         else:
             styled_path = click.style(str(existing_worktree), fg="cyan", bold=True)
             user_output(f"PR #{pr_number} already checked out at {styled_path}")
-            user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")
-            user_output(f"Or use: source <(erk pr checkout {pr_reference} --script)")
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
@@ -165,8 +175,15 @@ def pr_checkout(ctx: ErkContext, pr_reference: str, script: bool) -> None:
             comment=f"activate PR #{pr_number}",
         )
         result.output_for_shell_integration()
+    elif not is_shell_integration_active():
+        # Spawn subshell for navigation
+        exit_code = spawn_simple_subshell(
+            ctx.shell,
+            worktree_path=worktree_path,
+            branch=branch_name,
+            shell=None,
+        )
+        sys.exit(exit_code)
     else:
         styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
         user_output(f"Created worktree for PR #{pr_number} at {styled_path}")
-        user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")
-        user_output(f"Or use: source <(erk pr checkout {pr_reference} --script)")

@@ -174,3 +174,62 @@ def spawn_worktree_subshell(
         command=full_command,
         env=subshell_env,
     )
+
+
+def spawn_simple_subshell(
+    shell_gateway: Shell,
+    *,
+    worktree_path: Path,
+    branch: str,
+    shell: str | None,
+) -> int:
+    """Spawn subshell in worktree for navigation (no Claude auto-launch).
+
+    Uses the Shell gateway to spawn user's shell with:
+    - cwd set to worktree_path
+    - ERK_SUBSHELL=1 and ERK_WORKTREE_NAME in environment
+    - Automatic PS1 modification for visual indicator (unless ERK_NO_PROMPT_MODIFY is set)
+
+    Unlike spawn_worktree_subshell(), this does NOT auto-launch Claude. It's intended
+    for checkout commands where the user just wants to navigate to a worktree.
+
+    Args:
+        shell_gateway: Shell gateway for spawning the subshell
+        worktree_path: Path to worktree directory
+        branch: Current branch name (for display in welcome message)
+        shell: Override for user's shell (for testing), None uses $SHELL
+
+    Returns:
+        Exit code when subshell exits
+    """
+    # Determine shell to use
+    user_shell = shell if shell is not None else detect_user_shell()
+
+    # Build prompt setup command (may be empty if opt-out or unsupported shell)
+    prompt_setup = build_prompt_setup_command(user_shell)
+
+    # Build environment for subshell
+    subshell_env: dict[str, str] = {
+        "ERK_SUBSHELL": "1",
+        "ERK_WORKTREE_NAME": worktree_path.name,
+    }
+
+    # Pass through ERK_NO_PROMPT_MODIFY if set (so nested subshells respect it)
+    opt_out_value = os.environ.get("ERK_NO_PROMPT_MODIFY")
+    if opt_out_value is not None:
+        subshell_env["ERK_NO_PROMPT_MODIFY"] = opt_out_value
+
+    # Print welcome message
+    welcome_msg = format_subshell_welcome_message(worktree_path, branch)
+    click.echo(welcome_msg)
+    click.echo()
+
+    # Use Shell gateway to spawn the subshell
+    # If prompt setup exists, pass it as a command to execute at shell startup
+    # For shells without prompt setup (fish, unknown, or opted out), pass ":" (no-op)
+    return shell_gateway.spawn_subshell(
+        cwd=worktree_path,
+        shell_path=user_shell,
+        command=prompt_setup if prompt_setup else ":",
+        env=subshell_env,
+    )

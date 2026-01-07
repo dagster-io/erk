@@ -1,5 +1,6 @@
 """Checkout command - find and switch to a worktree by branch name."""
 
+import sys
 from pathlib import Path
 
 import click
@@ -11,6 +12,7 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.graphite import find_worktrees_containing_branch
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+from erk.cli.subshell import is_shell_integration_active, spawn_simple_subshell
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_utils import compute_relative_path_in_worktree
@@ -226,8 +228,17 @@ def _perform_checkout(
             comment=f"checkout {branch}",
         )
         result.output_for_shell_integration()
+    elif not is_shell_integration_active():
+        # Non-script mode without shell integration: spawn subshell
+        exit_code = spawn_simple_subshell(
+            ctx.shell,
+            worktree_path=target_path,
+            branch=branch,
+            shell=None,
+        )
+        sys.exit(exit_code)
     else:
-        # Non-script mode: Apply same four-case logic with user_output()
+        # Non-script mode with shell integration: Apply same four-case logic with user_output()
         worktree_name = target_path.name
 
         if is_newly_created:
@@ -248,10 +259,6 @@ def _perform_checkout(
             styled_wt = click.style(worktree_name, fg="cyan", bold=True)
             styled_branch = click.style(branch, fg="yellow")
             user_output(f"Switched to worktree {styled_wt} and checked out branch {styled_branch}")
-
-        # Show manual instructions
-        user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")
-        user_output(f"Or use: source <(erk br co {branch} --script)")
 
 
 @alias("co")

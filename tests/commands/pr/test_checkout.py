@@ -1,6 +1,8 @@
 """Tests for erk pr checkout command."""
 
+import os
 from pathlib import Path
+from unittest.mock import patch
 
 from click.testing import CliRunner
 
@@ -74,7 +76,9 @@ def test_pr_checkout_same_repo_branch_exists_on_remote() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "123"], obj=ctx)
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "123"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Created worktree for PR #123" in result.output
@@ -138,7 +142,9 @@ def test_pr_checkout_cross_repository_fork() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "789"], obj=ctx)
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "789"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Created worktree for PR #789" in result.output
@@ -177,7 +183,9 @@ def test_pr_checkout_already_checked_out() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "111"], obj=ctx)
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "111"], obj=ctx)
 
         assert result.exit_code == 0
         assert "already checked out" in result.output
@@ -275,11 +283,13 @@ def test_pr_checkout_with_github_url() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(
-            pr_group,
-            ["checkout", "https://github.com/owner/repo/pull/444"],
-            obj=ctx,
-        )
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                pr_group,
+                ["checkout", "https://github.com/owner/repo/pull/444"],
+                obj=ctx,
+            )
 
         assert result.exit_code == 0
         assert "Created worktree for PR #444" in result.output
@@ -336,8 +346,8 @@ def test_pr_checkout_script_mode_outputs_script_path() -> None:
         assert ".venv" in script_content
 
 
-def test_pr_checkout_non_script_mode_shows_manual_instructions() -> None:
-    """Test that non-script mode shows manual instructions."""
+def test_pr_checkout_non_script_mode_spawns_subshell() -> None:
+    """Test that non-script mode without shell integration spawns subshell."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -356,12 +366,16 @@ def test_pr_checkout_non_script_mode_shows_manual_instructions() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "666"], obj=ctx)
+        # Without ERK_SHELL set, the command spawns a subshell
+        # Ensure ERK_SHELL is NOT set
+        env_copy = {k: v for k, v in os.environ.items() if k != "ERK_SHELL"}
+        with patch.dict(os.environ, env_copy, clear=True):
+            result = runner.invoke(pr_group, ["checkout", "666"], obj=ctx)
 
+        # Subshell shows welcome banner
         assert result.exit_code == 0
-        assert "Created worktree for PR #666" in result.output
-        assert "Shell integration not detected" in result.output
-        assert "source <(erk pr checkout 666 --script)" in result.output
+        assert "worktree subshell" in result.output
+        assert "exit" in result.output
 
 
 def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
@@ -388,7 +402,9 @@ def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "777"], obj=ctx)
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "777"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Created worktree for PR #777" in result.output
@@ -427,7 +443,9 @@ def test_pr_checkout_stacked_pr_with_conflicts_warns_user() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "888"], obj=ctx)
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "888"], obj=ctx)
 
         assert result.exit_code == 0
         # Worktree should still be created
@@ -462,7 +480,9 @@ def test_pr_checkout_trunk_pr_skips_rebase() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        result = runner.invoke(pr_group, ["checkout", "999"], obj=ctx)
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "999"], obj=ctx)
 
         assert result.exit_code == 0
         assert "Created worktree for PR #999" in result.output

@@ -5,6 +5,9 @@ the full CLI command pipeline. These tests directly verify the message
 generation business logic.
 """
 
+import os
+from unittest.mock import patch
+
 from erk.cli.commands.branch.checkout_cmd import _perform_checkout
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -337,7 +340,8 @@ def test_message_colorization_applied() -> None:
 def test_message_non_script_mode_case_1() -> None:
     """Test non-script mode message for Case 1 (already there).
 
-    Verifies that user_output() is called with correct message in non-script mode.
+    Verifies that user_output() is called with correct message in non-script mode
+    when shell integration is active.
     """
     import sys
     from io import StringIO
@@ -370,15 +374,18 @@ def test_message_non_script_mode_case_1() -> None:
         sys.stderr = captured_stderr
 
         try:
-            # Call _perform_checkout in non-script mode
-            _perform_checkout(
-                ctx=test_ctx,
-                repo_root=env.cwd,
-                target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
-                branch="feature-1",
-                script=False,
-                is_newly_created=False,
-            )
+            # Simulate shell integration active to test message output path
+            # (without it, non-script mode spawns subshell and sys.exit())
+            with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+                # Call _perform_checkout in non-script mode
+                _perform_checkout(
+                    ctx=test_ctx,
+                    repo_root=env.cwd,
+                    target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
+                    branch="feature-1",
+                    script=False,
+                    is_newly_created=False,
+                )
         finally:
             sys.stderr = old_stderr
 
@@ -393,7 +400,8 @@ def test_message_non_script_mode_case_1() -> None:
 def test_message_non_script_mode_case_4() -> None:
     """Test non-script mode message for Case 4 (newly created).
 
-    Verifies that user_output() is called with correct message in non-script mode.
+    Verifies that user_output() is called with correct message in non-script mode
+    when shell integration is active.
     """
     import sys
     from io import StringIO
@@ -427,15 +435,18 @@ def test_message_non_script_mode_case_4() -> None:
         sys.stderr = captured_stderr
 
         try:
-            # Call _perform_checkout in non-script mode with is_newly_created=True
-            _perform_checkout(
-                ctx=test_ctx,
-                repo_root=env.cwd,
-                target_worktree=WorktreeInfo(path=new_wt, branch="new-feature"),
-                branch="new-feature",
-                script=False,
-                is_newly_created=True,
-            )
+            # Simulate shell integration active to test message output path
+            # (without it, non-script mode spawns subshell and sys.exit())
+            with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+                # Call _perform_checkout in non-script mode with is_newly_created=True
+                _perform_checkout(
+                    ctx=test_ctx,
+                    repo_root=env.cwd,
+                    target_worktree=WorktreeInfo(path=new_wt, branch="new-feature"),
+                    branch="new-feature",
+                    script=False,
+                    is_newly_created=True,
+                )
         finally:
             sys.stderr = old_stderr
 
