@@ -287,7 +287,7 @@ def execute_interactive_mode(
             executor.execute_interactive(
                 worktree_path=worktree_path,
                 dangerous=dangerous,
-                command="/erk:plan-implement",
+                command="/erk:system:impl-execute",
                 target_subpath=compute_relative_path_in_worktree(
                     ctx.git.list_worktrees(repo_root), ctx.cwd
                 ),
@@ -305,7 +305,7 @@ def execute_interactive_mode(
             ctx.shell,
             worktree_path=worktree_path,
             branch=branch,
-            claude_command="/erk:plan-implement",
+            claude_command="/erk:system:impl-execute",
             dangerous=dangerous,
             model=model,
             shell=None,
