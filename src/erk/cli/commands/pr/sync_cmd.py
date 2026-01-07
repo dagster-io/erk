@@ -34,7 +34,6 @@ import click
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.gt.events import CompletionEvent
 from erk_shared.gateway.gt.operations import execute_squash
 from erk_shared.gateway.gt.types import RestackError, SquashError, SquashSuccess
@@ -193,7 +192,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     base_branch = pr.base_ref_name
 
     # Determine which mode to use based on Graphite availability
-    if isinstance(ctx.graphite, GraphiteDisabled):
+    if not ctx.branch_manager.is_graphite_managed():
         # Git-only mode: fetch → rebase → force push
         user_output(f"Base branch: {base_branch}")
         _git_only_sync(ctx, repo, current_branch, base_branch, pr_number)
