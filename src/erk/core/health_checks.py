@@ -172,6 +172,9 @@ def check_claude_cli(shell: Shell) -> CheckResult:
 def check_graphite_cli(shell: Shell) -> CheckResult:
     """Check if Graphite CLI (gt) is installed and available in PATH.
 
+    This is an info-level check - it always passes, but informs users
+    whether gt is configured. Graphite enables stacked PRs but is optional.
+
     Args:
         shell: Shell implementation for tool detection
     """
@@ -179,9 +182,10 @@ def check_graphite_cli(shell: Shell) -> CheckResult:
     if gt_path is None:
         return CheckResult(
             name="graphite",
-            passed=False,
-            message="Graphite CLI (gt) not found in PATH",
-            details="Install from: https://graphite.dev/docs/installing-the-cli",
+            passed=True,
+            message="Graphite CLI (gt) not installed",
+            info=True,
+            remediation="Install from https://graphite.dev/docs/installing-the-cli for stacked PRs",
         )
 
     # Try to get version

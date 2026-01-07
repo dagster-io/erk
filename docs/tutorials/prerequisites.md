@@ -1,36 +1,50 @@
 # Prerequisites
 
-Tools and software you need before installing erk.
-
-<!-- TODO: This document is a skeleton. Fill in the sections below. -->
+Tools you need before installing erk.
 
 ## Required Tools
 
-<!-- TODO: List each required tool with version requirements -->
+### Python 3.10+
 
-### Python
+```bash
+python --version
+```
 
-<!-- TODO: Python 3.10+ requirement, how to check version -->
+You should see `Python 3.10.x` or higher.
 
-### Claude Code
+[Install Python](https://www.python.org/downloads/) if needed.
 
-<!-- TODO: Claude Code CLI requirement, installation link -->
+### Claude Code CLI
 
-### uv
+```bash
+claude --version
+```
 
-<!-- TODO: uv requirement for Python environment management -->
+[Install from https://docs.anthropic.com/en/docs/claude-code/getting-started](https://docs.anthropic.com/en/docs/claude-code/getting-started)
 
-### Graphite (gt)
+### uv (Python Package Manager)
 
-<!-- TODO: Graphite CLI for stacked PRs -->
+```bash
+uv --version
+```
 
-### GitHub CLI (gh)
+[Install from https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
 
-<!-- TODO: GitHub CLI for PR operations -->
+### GitHub CLI
 
-## Verification
+```bash
+gh --version
+gh auth status
+```
 
-<!-- TODO: How to verify all prerequisites are installed -->
+[Install from https://cli.github.com/](https://cli.github.com/)
+
+## Optional Enhancements
+
+These tools unlock additional features but are not required to start:
+
+- **Graphite (gt)**: Enables stacked PRs. See [Stacked PRs tutorial](stacked-prs.md).
+- **Shell integration**: Enables seamless directory switching. See [Shell Integration](shell-integration.md).
 
 ## See Also
 
