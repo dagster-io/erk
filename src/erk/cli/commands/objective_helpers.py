@@ -4,6 +4,7 @@ These helpers are used by `erk land` to check for linked objectives
 and prompt users to update them after landing.
 """
 
+import logging
 from pathlib import Path
 
 import click
@@ -14,6 +15,8 @@ from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
+
+logger = logging.getLogger(__name__)
 
 # Number of retry attempts for auto-close detection
 _AUTO_CLOSE_MAX_RETRIES = 3
@@ -35,15 +38,33 @@ def _wait_for_issue_closure(
     Returns True if issue closed within retry window, False otherwise.
     Returns False if issue becomes inaccessible (fail-open).
     """
-    for _ in range(_AUTO_CLOSE_MAX_RETRIES):
+    logger.debug(
+        "Waiting for issue #%d to close (max %d retries, %.1fs delay)",
+        issue_number,
+        _AUTO_CLOSE_MAX_RETRIES,
+        _AUTO_CLOSE_RETRY_DELAY,
+    )
+    for attempt in range(_AUTO_CLOSE_MAX_RETRIES):
         ctx.time.sleep(_AUTO_CLOSE_RETRY_DELAY)
         try:
             issue = ctx.issues.get_issue(repo_root, issue_number)
         except RuntimeError:
-            # Issue became inaccessible - fail-open
+            logger.warning(
+                "Issue #%d became inaccessible during retry %d", issue_number, attempt + 1
+            )
             return False
         if issue.state == "CLOSED":
+            logger.debug("Issue #%d closed after %d retries", issue_number, attempt + 1)
             return True
+        logger.debug(
+            "Issue #%d still open after retry %d/%d",
+            issue_number,
+            attempt + 1,
+            _AUTO_CLOSE_MAX_RETRIES,
+        )
+    logger.debug(
+        "Issue #%d did not close after %d retries", issue_number, _AUTO_CLOSE_MAX_RETRIES
+    )
     return False
 
 
@@ -68,14 +89,24 @@ def check_and_display_plan_issue_closure(
     if plan_number is None:
         return None
 
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-    has_closing_ref = has_issue_closing_reference(pr_body, plan_number, plans_repo)
+    has_closing_ref = has_issue_closing_reference(
+        pr_body,
+        plan_number,
+        ctx.local_config.plans_repo if ctx.local_config else None,
+    )
+    logger.debug(
+        "Plan issue #%d: has_closing_ref=%s, branch=%s",
+        plan_number,
+        has_closing_ref,
+        branch,
+    )
 
     # GitHubIssues.get_issue raises RuntimeError for missing issues.
     # This is a fail-open feature (non-critical), so we catch and return None.
     try:
         issue = ctx.issues.get_issue(repo_root, plan_number)
     except RuntimeError:
+        logger.debug("Plan issue #%d not found, skipping closure check", plan_number)
         return None
 
     if issue.state == "CLOSED":

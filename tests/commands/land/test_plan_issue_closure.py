@@ -47,7 +47,7 @@ class StatefulFakeGitHubIssues(GitHubIssues):
         self,
         *,
         issues: dict[int, IssueInfo],
-        close_after_calls: int | None = None,
+        close_after_calls: int | None,
     ) -> None:
         """Create StatefulFakeGitHubIssues.
 
