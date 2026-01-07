@@ -53,6 +53,19 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Delete a local branch.
+
+        For Graphite: Uses `git branch -D` with Graphite metadata cleanup.
+        For Git: Uses plain `git branch -D`.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to delete
+        """
+        ...
+
+    @abstractmethod
     def is_graphite_managed(self) -> bool:
         """Returns True if using Graphite for branch operations.
 

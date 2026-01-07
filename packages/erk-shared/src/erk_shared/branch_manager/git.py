@@ -63,6 +63,15 @@ class GitBranchManager(BranchManager):
         # Checkout the new branch
         self.git.checkout_branch(repo_root, branch_name)
 
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Delete a branch using plain Git.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to delete
+        """
+        self.git.delete_branch(repo_root, branch, force=True)
+
     def is_graphite_managed(self) -> bool:
         """Returns False - this implementation uses plain Git."""
         return False

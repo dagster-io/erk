@@ -70,6 +70,15 @@ class GraphiteBranchManager(BranchManager):
         # Track it with Graphite
         self.graphite.track_branch(repo_root, branch_name, base_branch)
 
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Delete a branch with Graphite metadata cleanup.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to delete
+        """
+        self.git.delete_branch_with_graphite(repo_root, branch, force=True)
+
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""
         return True
