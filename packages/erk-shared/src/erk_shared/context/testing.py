@@ -64,12 +64,10 @@ def context_for_test(
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
     from erk_shared.extraction.claude_installation import FakeClaudeInstallation
-    from erk_shared.gateway.claude_settings.fake import FakeUserLevelClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.repo_state.fake import FakeRepoLevelStateStore
     from erk_shared.gateway.shell import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
@@ -119,8 +117,6 @@ def context_for_test(
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
-        claude_settings_store=FakeUserLevelClaudeSettingsStore(),
-        repo_state_store=FakeRepoLevelStateStore(),
         shell=FakeShell(),
         completion=FakeCompletion(),
         feedback=FakeUserFeedback(),

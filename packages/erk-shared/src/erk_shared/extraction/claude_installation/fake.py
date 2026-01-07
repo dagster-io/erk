@@ -70,6 +70,7 @@ class FakeClaudeInstallation(ClaudeInstallation):
         self._session_planning_agents = session_planning_agents or {}
         self._plans_dir_path = plans_dir_path
         self._projects_dir_path = projects_dir_path
+        self._settings_writes: list[dict] = []
 
     @classmethod
     def for_test(
@@ -299,6 +300,32 @@ class FakeClaudeInstallation(ClaudeInstallation):
         if self._settings is None:
             return {}
         return dict(self._settings)  # Return copy
+
+    def write_settings(self, settings: dict) -> Path | None:
+        """Write settings to in-memory storage.
+
+        Does not create actual backups - just stores the new settings.
+
+        Args:
+            settings: Settings dict to store
+
+        Returns:
+            None (fake never creates real backups)
+        """
+        self._settings = dict(settings)  # Store a copy
+        # Track write for test assertions
+        self._settings_writes.append(dict(settings))
+        # Return None since fake doesn't create backup files
+        return None
+
+    @property
+    def settings_writes(self) -> list[dict]:
+        """Read-only access to all settings writes for test assertions.
+
+        Returns:
+            List of settings dicts that were written, in order
+        """
+        return list(self._settings_writes)
 
     # --- Plan operations ---
 

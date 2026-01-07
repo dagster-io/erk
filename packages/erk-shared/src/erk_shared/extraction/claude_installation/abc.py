@@ -240,6 +240,21 @@ class ClaudeInstallation(ABC):
     # --- Projects directory operations ---
 
     @abstractmethod
+    def write_settings(self, settings: dict) -> Path | None:
+        """Write settings to ~/.claude/settings.json with backup.
+
+        Creates a backup of existing file before writing.
+
+        Args:
+            settings: Settings dict to write
+
+        Returns:
+            Path to backup file if created, None if no backup was needed
+            (file didn't exist).
+        """
+        ...
+
+    @abstractmethod
     def projects_dir_exists(self) -> bool:
         """Check if ~/.claude/projects/ directory exists."""
         ...

@@ -1,1 +1,0 @@
-"""Claude settings store gateway."""

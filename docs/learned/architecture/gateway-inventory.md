@@ -115,6 +115,32 @@ Claude Code session data operations.
 
 **Fake Features**: Configurable session data, project directory injection.
 
+### Claude Installation (`extraction/claude_installation/`)
+
+Consolidated gateway for all `~/.claude/` filesystem operations. Provides settings read/write, session access, and plan file management.
+
+**Key Methods**:
+
+- `read_settings()` / `write_settings()`: Settings file operations with backup
+- `get_settings_path()`: Path to `~/.claude/settings.json`
+- `get_session_log_path()`: Session log path retrieval
+- `get_plan_content()`: Plan file content access
+
+**Fake Features**: In-memory settings storage, mutation tracking via `settings_writes` property.
+
+### Erk Installation (`gateway/erk_installation/`)
+
+Consolidated gateway for all `~/.erk/` filesystem operations. Provides config management, version tracking, and pool state persistence.
+
+**Key Methods**:
+
+- `config_exists()` / `load_config()` / `save_config()`: Global config operations
+- `load_pool_state()` / `save_pool_state()`: Pool state persistence
+- `get_last_seen_version()` / `update_last_seen_version()`: Version tracking
+- `root()`: Installation root path access
+
+**Fake Features**: In-memory config/pool state, mutation tracking via `saved_configs`, `pool_saves`, `version_updates` properties.
+
 ### Parallel Task Runner (`parallel/`)
 
 Parallel execution abstraction.

@@ -180,7 +180,7 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Load pool state
-    state = ctx.repo_state_store.load_pool_state(repo.pool_json_path)
+    state = ctx.erk_installation.load_pool_state(repo.pool_json_path)
     if state is None:
         user_output("Error: No pool configured. Run `erk slot create` first.")
         raise SystemExit(1) from None
@@ -227,7 +227,7 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
         for ra in stale_assignments:
             user_output(f"  erk slot unassign {ra.assignment.slot_name}")
     else:
-        ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
+        ctx.erk_installation.save_pool_state(repo.pool_json_path, new_state)
         user_output("")
         user_output(
             click.style("✓ ", fg="green") + f"Removed {len(stale_assignments)} stale assignment(s)"

@@ -4,10 +4,16 @@ FakeErkInstallation is an in-memory implementation that enables fast and
 deterministic tests without touching the filesystem.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
+
+if TYPE_CHECKING:
+    from erk.core.worktree_pool import PoolState
 
 
 class FakeErkInstallation(ErkInstallation):
@@ -24,6 +30,7 @@ class FakeErkInstallation(ErkInstallation):
         command_log_path: Path | None = None,
         last_seen_version: str | None = None,
         root_path: Path | None = None,
+        initial_pool_state: PoolState | None = None,
     ) -> None:
         """Create FakeErkInstallation with optional initial state.
 
@@ -32,6 +39,8 @@ class FakeErkInstallation(ErkInstallation):
             command_log_path: Custom command log path (defaults to /fake/erk/command_history.jsonl)
             last_seen_version: Pre-configured last seen version (None means no file exists)
             root_path: Custom root path (defaults to /fake/erk/)
+            initial_pool_state: Optional PoolState to pre-populate the store
+                for testing scenarios. If None, load_pool_state returns None.
         """
         self._config = config
         self._root_path = root_path if root_path is not None else Path("/fake/erk")
@@ -43,6 +52,8 @@ class FakeErkInstallation(ErkInstallation):
         self._saved_configs: list[GlobalConfig] = []
         self._last_seen_version = last_seen_version
         self._version_updates: list[str] = []
+        self._pool_state = initial_pool_state
+        self._pool_saves: list[tuple[Path, PoolState]] = []
 
     # --- Test assertions ---
 
@@ -159,3 +170,44 @@ class FakeErkInstallation(ErkInstallation):
         """
         self._last_seen_version = version
         self._version_updates.append(version)
+
+    # --- Pool state operations ---
+
+    def load_pool_state(self, pool_json_path: Path) -> PoolState | None:
+        """Load pool state from in-memory storage.
+
+        Args:
+            pool_json_path: Path to the pool.json file (ignored in fake)
+
+        Returns:
+            Stored PoolState, or None if not set
+        """
+        return self._pool_state
+
+    def save_pool_state(self, pool_json_path: Path, state: PoolState) -> None:
+        """Save pool state to in-memory storage.
+
+        Args:
+            pool_json_path: Path to the pool.json file
+            state: Pool state to store
+        """
+        self._pool_state = state
+        self._pool_saves.append((pool_json_path, state))
+
+    @property
+    def pool_saves(self) -> tuple[tuple[Path, PoolState], ...]:
+        """Read-only access to all pool saves for test assertions.
+
+        Returns:
+            Tuple of (path, state) for each save that occurred
+        """
+        return tuple(self._pool_saves)
+
+    @property
+    def current_pool_state(self) -> PoolState | None:
+        """Read-only access to current pool state.
+
+        Returns:
+            Current PoolState or None
+        """
+        return self._pool_state

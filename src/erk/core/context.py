@@ -42,8 +42,6 @@ from erk_shared.core import (
     ScriptWriter,
 )
 from erk_shared.extraction.claude_installation import ClaudeInstallation
-from erk_shared.gateway.claude_settings.abc import UserLevelClaudeSettingsStore
-from erk_shared.gateway.claude_settings.real import RealUserLevelClaudeSettingsStore
 
 # Import erk-specific integrations
 from erk_shared.gateway.completion import Completion
@@ -57,9 +55,6 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
-from erk_shared.gateway.repo_state.abc import RepoLevelStateStore
-from erk_shared.gateway.repo_state.dry_run import DryRunRepoLevelStateStore
-from erk_shared.gateway.repo_state.real import RealRepoLevelStateStore
 from erk_shared.gateway.shell import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
@@ -103,12 +98,10 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_installation import FakeClaudeInstallation
-    from erk_shared.gateway.claude_settings.fake import FakeUserLevelClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.repo_state.fake import FakeRepoLevelStateStore
     from erk_shared.gateway.shell import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.github.fake import FakeGitHub
@@ -138,8 +131,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         planner_registry=FakePlannerRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
         prompt_executor=FakePromptExecutor(),
-        claude_settings_store=FakeUserLevelClaudeSettingsStore(),
-        repo_state_store=FakeRepoLevelStateStore(),
         cwd=cwd,
         global_config=None,
         local_config=LoadedConfig.test(),
@@ -169,7 +160,6 @@ def context_for_test(
     planner_registry: PlannerRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
-    repo_state_store: RepoLevelStateStore | None = None,
     cwd: Path | None = None,
     global_config: GlobalConfig | None = None,
     local_config: LoadedConfig | None = None,
@@ -201,8 +191,6 @@ def context_for_test(
         feedback: Optional UserFeedback implementation.
                     If None, creates FakeUserFeedback.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
-        repo_state_store: Optional RepoLevelStateStore implementation.
-                          If None, creates empty FakeRepoLevelStateStore.
         cwd: Optional current working directory. If None, uses sentinel_path().
         global_config: Optional GlobalConfig. If None, uses test defaults.
         local_config: Optional LoadedConfig. If None, uses empty defaults.
@@ -220,13 +208,11 @@ def context_for_test(
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_installation import FakeClaudeInstallation
-    from erk_shared.gateway.claude_settings.fake import FakeUserLevelClaudeSettingsStore
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.repo_state.fake import FakeRepoLevelStateStore
     from erk_shared.gateway.shell import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
@@ -298,9 +284,6 @@ def context_for_test(
     if prompt_executor is None:
         prompt_executor = FakePromptExecutor()
 
-    if repo_state_store is None:
-        repo_state_store = FakeRepoLevelStateStore()
-
     if global_config is None:
         global_config = GlobalConfig(
             erk_root=Path("/test/erks"),
@@ -343,8 +326,6 @@ def context_for_test(
         planner_registry=planner_registry,
         claude_installation=claude_installation,
         prompt_executor=prompt_executor,
-        claude_settings_store=FakeUserLevelClaudeSettingsStore(),
-        repo_state_store=repo_state_store,
         cwd=cwd or sentinel_path(),
         global_config=global_config,
         local_config=local_config,
@@ -534,19 +515,13 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 11. Create claude installation, prompt executor, and claude settings store
+    # 11. Create claude installation and prompt executor
     from erk_shared.extraction.claude_installation import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
-    claude_settings_store: UserLevelClaudeSettingsStore = RealUserLevelClaudeSettingsStore()
 
-    # 12. Create repo state store (wrap with dry-run if needed)
-    repo_state_store: RepoLevelStateStore = RealRepoLevelStateStore()
-    if dry_run:
-        repo_state_store = DryRunRepoLevelStateStore(repo_state_store)
-
-    # 13. Create context with all values
+    # 12. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -565,8 +540,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         planner_registry=RealPlannerRegistry(erk_installation.get_planners_config_path()),
         claude_installation=real_claude_installation,
         prompt_executor=prompt_executor,
-        claude_settings_store=claude_settings_store,
-        repo_state_store=repo_state_store,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,

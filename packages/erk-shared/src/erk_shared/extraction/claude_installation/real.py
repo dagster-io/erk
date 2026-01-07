@@ -443,6 +443,35 @@ class RealClaudeInstallation(ClaudeInstallation):
 
         return None
 
+    def write_settings(self, settings: dict) -> Path | None:
+        """Write settings to ~/.claude/settings.json with backup.
+
+        Creates a backup of existing file before writing.
+
+        Args:
+            settings: Settings dict to write
+
+        Returns:
+            Path to backup file if created, None if no backup was needed
+            (file didn't exist).
+        """
+        path = self.get_settings_path()
+
+        # Create backup of existing file (if it exists)
+        backup_path: Path | None = None
+        if path.exists():
+            backup_path = path.with_suffix(".json.bak")
+            backup_path.write_bytes(path.read_bytes())
+
+        # Ensure parent directory exists
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Write with pretty formatting to match Claude's style
+        content = json.dumps(settings, indent=2)
+        path.write_text(content, encoding="utf-8")
+
+        return backup_path
+
     # --- Projects directory operations ---
 
     def projects_dir_exists(self) -> bool:

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from erk.core.worktree_pool import PoolState
     from erk_shared.context.types import GlobalConfig
 
 
@@ -115,5 +116,31 @@ class ErkInstallation(ABC):
 
         Args:
             version: Version string to record
+        """
+        ...
+
+    # --- Pool state operations (migrated from RepoLevelStateStore) ---
+
+    @abstractmethod
+    def load_pool_state(self, pool_json_path: Path) -> PoolState | None:
+        """Load pool state from JSON file.
+
+        Args:
+            pool_json_path: Path to the pool.json file
+
+        Returns:
+            PoolState if file exists and is valid, None otherwise
+        """
+        ...
+
+    @abstractmethod
+    def save_pool_state(self, pool_json_path: Path, state: PoolState) -> None:
+        """Save pool state to JSON file.
+
+        Creates parent directories if they don't exist.
+
+        Args:
+            pool_json_path: Path to the pool.json file
+            state: Pool state to persist
         """
         ...

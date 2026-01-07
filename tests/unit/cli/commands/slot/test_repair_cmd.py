@@ -8,7 +8,7 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
-from erk_shared.gateway.repo_state.fake import FakeRepoLevelStateStore
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -103,9 +103,9 @@ def test_slot_repair_no_stale_assignments() -> None:
         # Create pool state with a valid assignment (worktree exists)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
 
@@ -113,8 +113,8 @@ def test_slot_repair_no_stale_assignments() -> None:
         assert "No issues found" in result.output
 
         # Verify state unchanged
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 1
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 1
 
 
 def test_slot_repair_removes_stale_with_force() -> None:
@@ -146,9 +146,9 @@ def test_slot_repair_removes_stale_with_force() -> None:
         # Create pool state with a stale assignment (worktree doesn't exist)
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(
             cli, ["slot", "repair", "--force"], obj=test_ctx, catch_exceptions=False
@@ -161,8 +161,8 @@ def test_slot_repair_removes_stale_with_force() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Verify assignment was removed
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 0
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_preserves_valid_assignments() -> None:
@@ -204,9 +204,9 @@ def test_slot_repair_preserves_valid_assignments() -> None:
         valid_assignment = _create_test_assignment("erk-managed-wt-01", "feature-a", valid_wt_path)
         stale_assignment = _create_test_assignment("erk-managed-wt-02", "feature-b", stale_wt_path)
         initial_state = PoolState.test(assignments=(valid_assignment, stale_assignment))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
@@ -216,7 +216,7 @@ def test_slot_repair_preserves_valid_assignments() -> None:
         assert "feature-b" in result.output
 
         # Verify only stale assignment was removed
-        state = repo_state_store.current_pool_state
+        state = erk_install.current_pool_state
         assert state is not None
         assert len(state.assignments) == 1
         assert state.assignments[0].slot_name == "erk-managed-wt-01"
@@ -250,9 +250,9 @@ def test_slot_repair_confirmation_required_without_force() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         # Simulate user saying 'n' to confirmation
         result = runner.invoke(
@@ -264,8 +264,8 @@ def test_slot_repair_confirmation_required_without_force() -> None:
         assert "Aborted" in result.output
 
         # Verify assignment was NOT removed (user declined)
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 1
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 1
 
 
 def test_slot_repair_confirmation_yes() -> None:
@@ -295,9 +295,9 @@ def test_slot_repair_confirmation_yes() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         # Simulate user saying 'y' to confirmation
         result = runner.invoke(
@@ -308,8 +308,8 @@ def test_slot_repair_confirmation_yes() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Verify assignment was removed
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 0
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_repairs_branch_mismatch() -> None:
@@ -346,9 +346,9 @@ def test_slot_repair_repairs_branch_mismatch() -> None:
         # Pool.json says expected-branch but git says actual-branch
         assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
@@ -357,8 +357,8 @@ def test_slot_repair_repairs_branch_mismatch() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Assignment should be removed
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 0
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_repairs_multiple_issues() -> None:
@@ -409,9 +409,9 @@ def test_slot_repair_repairs_multiple_issues() -> None:
             "erk-managed-wt-02", "stale-branch", stale_wt_path
         )
         initial_state = PoolState.test(assignments=(mismatch_assignment, stale_assignment))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
@@ -421,7 +421,7 @@ def test_slot_repair_repairs_multiple_issues() -> None:
         assert "Removed 2 stale assignment" in result.output
 
         # Both assignments should be removed
-        state = repo_state_store.current_pool_state
+        state = erk_install.current_pool_state
         assert state is not None
         assert len(state.assignments) == 0
 
@@ -459,9 +459,9 @@ def test_slot_repair_repairs_missing_branch() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
         assert result.exit_code == 0
@@ -469,8 +469,8 @@ def test_slot_repair_repairs_missing_branch() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Assignment should be removed
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 0
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_repairs_git_registry_missing() -> None:
@@ -501,9 +501,9 @@ def test_slot_repair_repairs_git_registry_missing() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
         assert result.exit_code == 0
@@ -511,8 +511,8 @@ def test_slot_repair_repairs_git_registry_missing() -> None:
         assert "Removed 1 stale assignment" in result.output
 
         # Assignment should be removed
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 0
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
 
 
 def test_slot_repair_dry_run_does_not_modify_state() -> None:
@@ -542,9 +542,9 @@ def test_slot_repair_dry_run_does_not_modify_state() -> None:
 
         assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(
             cli, ["slot", "repair", "--dry-run"], obj=test_ctx, catch_exceptions=False
@@ -556,9 +556,9 @@ def test_slot_repair_dry_run_does_not_modify_state() -> None:
         assert "Would remove 1 stale assignment" in result.output
 
         # Verify state was NOT modified
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 1
-        assert repo_state_store.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 1
+        assert erk_install.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
 
 
 def test_slot_repair_dry_run_branch_mismatch() -> None:
@@ -594,9 +594,9 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
         # Pool.json says expected-branch but git says actual-branch
         assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
         initial_state = PoolState.test(assignments=(assignment,))
-        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
 
         result = runner.invoke(
             cli, ["slot", "repair", "--dry-run"], obj=test_ctx, catch_exceptions=False
@@ -608,6 +608,6 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
         assert "Would remove 1 stale assignment" in result.output
 
         # Verify state was NOT modified
-        assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 1
-        assert repo_state_store.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 1
+        assert erk_install.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
