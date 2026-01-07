@@ -42,7 +42,6 @@ def get_all_commands() -> list[CommandDefinition]:
             is_available=lambda ctx: (
                 ctx.row.pr_number is not None
                 and ctx.row.pr_state == "OPEN"
-                and not ctx.row.exists_locally
                 and ctx.row.run_url is not None
             ),
         ),
