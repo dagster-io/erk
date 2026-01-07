@@ -43,3 +43,15 @@ On failure, display the error message and suggest:
 - Checking that a plan exists (enter Plan mode and exit it first)
 - Verifying GitHub CLI authentication (`gh auth status`)
 - Checking network connectivity
+
+## Session Tracking
+
+After successfully saving a plan, the issue number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved issue number:**
+
+```bash
+erk exec marker read --session-id <session-id> plan-saved-issue
+```
+
+This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.
