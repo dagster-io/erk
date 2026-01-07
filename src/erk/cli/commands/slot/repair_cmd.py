@@ -1,10 +1,15 @@
 """Slot repair command - remove stale assignments from pool state."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
 
-from erk.cli.commands.slot.diagnostics import SyncIssue, run_sync_diagnostics
+from erk.cli.commands.slot.diagnostics import (
+    SyncIssue,
+    SyncIssueCode,
+    run_sync_diagnostics,
+)
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
@@ -19,6 +24,14 @@ REPAIRABLE_CODES = frozenset(
         "branch-mismatch",
     }
 )
+
+
+@dataclass(frozen=True)
+class RepairableAssignment:
+    """Pairs a stale assignment with its diagnostic issue code."""
+
+    assignment: SlotAssignment
+    issue_code: SyncIssueCode
 
 
 def _extract_slot_name(issue: SyncIssue) -> str:
@@ -64,7 +77,7 @@ def find_stale_assignments(
     issues: list[SyncIssue],
     *,
     repairable_codes: frozenset[str],
-) -> list[SlotAssignment]:
+) -> list[RepairableAssignment]:
     """Find assignments that can be auto-repaired.
 
     Args:
@@ -73,31 +86,42 @@ def find_stale_assignments(
         repairable_codes: Set of issue codes that should be auto-repaired
 
     Returns:
-        List of stale SlotAssignments matching the repairable codes
+        List of RepairableAssignment objects with assignment and issue code
     """
-    # Collect the slot names that have repairable issues
-    stale_slot_names = {
-        _extract_slot_name(issue) for issue in issues if issue.code in repairable_codes
-    }
+    # Build mapping from slot name to issue code for repairable issues
+    slot_to_issue: dict[str, SyncIssueCode] = {}
+    for issue in issues:
+        if issue.code in repairable_codes:
+            slot_name = _extract_slot_name(issue)
+            slot_to_issue[slot_name] = issue.code
 
-    # Return the actual assignments that are stale
-    return [a for a in state.assignments if a.slot_name in stale_slot_names]
+    # Return assignments paired with their issue codes
+    result: list[RepairableAssignment] = []
+    for assignment in state.assignments:
+        if assignment.slot_name in slot_to_issue:
+            result.append(
+                RepairableAssignment(
+                    assignment=assignment,
+                    issue_code=slot_to_issue[assignment.slot_name],
+                )
+            )
+    return result
 
 
 def execute_repair(
     state: PoolState,
-    stale_assignments: list[SlotAssignment],
+    stale_assignments: list[RepairableAssignment],
 ) -> PoolState:
     """Create new pool state with stale assignments removed.
 
     Args:
         state: Current pool state
-        stale_assignments: Assignments to remove
+        stale_assignments: RepairableAssignment objects to remove
 
     Returns:
         New PoolState with stale assignments filtered out
     """
-    stale_slot_names = {a.slot_name for a in stale_assignments}
+    stale_slot_names = {ra.assignment.slot_name for ra in stale_assignments}
     new_assignments = tuple(a for a in state.assignments if a.slot_name not in stale_slot_names)
 
     return PoolState(
@@ -178,11 +202,11 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     # Show what will be repaired
     user_output("")
     user_output(f"Found {len(stale_assignments)} repairable issue(s):")
-    for assignment in stale_assignments:
+    for ra in stale_assignments:
         user_output(
-            f"  - {click.style(assignment.slot_name, fg='cyan')}: "
-            f"branch '{click.style(assignment.branch_name, fg='yellow')}' "
-            f"(worktree missing)"
+            f"  - {click.style(ra.assignment.slot_name, fg='cyan')}: "
+            f"branch '{click.style(ra.assignment.branch_name, fg='yellow')}' "
+            f"({ra.issue_code})"
         )
 
     # Prompt for confirmation unless --force or --dry-run
@@ -198,8 +222,10 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
         user_output("")
         user_output(
             click.style("[DRY RUN] ", fg="yellow", bold=True)
-            + f"Would remove {len(stale_assignments)} stale assignment(s)"
+            + f"Would remove {len(stale_assignments)} stale assignment(s):"
         )
+        for ra in stale_assignments:
+            user_output(f"  erk slot unassign {ra.assignment.slot_name}")
     else:
         ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
         user_output("")
