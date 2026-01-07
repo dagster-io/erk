@@ -957,3 +957,156 @@ def test_delete_remote_branch_other_error_returns_false(monkeypatch: MonkeyPatch
         result = ops.delete_remote_branch(Path("/repo"), "protected-branch")
 
         assert result is False
+
+
+# ============================================================================
+# list_prs() Tests
+# ============================================================================
+
+
+def test_list_prs_success(monkeypatch: MonkeyPatch) -> None:
+    """Test list_prs returns dict of PRs keyed by branch name."""
+    called_with: list[list[str]] = []
+
+    sample_response = json.dumps(
+        [
+            {
+                "number": 123,
+                "state": "open",
+                "html_url": "https://github.com/owner/repo/pull/123",
+                "draft": False,
+                "title": "Feature A",
+                "head": {"ref": "feature-a"},
+            },
+            {
+                "number": 456,
+                "state": "open",
+                "html_url": "https://github.com/owner/repo/pull/456",
+                "draft": True,
+                "title": "Feature B",
+                "head": {"ref": "feature-b"},
+            },
+        ]
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=sample_response,
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.list_prs(Path("/repo"), state="open")
+
+        # Verify REST API command format
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        assert cmd[0:2] == ["gh", "api"]
+        assert "/repos/owner/repo/pulls?state=open&per_page=100" in cmd[2]
+
+        # Verify result
+        assert len(result) == 2
+        assert "feature-a" in result
+        assert "feature-b" in result
+        assert result["feature-a"].number == 123
+        assert result["feature-a"].state == "OPEN"
+        assert result["feature-a"].is_draft is False
+        assert result["feature-b"].number == 456
+        assert result["feature-b"].is_draft is True
+
+
+def test_list_prs_with_closed_state(monkeypatch: MonkeyPatch) -> None:
+    """Test list_prs filters by closed state."""
+    called_with: list[list[str]] = []
+
+    sample_response = json.dumps(
+        [
+            {
+                "number": 789,
+                "state": "closed",
+                "merged": False,
+                "html_url": "https://github.com/owner/repo/pull/789",
+                "draft": False,
+                "title": "Closed PR",
+                "head": {"ref": "closed-branch"},
+            },
+        ]
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=sample_response,
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.list_prs(Path("/repo"), state="closed")
+
+        # Verify state parameter passed
+        assert len(called_with) == 1
+        assert "state=closed" in called_with[0][2]
+
+        # Verify result
+        assert len(result) == 1
+        assert result["closed-branch"].state == "CLOSED"
+
+
+def test_list_prs_merged_state(monkeypatch: MonkeyPatch) -> None:
+    """Test list_prs correctly identifies merged PRs."""
+    sample_response = json.dumps(
+        [
+            {
+                "number": 999,
+                "state": "closed",
+                "merged": True,
+                "html_url": "https://github.com/owner/repo/pull/999",
+                "draft": False,
+                "title": "Merged PR",
+                "head": {"ref": "merged-branch"},
+            },
+        ]
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=sample_response,
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.list_prs(Path("/repo"), state="all")
+
+        assert result["merged-branch"].state == "MERGED"
+
+
+def test_list_prs_api_failure_returns_empty(monkeypatch: MonkeyPatch) -> None:
+    """Test list_prs returns empty dict on API failure."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise RuntimeError("API failure")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.list_prs(Path("/repo"), state="open")
+
+        # Should return empty dict, not raise
+        assert result == {}
