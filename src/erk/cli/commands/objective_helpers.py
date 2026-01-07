@@ -86,9 +86,7 @@ def check_and_display_plan_issue_closure(
     if has_closing_ref:
         # PR has "Closes #N" - GitHub should auto-close, but it's async.
         if _wait_for_issue_closure(ctx, repo_root, plan_number):
-            user_output(
-                click.style("✓", fg="green") + f" Closed plan issue #{plan_number}"
-            )
+            user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
         else:
             # Still open after retries - unexpected, but not critical
             user_output(

@@ -18,11 +18,13 @@ When a PR body or commit message contains patterns like `Closes #123` or `Fixes 
 ### Supported Patterns
 
 Same-repo references:
+
 - `Closes #123`
 - `Fixes #123`
 - `Resolves #123`
 
 Cross-repo references (for separate plans repo):
+
 - `Closes owner/repo#123`
 - `Fixes owner/repo#123`
 
@@ -40,6 +42,7 @@ This means if a PR is created without the closing keyword, editing the body late
 ### Why This Matters for Erk
 
 When `erk pr submit` creates a PR, it includes `Closes #N` in the body. If this line is somehow missing or the PR was created manually:
+
 - The issue won't be linked to the PR
 - Merging the PR won't auto-close the issue
 - Users will see a warning after landing
@@ -47,6 +50,7 @@ When `erk pr submit` creates a PR, it includes `Closes #N` in the body. If this 
 ## Auto-Close is Asynchronous
 
 When a PR merges, GitHub closes linked issues **asynchronously**. There's typically a 1-3 second delay between:
+
 1. PR merge completing (merge API returns success)
 2. Linked issues being closed
 

@@ -686,9 +686,7 @@ def _land_specific_pr(
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
 
     # Check and display plan issue closure
-    check_and_display_plan_issue_closure(
-        ctx, main_repo_root, branch, pr_body=pr_details.body or ""
-    )
+    check_and_display_plan_issue_closure(ctx, main_repo_root, branch, pr_body=pr_details.body or "")
 
     # Check for linked objective and offer to update
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)

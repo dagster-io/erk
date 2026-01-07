@@ -94,9 +94,7 @@ class StatefulFakeGitHubIssues(GitHubIssues):
         return self._issues[number]
 
     # Stub out other required methods (not used by check_and_display_plan_issue_closure)
-    def create_issue(
-        self, *, repo_root: Path, title: str, body: str, labels: list[str]
-    ):
+    def create_issue(self, *, repo_root: Path, title: str, body: str, labels: list[str]):
         raise NotImplementedError
 
     def add_comment(self, repo_root: Path, number: int, body: str) -> int:
@@ -132,14 +130,10 @@ class StatefulFakeGitHubIssues(GitHubIssues):
     def label_exists(self, repo_root: Path, label: str) -> bool:
         raise NotImplementedError
 
-    def ensure_label_on_issue(
-        self, repo_root: Path, issue_number: int, label: str
-    ) -> None:
+    def ensure_label_on_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         raise NotImplementedError
 
-    def remove_label_from_issue(
-        self, repo_root: Path, issue_number: int, label: str
-    ) -> None:
+    def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         raise NotImplementedError
 
     def close_issue(self, repo_root: Path, number: int) -> None:
@@ -151,9 +145,7 @@ class StatefulFakeGitHubIssues(GitHubIssues):
     def get_prs_referencing_issue(self, repo_root: Path, issue_number: int):
         raise NotImplementedError
 
-    def add_reaction_to_comment(
-        self, repo_root: Path, comment_id: int, reaction: str
-    ) -> None:
+    def add_reaction_to_comment(self, repo_root: Path, comment_id: int, reaction: str) -> None:
         raise NotImplementedError
 
     def update_comment(self, repo_root: Path, comment_id: int, body: str) -> None:
