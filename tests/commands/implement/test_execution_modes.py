@@ -33,7 +33,8 @@ def test_interactive_mode_calls_executor() -> None:
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
         # Interactive mode is the default (no --no-interactive flag)
-        result = runner.invoke(implement, ["#42"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -66,7 +67,8 @@ def test_interactive_mode_with_dangerous_flag() -> None:
         executor = FakeClaudeExecutor(claude_available=True)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42", "--dangerous"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -95,7 +97,8 @@ def test_interactive_mode_from_plan_file() -> None:
         plan_file = env.cwd / "my-feature-plan.md"
         plan_file.write_text(plan_content, encoding="utf-8")
 
-        result = runner.invoke(implement, [str(plan_file)], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, [str(plan_file)], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -126,11 +129,52 @@ def test_interactive_mode_fails_when_claude_not_available() -> None:
         executor = FakeClaudeExecutor(claude_available=False)
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
-        result = runner.invoke(implement, ["#42"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         # Should fail with error about Claude CLI not found
         assert result.exit_code != 0
         assert "Claude CLI not found" in result.output
+
+
+def test_interactive_mode_uses_subshell_fallback_without_shell_integration() -> None:
+    """Verify interactive mode uses subshell fallback when ERK_SHELL is not set.
+
+    Without shell integration, execute_interactive_mode should call
+    spawn_worktree_subshell() via the Shell gateway instead of executor.execute_interactive().
+    """
+    from unittest.mock import patch
+
+    from erk_shared.gateway.shell import FakeShell
+
+    plan_issue = create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        shell = FakeShell(subshell_exit_code=0)
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, claude_executor=executor, shell=shell
+        )
+
+        # Patch sys.exit to prevent test from exiting
+        with patch("erk.cli.commands.implement_shared.sys.exit"):
+            # Do NOT set ERK_SHELL - this triggers subshell fallback path
+            runner.invoke(implement, ["#42"], obj=ctx)
+
+        # Verify spawn_subshell was called via the Shell gateway
+        assert len(shell.subshell_calls) == 1
+        assert len(executor.interactive_calls) == 0
+
+        # Verify the spawn call arguments
+        call = shell.subshell_calls[0]
+        assert "/erk:plan-implement" in call.command
 
 
 # Non-Interactive Mode Tests

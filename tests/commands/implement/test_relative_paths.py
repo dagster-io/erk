@@ -48,7 +48,8 @@ def test_interactive_mode_preserves_relative_path_from_subdirectory() -> None:
         # Change to subdirectory before invoking command
         os.chdir(subdir)
 
-        result = runner.invoke(implement, ["#42"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -83,7 +84,8 @@ def test_interactive_mode_no_relative_path_from_worktree_root() -> None:
         ctx = build_workspace_test_context(env, git=git, plan_store=store, claude_executor=executor)
 
         # Run from worktree root (default in erk_isolated_fs_env)
-        result = runner.invoke(implement, ["#42"], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, ["#42"], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
@@ -121,7 +123,8 @@ def test_interactive_mode_preserves_relative_path_from_plan_file() -> None:
         # Change to subdirectory before invoking command
         os.chdir(subdir)
 
-        result = runner.invoke(implement, [str(plan_file)], obj=ctx)
+        # Set ERK_SHELL to simulate shell integration being active
+        result = runner.invoke(implement, [str(plan_file)], obj=ctx, env={"ERK_SHELL": "zsh"})
 
         assert result.exit_code == 0
 
