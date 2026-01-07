@@ -10,17 +10,56 @@ import click
 
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
+from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
+
+# Number of retry attempts for auto-close detection
+_AUTO_CLOSE_MAX_RETRIES = 3
+# Seconds to wait between retry attempts
+_AUTO_CLOSE_RETRY_DELAY = 1.0
+
+
+def _wait_for_issue_closure(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+) -> bool:
+    """Wait for GitHub to auto-close an issue after PR merge.
+
+    GitHub's auto-close is asynchronous - there's a delay between PR merge
+    and linked issue closure. This function retries up to _AUTO_CLOSE_MAX_RETRIES
+    times with _AUTO_CLOSE_RETRY_DELAY between attempts.
+
+    Returns True if issue closed within retry window, False otherwise.
+    Returns False if issue becomes inaccessible (fail-open).
+    """
+    for _ in range(_AUTO_CLOSE_MAX_RETRIES):
+        ctx.time.sleep(_AUTO_CLOSE_RETRY_DELAY)
+        try:
+            issue = ctx.issues.get_issue(repo_root, issue_number)
+        except RuntimeError:
+            # Issue became inaccessible - fail-open
+            return False
+        if issue.state == "CLOSED":
+            return True
+    return False
 
 
 def check_and_display_plan_issue_closure(
     ctx: ErkContext,
     repo_root: Path,
     branch: str,
+    *,
+    pr_body: str,
 ) -> int | None:
     """Check and display plan issue closure status after landing.
+
+    Differentiates between:
+    - PR has "Closes #N" but issue still open: retry (async auto-close expected)
+    - PR missing "Closes #N" and issue open: warn about missing reference
+    - Issue already closed: success regardless
 
     Returns the plan issue number if found, None otherwise.
     This is fail-open: returns None silently if the issue doesn't exist.
@@ -28,6 +67,9 @@ def check_and_display_plan_issue_closure(
     plan_number = extract_leading_issue_number(branch)
     if plan_number is None:
         return None
+
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
+    has_closing_ref = has_issue_closing_reference(pr_body, plan_number, plans_repo)
 
     # GitHubIssues.get_issue raises RuntimeError for missing issues.
     # This is a fail-open feature (non-critical), so we catch and return None.
@@ -38,10 +80,27 @@ def check_and_display_plan_issue_closure(
 
     if issue.state == "CLOSED":
         user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
+        return plan_number
+
+    # Issue is OPEN - behavior depends on whether PR has closing reference
+    if has_closing_ref:
+        # PR has "Closes #N" - GitHub should auto-close, but it's async.
+        if _wait_for_issue_closure(ctx, repo_root, plan_number):
+            user_output(
+                click.style("✓", fg="green") + f" Closed plan issue #{plan_number}"
+            )
+        else:
+            # Still open after retries - unexpected, but not critical
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"Plan issue #{plan_number} still open (expected auto-close)"
+            )
     else:
+        # PR missing "Closes #N" - this is the bug case we want to detect.
+        # The user added the closing reference after PR creation, which doesn't work.
         user_output(
             click.style("⚠ ", fg="yellow")
-            + f"Plan issue #{plan_number} still open (expected auto-close)"
+            + f"PR missing closing reference - plan issue #{plan_number} won't auto-close"
         )
 
     return plan_number
