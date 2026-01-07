@@ -4,7 +4,7 @@ This command has two modes:
 
 **With Graphite enabled:**
 Registers a checked-out PR branch with Graphite so it can be managed
-using gt commands (gt pr, gt land, etc.). Requires --dangerous flag.
+using gt commands (gt merge, gt pr, etc.). Requires --dangerous flag.
 
 Flow:
 1. Validate preconditions (gh/gt auth, on branch, PR exists and is OPEN)
@@ -133,7 +133,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     With Graphite enabled (requires --dangerous):
         Registers the current PR branch with Graphite for stack management.
-        After syncing, you can use standard gt commands (gt pr, gt land, etc.).
+        After syncing, you can use standard gt commands (gt merge, gt pr, etc.).
 
     Without Graphite (git-only mode):
         Fetches the PR base branch, rebases onto it, and force pushes.
@@ -257,4 +257,4 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized with Graphite")
 
     user_output(f"\nBranch '{current_branch}' is now tracked by Graphite.")
-    user_output("You can now use: gt pr, gt land, etc.")
+    user_output("You can now use: gt merge, gt pr, etc.")
