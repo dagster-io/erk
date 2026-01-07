@@ -3,21 +3,25 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.land_cmd import (
     ParsedArgument,
     _cleanup_and_navigate,
+    _execute_simple_land,
     parse_argument,
 )
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import GitHubRepoId, PRDetails
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
@@ -321,3 +325,192 @@ def test_cleanup_and_navigate_dry_run_shows_summary() -> None:
         # The dry-run summary is output via user_output which goes to stderr
         # Note: user_output uses click.echo which may not capture in StringIO
         # The test mainly verifies the function doesn't crash in dry-run mode
+
+
+# Tests for non-Graphite (GraphiteDisabled) mode
+
+
+def test_execute_simple_land_merges_pr_without_graphite(tmp_path: Path) -> None:
+    """Test that _execute_simple_land merges a PR using GitHub API only."""
+    repo_root = tmp_path
+    branch = "feature-branch"
+    pr_number = 123
+
+    # Create PR details
+    pr_details = PRDetails(
+        number=pr_number,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Test body",
+        state="OPEN",
+        base_ref_name="main",
+        head_ref_name=branch,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        is_draft=False,
+        is_cross_repository=False,
+        owner="owner",
+        repo="repo",
+    )
+
+    fake_git = FakeGit(
+        default_branches={repo_root: "main"},
+    )
+
+    fake_github = FakeGitHub(
+        pr_details={pr_number: pr_details},
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=repo_root,
+    )
+
+    # Execute simple land
+    result = _execute_simple_land(ctx, repo_root=repo_root, branch=branch, pr_details=pr_details)
+
+    # Verify PR was merged
+    assert result == pr_number
+    assert pr_number in fake_github.merged_prs
+
+
+def test_execute_simple_land_fails_if_pr_not_open(tmp_path: Path) -> None:
+    """Test that _execute_simple_land fails if PR is not open."""
+    repo_root = tmp_path
+    branch = "feature-branch"
+    pr_number = 123
+
+    # Create closed PR details
+    pr_details = PRDetails(
+        number=pr_number,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Test body",
+        state="MERGED",
+        base_ref_name="main",
+        head_ref_name=branch,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        is_draft=False,
+        is_cross_repository=False,
+        owner="owner",
+        repo="repo",
+    )
+
+    fake_git = FakeGit(
+        default_branches={repo_root: "main"},
+    )
+
+    fake_github = FakeGitHub()
+
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=repo_root,
+    )
+
+    # Execute simple land should fail
+    try:
+        _execute_simple_land(ctx, repo_root=repo_root, branch=branch, pr_details=pr_details)
+        pytest.fail("Expected SystemExit")
+    except SystemExit as e:
+        assert e.code == 1
+
+
+def test_execute_simple_land_fails_if_pr_not_targeting_trunk(tmp_path: Path) -> None:
+    """Test that _execute_simple_land fails if PR base is not trunk."""
+    repo_root = tmp_path
+    branch = "feature-branch"
+    pr_number = 123
+
+    # Create PR targeting non-trunk branch
+    pr_details = PRDetails(
+        number=pr_number,
+        url="https://github.com/owner/repo/pull/123",
+        title="Test PR",
+        body="Test body",
+        state="OPEN",
+        base_ref_name="some-other-branch",  # Not trunk
+        head_ref_name=branch,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        is_draft=False,
+        is_cross_repository=False,
+        owner="owner",
+        repo="repo",
+    )
+
+    fake_git = FakeGit(
+        default_branches={repo_root: "main"},
+    )
+
+    fake_github = FakeGitHub()
+
+    ctx = context_for_test(
+        git=fake_git,
+        github=fake_github,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=repo_root,
+    )
+
+    # Execute simple land should fail
+    try:
+        _execute_simple_land(ctx, repo_root=repo_root, branch=branch, pr_details=pr_details)
+        pytest.fail("Expected SystemExit")
+    except SystemExit as e:
+        assert e.code == 1
+
+
+def test_cleanup_and_navigate_uses_plain_git_delete_when_graphite_disabled(
+    tmp_path: Path,
+) -> None:
+    """Test that _cleanup_and_navigate uses git.delete_branch when Graphite is disabled."""
+    worktree_path = tmp_path / "worktrees" / "feature-branch"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path
+
+    fake_git = FakeGit(
+        worktrees={main_repo_root: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={worktree_path, main_repo_root, main_repo_root / ".git"},
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=main_repo_root / "pool.json",
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=None,  # No worktree to handle, just branch deletion
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify branch was deleted via plain git (not graphite)
+    assert "feature-branch" in fake_git.deleted_branches
