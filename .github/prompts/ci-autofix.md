@@ -4,17 +4,17 @@ Fix the style/formatting errors. You have full context of all CI job results.
 
 ## Job Results
 
-- format: ${{ needs.format.result }}
-- lint: ${{ needs.lint.result }}
-- prettier: ${{ needs.prettier.result }}
-- docs-check: ${{ needs.docs-check.result }}
-- ty: ${{ needs.ty.result }} (NOT auto-fixable)
-- unit-tests: ${{ needs.unit-tests.result }} (NOT auto-fixable)
-- integration-tests: ${{ needs.integration-tests.result }} (NOT auto-fixable)
+- format: {{ format }}
+- lint: {{ lint }}
+- prettier: {{ prettier }}
+- docs-check: {{ docs-check }}
+- ty: {{ ty }} (NOT auto-fixable)
+- unit-tests: {{ unit-tests }} (NOT auto-fixable)
+- integration-tests: {{ integration-tests }} (NOT auto-fixable)
 
 ## Errors to Fix
 
-$ERRORS
+{{ ERRORS }}
 
 ## Rules
 
