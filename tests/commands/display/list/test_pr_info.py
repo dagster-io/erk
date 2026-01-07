@@ -1,7 +1,6 @@
 """Tests for PR info display in wt list command.
 
-The fast local-only list command shows PR info from Graphite cache first,
-falling back to GitHub API if Graphite cache is empty. It displays:
+The list command shows PR info from GitHub API. It displays:
 emoji + #number (no title, no plan summary).
 """
 
@@ -9,9 +8,9 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
 from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -64,8 +63,7 @@ def test_list_pr_emoji_mapping(
 
         test_ctx = env.build_context(
             git=git_ops,
-            graphite=FakeGraphite(pr_info={branch_name: pr}),
-            use_graphite=True,
+            github=FakeGitHub(prs={branch_name: pr}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -117,8 +115,7 @@ def test_list_pr_with_merge_conflicts() -> None:
 
         test_ctx = env.build_context(
             git=git_ops,
-            graphite=FakeGraphite(pr_info={branch_name: pr}),
-            use_graphite=True,
+            github=FakeGitHub(prs={branch_name: pr}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -134,8 +131,8 @@ def test_list_pr_with_merge_conflicts() -> None:
 # ===========================
 
 
-def test_list_graceful_degradation_no_graphite_cache() -> None:
-    """Test that list works gracefully when Graphite cache is not available."""
+def test_list_graceful_degradation_no_pr_info() -> None:
+    """Test that list works gracefully when no PR info is available from GitHub."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         branch_name = "feature-branch"
@@ -155,11 +152,10 @@ def test_list_graceful_degradation_no_graphite_cache() -> None:
             current_branches={env.cwd: "main", feature_worktree: branch_name},
         )
 
-        # Empty Graphite - simulates no cache
+        # No PR info from GitHub API
         test_ctx = env.build_context(
             git=git_ops,
-            graphite=FakeGraphite(pr_info={}),  # No PR info available
-            use_graphite=True,
+            github=FakeGitHub(prs={}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -175,14 +171,12 @@ def test_list_graceful_degradation_no_graphite_cache() -> None:
 
 
 # ===========================
-# GitHub API Fallback Tests
+# GitHub API Tests
 # ===========================
 
 
-def test_list_github_api_fallback_when_graphite_empty() -> None:
-    """Test that GitHub API is used as fallback when Graphite cache is empty."""
-    from erk_shared.github.fake import FakeGitHub
-
+def test_list_shows_pr_info_from_github_api() -> None:
+    """Test that PR info is displayed from GitHub API."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         branch_name = "feature-branch"
@@ -202,7 +196,7 @@ def test_list_github_api_fallback_when_graphite_empty() -> None:
             current_branches={env.cwd: "main", feature_worktree: branch_name},
         )
 
-        # Create PR info for GitHub API (NOT in Graphite)
+        # Create PR info for GitHub API
         github_pr = PullRequestInfo(
             number=123,
             state="OPEN",
@@ -214,18 +208,14 @@ def test_list_github_api_fallback_when_graphite_empty() -> None:
             repo="repo",
         )
 
-        # Empty Graphite cache (simulates use_graphite=false config)
-        # But GitHub has PR data
         test_ctx = env.build_context(
             git=git_ops,
-            graphite=FakeGraphite(pr_info={}),  # Empty - no Graphite cache
-            github=FakeGitHub(prs={branch_name: github_pr}),  # PR available via GitHub API
-            use_graphite=True,  # Even with Graphite enabled, empty cache triggers fallback
+            github=FakeGitHub(prs={branch_name: github_pr}),
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
         assert result.exit_code == 0, result.output
 
-        # Should show PR from GitHub API fallback
+        # Should show PR from GitHub API
         assert "#123" in result.output
         assert "✅" in result.output  # Open PR with passing checks
