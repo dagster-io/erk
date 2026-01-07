@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.branch_manager.git import GitBranchManager
+from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.context.types import (
     GlobalConfig,
     LoadedConfig,
@@ -30,6 +32,7 @@ from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.shell import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
@@ -158,10 +161,6 @@ class ErkContext:
         This provides a unified interface for branch operations that
         handles Graphite vs plain Git differences transparently.
         """
-        from erk_shared.branch_manager.git import GitBranchManager
-        from erk_shared.branch_manager.graphite import GraphiteBranchManager
-        from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-
         if isinstance(self.graphite, GraphiteDisabled):
             return GitBranchManager(git=self.git, github=self.github)
         return GraphiteBranchManager(git=self.git, graphite=self.graphite)
