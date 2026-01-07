@@ -2,6 +2,7 @@
 
 Usage:
     erk exec marker create --session-id SESSION_ID <name>
+    erk exec marker read --session-id SESSION_ID <name>
     erk exec marker exists --session-id SESSION_ID <name>
     erk exec marker delete --session-id SESSION_ID <name>
 
@@ -13,6 +14,7 @@ The `--session-id` flag takes precedence over the environment variable.
 
 Exit codes:
     create: 0 = created, 1 = error (missing session ID)
+    read: 0 = marker exists (content on stdout), 1 = marker doesn't exist or error
     exists: 0 = exists, 1 = does not exist
     delete: 0 = deleted (or didn't exist), 1 = error (missing session ID)
 """
@@ -64,9 +66,18 @@ def marker() -> None:
     default=None,
     help="Associated objective issue number (stored in marker file)",
 )
+@click.option(
+    "--content",
+    default=None,
+    help="Content to store in marker file (alternative to --associated-objective)",
+)
 @click.pass_context
 def marker_create(
-    ctx: click.Context, name: str, session_id: str | None, associated_objective: int | None
+    ctx: click.Context,
+    name: str,
+    session_id: str | None,
+    associated_objective: int | None,
+    content: str | None,
 ) -> None:
     """Create a marker file.
 
@@ -74,7 +85,8 @@ def marker_create(
     The '.marker' extension is added automatically.
 
     If --associated-objective is provided, the issue number is stored
-    in the marker file content. Otherwise, an empty file is created.
+    in the marker file content. If --content is provided, that string is stored.
+    Otherwise, an empty file is created.
     """
     resolved_session_id = _resolve_session_id(session_id)
     if resolved_session_id is None:
@@ -90,9 +102,46 @@ def marker_create(
     marker_file = scratch_dir / f"{name}{MARKER_EXTENSION}"
     if associated_objective is not None:
         marker_file.write_text(str(associated_objective), encoding="utf-8")
+    elif content is not None:
+        marker_file.write_text(content, encoding="utf-8")
     else:
         marker_file.touch()
     _output_json(True, f"Created marker: {name}")
+
+
+@marker.command(name="read")
+@click.argument("name")
+@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for marker storage (default: $CLAUDE_CODE_SESSION_ID)",
+)
+@click.pass_context
+def marker_read(ctx: click.Context, name: str, session_id: str | None) -> None:
+    """Read content from a marker file.
+
+    NAME is the marker name (e.g., 'plan-saved-issue').
+    Outputs the marker content to stdout (no JSON wrapper).
+    Exit code 0 if marker exists, 1 if it doesn't exist or error.
+    """
+    resolved_session_id = _resolve_session_id(session_id)
+    if resolved_session_id is None:
+        msg = (
+            "Missing session ID: provide --session-id or set "
+            "CLAUDE_CODE_SESSION_ID environment variable"
+        )
+        _output_json(False, msg)
+        raise SystemExit(1) from None
+
+    repo_root = require_repo_root(ctx)
+    scratch_dir = get_scratch_dir(resolved_session_id, repo_root=repo_root)
+    marker_file = scratch_dir / f"{name}{MARKER_EXTENSION}"
+
+    if marker_file.exists():
+        content = marker_file.read_text(encoding="utf-8").strip()
+        click.echo(content)
+    else:
+        raise SystemExit(1) from None
 
 
 @marker.command(name="exists")

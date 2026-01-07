@@ -160,6 +160,198 @@ class TestMarkerCreate:
         assert marker_file.exists()
         assert marker_file.read_text(encoding="utf-8") == ""
 
+    def test_create_marker_with_content_stores_string(self, tmp_path: Path) -> None:
+        """Test creating marker with --content stores the string content."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+        content_value = "4386"
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["create", "--content", content_value, "plan-saved-issue"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        data = json.loads(result.output)
+        assert data["success"] is True
+        assert "plan-saved-issue" in data["message"]
+
+        # Verify marker file was created with correct content
+        marker_file = (
+            tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-issue.marker"
+        )
+        assert marker_file.exists()
+        assert marker_file.read_text(encoding="utf-8") == "4386"
+
+    def test_create_marker_associated_objective_takes_precedence_over_content(
+        self, tmp_path: Path
+    ) -> None:
+        """Test that --associated-objective takes precedence over --content."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            [
+                "create",
+                "--associated-objective",
+                "100",
+                "--content",
+                "should-be-ignored",
+                "test-marker",
+            ],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+
+        # Verify marker file has the objective number, not the content string
+        marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "test-marker.marker"
+        assert marker_file.exists()
+        assert marker_file.read_text(encoding="utf-8") == "100"
+
+
+class TestMarkerRead:
+    """Tests for 'erk exec marker read' subcommand."""
+
+    def test_read_returns_content_when_marker_exists(self, tmp_path: Path) -> None:
+        """Test read returns marker content and exit code 0."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+        marker_content = "4386"
+
+        # Pre-create the marker file with content
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "plan-saved-issue.marker"
+        marker_file.write_text(marker_content, encoding="utf-8")
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "plan-saved-issue"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == "4386"
+
+    def test_read_with_explicit_session_id(self, tmp_path: Path) -> None:
+        """Test read with --session-id flag."""
+        runner = CliRunner()
+        session_id = "explicit-session-456"
+        marker_content = "1234"
+
+        # Pre-create the marker file
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "my-marker.marker"
+        marker_file.write_text(marker_content, encoding="utf-8")
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "--session-id", session_id, "my-marker"],
+            obj=ctx,
+            env={},  # No env var, should use --session-id flag
+        )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == "1234"
+
+    def test_read_returns_failure_when_marker_missing(self, tmp_path: Path) -> None:
+        """Test read returns exit code 1 when marker does not exist."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "missing-marker"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 1
+        # No JSON output for read command on failure (silent exit)
+        assert result.output.strip() == ""
+
+    def test_read_missing_session_id(self, tmp_path: Path) -> None:
+        """Test read fails without session ID."""
+        runner = CliRunner()
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "my-marker"],
+            obj=ctx,
+            env={},  # No CLAUDE_CODE_SESSION_ID
+        )
+
+        assert result.exit_code == 1
+        data = json.loads(result.output)
+        assert data["success"] is False
+        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
+
+    def test_read_strips_whitespace(self, tmp_path: Path) -> None:
+        """Test read strips leading/trailing whitespace from content."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+        marker_content = "  4386\n  "  # Content with whitespace
+
+        # Pre-create the marker file with whitespace
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "plan-saved-issue.marker"
+        marker_file.write_text(marker_content, encoding="utf-8")
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "plan-saved-issue"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == "4386"
+
+    def test_read_empty_marker_returns_empty_string(self, tmp_path: Path) -> None:
+        """Test read returns empty string for empty marker file."""
+        runner = CliRunner()
+        session_id = "test-session-123"
+
+        # Pre-create an empty marker file
+        marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+        marker_dir.mkdir(parents=True)
+        marker_file = marker_dir / "empty-marker.marker"
+        marker_file.touch()
+
+        ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
+
+        result = runner.invoke(
+            marker,
+            ["read", "empty-marker"],
+            obj=ctx,
+            env={"CLAUDE_CODE_SESSION_ID": session_id},
+        )
+
+        assert result.exit_code == 0
+        assert result.output.strip() == ""
+
 
 class TestMarkerExists:
     """Tests for 'erk exec marker exists' subcommand."""
