@@ -143,8 +143,8 @@ def delete_branch_and_worktree(
     ctx.git.remove_worktree(main_repo, worktree_path, force=True)
     user_output(f"✓ Removed worktree: {click.style(str(worktree_path), fg='green')}")
 
-    # Delete the branch using Git abstraction
-    ctx.git.delete_branch_with_graphite(main_repo, branch, force=True)
+    # Delete the branch using BranchManager abstraction (respects use_graphite config)
+    ctx.branch_manager.delete_branch(main_repo, branch)
     user_output(f"✓ Deleted branch: {click.style(branch, fg='yellow')}")
 
 
@@ -201,12 +201,12 @@ def unallocate_worktree_and_branch(
         # state is guaranteed to be non-None since assignment was found in it
         assert state is not None
         execute_unassign(ctx, repo, state, assignment)
-        ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+        ctx.branch_manager.delete_branch(main_repo_root, branch)
         user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
     else:
         # Non-slot worktree: delete both
         ctx.git.remove_worktree(main_repo_root, worktree_path, force=True)
-        ctx.git.delete_branch_with_graphite(main_repo_root, branch, force=True)
+        ctx.branch_manager.delete_branch(main_repo_root, branch)
         user_output(click.style("✓", fg="green") + " Removed worktree and deleted branch")
 
 
