@@ -80,6 +80,16 @@ def filter_diff_excluded_files(diff: str) -> str:
     return "".join(filtered_sections)
 
 
+def _is_diff_too_large_error(error: RuntimeError) -> bool:
+    """Check if error is due to diff exceeding GitHub's size limit.
+
+    GitHub returns HTTP 406 when diffs exceed their size threshold (~20k lines).
+    The error message may contain "406", "too_large", or "Not Acceptable".
+    """
+    error_str = str(error).lower()
+    return "406" in error_str or "too_large" in error_str or "not acceptable" in error_str
+
+
 def execute_diff_extraction(
     ctx: ErkContext,
     cwd: Path,
@@ -89,7 +99,8 @@ def execute_diff_extraction(
     """Extract PR diff from GitHub API and write to scratch file.
 
     This operation fetches the diff for an existing PR and writes it to a
-    session-scoped scratch file for AI analysis.
+    session-scoped scratch file for AI analysis. If GitHub's API returns a
+    size limit error (HTTP 406), falls back to local git diff.
 
     Args:
         ctx: ErkContext providing git and github operations
@@ -103,11 +114,26 @@ def execute_diff_extraction(
     """
     repo_root = ctx.git.get_repository_root(cwd)
 
-    # Get PR diff from GitHub API
+    # Get PR diff from GitHub API, with fallback to local git diff
     yield ProgressEvent(f"Getting PR diff from GitHub... (gh pr diff {pr_number})")
-    pr_diff = ctx.github.get_pr_diff(repo_root, pr_number)
-    diff_lines = len(pr_diff.splitlines())
-    yield ProgressEvent(f"PR diff retrieved ({diff_lines} lines)", style="success")
+
+    pr_diff: str
+    try:
+        pr_diff = ctx.github.get_pr_diff(repo_root, pr_number)
+        diff_lines = len(pr_diff.splitlines())
+        yield ProgressEvent(f"PR diff retrieved ({diff_lines} lines)", style="success")
+    except RuntimeError as e:
+        if not _is_diff_too_large_error(e):
+            raise
+
+        # Fallback to local git diff
+        yield ProgressEvent("GitHub diff too large, using local git diff...", style="warning")
+        base_branch = ctx.github.get_pr_base_branch(repo_root, pr_number)
+        if base_branch is None:
+            base_branch = ctx.git.detect_trunk_branch(repo_root)
+        pr_diff = ctx.git.get_diff_to_branch(cwd, base_branch)
+        diff_lines = len(pr_diff.splitlines())
+        yield ProgressEvent(f"Local git diff retrieved ({diff_lines} lines)", style="success")
 
     # Filter out lock files before truncation
     pr_diff = filter_diff_excluded_files(pr_diff)
