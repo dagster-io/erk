@@ -51,7 +51,7 @@ class FakeGit(Git):
     Mutation Tracking:
     -----------------
     This fake tracks mutations for test assertions via read-only properties:
-    - deleted_branches: Branches deleted via delete_branch() or delete_branch_with_graphite()
+    - deleted_branches: Branches deleted via delete_branch()
     - added_worktrees: Worktrees added via add_worktree()
     - removed_worktrees: Worktrees removed via remove_worktree()
     - checked_out_branches: Branches checked out via checkout_branch()
@@ -74,7 +74,7 @@ class FakeGit(Git):
 
         # Verify sequence of operations
         git_ops.checkout_branch(repo, "feature")
-        git_ops.delete_branch_with_graphite(repo, "old-feature", force=True)
+        git_ops.delete_branch(repo, "old-feature", force=True)
         assert (repo, "feature") in git_ops.checked_out_branches
         assert "old-feature" in git_ops.deleted_branches
     """
@@ -468,23 +468,6 @@ class FakeGit(Git):
             raise exc
 
         self._deleted_branches.append(branch_name)
-
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Track which branches were deleted (mutates internal state).
-
-        Raises configured exception if branch is in delete_branch_raises mapping.
-        If delete_branch_raises contains a CalledProcessError, it is wrapped in
-        RuntimeError to match run_subprocess_with_context behavior.
-        """
-        # Check if we should raise an exception for this branch
-        if branch in self._delete_branch_raises:
-            exc = self._delete_branch_raises[branch]
-            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
-            if isinstance(exc, subprocess.CalledProcessError):
-                raise RuntimeError(f"Failed to delete branch {branch}") from exc
-            raise exc
-
-        self._deleted_branches.append(branch)
 
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata (no-op for in-memory fake)."""

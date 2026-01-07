@@ -333,6 +333,22 @@ class Graphite(ABC):
         """
         ...
 
+    @abstractmethod
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Delete a branch using Graphite's gt delete command.
+
+        Uses `gt delete -f <branch>` to delete a branch and clean up Graphite
+        metadata. The -f flag is always used to force deletion without prompts.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to delete
+
+        Raises:
+            RuntimeError: If gt delete fails
+        """
+        ...
+
     def squash_branch_idempotent(
         self, repo_root: Path, *, quiet: bool = True
     ) -> SquashSuccess | SquashError:

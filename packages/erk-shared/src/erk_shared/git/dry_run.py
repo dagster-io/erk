@@ -133,11 +133,6 @@ class DryRunGit(Git):
         force_flag = "--force " if force else ""
         user_output(f"[DRY RUN] Would run: git worktree remove {force_flag}{path}")
 
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Print dry-run message instead of deleting branch."""
-        force_flag = "-f " if force else ""
-        user_output(f"[DRY RUN] Would run: gt delete {force_flag}{branch}")
-
     def prune_worktrees(self, repo_root: Path) -> None:
         """Print dry-run message instead of pruning worktrees."""
         user_output("[DRY RUN] Would run: git worktree prune")

@@ -98,12 +98,20 @@ def test_minimal_factory_creates_fake_ops() -> None:
 
 
 def test_for_test_factory_creates_context_with_defaults() -> None:
-    """context_for_test() creates context with all defaults when no args provided."""
+    """context_for_test() creates context with all defaults when no args provided.
+
+    Note: With use_graphite=False (default), graphite is GraphiteDisabled to match
+    production behavior. Tests that need FakeGraphite should pass it explicitly
+    or use a GlobalConfig with use_graphite=True.
+    """
+    from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+
     ctx = context_for_test()
 
     assert isinstance(ctx.git, FakeGit)
     assert isinstance(ctx.github, FakeGitHub)
-    assert isinstance(ctx.graphite, FakeGraphite)
+    # With use_graphite=False (default), graphite is GraphiteDisabled
+    assert isinstance(ctx.graphite, GraphiteDisabled)
     assert isinstance(ctx.shell, FakeShell)
     assert ctx.cwd == sentinel_path()
     assert ctx.dry_run is False

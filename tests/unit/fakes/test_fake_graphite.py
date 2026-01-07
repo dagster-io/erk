@@ -322,3 +322,45 @@ def test_fake_graphite_is_branch_tracked_empty_branches() -> None:
     ops = FakeGraphite()
 
     assert ops.is_branch_tracked(Path("/repo"), "any-branch") is False
+
+
+def test_fake_graphite_delete_branch_tracks_calls() -> None:
+    """Test that delete_branch tracks calls via delete_branch_calls property."""
+    branches = {
+        "feature": BranchMetadata.branch("feature", "main"),
+    }
+    ops = FakeGraphite(branches=branches)
+
+    ops.delete_branch(Path("/repo"), "feature")
+
+    assert len(ops.delete_branch_calls) == 1
+    assert ops.delete_branch_calls[0] == (Path("/repo"), "feature")
+
+
+def test_fake_graphite_delete_branch_removes_from_branches() -> None:
+    """Test that delete_branch removes branch from internal branches dict."""
+    branches = {
+        "main": BranchMetadata.trunk("main", children=["feature"]),
+        "feature": BranchMetadata.branch("feature", "main"),
+    }
+    ops = FakeGraphite(branches=branches)
+
+    # Before deletion, branch is tracked
+    assert ops.is_branch_tracked(Path("/repo"), "feature") is True
+
+    ops.delete_branch(Path("/repo"), "feature")
+
+    # After deletion, branch is no longer tracked
+    assert ops.is_branch_tracked(Path("/repo"), "feature") is False
+
+
+def test_fake_graphite_delete_branch_raises() -> None:
+    """Test that delete_branch can be configured to raise exceptions."""
+    test_error = RuntimeError("Delete failed")
+    branches = {
+        "feature": BranchMetadata.branch("feature", "main"),
+    }
+    ops = FakeGraphite(branches=branches, delete_branch_raises=test_error)
+
+    with pytest.raises(RuntimeError, match="Delete failed"):
+        ops.delete_branch(Path("/repo"), "feature")

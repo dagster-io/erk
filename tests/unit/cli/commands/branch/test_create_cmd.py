@@ -33,7 +33,8 @@ def test_branch_create_creates_new_branch_and_assignment(tmp_path) -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        # use_graphite=True because branch create calls graphite.track_branch
+        test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
         result = runner.invoke(
             cli, ["branch", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
@@ -72,7 +73,8 @@ def test_branch_create_with_br_alias(tmp_path) -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        # use_graphite=True because branch create calls graphite.track_branch
+        test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
         result = runner.invoke(
             cli, ["br", "create", "feature-test"], obj=test_ctx, catch_exceptions=False
@@ -148,7 +150,8 @@ def test_branch_create_second_slot() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        test_ctx = env.build_context(git=git_ops, repo=repo)
+        # use_graphite=True because branch create calls graphite.track_branch
+        test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
 
         # First create
         result1 = runner.invoke(

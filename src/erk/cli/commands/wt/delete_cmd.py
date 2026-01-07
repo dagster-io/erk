@@ -23,7 +23,6 @@ from erk.core.worktree_utils import (
     find_worktree_containing_path,
     get_worktree_branch,
 )
-from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.metadata.plan_header import extract_plan_header_worktree_name
 from erk_shared.github.types import PRNotFound
@@ -380,7 +379,7 @@ def _delete_worktree_directory(ctx: ErkContext, repo: RepoContext, wt_path: Path
 
 
 def _delete_branch_at_error_boundary(
-    ctx: ErkContext, *, repo_root: Path, branch: str, force: bool, dry_run: bool, graphite: Graphite
+    ctx: ErkContext, *, repo_root: Path, branch: str, force: bool, dry_run: bool
 ) -> None:
     """Delete a branch after its worktree has been removed.
 
@@ -395,19 +394,11 @@ def _delete_branch_at_error_boundary(
 
     Note: run_subprocess_with_context catches CalledProcessError and re-raises
     as RuntimeError with the original exception in __cause__.
+
+    Uses BranchManager abstraction to handle both Graphite and Git paths transparently.
     """
-    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
-
-    # Determine if branch is tracked by Graphite (LBYL check using gt branch info)
-    branch_is_tracked = False
-    if use_graphite:
-        branch_is_tracked = graphite.is_branch_tracked(repo_root, branch)
-
     try:
-        if branch_is_tracked:
-            ctx.git.delete_branch_with_graphite(repo_root, branch, force=force)
-        else:
-            ctx.git.delete_branch(repo_root, branch, force=force)
+        ctx.branch_manager.delete_branch(repo_root, branch)
         if not dry_run:
             branch_text = click.style(branch, fg="green")
             user_output(f"✅ Deleted branch: {branch_text}")
@@ -527,7 +518,6 @@ def _delete_worktree(
             branch=branch_to_delete,
             force=True,
             dry_run=dry_run,
-            graphite=ctx.graphite,
         )
 
     if not dry_run and not was_slot:

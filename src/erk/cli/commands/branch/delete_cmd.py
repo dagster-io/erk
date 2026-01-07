@@ -330,7 +330,6 @@ def _delete_branch(
         branch=branch,
         force=True,  # User already confirmed
         dry_run=dry_run,
-        graphite=ctx.graphite,
     )
 
 

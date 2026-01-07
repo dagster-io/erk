@@ -77,3 +77,8 @@ class PrintingGraphite(PrintingBase, Graphite):
         """Submit branch with printed output."""
         self._emit(self._format_command(f"gt submit --branch {branch_name} --no-edit"))
         self._wrapped.submit_branch(repo_root, branch_name, quiet=quiet)
+
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Delete branch with printed output."""
+        self._emit(self._format_command(f"gt delete -f {branch}"))
+        self._wrapped.delete_branch(repo_root, branch)

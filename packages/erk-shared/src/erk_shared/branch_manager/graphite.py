@@ -77,7 +77,7 @@ class GraphiteBranchManager(BranchManager):
             repo_root: Repository root directory
             branch: Branch name to delete
         """
-        self.git.delete_branch_with_graphite(repo_root, branch, force=True)
+        self.graphite.delete_branch(repo_root, branch)
 
     def submit_branch(self, repo_root: Path, branch: str) -> None:
         """Submit branch via Graphite.

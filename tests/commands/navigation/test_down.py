@@ -445,8 +445,8 @@ def test_down_delete_current_success() -> None:
         feature_2_path = repo_dir / "worktrees" / "feature-2"
         assert feature_2_path in git_ops.removed_worktrees, "feature-2 worktree should be removed"
 
-        # Assert: feature-2 branch was deleted
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_uncommitted_changes() -> None:
@@ -688,7 +688,8 @@ def test_down_delete_current_force_with_open_pr_confirmed() -> None:
         # Assert: feature-2 worktree was removed and branch deleted
         feature_2_path = repo_dir / "worktrees" / "feature-2"
         assert feature_2_path in git_ops.removed_worktrees
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_force_with_open_pr_declined() -> None:
@@ -879,7 +880,8 @@ def test_down_delete_current_force_with_open_pr_close_confirmed() -> None:
         # Assert: feature-2 worktree was removed and branch deleted
         feature_2_path = repo_dir / "worktrees" / "feature-2"
         assert feature_2_path in git_ops.removed_worktrees
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_force_with_open_pr_close_declined() -> None:
@@ -980,7 +982,8 @@ def test_down_delete_current_force_with_open_pr_close_declined() -> None:
         # Assert: feature-2 worktree was removed and branch deleted (deletion still happened)
         feature_2_path = repo_dir / "worktrees" / "feature-2"
         assert feature_2_path in git_ops.removed_worktrees
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_pr_closed() -> None:
@@ -1056,8 +1059,8 @@ def test_down_delete_current_pr_closed() -> None:
         feature_2_path = repo_dir / "worktrees" / "feature-2"
         assert feature_2_path in git_ops.removed_worktrees, "feature-2 worktree should be removed"
 
-        # Assert: feature-2 branch was deleted
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_no_pr() -> None:
@@ -1114,8 +1117,8 @@ def test_down_delete_current_no_pr() -> None:
 
         # Assert: Branch and worktree were deleted
         assert len(git_ops.removed_worktrees) == 1
-        assert len(git_ops.deleted_branches) == 1
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_trunk_in_root() -> None:
@@ -1189,8 +1192,8 @@ def test_down_delete_current_trunk_in_root() -> None:
         feature_1_path = repo_dir / "worktrees" / "feature-1"
         assert feature_1_path in git_ops.removed_worktrees, "feature-1 worktree should be removed"
 
-        # Assert: feature-1 branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Assert: feature-1 branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_down_delete_current_slot_aware_unassigns_slot() -> None:
@@ -1293,8 +1296,8 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         # Assert: Worktree directory was NOT removed (slot stays for reuse)
         assert slot_path not in git_ops.removed_worktrees, "Slot worktree should NOT be removed"
 
-        # Assert: Branch was deleted
-        assert "feature-2" in git_ops.deleted_branches
+        # Assert: Branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
 
         # Assert: Assignment was removed from pool state
         state = load_pool_state(repo.pool_json_path)

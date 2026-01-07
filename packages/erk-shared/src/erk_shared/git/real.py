@@ -357,17 +357,6 @@ class RealGit(Git):
             cwd=cwd,
         )
 
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Delete a branch using Graphite's gt delete command."""
-        cmd = ["gt", "delete", branch]
-        if force:
-            cmd.insert(2, "-f")
-        run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"delete branch '{branch}' with Graphite",
-            cwd=repo_root,
-        )
-
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata."""
         run_subprocess_with_context(

@@ -464,6 +464,5 @@ def test_delete_branch_uses_graphite_when_tracked() -> None:
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        # Branch should be deleted (both delete_branch and delete_branch_with_graphite
-        # track in deleted_branches)
-        assert "feature-gt" in git_ops.deleted_branches
+        # Branch should be deleted via Graphite gateway (tracked in delete_branch_calls)
+        assert any(branch == "feature-gt" for _path, branch in graphite.delete_branch_calls)
