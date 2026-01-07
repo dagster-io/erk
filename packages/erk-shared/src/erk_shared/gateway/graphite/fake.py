@@ -29,6 +29,7 @@ class FakeGraphite(Graphite):
         squash_branch_raises: Exception | None = None,
         submit_stack_raises: Exception | None = None,
         continue_restack_raises: Exception | None = None,
+        delete_branch_raises: Exception | None = None,
         pr_info: dict[str, PullRequestInfo] | None = None,
         branches: dict[str, BranchMetadata] | None = None,
         stacks: dict[str, list[str]] | None = None,
@@ -46,6 +47,7 @@ class FakeGraphite(Graphite):
             squash_branch_raises: Exception to raise when squash_branch() is called
             submit_stack_raises: Exception to raise when submit_stack() is called
             continue_restack_raises: Exception to raise when continue_restack() is called
+            delete_branch_raises: Exception to raise when delete_branch() is called
             pr_info: Mapping of branch name -> PullRequestInfo for get_prs_from_graphite()
             branches: Mapping of branch name -> BranchMetadata for get_all_branches()
             stacks: Mapping of branch name -> stack (list of branches from trunk to leaf)
@@ -60,6 +62,7 @@ class FakeGraphite(Graphite):
         self._squash_branch_raises = squash_branch_raises
         self._submit_stack_raises = submit_stack_raises
         self._continue_restack_raises = continue_restack_raises
+        self._delete_branch_raises = delete_branch_raises
         self._sync_calls: list[tuple[Path, bool, bool]] = []
         self._restack_calls: list[tuple[Path, bool, bool]] = []
         self._submit_branch_calls: list[tuple[Path, str, bool]] = []
@@ -67,6 +70,7 @@ class FakeGraphite(Graphite):
         self._squash_branch_calls: list[tuple[Path, bool]] = []
         self._submit_stack_calls: list[tuple[Path, bool, bool, bool, bool]] = []
         self._continue_restack_calls: list[tuple[Path, bool]] = []
+        self._delete_branch_calls: list[tuple[Path, str]] = []
         self._pr_info = pr_info if pr_info is not None else {}
         self._branches = branches if branches is not None else {}
         self._stacks = stacks if stacks is not None else {}
@@ -315,3 +319,26 @@ class FakeGraphite(Graphite):
         Returns list of (repo_root, quiet) tuples.
         """
         return self._continue_restack_calls
+
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Track delete_branch calls and optionally raise.
+
+        Also removes the branch from internal branch metadata so
+        is_branch_tracked() returns False after deletion.
+        """
+        self._delete_branch_calls.append((repo_root, branch))
+
+        # Remove from branch metadata
+        if branch in self._branches:
+            del self._branches[branch]
+
+        if self._delete_branch_raises is not None:
+            raise self._delete_branch_raises
+
+    @property
+    def delete_branch_calls(self) -> list[tuple[Path, str]]:
+        """Get the list of delete_branch() calls.
+
+        Returns list of (repo_root, branch) tuples.
+        """
+        return self._delete_branch_calls

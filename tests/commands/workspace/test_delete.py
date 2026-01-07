@@ -128,7 +128,7 @@ def test_delete_dry_run_does_not_delete() -> None:
 
 
 def test_delete_dry_run_with_branch() -> None:
-    """Test dry-run with --branch flag prints but doesn't delete branches."""
+    """Test dry-run with --branch flag is a no-op (DryRunGraphite intercepts)."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
@@ -146,12 +146,13 @@ def test_delete_dry_run_with_branch() -> None:
             "main": BranchMetadata.trunk("main", children=["feature"]),
             "feature": BranchMetadata.branch("feature", "main"),
         }
+        graphite_ops = FakeGraphite(branches=branches)
 
         test_ctx = env.build_context(
             use_graphite=True,
             git=git_ops,
             github=FakeGitHub(),
-            graphite=FakeGraphite(branches=branches),
+            graphite=graphite_ops,
             shell=FakeShell(),
             dry_run=True,
             existing_paths={wt},
@@ -159,8 +160,13 @@ def test_delete_dry_run_with_branch() -> None:
 
         result = runner.invoke(cli, ["wt", "delete", "test-branch", "-f", "-b"], obj=test_ctx)
 
-        assert_cli_success(result, "[DRY RUN]", "Would run: gt delete")
-        assert len(fake_git_ops.deleted_branches) == 0  # No actual deletion
+        # Command succeeds with dry-run output
+        assert_cli_success(result, "[DRY RUN]")
+        # DryRunGraphite intercepts delete_branch calls (no-op), so the underlying
+        # FakeGraphite never receives the call. This is correct - no actual deletion.
+        assert len(graphite_ops.delete_branch_calls) == 0
+        # No git branch deletion either
+        assert len(fake_git_ops.deleted_branches) == 0
         # Directory should still exist (check via git_ops state)
         assert test_ctx.git.path_exists(wt)
 
@@ -286,12 +292,13 @@ def test_delete_with_branch_with_graphite() -> None:
             "main": BranchMetadata.trunk("main", children=["feature"]),
             "feature": BranchMetadata.branch("feature", "main"),
         }
+        graphite_ops = FakeGraphite(branches=branches)
 
         test_ctx = env.build_context(
             use_graphite=True,
             git=fake_git_ops,
             github=FakeGitHub(),
-            graphite=FakeGraphite(branches=branches),
+            graphite=graphite_ops,
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -303,13 +310,19 @@ def test_delete_with_branch_with_graphite() -> None:
             obj=test_ctx,
         )
 
-        # Assert: Command should succeed and branch should be deleted
+        # Assert: Command should succeed and branch should be deleted via Graphite
         assert_cli_success(result)
-        assert "feature" in fake_git_ops.deleted_branches
+        # Branch deletion goes through Graphite gateway since use_graphite=True
+        assert any(branch == "feature" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
-    """Test --branch falls back to git branch -D when Graphite enabled but branch untracked."""
+    """Test --branch with Graphite enabled still uses gt delete even for untracked branches.
+
+    When use_graphite=True, all branch deletions go through the Graphite gateway
+    (via BranchManager). The actual `gt delete` command handles untracked branches
+    gracefully, so there's no need for fallback logic in the BranchManager.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
@@ -326,12 +339,13 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
         branches = {
             "main": BranchMetadata.trunk("main"),
         }
+        graphite_ops = FakeGraphite(branches=branches)
 
         test_ctx = env.build_context(
             use_graphite=True,
             git=fake_git_ops,
             github=FakeGitHub(),
-            graphite=FakeGraphite(branches=branches),
+            graphite=graphite_ops,
             shell=FakeShell(),
             existing_paths={wt},
         )
@@ -343,11 +357,13 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
             obj=test_ctx,
         )
 
-        # Assert: Command should succeed and use git branch -D (not gt delete)
+        # Assert: Command should succeed; deletion goes through Graphite gateway
+        # even for untracked branches (gt delete handles this gracefully)
         assert_cli_success(result)
-        assert "untracked-feature" in fake_git_ops.deleted_branches
-        # The branch should be deleted via git, not graphite
-        # Since FakeGit.delete_branch is used, the branch appears in deleted_branches
+        # Branch deletion goes through Graphite gateway since use_graphite=True
+        assert any(
+            branch == "untracked-feature" for _path, branch in graphite_ops.delete_branch_calls
+        )
 
 
 def test_delete_blocks_when_pending_extraction_marker_exists() -> None:

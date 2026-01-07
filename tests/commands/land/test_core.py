@@ -115,8 +115,8 @@ def test_land_merges_and_deletes_worktree() -> None:
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
         # Verify activation script points to root repo (trunk)
         script_path = Path(result.stdout.strip())
@@ -645,8 +645,8 @@ def test_land_updates_upstack_pr_base_branches() -> None:
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
         # CRITICAL: Verify upstack PR base was updated to trunk before remote branch deletion
         # This prevents GitHub from auto-closing PRs when their base branch is deleted

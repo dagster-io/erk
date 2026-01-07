@@ -252,8 +252,19 @@ def context_for_test(
         # This ensures tests use the same composition as production code
         plan_store = GitHubPlanStore(issues)
 
+    # Handle graphite based on global_config.use_graphite to match production behavior
+    # When use_graphite=False, use GraphiteDisabled sentinel so that
+    # ErkContext.branch_manager returns GitBranchManager
     if graphite is None:
-        graphite = FakeGraphite()
+        # Need to check global_config.use_graphite - but it might be None or not set yet
+        # If global_config is None, default will be set later with use_graphite=False
+        use_graphite_from_config = (
+            global_config.use_graphite if global_config is not None else False
+        )
+        if use_graphite_from_config:
+            graphite = FakeGraphite()
+        else:
+            graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
     if shell is None:
         shell = FakeShell()

@@ -280,11 +280,6 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Delete a branch using Graphite's gt delete command."""
-        ...
-
-    @abstractmethod
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata."""
         ...

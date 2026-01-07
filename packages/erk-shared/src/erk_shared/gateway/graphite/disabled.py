@@ -116,3 +116,7 @@ class GraphiteDisabled(Graphite):
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """Raise error - continue_restack is a mutating operation."""
         raise GraphiteDisabledError(self.reason)
+
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Raise error - delete_branch is a mutating operation."""
+        raise GraphiteDisabledError(self.reason)

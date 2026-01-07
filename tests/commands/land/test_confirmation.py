@@ -204,8 +204,8 @@ def test_land_force_skips_cleanup_confirmation() -> None:
         # Verify worktree was removed (--force skipped confirmation)
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_land_up_rejected_with_pr_argument() -> None:
@@ -377,8 +377,8 @@ def test_land_from_different_worktree() -> None:
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
         # Since we weren't in the target worktree, no navigation should happen
         # (we stay on main). The test completes without the activation script

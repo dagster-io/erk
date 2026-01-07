@@ -407,3 +407,14 @@ class RealGraphite(Graphite):
 
         # Invalidate branches cache - gt continue modifies Graphite metadata
         self._branches_cache = None
+
+    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        """Delete a branch using Graphite's gt delete command."""
+        run_subprocess_with_context(
+            cmd=["gt", "delete", "-f", branch],
+            operation_context=f"delete branch '{branch}' with Graphite",
+            cwd=repo_root,
+        )
+
+        # Invalidate branches cache - gt delete modifies Graphite metadata
+        self._branches_cache = None

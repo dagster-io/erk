@@ -499,8 +499,19 @@ class ErkIsolatedFsEnv:
                 git = DryRunGit(git)
 
         # Smart integration defaults
+        # When use_graphite=False, use GraphiteDisabled sentinel to match production
+        # behavior. This ensures ErkContext.branch_manager returns GitBranchManager
+        # and branch operations use FakeGit.delete_branch (tracked in deleted_branches).
         if graphite is None:
-            graphite = FakeGraphite()
+            if use_graphite:
+                graphite = FakeGraphite()
+            else:
+                from erk_shared.gateway.graphite.disabled import (
+                    GraphiteDisabled,
+                    GraphiteDisabledReason,
+                )
+
+                graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
         if github is None:
             github = FakeGitHub()
@@ -918,8 +929,19 @@ class ErkInMemEnv:
                 git = DryRunGit(git)
 
         # Smart integration defaults
+        # When use_graphite=False, use GraphiteDisabled sentinel to match production
+        # behavior. This ensures ErkContext.branch_manager returns GitBranchManager
+        # and branch operations use FakeGit.delete_branch (tracked in deleted_branches).
         if graphite is None:
-            graphite = FakeGraphite()
+            if use_graphite:
+                graphite = FakeGraphite()
+            else:
+                from erk_shared.gateway.graphite.disabled import (
+                    GraphiteDisabled,
+                    GraphiteDisabledReason,
+                )
+
+                graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
         if github is None:
             github = FakeGitHub()

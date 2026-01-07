@@ -109,10 +109,10 @@ def test_fake_gitops_checkout_branch() -> None:
 
 def test_fake_gitops_delete_branch_tracking() -> None:
     """Test that FakeGit tracks deleted branches."""
-    repo_root = Path("/repo")
+    cwd = Path("/repo")
     git_ops = FakeGit()
 
-    git_ops.delete_branch_with_graphite(repo_root, "old-branch", force=True)
+    git_ops.delete_branch(cwd, "old-branch", force=True)
 
     assert "old-branch" in git_ops.deleted_branches
 
@@ -420,7 +420,7 @@ def test_fake_gitops_detached_checkouts_tracking() -> None:
     assert len(git_ops.detached_checkouts) == 2
 
 
-def test_fake_gitops_delete_branch_with_graphite_raises() -> None:
+def test_fake_gitops_delete_branch_raises() -> None:
     """Test that FakeGit wraps CalledProcessError in RuntimeError on delete.
 
     This matches run_subprocess_with_context behavior where CalledProcessError
@@ -432,7 +432,7 @@ def test_fake_gitops_delete_branch_with_graphite_raises() -> None:
 
     error = subprocess.CalledProcessError(
         returncode=1,
-        cmd=["gt", "delete", "test-branch"],
+        cmd=["git", "branch", "-D", "test-branch"],
         stderr=None,
     )
 
@@ -440,11 +440,11 @@ def test_fake_gitops_delete_branch_with_graphite_raises() -> None:
         delete_branch_raises={"test-branch": error},
     )
 
-    repo_root = Path("/fake/repo")
+    cwd = Path("/fake/repo")
 
     # Should raise RuntimeError wrapping the CalledProcessError
     with pytest.raises(RuntimeError) as exc_info:
-        git_ops.delete_branch_with_graphite(repo_root, "test-branch", force=False)
+        git_ops.delete_branch(cwd, "test-branch", force=False)
 
     # Original CalledProcessError should be accessible via __cause__
     assert isinstance(exc_info.value.__cause__, subprocess.CalledProcessError)
@@ -452,7 +452,7 @@ def test_fake_gitops_delete_branch_with_graphite_raises() -> None:
     assert "test-branch" in exc_info.value.__cause__.cmd
 
     # Other branches should not raise
-    git_ops.delete_branch_with_graphite(repo_root, "other-branch", force=False)
+    git_ops.delete_branch(cwd, "other-branch", force=False)
     assert "other-branch" in git_ops.deleted_branches
 
 

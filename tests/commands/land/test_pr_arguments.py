@@ -107,8 +107,8 @@ def test_land_by_number() -> None:
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_land_by_url() -> None:
@@ -289,8 +289,8 @@ def test_land_by_branch_name() -> None:
         # Verify worktree was removed
         assert feature_1_path in git_ops.removed_worktrees
 
-        # Verify branch was deleted
-        assert "feature-1" in git_ops.deleted_branches
+        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
 
 def test_land_fork_pr() -> None:
@@ -367,4 +367,4 @@ def test_land_fork_pr() -> None:
         # The fork PR's branch doesn't exist locally (never checked out),
         # so we skip deletion silently (no confusing message)
         assert "Branch 'pr/789' not found locally" not in result.output
-        assert "pr/789" not in git_ops.deleted_branches
+        assert not any(branch == "pr/789" for _path, branch in graphite_ops.delete_branch_calls)

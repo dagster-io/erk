@@ -140,11 +140,6 @@ class PrintingGit(PrintingBase, Git):
         # Not used in land-stack
         self._wrapped.remove_worktree(repo_root, path, force=force)
 
-    def delete_branch_with_graphite(self, repo_root: Path, branch: str, *, force: bool) -> None:
-        """Delete branch with graphite (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.delete_branch_with_graphite(repo_root, branch, force=force)
-
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch branch with printed output."""
         self._emit(self._format_command(f"git fetch {remote} {branch}"))

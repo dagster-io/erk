@@ -127,8 +127,8 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
         assert mock_run.called
 
 
-def test_dryrun_git_delete_branch_prints_message(tmp_path: Path) -> None:
-    """Test that dry-run Git delete operations print messages without executing."""
+def test_dryrun_graphite_delete_branch_is_noop(tmp_path: Path) -> None:
+    """Test that dry-run Graphite delete_branch is a no-op."""
     repo = tmp_path / "repo"
     repo.mkdir()
     init_git_repo(repo, "main")
@@ -152,12 +152,9 @@ def test_dryrun_git_delete_branch_prints_message(tmp_path: Path) -> None:
         check=True,
     )
     assert "feature-branch" in result.stdout
-    from erk_shared.git.real import RealGit
 
-    real_ops = RealGit()
-    git_dir = real_ops.get_git_common_dir(repo)
-    if git_dir is not None:
-        ctx.git.delete_branch_with_graphite(git_dir.parent, "feature-branch", force=True)
+    # Call graphite.delete_branch in dry-run mode (should be a no-op)
+    ctx.graphite.delete_branch(repo, "feature-branch")
 
     # Verify the branch still exists (dry-run didn't actually delete)
     result = subprocess.run(
