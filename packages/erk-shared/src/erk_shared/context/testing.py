@@ -107,7 +107,7 @@ def context_for_test(
     )
 
     fake_time = FakeTime()
-    fake_terminal = FakeTerminal(is_interactive=True)
+    fake_terminal = FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None)
     return ErkContext(
         git=resolved_git,
         github=resolved_github,

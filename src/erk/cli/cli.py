@@ -46,6 +46,7 @@ from erk.core.version_check import (
     is_version_mismatch,
 )
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
+from erk_shared.gateway.terminal.real import RealTerminal
 from erk_shared.git.real import RealGit
 
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
@@ -107,7 +108,8 @@ def _show_version_change_banner() -> None:
         click.echo(file=sys.stderr)
 
         # Prompt user to continue (only if stdin is a TTY)
-        if sys.stdin.isatty():
+        terminal = RealTerminal()
+        if terminal.is_stdin_interactive():
             click.pause(info=click.style("  Press Enter to continue...", dim=True), err=True)
     except click.Abort:
         # User pressed Ctrl+C or declined - exit gracefully

@@ -9,7 +9,7 @@ from erk.core.output_filter import extract_pr_metadata_from_text
 
 def test_parse_stream_json_line_extracts_pr_metadata_from_string_content() -> None:
     """Test that _parse_stream_json_line extracts PR metadata from string tool_result content."""
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -45,7 +45,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None
     This is the stream-json format where tool_result.content is a list of text items:
     {"type": "tool_result", "content": [{"type": "text", "text": "...json..."}]}
     """
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -87,7 +87,7 @@ def test_parse_stream_json_line_extracts_pr_metadata_from_list_content() -> None
 
 def test_parse_stream_json_line_handles_list_content_without_pr_metadata() -> None:
     """Test that list content without PR metadata returns None values."""
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -115,7 +115,7 @@ def test_parse_stream_json_line_handles_list_content_without_pr_metadata() -> No
 
 def test_parse_stream_json_line_handles_empty_list_content() -> None:
     """Test that empty list content is handled gracefully."""
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -134,7 +134,7 @@ def test_parse_stream_json_line_handles_empty_list_content() -> None:
 
 def test_parse_stream_json_line_extracts_result_num_turns() -> None:
     """Test that _parse_stream_json_line extracts num_turns from type: result messages."""
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -158,7 +158,7 @@ def test_parse_stream_json_line_extracts_result_num_turns() -> None:
 
 def test_parse_stream_json_line_extracts_result_with_positive_turns() -> None:
     """Test that _parse_stream_json_line extracts num_turns from successful result."""
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 
@@ -184,7 +184,7 @@ def test_parse_stream_json_line_extracts_result_with_positive_turns() -> None:
 
 def test_parse_stream_json_line_extracts_result_error() -> None:
     """Test that _parse_stream_json_line handles error results."""
-    executor = RealClaudeExecutor()
+    executor = RealClaudeExecutor(terminal=None)
     worktree_path = Path("/test/repo")
     command = "/gt:pr-submit"
 

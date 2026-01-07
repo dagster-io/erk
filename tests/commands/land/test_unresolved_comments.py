@@ -117,7 +117,7 @@ def test_land_warns_on_unresolved_comments() -> None:
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            terminal=FakeTerminal(is_interactive=True),
+            terminal=FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None),
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
@@ -335,7 +335,7 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            terminal=FakeTerminal(is_interactive=True),
+            terminal=FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None),
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
@@ -550,7 +550,7 @@ def test_land_fails_non_interactive_with_unresolved_comments() -> None:
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            terminal=FakeTerminal(is_interactive=False),
+            terminal=FakeTerminal(is_interactive=False, is_stdout_tty=None, is_stderr_tty=None),
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 

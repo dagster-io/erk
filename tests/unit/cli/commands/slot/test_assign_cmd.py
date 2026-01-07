@@ -319,7 +319,7 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
             git=git_ops,
             repo=repo,
             local_config=local_config,
-            terminal=FakeTerminal(is_interactive=False),
+            terminal=FakeTerminal(is_interactive=False, is_stdout_tty=None, is_stderr_tty=None),
         )
 
         # Try to assign without --force (non-interactive terminal)

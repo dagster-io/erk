@@ -115,7 +115,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
     fake_graphite = FakeGraphite()
-    fake_terminal = FakeTerminal(is_interactive=True)
+    fake_terminal = FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None)
     fake_time = FakeTime()
     return ErkContext(
         git=git,
@@ -260,7 +260,7 @@ def context_for_test(
             graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
     if terminal is None:
-        terminal = FakeTerminal(is_interactive=True)
+        terminal = FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None)
 
     if shell is None:
         shell = FakeShell()
@@ -543,7 +543,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         graphite=graphite,
         terminal=terminal,
         shell=RealShell(),
-        claude_executor=RealClaudeExecutor(),
+        claude_executor=RealClaudeExecutor(terminal=terminal),
         completion=RealCompletion(),
         time=time,
         erk_installation=erk_installation,

@@ -18,3 +18,21 @@ class Terminal(ABC):
             True if stdin is a TTY, False otherwise
         """
         ...
+
+    @abstractmethod
+    def is_stdout_tty(self) -> bool:
+        """Check if stdout is connected to a TTY.
+
+        Returns:
+            True if stdout is a TTY, False otherwise
+        """
+        ...
+
+    @abstractmethod
+    def is_stderr_tty(self) -> bool:
+        """Check if stderr is connected to a TTY.
+
+        Returns:
+            True if stderr is a TTY, False otherwise
+        """
+        ...

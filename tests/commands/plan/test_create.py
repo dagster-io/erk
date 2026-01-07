@@ -61,7 +61,9 @@ def test_create_from_stdin() -> None:
         issues = FakeGitHubIssues()
         # Terminal must be non-interactive so stdin is read as piped data
         ctx = build_workspace_test_context(
-            env, issues=issues, terminal=FakeTerminal(is_interactive=False)
+            env,
+            issues=issues,
+            terminal=FakeTerminal(is_interactive=False, is_stdout_tty=None, is_stderr_tty=None),
         )
 
         # Act
@@ -173,7 +175,9 @@ def test_create_fails_with_empty_stdin() -> None:
         issues = FakeGitHubIssues()
         # Terminal must be non-interactive so stdin is read as piped data
         ctx = build_workspace_test_context(
-            env, issues=issues, terminal=FakeTerminal(is_interactive=False)
+            env,
+            issues=issues,
+            terminal=FakeTerminal(is_interactive=False, is_stdout_tty=None, is_stderr_tty=None),
         )
 
         # Act (CliRunner provides empty stdin by default when no input provided)
