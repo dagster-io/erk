@@ -4,7 +4,11 @@ Erk is a CLI tool for plan-oriented agentic engineering: a workflow where AI age
 
 ## Getting Started
 
-Coming soon.
+New to erk? Start here:
+
+1. [Prerequisites](tutorials/prerequisites.md) - Tools you need
+2. [Installation](tutorials/installation.md) - Install and configure erk
+3. [Your First Plan](tutorials/first-plan.md) - Complete workflow tutorial
 
 ## Features
 
