@@ -11,6 +11,7 @@ Error Handling Philosophy:
 """
 
 import json
+import re
 import secrets
 import string
 from datetime import UTC, datetime, timedelta
@@ -102,15 +103,10 @@ class RealGitHub(GitHub):
         Raises:
             RuntimeError: If remote URL cannot be parsed
         """
-        import re
-        import subprocess
-
-        result = subprocess.run(
-            ["git", "config", "--get", "remote.origin.url"],
+        result = run_subprocess_with_context(
+            cmd=["git", "config", "--get", "remote.origin.url"],
+            operation_context="extract GitHub owner/repo from git remote URL",
             cwd=repo_root,
-            capture_output=True,
-            text=True,
-            check=True,
         )
         url = result.stdout.strip()
 
