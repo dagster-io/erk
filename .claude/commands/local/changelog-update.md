@@ -14,6 +14,18 @@ Brings the CHANGELOG.md Unreleased section up-to-date with commits merged to mas
 /local:changelog-update
 ```
 
+## Plan Cycle Workflow
+
+To run changelog updates through the full plan cycle (GitHub issue + branch + PR):
+
+1. Enter plan mode first
+2. Run `/local:changelog-update`
+3. Review the proposal written to the plan file
+4. Exit plan mode
+5. Choose "Implement now" when prompted
+
+This workflow is useful when you want changelog updates tracked as a PR for team review.
+
 ## What It Does
 
 1. Reads the "As of" marker in the Unreleased section (adds one if missing)
@@ -75,6 +87,15 @@ If `commits` array is empty, the changelog content is current but the marker sho
 
 1. Update the "As of" line to the current HEAD commit hash
 2. Report "CHANGELOG.md is already up-to-date. Updated marker to {head_commit}." and exit
+
+### Phase 2b: Check for Plan Mode
+
+If plan mode is active (check for "Plan mode is active" in system reminders):
+
+1. Continue with Phase 3 (Analyze and Categorize) as normal
+2. In Phase 4, write the proposal to the plan file instead of displaying it interactively
+3. Skip Phases 5-6 (let `/erk:plan-implement` handle the actual update)
+4. Call ExitPlanMode when done writing the plan
 
 ### Phase 3: Analyze and Categorize Commits
 
@@ -201,9 +222,11 @@ Commits: {list of hashes}
 
 ### Phase 4: Present Proposal for Review
 
-**CRITICAL: Do NOT edit the changelog yet. Present the proposal and wait for user approval.**
+**CRITICAL: Do NOT edit the changelog yet.**
 
-Format the proposal as follows:
+#### If NOT in Plan Mode (Normal Mode)
+
+Present the proposal interactively and wait for user approval:
 
 ```
 Found {n} commits since last sync ({marker_commit}).
@@ -243,6 +266,65 @@ Would you like me to:
 2. Rephrase any entry descriptions?
 3. Include or exclude any commits?
 ```
+
+#### If in Plan Mode
+
+Write the proposal to the plan file (from "Plan File Info:" in system reminders) in this format:
+
+```markdown
+# Plan: Changelog Update
+
+## Overview
+
+Update CHANGELOG.md with commits since {marker_commit} ({n} commits total).
+
+## Proposed Entries
+
+### Major Changes ({count})
+
+1. `{hash}` - {proposed description}
+   - _Reasoning:_ {why this is a major change}
+
+### Added ({count})
+
+1. `{hash}` - {proposed description}
+   - _Reasoning:_ {why categorized as Added}
+
+### Changed ({count})
+
+...
+
+### Fixed ({count})
+
+...
+
+### Removed ({count})
+
+...
+
+### Filtered Out ({count})
+
+- `{hash}` - "{original message}" → {reason for filtering}
+
+### Low-Confidence Categorizations ⚠️
+
+- `{hash}` - Categorized as {category}, but could be {alternative}
+  - _Uncertainty:_ {explanation of ambiguity}
+
+## Update Details
+
+- **As of marker:** Will be set to `{head_commit}`
+- **Section order:** {categories with entries}
+
+## Execution Steps
+
+1. Present proposal for review (user should verify categorizations)
+2. After approval, add "As of `{head_commit}`" marker to Unreleased section
+3. Add entries under appropriate category headers
+4. Preserve any existing entries in Unreleased section
+```
+
+Then call ExitPlanMode. The `/erk:plan-implement` workflow will handle saving to GitHub and actual implementation.
 
 #### Confidence Flags
 
