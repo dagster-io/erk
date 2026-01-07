@@ -25,10 +25,11 @@ theme:
 nav:
   - Getting Started:
       - index.md
-  - Concepts: []
-  - Guides: []
-  - Reference: []
-  - Troubleshooting: []
+  - Tutorials:
+      - tutorials/index.md
+      - tutorials/prerequisites.md
+      - tutorials/installation.md
+      - tutorials/first-plan.md
 
 exclude_docs: |
   learned/

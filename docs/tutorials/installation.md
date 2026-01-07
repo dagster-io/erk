@@ -1,31 +1,39 @@
 # Installation
 
-How to install erk and run initial configuration.
-
-<!-- TODO: This document is a skeleton. Fill in the sections below. -->
+Install erk and verify your setup.
 
 ## Install erk
 
-<!-- TODO: Installation command via uv -->
+```bash
+pip install erk
+```
 
-## Initialize erk
+Or with uv:
 
-<!-- TODO: erk init command and what it does -->
-
-## Global Configuration
-
-<!-- TODO: ~/.erk/config.toml setup -->
-
-## Repository Configuration
-
-<!-- TODO: .erk/config.toml for repo-specific settings -->
+```bash
+uv pip install erk
+```
 
 ## Verify Installation
 
-<!-- TODO: erk doctor to verify setup -->
+Run the doctor command to check your setup:
 
-## See Also
+```bash
+erk doctor
+```
 
-- [Prerequisites](prerequisites.md) - Tools to install first
-- [Shell Integration](shell-integration.md) - Enable directory switching
-- [Your First Plan](first-plan.md) - Start using erk
+All required checks should pass (green ✅). Optional items show as info (ℹ️).
+
+## Initialize a Repository
+
+In your project directory:
+
+```bash
+erk init
+```
+
+This configures Claude Code hooks and settings for erk workflows.
+
+## Next Steps
+
+- [First Steps](first-steps.md) - Create your first plan
