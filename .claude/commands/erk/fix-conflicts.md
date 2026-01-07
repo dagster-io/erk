@@ -18,7 +18,7 @@ Fix all merge conflicts and continue the git rebase.
 3. **After resolving all conflicts:**
    - If project memory includes a precommit check, run it and ensure no failures
    - Stage the resolved files with `git add`
-   - Continue the rebase with `gt continue`
+   - Continue the rebase with `git rebase --continue`
 
 4. **Loop** - If the rebase continues with more conflicts, repeat the process
 
