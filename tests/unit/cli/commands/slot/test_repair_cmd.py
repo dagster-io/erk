@@ -312,8 +312,8 @@ def test_slot_repair_confirmation_yes() -> None:
         assert len(repo_state_store.current_pool_state.assignments) == 0
 
 
-def test_slot_repair_shows_branch_mismatch_info() -> None:
-    """Test repair shows branch-mismatch issues with remediation suggestions."""
+def test_slot_repair_repairs_branch_mismatch() -> None:
+    """Test repair fixes branch-mismatch issues by removing the assignment."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -350,27 +350,19 @@ def test_slot_repair_shows_branch_mismatch_info() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
-        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        # Should show informational issue
-        assert "requiring manual intervention" in result.output
-        assert "branch-mismatch" in result.output
-        assert "expected-branch" in result.output
-        assert "actual-branch" in result.output
-        # Should show remediation suggestions
-        assert "erk slot unassign" in result.output
-        assert "git checkout" in result.output
-        # Should NOT prompt for repair (no repairable issues)
-        assert "Remove" not in result.output
+        assert "Found 1 repairable issue" in result.output
+        assert "Removed 1 stale assignment" in result.output
 
-        # State should be unchanged
+        # Assignment should be removed
         assert repo_state_store.current_pool_state is not None
-        assert len(repo_state_store.current_pool_state.assignments) == 1
+        assert len(repo_state_store.current_pool_state.assignments) == 0
 
 
-def test_slot_repair_shows_both_repairable_and_informational() -> None:
-    """Test repair shows both repairable and informational issues."""
+def test_slot_repair_repairs_multiple_issues() -> None:
+    """Test repair fixes multiple issues of different types."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -379,7 +371,7 @@ def test_slot_repair_shows_both_repairable_and_informational() -> None:
         mismatch_wt_path = repo_dir / "worktrees" / "erk-managed-wt-01"
         mismatch_wt_path.mkdir(parents=True)
 
-        # One worktree that doesn't exist (orphan-state, repairable)
+        # One worktree that doesn't exist (orphan-state)
         stale_wt_path = repo_dir / "worktrees" / "erk-managed-wt-02"
         # Do NOT create stale_wt_path
 
@@ -424,15 +416,198 @@ def test_slot_repair_shows_both_repairable_and_informational() -> None:
         result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        # Should show both types of issues
-        assert "requiring manual intervention" in result.output
-        assert "branch-mismatch" in result.output
-        assert "Found 1 repairable issue" in result.output
-        assert "erk-managed-wt-02" in result.output
-        assert "Removed 1 stale assignment" in result.output
+        # Both issues should be repaired
+        assert "Found 2 repairable issue" in result.output
+        assert "Removed 2 stale assignment" in result.output
 
-        # Only the stale assignment should be removed
+        # Both assignments should be removed
         state = repo_state_store.current_pool_state
         assert state is not None
-        assert len(state.assignments) == 1
-        assert state.assignments[0].slot_name == "erk-managed-wt-01"
+        assert len(state.assignments) == 0
+
+
+def test_slot_repair_repairs_missing_branch() -> None:
+    """Test repair fixes missing-branch issues by removing the assignment."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Build worktrees list including the slot worktree in git registry
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "feature-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Branch does NOT exist in git - missing-branch issue
+            branch_heads={},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 0
+
+
+def test_slot_repair_repairs_git_registry_missing() -> None:
+    """Test repair fixes git-registry-missing issues by removing the assignment."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Worktree directory exists but NOT in git registry
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),  # No slot worktree in registry
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},  # Directory exists
+            branch_heads={"feature-branch": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 0
+
+
+def test_slot_repair_dry_run_does_not_modify_state() -> None:
+    """Test --dry-run shows what would be repaired without modifying state."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        # Do NOT create the directory - simulates stale assignment (orphan-state)
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            # Branch exists in git (only orphan-state issue)
+            branch_heads={"feature-test": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        assignment = _create_test_assignment("erk-managed-wt-01", "feature-test", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+
+        result = runner.invoke(
+            cli, ["slot", "repair", "--dry-run"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "[DRY RUN]" in result.output
+        assert "Would remove 1 stale assignment" in result.output
+
+        # Verify state was NOT modified
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 1
+        assert repo_state_store.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"
+
+
+def test_slot_repair_dry_run_branch_mismatch() -> None:
+    """Test --dry-run shows branch-mismatch repairs without modifying state."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path.mkdir(parents=True)
+
+        # Git registry shows different branch than pool.json (branch-mismatch)
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "actual-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "actual-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            branch_heads={"expected-branch": "abc123", "actual-branch": "def456"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pool.json says expected-branch but git says actual-branch
+        assignment = _create_test_assignment("erk-managed-wt-01", "expected-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        repo_state_store = FakeRepoLevelStateStore(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
+
+        result = runner.invoke(
+            cli, ["slot", "repair", "--dry-run"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "[DRY RUN]" in result.output
+        assert "Would remove 1 stale assignment" in result.output
+
+        # Verify state was NOT modified
+        assert repo_state_store.current_pool_state is not None
+        assert len(repo_state_store.current_pool_state.assignments) == 1
+        assert repo_state_store.current_pool_state.assignments[0].slot_name == "erk-managed-wt-01"

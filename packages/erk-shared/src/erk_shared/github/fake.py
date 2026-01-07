@@ -11,6 +11,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
+    PRListState,
     PRNotFound,
     PRReviewThread,
     PullRequestInfo,
@@ -539,6 +540,28 @@ class FakeGitHub(GitHub):
         if pr_details is None:
             return PRNotFound(branch=branch)
         return pr_details
+
+    def list_prs(
+        self,
+        repo_root: Path,
+        *,
+        state: PRListState,
+    ) -> dict[str, PullRequestInfo]:
+        """List PRs from pre-configured state, filtered by state.
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            state: Filter by state - "open", "closed", or "all"
+
+        Returns:
+            Dict mapping head branch name to PullRequestInfo.
+        """
+        if state == "all":
+            return dict(self._prs)
+
+        # Filter by state (normalize to upper case for comparison)
+        target_state = state.upper()
+        return {branch: pr for branch, pr in self._prs.items() if pr.state == target_state}
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number from configured state.

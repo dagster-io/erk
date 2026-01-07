@@ -118,6 +118,9 @@ WorkflowRunStatus = Literal["completed", "in_progress", "queued", "unknown"]
 # Workflow run conclusion (lowercase, None when run is not completed)
 WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
 
+# PR list filter state (lowercase, matches GitHub API)
+PRListState = Literal["open", "closed", "all"]
+
 
 @dataclass(frozen=True)
 class PullRequestInfo:

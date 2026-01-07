@@ -122,7 +122,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Major Changes
 
-- **Worktree Pool System**: Pre-initialized worktree slots replace ephemeral worktree creation. Creating and deleting worktrees on larger repositories caused significant problems: shells left on deleted working directories, an epidemic of git `index.lock` issues, and slow worktree operations. The pool system maintains a configurable number of persistent slots that are reused across assignments. Commands: `erk slot init`, `erk slot list`, `erk slot repair`, and `erk slot check`.
+- **Worktree Pool System**: Pre-initialized worktree slots replace ephemeral worktree creation. Creating and deleting worktrees on larger repositories caused significant problems: shells left on deleted working directories, an epidemic of git `index.lock` issues, and slow worktree operations. The pool system maintains a configurable number of persistent slots that are reused across assignments. Commands: `erk slot init`, `erk slot list`, and `erk slot repair`.
 
 - **`erk br` namespace for branch management**: Consolidated branch lifecycle commands (`create`, `assign`, `unassign`) under `erk br` (short alias for `branch`). The `slot` group now focuses exclusively on pool infrastructure. Includes `--no-slot` flag for creating branches without slot assignment.
 

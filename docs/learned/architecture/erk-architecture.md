@@ -8,8 +8,8 @@ read_when:
   - "detecting worktree location"
   - "adding composing template methods to ABC"
 tripwires:
-  - action: "passing dry_run boolean flags through function parameters"
-    warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers instead of boolean flags."
+  - action: "passing dry_run boolean flags through business logic function parameters"
+    warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
   - action: "calling os.chdir() in erk code"
     warning: "After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError."
   - action: "importing time module or calling time.sleep()"
@@ -30,26 +30,24 @@ tripwires:
 
 This document describes the core architectural patterns specific to the erk codebase.
 
-## Dry-Run via Dependency Injection
+## Dry-Run Patterns
 
-**This codebase uses dependency injection for dry-run mode, NOT boolean flags.**
+This codebase has two distinct dry-run patterns, each appropriate in different contexts.
 
-**MUST**: Use DryRun wrappers for dry-run mode
+### Pattern 1: Dependency Injection (for complex workflows)
+
+**Use DryRun wrappers** when the command executes multiple operations through gateways:
+
+**MUST**: Use DryRun wrappers for multi-step workflows
 **MUST NOT**: Pass dry_run flags through business logic functions
-**SHOULD**: Keep dry-run UI logic at the CLI layer only
-
-### Wrong Pattern
+**SHOULD**: Inject DryRunGit/DryRunGitHub at the context creation level
 
 ```python
 # WRONG: Passing dry_run flag through business logic
 def execute_plan(plan, git, dry_run=False):
     if not dry_run:
         git.add_worktree(...)
-```
 
-### Correct Pattern
-
-```python
 # CORRECT: Rely on injected integration implementation
 def execute_plan(plan, git):
     # Always execute - behavior depends on git implementation
@@ -62,12 +60,41 @@ else:
     git = real_git  # or PrintingGit(real_git)
 ```
 
+### Pattern 2: CLI Preview Flag (for simple commands)
+
+**Use a simple `--dry-run` CLI flag** when the command has a single, clear action point:
+
+```python
+# ACCEPTABLE: Simple CLI preview for single-action commands
+@click.command()
+@click.option("--dry-run", is_flag=True, help="Show what would be done")
+def slot_repair(ctx: ErkContext, dry_run: bool) -> None:
+    # ... compute what needs to be repaired ...
+
+    if dry_run:
+        user_output("[DRY RUN] Would remove 3 stale assignments")
+    else:
+        ctx.repo_state_store.save_pool_state(path, new_state)
+        user_output("Removed 3 stale assignments")
+```
+
+**When to use CLI preview flag:**
+
+- Command has a single mutating operation (e.g., save to file, delete record)
+- The "dry-run" behavior is just "don't execute the final step"
+- No complex multi-step workflows with rollback concerns
+
+**When to use dependency injection:**
+
+- Command performs multiple operations that should all be dry-run
+- Operations span multiple gateways (git + github + filesystem)
+- You need consistent dry-run behavior across the entire operation
+
 ### Rationale
 
-- Keeps business logic pure and testable
-- Dry-run behavior is determined by dependency injection
-- No conditional logic scattered throughout the codebase
-- Single responsibility: business logic doesn't know about UI modes
+- **DI pattern**: Keeps business logic pure, enables testing, handles complex workflows
+- **CLI flag**: Simpler for straightforward "preview before commit" UX
+- Both are valid - choose based on complexity of the command
 
 ## Context Regeneration
 

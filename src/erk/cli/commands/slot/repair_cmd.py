@@ -1,17 +1,37 @@
 """Slot repair command - remove stale assignments from pool state."""
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import click
 
-from erk.cli.commands.slot.check_cmd import SyncIssue, run_sync_diagnostics
+from erk.cli.commands.slot.diagnostics import (
+    SyncIssue,
+    SyncIssueCode,
+    run_sync_diagnostics,
+)
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.output.output import user_confirm, user_output
 
-# Issue codes that can be auto-repaired by removing the assignment
-AUTO_REPAIRABLE_CODES = frozenset({"orphan-state"})
+# Issue codes that can be repaired by removing the assignment
+REPAIRABLE_CODES = frozenset(
+    {
+        "orphan-state",
+        "missing-branch",
+        "git-registry-missing",
+        "branch-mismatch",
+    }
+)
+
+
+@dataclass(frozen=True)
+class RepairableAssignment:
+    """Pairs a stale assignment with its diagnostic issue code."""
+
+    assignment: SlotAssignment
+    issue_code: SyncIssueCode
 
 
 def _extract_slot_name(issue: SyncIssue) -> str:
@@ -55,39 +75,53 @@ def _format_remediation(issue: SyncIssue, worktrees_dir: Path) -> list[str]:
 def find_stale_assignments(
     state: PoolState,
     issues: list[SyncIssue],
-) -> list[SlotAssignment]:
+    *,
+    repairable_codes: frozenset[str],
+) -> list[RepairableAssignment]:
     """Find assignments that can be auto-repaired.
 
     Args:
         state: Pool state to check
         issues: List of sync issues from run_sync_diagnostics
+        repairable_codes: Set of issue codes that should be auto-repaired
 
     Returns:
-        List of stale SlotAssignments (orphan-state issues)
+        List of RepairableAssignment objects with assignment and issue code
     """
-    # Collect the slot names that have auto-repairable issues
-    stale_slot_names = {
-        _extract_slot_name(issue) for issue in issues if issue.code in AUTO_REPAIRABLE_CODES
-    }
+    # Build mapping from slot name to issue code for repairable issues
+    slot_to_issue: dict[str, SyncIssueCode] = {}
+    for issue in issues:
+        if issue.code in repairable_codes:
+            slot_name = _extract_slot_name(issue)
+            slot_to_issue[slot_name] = issue.code
 
-    # Return the actual assignments that are stale
-    return [a for a in state.assignments if a.slot_name in stale_slot_names]
+    # Return assignments paired with their issue codes
+    result: list[RepairableAssignment] = []
+    for assignment in state.assignments:
+        if assignment.slot_name in slot_to_issue:
+            result.append(
+                RepairableAssignment(
+                    assignment=assignment,
+                    issue_code=slot_to_issue[assignment.slot_name],
+                )
+            )
+    return result
 
 
 def execute_repair(
     state: PoolState,
-    stale_assignments: list[SlotAssignment],
+    stale_assignments: list[RepairableAssignment],
 ) -> PoolState:
     """Create new pool state with stale assignments removed.
 
     Args:
         state: Current pool state
-        stale_assignments: Assignments to remove
+        stale_assignments: RepairableAssignment objects to remove
 
     Returns:
         New PoolState with stale assignments filtered out
     """
-    stale_slot_names = {a.slot_name for a in stale_assignments}
+    stale_slot_names = {ra.assignment.slot_name for ra in stale_assignments}
     new_assignments = tuple(a for a in state.assignments if a.slot_name not in stale_slot_names)
 
     return PoolState(
@@ -101,14 +135,17 @@ def execute_repair(
 def _display_informational_issues(
     issues: list[SyncIssue],
     worktrees_dir: Path,
+    *,
+    repairable_codes: frozenset[str],
 ) -> None:
     """Display informational issues that require manual intervention.
 
     Args:
-        issues: List of non-auto-repairable issues
+        issues: List of sync issues
         worktrees_dir: Path to worktrees directory (for path display)
+        repairable_codes: Set of issue codes being auto-repaired (excluded from display)
     """
-    informational = [i for i in issues if i.code not in AUTO_REPAIRABLE_CODES]
+    informational = [i for i in issues if i.code not in repairable_codes]
     if not informational:
         return
 
@@ -125,17 +162,20 @@ def _display_informational_issues(
 
 @click.command("repair")
 @click.option("-f", "--force", is_flag=True, help="Skip confirmation prompt")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Print what would be done without executing repairs.",
+)
 @click.pass_obj
-def slot_repair(ctx: ErkContext, force: bool) -> None:
+def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     """Remove stale assignments from pool state.
 
-    Finds assignments where the worktree directory no longer exists
-    and removes them from pool.json.
-
-    Also displays other issues (like branch-mismatch) that require
-    manual intervention with suggested remediation commands.
+    Repairs all detectable issues by removing the stale assignment:
+    orphan-state, missing-branch, branch-mismatch, and git-registry-missing.
 
     Use --force to skip the confirmation prompt.
+    Use --dry-run to see what would be repaired without making changes.
     """
     repo = discover_repo_context(ctx, ctx.cwd)
 
@@ -148,38 +188,47 @@ def slot_repair(ctx: ErkContext, force: bool) -> None:
     # Run full diagnostics to get all issues
     all_issues = run_sync_diagnostics(ctx, state, repo.root)
 
-    # Find stale (auto-repairable) assignments
-    stale_assignments = find_stale_assignments(state, all_issues)
+    # Find repairable assignments
+    stale_assignments = find_stale_assignments(state, all_issues, repairable_codes=REPAIRABLE_CODES)
 
-    # Display informational issues (non-auto-repairable)
-    _display_informational_issues(all_issues, repo.worktrees_dir)
+    # Display informational issues (non-repairable)
+    _display_informational_issues(all_issues, repo.worktrees_dir, repairable_codes=REPAIRABLE_CODES)
 
     if not stale_assignments:
-        if not any(i.code not in AUTO_REPAIRABLE_CODES for i in all_issues):
+        if not any(i.code not in REPAIRABLE_CODES for i in all_issues):
             user_output(click.style("✓ No issues found", fg="green"))
         return
 
     # Show what will be repaired
     user_output("")
     user_output(f"Found {len(stale_assignments)} repairable issue(s):")
-    for assignment in stale_assignments:
+    for ra in stale_assignments:
         user_output(
-            f"  - {click.style(assignment.slot_name, fg='cyan')}: "
-            f"branch '{click.style(assignment.branch_name, fg='yellow')}' "
-            f"(worktree missing)"
+            f"  - {click.style(ra.assignment.slot_name, fg='cyan')}: "
+            f"branch '{click.style(ra.assignment.branch_name, fg='yellow')}' "
+            f"({ra.issue_code})"
         )
 
-    # Prompt for confirmation unless --force
-    if not force:
+    # Prompt for confirmation unless --force or --dry-run
+    if not force and not dry_run:
         if not user_confirm("\nRemove these stale assignments?", default=True):
             user_output("Aborted.")
             return
 
     # Execute repair
     new_state = execute_repair(state, stale_assignments)
-    ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
 
-    user_output("")
-    user_output(
-        click.style("✓ ", fg="green") + f"Removed {len(stale_assignments)} stale assignment(s)"
-    )
+    if dry_run:
+        user_output("")
+        user_output(
+            click.style("[DRY RUN] ", fg="yellow", bold=True)
+            + f"Would remove {len(stale_assignments)} stale assignment(s):"
+        )
+        for ra in stale_assignments:
+            user_output(f"  erk slot unassign {ra.assignment.slot_name}")
+    else:
+        ctx.repo_state_store.save_pool_state(repo.pool_json_path, new_state)
+        user_output("")
+        user_output(
+            click.style("✓ ", fg="green") + f"Removed {len(stale_assignments)} stale assignment(s)"
+        )

@@ -41,6 +41,7 @@ from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
+    PRListState,
     PRNotFound,
     PRReviewComment,
     PRReviewThread,
@@ -1420,6 +1421,69 @@ query {{
             repo=repo_info.name,
             labels=labels,
         )
+
+    def list_prs(
+        self,
+        repo_root: Path,
+        *,
+        state: PRListState,
+    ) -> dict[str, PullRequestInfo]:
+        """List PRs for the repository, keyed by head branch name.
+
+        Uses REST API to fetch PRs in a single call.
+
+        Args:
+            repo_root: Repository root directory
+            state: Filter by state - "open", "closed", or "all"
+
+        Returns:
+            Dict mapping head branch name to PullRequestInfo.
+            Empty dict if no PRs match or on API failure.
+        """
+        assert self._repo_info is not None, "repo_info required for list_prs"
+
+        # GH-API-AUDIT: REST - GET pulls (list)
+        endpoint = (
+            f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls"
+            f"?state={state}&per_page=100"
+        )
+        cmd = ["gh", "api", endpoint]
+
+        try:
+            stdout = execute_gh_command(cmd, repo_root)
+        except RuntimeError:
+            # API call failed - return empty dict for graceful degradation
+            # This allows callers to proceed without PR data rather than crashing
+            return {}
+
+        data = json.loads(stdout)
+        result: dict[str, PullRequestInfo] = {}
+
+        for pr_data in data:
+            # Derive state (REST API uses "open"/"closed" + merged boolean)
+            if pr_data.get("merged"):
+                pr_state = "MERGED"
+            elif pr_data["state"] == "closed":
+                pr_state = "CLOSED"
+            else:
+                pr_state = "OPEN"
+
+            branch = pr_data["head"]["ref"]
+            result[branch] = PullRequestInfo(
+                number=pr_data["number"],
+                state=pr_state,
+                url=pr_data["html_url"],
+                is_draft=pr_data.get("draft", False),
+                title=pr_data.get("title"),
+                checks_passing=None,  # Not fetched in batch API
+                owner=self._repo_info.owner,
+                repo=self._repo_info.name,
+                has_conflicts=None,  # Not fetched in batch API
+                checks_counts=None,
+                will_close_target=False,
+            )
+
+        return result
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number using gh CLI.

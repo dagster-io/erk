@@ -1,17 +1,14 @@
-"""Slot check command - check pool state consistency with disk and git."""
+"""Slot diagnostics - check pool state consistency with disk and git."""
 
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-import click
-
 from erk.cli.commands.slot.common import generate_slot_name
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.git.abc import Git, WorktreeInfo
-from erk_shared.output.output import user_output
 
 # Type alias for sync issue codes - using Literal for type safety
 SyncIssueCode = Literal[
@@ -84,7 +81,7 @@ def _check_orphan_states(
         ctx: Erk context (for git.path_exists)
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     issues: list[SyncIssue] = []
     for assignment in assignments:
@@ -109,7 +106,7 @@ def _check_orphan_dirs(
         fs_slots: Set of slot names found on filesystem
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     # Generate known slots from pool_size (same logic as slot list command)
     known_slots = {generate_slot_name(i) for i in range(1, state.pool_size + 1)}
@@ -139,7 +136,7 @@ def _check_missing_branches(
         repo_root: Path to the repository root
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     issues: list[SyncIssue] = []
     for assignment in assignments:
@@ -161,7 +158,7 @@ def _check_git_worktree_mismatch(
         git_slots: Dict of slot names to WorktreeInfo from git
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     issues: list[SyncIssue] = []
 
@@ -205,7 +202,7 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
         repo_root: Repository root path
 
     Returns:
-        List of (issue_type, message) tuples
+        List of SyncIssue instances
     """
     repo = discover_repo_context(ctx, repo_root)
 
@@ -224,54 +221,3 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     issues.extend(_check_git_worktree_mismatch(state, git_slots))
 
     return issues
-
-
-@click.command("check")
-@click.pass_obj
-def slot_check(ctx: ErkContext) -> None:
-    """Check pool state consistency with disk and git.
-
-    Reports drift between:
-    - Pool state (pool.json)
-    - Filesystem (worktree directories)
-    - Git worktree registry
-
-    This is a diagnostic command - it does not modify anything.
-    """
-    repo = discover_repo_context(ctx, ctx.cwd)
-
-    # Load pool state
-    state = load_pool_state(repo.pool_json_path)
-    if state is None:
-        user_output("Error: No pool configured. Run `erk slot create` first.")
-        raise SystemExit(1) from None
-
-    # Get git worktrees
-    worktrees = ctx.git.list_worktrees(repo.root)
-    git_slots = _get_git_managed_slots(worktrees, repo.worktrees_dir)
-
-    # Get filesystem state
-    fs_slots = _find_erk_managed_dirs(repo.worktrees_dir, ctx.git)
-
-    # Run all checks
-    issues: list[SyncIssue] = []
-    issues.extend(_check_orphan_states(state.assignments, ctx))
-    issues.extend(_check_orphan_dirs(state, fs_slots))
-    issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))
-    issues.extend(_check_git_worktree_mismatch(state, git_slots))
-
-    # Print report
-    user_output("Pool Check Report")
-    user_output("================")
-    user_output("")
-    user_output(f"Pool state: {len(state.assignments)} assignments")
-    user_output(f"Git worktrees: {len(worktrees)} registered ({len(git_slots)} erk-managed)")
-    user_output(f"Filesystem: {len(fs_slots)} slot directories")
-    user_output("")
-
-    if issues:
-        user_output("Issues Found:")
-        for issue in issues:
-            user_output(f"  [{issue.code}] {issue.message}")
-    else:
-        user_output(click.style("✓ No issues found", fg="green"))
