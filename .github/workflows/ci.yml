@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write # Needed for autofix to push
+  actions: write # Needed to re-trigger workflow after autofix push
 
 jobs:
   check-submission:
@@ -321,3 +322,17 @@ jobs:
             --dangerously-skip-permissions \
             --verbose \
             --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
+
+      - name: Re-trigger CI
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Check if a new commit was pushed
+          current_sha=$(git rev-parse HEAD)
+          if [ "$current_sha" != "${{ github.sha }}" ]; then
+            echo "Autofix pushed new commit $current_sha, re-triggering CI"
+            gh workflow run ci --ref ${{ github.head_ref || github.ref_name }}
+          else
+            echo "No new commit was pushed, skipping re-trigger"
+          fi
