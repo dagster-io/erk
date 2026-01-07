@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of ec69401d5 -->
+
+### Major Changes
+
+- **Shell integration is now optional**: `erk implement` works without shell integration configured. When ERK_SHELL is not set, erk spawns a subshell in the worktree and launches Claude automatically. (33dea5a2a)
+
+### Added
+
+- Add `erk admin test-erk-impl-gh-workflow` command for testing workflow changes before merge (f8fb27fb8)
+- Validate Claude credentials in erk-impl workflow before execution (47ec0bf79)
+- Add Anthropic API authentication secret health check to `erk doctor` (aa5f943c1)
+- Add conditional erk-shared installation for monorepo flexibility (213823ebb)
+
+### Changed
+
+- Support `erk land` without Graphite enabled (1f78eab5d)
+
+### Fixed
+
+- Fix CI autofix prompt variable substitution (b95cac421)
+- Fix statusline crash when creating RealGitHub instances without repo_info (25a7c2e51)
+- Fix GitHub integration by properly resolving Graphite implementation based on config (71c4bd811)
+
 ## [0.4.6] - 2026-01-06 12:21 PT
 
 ### Added
