@@ -1,0 +1,15 @@
+name: "Setup Erk"
+description: "Install erk tools (assumes container has uv and claude preinstalled)"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install erk
+      shell: bash
+      run: |
+        cd $GITHUB_WORKSPACE
+        if [ -d "./packages/erk-shared" ]; then
+          uv tool install --from . --with-editable ./packages/erk-shared erk
+        else
+          uv tool install --from . --with erk-shared erk
+        fi

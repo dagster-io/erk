@@ -192,6 +192,34 @@ def has_shell_integration_in_rc(rc_path: Path) -> bool:
     return ERK_SHELL_INTEGRATION_MARKER in content
 
 
+def add_gitignore_entries_non_interactive(repo_root: Path) -> None:
+    """Add standard .gitignore entries without prompting.
+
+    Adds .env, .erk/scratch/, and .impl/ to .gitignore if not already present.
+    This is used by auto-init which runs non-interactively.
+
+    Args:
+        repo_root: Path to the repository root
+    """
+    gitignore_path = repo_root / ".gitignore"
+    if not gitignore_path.exists():
+        # Create a new .gitignore if it doesn't exist
+        gitignore_content = ""
+    else:
+        gitignore_content = gitignore_path.read_text(encoding="utf-8")
+
+    # Add standard entries
+    entries = [".env", ".erk/scratch/", ".impl/"]
+    modified = False
+    for entry in entries:
+        if entry not in gitignore_content:
+            gitignore_content = add_gitignore_entry(gitignore_content, entry)
+            modified = True
+
+    if modified:
+        gitignore_path.write_text(gitignore_content, encoding="utf-8")
+
+
 def add_gitignore_entry(content: str, entry: str) -> str:
     """Add an entry to gitignore content if not already present.
 

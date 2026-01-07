@@ -48,6 +48,8 @@ from erk.core.version_check import (
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.git.real import RealGit
 
+# Auto-init must be imported at the function level to avoid circular imports
+
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])  # terse help flags
 
 
@@ -157,7 +159,48 @@ def _show_version_warning() -> None:
         logging.warning("Failed to check version: %s", e)
 
 
-@click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS)
+def _maybe_auto_init(ctx: click.Context) -> None:
+    """Attempt auto-initialization if conditions are met.
+
+    Auto-init runs when:
+    - User runs a meaningful erk command (not --help, doctor, init, etc.)
+    - Current directory is in a git repository
+    - Repository hasn't been erk-ified yet
+    - Not running in a test (ctx.obj is None)
+
+    This is designed to never fail - exceptions are logged but don't break the CLI.
+    """
+    from erk.core.auto_init import auto_init_repo, should_auto_init
+
+    try:
+        # Skip auto-init if context is already injected (test mode)
+        # Tests inject their own ErkContext with fakes, so auto-init would interfere
+        if ctx.obj is not None:
+            return
+
+        # Determine if we should attempt auto-init
+        invoked_subcommand = ctx.invoked_subcommand
+        is_help = ctx.resilient_parsing
+
+        if not should_auto_init(invoked_subcommand, is_help):
+            return
+
+        # Get erk_root from global config if available, otherwise use default
+        erk_installation = RealErkInstallation()
+        if erk_installation.config_exists():
+            global_config = erk_installation.load_config()
+            erk_root = global_config.erk_root if global_config is not None else Path.home() / ".erk"
+        else:
+            erk_root = Path.home() / ".erk"
+
+        git = RealGit()
+        auto_init_repo(cwd=Path.cwd(), git=git, erk_root=erk_root)
+    except Exception as e:
+        # Never let auto-init break the CLI, but warn so issues can be diagnosed
+        logging.warning("Auto-init failed: %s", e)
+
+
+@click.group(cls=ErkCommandGroup, context_settings=CONTEXT_SETTINGS, invoke_without_command=True)
 @click.version_option(package_name="erk")
 @click.option("--debug", is_flag=True, help="Enable debug logging")
 @click.pass_context
@@ -170,10 +213,16 @@ def cli(ctx: click.Context, debug: bool) -> None:
     if not ctx.resilient_parsing:
         _show_version_change_banner()
         _show_version_warning()
+        # Auto-init if in an uninitialized git repo
+        _maybe_auto_init(ctx)
 
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
         ctx.obj = create_context(dry_run=False)
+
+    # If invoked without a subcommand, show help
+    if ctx.invoked_subcommand is None and not ctx.resilient_parsing:
+        click.echo(ctx.get_help())
 
 
 # Register all commands

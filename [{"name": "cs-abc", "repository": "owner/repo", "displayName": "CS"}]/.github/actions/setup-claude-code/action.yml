@@ -1,0 +1,80 @@
+name: "Setup Claude Code"
+description: "Install Claude Code CLI (native binary) with caching"
+
+# ============================================================================
+# WHY DIRECT DOWNLOAD INSTEAD OF INSTALL SCRIPT?
+# ============================================================================
+#
+# The standard installation method (curl -fsSL https://claude.ai/install.sh | bash)
+# frequently hangs in CI environments, sometimes for hours before timeout.
+#
+# Known Issues:
+# - https://github.com/anthropics/claude-code-action/issues/693 (Setup timeouts)
+# - https://github.com/anthropics/claude-code-action/issues/709 (Stale lock files)
+# - https://github.com/anthropics/claude-code/issues/13498 (Timeout errors)
+# - https://github.com/anthropics/claude-code/issues/13981 (Install script fails)
+#
+# Root causes:
+# 1. The install script spawns subprocesses that can hang indefinitely
+# 2. Lock files at ~/.local/state/claude/locks/ persist after timeout
+# 3. No built-in timeout or retry in the install script
+#
+# Solution: Download the binary directly from GCS, bypassing the install script.
+# This approach is proven by: https://github.com/alonw0/cc-versions
+#
+# GCS bucket URL: https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases
+# This is the same bucket that https://claude.ai/install.sh redirects to.
+#
+# Binary-only features: We use native binary (not npm) because Anthropic is
+# starting to release features that require the native binary installation.
+# ============================================================================
+
+runs:
+  using: "composite"
+  steps:
+    - name: Cache Claude Code binary
+      id: cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.local/bin/claude
+        key: claude-code-binary-${{ runner.os }}-${{ runner.arch }}-v1
+
+    - name: Clean stale lock files
+      shell: bash
+      run: rm -rf ~/.local/state/claude/locks 2>/dev/null || true
+
+    - name: Download Claude Code (on cache miss)
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        GCS_BUCKET="https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases"
+
+        echo "Fetching stable version..."
+        VERSION=$(curl -fsSL --retry 3 --retry-delay 2 "$GCS_BUCKET/stable")
+        echo "Claude Code version: $VERSION"
+
+        # Detect platform
+        ARCH=$(uname -m)
+        case "$ARCH" in
+          x86_64) PLATFORM="linux-x64" ;;
+          aarch64) PLATFORM="linux-arm64" ;;
+          *) echo "Unsupported architecture: $ARCH"; exit 1 ;;
+        esac
+
+        echo "Downloading $PLATFORM binary..."
+        mkdir -p ~/.local/bin
+        curl -fsSL --retry 3 --retry-delay 2 \
+          "$GCS_BUCKET/$VERSION/$PLATFORM/claude" \
+          -o ~/.local/bin/claude
+        chmod +x ~/.local/bin/claude
+        echo "Download complete"
+
+    - name: Add Claude Code to PATH
+      shell: bash
+      run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+    - name: Verify installation
+      shell: bash
+      run: |
+        export PATH="$HOME/.local/bin:$PATH"
+        claude --version
