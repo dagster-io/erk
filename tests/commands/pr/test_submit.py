@@ -90,6 +90,7 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},  # Has commits to submit
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
         )
 
         # Graphite not authenticated - but core submit will still work
@@ -98,7 +99,7 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+            pr_bases={123: "main"},
         )
         claude_executor = FakeClaudeExecutor(
             claude_available=True,
@@ -245,6 +246,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},  # Single commit - no squash needed
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
         )
 
         graphite = FakeGraphite(
@@ -270,7 +272,7 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+            pr_bases={123: "main"},
         )
 
         # Configure executor to fail on prompt
@@ -333,6 +335,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
         )
 
         graphite = FakeGraphite(
@@ -360,7 +363,7 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+            pr_bases={123: "main"},
             pr_update_should_succeed=False,
         )
 
@@ -425,6 +428,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
         )
 
         graphite = FakeGraphite(
@@ -451,7 +455,7 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+new content"},
+            pr_bases={123: "main"},
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -549,6 +553,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
                     "feat: add feature 2 (from branch-2)",
                 ],
             },
+            diff_to_branch={(env.cwd, "branch-1"): "diff --git a/file2.py b/file2.py\n+feature 2"},
         )
 
         # Configure Graphite stack: main → branch-1 → branch-2
@@ -583,7 +588,7 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
             authenticated=True,
             prs={"branch-2": pr_info},
             pr_details={456: pr_details},
-            pr_diffs={456: "diff --git a/file2.py b/file2.py\n+feature 2"},
+            pr_bases={456: "branch-1"},
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -655,6 +660,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
         )
 
         graphite = FakeGraphite(
@@ -681,7 +687,7 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+content"},
+            pr_bases={123: "main"},
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -750,6 +756,7 @@ def test_pr_submit_short_force_flag() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
         )
 
         graphite = FakeGraphite(
@@ -776,7 +783,7 @@ def test_pr_submit_short_force_flag() -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+content"},
+            pr_bases={123: "main"},
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -842,6 +849,7 @@ def test_pr_submit_shows_graphite_url() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
         )
 
         graphite = FakeGraphite(
@@ -868,7 +876,7 @@ def test_pr_submit_shows_graphite_url() -> None:
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+content"},
+            pr_bases={123: "main"},
         )
 
         claude_executor = FakeClaudeExecutor(

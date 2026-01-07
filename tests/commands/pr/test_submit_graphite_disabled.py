@@ -64,13 +64,14 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+# Test change"},
         )
 
         github = FakeGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+# Test change"},
+            pr_bases={123: "main"},
         )
 
         claude_executor = FakeClaudeExecutor(
@@ -108,13 +109,14 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
             current_branches={env.cwd: "feature"},
             commits_ahead={(env.cwd, "main"): 1},
             remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+# Test change"},
         )
 
         github = FakeGitHub(
             authenticated=True,
             prs={"feature": pr_info},
             pr_details={123: pr_details},
-            pr_diffs={123: "diff --git a/file.py b/file.py\n+# Test change"},
+            pr_bases={123: "main"},
         )
 
         claude_executor = FakeClaudeExecutor(
