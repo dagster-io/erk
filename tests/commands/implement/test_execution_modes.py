@@ -46,7 +46,7 @@ def test_interactive_mode_calls_executor() -> None:
         # Slot-based path
         assert "erk-managed-wt-" in str(worktree_path)
         assert dangerous is False
-        assert command == "/erk:plan-implement"
+        assert command == "/erk:system:impl-execute"
         # No relative path preservation when running from worktree root
         assert target_subpath is None
         assert model is None
@@ -76,7 +76,7 @@ def test_interactive_mode_with_dangerous_flag() -> None:
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert dangerous is True
-        assert command == "/erk:plan-implement"
+        assert command == "/erk:system:impl-execute"
         assert model is None
 
 
@@ -107,7 +107,7 @@ def test_interactive_mode_from_plan_file() -> None:
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert "erk-managed-wt-" in str(worktree_path)
         assert dangerous is False
-        assert command == "/erk:plan-implement"
+        assert command == "/erk:system:impl-execute"
         assert model is None
 
         # Verify plan file was deleted (moved to worktree)
@@ -174,7 +174,7 @@ def test_interactive_mode_uses_subshell_fallback_without_shell_integration() -> 
 
         # Verify the spawn call arguments
         call = shell.subshell_calls[0]
-        assert "/erk:plan-implement" in call.command
+        assert "/erk:system:impl-execute" in call.command
 
 
 # Non-Interactive Mode Tests
