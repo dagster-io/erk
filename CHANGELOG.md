@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of 33dea5a2a -->
+
+### Major Changes
+
+- **Subshell fallback for worktree launches**: Users can now launch Claude in worktrees without shell integration setup. When `ERK_SHELL` is inactive, `erk implement` spawns an interactive subshell with proper environment, auto-launches Claude, and provides prompt customization guidance. (33dea5a2a)
+- **Formal support for Graphite-less workflows**: Erk now works without Graphite installed or enabled. `erk land` handles GitHub-only PR merging, and Graphite resolution properly detects configuration and availability. This enables erk adoption in repos that don't use Graphite for stack management. (1f78eab5d)
+
+### Added
+
+- Add `erk admin test-erk-impl-gh-workflow` command for testing workflow changes before merging (f8fb27fb8)
+- Add Claude credential validation in erk-impl workflow for early failure detection (47ec0bf79)
+- Add Anthropic API authentication secret health check in `erk doctor` (aa5f943c1)
+
 ## [0.4.6] - 2026-01-06 12:21 PT
 
 ### Added
