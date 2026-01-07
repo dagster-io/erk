@@ -328,7 +328,8 @@ def test_init_skips_shell_if_declined() -> None:
         assert result.exit_code == 0, result.output
         # Verify no instructions were printed when declined
         assert "Shell Integration Setup" not in result.output
-        assert "Skipping shell integration" in result.output
+        # New messaging explains subshells are the default
+        assert "Skipping. Erk will use subshells" in result.output
 
 
 def test_shell_setup_confirmation_declined_with_shell_flag() -> None:
@@ -511,3 +512,78 @@ def test_shell_setup_permission_error_first_init() -> None:
         assert "Shell integration instructions shown above" in result.output
         # First save succeeded, second failed
         assert erk_installation.save_count == 2
+
+
+def test_init_shell_integration_optional_messaging() -> None:
+    """Test that init presents shell integration as optional enhancement.
+
+    Shell integration should be framed as an optional enhancement,
+    not a required setup step. The default should be to skip it.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+        bashrc = Path.home() / ".bashrc"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        # Config doesn't exist yet (first-time init)
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+            github=FakeGitHub(),
+            graphite=FakeGraphite(),
+            shell=FakeShell(detected_shell=("bash", bashrc)),
+            dry_run=False,
+        )
+
+        # Input: erk_root, decline hooks, decline shell (empty input = default)
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\n")
+
+        assert result.exit_code == 0, result.output
+        # Should show optional enhancement messaging
+        assert "optional enhancement" in result.output.lower()
+        # Should explain subshells are the default
+        assert "subshell" in result.output.lower()
+        # Step 3 should be labeled as "Optional enhancements"
+        assert "Optional enhancements" in result.output
+
+
+def test_init_shell_prompt_defaults_to_no() -> None:
+    """Test that shell integration prompt defaults to No.
+
+    Since shell integration is optional and erk works with subshells,
+    the default should be to skip shell integration (user must opt-in).
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+        bashrc = Path.home() / ".bashrc"
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        # Config doesn't exist yet (first-time init)
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+            github=FakeGitHub(),
+            graphite=FakeGraphite(),
+            shell=FakeShell(detected_shell=("bash", bashrc)),
+            dry_run=False,
+        )
+
+        # Input: erk_root, decline hooks, then just press enter (accept default)
+        # The default is now "n" (False), so pressing enter skips shell setup
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n\n")
+
+        assert result.exit_code == 0, result.output
+        # Should skip shell setup (default is No)
+        assert "Shell Integration Setup" not in result.output
+        # Should show the skip message
+        assert "Skipping. Erk will use subshells" in result.output

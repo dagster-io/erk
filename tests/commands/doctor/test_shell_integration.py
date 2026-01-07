@@ -33,7 +33,11 @@ def test_check_shell_integration_rc_file_not_found(tmp_path: Path) -> None:
 
 
 def test_check_shell_integration_not_configured(tmp_path: Path) -> None:
-    """Test check when RC file exists but integration not configured."""
+    """Test check when RC file exists but integration not configured.
+
+    Shell integration is optional - erk uses subshells by default.
+    This should be info-only with no remediation action.
+    """
     rc_path = tmp_path / ".zshrc"
     rc_path.write_text("# Some other content\nexport PATH=$PATH:/usr/local/bin\n")
     shell = FakeShell(detected_shell=("zsh", rc_path))
@@ -45,7 +49,10 @@ def test_check_shell_integration_not_configured(tmp_path: Path) -> None:
     assert result.info is True
     assert "Shell integration not configured" in result.message
     assert "zsh" in result.message
-    assert result.remediation == "Run 'erk init' to add shell integration"
+    # No remediation - shell integration is optional
+    assert result.remediation is None
+    # Details explain the default behavior
+    assert result.details == "Optional enhancement - erk uses subshells by default"
 
 
 def test_check_shell_integration_configured(tmp_path: Path) -> None:
@@ -62,6 +69,8 @@ def test_check_shell_integration_configured(tmp_path: Path) -> None:
     assert "Shell integration configured" in result.message
     assert "zsh" in result.message
     assert result.remediation is None
+    # Details explain what mode is being used
+    assert result.details == "Using 'cd' mode instead of subshells"
 
 
 def test_check_shell_integration_bash(tmp_path: Path) -> None:

@@ -697,14 +697,16 @@ def check_shell_integration(shell: Shell) -> CheckResult:
             name="shell-integration",
             passed=True,
             message=f"Shell integration configured ({shell_name})",
+            details="Using 'cd' mode instead of subshells",
         )
 
     return CheckResult(
         name="shell-integration",
         passed=True,
         message=f"Shell integration not configured ({shell_name})",
+        details="Optional enhancement - erk uses subshells by default",
         info=True,
-        remediation="Run 'erk init' to add shell integration",
+        # No remediation - this is purely informational
     )
 
 
