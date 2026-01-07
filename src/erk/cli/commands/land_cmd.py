@@ -212,18 +212,6 @@ def _execute_simple_land(
     return pr_number
 
 
-def _delete_branch_for_land(ctx: ErkContext, *, repo_root: Path, branch: str) -> None:
-    """Delete a branch, using plain git when Graphite is disabled.
-
-    This consolidates the Graphite-awareness check for branch deletion
-    used during land cleanup.
-    """
-    if isinstance(ctx.graphite, GraphiteDisabled):
-        ctx.git.delete_branch(repo_root, branch, force=True)
-    else:
-        ctx.git.delete_branch_with_graphite(repo_root, branch, force=True)
-
-
 def _cleanup_and_navigate(
     ctx: ErkContext,
     *,
@@ -281,7 +269,7 @@ def _cleanup_and_navigate(
                 else:
                     save_pool_state(repo.pool_json_path, state)
             execute_unassign(ctx, repo, state, assignment)
-            _delete_branch_for_land(ctx, repo_root=main_repo_root, branch=branch)
+            ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
         else:
             # Non-slot worktree: delete worktree and branch
@@ -298,7 +286,7 @@ def _cleanup_and_navigate(
         # No worktree - check if branch exists locally before deletion (LBYL)
         local_branches = ctx.git.list_local_branches(main_repo_root)
         if branch in local_branches:
-            _delete_branch_for_land(ctx, repo_root=main_repo_root, branch=branch)
+            ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(click.style("✓", fg="green") + f" Deleted branch '{branch}'")
         # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
 
