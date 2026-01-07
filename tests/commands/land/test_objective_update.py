@@ -48,8 +48,8 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
     )
 
 
-def test_land_force_skips_objective_update_prompt() -> None:
-    """Test that --force flag skips objective update prompt and prints command for later."""
+def test_land_force_runs_objective_update_without_prompt() -> None:
+    """Test that --force flag runs objective update without prompting."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -140,12 +140,20 @@ def test_land_force_skips_objective_update_prompt() -> None:
 
         assert result.exit_code == 0
 
-        # Should show objective info and command to run later
+        # Should show objective info and success message
         assert "Linked to Objective #100" in result.output
-        assert "/erk:objective-update-with-landed-pr" in result.output
+        assert "Starting objective update..." in result.output
+        assert "Objective updated successfully" in result.output
 
-        # Should NOT have called claude executor (--force skips prompt)
-        assert len(executor.executed_commands) == 0
+        # Should have called claude executor with correct command
+        assert len(executor.executed_commands) == 1
+        cmd, path, dangerous, verbose, model = executor.executed_commands[0]
+        expected = (
+            "/erk:objective-update-with-landed-pr "
+            "--pr 123 --objective 100 --branch P42-test-feature --auto-close"
+        )
+        assert cmd == expected
+        assert dangerous is True
 
 
 def test_land_user_declines_objective_update_shows_command() -> None:

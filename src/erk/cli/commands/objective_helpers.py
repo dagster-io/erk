@@ -185,8 +185,26 @@ def prompt_objective_update(
     )
 
     if force:
-        # --force skips all prompts, print command for later
-        user_output(f"   Run '{cmd}' to update objective")
+        # --force skips prompt but still executes the update
+        user_output("")
+        user_output("Starting objective update...")
+
+        result = stream_command_with_feedback(
+            executor=ctx.claude_executor,
+            command=cmd,
+            worktree_path=repo_root,
+            dangerous=True,
+        )
+
+        if result.success:
+            user_output("")
+            user_output(click.style("✓", fg="green") + " Objective updated successfully")
+        else:
+            user_output("")
+            user_output(
+                click.style("⚠", fg="yellow") + f" Objective update failed: {result.error_message}"
+            )
+            user_output("  Run '/erk:objective-update-with-landed-pr' manually to retry")
         return
 
     # Ask y/n prompt
