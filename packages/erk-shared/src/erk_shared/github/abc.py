@@ -7,6 +7,7 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
     PRDetails,
+    PRListState,
     PRNotFound,
     PRReviewThread,
     PullRequestInfo,
@@ -370,6 +371,28 @@ class GitHub(ABC):
 
         Returns:
             PRDetails if a PR exists for the branch, PRNotFound otherwise
+        """
+        ...
+
+    @abstractmethod
+    def list_prs(
+        self,
+        repo_root: Path,
+        *,
+        state: PRListState,
+    ) -> dict[str, PullRequestInfo]:
+        """List PRs for the repository, keyed by head branch name.
+
+        Fetches PRs from GitHub API in a single REST API call.
+        This is used as a fallback when Graphite cache is unavailable.
+
+        Args:
+            repo_root: Repository root directory
+            state: Filter by state - "open", "closed", or "all"
+
+        Returns:
+            Dict mapping head branch name to PullRequestInfo.
+            Empty dict if no PRs match or on API failure.
         """
         ...
 

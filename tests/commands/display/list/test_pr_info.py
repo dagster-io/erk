@@ -11,6 +11,7 @@ from erk.cli.cli import cli
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PullRequestInfo
 from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.env_helpers import erk_inmem_env
@@ -229,3 +230,50 @@ def test_list_graceful_degradation_no_graphite_cache() -> None:
 
         # PR column should show "-" for no PR info
         assert "-" in result.output
+
+
+def test_list_github_api_fallback_when_graphite_empty() -> None:
+    """Test that PR info falls back to GitHub API when Graphite cache is empty."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        branch_name = "feature-branch"
+        pr = PullRequestInfo(
+            number=999,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/999",
+            is_draft=False,
+            title="Test PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+
+        repo_name = env.cwd.name
+        repo_dir = env.erk_root / repo_name
+        feature_worktree = repo_dir / branch_name
+
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                    WorktreeInfo(path=feature_worktree, branch=branch_name),
+                ]
+            },
+            git_common_dirs={env.cwd: env.git_dir, feature_worktree: env.git_dir},
+            current_branches={env.cwd: "main", feature_worktree: branch_name},
+        )
+
+        # Empty Graphite cache (simulates Graphite disabled or no cache)
+        # but GitHub has the PR data
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=FakeGraphite(pr_info={}),  # Empty - no Graphite cache
+            github=FakeGitHub(prs={branch_name: pr}),  # GitHub has the PR
+            use_graphite=False,  # Graphite disabled
+        )
+
+        result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
+        assert result.exit_code == 0, result.output
+
+        # PR info should come from GitHub API fallback
+        assert "#999" in result.output
