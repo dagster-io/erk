@@ -27,7 +27,7 @@ class IssueNextSteps:
 
     @property
     def submit(self) -> str:
-        return f"erk submit {self.issue_number}"
+        return f"erk plan submit {self.issue_number}"
 
 
 # Slash command (static, doesn't need issue number)

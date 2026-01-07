@@ -678,9 +678,9 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         ISSUE_NUMBERS: One or more GitHub issue numbers to submit
 
     Example:
-        erk submit 123
-        erk submit 123 456 789
-        erk submit 123 --base master
+        erk plan submit 123
+        erk plan submit 123 456 789
+        erk plan submit 123 --base master
 
     Requires:
         - All issues must have erk-plan label

@@ -128,7 +128,7 @@ class PlanSchema(MetadataBlockSchema):
 
 @dataclass(frozen=True)
 class SubmissionQueuedSchema(MetadataBlockSchema):
-    """Schema for submission-queued blocks (posted by erk submit)."""
+    """Schema for submission-queued blocks (posted by erk plan submit)."""
 
     def validate(self, data: dict[str, Any]) -> None:
         """Validate submission-queued data structure."""

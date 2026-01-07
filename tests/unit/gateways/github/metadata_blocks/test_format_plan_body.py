@@ -31,7 +31,7 @@ def test_format_plan_issue_body_simple_no_execution_commands() -> None:
 
     # Verify no execution commands section (the key optimization)
     assert "## Execution Commands" not in result
-    assert "erk submit" not in result
+    assert "erk plan submit" not in result
     assert "erk implement" not in result
     assert "--yolo" not in result
     assert "--dangerous" not in result

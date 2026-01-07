@@ -31,7 +31,7 @@ def test_create_from_file(tmp_path) -> None:
         assert "https://github.com/test-owner/test-repo/issues/1" in result.output
         assert "View:       erk get 1" in result.output
         assert "Implement:  erk implement 1" in result.output
-        assert "Submit:     erk submit 1" in result.output
+        assert "Submit:     erk plan submit 1" in result.output
 
         # Verify issue was created with correct data
         assert len(issues.created_issues) == 1
