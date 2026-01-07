@@ -45,7 +45,6 @@ def setup_collector(
     *,
     branch: str | None,
     prs: dict[str, PullRequestInfo] | None = None,
-    show_pr_info: bool = True,
     graphite_kwargs: dict[str, Any] | None = None,
     git_kwargs: dict[str, Any] | None = None,
 ) -> tuple[GitHubPRCollector, Path, Path, Any]:
@@ -72,7 +71,6 @@ def setup_collector(
         Path("/fake/erks"),
         use_graphite=False,
         shell_setup_complete=False,
-        show_pr_info=show_pr_info,
     )
     ctx = create_test_context(
         git=git_ops,
@@ -256,18 +254,17 @@ def test_github_pr_collector_returns_none_without_graphite(tmp_path: Path) -> No
 
 
 @pytest.mark.parametrize(
-    ("show_pr_info", "path_exists", "expected"),
+    ("path_exists", "expected"),
     [
-        (False, True, False),
-        (True, False, False),
-        (True, True, True),
+        (False, False),
+        (True, True),
     ],
-    ids=["feature-disabled", "path-missing", "available"],
+    ids=["path-missing", "available"],
 )
 def test_github_pr_collector_is_available(
-    tmp_path: Path, show_pr_info: bool, path_exists: bool, expected: bool
+    tmp_path: Path, path_exists: bool, expected: bool
 ) -> None:
-    """Availability is controlled by config and worktree presence."""
+    """Availability is controlled by worktree presence."""
     worktree_path = tmp_path / "worktree"
     if path_exists:
         worktree_path.mkdir()
@@ -276,7 +273,6 @@ def test_github_pr_collector_is_available(
         Path("/fake/erks"),
         use_graphite=False,
         shell_setup_complete=False,
-        show_pr_info=show_pr_info,
     )
     ctx = create_test_context(global_config=global_config)
     collector = GitHubPRCollector()

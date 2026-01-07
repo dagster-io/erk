@@ -222,14 +222,12 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool, show_all: bool) 
     wt_info = find_current_worktree(worktrees, current_dir)
     current_worktree_path = wt_info.path if wt_info is not None else None
 
-    # Fetch PR information from Graphite cache, with GitHub API fallback
+    # Fetch PR information from Graphite cache (graceful degradation if unavailable)
     prs: dict[str, PullRequestInfo] = {}
-    if ctx.global_config and ctx.global_config.show_pr_info:
-        # Try Graphite cache first (fast, no network)
-        prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo.root)
-        # Fallback to GitHub API if Graphite cache empty
-        if not prs:
-            prs = ctx.github.list_prs(repo.root, state="open")
+    graphite_prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo.root)
+    if graphite_prs:
+        prs = graphite_prs
+    # If Graphite cache is missing, prs stays empty - graceful degradation
 
     # Determine use_graphite for URL selection
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False

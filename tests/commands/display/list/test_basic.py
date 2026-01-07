@@ -33,7 +33,6 @@ def test_list_outputs_names_not_paths() -> None:
         test_ctx = env.build_context(
             git=git_ops,
             graphite=FakeGraphite(pr_info={}),
-            show_pr_info=False,  # Don't require PR info for this test
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -81,7 +80,6 @@ def test_list_shows_equal_for_matching_branch() -> None:
         test_ctx = env.build_context(
             git=git_ops,
             graphite=FakeGraphite(pr_info={}),
-            show_pr_info=False,
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
@@ -108,7 +106,6 @@ def test_list_shows_cwd_indicator() -> None:
         test_ctx = env.build_context(
             git=git_ops,
             graphite=FakeGraphite(pr_info={}),
-            show_pr_info=False,
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)

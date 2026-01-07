@@ -136,7 +136,6 @@ config_store = FakeConfigStore(
     erks_root: Path | None = None,
     use_graphite: bool = False,
     shell_setup_complete: bool = False,
-    show_pr_info: bool = True,
     show_pr_checks: bool = False,
 )
 ```

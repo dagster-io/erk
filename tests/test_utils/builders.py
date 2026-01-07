@@ -308,7 +308,6 @@ class WorktreeScenario:
         self._prs: dict[str, PullRequestInfo] = {}
         self._graphite_stacks: dict[str, list[str]] = {}
         self._use_graphite = False
-        self._show_pr_info = False
 
     def with_main_branch(self, name: str = "main") -> WorktreeScenario:
         """Add main/root worktree.
@@ -370,7 +369,6 @@ class WorktreeScenario:
         Returns:
             Self for method chaining
         """
-        self._show_pr_info = True
         builder = PullRequestInfoBuilder(number, branch)
         builder.state = state
         builder.is_draft = is_draft
@@ -413,7 +411,6 @@ class WorktreeScenario:
             self.erk_root,
             use_graphite=self._use_graphite,
             shell_setup_complete=False,
-            show_pr_info=self._show_pr_info,
         )
 
         self.shell = FakeShell()

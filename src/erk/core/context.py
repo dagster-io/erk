@@ -306,7 +306,6 @@ def context_for_test(
             erk_root=Path("/test/erks"),
             use_graphite=False,
             shell_setup_complete=False,
-            show_pr_info=True,
             github_planning=True,
         )
 

@@ -17,64 +17,6 @@ from tests.test_utils.builders import PullRequestInfoBuilder
 from tests.test_utils.env_helpers import erk_inmem_env
 
 # ===========================
-# Config Handling Tests
-# ===========================
-
-
-@pytest.mark.parametrize(
-    ("show_pr_info", "expected_visible"),
-    [
-        (True, True),
-        (False, False),
-    ],
-    ids=["visible", "hidden"],
-)
-def test_list_pr_visibility(show_pr_info: bool, expected_visible: bool) -> None:
-    """PR info visibility follows the show_pr_info configuration flag."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        branch_name = "feature-branch"
-        pr = PullRequestInfo(
-            number=42,
-            state="OPEN",
-            url="https://github.com/owner/repo/pull/42",
-            is_draft=False,
-            title=None,
-            checks_passing=True,
-            owner="owner",
-            repo="repo",
-        )
-
-        repo_name = env.cwd.name
-        repo_dir = env.erk_root / repo_name
-        feature_worktree = repo_dir / branch_name
-
-        git_ops = FakeGit(
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="main"),
-                    WorktreeInfo(path=feature_worktree, branch=branch_name),
-                ]
-            },
-            git_common_dirs={env.cwd: env.git_dir, feature_worktree: env.git_dir},
-            current_branches={env.cwd: "main", feature_worktree: branch_name},
-        )
-
-        # PR data comes from Graphite cache
-        test_ctx = env.build_context(
-            git=git_ops,
-            graphite=FakeGraphite(pr_info={branch_name: pr}),
-            use_graphite=True,
-            show_pr_info=show_pr_info,
-        )
-
-        result = runner.invoke(cli, ["wt", "list"], obj=test_ctx)
-        assert result.exit_code == 0, result.output
-
-        assert ("#42" in result.output) is expected_visible
-
-
-# ===========================
 # Emoji Rendering Tests
 # ===========================
 

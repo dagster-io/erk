@@ -381,7 +381,6 @@ class ErkIsolatedFsEnv:
         current_branch: str | None = None,
         trunk_branch: str = "main",
         use_graphite: bool = False,
-        show_pr_info: bool = True,
         git: Git | None = None,
         graphite: FakeGraphite | None = None,
         github: FakeGitHub | None = None,
@@ -400,7 +399,6 @@ class ErkIsolatedFsEnv:
             current_branch: If provided, auto-configures FakeGit.current_branches
             trunk_branch: Default branch name (default: "main")
             use_graphite: Enable Graphite integration (default: False)
-            show_pr_info: Show PR information (default: True)
             git: Custom FakeGit instance (overrides smart defaults)
             graphite: Custom FakeGraphite instance
             github: Custom FakeGitHub instance
@@ -528,7 +526,6 @@ class ErkIsolatedFsEnv:
             global_config = GlobalConfig.test(
                 self.erk_root,
                 use_graphite=use_graphite,
-                show_pr_info=show_pr_info,
                 shell_setup_complete=False,
             )
 
@@ -807,7 +804,6 @@ class ErkInMemEnv:
         current_branch: str | None = None,
         trunk_branch: str = "main",
         use_graphite: bool = False,
-        show_pr_info: bool = True,
         git: Git | None = None,
         graphite: FakeGraphite | None = None,
         github: FakeGitHub | None = None,
@@ -828,7 +824,6 @@ class ErkInMemEnv:
             current_branch: If provided, auto-configures FakeGit.current_branches
             trunk_branch: Default branch name (default: "main")
             use_graphite: Enable Graphite integration (default: False)
-            show_pr_info: Show PR information (default: True)
             git: Custom FakeGit instance (overrides smart defaults)
             graphite: Custom FakeGraphite instance
             github: Custom FakeGitHub instance
@@ -958,7 +953,6 @@ class ErkInMemEnv:
             global_config = GlobalConfig.test(
                 self.erk_root,
                 use_graphite=use_graphite,
-                show_pr_info=show_pr_info,
                 shell_setup_complete=False,
             )
 

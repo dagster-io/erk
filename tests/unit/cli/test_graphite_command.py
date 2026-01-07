@@ -115,7 +115,6 @@ def test_is_graphite_available_falls_back_to_config_when_ctx_obj_is_none(
         erk_root=Path("/tmp/erks"),
         use_graphite=True,
         shell_setup_complete=True,
-        show_pr_info=True,
         github_planning=True,
     )
 
@@ -147,7 +146,6 @@ def test_is_graphite_available_returns_false_when_config_disabled_and_ctx_obj_no
         erk_root=Path("/tmp/erks"),
         use_graphite=False,
         shell_setup_complete=True,
-        show_pr_info=True,
         github_planning=True,
     )
 
@@ -174,7 +172,6 @@ def test_is_graphite_available_returns_false_when_gt_not_installed_and_ctx_obj_n
         erk_root=Path("/tmp/erks"),
         use_graphite=True,
         shell_setup_complete=True,
-        show_pr_info=True,
         github_planning=True,
     )
 
@@ -235,7 +232,6 @@ def test_graphite_command_invoke_checks_graphite_availability() -> None:
             erk_root=Path("/tmp/erks"),
             use_graphite=False,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
@@ -265,7 +261,6 @@ def test_graphite_command_invoke_succeeds_with_graphite_enabled() -> None:
             erk_root=Path("/tmp/erks"),
             use_graphite=True,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=FakeGraphite(),
@@ -296,7 +291,6 @@ def test_graphite_command_with_hidden_options_invoke_checks_graphite_availabilit
             erk_root=Path("/tmp/erks"),
             use_graphite=False,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED),
@@ -327,7 +321,6 @@ def test_graphite_command_with_hidden_options_preserves_hidden_options_behavior(
             erk_root=Path("/tmp/erks"),
             use_graphite=True,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
             show_hidden_commands=True,
         ),
@@ -388,7 +381,6 @@ def test_graphite_command_hidden_in_help_when_graphite_unavailable() -> None:
             erk_root=Path("/tmp/erks"),
             use_graphite=False,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
@@ -428,7 +420,6 @@ def test_graphite_command_visible_in_help_when_graphite_available() -> None:
             erk_root=Path("/tmp/erks"),
             use_graphite=True,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=FakeGraphite(),
@@ -466,7 +457,6 @@ def test_graphite_group_hidden_in_help_when_graphite_unavailable() -> None:
             erk_root=Path("/tmp/erks"),
             use_graphite=False,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED),
@@ -505,7 +495,6 @@ def test_graphite_group_visible_in_help_when_graphite_available() -> None:
             erk_root=Path("/tmp/erks"),
             use_graphite=True,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
         ),
         graphite=FakeGraphite(),
@@ -543,7 +532,6 @@ def test_graphite_commands_shown_in_hidden_section_when_show_hidden_enabled() ->
             erk_root=Path("/tmp/erks"),
             use_graphite=False,
             shell_setup_complete=True,
-            show_pr_info=True,
             github_planning=True,
             show_hidden_commands=True,
         ),
@@ -577,7 +565,6 @@ def test_graphite_command_visible_when_help_shown_without_ctx_obj(
         erk_root=Path("/tmp/erks"),
         use_graphite=True,
         shell_setup_complete=True,
-        show_pr_info=True,
         github_planning=True,
     )
 
@@ -625,7 +612,6 @@ def test_graphite_command_hidden_when_help_shown_without_ctx_obj_and_config_disa
         erk_root=Path("/tmp/erks"),
         use_graphite=False,
         shell_setup_complete=True,
-        show_pr_info=True,
         github_planning=True,
     )
 

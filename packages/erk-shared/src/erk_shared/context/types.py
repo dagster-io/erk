@@ -71,7 +71,6 @@ class GlobalConfig:
     erk_root: Path
     use_graphite: bool
     shell_setup_complete: bool
-    show_pr_info: bool
     github_planning: bool
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
@@ -82,7 +81,6 @@ class GlobalConfig:
         *,
         use_graphite: bool = True,
         shell_setup_complete: bool = True,
-        show_pr_info: bool = True,
         github_planning: bool = True,
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
@@ -92,7 +90,6 @@ class GlobalConfig:
             erk_root=erk_root,
             use_graphite=use_graphite,
             shell_setup_complete=shell_setup_complete,
-            show_pr_info=show_pr_info,
             github_planning=github_planning,
             fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,

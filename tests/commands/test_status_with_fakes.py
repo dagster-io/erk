@@ -95,7 +95,6 @@ def test_status_cmd_in_subdirectory_of_worktree(tmp_path: Path) -> None:
         tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
-        show_pr_info=False,
     )
     ctx = create_test_context(git=git_ops, global_config=global_config, cwd=subdir)
 

@@ -63,7 +63,7 @@ def test_branch_list_shows_branches_with_prs_only() -> None:
         # Branch with open PR but no worktree
         pr = PullRequestInfoBuilder(123, "remote-branch").with_passing_checks().build()
         graphite = FakeGraphite(pr_info={"remote-branch": pr})
-        test_ctx = env.build_context(git=git, graphite=graphite, show_pr_info=True)
+        test_ctx = env.build_context(git=git, graphite=graphite)
 
         result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
         assert result.exit_code == 0, result.output
@@ -100,7 +100,7 @@ def test_branch_list_shows_branches_with_worktrees_and_prs() -> None:
         # Branch with worktree and PR
         pr = PullRequestInfoBuilder(456, "feat-1").with_passing_checks().build()
         graphite = FakeGraphite(pr_info={"feat-1": pr})
-        test_ctx = env.build_context(git=git, graphite=graphite, show_pr_info=True)
+        test_ctx = env.build_context(git=git, graphite=graphite)
 
         result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
         assert result.exit_code == 0, result.output
@@ -130,7 +130,7 @@ def test_branch_list_excludes_closed_prs_without_worktrees() -> None:
         # Branch with closed PR and no worktree
         pr = PullRequestInfoBuilder(789, "old-branch").as_closed().build()
         graphite = FakeGraphite(pr_info={"old-branch": pr})
-        test_ctx = env.build_context(git=git, graphite=graphite, show_pr_info=True)
+        test_ctx = env.build_context(git=git, graphite=graphite)
 
         result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
         assert result.exit_code == 0, result.output
@@ -280,7 +280,7 @@ def test_branch_list_shows_pr_status_emoji() -> None:
         graphite = FakeGraphite(
             pr_info={"passing": passing_pr, "failing": failing_pr, "draft": draft_pr}
         )
-        test_ctx = env.build_context(git=git, graphite=graphite, show_pr_info=True)
+        test_ctx = env.build_context(git=git, graphite=graphite)
 
         result = runner.invoke(cli, ["branch", "list"], obj=test_ctx)
         assert result.exit_code == 0, result.output
