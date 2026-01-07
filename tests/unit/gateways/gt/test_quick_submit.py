@@ -190,9 +190,7 @@ class TestQuickSubmitMutationTracking:
 class TestQuickSubmitGraphiteDisabled:
     """Tests for quick-submit when Graphite is disabled (git push fallback)."""
 
-    def test_quick_submit_uses_git_push_when_graphite_disabled(
-        self, tmp_repo: Path
-    ) -> None:
+    def test_quick_submit_uses_git_push_when_graphite_disabled(self, tmp_repo: Path) -> None:
         """Test that quick-submit uses git push when Graphite is disabled."""
         ops = (
             FakeGtKitOps()
@@ -216,9 +214,7 @@ class TestQuickSubmitGraphiteDisabled:
         assert push_call.branch == "feature-branch"
         assert push_call.set_upstream is True
 
-    def test_quick_submit_graphite_disabled_with_staged_changes(
-        self, tmp_repo: Path
-    ) -> None:
+    def test_quick_submit_graphite_disabled_with_staged_changes(self, tmp_repo: Path) -> None:
         """Test quick-submit commits and pushes when Graphite is disabled."""
         ops = (
             FakeGtKitOps()
