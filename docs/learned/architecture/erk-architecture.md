@@ -842,22 +842,24 @@ When you need an operation that differs between Graphite and Git:
 
 ### Existing BranchManager Methods
 
-| Method | GraphiteBranchManager | GitBranchManager |
-|--------|----------------------|------------------|
-| `create_branch()` | `gt branch create` | `git checkout -b` |
-| `delete_branch()` | `git branch -D` (with graphite cleanup) | `git branch -D` |
-| `submit_branch()` | `gt submit --force --quiet` | `git push -u origin` |
-| `get_pr_for_branch()` | GitHub API lookup | GitHub API lookup |
-| `is_graphite_managed()` | `True` | `False` |
+| Method                  | GraphiteBranchManager                   | GitBranchManager     |
+| ----------------------- | --------------------------------------- | -------------------- |
+| `create_branch()`       | `gt branch create`                      | `git checkout -b`    |
+| `delete_branch()`       | `git branch -D` (with graphite cleanup) | `git branch -D`      |
+| `submit_branch()`       | `gt submit --force --quiet`             | `git push -u origin` |
+| `get_pr_for_branch()`   | GitHub API lookup                       | GitHub API lookup    |
+| `is_graphite_managed()` | `True`                                  | `False`              |
 
 ### When to Use BranchManager vs Direct Gateway
 
 **Use BranchManager when:**
+
 - Operation differs between Graphite and Git modes
 - Operation involves branch workflow (create, delete, submit, navigate)
 - You would otherwise check `isinstance(ctx.graphite, GraphiteDisabled)`
 
 **Use gateway directly when:**
+
 - Operation is the same regardless of Graphite mode
 - Operation is purely Git or purely GitHub (not workflow-dependent)
 - Operation doesn't involve branch management
