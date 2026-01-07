@@ -150,13 +150,13 @@ def test_close_plan_has_no_shortcut() -> None:
 
 
 def test_land_pr_available_when_all_conditions_met() -> None:
-    """land_pr should be available when PR is open, remote run exists, no local worktree."""
+    """land_pr should be available when PR is open and remote run exists."""
     row = make_plan_row(
         123,
         "Test",
         pr_number=456,
         pr_state="OPEN",
-        exists_locally=False,
+        exists_locally=True,
         run_url="https://github.com/test/repo/actions/runs/789",
     )
     ctx = CommandContext(row=row)
@@ -190,8 +190,8 @@ def test_land_pr_not_available_when_pr_merged() -> None:
     assert "land_pr" not in cmd_ids
 
 
-def test_land_pr_not_available_when_exists_locally() -> None:
-    """land_pr should not be available when worktree exists locally."""
+def test_land_pr_available_when_exists_locally() -> None:
+    """land_pr should be available even when worktree exists locally."""
     row = make_plan_row(
         123,
         "Test",
@@ -203,7 +203,7 @@ def test_land_pr_not_available_when_exists_locally() -> None:
     ctx = CommandContext(row=row)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "land_pr" not in cmd_ids
+    assert "land_pr" in cmd_ids
 
 
 def test_land_pr_not_available_when_no_run() -> None:
