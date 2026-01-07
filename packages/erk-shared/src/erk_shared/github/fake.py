@@ -561,11 +561,7 @@ class FakeGitHub(GitHub):
 
         # Filter by state (normalize to upper case for comparison)
         target_state = state.upper()
-        return {
-            branch: pr
-            for branch, pr in self._prs.items()
-            if pr.state == target_state
-        }
+        return {branch: pr for branch, pr in self._prs.items() if pr.state == target_state}
 
     def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
         """Get PR title by number from configured state.
