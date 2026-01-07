@@ -11,7 +11,6 @@ Error Handling Philosophy:
 """
 
 import json
-import re
 import secrets
 import string
 from datetime import UTC, datetime, timedelta
@@ -86,41 +85,6 @@ class RealGitHub(GitHub):
         """
         self._time = time
         self._repo_info = repo_info
-
-    def _extract_repo_info_from_repo_root(self, repo_root: Path) -> RepoInfo:
-        """Extract owner/repo from git remote URL.
-
-        Handles both HTTPS and SSH URL formats:
-        - https://github.com/owner/repo.git
-        - git@github.com:owner/repo.git
-
-        Args:
-            repo_root: Repository root directory
-
-        Returns:
-            RepoInfo with owner and name extracted from remote URL
-
-        Raises:
-            RuntimeError: If remote URL cannot be parsed
-        """
-        result = run_subprocess_with_context(
-            cmd=["git", "config", "--get", "remote.origin.url"],
-            operation_context="extract GitHub owner/repo from git remote URL",
-            cwd=repo_root,
-        )
-        url = result.stdout.strip()
-
-        # Try HTTPS format: https://github.com/owner/repo.git
-        https_match = re.match(r"https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$", url)
-        if https_match:
-            return RepoInfo(owner=https_match.group(1), name=https_match.group(2))
-
-        # Try SSH format: git@github.com:owner/repo.git
-        ssh_match = re.match(r"git@github\.com:([^/]+)/([^/]+?)(?:\.git)?$", url)
-        if ssh_match:
-            return RepoInfo(owner=ssh_match.group(1), name=ssh_match.group(2))
-
-        raise RuntimeError(f"Could not parse GitHub owner/repo from remote URL: {url}")
 
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from GitHub.
@@ -1381,20 +1345,13 @@ query {{
         Uses gh api to call GET /repos/{owner}/{repo}/pulls?head={owner}:{branch}&state=all
         which returns PRs for the branch in a single request.
 
-        If repo_info was not provided at construction, it will be extracted from
-        the repository's git remote URL.
-
         Returns:
             PRDetails if a PR exists for the branch, PRNotFound otherwise
         """
-        # Use constructor repo_info if available, otherwise extract from git remote
-        repo_info = self._repo_info
-        if repo_info is None:
-            repo_info = self._extract_repo_info_from_repo_root(repo_root)
-
+        assert self._repo_info is not None, "repo_info required for get_pr_for_branch"
         endpoint = (
-            f"/repos/{repo_info.owner}/{repo_info.name}/pulls"
-            f"?head={repo_info.owner}:{branch}&state=all"
+            f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls"
+            f"?head={self._repo_info.owner}:{branch}&state=all"
         )
 
         # GH-API-AUDIT: REST - GET pulls (filtered by head)
@@ -1406,7 +1363,7 @@ query {{
             return PRNotFound(branch=branch)
 
         pr = data[0]
-        return self._parse_pr_details_from_rest_api(pr, repo_info)
+        return self._parse_pr_details_from_rest_api(pr, self._repo_info)
 
     def _parse_pr_details_from_rest_api(
         self, data: dict[str, Any], repo_info: RepoInfo
