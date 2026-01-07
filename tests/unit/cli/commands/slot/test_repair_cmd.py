@@ -350,9 +350,7 @@ def test_slot_repair_repairs_branch_mismatch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
-        result = runner.invoke(
-            cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Found 1 repairable issue" in result.output
@@ -465,9 +463,7 @@ def test_slot_repair_repairs_missing_branch() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
-        result = runner.invoke(
-            cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
         assert result.exit_code == 0
         assert "Found 1 repairable issue" in result.output
         assert "Removed 1 stale assignment" in result.output
@@ -509,9 +505,7 @@ def test_slot_repair_repairs_git_registry_missing() -> None:
 
         test_ctx = env.build_context(git=git_ops, repo=repo, repo_state_store=repo_state_store)
 
-        result = runner.invoke(
-            cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
         assert result.exit_code == 0
         assert "Found 1 repairable issue" in result.output
         assert "Removed 1 stale assignment" in result.output

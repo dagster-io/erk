@@ -165,9 +165,7 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     all_issues = run_sync_diagnostics(ctx, state, repo.root)
 
     # Find repairable assignments
-    stale_assignments = find_stale_assignments(
-        state, all_issues, repairable_codes=REPAIRABLE_CODES
-    )
+    stale_assignments = find_stale_assignments(state, all_issues, repairable_codes=REPAIRABLE_CODES)
 
     # Display informational issues (non-repairable)
     _display_informational_issues(all_issues, repo.worktrees_dir, repairable_codes=REPAIRABLE_CODES)
