@@ -881,6 +881,12 @@ The `as X` syntax is the PEP 484 standard for indicating intentional re-exports.
 
 ### Default Parameter Values Are Dangerous
 
+> **Scope:** This rule applies to **function definitions** (`def foo(bar: bool = False)`),
+> NOT to **function calls** where you pass an argument named `default` (e.g.,
+> `click.confirm(default=True)`). Passing `default=True` to a function that accepts
+> a `default` parameter is perfectly valid—you're not creating a default parameter value,
+> you're explicitly providing a value.
+
 **Avoid default parameter values unless absolutely necessary.** They are a significant source of bugs.
 
 **Why defaults are dangerous:**
