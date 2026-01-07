@@ -62,9 +62,7 @@ def _wait_for_issue_closure(
             attempt + 1,
             _AUTO_CLOSE_MAX_RETRIES,
         )
-    logger.debug(
-        "Issue #%d did not close after %d retries", issue_number, _AUTO_CLOSE_MAX_RETRIES
-    )
+    logger.debug("Issue #%d did not close after %d retries", issue_number, _AUTO_CLOSE_MAX_RETRIES)
     return False
 
 
