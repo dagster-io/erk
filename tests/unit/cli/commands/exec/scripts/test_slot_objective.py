@@ -26,7 +26,7 @@ def test_slot_objective_returns_objective_when_in_slot() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -47,10 +47,10 @@ def test_slot_objective_returns_objective_when_in_slot() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=123),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=123),),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="feature-branch",
                     assigned_at="2025-01-01T12:00:00+00:00",
                     worktree_path=worktree_path,
@@ -66,7 +66,7 @@ def test_slot_objective_returns_objective_when_in_slot() -> None:
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["objective_issue"] == 123
-        assert data["slot_name"] == "erk-managed-wt-01"
+        assert data["slot_name"] == "erk-slot-01"
 
 
 def test_slot_objective_returns_null_when_slot_has_no_objective() -> None:
@@ -76,7 +76,7 @@ def test_slot_objective_returns_null_when_slot_has_no_objective() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -97,10 +97,10 @@ def test_slot_objective_returns_null_when_slot_has_no_objective() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="feature-branch",
                     assigned_at="2025-01-01T12:00:00+00:00",
                     worktree_path=worktree_path,
@@ -116,7 +116,7 @@ def test_slot_objective_returns_null_when_slot_has_no_objective() -> None:
         assert result.exit_code == 0
         data = json.loads(result.output)
         assert data["objective_issue"] is None
-        assert data["slot_name"] == "erk-managed-wt-01"
+        assert data["slot_name"] == "erk-slot-01"
 
 
 def test_slot_objective_returns_null_when_not_in_slot() -> None:
@@ -130,7 +130,7 @@ def test_slot_objective_returns_null_when_not_in_slot() -> None:
         regular_worktree.mkdir(parents=True)
 
         # Create slot worktree
-        slot_worktree = repo_dir / "worktrees" / "erk-managed-wt-01"
+        slot_worktree = repo_dir / "worktrees" / "erk-slot-01"
         slot_worktree.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -151,10 +151,10 @@ def test_slot_objective_returns_null_when_not_in_slot() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-managed-wt-01", last_objective_issue=123),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=123),),
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="other-branch",
                     assigned_at="2025-01-01T12:00:00+00:00",
                     worktree_path=slot_worktree,

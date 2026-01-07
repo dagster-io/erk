@@ -119,27 +119,27 @@ def test_parse_argument_branch_master() -> None:
 
 def testfind_assignment_by_worktree_path_finds_matching_slot(tmp_path: Path) -> None:
     """Test that find_assignment_by_worktree_path finds a matching slot assignment."""
-    worktree_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+    worktree_path = tmp_path / "worktrees" / "erk-slot-01"
     worktree_path.mkdir(parents=True)
 
-    assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+    assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
     state = PoolState.test(assignments=(assignment,))
 
     result = find_assignment_by_worktree_path(state, worktree_path)
 
     assert result is not None
-    assert result.slot_name == "erk-managed-wt-01"
+    assert result.slot_name == "erk-slot-01"
     assert result.branch_name == "feature-branch"
 
 
 def testfind_assignment_by_worktree_path_returns_none_for_non_slot(tmp_path: Path) -> None:
     """Test that find_assignment_by_worktree_path returns None for non-slot worktrees."""
-    slot_worktree = tmp_path / "worktrees" / "erk-managed-wt-01"
+    slot_worktree = tmp_path / "worktrees" / "erk-slot-01"
     slot_worktree.mkdir(parents=True)
     regular_worktree = tmp_path / "worktrees" / "regular-worktree"
     regular_worktree.mkdir(parents=True)
 
-    assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", slot_worktree)
+    assignment = _create_test_assignment("erk-slot-01", "feature-branch", slot_worktree)
     state = PoolState.test(assignments=(assignment,))
 
     result = find_assignment_by_worktree_path(state, regular_worktree)
@@ -163,11 +163,11 @@ def testfind_assignment_by_worktree_path_returns_none_for_nonexistent_path(
     tmp_path: Path,
 ) -> None:
     """Test that find_assignment_by_worktree_path returns None for nonexistent paths."""
-    slot_worktree = tmp_path / "worktrees" / "erk-managed-wt-01"
+    slot_worktree = tmp_path / "worktrees" / "erk-slot-01"
     slot_worktree.mkdir(parents=True)
     nonexistent_path = tmp_path / "worktrees" / "nonexistent"
 
-    assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", slot_worktree)
+    assignment = _create_test_assignment("erk-slot-01", "feature-branch", slot_worktree)
     state = PoolState.test(assignments=(assignment,))
 
     result = find_assignment_by_worktree_path(state, nonexistent_path)
@@ -177,19 +177,19 @@ def testfind_assignment_by_worktree_path_returns_none_for_nonexistent_path(
 
 def testfind_assignment_by_worktree_path_handles_multiple_assignments(tmp_path: Path) -> None:
     """Test that find_assignment_by_worktree_path finds correct assignment among multiple."""
-    wt1 = tmp_path / "worktrees" / "erk-managed-wt-01"
+    wt1 = tmp_path / "worktrees" / "erk-slot-01"
     wt1.mkdir(parents=True)
-    wt2 = tmp_path / "worktrees" / "erk-managed-wt-02"
+    wt2 = tmp_path / "worktrees" / "erk-slot-02"
     wt2.mkdir(parents=True)
 
-    assignment1 = _create_test_assignment("erk-managed-wt-01", "feature-a", wt1)
-    assignment2 = _create_test_assignment("erk-managed-wt-02", "feature-b", wt2)
+    assignment1 = _create_test_assignment("erk-slot-01", "feature-a", wt1)
+    assignment2 = _create_test_assignment("erk-slot-02", "feature-b", wt2)
     state = PoolState.test(assignments=(assignment1, assignment2))
 
     result = find_assignment_by_worktree_path(state, wt2)
 
     assert result is not None
-    assert result.slot_name == "erk-managed-wt-02"
+    assert result.slot_name == "erk-slot-02"
     assert result.branch_name == "feature-b"
 
 
@@ -199,12 +199,12 @@ def testfind_assignment_by_worktree_path_handles_multiple_assignments(tmp_path: 
 def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -> None:
     """Test that _cleanup_and_navigate in dry-run mode does not save pool state."""
     # Create worktree path and pool.json
-    worktree_path = tmp_path / "worktrees" / "erk-managed-wt-01"
+    worktree_path = tmp_path / "worktrees" / "erk-slot-01"
     worktree_path.mkdir(parents=True)
     pool_json_path = tmp_path / "pool.json"
 
     # Create initial pool state with an assignment
-    assignment = _create_test_assignment("erk-managed-wt-01", "feature-branch", worktree_path)
+    assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
     initial_state = PoolState.test(assignments=(assignment,))
 
     # Write initial state to disk
@@ -260,7 +260,7 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
     # The slot should still have its assignment (not modified by dry-run)
     found_assignment = None
     for a in reloaded_state.assignments:
-        if a.slot_name == "erk-managed-wt-01":
+        if a.slot_name == "erk-slot-01":
             found_assignment = a
             break
     assert found_assignment is not None

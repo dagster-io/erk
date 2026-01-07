@@ -14,7 +14,7 @@ Exit Codes:
 
 Examples:
     $ erk exec slot-objective
-    {"objective_issue": 123, "slot_name": "erk-managed-wt-01"}
+    {"objective_issue": 123, "slot_name": "erk-slot-01"}
 
     $ erk exec slot-objective  # Not in a slot worktree
     {"objective_issue": null, "slot_name": null}

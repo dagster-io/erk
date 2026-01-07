@@ -35,10 +35,10 @@ def test_slot_list_empty() -> None:
 
         assert result.exit_code == 0
         # All 4 slots should be shown
-        assert "erk-managed-wt-01" in result.output
-        assert "erk-managed-wt-02" in result.output
-        assert "erk-managed-wt-03" in result.output
-        assert "erk-managed-wt-04" in result.output
+        assert "erk-slot-01" in result.output
+        assert "erk-slot-02" in result.output
+        assert "erk-slot-03" in result.output
+        assert "erk-slot-04" in result.output
         # All should show "available" status
         assert "available" in result.output
 
@@ -67,10 +67,10 @@ def test_slot_list_with_assignments() -> None:
         state = PoolState.test(
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="feature-xyz",
                     assigned_at="2025-01-03T10:30:00+00:00",
-                    worktree_path=repo_dir / "worktrees" / "erk-managed-wt-01",
+                    worktree_path=repo_dir / "worktrees" / "erk-slot-01",
                 ),
             ),
         )
@@ -84,7 +84,7 @@ def test_slot_list_with_assignments() -> None:
         # Slot 1 should show assignment
         assert "feature-xyz" in result.output
         # Other slots should be available
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-02" in result.output
 
 
 def test_slot_list_alias_ls() -> None:
@@ -112,7 +112,7 @@ def test_slot_list_alias_ls() -> None:
         result = runner.invoke(cli, ["slot", "ls"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
-        assert "erk-managed-wt-01" in result.output
+        assert "erk-slot-01" in result.output
 
 
 def test_slot_list_shows_reason_column() -> None:
@@ -122,7 +122,7 @@ def test_slot_list_shows_reason_column() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -143,7 +143,7 @@ def test_slot_list_shows_reason_column() -> None:
         state = PoolState.test(
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="feature-xyz",
                     assigned_at="2025-01-03T10:30:00+00:00",
                     worktree_path=worktree_path,
@@ -169,7 +169,7 @@ def test_slot_list_shows_dirty_for_uncommitted_changes() -> None:
         repo_dir = env.setup_repo_structure()
 
         # Create worktree directory
-        worktree_path = repo_dir / "worktrees" / "erk-managed-wt-01"
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
         worktree_path.mkdir(parents=True)
 
         git_ops = FakeGit(
@@ -191,7 +191,7 @@ def test_slot_list_shows_dirty_for_uncommitted_changes() -> None:
         state = PoolState.test(
             assignments=(
                 SlotAssignment(
-                    slot_name="erk-managed-wt-01",
+                    slot_name="erk-slot-01",
                     branch_name="feature-xyz",
                     assigned_at="2025-01-03T10:30:00+00:00",
                     worktree_path=worktree_path,

@@ -29,15 +29,15 @@ class SyncIssue:
     message: str
 
 
-def _find_erk_managed_dirs(worktrees_dir: Path, git: Git) -> set[str]:
-    """Find directories in worktrees_dir matching erk-managed-wt-* pattern.
+def _find_slot_dirs(worktrees_dir: Path, git: Git) -> set[str]:
+    """Find directories in worktrees_dir matching erk-slot-* pattern.
 
     Args:
         worktrees_dir: Path to the worktrees directory
         git: Git abstraction for path_exists and is_dir checks
 
     Returns:
-        Set of slot names (e.g., {"erk-managed-wt-01", "erk-managed-wt-02"})
+        Set of slot names (e.g., {"erk-slot-01", "erk-slot-02"})
     """
     if not git.path_exists(worktrees_dir):
         return set()
@@ -46,7 +46,7 @@ def _find_erk_managed_dirs(worktrees_dir: Path, git: Git) -> set[str]:
     # Iterate over worktrees_dir contents
     # Use path_exists to validate before iterdir
     for entry in worktrees_dir.iterdir():
-        if entry.name.startswith("erk-managed-wt-") and git.is_dir(entry):
+        if entry.name.startswith("erk-slot-") and git.is_dir(entry):
             result.add(entry.name)
     return result
 
@@ -54,18 +54,18 @@ def _find_erk_managed_dirs(worktrees_dir: Path, git: Git) -> set[str]:
 def _get_git_managed_slots(
     worktrees: list[WorktreeInfo], worktrees_dir: Path
 ) -> dict[str, WorktreeInfo]:
-    """Get worktrees that are erk-managed pool slots.
+    """Get worktrees that are erk pool slots.
 
     Args:
         worktrees: List of all git worktrees
         worktrees_dir: Path to the worktrees directory
 
     Returns:
-        Dict mapping slot name to WorktreeInfo for erk-managed slots
+        Dict mapping slot name to WorktreeInfo for pool slots
     """
     result: dict[str, WorktreeInfo] = {}
     for wt in worktrees:
-        if wt.path.parent == worktrees_dir and wt.path.name.startswith("erk-managed-wt-"):
+        if wt.path.parent == worktrees_dir and wt.path.name.startswith("erk-slot-"):
             result[wt.path.name] = wt
     return result
 
@@ -211,7 +211,7 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     git_slots = _get_git_managed_slots(worktrees, repo.worktrees_dir)
 
     # Get filesystem state
-    fs_slots = _find_erk_managed_dirs(repo.worktrees_dir, ctx.git)
+    fs_slots = _find_slot_dirs(repo.worktrees_dir, ctx.git)
 
     # Run all checks
     issues: list[SyncIssue] = []

@@ -524,7 +524,7 @@ class TestBuildBlockingMessage:
             plan_file_path=plan_path,
             objective_issue=None,
             plan_title="Add Feature X",
-            worktree_name="erk-managed-wt-02",
+            worktree_name="erk-slot-02",
             pr_number=4230,
             plan_issue_number=4224,
             editor=None,
@@ -532,7 +532,7 @@ class TestBuildBlockingMessage:
         # Title should be present
         assert "📋 Add Feature X" in message
         # Statusline-style context should be present
-        assert "(wt:erk-managed-wt-02)" in message
+        assert "(wt:erk-slot-02)" in message
         assert "(br:P4224-add-feature)" in message
         assert "(gh:#4230)" in message
         assert "(plan:#4224)" in message
@@ -546,7 +546,7 @@ class TestBuildBlockingMessage:
             plan_file_path=plan_path,
             objective_issue=None,
             plan_title=None,
-            worktree_name="erk-managed-wt-02",
+            worktree_name="erk-slot-02",
             pr_number=None,
             plan_issue_number=4224,
             editor=None,
@@ -554,7 +554,7 @@ class TestBuildBlockingMessage:
         # No title emoji
         assert "📋" not in message
         # Partial statusline context
-        assert "(wt:erk-managed-wt-02)" in message
+        assert "(wt:erk-slot-02)" in message
         assert "(br:feature-branch)" in message
         assert "(gh:#" not in message  # No PR
         assert "(plan:#4224)" in message

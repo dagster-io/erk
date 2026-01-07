@@ -1,7 +1,7 @@
 """Tests for wt list command filtering of empty slots (placeholder branches).
 
 By default, `erk wt list` should hide worktrees that have placeholder branches
-(e.g., `__erk-slot-07-placeholder__`), which represent unassigned slots in the
+(e.g., `__erk-slot-07-br-stub__`), which represent unassigned slots in the
 worktree pool. The `--all` flag overrides this to show all worktrees.
 """
 
@@ -18,8 +18,8 @@ def test_wt_list_hides_placeholder_branches_by_default() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_path = repo_dir / "worktrees" / "erk-managed-wt-01"
-        empty_slot_path = repo_dir / "worktrees" / "erk-managed-wt-02"
+        feature_path = repo_dir / "worktrees" / "erk-slot-01"
+        empty_slot_path = repo_dir / "worktrees" / "erk-slot-02"
 
         git_ops = FakeGit(
             worktrees={
@@ -28,7 +28,7 @@ def test_wt_list_hides_placeholder_branches_by_default() -> None:
                     WorktreeInfo(path=feature_path, branch="my-feature", is_root=False),
                     WorktreeInfo(
                         path=empty_slot_path,
-                        branch="__erk-slot-02-placeholder__",
+                        branch="__erk-slot-02-br-stub__",
                         is_root=False,
                     ),
                 ]
@@ -48,10 +48,10 @@ def test_wt_list_hides_placeholder_branches_by_default() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Root and feature worktree should be visible
         assert "root" in result.output
-        assert "erk-managed-wt-01" in result.output
+        assert "erk-slot-01" in result.output
         # Empty slot should be hidden
-        assert "erk-managed-wt-02" not in result.output
-        assert "__erk-slot-02-placeholder__" not in result.output
+        assert "erk-slot-02" not in result.output
+        assert "__erk-slot-02-br-stub__" not in result.output
 
 
 def test_wt_list_all_flag_shows_placeholder_branches() -> None:
@@ -59,8 +59,8 @@ def test_wt_list_all_flag_shows_placeholder_branches() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_path = repo_dir / "worktrees" / "erk-managed-wt-01"
-        empty_slot_path = repo_dir / "worktrees" / "erk-managed-wt-02"
+        feature_path = repo_dir / "worktrees" / "erk-slot-01"
+        empty_slot_path = repo_dir / "worktrees" / "erk-slot-02"
 
         git_ops = FakeGit(
             worktrees={
@@ -69,7 +69,7 @@ def test_wt_list_all_flag_shows_placeholder_branches() -> None:
                     WorktreeInfo(path=feature_path, branch="my-feature", is_root=False),
                     WorktreeInfo(
                         path=empty_slot_path,
-                        branch="__erk-slot-02-placeholder__",
+                        branch="__erk-slot-02-br-stub__",
                         is_root=False,
                     ),
                 ]
@@ -89,8 +89,8 @@ def test_wt_list_all_flag_shows_placeholder_branches() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # All worktrees should be visible with --all
         assert "root" in result.output
-        assert "erk-managed-wt-01" in result.output
-        assert "erk-managed-wt-02" in result.output
+        assert "erk-slot-01" in result.output
+        assert "erk-slot-02" in result.output
 
 
 def test_wt_list_short_all_flag() -> None:
@@ -98,7 +98,7 @@ def test_wt_list_short_all_flag() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        empty_slot_path = repo_dir / "worktrees" / "erk-managed-wt-03"
+        empty_slot_path = repo_dir / "worktrees" / "erk-slot-03"
 
         git_ops = FakeGit(
             worktrees={
@@ -106,7 +106,7 @@ def test_wt_list_short_all_flag() -> None:
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                     WorktreeInfo(
                         path=empty_slot_path,
-                        branch="__erk-slot-03-placeholder__",
+                        branch="__erk-slot-03-br-stub__",
                         is_root=False,
                     ),
                 ]
@@ -124,7 +124,7 @@ def test_wt_list_short_all_flag() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Empty slot should be visible with -a flag
-        assert "erk-managed-wt-03" in result.output
+        assert "erk-slot-03" in result.output
 
 
 def test_wt_list_hides_multiple_placeholder_branches() -> None:
@@ -132,9 +132,9 @@ def test_wt_list_hides_multiple_placeholder_branches() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        slot1_path = repo_dir / "worktrees" / "erk-managed-wt-01"
-        slot2_path = repo_dir / "worktrees" / "erk-managed-wt-02"
-        slot3_path = repo_dir / "worktrees" / "erk-managed-wt-03"
+        slot1_path = repo_dir / "worktrees" / "erk-slot-01"
+        slot2_path = repo_dir / "worktrees" / "erk-slot-02"
+        slot3_path = repo_dir / "worktrees" / "erk-slot-03"
 
         git_ops = FakeGit(
             worktrees={
@@ -142,17 +142,17 @@ def test_wt_list_hides_multiple_placeholder_branches() -> None:
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                     WorktreeInfo(
                         path=slot1_path,
-                        branch="__erk-slot-01-placeholder__",
+                        branch="__erk-slot-01-br-stub__",
                         is_root=False,
                     ),
                     WorktreeInfo(
                         path=slot2_path,
-                        branch="__erk-slot-02-placeholder__",
+                        branch="__erk-slot-02-br-stub__",
                         is_root=False,
                     ),
                     WorktreeInfo(
                         path=slot3_path,
-                        branch="__erk-slot-03-placeholder__",
+                        branch="__erk-slot-03-br-stub__",
                         is_root=False,
                     ),
                 ]
@@ -175,9 +175,9 @@ def test_wt_list_hides_multiple_placeholder_branches() -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Only root should be visible
         assert "root" in result.output
-        assert "erk-managed-wt-01" not in result.output
-        assert "erk-managed-wt-02" not in result.output
-        assert "erk-managed-wt-03" not in result.output
+        assert "erk-slot-01" not in result.output
+        assert "erk-slot-02" not in result.output
+        assert "erk-slot-03" not in result.output
 
 
 def test_wt_list_preserves_non_placeholder_worktrees() -> None:
@@ -249,7 +249,7 @@ def test_wt_list_ls_alias_respects_filtering() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        empty_slot_path = repo_dir / "worktrees" / "erk-managed-wt-05"
+        empty_slot_path = repo_dir / "worktrees" / "erk-slot-05"
 
         git_ops = FakeGit(
             worktrees={
@@ -257,7 +257,7 @@ def test_wt_list_ls_alias_respects_filtering() -> None:
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                     WorktreeInfo(
                         path=empty_slot_path,
-                        branch="__erk-slot-05-placeholder__",
+                        branch="__erk-slot-05-br-stub__",
                         is_root=False,
                     ),
                 ]
@@ -275,7 +275,7 @@ def test_wt_list_ls_alias_respects_filtering() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Empty slot should be hidden even with 'ls' alias
-        assert "erk-managed-wt-05" not in result.output
+        assert "erk-slot-05" not in result.output
 
 
 def test_wt_list_ls_alias_all_flag() -> None:
@@ -283,7 +283,7 @@ def test_wt_list_ls_alias_all_flag() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        empty_slot_path = repo_dir / "worktrees" / "erk-managed-wt-05"
+        empty_slot_path = repo_dir / "worktrees" / "erk-slot-05"
 
         git_ops = FakeGit(
             worktrees={
@@ -291,7 +291,7 @@ def test_wt_list_ls_alias_all_flag() -> None:
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
                     WorktreeInfo(
                         path=empty_slot_path,
-                        branch="__erk-slot-05-placeholder__",
+                        branch="__erk-slot-05-br-stub__",
                         is_root=False,
                     ),
                 ]
@@ -309,4 +309,4 @@ def test_wt_list_ls_alias_all_flag() -> None:
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
         # Empty slot should be visible with --all
-        assert "erk-managed-wt-05" in result.output
+        assert "erk-slot-05" in result.output

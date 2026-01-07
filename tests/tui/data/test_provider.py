@@ -32,7 +32,7 @@ class TestBuildWorktreeMapping:
     def test_pool_managed_worktree_extracts_from_branch_name(self, tmp_path: Path) -> None:
         """Pool-managed worktree with generic directory name maps via branch.
 
-        The directory name is 'erk-managed-wt-02' (no issue prefix),
+        The directory name is 'erk-slot-02' (no issue prefix),
         but the branch name is 'P4280-add-required-kwargs-01-05-2230',
         so issue 4280 should be extracted from the branch.
         """
@@ -43,7 +43,7 @@ class TestBuildWorktreeMapping:
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir()
 
-        worktree_path = tmp_path / "worktrees" / "erk-managed-wt-02"
+        worktree_path = tmp_path / "worktrees" / "erk-slot-02"
         branch_name = "P4280-add-required-kwargs-01-05-2230"
 
         git = FakeGit(
@@ -79,7 +79,7 @@ class TestBuildWorktreeMapping:
         # Issue 4280 should be extracted from the branch name
         assert 4280 in mapping
         worktree_name, worktree_branch = mapping[4280]
-        assert worktree_name == "erk-managed-wt-02"
+        assert worktree_name == "erk-slot-02"
         assert worktree_branch == branch_name
 
     def test_issue_named_worktree_extracts_from_branch_name(self, tmp_path: Path) -> None:
