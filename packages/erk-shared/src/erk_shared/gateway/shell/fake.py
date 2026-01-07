@@ -5,9 +5,20 @@ requiring specific shell configurations or installed tools.
 """
 
 import subprocess
+from dataclasses import dataclass
 from pathlib import Path
 
 from erk_shared.gateway.shell.abc import Shell
+
+
+@dataclass(frozen=True)
+class SpawnSubshellCall:
+    """Record of a spawn_subshell call for test assertions."""
+
+    cwd: Path
+    shell_path: str
+    command: str
+    env: dict[str, str]
 
 
 class FakeShell(Shell):
@@ -51,6 +62,7 @@ class FakeShell(Shell):
         tool_versions: dict[str, str] | None = None,
         claude_extraction_raises: bool = False,
         extraction_plan_url: str | None = None,
+        subshell_exit_code: int = 0,
     ) -> None:
         """Initialize fake with predetermined shell and tool availability.
 
@@ -64,6 +76,7 @@ class FakeShell(Shell):
             claude_extraction_raises: If True, run_claude_extraction_plan will raise
                 CalledProcessError
             extraction_plan_url: URL to return from run_claude_extraction_plan on success
+            subshell_exit_code: Exit code to return from spawn_subshell()
         """
         self._detected_shell = detected_shell
         self._installed_tools = installed_tools or {}
@@ -71,6 +84,8 @@ class FakeShell(Shell):
         self._extraction_calls: list[Path] = []
         self._claude_extraction_raises = claude_extraction_raises
         self._extraction_plan_url = extraction_plan_url
+        self._subshell_exit_code = subshell_exit_code
+        self._subshell_calls: list[SpawnSubshellCall] = []
 
     def detect_shell(self) -> tuple[str, Path] | None:
         """Return the shell configured at construction time."""
@@ -109,3 +124,36 @@ class FakeShell(Shell):
         This property is for test assertions only.
         """
         return self._extraction_calls.copy()
+
+    def spawn_subshell(
+        self,
+        *,
+        cwd: Path,
+        shell_path: str,
+        command: str,
+        env: dict[str, str],
+    ) -> int:
+        """Record spawn_subshell call and return configured exit code.
+
+        This method records the call parameters for test assertions.
+        Returns the exit code configured at construction time.
+        """
+        self._subshell_calls.append(
+            SpawnSubshellCall(
+                cwd=cwd,
+                shell_path=shell_path,
+                command=command,
+                env=env.copy(),
+            )
+        )
+        return self._subshell_exit_code
+
+    @property
+    def subshell_calls(self) -> list[SpawnSubshellCall]:
+        """Get the list of spawn_subshell() calls that were made.
+
+        Returns list of SpawnSubshellCall records with call parameters.
+
+        This property is for test assertions only.
+        """
+        return self._subshell_calls.copy()

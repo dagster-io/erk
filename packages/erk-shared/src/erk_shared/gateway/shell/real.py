@@ -78,6 +78,52 @@ class RealShell(Shell):
         # so we search from the end of stdout to find the JSON line
         return _extract_issue_url_from_output(result.stdout)
 
+    def spawn_subshell(
+        self,
+        *,
+        cwd: Path,
+        shell_path: str,
+        command: str,
+        env: dict[str, str],
+    ) -> int:
+        """Spawn an interactive subshell using subprocess.run.
+
+        Implementation details:
+        - Uses shell -c to execute the command, then exec back to interactive shell
+        - Merges provided env with current environment
+        - Returns the subprocess exit code
+        """
+        shell_name = Path(shell_path).name
+
+        # For bash/zsh/sh, use -i for interactive and -c to run initial command
+        # After command exits, exec back to interactive shell
+        if shell_name in ("bash", "zsh", "sh"):
+            shell_args = [
+                shell_path,
+                "-c",
+                f"{command}; exec {shell_path} -i",
+            ]
+        else:
+            # For other shells, just run command then start interactive shell
+            shell_args = [
+                shell_path,
+                "-c",
+                f"{command}; exec {shell_path}",
+            ]
+
+        # Merge environments - provided env takes precedence
+        merged_env = os.environ.copy()
+        merged_env.update(env)
+
+        # Intentionally omit check=True to capture and return exit code
+        result = subprocess.run(
+            shell_args,
+            cwd=cwd,
+            env=merged_env,
+        )
+
+        return result.returncode
+
 
 def _extract_issue_url_from_output(output: str) -> str | None:
     """Extract issue_url from Claude CLI output that may contain mixed content.

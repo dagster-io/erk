@@ -5,6 +5,7 @@ This module contains the common logic for erk implement - worktree-based impleme
 
 import re
 import shlex
+import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,6 +15,7 @@ import click
 
 from erk.cli.activation import render_activation_script
 from erk.cli.help_formatter import script_option
+from erk.cli.subshell import is_shell_integration_active, spawn_worktree_subshell
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
 from erk.core.worktree_utils import compute_relative_path_in_worktree
@@ -256,6 +258,13 @@ def execute_interactive_mode(
 ) -> None:
     """Execute implementation in interactive mode using executor.
 
+    When shell integration is active (ERK_SHELL is set), uses the existing
+    executor.execute_interactive() which replaces the current process.
+
+    When shell integration is not active, spawns a subshell in the worktree
+    directory and auto-launches Claude within it. This allows users to work
+    without configuring shell integration.
+
     Args:
         ctx: Erk context for accessing git and current working directory
         repo_root: Path to repository root for listing worktrees
@@ -268,21 +277,40 @@ def execute_interactive_mode(
         click.ClickException: If Claude CLI not found
 
     Note:
-        This function never returns in production - the process is replaced by Claude
+        With shell integration: This function never returns - process is replaced
+        Without shell integration: Returns when user exits the subshell
     """
-    click.echo("Entering interactive implementation mode...", err=True)
-    try:
-        executor.execute_interactive(
+    if is_shell_integration_active():
+        # Shell integration handles activation - use existing flow
+        click.echo("Entering interactive implementation mode...", err=True)
+        try:
+            executor.execute_interactive(
+                worktree_path=worktree_path,
+                dangerous=dangerous,
+                command="/erk:plan-implement",
+                target_subpath=compute_relative_path_in_worktree(
+                    ctx.git.list_worktrees(repo_root), ctx.cwd
+                ),
+                model=model,
+            )
+        except RuntimeError as e:
+            raise click.ClickException(str(e)) from e
+    else:
+        # No shell integration - spawn subshell with Claude
+        click.echo("Spawning worktree subshell...", err=True)
+        branch = ctx.git.get_current_branch(worktree_path)
+        if branch is None:
+            branch = worktree_path.name
+        exit_code = spawn_worktree_subshell(
+            ctx.shell,
             worktree_path=worktree_path,
+            branch=branch,
+            claude_command="/erk:plan-implement",
             dangerous=dangerous,
-            command="/erk:plan-implement",
-            target_subpath=compute_relative_path_in_worktree(
-                ctx.git.list_worktrees(repo_root), ctx.cwd
-            ),
             model=model,
+            shell=None,
         )
-    except RuntimeError as e:
-        raise click.ClickException(str(e)) from e
+        sys.exit(exit_code)
 
 
 def execute_non_interactive_mode(
