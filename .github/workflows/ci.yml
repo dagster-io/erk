@@ -315,10 +315,9 @@ jobs:
 
           echo "Debug: Got prompt (${#prompt} chars)"
 
-          claude --print \
+          echo "$prompt" | claude --print \
             --model claude-sonnet-4-20250514 \
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)' \
-            "$prompt"
+            --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
