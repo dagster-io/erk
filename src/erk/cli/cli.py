@@ -18,7 +18,7 @@ from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.implement import implement
 from erk.cli.commands.info import info_group
-from erk.cli.commands.init import init_cmd
+from erk.cli.commands.init import init_group
 from erk.cli.commands.land_cmd import land
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
@@ -188,7 +188,7 @@ cli.add_command(config_group)
 cli.add_command(doctor_cmd)
 cli.add_command(down_cmd)
 register_with_aliases(cli, implement)  # Has @alias("impl")
-cli.add_command(init_cmd)
+cli.add_command(init_group)
 cli.add_command(land)
 admin_group.add_command(log_cmd)
 cli.add_command(dash)

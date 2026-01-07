@@ -25,7 +25,7 @@ import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.init import perform_statusline_setup
+from erk.cli.commands.init.main import perform_statusline_setup
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.git.fake import FakeGit
@@ -45,7 +45,7 @@ def test_statusline_setup_configures_empty_settings(
     settings_path.write_text("{}", encoding="utf-8")
 
     # Mock user_confirm to return True (confirm write)
-    with mock.patch("erk.cli.commands.init.user_confirm", return_value=True):
+    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=True):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were written
@@ -65,7 +65,7 @@ def test_statusline_setup_creates_settings_if_missing(
     settings_path = tmp_path / ".claude" / "settings.json"
 
     # Mock user_confirm to return True (confirm write)
-    with mock.patch("erk.cli.commands.init.user_confirm", return_value=True):
+    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=True):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify file was created
@@ -115,7 +115,7 @@ def test_statusline_setup_prompts_for_different_command(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
     # Mock user_confirm to return False (decline replacement)
-    with mock.patch("erk.cli.commands.init.user_confirm", return_value=False):
+    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=False):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were NOT changed
@@ -142,7 +142,7 @@ def test_statusline_setup_replaces_when_confirmed(
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
     # Mock user_confirm to return True for both prompts
-    with mock.patch("erk.cli.commands.init.user_confirm", return_value=True):
+    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=True):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were updated
@@ -171,7 +171,7 @@ def test_init_statusline_flag_recognized() -> None:
         )
 
         # Mock the function to avoid HOME dependency in CLI test
-        with mock.patch("erk.cli.commands.init.perform_statusline_setup") as mock_setup:
+        with mock.patch("erk.cli.commands.init.main.perform_statusline_setup") as mock_setup:
             result = runner.invoke(cli, ["init", "--statusline"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output

@@ -1,0 +1,95 @@
+"""Init command group for erk initialization and capability management."""
+
+import click
+
+from erk.cli.commands.init.capability import capability_group
+from erk.cli.commands.init.main import (
+    _get_presets_dir,
+    discover_presets,
+    run_init,
+)
+from erk.cli.help_formatter import ErkCommandGroup
+from erk.core.context import ErkContext
+
+
+@click.group("init", cls=ErkCommandGroup, invoke_without_command=True)
+@click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
+@click.option(
+    "--preset",
+    type=str,
+    default="auto",
+    help=(
+        "Config template to use. 'auto' detects preset based on repo characteristics. "
+        f"Available: auto, {', '.join(discover_presets(_get_presets_dir()))}."
+    ),
+)
+@click.option(
+    "--list-presets",
+    is_flag=True,
+    help="List available presets and exit.",
+)
+@click.option(
+    "--shell",
+    is_flag=True,
+    help="Show shell integration setup instructions (completion + auto-activation wrapper).",
+)
+@click.option(
+    "--hooks",
+    "hooks_only",
+    is_flag=True,
+    help="Only set up Claude Code hooks.",
+)
+@click.option(
+    "--statusline",
+    "statusline_only",
+    is_flag=True,
+    help="Only configure erk-statusline in Claude Code.",
+)
+@click.option(
+    "--no-interactive",
+    "no_interactive",
+    is_flag=True,
+    help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
+)
+@click.option(
+    "--with-dignified-review",
+    "with_dignified_review",
+    is_flag=True,
+    help="Install dignified-python skill and review workflow.",
+)
+@click.pass_context
+def init_group(
+    ctx: click.Context,
+    *,
+    force: bool,
+    preset: str,
+    list_presets: bool,
+    shell: bool,
+    hooks_only: bool,
+    statusline_only: bool,
+    no_interactive: bool,
+    with_dignified_review: bool,
+) -> None:
+    """Initialize erk for this repo and scaffold config.toml.
+
+    When run without a subcommand, performs full initialization.
+    Use 'erk init capability' subcommands to manage optional features.
+    """
+    if ctx.invoked_subcommand is None:
+        # Run main init when no subcommand given
+        erk_ctx: ErkContext = ctx.obj
+        run_init(
+            erk_ctx,
+            force=force,
+            preset=preset,
+            list_presets=list_presets,
+            shell=shell,
+            hooks_only=hooks_only,
+            statusline_only=statusline_only,
+            no_interactive=no_interactive,
+            with_dignified_review=with_dignified_review,
+        )
+
+
+# Register subcommands
+init_group.add_command(capability_group)

@@ -4,7 +4,7 @@ These tests verify the label creation logic for the plans repository.
 Uses FakeGitHubIssues to test label creation behavior.
 """
 
-from erk.cli.commands.init import create_plans_repo_labels
+from erk.cli.commands.init.main import create_plans_repo_labels
 from erk_shared.github.issues import FakeGitHubIssues
 from tests.test_utils.paths import sentinel_path
 
