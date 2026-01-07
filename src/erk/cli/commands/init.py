@@ -207,12 +207,14 @@ def perform_shell_setup(shell_ops: Shell) -> bool:
         rc_file = rc_file.resolve()
 
     user_output(f"\nDetected shell: {shell}")
-    user_output("Shell integration provides:")
+    user_output("Shell integration is an optional enhancement that provides:")
     user_output("  - Tab completion for erk commands")
-    user_output("  - Automatic worktree activation on 'erk br co'")
+    user_output("  - Seamless 'cd' behavior on 'erk br co' (instead of subshell)")
+    user_output("Note: erk works without this - worktree commands spawn subshells by default.")
 
-    if not click.confirm("\nShow shell integration setup instructions?", default=True):
-        user_output("Skipping shell integration. You can run 'erk init --shell' later.")
+    if not click.confirm("\nSet up shell integration?", default=False):
+        user_output("Skipping. Erk will use subshells for worktree navigation (works great!).")
+        user_output("You can add shell integration later with 'erk init --shell'.")
         return False
 
     # Generate the instructions
@@ -724,9 +726,9 @@ def init_cmd(
             offer_backup_cleanup(pending_backup)
 
     # =========================================================================
-    # STEP 3: User Configuration (always runs)
+    # STEP 3: Optional Enhancements (always runs)
     # =========================================================================
-    user_output("\nStep 3: User configuration...")
+    user_output("\nStep 3: Optional enhancements...")
 
     # Skip interactive prompts if requested
     interactive = not no_interactive

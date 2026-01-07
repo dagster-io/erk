@@ -180,7 +180,7 @@ def test_init_stepped_flow_shows_three_steps() -> None:
         # Verify three steps are shown
         assert "Step 1: Checking repository..." in result.output
         assert "Step 2: Project configuration..." in result.output
-        assert "Step 3: User configuration..." in result.output
+        assert "Step 3: Optional enhancements..." in result.output
         assert "Initialization complete!" in result.output
 
 
