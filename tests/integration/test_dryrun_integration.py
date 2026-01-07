@@ -51,7 +51,6 @@ def test_dryrun_context_creation(tmp_path: Path, monkeypatch: pytest.MonkeyPatch
         f"""erk_root = "{erk_root}"
 use_graphite = false
 shell_setup_complete = false
-show_pr_info = true
 """,
         encoding="utf-8",
     )
@@ -99,7 +98,6 @@ def test_dryrun_read_operations_still_work(tmp_path: Path) -> None:
         tmp_path / "erks",
         use_graphite=False,
         shell_setup_complete=False,
-        show_pr_info=False,  # This test is about dry-run operations, not PR info
     )
 
     # Wrap fakes in dry-run wrappers

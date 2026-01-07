@@ -50,8 +50,7 @@ def test_preserves_multiline_content(tmp_path: Path) -> None:
     preset = presets_dir / "python.toml"
     preset.write_text(
         """trunk_branch = 'main'
-worktree_prefix = 'wt-'
-show_pr_info = true""",
+worktree_prefix = 'wt-'""",
         encoding="utf-8",
     )
 
@@ -59,4 +58,3 @@ show_pr_info = true""",
 
     assert "trunk_branch = 'main'" in result
     assert "worktree_prefix = 'wt-'" in result
-    assert "show_pr_info = true" in result

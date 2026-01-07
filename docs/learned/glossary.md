@@ -289,7 +289,6 @@ Configuration stored in `~/.erk/config.toml`.
 ```toml
 erks_root = "/Users/you/worktrees"
 use_graphite = true
-show_pr_info = true
 shell_setup_complete = true
 ```
 

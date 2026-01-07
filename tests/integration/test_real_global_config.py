@@ -21,7 +21,6 @@ def test_global_config_test_factory_method(tmp_path: Path) -> None:
     assert config.erk_root == tmp_path / "erks"
     assert config.use_graphite is True
     assert config.shell_setup_complete is True
-    assert config.show_pr_info is True
     assert config.github_planning is True
     assert config.show_hidden_commands is False
 
@@ -38,7 +37,6 @@ def test_global_config_test_factory_with_overrides(tmp_path: Path) -> None:
     assert config.erk_root == tmp_path / "erks"
     assert config.use_graphite is False
     assert config.shell_setup_complete is False
-    assert config.show_pr_info is True  # Still default
     assert config.github_planning is True  # Still default
     assert config.show_hidden_commands is True
 
@@ -129,7 +127,6 @@ def test_real_config_store_roundtrip_show_hidden_commands(
         erk_root=tmp_path / "erks",
         use_graphite=True,
         shell_setup_complete=True,
-        show_pr_info=True,
         github_planning=True,
         show_hidden_commands=True,
     )

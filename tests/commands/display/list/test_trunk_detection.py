@@ -54,7 +54,6 @@ def test_list_with_trunk_branch(trunk_branch: str) -> None:
             graphite=graphite_ops,
             repo=env.repo,
             use_graphite=True,
-            show_pr_info=False,
         )
 
         result = runner.invoke(cli, ["wt", "list"], obj=ctx)

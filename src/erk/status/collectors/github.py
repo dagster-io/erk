@@ -23,15 +23,9 @@ class GitHubPRCollector(StatusCollector):
             worktree_path: Path to worktree
 
         Returns:
-            True if PR info is enabled in config
+            True if worktree exists
         """
-        if not (ctx.global_config and ctx.global_config.show_pr_info):
-            return False
-
-        if not worktree_path.exists():
-            return False
-
-        return True
+        return worktree_path.exists()
 
     def collect(
         self, ctx: ErkContext, worktree_path: Path, repo_root: Path

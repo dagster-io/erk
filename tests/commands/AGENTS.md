@@ -72,7 +72,6 @@ global_config = GlobalConfig(
     erks_root=env.erks_root,
     use_graphite=False,
     shell_setup_complete=False,
-    show_pr_info=True,
     show_pr_checks=False,
 )
 
@@ -131,7 +130,6 @@ test_ctx = env.build_context(
 - `shell`: Custom Shell implementation
 - `script_writer`: Custom ScriptWriter implementation
 - `use_graphite`: Enable Graphite integration (default: False)
-- `show_pr_info`: Show PR information (default: True)
 - `show_pr_checks`: Show PR checks (default: False)
 - `dry_run`: Enable dry-run mode (default: False)
 - `cwd`: Override current working directory (default: env.cwd)

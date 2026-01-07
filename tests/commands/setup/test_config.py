@@ -43,7 +43,6 @@ def test_config_list_displays_global_config() -> None:
         assert "Global configuration:" in result.output
         assert "erk_root=" in result.output
         assert "use_graphite=true" in result.output
-        assert "show_pr_info=true" in result.output
 
 
 def test_config_list_displays_repo_config() -> None:
@@ -188,21 +187,6 @@ def test_config_get_use_graphite() -> None:
         )
 
         result = runner.invoke(cli, ["config", "get", "use_graphite"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        assert "true" in result.output.strip()
-
-
-def test_config_get_show_pr_info() -> None:
-    """Test getting show_pr_info config value."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        test_ctx = env.build_context(
-            git=git_ops,
-        )
-
-        result = runner.invoke(cli, ["config", "get", "show_pr_info"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         assert "true" in result.output.strip()

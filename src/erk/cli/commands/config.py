@@ -26,7 +26,6 @@ def get_global_config_keys() -> dict[str, str]:
     return {
         "erk_root": "Root directory for erk data (~/.erk by default)",
         "use_graphite": "Enable Graphite integration for stack management",
-        "show_pr_info": "Show PR status in branch listings",
         "github_planning": "Enable GitHub issues integration for planning",
         "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",

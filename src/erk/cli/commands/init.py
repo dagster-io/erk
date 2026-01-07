@@ -65,7 +65,6 @@ def create_and_save_global_config(
         erk_root=erk_root,
         use_graphite=use_graphite,
         shell_setup_complete=shell_setup_complete,
-        show_pr_info=True,
         github_planning=True,
     )
     ctx.erk_installation.save_config(config)
@@ -566,7 +565,6 @@ def init_cmd(
                 erk_root=ctx.global_config.erk_root,
                 use_graphite=ctx.global_config.use_graphite,
                 shell_setup_complete=True,
-                show_pr_info=ctx.global_config.show_pr_info,
                 github_planning=ctx.global_config.github_planning,
             )
             try:
@@ -757,7 +755,6 @@ def init_cmd(
                             erk_root=fresh_config.erk_root,
                             use_graphite=fresh_config.use_graphite,
                             shell_setup_complete=True,
-                            show_pr_info=fresh_config.show_pr_info,
                             github_planning=fresh_config.github_planning,
                         )
                         ctx.erk_installation.save_config(new_config)
@@ -781,7 +778,6 @@ def init_cmd(
                                 erk_root=fresh_config.erk_root,
                                 use_graphite=fresh_config.use_graphite,
                                 shell_setup_complete=True,
-                                show_pr_info=fresh_config.show_pr_info,
                                 github_planning=fresh_config.github_planning,
                             )
                             try:
