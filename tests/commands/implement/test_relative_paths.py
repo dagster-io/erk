@@ -57,7 +57,7 @@ def test_interactive_mode_preserves_relative_path_from_subdirectory() -> None:
         assert len(executor.interactive_calls) == 1
         worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
         assert dangerous is False
-        assert command == "/erk:plan-implement"
+        assert command == "/erk:system:impl-execute"
         # The relative path from worktree root to src/lib should be passed
         assert target_subpath == Path("src/lib")
         assert model is None
