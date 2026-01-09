@@ -852,9 +852,13 @@ def test_check_legacy_slot_naming_has_old_style(tmp_path: Path) -> None:
     assert "Legacy slot naming found" in result.message
     assert "2 assignment(s)" in result.message
     assert "erk-managed-wt-XX" in result.message
+    assert result.details is not None
+    assert "erk-managed-wt-01" in result.details
+    assert "erk-managed-wt-02" in result.details
     assert result.remediation is not None
     assert "test-repo" in result.remediation
     assert "pool.json" in result.remediation
+    assert "remove assignments for:" in result.remediation
     assert "git worktree prune" in result.remediation
 
 
@@ -894,3 +898,6 @@ def test_check_legacy_slot_naming_mixed_styles(tmp_path: Path) -> None:
     assert result.passed is False
     assert "Legacy slot naming found" in result.message
     assert "1 assignment(s)" in result.message  # Only the old-style one counts
+    assert result.details is not None
+    assert "erk-managed-wt-02" in result.details
+    assert "erk-slot-01" not in result.details  # New-style should not be listed
