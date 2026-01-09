@@ -83,12 +83,12 @@ def test_format_subshell_welcome_message_is_concise(tmp_path: Path) -> None:
 def test_build_claude_command_string_basic() -> None:
     """build_claude_command_string creates basic command."""
     result = build_claude_command_string(
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
     )
 
-    assert "/erk:plan-implement" in result
+    assert "/erk:system:impl-execute" in result
     assert "--permission-mode" in result
     assert "acceptEdits" in result
 
@@ -96,7 +96,7 @@ def test_build_claude_command_string_basic() -> None:
 def test_build_claude_command_string_with_dangerous() -> None:
     """build_claude_command_string includes dangerous flag."""
     result = build_claude_command_string(
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=True,
         model=None,
     )
@@ -107,7 +107,7 @@ def test_build_claude_command_string_with_dangerous() -> None:
 def test_build_claude_command_string_with_model() -> None:
     """build_claude_command_string includes model flag."""
     result = build_claude_command_string(
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model="opus",
     )
@@ -176,7 +176,7 @@ def test_spawn_worktree_subshell_calls_gateway(tmp_path: Path) -> None:
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
         shell="/bin/bash",
@@ -197,7 +197,7 @@ def test_spawn_worktree_subshell_sets_environment_variables(tmp_path: Path) -> N
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
         shell="/bin/bash",
@@ -222,7 +222,7 @@ def test_spawn_worktree_subshell_sets_cwd_to_worktree(tmp_path: Path) -> None:
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
         shell="/bin/bash",
@@ -243,7 +243,7 @@ def test_spawn_worktree_subshell_returns_exit_code(tmp_path: Path) -> None:
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
         shell="/bin/bash",
@@ -263,14 +263,14 @@ def test_spawn_worktree_subshell_includes_claude_command(tmp_path: Path) -> None
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
         shell="/bin/bash",
     )
 
     call = shell.subshell_calls[0]
-    assert "/erk:plan-implement" in call.command
+    assert "/erk:system:impl-execute" in call.command
     assert "--permission-mode" in call.command
     assert "acceptEdits" in call.command
 
@@ -286,7 +286,7 @@ def test_spawn_worktree_subshell_includes_dangerous_flag_when_set(tmp_path: Path
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=True,
         model=None,
         shell="/bin/bash",
@@ -307,7 +307,7 @@ def test_spawn_worktree_subshell_includes_model_flag_when_set(tmp_path: Path) ->
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model="opus",
         shell="/bin/bash",
@@ -329,7 +329,7 @@ def test_spawn_worktree_subshell_passes_shell_path(tmp_path: Path) -> None:
         shell,
         worktree_path=worktree_path,
         branch="feature-branch",
-        claude_command="/erk:plan-implement",
+        claude_command="/erk:system:impl-execute",
         dangerous=False,
         model=None,
         shell="/bin/zsh",
@@ -353,7 +353,7 @@ def test_spawn_worktree_subshell_includes_prompt_setup(tmp_path: Path) -> None:
             shell,
             worktree_path=worktree_path,
             branch="feature-branch",
-            claude_command="/erk:plan-implement",
+            claude_command="/erk:system:impl-execute",
             dangerous=False,
             model=None,
             shell="/bin/bash",
@@ -363,7 +363,7 @@ def test_spawn_worktree_subshell_includes_prompt_setup(tmp_path: Path) -> None:
     # Command should start with prompt setup
     assert call.command.startswith('export PS1="(erk:$ERK_WORKTREE_NAME) $PS1"')
     # And still include the claude command
-    assert "/erk:plan-implement" in call.command
+    assert "/erk:system:impl-execute" in call.command
 
 
 def test_spawn_worktree_subshell_skips_prompt_setup_when_opt_out(tmp_path: Path) -> None:
@@ -378,7 +378,7 @@ def test_spawn_worktree_subshell_skips_prompt_setup_when_opt_out(tmp_path: Path)
             shell,
             worktree_path=worktree_path,
             branch="feature-branch",
-            claude_command="/erk:plan-implement",
+            claude_command="/erk:system:impl-execute",
             dangerous=False,
             model=None,
             shell="/bin/bash",
@@ -388,7 +388,7 @@ def test_spawn_worktree_subshell_skips_prompt_setup_when_opt_out(tmp_path: Path)
     # Command should NOT contain prompt setup
     assert "export PS1" not in call.command
     # But still include the claude command
-    assert "/erk:plan-implement" in call.command
+    assert "/erk:system:impl-execute" in call.command
 
 
 def test_spawn_worktree_subshell_passes_opt_out_env_variable(tmp_path: Path) -> None:
@@ -403,7 +403,7 @@ def test_spawn_worktree_subshell_passes_opt_out_env_variable(tmp_path: Path) -> 
             shell,
             worktree_path=worktree_path,
             branch="feature-branch",
-            claude_command="/erk:plan-implement",
+            claude_command="/erk:system:impl-execute",
             dangerous=False,
             model=None,
             shell="/bin/bash",
@@ -428,7 +428,7 @@ def test_spawn_worktree_subshell_skips_prompt_setup_for_fish(tmp_path: Path) -> 
             shell,
             worktree_path=worktree_path,
             branch="feature-branch",
-            claude_command="/erk:plan-implement",
+            claude_command="/erk:system:impl-execute",
             dangerous=False,
             model=None,
             shell="/usr/local/bin/fish",
@@ -438,7 +438,7 @@ def test_spawn_worktree_subshell_skips_prompt_setup_for_fish(tmp_path: Path) -> 
     # Command should NOT contain prompt setup for fish
     assert "export PS1" not in call.command
     # But still include the claude command
-    assert "/erk:plan-implement" in call.command
+    assert "/erk:system:impl-execute" in call.command
 
 
 # spawn_simple_subshell tests using FakeShell
@@ -539,7 +539,7 @@ def test_spawn_simple_subshell_does_not_include_claude_command(tmp_path: Path) -
     call = shell.subshell_calls[0]
     # Command should NOT contain any claude command
     assert "claude" not in call.command if call.command else True
-    assert "/erk:plan-implement" not in (call.command or "")
+    assert "/erk:system:impl-execute" not in (call.command or "")
 
 
 def test_spawn_simple_subshell_includes_prompt_setup(tmp_path: Path) -> None:

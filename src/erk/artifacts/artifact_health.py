@@ -74,7 +74,7 @@ ArtifactStatusType = Literal["up-to-date", "changed-upstream", "locally-modified
 class ArtifactStatus:
     """Per-artifact status comparing installed vs bundled state."""
 
-    name: str  # e.g. "skills/dignified-python", "commands/erk/plan-implement.md"
+    name: str  # e.g. "skills/dignified-python", "commands/erk/system/impl-execute.md"
     installed_version: str | None  # version at sync time, None if not tracked
     current_version: str  # current erk version
     installed_hash: str | None  # hash at sync time, None if not tracked
@@ -229,12 +229,14 @@ def get_artifact_health(
 
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
-    # Check commands (enumerate erk commands from bundled source)
+    # Check commands (enumerate erk commands from bundled source, including nested dirs)
     bundled_erk_commands = bundled_claude_dir / "commands" / "erk"
     if bundled_erk_commands.exists():
-        for cmd_file in sorted(bundled_erk_commands.glob("*.md")):
-            key = f"commands/erk/{cmd_file.name}"
-            path = project_claude_dir / "commands" / "erk" / cmd_file.name
+        for cmd_file in sorted(bundled_erk_commands.rglob("*.md")):
+            # Compute relative path (e.g., "system/impl-execute.md" or "plan-save.md")
+            relative_path = cmd_file.relative_to(bundled_erk_commands)
+            key = f"commands/erk/{relative_path}"
+            path = project_claude_dir / "commands" / "erk" / relative_path
             installed_hash = _compute_path_hash(path, is_directory=False)
             artifacts.append(
                 _build_artifact_status(key, installed_hash, saved_files, current_version)

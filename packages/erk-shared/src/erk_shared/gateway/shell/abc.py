@@ -128,7 +128,7 @@ class Shell(ABC):
             >>> exit_code = shell_ops.spawn_subshell(
             ...     cwd=Path("/worktree"),
             ...     shell_path="/bin/bash",
-            ...     command="claude --print '/erk:plan-implement'",
+            ...     command="claude --print '/erk:system:impl-execute'",
             ...     env={"ERK_SUBSHELL": "1"},
             ... )
         """

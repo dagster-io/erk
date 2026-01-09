@@ -80,7 +80,7 @@ def build_claude_command_string(
     """Build the quoted Claude CLI command string for shell execution.
 
     Args:
-        claude_command: The slash command to execute (e.g., "/erk:plan-implement")
+        claude_command: The slash command to execute (e.g., "/erk:system:impl-execute")
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
 
@@ -124,7 +124,7 @@ def spawn_worktree_subshell(
         shell_gateway: Shell gateway for spawning the subshell
         worktree_path: Path to worktree directory
         branch: Current branch name (for display in welcome message)
-        claude_command: The slash command to execute (e.g., "/erk:plan-implement")
+        claude_command: The slash command to execute (e.g., "/erk:system:impl-execute")
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         shell: Override for user's shell (for testing), None uses $SHELL

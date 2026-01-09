@@ -303,6 +303,39 @@ def test_sync_commands_only_syncs_erk_namespace(tmp_path: Path) -> None:
     assert not (target_dir / "gt").exists()
 
 
+def test_sync_commands_handles_nested_directories(tmp_path: Path) -> None:
+    """_sync_commands correctly syncs nested command directories."""
+    source_dir = tmp_path / "source" / "commands"
+
+    # Create flat erk command
+    erk_commands = source_dir / "erk"
+    erk_commands.mkdir(parents=True)
+    (erk_commands / "plan-save.md").write_text("# Flat Command", encoding="utf-8")
+
+    # Create nested erk command (e.g., commands/erk/system/impl-execute.md)
+    nested_commands = erk_commands / "system"
+    nested_commands.mkdir(parents=True)
+    (nested_commands / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
+
+    target_dir = tmp_path / "target" / "commands"
+
+    copied, synced = _sync_commands(source_dir, target_dir)
+
+    # Should copy both files (flat + nested)
+    assert copied == 2
+
+    # Flat command should exist
+    assert (target_dir / "erk" / "plan-save.md").exists()
+
+    # Nested command should exist
+    assert (target_dir / "erk" / "system" / "impl-execute.md").exists()
+
+    # Verify synced artifacts have correct keys with relative paths
+    synced_keys = {s.key for s in synced}
+    assert "commands/erk/plan-save.md" in synced_keys
+    assert "commands/erk/system/impl-execute.md" in synced_keys
+
+
 def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     """Full integration test: sync_artifacts filters skills, agents, and commands."""
     bundled_claude = tmp_path / "bundled"
@@ -655,3 +688,42 @@ def test_sync_dignified_review_handles_missing_sources(tmp_path: Path) -> None:
 
     assert result.success is True
     assert result.artifacts_installed == 0
+
+
+def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> None:
+    """sync_artifacts in erk repo correctly tracks nested commands."""
+    # Create pyproject.toml to simulate erk repo
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
+
+    # Create bundled commands with nested structure
+    bundled_claude = tmp_path / ".claude"
+    bundled_cmd = bundled_claude / "commands" / "erk"
+    bundled_cmd.mkdir(parents=True)
+    (bundled_cmd / "plan-save.md").write_text("# Flat Command", encoding="utf-8")
+
+    # Create nested command (e.g., commands/erk/system/impl-execute.md)
+    nested_cmd = bundled_cmd / "system"
+    nested_cmd.mkdir(parents=True)
+    (nested_cmd / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
+
+    with (
+        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
+        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=tmp_path / ".github"),
+        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+    ):
+        result = sync_artifacts(tmp_path, force=False)
+
+    assert result.success is True
+    # Should be development mode (no files actually copied)
+    assert result.artifacts_installed == 0
+    assert "Development mode" in result.message
+
+    # Verify state.toml was created with nested command keys
+    state_file = tmp_path / ".erk" / "state.toml"
+    assert state_file.exists()
+    content = state_file.read_text(encoding="utf-8")
+
+    # Both flat and nested commands should be tracked
+    assert "commands/erk/plan-save.md" in content
+    assert "commands/erk/system/impl-execute.md" in content
