@@ -72,6 +72,7 @@ packages = ["src/erk"]
 ".github/workflows/erk-impl.yml" = "erk/data/github/workflows/erk-impl.yml"
 # Actions: composite GitHub actions (needed by workflows)
 ".github/actions/setup-claude-erk" = "erk/data/github/actions/setup-claude-erk"
+".github/actions/setup-claude-code" = "erk/data/github/actions/setup-claude-code"
 # Optional feature: dignified-review (workflow + prompt)
 ".github/workflows/dignified-python-review.yml" = "erk/data/github/workflows/dignified-python-review.yml"
 ".github/prompts/dignified-python-review.md" = "erk/data/github/prompts/dignified-python-review.md"

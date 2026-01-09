@@ -1297,6 +1297,11 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
     overall_worst: ArtifactStatusType = "up-to-date"
     has_issues = False
 
+    # Determine if workflows are installed (actions are only required if workflows are installed)
+    workflows_installed = "workflows" in by_type and any(
+        a.status != "not-installed" for a in by_type.get("workflows", [])
+    )
+
     # Consistent type ordering
     type_order = ["skills", "commands", "agents", "workflows", "actions", "hooks"]
     for artifact_type in type_order:
@@ -1308,25 +1313,42 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
         count = len(statuses)
         worst = _worst_status(statuses)
 
-        # Track overall worst for header
-        if overall_worst == "up-to-date":
-            overall_worst = worst
-        elif worst == "not-installed":
-            overall_worst = "not-installed"
-        elif worst in ("locally-modified", "changed-upstream") and overall_worst not in (
-            "not-installed",
-        ):
-            overall_worst = worst
+        # Special case: actions not-installed is informational (not error) when workflows
+        # aren't installed, since actions are only needed by workflows
+        actions_optional = (
+            artifact_type == "actions" and worst == "not-installed" and not workflows_installed
+        )
 
-        icon = _status_icon(worst)
+        # Track overall worst for header (skip actions if optional)
+        if not actions_optional:
+            if overall_worst == "up-to-date":
+                overall_worst = worst
+            elif worst == "not-installed":
+                overall_worst = "not-installed"
+            elif worst in ("locally-modified", "changed-upstream") and overall_worst not in (
+                "not-installed",
+            ):
+                overall_worst = worst
+
+        # Use info icon for optional actions, otherwise status icon
+        if actions_optional:
+            icon = "ℹ️"
+        else:
+            icon = _status_icon(worst)
         line = f"   {icon} {artifact_type} ({count})"
 
         # Add issue description if not up-to-date
         if worst != "up-to-date":
-            has_issues = True
+            # Only mark has_issues if this isn't an optional actions case
+            if not actions_optional:
+                has_issues = True
             issue_count = sum(1 for s in statuses if s == worst)
             desc = _status_description(worst, issue_count)
-            line += f" - {desc}"
+            # Add clarifying note for optional actions
+            if actions_optional:
+                line += f" - {desc} (install workflows first)"
+            else:
+                line += f" - {desc}"
 
         type_summaries.append(line)
         verbose_summaries.append(line)

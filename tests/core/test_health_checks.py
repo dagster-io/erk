@@ -695,6 +695,133 @@ def test_check_managed_artifacts_shows_type_summary(
     assert "hooks" in result.details
 
 
+def test_check_managed_artifacts_actions_optional_without_workflows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Actions not-installed is OK (info) when workflows aren't installed."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Monkeypatch registries to simplify test (only test actions/workflows interaction)
+    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_SKILLS", frozenset())
+    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_AGENTS", frozenset())
+    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_WORKFLOWS", frozenset())
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.BUNDLED_ACTIONS", frozenset({"setup-claude-erk"})
+    )
+
+    # Create bundled dir with command AND action (but no workflow)
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_claude / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+
+    # Bundled github dir with action
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_actions = bundled_github / "actions" / "setup-claude-erk"
+    bundled_actions.mkdir(parents=True)
+    (bundled_actions / "action.yml").write_text("name: setup-claude-erk", encoding="utf-8")
+
+    # Create project dir with command and hooks but NO workflows and NO actions
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    # Should PASS because actions not-installed is OK when workflows not installed
+    assert result.passed is True
+    assert result.details is not None
+    # Actions should show with info icon and clarifying message
+    assert "actions" in result.details
+    assert "ℹ️" in result.details
+    assert "install workflows first" in result.details
+
+
+def test_check_managed_artifacts_actions_required_with_workflows(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Actions not-installed is an error when workflows ARE installed."""
+    import json
+
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Monkeypatch registries to simplify test (only test actions/workflows interaction)
+    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_SKILLS", frozenset())
+    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_AGENTS", frozenset())
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.BUNDLED_WORKFLOWS", frozenset({"erk-impl.yml"})
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.BUNDLED_ACTIONS", frozenset({"setup-claude-erk"})
+    )
+
+    # Create bundled dir with command, workflow, and action
+    bundled_claude = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_claude / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_workflows = bundled_github / "workflows"
+    bundled_workflows.mkdir(parents=True)
+    (bundled_workflows / "erk-impl.yml").write_text("name: erk-impl", encoding="utf-8")
+    bundled_actions = bundled_github / "actions" / "setup-claude-erk"
+    bundled_actions.mkdir(parents=True)
+    (bundled_actions / "action.yml").write_text("name: setup-claude-erk", encoding="utf-8")
+
+    # Create project dir with command AND workflow but NO actions
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    # Install workflow (but not action)
+    project_workflows = project_dir / ".github" / "workflows"
+    project_workflows.mkdir(parents=True)
+    (project_workflows / "erk-impl.yml").write_text("name: erk-impl", encoding="utf-8")
+
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_claude
+    )
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    # Should FAIL because actions are required when workflows are installed
+    assert result.passed is False
+    assert "have issues" in result.message
+    assert result.details is not None
+    assert "actions" in result.details
+    # Should show error icon (❌) not info icon
+    assert "❌" in result.details
+    # Should NOT have the "install workflows first" message
+    assert "install workflows first" not in result.details
+    assert result.remediation is not None
+    assert "erk artifact sync" in result.remediation
+
+
 # --- Post-Plan-Implement CI Hook Tests ---
 
 
