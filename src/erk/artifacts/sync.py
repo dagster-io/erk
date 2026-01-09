@@ -106,7 +106,7 @@ def _copy_directory_contents(source_dir: Path, target_dir: Path) -> int:
 class SyncedArtifact:
     """Represents an artifact that was synced, with its computed hash."""
 
-    key: str  # e.g. "skills/dignified-python", "commands/erk/plan-implement"
+    key: str  # e.g. "skills/dignified-python", "commands/erk/system/impl-execute"
     hash: str
     file_count: int
 
@@ -210,13 +210,14 @@ def _sync_commands(
     target = target_commands_dir / "erk"
     count = _copy_directory_contents(source, target)
 
-    # Track each command file individually
+    # Track each command file individually (including nested directories)
     synced: list[SyncedArtifact] = []
     if target.exists():
-        for cmd_file in target.glob("*.md"):
+        for cmd_file in target.rglob("*.md"):
+            relative_path = cmd_file.relative_to(target)
             synced.append(
                 SyncedArtifact(
-                    key=f"commands/erk/{cmd_file.name}",
+                    key=f"commands/erk/{relative_path}",
                     hash=_compute_file_hash(cmd_file),
                     file_count=1,
                 )
@@ -429,13 +430,14 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     # Hash agents (supports both directory-based and single-file)
     artifacts.extend(_hash_agent_artifacts(bundled_claude_dir / "agents", BUNDLED_AGENTS))
 
-    # Hash commands from source
+    # Hash commands from source (including nested directories)
     commands_dir = bundled_claude_dir / "commands" / "erk"
     if commands_dir.exists():
-        for cmd_file in sorted(commands_dir.glob("*.md")):
+        for cmd_file in sorted(commands_dir.rglob("*.md")):
+            relative_path = cmd_file.relative_to(commands_dir)
             artifacts.append(
                 SyncedArtifact(
-                    key=f"commands/erk/{cmd_file.name}",
+                    key=f"commands/erk/{relative_path}",
                     hash=_compute_file_hash(cmd_file),
                     file_count=1,
                 )
