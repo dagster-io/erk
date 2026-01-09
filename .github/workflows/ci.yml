@@ -329,6 +329,8 @@ jobs:
 
       - name: Run full CI verification
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Check if a new commit was pushed
           current_sha=$(git rev-parse HEAD)
@@ -340,56 +342,88 @@ jobs:
           echo "Autofix pushed new commit $current_sha, running full CI verification..."
           echo ""
 
+          # Report individual check status to GitHub
+          report_status() {
+            local name="$1"
+            local state="$2"
+            local desc="$3"
+            gh api repos/${{ github.repository }}/statuses/$current_sha \
+              -f state="$state" \
+              -f context="ci / $name (autofix-verified)" \
+              -f description="$desc"
+          }
+
           failed=false
 
           # === Style Checks ===
           echo "=== Format Check ==="
-          if ! make format-check; then
+          if make format-check; then
+            report_status "format" "success" "Format check passed"
+          else
             echo "::error::Format check failed"
+            report_status "format" "failure" "Format check failed"
             failed=true
           fi
 
           echo ""
           echo "=== Lint Check ==="
-          if ! make lint; then
+          if make lint; then
+            report_status "lint" "success" "Lint check passed"
+          else
             echo "::error::Lint check failed"
+            report_status "lint" "failure" "Lint check failed"
             failed=true
           fi
 
           echo ""
           echo "=== Prettier Check ==="
-          if ! prettier --check '**/*.md' --ignore-path .gitignore; then
+          if prettier --check '**/*.md' --ignore-path .gitignore; then
+            report_status "prettier" "success" "Prettier check passed"
+          else
             echo "::error::Prettier check failed"
+            report_status "prettier" "failure" "Prettier check failed"
             failed=true
           fi
 
           echo ""
           echo "=== Docs Sync Check ==="
-          if ! make docs-sync-check; then
+          if make docs-sync-check; then
+            report_status "docs-check" "success" "Docs sync check passed"
+          else
             echo "::error::Docs sync check failed"
+            report_status "docs-check" "failure" "Docs sync check failed"
             failed=true
           fi
 
           # === Type Checks ===
           echo ""
           echo "=== Type Check (ty) ==="
-          if ! make ty; then
+          if make ty; then
+            report_status "ty" "success" "Type check passed"
+          else
             echo "::error::Type check failed"
+            report_status "ty" "failure" "Type check failed"
             failed=true
           fi
 
           # === Tests ===
           echo ""
           echo "=== Unit Tests ==="
-          if ! make test; then
+          if make test; then
+            report_status "unit-tests" "success" "Unit tests passed"
+          else
             echo "::error::Unit tests failed"
+            report_status "unit-tests" "failure" "Unit tests failed"
             failed=true
           fi
 
           echo ""
           echo "=== Integration Tests ==="
-          if ! make test-integration; then
+          if make test-integration; then
+            report_status "integration-tests" "success" "Integration tests passed"
+          else
             echo "::error::Integration tests failed"
+            report_status "integration-tests" "failure" "Integration tests failed"
             failed=true
           fi
 
@@ -400,16 +434,3 @@ jobs:
           fi
 
           echo "All CI checks passed!"
-
-      - name: Update commit status
-        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true' && success()
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          current_sha=$(git rev-parse HEAD)
-          if [ "$current_sha" != "${{ github.sha }}" ]; then
-            gh api repos/${{ github.repository }}/statuses/$current_sha \
-              -f state=success \
-              -f context="ci / autofix-verified" \
-              -f description="All CI checks passed after autofix"
-          fi
