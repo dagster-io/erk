@@ -11,6 +11,7 @@ from erk.core.health_checks import (
     check_erk_version,
     check_gitignore_entries,
     check_hooks_disabled,
+    check_legacy_slot_naming,
     check_managed_artifacts,
     check_post_plan_implement_ci_hook,
     check_repository,
@@ -19,6 +20,8 @@ from erk.core.health_checks import (
 from erk.core.health_checks_dogfooder.legacy_config_locations import (
     check_legacy_config_locations,
 )
+from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
+from erk_shared.context.types import RepoContext
 from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 from erk_shared.git.fake import FakeGit
 from tests.fakes.context import create_test_context
@@ -849,3 +852,175 @@ def test_check_post_plan_implement_ci_hook_missing(tmp_path: Path) -> None:
     assert result.details is not None
     assert "post-plan-implement-ci.md" in result.details
     assert "CI instructions" in result.details
+
+
+# --- Legacy Slot Naming Tests ---
+
+
+def _create_repo_context(tmp_path: Path, repo_name: str) -> RepoContext:
+    """Create a RepoContext for testing."""
+    repo_dir = tmp_path / "erk" / "repos" / repo_name
+    return RepoContext(
+        root=tmp_path / "repo",
+        repo_name=repo_name,
+        repo_dir=repo_dir,
+        worktrees_dir=repo_dir / "worktrees",
+        pool_json_path=repo_dir / "pool.json",
+    )
+
+
+def test_check_legacy_slot_naming_no_pool_file(tmp_path: Path) -> None:
+    """Test legacy slot naming check when no pool.json exists."""
+    repo = _create_repo_context(tmp_path, "test-repo")
+
+    result = check_legacy_slot_naming(repo)
+
+    assert result.name == "legacy-slot-naming"
+    assert result.passed is True
+    assert "No pool state configured" in result.message
+
+
+def test_check_legacy_slot_naming_empty_assignments(tmp_path: Path) -> None:
+    """Test legacy slot naming check when pool has no assignments."""
+    repo = _create_repo_context(tmp_path, "test-repo")
+    repo.repo_dir.mkdir(parents=True)
+
+    # Create pool with no assignments
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
+        assignments=(),
+    )
+    save_pool_state(repo.pool_json_path, state)
+
+    result = check_legacy_slot_naming(repo)
+
+    assert result.name == "legacy-slot-naming"
+    assert result.passed is True
+    assert "No slot assignments to check" in result.message
+
+
+def test_check_legacy_slot_naming_all_new_style(tmp_path: Path) -> None:
+    """Test legacy slot naming check when all assignments use new style."""
+    repo = _create_repo_context(tmp_path, "test-repo")
+    repo.repo_dir.mkdir(parents=True)
+
+    # Create pool with new-style assignments
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(
+            SlotInfo(name="erk-slot-01", last_objective_issue=None),
+            SlotInfo(name="erk-slot-02", last_objective_issue=None),
+        ),
+        assignments=(
+            SlotAssignment(
+                slot_name="erk-slot-01",
+                branch_name="feature-1",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=repo.worktrees_dir / "erk-slot-01",
+            ),
+            SlotAssignment(
+                slot_name="erk-slot-02",
+                branch_name="feature-2",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=repo.worktrees_dir / "erk-slot-02",
+            ),
+        ),
+    )
+    save_pool_state(repo.pool_json_path, state)
+
+    result = check_legacy_slot_naming(repo)
+
+    assert result.name == "legacy-slot-naming"
+    assert result.passed is True
+    assert "All slot assignments use current naming" in result.message
+
+
+def test_check_legacy_slot_naming_has_old_style(tmp_path: Path) -> None:
+    """Test legacy slot naming check when old-style assignments exist."""
+    repo = _create_repo_context(tmp_path, "test-repo")
+    repo.repo_dir.mkdir(parents=True)
+
+    # Create pool with old-style assignments
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(
+            SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),
+            SlotInfo(name="erk-managed-wt-02", last_objective_issue=None),
+        ),
+        assignments=(
+            SlotAssignment(
+                slot_name="erk-managed-wt-01",
+                branch_name="feature-1",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=repo.worktrees_dir / "erk-managed-wt-01",
+            ),
+            SlotAssignment(
+                slot_name="erk-managed-wt-02",
+                branch_name="feature-2",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=repo.worktrees_dir / "erk-managed-wt-02",
+            ),
+        ),
+    )
+    save_pool_state(repo.pool_json_path, state)
+
+    result = check_legacy_slot_naming(repo)
+
+    assert result.name == "legacy-slot-naming"
+    assert result.passed is False
+    assert "Legacy slot naming found" in result.message
+    assert "2 assignment(s)" in result.message
+    assert "erk-managed-wt-XX" in result.message
+    assert result.details is not None
+    assert "erk-managed-wt-01" in result.details
+    assert "erk-managed-wt-02" in result.details
+    assert result.remediation is not None
+    assert "test-repo" in result.remediation
+    assert "pool.json" in result.remediation
+    assert "remove assignments for:" in result.remediation
+    assert "git worktree prune" in result.remediation
+
+
+def test_check_legacy_slot_naming_mixed_styles(tmp_path: Path) -> None:
+    """Test legacy slot naming check with mix of old and new styles."""
+    repo = _create_repo_context(tmp_path, "test-repo")
+    repo.repo_dir.mkdir(parents=True)
+
+    # Create pool with mixed assignments
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(
+            SlotInfo(name="erk-slot-01", last_objective_issue=None),
+            SlotInfo(name="erk-managed-wt-02", last_objective_issue=None),
+        ),
+        assignments=(
+            SlotAssignment(
+                slot_name="erk-slot-01",
+                branch_name="feature-1",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=repo.worktrees_dir / "erk-slot-01",
+            ),
+            SlotAssignment(
+                slot_name="erk-managed-wt-02",
+                branch_name="feature-2",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=repo.worktrees_dir / "erk-managed-wt-02",
+            ),
+        ),
+    )
+    save_pool_state(repo.pool_json_path, state)
+
+    result = check_legacy_slot_naming(repo)
+
+    assert result.name == "legacy-slot-naming"
+    assert result.passed is False
+    assert "Legacy slot naming found" in result.message
+    assert "1 assignment(s)" in result.message  # Only the old-style one counts
+    assert result.details is not None
+    assert "erk-managed-wt-02" in result.details
+    assert "erk-slot-01" not in result.details  # New-style should not be listed
