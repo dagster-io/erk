@@ -1574,8 +1574,7 @@ def check_legacy_slot_naming(repo: RepoContext) -> CheckResult:
     )
 
     message = (
-        f"Legacy slot naming found "
-        f"({len(old_style_slots)} assignment(s) use 'erk-managed-wt-XX')"
+        f"Legacy slot naming found ({len(old_style_slots)} assignment(s) use 'erk-managed-wt-XX')"
     )
 
     return CheckResult(
