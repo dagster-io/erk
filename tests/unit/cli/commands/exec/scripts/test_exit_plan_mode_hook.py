@@ -326,18 +326,18 @@ class TestBuildBlockingMessage:
         assert "AskUserQuestion" in message
         assert "Save the plan" in message
         assert "(Recommended)" in message
-        # New "Implement" option (save + implement)
-        assert '"Implement"' in message
+        # "Save plan and implement here" option (save + implement)
+        assert '"Save plan and implement here"' in message
         assert "Save to GitHub, then immediately implement" in message
-        # New "Incremental implementation" option
-        assert "Incremental implementation" in message
+        # "Do not save issue and implement here" option
+        assert "Do not save issue and implement here" in message
         assert "small PR iterations" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message
         assert "exit-plan-mode-hook.implement-now" in message
-        # Verify the Implement option runs plan-save first, then creates marker
-        assert "If user chooses 'Implement':" in message
+        # Verify the "Save plan and implement here" option runs plan-save first, then creates marker
+        assert "If user chooses 'Save plan and implement here':" in message
         assert "/erk:system:impl-execute" in message
 
     def test_trunk_branch_main_shows_warning(self) -> None:
