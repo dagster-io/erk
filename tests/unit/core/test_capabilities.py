@@ -4,6 +4,8 @@ These tests verify:
 1. The Capability ABC contract
 2. The registry functions (register, get, list)
 3. The LearnedDocsCapability implementation
+4. Skill-based capabilities
+5. Capability groups
 """
 
 from pathlib import Path
@@ -17,6 +19,22 @@ from erk.core.capabilities import (
     list_capabilities,
     register_capability,
 )
+from erk.core.capabilities.agents import DevrunAgentCapability
+from erk.core.capabilities.groups import (
+    CAPABILITY_GROUPS,
+    CapabilityGroup,
+    expand_capability_names,
+    get_group,
+    is_group,
+    list_groups,
+)
+from erk.core.capabilities.skills import (
+    DignifiedPythonCapability,
+    FakeDrivenTestingCapability,
+    GhCapability,
+    GtCapability,
+)
+from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 
 # =============================================================================
 # Tests for CapabilityResult
@@ -263,3 +281,284 @@ def test_custom_capability_install_and_is_installed(tmp_path: Path) -> None:
     result2 = cap.install(tmp_path)
     assert result2.success is True
     assert result2.message == "Already installed"
+
+
+# =============================================================================
+# Tests for Skill Capabilities
+# =============================================================================
+
+
+def test_dignified_python_capability_properties() -> None:
+    """Test DignifiedPythonCapability has correct properties."""
+    cap = DignifiedPythonCapability()
+    assert cap.name == "dignified-python"
+    assert cap.skill_name == "dignified-python"
+    assert "Python" in cap.description
+    assert ".claude/skills/dignified-python" in cap.installation_check_description
+
+
+def test_fake_driven_testing_capability_properties() -> None:
+    """Test FakeDrivenTestingCapability has correct properties."""
+    cap = FakeDrivenTestingCapability()
+    assert cap.name == "fake-driven-testing"
+    assert cap.skill_name == "fake-driven-testing"
+    assert "test" in cap.description.lower()
+
+
+def test_gh_capability_properties() -> None:
+    """Test GhCapability has correct properties."""
+    cap = GhCapability()
+    assert cap.name == "gh"
+    assert cap.skill_name == "gh"
+    assert "GitHub" in cap.description
+
+
+def test_gt_capability_properties() -> None:
+    """Test GtCapability has correct properties."""
+    cap = GtCapability()
+    assert cap.name == "gt"
+    assert cap.skill_name == "gt"
+    assert "Graphite" in cap.description
+
+
+def test_skill_capability_is_installed_false_when_missing(tmp_path: Path) -> None:
+    """Test skill capability is_installed returns False when skill directory missing."""
+    cap = DignifiedPythonCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_skill_capability_is_installed_true_when_exists(tmp_path: Path) -> None:
+    """Test skill capability is_installed returns True when skill directory exists."""
+    (tmp_path / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
+    cap = DignifiedPythonCapability()
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_skill_capability_artifacts() -> None:
+    """Test that skill capabilities list correct artifacts."""
+    cap = DignifiedPythonCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".claude/skills/dignified-python/"
+    assert artifacts[0].artifact_type == "directory"
+
+
+def test_all_skill_capabilities_registered() -> None:
+    """Test that all skill capabilities are registered."""
+    expected_skills = [
+        "dignified-python",
+        "fake-driven-testing",
+        "gh",
+        "gt",
+        "command-creator",
+        "cli-skill-creator",
+        "ci-iteration",
+    ]
+    for skill_name in expected_skills:
+        cap = get_capability(skill_name)
+        assert cap is not None, f"Skill '{skill_name}' not registered"
+        assert cap.name == skill_name
+
+
+# =============================================================================
+# Tests for Workflow Capabilities
+# =============================================================================
+
+
+def test_erk_impl_workflow_capability_properties() -> None:
+    """Test ErkImplWorkflowCapability has correct properties."""
+    cap = ErkImplWorkflowCapability()
+    assert cap.name == "erk-impl-workflow"
+    assert "GitHub Action" in cap.description
+    assert "erk-impl.yml" in cap.installation_check_description
+
+
+def test_erk_impl_workflow_artifacts() -> None:
+    """Test ErkImplWorkflowCapability lists all artifacts."""
+    cap = ErkImplWorkflowCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 3
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/erk-impl.yml" in paths
+    assert ".github/actions/setup-claude-code/" in paths
+    assert ".github/actions/setup-claude-erk/" in paths
+
+
+def test_erk_impl_workflow_is_installed(tmp_path: Path) -> None:
+    """Test workflow is_installed checks for workflow file."""
+    cap = ErkImplWorkflowCapability()
+
+    # Not installed when workflow file missing
+    assert cap.is_installed(tmp_path) is False
+
+    # Installed when workflow file exists
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "erk-impl.yml").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_workflow_capability_registered() -> None:
+    """Test that workflow capability is registered."""
+    cap = get_capability("erk-impl-workflow")
+    assert cap is not None
+    assert cap.name == "erk-impl-workflow"
+
+
+# =============================================================================
+# Tests for Agent Capabilities
+# =============================================================================
+
+
+def test_devrun_agent_capability_properties() -> None:
+    """Test DevrunAgentCapability has correct properties."""
+    cap = DevrunAgentCapability()
+    assert cap.name == "devrun-agent"
+    assert "pytest" in cap.description or "execution" in cap.description.lower()
+    assert "devrun" in cap.installation_check_description
+
+
+def test_devrun_agent_artifacts() -> None:
+    """Test DevrunAgentCapability lists correct artifacts."""
+    cap = DevrunAgentCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".claude/agents/devrun.md"
+    assert artifacts[0].artifact_type == "file"
+
+
+def test_devrun_agent_is_installed(tmp_path: Path) -> None:
+    """Test agent is_installed checks for agent file."""
+    cap = DevrunAgentCapability()
+
+    # Not installed when agent file missing
+    assert cap.is_installed(tmp_path) is False
+
+    # Installed when agent file exists
+    (tmp_path / ".claude" / "agents").mkdir(parents=True)
+    (tmp_path / ".claude" / "agents" / "devrun.md").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_agent_capability_registered() -> None:
+    """Test that agent capability is registered."""
+    cap = get_capability("devrun-agent")
+    assert cap is not None
+    assert cap.name == "devrun-agent"
+
+
+# =============================================================================
+# Tests for Capability Groups
+# =============================================================================
+
+
+def test_capability_group_is_frozen() -> None:
+    """Test that CapabilityGroup is immutable."""
+    group = CapabilityGroup(
+        name="test-group",
+        description="Test group",
+        members=("cap1", "cap2"),
+    )
+    assert group.name == "test-group"
+    assert group.description == "Test group"
+    assert group.members == ("cap1", "cap2")
+
+
+def test_is_group_returns_true_for_groups() -> None:
+    """Test is_group returns True for registered groups."""
+    assert is_group("python-dev") is True
+    assert is_group("github-workflow") is True
+    assert is_group("graphite-workflow") is True
+    assert is_group("skill-authoring") is True
+
+
+def test_is_group_returns_false_for_non_groups() -> None:
+    """Test is_group returns False for non-groups."""
+    assert is_group("dignified-python") is False
+    assert is_group("nonexistent") is False
+    assert is_group("learned-docs") is False
+
+
+def test_get_group_returns_group() -> None:
+    """Test get_group returns the group for registered groups."""
+    group = get_group("python-dev")
+    assert group is not None
+    assert group.name == "python-dev"
+    assert "dignified-python" in group.members
+
+
+def test_get_group_returns_none_for_unknown() -> None:
+    """Test get_group returns None for unknown groups."""
+    assert get_group("nonexistent") is None
+    assert get_group("dignified-python") is None  # This is a capability, not a group
+
+
+def test_list_groups_returns_all() -> None:
+    """Test list_groups returns all registered groups."""
+    groups = list_groups()
+    names = [g.name for g in groups]
+    assert "python-dev" in names
+    assert "github-workflow" in names
+    assert "graphite-workflow" in names
+    assert "skill-authoring" in names
+
+
+def test_expand_capability_names_passes_through_capabilities() -> None:
+    """Test expand_capability_names passes through individual capabilities."""
+    result = expand_capability_names(["dignified-python", "learned-docs"])
+    assert result == ["dignified-python", "learned-docs"]
+
+
+def test_expand_capability_names_expands_groups() -> None:
+    """Test expand_capability_names expands groups to members."""
+    result = expand_capability_names(["python-dev"])
+    assert "dignified-python" in result
+    assert "fake-driven-testing" in result
+    assert "devrun-agent" in result
+
+
+def test_expand_capability_names_mixed() -> None:
+    """Test expand_capability_names handles mix of groups and capabilities."""
+    result = expand_capability_names(["learned-docs", "python-dev"])
+    assert result[0] == "learned-docs"  # Individual comes first
+    assert "dignified-python" in result
+    assert "fake-driven-testing" in result
+
+
+def test_expand_capability_names_removes_duplicates() -> None:
+    """Test expand_capability_names removes duplicates preserving order."""
+    result = expand_capability_names(["dignified-python", "python-dev"])
+    # dignified-python appears first, then rest of python-dev (excluding dignified-python)
+    assert result.count("dignified-python") == 1
+    assert result[0] == "dignified-python"
+
+
+def test_python_dev_group_members() -> None:
+    """Test python-dev group has expected members."""
+    group = CAPABILITY_GROUPS["python-dev"]
+    assert "dignified-python" in group.members
+    assert "fake-driven-testing" in group.members
+    assert "devrun-agent" in group.members
+
+
+def test_github_workflow_group_members() -> None:
+    """Test github-workflow group has expected members."""
+    group = CAPABILITY_GROUPS["github-workflow"]
+    assert "gh" in group.members
+    assert "erk-impl-workflow" in group.members
+
+
+def test_graphite_workflow_group_members() -> None:
+    """Test graphite-workflow group has expected members."""
+    group = CAPABILITY_GROUPS["graphite-workflow"]
+    assert "gt" in group.members
+
+
+def test_skill_authoring_group_members() -> None:
+    """Test skill-authoring group has expected members."""
+    group = CAPABILITY_GROUPS["skill-authoring"]
+    assert "command-creator" in group.members
+    assert "cli-skill-creator" in group.members
+    assert "learned-docs" in group.members

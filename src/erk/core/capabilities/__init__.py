@@ -1,98 +1,78 @@
 """Capability system for erk init.
 
-Capabilities are optional features that can be installed via `erk init --capability <name>`.
+Capabilities are optional features that can be installed via `erk init capability add <name>`.
 Each capability knows how to detect if it's installed and how to install itself.
+
+This package provides:
+- Base types: Capability, CapabilityArtifact, CapabilityResult
+- SkillCapability: Base class for skill-based capabilities
+- Individual capabilities for skills, agents, and workflows
+- Capability groups for themed bundles
+- Registry functions for capability lookup
 """
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from functools import cache
 from pathlib import Path
-from typing import Literal
+
+# Re-exports for public API - use explicit `as X` syntax per PEP 484
+from erk.core.capabilities.agents import AGENT_CAPABILITIES
+from erk.core.capabilities.agents import DevrunAgentCapability as DevrunAgentCapability
+from erk.core.capabilities.base import Capability as Capability
+from erk.core.capabilities.base import CapabilityArtifact as CapabilityArtifact
+from erk.core.capabilities.base import CapabilityResult as CapabilityResult
+from erk.core.capabilities.groups import CAPABILITY_GROUPS as CAPABILITY_GROUPS
+from erk.core.capabilities.groups import CapabilityGroup as CapabilityGroup
+from erk.core.capabilities.groups import expand_capability_names as expand_capability_names
+from erk.core.capabilities.groups import get_group as get_group
+from erk.core.capabilities.groups import is_group as is_group
+from erk.core.capabilities.groups import list_groups as list_groups
+from erk.core.capabilities.skill_capability import SkillCapability as SkillCapability
+from erk.core.capabilities.skills import SKILL_CAPABILITIES
+from erk.core.capabilities.skills import CiIterationCapability as CiIterationCapability
+from erk.core.capabilities.skills import CliSkillCreatorCapability as CliSkillCreatorCapability
+from erk.core.capabilities.skills import CommandCreatorCapability as CommandCreatorCapability
+from erk.core.capabilities.skills import DignifiedPythonCapability as DignifiedPythonCapability
+from erk.core.capabilities.skills import (
+    FakeDrivenTestingCapability as FakeDrivenTestingCapability,
+)
+from erk.core.capabilities.skills import GhCapability as GhCapability
+from erk.core.capabilities.skills import GtCapability as GtCapability
+from erk.core.capabilities.workflows import WORKFLOW_CAPABILITIES
+from erk.core.capabilities.workflows import (
+    ErkImplWorkflowCapability as ErkImplWorkflowCapability,
+)
+
+# Global registry of available capabilities
+_CAPABILITIES: dict[str, Capability] = {}
 
 
-@dataclass(frozen=True)
-class CapabilityResult:
-    """Result of a capability installation operation."""
+def register_capability(cap: Capability) -> None:
+    """Register a capability in the global registry.
 
-    success: bool
-    message: str
-    created_files: tuple[str, ...] = ()  # Relative paths of files/dirs created
-
-
-@dataclass(frozen=True)
-class CapabilityArtifact:
-    """Describes an artifact installed by a capability."""
-
-    path: str  # Relative to repo_root, e.g., "docs/learned/"
-    artifact_type: Literal["file", "directory"]
-
-
-class Capability(ABC):
-    """Abstract base class for erk capabilities.
-
-    A capability is an optional feature that can be installed during `erk init`.
-    Each capability must implement:
-    - name: CLI-facing identifier
-    - description: Short description for help text
-    - is_installed(): Check if already installed
-    - install(): Install the capability
+    Args:
+        cap: The capability to register
     """
+    _CAPABILITIES[cap.name] = cap
 
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """CLI-facing identifier for this capability (e.g., 'learned-docs')."""
-        ...
 
-    @property
-    @abstractmethod
-    def description(self) -> str:
-        """Short description for help text."""
-        ...
+def get_capability(name: str) -> Capability | None:
+    """Get a capability by name.
 
-    @property
-    @abstractmethod
-    def installation_check_description(self) -> str:
-        """Human-readable description of what is_installed() checks.
+    Args:
+        name: The capability name
 
-        Example: "docs/learned/ directory exists"
-        """
-        ...
+    Returns:
+        The capability if found, None otherwise
+    """
+    return _CAPABILITIES.get(name)
 
-    @property
-    @abstractmethod
-    def artifacts(self) -> list[CapabilityArtifact]:
-        """List of artifacts this capability installs.
 
-        Returns:
-            List of CapabilityArtifact describing files/directories created
-        """
-        ...
+def list_capabilities() -> list[Capability]:
+    """Get all registered capabilities.
 
-    @abstractmethod
-    def is_installed(self, repo_root: Path) -> bool:
-        """Check if this capability is already installed.
-
-        Args:
-            repo_root: Path to the repository root
-
-        Returns:
-            True if the capability is already installed
-        """
-        ...
-
-    @abstractmethod
-    def install(self, repo_root: Path) -> CapabilityResult:
-        """Install this capability.
-
-        Args:
-            repo_root: Path to the repository root
-
-        Returns:
-            CapabilityResult with success status and message
-        """
-        ...
+    Returns:
+        List of all registered capabilities
+    """
+    return list(_CAPABILITIES.values())
 
 
 # =============================================================================
@@ -354,49 +334,27 @@ class LearnedDocsCapability(Capability):
 
 
 # =============================================================================
-# Capability Registry (Lazy Initialization)
+# Register All Built-in Capabilities
 # =============================================================================
 
 
-@cache
-def _get_capability_registry() -> dict[str, Capability]:
-    """Get capability registry (initialized on first call).
+def _register_all_capabilities() -> None:
+    """Register all built-in capabilities."""
+    # Legacy capability
+    register_capability(LearnedDocsCapability())
 
-    Uses @cache for lazy initialization - built-in capabilities are only
-    instantiated when first accessed, avoiding import-time side effects.
-    """
-    return {
-        "learned-docs": LearnedDocsCapability(),
-    }
+    # Skill capabilities
+    for cap_class in SKILL_CAPABILITIES:
+        register_capability(cap_class())
 
+    # Workflow capabilities
+    for cap_class in WORKFLOW_CAPABILITIES:
+        register_capability(cap_class())
 
-def register_capability(cap: Capability) -> None:
-    """Register a capability in the global registry.
-
-    This function can be called to add custom capabilities after module import.
-
-    Args:
-        cap: The capability to register
-    """
-    _get_capability_registry()[cap.name] = cap
+    # Agent capabilities
+    for cap_class in AGENT_CAPABILITIES:
+        register_capability(cap_class())
 
 
-def get_capability(name: str) -> Capability | None:
-    """Get a capability by name.
-
-    Args:
-        name: The capability name
-
-    Returns:
-        The capability if found, None otherwise
-    """
-    return _get_capability_registry().get(name)
-
-
-def list_capabilities() -> list[Capability]:
-    """Get all registered capabilities.
-
-    Returns:
-        List of all registered capabilities
-    """
-    return list(_get_capability_registry().values())
+# Register on module import
+_register_all_capabilities()
