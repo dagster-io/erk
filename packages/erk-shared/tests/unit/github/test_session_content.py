@@ -1,5 +1,7 @@
 """Tests for session content metadata block functions."""
 
+import re
+
 from erk_shared.github.metadata.constants import (
     CHUNK_SAFETY_BUFFER,
     GITHUB_COMMENT_SIZE_LIMIT,
@@ -443,49 +445,61 @@ def test_extract_session_content_roundtrip() -> None:
 
 
 def test_render_session_prompts_block_basic() -> None:
-    """Basic rendering includes metadata block markers and YAML content."""
+    """Basic rendering includes metadata block markers and numbered prompts."""
     prompts = ["Add dark mode", "Run tests"]
-    result = render_session_prompts_block(prompts)
+    result = render_session_prompts_block(prompts, max_prompt_display_length=500)
 
     assert "<!-- erk:metadata-block:session-prompts -->" in result
     assert "<!-- /erk:metadata-block:session-prompts -->" in result
     assert "<details>" in result
     assert "</details>" in result
-    assert "```yaml" in result
-    assert "prompt_count: 2" in result
-    assert "prompts:" in result
+    assert "**Prompt 1:**" in result
+    assert "**Prompt 2:**" in result
+    assert "Add dark mode" in result
+    assert "Run tests" in result
 
 
 def test_render_session_prompts_block_includes_warning() -> None:
     """The machine-generated warning comment is included."""
-    result = render_session_prompts_block(["Test prompt"])
+    result = render_session_prompts_block(["Test prompt"], max_prompt_display_length=500)
 
     assert "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->" in result
 
 
-def test_render_session_prompts_block_includes_summary() -> None:
-    """The summary tag with code element is included."""
-    result = render_session_prompts_block(["Test prompt"])
+def test_render_session_prompts_block_includes_summary_with_count() -> None:
+    """The summary tag includes prompt count."""
+    result = render_session_prompts_block(["Test prompt"], max_prompt_display_length=500)
+    assert "<summary><code>session-prompts</code> (1 prompt)</summary>" in result
 
-    assert "<summary><code>session-prompts</code></summary>" in result
+    result2 = render_session_prompts_block(["A", "B"], max_prompt_display_length=500)
+    assert "<summary><code>session-prompts</code> (2 prompts)</summary>" in result2
 
 
 def test_render_session_prompts_block_empty_list() -> None:
     """Empty prompt list renders with count 0."""
-    result = render_session_prompts_block([])
+    result = render_session_prompts_block([], max_prompt_display_length=500)
 
-    assert "prompt_count: 0" in result
-    assert "prompts: []" in result
+    assert "(0 prompts)" in result
+    # No prompt blocks for empty list
+    assert "**Prompt" not in result
 
 
 def test_render_session_prompts_block_preserves_special_characters() -> None:
     """Prompts with special characters are preserved."""
     prompts = ['Add "dark mode" feature', "Fix bug: can't save"]
-    result = render_session_prompts_block(prompts)
+    result = render_session_prompts_block(prompts, max_prompt_display_length=500)
 
-    # YAML escapes quotes in strings
-    assert "dark mode" in result
-    assert "can't save" in result or "can''t save" in result
+    assert 'Add "dark mode" feature' in result
+    assert "can't save" in result
+
+
+def test_render_session_prompts_block_truncates_long_prompts() -> None:
+    """Long prompts are truncated with ellipsis."""
+    long_prompt = "This is a very long prompt that should be truncated"
+    result = render_session_prompts_block([long_prompt], max_prompt_display_length=25)
+
+    assert "This is a very long pr..." in result
+    assert long_prompt not in result  # Full text should not appear
 
 
 # =============================================================================
@@ -496,13 +510,18 @@ def test_render_session_prompts_block_preserves_special_characters() -> None:
 def test_extract_prompts_from_session_prompts_block_basic() -> None:
     """Extracts prompts from a valid session-prompts block body."""
     block_body = """<details>
-<summary><code>session-prompts</code></summary>
+<summary><code>session-prompts</code> (2 prompts)</summary>
 
-```yaml
-prompt_count: 2
-prompts:
-  - "First prompt"
-  - "Second prompt"
+**Prompt 1:**
+
+```
+First prompt
+```
+
+**Prompt 2:**
+
+```
+Second prompt
 ```
 
 </details>"""
@@ -513,14 +532,31 @@ prompts:
     assert result == ["First prompt", "Second prompt"]
 
 
-def test_extract_prompts_from_session_prompts_block_empty_list() -> None:
-    """Extracts empty list when prompts array is empty."""
+def test_extract_prompts_from_session_prompts_block_no_prompts_returns_none() -> None:
+    """Returns None when no prompt blocks are found."""
     block_body = """<details>
-<summary><code>session-prompts</code></summary>
+<summary><code>session-prompts</code> (0 prompts)</summary>
 
-```yaml
-prompt_count: 0
-prompts: []
+No prompt blocks here
+
+</details>"""
+
+    result = extract_prompts_from_session_prompts_block(block_body)
+
+    assert result is None
+
+
+def test_extract_prompts_from_session_prompts_block_multiline() -> None:
+    """Extracts prompts with multiline content."""
+    block_body = """<details>
+<summary><code>session-prompts</code> (1 prompt)</summary>
+
+**Prompt 1:**
+
+```
+First line
+Second line
+Third line
 ```
 
 </details>"""
@@ -528,54 +564,9 @@ prompts: []
     result = extract_prompts_from_session_prompts_block(block_body)
 
     assert result is not None
-    assert result == []
-
-
-def test_extract_prompts_from_session_prompts_block_no_yaml_returns_none() -> None:
-    """Returns None when no YAML code fence is found."""
-    block_body = """<details>
-<summary><code>session-prompts</code></summary>
-
-No code fence here
-
-</details>"""
-
-    result = extract_prompts_from_session_prompts_block(block_body)
-
-    assert result is None
-
-
-def test_extract_prompts_from_session_prompts_block_invalid_yaml_returns_none() -> None:
-    """Returns None when YAML content is invalid."""
-    block_body = """<details>
-<summary><code>session-prompts</code></summary>
-
-```yaml
-not: valid: yaml: here: : : :
-```
-
-</details>"""
-
-    result = extract_prompts_from_session_prompts_block(block_body)
-
-    assert result is None
-
-
-def test_extract_prompts_from_session_prompts_block_missing_prompts_key() -> None:
-    """Returns None when prompts key is missing from YAML."""
-    block_body = """<details>
-<summary><code>session-prompts</code></summary>
-
-```yaml
-prompt_count: 2
-other_key: value
-```
-
-</details>"""
-
-    result = extract_prompts_from_session_prompts_block(block_body)
-
-    assert result is None
+    assert len(result) == 1
+    assert "First line" in result[0]
+    assert "Third line" in result[0]
 
 
 def test_session_prompts_roundtrip() -> None:
@@ -583,12 +574,10 @@ def test_session_prompts_roundtrip() -> None:
     original_prompts = ["Add a feature", "Run tests", "Fix the bug"]
 
     # Render the prompts
-    rendered = render_session_prompts_block(original_prompts)
+    rendered = render_session_prompts_block(original_prompts, max_prompt_display_length=500)
 
     # Extract from the rendered block body (strip the HTML comment wrappers)
     # Find the body between the markers
-    import re
-
     start_marker = "<!-- erk:metadata-block:session-prompts -->"
     end_marker = "<!-- /erk:metadata-block:session-prompts -->"
     pattern = rf"{re.escape(start_marker)}(.+?){re.escape(end_marker)}"

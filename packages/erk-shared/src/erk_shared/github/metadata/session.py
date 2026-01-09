@@ -9,8 +9,6 @@ These support storing session content in GitHub issue comments, with:
 
 import re
 
-import yaml
-
 from erk_shared.github.metadata.constants import (
     CHUNK_SAFETY_BUFFER,
     GITHUB_COMMENT_SIZE_LIMIT,
@@ -350,14 +348,20 @@ def get_default_max_chunk_size() -> int:
     return GITHUB_COMMENT_SIZE_LIMIT - CHUNK_SAFETY_BUFFER
 
 
-def render_session_prompts_block(prompts: list[str]) -> str:
-    """Render session prompts as a metadata block with YAML content.
+def render_session_prompts_block(
+    prompts: list[str],
+    *,
+    max_prompt_display_length: int,
+) -> str:
+    """Render session prompts as a metadata block with numbered markdown blocks.
 
     Creates a collapsible metadata block containing user prompts from
-    the planning session, formatted as a YAML list.
+    the planning session, formatted as numbered code blocks for readability.
 
     Args:
         prompts: List of user prompt strings to include.
+        max_prompt_display_length: Maximum characters to show per prompt.
+            Prompts longer than this are truncated with "..." suffix.
 
     Returns:
         Rendered metadata block markdown string.
@@ -366,41 +370,50 @@ def render_session_prompts_block(prompts: list[str]) -> str:
         <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
         <!-- erk:metadata-block:session-prompts -->
         <details>
-        <summary><code>session-prompts</code></summary>
+        <summary><code>session-prompts</code> (3 prompts)</summary>
 
-        ```yaml
-        prompt_count: 3
-        prompts:
-          - "Add a dark mode toggle"
-          - "Make sure tests pass"
-          - "Also run the linter"
+        **Prompt 1:**
+
+        ```
+        Add a dark mode toggle
+        ```
+
+        **Prompt 2:**
+
+        ```
+        Make sure tests pass
         ```
 
         </details>
         <!-- /erk:metadata-block:session-prompts -->
     """
-    data = {
-        "prompt_count": len(prompts),
-        "prompts": prompts,
-    }
+    # Build the numbered prompt blocks
+    prompt_blocks: list[str] = []
+    for i, prompt in enumerate(prompts, start=1):
+        # Truncate long prompts for display
+        display_text = prompt
+        if len(prompt) > max_prompt_display_length:
+            display_text = prompt[: max_prompt_display_length - 3] + "..."
 
-    yaml_content = yaml.safe_dump(
-        data,
-        default_flow_style=False,
-        allow_unicode=True,
-        sort_keys=False,
-    ).rstrip("\n")
+        block = f"""**Prompt {i}:**
+
+```
+{display_text}
+```"""
+        prompt_blocks.append(block)
+
+    # Join blocks with blank lines
+    content = "\n\n".join(prompt_blocks)
+
+    # Summary shows count
+    count_suffix = f" ({len(prompts)} prompt{'s' if len(prompts) != 1 else ''})"
 
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:session-prompts -->
 <details>
-<summary><code>session-prompts</code></summary>
+<summary><code>session-prompts</code>{count_suffix}</summary>
 
-```yaml
-
-{yaml_content}
-
-```
+{content}
 
 </details>
 <!-- /erk:metadata-block:session-prompts -->"""
@@ -409,8 +422,8 @@ def render_session_prompts_block(prompts: list[str]) -> str:
 def extract_prompts_from_session_prompts_block(block_body: str) -> list[str] | None:
     """Extract prompts list from a session-prompts metadata block.
 
-    Parses the <details> structure to find the YAML content and extract
-    the prompts list.
+    Parses the <details> structure to find numbered prompt blocks and extract
+    the prompt text from each code fence.
 
     Args:
         block_body: Raw body content from a session-prompts metadata block.
@@ -420,40 +433,28 @@ def extract_prompts_from_session_prompts_block(block_body: str) -> list[str] | N
     """
     # The session-prompts block has format:
     # <details>
-    # <summary><code>session-prompts</code></summary>
+    # <summary><code>session-prompts</code> (N prompts)</summary>
     #
-    # ```yaml
-    # prompt_count: N
-    # prompts:
-    #   - "prompt 1"
-    #   - "prompt 2"
+    # **Prompt 1:**
+    #
+    # ```
+    # First prompt text
+    # ```
+    #
+    # **Prompt 2:**
+    #
+    # ```
+    # Second prompt text
     # ```
     #
     # </details>
 
-    # Extract content from the yaml code fence
-    pattern = r"```yaml\s*(.*?)\s*```"
-    match = re.search(pattern, block_body, re.DOTALL)
+    # Find all prompt blocks: **Prompt N:** followed by a code fence
+    # Pattern: **Prompt \d+:** followed by ``` ... ```
+    pattern = r"\*\*Prompt \d+:\*\*\s*\n\n```\n(.*?)\n```"
+    matches = re.findall(pattern, block_body, re.DOTALL)
 
-    if match is None:
+    if not matches:
         return None
 
-    yaml_content = match.group(1).strip()
-    if not yaml_content:
-        return None
-
-    # External data parsing - must handle malformed input gracefully
-    try:
-        data = yaml.safe_load(yaml_content)
-    except yaml.YAMLError:
-        return None
-
-    if not isinstance(data, dict):
-        return None
-
-    prompts = data.get("prompts")
-    if not isinstance(prompts, list):
-        return None
-
-    # Ensure all items are strings
-    return [str(p) for p in prompts]
+    return [match.strip() for match in matches]
