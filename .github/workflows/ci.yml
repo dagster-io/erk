@@ -236,6 +236,9 @@ jobs:
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         run: npm install -g prettier@3.6.0
 
+      - uses: ./.github/actions/setup-graphite
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
+
       - name: Setup Claude Code
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
         uses: ./.github/actions/setup-claude-code
@@ -323,16 +326,89 @@ jobs:
             --verbose \
             --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
 
-      - name: Re-trigger CI
+      - name: Run full CI verification
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           # Check if a new commit was pushed
           current_sha=$(git rev-parse HEAD)
+          if [ "$current_sha" = "${{ github.sha }}" ]; then
+            echo "No new commit was pushed, skipping verification"
+            exit 0
+          fi
+
+          echo "Autofix pushed new commit $current_sha, running full CI verification..."
+          echo ""
+
+          failed=false
+
+          # === Style Checks ===
+          echo "=== Format Check ==="
+          if ! make format-check; then
+            echo "::error::Format check failed"
+            failed=true
+          fi
+
+          echo ""
+          echo "=== Lint Check ==="
+          if ! make lint; then
+            echo "::error::Lint check failed"
+            failed=true
+          fi
+
+          echo ""
+          echo "=== Prettier Check ==="
+          if ! prettier --check '**/*.md' --ignore-path .gitignore; then
+            echo "::error::Prettier check failed"
+            failed=true
+          fi
+
+          echo ""
+          echo "=== Docs Sync Check ==="
+          if ! make docs-sync-check; then
+            echo "::error::Docs sync check failed"
+            failed=true
+          fi
+
+          # === Type Checks ===
+          echo ""
+          echo "=== Type Check (ty) ==="
+          if ! make ty; then
+            echo "::error::Type check failed"
+            failed=true
+          fi
+
+          # === Tests ===
+          echo ""
+          echo "=== Unit Tests ==="
+          if ! make test; then
+            echo "::error::Unit tests failed"
+            failed=true
+          fi
+
+          echo ""
+          echo "=== Integration Tests ==="
+          if ! make test-integration; then
+            echo "::error::Integration tests failed"
+            failed=true
+          fi
+
+          echo ""
+          if [ "$failed" = "true" ]; then
+            echo "::error::CI verification failed after autofix"
+            exit 1
+          fi
+
+          echo "All CI checks passed!"
+
+      - name: Update commit status
+        if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true' && success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          current_sha=$(git rev-parse HEAD)
           if [ "$current_sha" != "${{ github.sha }}" ]; then
-            echo "Autofix pushed new commit $current_sha, re-triggering CI"
-            gh workflow run ci --ref ${{ github.head_ref || github.ref_name }}
-          else
-            echo "No new commit was pushed, skipping re-trigger"
+            gh api repos/${{ github.repository }}/statuses/$current_sha \
+              -f state=success \
+              -f context="ci / autofix-verified" \
+              -f description="All CI checks passed after autofix"
           fi
