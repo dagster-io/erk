@@ -13,33 +13,11 @@ This package provides:
 
 from pathlib import Path
 
-# Re-exports for public API - use explicit `as X` syntax per PEP 484
+# Internal imports for _register_all_capabilities
 from erk.core.capabilities.agents import AGENT_CAPABILITIES
-from erk.core.capabilities.agents import DevrunAgentCapability as DevrunAgentCapability
-from erk.core.capabilities.base import Capability as Capability
-from erk.core.capabilities.base import CapabilityArtifact as CapabilityArtifact
-from erk.core.capabilities.base import CapabilityResult as CapabilityResult
-from erk.core.capabilities.groups import CAPABILITY_GROUPS as CAPABILITY_GROUPS
-from erk.core.capabilities.groups import CapabilityGroup as CapabilityGroup
-from erk.core.capabilities.groups import expand_capability_names as expand_capability_names
-from erk.core.capabilities.groups import get_group as get_group
-from erk.core.capabilities.groups import is_group as is_group
-from erk.core.capabilities.groups import list_groups as list_groups
-from erk.core.capabilities.skill_capability import SkillCapability as SkillCapability
+from erk.core.capabilities.base import Capability, CapabilityArtifact, CapabilityResult
 from erk.core.capabilities.skills import SKILL_CAPABILITIES
-from erk.core.capabilities.skills import CiIterationCapability as CiIterationCapability
-from erk.core.capabilities.skills import CliSkillCreatorCapability as CliSkillCreatorCapability
-from erk.core.capabilities.skills import CommandCreatorCapability as CommandCreatorCapability
-from erk.core.capabilities.skills import DignifiedPythonCapability as DignifiedPythonCapability
-from erk.core.capabilities.skills import (
-    FakeDrivenTestingCapability as FakeDrivenTestingCapability,
-)
-from erk.core.capabilities.skills import GhCapability as GhCapability
-from erk.core.capabilities.skills import GtCapability as GtCapability
 from erk.core.capabilities.workflows import WORKFLOW_CAPABILITIES
-from erk.core.capabilities.workflows import (
-    ErkImplWorkflowCapability as ErkImplWorkflowCapability,
-)
 
 # Global registry of available capabilities
 _CAPABILITIES: dict[str, Capability] = {}

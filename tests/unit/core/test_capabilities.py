@@ -11,15 +11,17 @@ These tests verify:
 from pathlib import Path
 
 from erk.core.capabilities import (
-    Capability,
-    CapabilityArtifact,
-    CapabilityResult,
     LearnedDocsCapability,
     get_capability,
     list_capabilities,
     register_capability,
 )
 from erk.core.capabilities.agents import DevrunAgentCapability
+from erk.core.capabilities.base import (
+    Capability,
+    CapabilityArtifact,
+    CapabilityResult,
+)
 from erk.core.capabilities.groups import (
     CAPABILITY_GROUPS,
     CapabilityGroup,

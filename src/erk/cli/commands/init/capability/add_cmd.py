@@ -2,11 +2,10 @@
 
 import click
 
-from erk.core.capabilities import (
+from erk.core.capabilities import get_capability, list_capabilities
+from erk.core.capabilities.groups import (
     expand_capability_names,
-    get_capability,
     is_group,
-    list_capabilities,
     list_groups,
 )
 from erk.core.context import ErkContext
