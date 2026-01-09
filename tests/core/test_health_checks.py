@@ -699,8 +699,6 @@ def test_check_managed_artifacts_actions_optional_without_workflows(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Actions not-installed is OK (info) when workflows aren't installed."""
-    import json
-
     from erk.core.claude_settings import add_erk_hooks
 
     # Monkeypatch registries to simplify test (only test actions/workflows interaction)
@@ -756,8 +754,6 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Actions not-installed is an error when workflows ARE installed."""
-    import json
-
     from erk.core.claude_settings import add_erk_hooks
 
     # Monkeypatch registries to simplify test (only test actions/workflows interaction)
