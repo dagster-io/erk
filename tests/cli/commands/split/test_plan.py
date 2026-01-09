@@ -4,6 +4,7 @@ These tests verify the pure business logic for worktree split operations.
 All tests are fast and don't require filesystem I/O.
 """
 
+import os
 from pathlib import Path
 
 from erk.cli.commands.stack.split_old.plan import (
