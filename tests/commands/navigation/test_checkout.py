@@ -154,10 +154,10 @@ def test_checkout_creates_worktree_for_unchecked_branch() -> None:
             print(f"stderr: {result.stderr}")
             print(f"stdout: {result.stdout}")
 
-        # Should succeed and create worktree
+        # Should succeed and allocate slot for the branch
         assert result.exit_code == 0
-        assert "creating worktree" in result.stderr
-        assert "✓ Created worktree" in result.stderr
+        # New slot allocation behavior outputs "Assigned X to erk-slot-XX"
+        assert "Assigned existing-branch to erk-slot-01" in result.stderr
 
         # Verify worktree was created
         assert len(git_ops.added_worktrees) == 1
@@ -224,9 +224,10 @@ def test_checkout_to_branch_in_stack_but_not_checked_out() -> None:
             print(f"stderr: {result.stderr}")
             print(f"stdout: {result.stdout}")
 
-        # Should succeed and create worktree
+        # Should succeed and allocate slot for the branch
         assert result.exit_code == 0
-        assert "creating worktree" in result.stderr
+        # New slot allocation behavior outputs "Assigned X to erk-slot-XX"
+        assert "Assigned feature-base to erk-slot-01" in result.stderr
 
         # Verify worktree was created
         assert len(git_ops.added_worktrees) == 1
@@ -482,11 +483,11 @@ def test_checkout_creates_worktree_for_remote_only_branch() -> None:
             print(f"stderr: {result.stderr}")
             print(f"stdout: {result.stdout}")
 
-        # Should succeed with worktree creation
+        # Should succeed with slot allocation for the remote branch
         assert result.exit_code == 0, f"Expected success, got: {result.stderr}"
         assert "exists on origin, creating local tracking branch" in result.stderr
-        assert "creating worktree" in result.stderr
-        assert "✓ Created worktree" in result.stderr
+        # New slot allocation behavior outputs "Assigned X to erk-slot-XX"
+        assert "Assigned feature-remote to erk-slot-01" in result.stderr
 
         # Verify worktree was created
         assert len(git_ops.added_worktrees) == 1
