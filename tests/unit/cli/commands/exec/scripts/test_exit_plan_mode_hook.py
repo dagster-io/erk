@@ -326,12 +326,12 @@ class TestBuildBlockingMessage:
         assert "AskUserQuestion" in message
         assert "Save the plan" in message
         assert "(Recommended)" in message
+        # "Do not save issue and implement here" option (skip saving)
+        assert "Do not save issue and implement here" in message
+        assert "small PR iterations" in message
         # "Save plan and implement here" option (save + implement)
         assert '"Save plan and implement here"' in message
         assert "Save to GitHub, then immediately implement" in message
-        # "Do not save issue and implement here" option
-        assert "Do not save issue and implement here" in message
-        assert "small PR iterations" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message

@@ -288,10 +288,10 @@ def build_blocking_message(
         "IMPORTANT: Present options in this exact order:",
         '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '
         "Does NOT proceed to implementation.",
-        '  2. "Save plan and implement here" - Save to GitHub, then immediately '
+        '  2. "Do not save issue and implement here" - Skip saving, implement directly '
+        "in current worktree (for small PR iterations that don't need issue tracking).",
+        '  3. "Save plan and implement here" - Save to GitHub, then immediately '
         "implement (full workflow).",
-        '  3. "Do not save issue and implement here" - Skip saving, implement directly in current '
-        "worktree (for small PR iterations that don't need issue tracking).",
         '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
     ]
 
@@ -319,14 +319,6 @@ def build_blocking_message(
             "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
-            "If user chooses 'Save plan and implement here':",
-            f"  1. Run {save_cmd}",
-            "  2. After save completes, create implement-now marker:",
-            f"     erk exec marker create --session-id {session_id} \\",
-            "       exit-plan-mode-hook.implement-now",
-            "  3. Call ExitPlanMode",
-            "  4. After exiting plan mode, run /erk:system:impl-execute to execute implementation",
-            "",
             "If user chooses 'Do not save issue and implement here':",
             "  1. Create implement-now marker (skip saving):",
             f"     erk exec marker create --session-id {session_id} \\",
@@ -334,6 +326,14 @@ def build_blocking_message(
             "  2. Call ExitPlanMode",
             "  3. After exiting plan mode, implement the changes directly",
             "     (no issue tracking - this is for small PR iterations)",
+            "",
+            "If user chooses 'Save plan and implement here':",
+            f"  1. Run {save_cmd}",
+            "  2. After save completes, create implement-now marker:",
+            f"     erk exec marker create --session-id {session_id} \\",
+            "       exit-plan-mode-hook.implement-now",
+            "  3. Call ExitPlanMode",
+            "  4. After exiting plan mode, run /erk:system:impl-execute to execute implementation",
         ]
     )
 
