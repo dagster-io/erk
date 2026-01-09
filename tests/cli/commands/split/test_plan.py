@@ -18,20 +18,7 @@ from erk_shared.git.abc import WorktreeInfo
 
 
 def test_identify_splittable_branches_excludes_trunk() -> None:
-    """
-
-
-
-
-
-
-
-
-
-
-
-
-    Trunk branch should stay in root worktree and not be split"""
+    """Trunk branch should stay in root worktree and not be split."""
     stack_branches = ["main", "feat-1", "feat-2"]
     trunk_branch = "main"
     current_branch = "feat-2"
