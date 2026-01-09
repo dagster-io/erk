@@ -368,9 +368,9 @@ def render_session_prompts_block(
 
     Example output:
         <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-        <!-- erk:metadata-block:session-prompts -->
+        <!-- erk:metadata-block:planning-session-prompts -->
         <details>
-        <summary><code>session-prompts</code> (3 prompts)</summary>
+        <summary><code>planning-session-prompts</code> (3 prompts)</summary>
 
         **Prompt 1:**
 
@@ -385,7 +385,7 @@ def render_session_prompts_block(
         ```
 
         </details>
-        <!-- /erk:metadata-block:session-prompts -->
+        <!-- /erk:metadata-block:planning-session-prompts -->
     """
     # Build the numbered prompt blocks
     prompt_blocks: list[str] = []
@@ -409,31 +409,31 @@ def render_session_prompts_block(
     count_suffix = f" ({len(prompts)} prompt{'s' if len(prompts) != 1 else ''})"
 
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:session-prompts -->
+<!-- erk:metadata-block:planning-session-prompts -->
 <details>
-<summary><code>session-prompts</code>{count_suffix}</summary>
+<summary><code>planning-session-prompts</code>{count_suffix}</summary>
 
 {content}
 
 </details>
-<!-- /erk:metadata-block:session-prompts -->"""
+<!-- /erk:metadata-block:planning-session-prompts -->"""
 
 
 def extract_prompts_from_session_prompts_block(block_body: str) -> list[str] | None:
-    """Extract prompts list from a session-prompts metadata block.
+    """Extract prompts list from a planning-session-prompts metadata block.
 
     Parses the <details> structure to find numbered prompt blocks and extract
     the prompt text from each code fence.
 
     Args:
-        block_body: Raw body content from a session-prompts metadata block.
+        block_body: Raw body content from a planning-session-prompts metadata block.
 
     Returns:
         List of prompt strings, or None if parsing fails.
     """
-    # The session-prompts block has format:
+    # The planning-session-prompts block has format:
     # <details>
-    # <summary><code>session-prompts</code> (N prompts)</summary>
+    # <summary><code>planning-session-prompts</code> (N prompts)</summary>
     #
     # **Prompt 1:**
     #

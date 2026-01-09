@@ -250,7 +250,7 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
     _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
     assert "Step 1" in plan_comment
     _issue_num2, prompts_comment, _comment_id2 = fake_gh.added_comments[1]
-    assert "session-prompts" in prompts_comment
+    assert "planning-session-prompts" in prompts_comment
     assert "Hello" in prompts_comment  # The user message from session_content
 
 

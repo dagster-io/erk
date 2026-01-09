@@ -449,8 +449,8 @@ def test_render_session_prompts_block_basic() -> None:
     prompts = ["Add dark mode", "Run tests"]
     result = render_session_prompts_block(prompts, max_prompt_display_length=500)
 
-    assert "<!-- erk:metadata-block:session-prompts -->" in result
-    assert "<!-- /erk:metadata-block:session-prompts -->" in result
+    assert "<!-- erk:metadata-block:planning-session-prompts -->" in result
+    assert "<!-- /erk:metadata-block:planning-session-prompts -->" in result
     assert "<details>" in result
     assert "</details>" in result
     assert "**Prompt 1:**" in result
@@ -469,10 +469,10 @@ def test_render_session_prompts_block_includes_warning() -> None:
 def test_render_session_prompts_block_includes_summary_with_count() -> None:
     """The summary tag includes prompt count."""
     result = render_session_prompts_block(["Test prompt"], max_prompt_display_length=500)
-    assert "<summary><code>session-prompts</code> (1 prompt)</summary>" in result
+    assert "<summary><code>planning-session-prompts</code> (1 prompt)</summary>" in result
 
     result2 = render_session_prompts_block(["A", "B"], max_prompt_display_length=500)
-    assert "<summary><code>session-prompts</code> (2 prompts)</summary>" in result2
+    assert "<summary><code>planning-session-prompts</code> (2 prompts)</summary>" in result2
 
 
 def test_render_session_prompts_block_empty_list() -> None:
@@ -508,9 +508,9 @@ def test_render_session_prompts_block_truncates_long_prompts() -> None:
 
 
 def test_extract_prompts_from_session_prompts_block_basic() -> None:
-    """Extracts prompts from a valid session-prompts block body."""
+    """Extracts prompts from a valid planning-session-prompts block body."""
     block_body = """<details>
-<summary><code>session-prompts</code> (2 prompts)</summary>
+<summary><code>planning-session-prompts</code> (2 prompts)</summary>
 
 **Prompt 1:**
 
@@ -535,7 +535,7 @@ Second prompt
 def test_extract_prompts_from_session_prompts_block_no_prompts_returns_none() -> None:
     """Returns None when no prompt blocks are found."""
     block_body = """<details>
-<summary><code>session-prompts</code> (0 prompts)</summary>
+<summary><code>planning-session-prompts</code> (0 prompts)</summary>
 
 No prompt blocks here
 
@@ -549,7 +549,7 @@ No prompt blocks here
 def test_extract_prompts_from_session_prompts_block_multiline() -> None:
     """Extracts prompts with multiline content."""
     block_body = """<details>
-<summary><code>session-prompts</code> (1 prompt)</summary>
+<summary><code>planning-session-prompts</code> (1 prompt)</summary>
 
 **Prompt 1:**
 
@@ -578,8 +578,8 @@ def test_session_prompts_roundtrip() -> None:
 
     # Extract from the rendered block body (strip the HTML comment wrappers)
     # Find the body between the markers
-    start_marker = "<!-- erk:metadata-block:session-prompts -->"
-    end_marker = "<!-- /erk:metadata-block:session-prompts -->"
+    start_marker = "<!-- erk:metadata-block:planning-session-prompts -->"
+    end_marker = "<!-- /erk:metadata-block:planning-session-prompts -->"
     pattern = rf"{re.escape(start_marker)}(.+?){re.escape(end_marker)}"
     match = re.search(pattern, rendered, re.DOTALL)
     assert match is not None
