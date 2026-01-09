@@ -9,6 +9,7 @@ on:
 permissions:
   contents: write # Needed for autofix to push
   actions: write # Needed to re-trigger workflow after autofix push
+  statuses: write # Needed for autofix to update commit status
 
 jobs:
   check-submission:
