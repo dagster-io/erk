@@ -30,6 +30,7 @@ from erk.core.context import ErkContext
 from erk.core.init_utils import has_shell_integration_in_rc
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
+from erk.core.worktree_pool import load_pool_state
 from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github.issues.abc import GitHubIssues
@@ -1527,8 +1528,6 @@ def check_legacy_slot_naming(repo: RepoContext) -> CheckResult:
     Returns:
         CheckResult indicating whether legacy slot names were found
     """
-    from erk.core.worktree_pool import load_pool_state
-
     pool_state = load_pool_state(repo.pool_json_path)
 
     # No pool file exists - nothing to check
