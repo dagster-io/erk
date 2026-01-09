@@ -9,6 +9,8 @@ These support storing session content in GitHub issue comments, with:
 
 import re
 
+import yaml
+
 from erk_shared.github.metadata.constants import (
     CHUNK_SAFETY_BUFFER,
     GITHUB_COMMENT_SIZE_LIMIT,
@@ -346,3 +348,112 @@ def get_default_max_chunk_size() -> int:
         Default max chunk size (GITHUB_COMMENT_SIZE_LIMIT - CHUNK_SAFETY_BUFFER)
     """
     return GITHUB_COMMENT_SIZE_LIMIT - CHUNK_SAFETY_BUFFER
+
+
+def render_session_prompts_block(prompts: list[str]) -> str:
+    """Render session prompts as a metadata block with YAML content.
+
+    Creates a collapsible metadata block containing user prompts from
+    the planning session, formatted as a YAML list.
+
+    Args:
+        prompts: List of user prompt strings to include.
+
+    Returns:
+        Rendered metadata block markdown string.
+
+    Example output:
+        <!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+        <!-- erk:metadata-block:session-prompts -->
+        <details>
+        <summary><code>session-prompts</code></summary>
+
+        ```yaml
+        prompt_count: 3
+        prompts:
+          - "Add a dark mode toggle"
+          - "Make sure tests pass"
+          - "Also run the linter"
+        ```
+
+        </details>
+        <!-- /erk:metadata-block:session-prompts -->
+    """
+    data = {
+        "prompt_count": len(prompts),
+        "prompts": prompts,
+    }
+
+    yaml_content = yaml.safe_dump(
+        data,
+        default_flow_style=False,
+        allow_unicode=True,
+        sort_keys=False,
+    ).rstrip("\n")
+
+    return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
+<!-- erk:metadata-block:session-prompts -->
+<details>
+<summary><code>session-prompts</code></summary>
+
+```yaml
+
+{yaml_content}
+
+```
+
+</details>
+<!-- /erk:metadata-block:session-prompts -->"""
+
+
+def extract_prompts_from_session_prompts_block(block_body: str) -> list[str] | None:
+    """Extract prompts list from a session-prompts metadata block.
+
+    Parses the <details> structure to find the YAML content and extract
+    the prompts list.
+
+    Args:
+        block_body: Raw body content from a session-prompts metadata block.
+
+    Returns:
+        List of prompt strings, or None if parsing fails.
+    """
+    # The session-prompts block has format:
+    # <details>
+    # <summary><code>session-prompts</code></summary>
+    #
+    # ```yaml
+    # prompt_count: N
+    # prompts:
+    #   - "prompt 1"
+    #   - "prompt 2"
+    # ```
+    #
+    # </details>
+
+    # Extract content from the yaml code fence
+    pattern = r"```yaml\s*(.*?)\s*```"
+    match = re.search(pattern, block_body, re.DOTALL)
+
+    if match is None:
+        return None
+
+    yaml_content = match.group(1).strip()
+    if not yaml_content:
+        return None
+
+    # External data parsing - must handle malformed input gracefully
+    try:
+        data = yaml.safe_load(yaml_content)
+    except yaml.YAMLError:
+        return None
+
+    if not isinstance(data, dict):
+        return None
+
+    prompts = data.get("prompts")
+    if not isinstance(prompts, list):
+        return None
+
+    # Ensure all items are strings
+    return [str(p) for p in prompts]

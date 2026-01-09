@@ -389,3 +389,60 @@ def extract_agent_id_from_tool_result(
     if tool_use_id is None:
         return None
     return (tool_use_id, agent_id)
+
+
+def extract_user_prompts_from_jsonl(
+    content: str,
+    *,
+    max_prompts: int,
+    max_prompt_length: int,
+) -> list[str]:
+    """Extract user prompt text from JSONL session content.
+
+    Iterates through session entries and extracts text from user messages,
+    with limits on count and length to keep output manageable.
+
+    Args:
+        content: Raw JSONL content as a string.
+        max_prompts: Maximum number of prompts to extract.
+        max_prompt_length: Maximum length for each prompt (truncated with ...).
+
+    Returns:
+        List of user prompt strings, with at most max_prompts items.
+    """
+    prompts: list[str] = []
+
+    for entry in iter_jsonl_entries(content):
+        if entry.get("type") != "user":
+            continue
+
+        message = entry.get("message", {})
+        content_field = message.get("content", "")
+
+        # Content can be string or list of content blocks
+        if isinstance(content_field, str):
+            text = content_field
+        elif isinstance(content_field, list):
+            extracted = extract_text_from_content_blocks(content_field)
+            if extracted is None:
+                continue
+            text = extracted
+        else:
+            continue
+
+        # Clean up and skip empty
+        text = text.strip()
+        if not text:
+            continue
+
+        # Truncate if needed
+        if len(text) > max_prompt_length:
+            text = text[: max_prompt_length - 3] + "..."
+
+        prompts.append(text)
+
+        # Stop if we've reached the limit
+        if len(prompts) >= max_prompts:
+            break
+
+    return prompts

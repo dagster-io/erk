@@ -13,6 +13,7 @@ from erk_shared.extraction.session_schema import (
     extract_task_tool_use_id,
     extract_text_from_content_blocks,
     extract_tool_use_id_from_content,
+    extract_user_prompts_from_jsonl,
     iter_jsonl_entries,
     parse_session_timestamp,
 )
@@ -702,3 +703,112 @@ class TestExtractAgentInfoFromJsonl:
         assert len(result) == 2
         assert result["agent-agent1"].agent_type == "Plan"
         assert result["agent-agent2"].agent_type == "devrun"
+
+
+class TestExtractUserPromptsFromJsonl:
+    """Tests for extract_user_prompts_from_jsonl function."""
+
+    def test_extracts_prompts_from_string_content(self) -> None:
+        """Extracts prompts from user messages with string content."""
+        entries = [
+            {"type": "user", "message": {"content": "First prompt"}},
+            {"type": "assistant", "message": {"content": "Response"}},
+            {"type": "user", "message": {"content": "Second prompt"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
+
+        assert result == ["First prompt", "Second prompt"]
+
+    def test_extracts_prompts_from_content_blocks(self) -> None:
+        """Extracts prompts from user messages with content blocks."""
+        entries = [
+            {
+                "type": "user",
+                "message": {"content": [{"type": "text", "text": "Hello from blocks"}]},
+            }
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
+
+        assert result == ["Hello from blocks"]
+
+    def test_limits_to_max_prompts(self) -> None:
+        """Stops extracting after max_prompts is reached."""
+        entries = [{"type": "user", "message": {"content": f"Prompt {i}"}} for i in range(10)]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=3, max_prompt_length=100)
+
+        assert len(result) == 3
+        assert result == ["Prompt 0", "Prompt 1", "Prompt 2"]
+
+    def test_truncates_long_prompts(self) -> None:
+        """Truncates prompts longer than max_prompt_length."""
+        long_text = "This is a very long prompt that needs truncation"
+        entries = [{"type": "user", "message": {"content": long_text}}]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=20)
+
+        assert len(result) == 1
+        assert result[0] == "This is a very lo..."
+        assert len(result[0]) == 20
+
+    def test_skips_empty_prompts(self) -> None:
+        """Skips user entries with empty or whitespace-only content."""
+        entries = [
+            {"type": "user", "message": {"content": "   "}},
+            {"type": "user", "message": {"content": ""}},
+            {"type": "user", "message": {"content": "Valid prompt"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
+
+        assert result == ["Valid prompt"]
+
+    def test_skips_non_user_entries(self) -> None:
+        """Only extracts prompts from user entries."""
+        entries = [
+            {"type": "assistant", "message": {"content": "Assistant message"}},
+            {"type": "tool_result", "message": {"content": "Tool result"}},
+            {"type": "user", "message": {"content": "User prompt"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
+
+        assert result == ["User prompt"]
+
+    def test_returns_empty_for_no_user_entries(self) -> None:
+        """Returns empty list when no user entries exist."""
+        entries = [{"type": "assistant", "message": {"content": "Only assistant"}}]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
+
+        assert result == []
+
+    def test_returns_empty_for_empty_content(self) -> None:
+        """Returns empty list for empty JSONL content."""
+        result = extract_user_prompts_from_jsonl("", max_prompts=10, max_prompt_length=100)
+
+        assert result == []
+
+    def test_handles_content_blocks_without_text(self) -> None:
+        """Skips user entries where content blocks have no text."""
+        entries = [
+            {
+                "type": "user",
+                "message": {"content": [{"type": "tool_use", "name": "Read"}]},
+            },
+            {"type": "user", "message": {"content": "Has text"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
+
+        assert result == ["Has text"]
