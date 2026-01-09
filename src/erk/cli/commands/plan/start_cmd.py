@@ -12,12 +12,12 @@ import click
 from erk.cli.activation import render_activation_script
 from erk.cli.commands.implement_shared import normalize_model_name
 from erk.cli.commands.slot.common import (
+    allocate_slot_for_branch,
     find_branch_assignment,
     find_inactive_slot,
     find_next_available_slot,
     generate_slot_name,
     get_pool_size,
-    handle_pool_full_interactive,
 )
 from erk.cli.commands.wt.create_cmd import run_post_worktree_setup
 from erk.cli.config import LoadedConfig
@@ -25,12 +25,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk.core.worktree_pool import (
-    PoolState,
-    SlotAssignment,
-    load_pool_state,
-    save_pool_state,
-)
+from erk.core.worktree_pool import PoolState, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -231,119 +226,48 @@ def plan_start(
     local_branches = ctx.git.list_local_branches(repo_root)
     use_existing_branch = branch in local_branches
 
-    # Find available slot
+    # Find available slot (preview for dry-run mode)
     inactive_slot = find_inactive_slot(state, ctx.git, repo_root)
     if inactive_slot is not None:
-        # Fast path: reuse existing worktree
-        slot_name, wt_path = inactive_slot
+        slot_name_preview, _ = inactive_slot
     else:
-        # Find next available slot number
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
-        if slot_num is None:
-            # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(
-                state, force, ctx.terminal.is_stdin_interactive()
-            )
-            if to_unassign is None:
-                raise SystemExit(1) from None
-
-            # Remove the assignment from state
-            new_assignments = tuple(
-                a for a in state.assignments if a.slot_name != to_unassign.slot_name
-            )
-            state = PoolState(
-                version=state.version,
-                pool_size=state.pool_size,
-                slots=state.slots,
-                assignments=new_assignments,
-            )
-            save_pool_state(repo.pool_json_path, state)
-            user_output(
-                click.style("✓ ", fg="green")
-                + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
-                + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
-            )
-
-            # Use the slot we just unassigned (it has a worktree directory that can be reused)
-            slot_name = to_unassign.slot_name
-            wt_path = to_unassign.worktree_path
+        if slot_num is not None:
+            slot_name_preview = generate_slot_name(slot_num)
         else:
-            slot_name = generate_slot_name(slot_num)
-            wt_path = repo.worktrees_dir / slot_name
+            # Pool is full - slot name will be determined after unassigning
+            # For dry-run, just show "oldest slot"
+            slot_name_preview = "(oldest slot after unassign)"
 
     # Handle dry-run mode
     if dry_run:
-        _show_dry_run_output(slot_name, branch, dangerous, model)
+        _show_dry_run_output(slot_name_preview, branch, dangerous, model)
         return
 
-    # Create worktree at slot path
-    ctx.feedback.info(f"Assigning to slot '{slot_name}'...")
-
-    # Load local config
-    config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
-
-    # Respect global use_graphite config
+    # Create branch if needed (BEFORE slot allocation)
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+    if not use_existing_branch:
+        ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
+        ctx.git.create_branch(repo_root, branch, base_branch)
+        if use_graphite:
+            ctx.graphite.track_branch(repo_root, branch, base_branch)
 
-    if inactive_slot is not None:
-        # Fast path: checkout branch in existing worktree
-        if use_existing_branch:
-            ctx.feedback.info(f"Checking out existing branch '{branch}'...")
-            ctx.git.checkout_branch(wt_path, branch)
-        else:
-            # Create branch and checkout
-            ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
-            ctx.git.create_branch(repo_root, branch, base_branch)
-            if use_graphite:
-                ctx.graphite.track_branch(repo_root, branch, base_branch)
-            ctx.git.checkout_branch(wt_path, branch)
-    else:
-        # On-demand slot creation
-        if not use_existing_branch:
-            # Create branch first
-            ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
-            ctx.git.create_branch(repo_root, branch, base_branch)
-            if use_graphite:
-                ctx.graphite.track_branch(repo_root, branch, base_branch)
-
-        # Check if worktree directory already exists (from pool initialization)
-        if wt_path.exists():
-            # Worktree already exists - check out the branch
-            ctx.git.checkout_branch(wt_path, branch)
-        else:
-            # Create directory for worktree
-            wt_path.mkdir(parents=True, exist_ok=True)
-
-            # Add worktree
-            ctx.git.add_worktree(
-                repo_root,
-                wt_path,
-                branch=branch,
-                ref=None,
-                create_branch=False,
-            )
+    # Allocate slot for the branch (branch now exists)
+    result = allocate_slot_for_branch(
+        ctx,
+        repo,
+        branch,
+        force=force,
+        reuse_inactive_slots=True,
+        cleanup_artifacts=True,
+    )
+    slot_name = result.slot_name
+    wt_path = result.worktree_path
 
     ctx.feedback.success(f"✓ Assigned {branch} to {slot_name}")
 
-    # Create slot assignment
-    now = ctx.time.now().isoformat()
-    new_assignment = SlotAssignment(
-        slot_name=slot_name,
-        branch_name=branch,
-        assigned_at=now,
-        worktree_path=wt_path,
-    )
-
-    # Update state with new assignment
-    new_state = PoolState(
-        version=state.version,
-        pool_size=state.pool_size,
-        slots=state.slots,
-        assignments=(*state.assignments, new_assignment),
-    )
-
-    # Save state
-    save_pool_state(repo.pool_json_path, new_state)
+    # Load local config for post-worktree setup
+    config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
 
     # Run post-worktree setup
     run_post_worktree_setup(

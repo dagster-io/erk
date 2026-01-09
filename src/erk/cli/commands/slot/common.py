@@ -2,12 +2,26 @@
 
 import re
 import shutil
+from dataclasses import dataclass
 from pathlib import Path
 
+import click
+
 from erk.core.context import ErkContext
-from erk.core.worktree_pool import PoolState, SlotAssignment
+from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.git.abc import Git
 from erk_shared.output.output import user_confirm, user_output
+
+
+@dataclass(frozen=True)
+class SlotAllocationResult:
+    """Result of allocating a slot for a branch."""
+
+    slot_name: str
+    worktree_path: Path
+    already_assigned: bool  # True if branch was already in a slot
+
 
 # Default pool configuration
 DEFAULT_POOL_SIZE = 4
@@ -312,3 +326,156 @@ def cleanup_worktree_artifacts(worktree_path: Path) -> None:
 
     if scratch_folder.exists():
         shutil.rmtree(scratch_folder)
+
+
+def allocate_slot_for_branch(
+    ctx: ErkContext,
+    repo: RepoContext,
+    branch_name: str,
+    *,
+    force: bool,
+    reuse_inactive_slots: bool,
+    cleanup_artifacts: bool,
+) -> SlotAllocationResult:
+    """Allocate a pool slot for a branch and setup the worktree.
+
+    This is the unified slot allocation algorithm used by all commands
+    that need to assign branches to pool slots.
+
+    The branch MUST already exist before calling this function.
+
+    Args:
+        ctx: Erk context (uses ctx.time.now() for testable timestamps)
+        repo: Repository context with pool_json_path and worktrees_dir
+        branch_name: Name of existing branch to assign
+        force: Auto-unassign oldest if pool is full (no interactive prompt)
+        reuse_inactive_slots: Try to reuse unassigned worktrees first
+        cleanup_artifacts: Remove .impl/ and .erk/scratch/ on worktree reuse
+
+    Returns:
+        SlotAllocationResult with slot info
+
+    Raises:
+        SystemExit(1): If pool is full and user declined to unassign
+    """
+    ensure_erk_metadata_dir(repo)
+
+    # Get pool size from config or default
+    pool_size = get_pool_size(ctx)
+
+    # Load or create pool state
+    state = load_pool_state(repo.pool_json_path)
+    if state is None:
+        state = PoolState(
+            version="1.0",
+            pool_size=pool_size,
+            slots=(),
+            assignments=(),
+        )
+
+    # Check if branch is already assigned
+    existing = find_branch_assignment(state, branch_name)
+    if existing is not None:
+        # Branch is already assigned to a slot - just return that path
+        return SlotAllocationResult(
+            slot_name=existing.slot_name,
+            worktree_path=existing.worktree_path,
+            already_assigned=True,
+        )
+
+    # First, prefer reusing existing worktrees (fast path)
+    inactive_slot = None
+    if reuse_inactive_slots:
+        inactive_slot = find_inactive_slot(state, ctx.git, repo.root)
+
+    if inactive_slot is not None:
+        slot_name, worktree_path = inactive_slot
+        if cleanup_artifacts:
+            cleanup_worktree_artifacts(worktree_path)
+        ctx.git.checkout_branch(worktree_path, branch_name)
+    else:
+        # Fall back to on-demand slot creation
+        slot_num = find_next_available_slot(state, repo.worktrees_dir)
+        if slot_num is None:
+            # Pool is full - handle interactively or with --force
+            to_unassign = handle_pool_full_interactive(
+                state, force, ctx.terminal.is_stdin_interactive()
+            )
+            if to_unassign is None:
+                raise SystemExit(1) from None
+
+            # Remove the assignment from state
+            new_assignments = tuple(
+                a for a in state.assignments if a.slot_name != to_unassign.slot_name
+            )
+            state = PoolState(
+                version=state.version,
+                pool_size=state.pool_size,
+                slots=state.slots,
+                assignments=new_assignments,
+            )
+            save_pool_state(repo.pool_json_path, state)
+            user_output(
+                click.style("✓ ", fg="green")
+                + f"Unassigned {click.style(to_unassign.branch_name, fg='yellow')} "
+                + f"from {click.style(to_unassign.slot_name, fg='cyan')}"
+            )
+
+            # Reuse the unassigned slot
+            slot_name = to_unassign.slot_name
+            worktree_path = to_unassign.worktree_path
+
+            # Check if worktree directory actually exists
+            if worktree_path.exists():
+                # Worktree exists - clean up and checkout
+                if cleanup_artifacts:
+                    cleanup_worktree_artifacts(worktree_path)
+                ctx.git.checkout_branch(worktree_path, branch_name)
+            else:
+                # Worktree doesn't exist (orphaned assignment) - create it
+                worktree_path.mkdir(parents=True, exist_ok=True)
+                ctx.git.add_worktree(
+                    repo.root,
+                    worktree_path,
+                    branch=branch_name,
+                    ref=None,
+                    create_branch=False,
+                )
+        else:
+            # Create new slot - no worktree exists yet
+            slot_name = generate_slot_name(slot_num)
+            worktree_path = repo.worktrees_dir / slot_name
+            worktree_path.mkdir(parents=True, exist_ok=True)
+            ctx.git.add_worktree(
+                repo.root,
+                worktree_path,
+                branch=branch_name,
+                ref=None,
+                create_branch=False,
+            )
+
+    # Create new assignment
+    now = ctx.time.now().isoformat()
+    new_assignment = SlotAssignment(
+        slot_name=slot_name,
+        branch_name=branch_name,
+        assigned_at=now,
+        worktree_path=worktree_path,
+    )
+
+    # Update state with new assignment
+    new_state = PoolState(
+        version=state.version,
+        pool_size=state.pool_size,
+        slots=state.slots,
+        assignments=(*state.assignments, new_assignment),
+    )
+
+    # Save state
+    save_pool_state(repo.pool_json_path, new_state)
+
+    return SlotAllocationResult(
+        slot_name=slot_name,
+        worktree_path=worktree_path,
+        already_assigned=False,
+    )
