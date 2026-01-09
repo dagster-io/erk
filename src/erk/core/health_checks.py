@@ -1507,4 +1507,74 @@ def run_all_checks(ctx: ErkContext) -> list[CheckResult]:
         metadata_dir = ctx.repo.repo_dir if isinstance(ctx.repo, RepoContext) else None
         results.extend(run_early_dogfooder_checks(repo_root, metadata_dir))
 
+        # Legacy slot naming check (requires RepoContext)
+        if isinstance(ctx.repo, RepoContext):
+            results.append(check_legacy_slot_naming(ctx.repo))
+
     return results
+
+
+def check_legacy_slot_naming(repo: RepoContext) -> CheckResult:
+    """Check for legacy slot naming convention in pool state.
+
+    The old naming convention was 'erk-managed-wt-XX'. The new convention
+    is 'erk-slot-XX'. This check detects old-style assignments that need
+    migration.
+
+    Args:
+        repo: Repository context with pool.json path
+
+    Returns:
+        CheckResult indicating whether legacy slot names were found
+    """
+    from erk.core.worktree_pool import load_pool_state
+
+    pool_state = load_pool_state(repo.pool_json_path)
+
+    # No pool file exists - nothing to check
+    if pool_state is None:
+        return CheckResult(
+            name="legacy-slot-naming",
+            passed=True,
+            message="No pool state configured",
+        )
+
+    # No assignments - nothing to check
+    if not pool_state.assignments:
+        return CheckResult(
+            name="legacy-slot-naming",
+            passed=True,
+            message="No slot assignments to check",
+        )
+
+    # Check for old-style slot names
+    old_style_count = 0
+    for assignment in pool_state.assignments:
+        if assignment.slot_name.startswith("erk-managed-wt-"):
+            old_style_count += 1
+
+    if old_style_count == 0:
+        return CheckResult(
+            name="legacy-slot-naming",
+            passed=True,
+            message="All slot assignments use current naming",
+        )
+
+    # Build remediation instructions
+    repo_name = repo.repo_name
+    remediation = (
+        f"To migrate:\n"
+        f'  1. Edit ~/.erk/repos/{repo_name}/pool.json - set "assignments": []\n'
+        f"  2. Delete old dirs: rm -rf ~/.erk/repos/{repo_name}/worktrees/erk-managed-wt-*\n"
+        f"  3. Prune worktrees: git worktree prune\n"
+        f"  4. Delete old branches: git branch | grep placeholder | xargs git branch -D"
+    )
+
+    message = f"Legacy slot naming found ({old_style_count} assignment(s) use 'erk-managed-wt-XX')"
+
+    return CheckResult(
+        name="legacy-slot-naming",
+        passed=False,
+        message=message,
+        remediation=remediation,
+    )
