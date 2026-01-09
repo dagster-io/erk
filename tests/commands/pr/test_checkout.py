@@ -150,9 +150,10 @@ def test_pr_checkout_cross_repository_fork() -> None:
         assert "Created worktree for PR #789" in result.output
         # Should fetch via PR ref, not regular branch
         assert ("origin", "pull/789/head") in git.fetched_branches
-        # Worktree should be at pr/789 path
-        worktree_path = Path(git.added_worktrees[0][0])
-        assert "pr" in worktree_path.parts[-1] or worktree_path.name == "789"
+        # Worktree should be created (at a slot path since we now use slot allocation)
+        assert len(git.added_worktrees) == 1
+        # Verify the branch is assigned to the slot
+        assert "Assigned pr/789 to erk-slot-01" in result.output
 
 
 def test_pr_checkout_already_checked_out() -> None:
@@ -488,3 +489,278 @@ def test_pr_checkout_trunk_pr_skips_rebase() -> None:
         assert "Created worktree for PR #999" in result.output
         # No rebase should have been called
         assert len(git.rebase_onto_calls) == 0
+
+
+# --- Slot allocation tests ---
+
+
+def test_pr_checkout_creates_slot_assignment() -> None:
+    """Test that pr checkout creates a slot assignment by default."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=1001,
+            head_ref_name="slot-test-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={1001: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "slot-test-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "1001"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned slot-test-branch to erk-slot-01" in result.output
+        assert "Created worktree for PR #1001" in result.output
+
+        # Verify pool state was persisted
+        from erk.core.worktree_pool import load_pool_state
+
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "slot-test-branch"
+        assert state.assignments[0].slot_name == "erk-slot-01"
+
+
+def test_pr_checkout_no_slot_skips_assignment() -> None:
+    """Test that --no-slot creates worktree without slot assignment."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=1002,
+            head_ref_name="no-slot-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={1002: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "no-slot-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "--no-slot", "1002"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created worktree for PR #1002" in result.output
+        # Should NOT have slot assignment message
+        assert "Assigned" not in result.output
+
+        # Verify worktree was created using branch name, not slot name
+        assert len(git.added_worktrees) == 1
+        worktree_path = Path(git.added_worktrees[0][0])
+        assert "no-slot-branch" in worktree_path.name or "erk-slot" not in worktree_path.name
+
+        # Verify NO pool state was created
+        from erk.core.worktree_pool import load_pool_state
+
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is None
+
+
+def test_pr_checkout_reuses_inactive_slot() -> None:
+    """Test that pr checkout reuses an existing inactive slot."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Pre-create worktree directory for the slot
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        slot_worktree_path.mkdir(parents=True)
+
+        pr_details = _make_pr_details(
+            number=1003,
+            head_ref_name="reuse-slot-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={1003: pr_details})
+
+        # Configure FakeGit with the existing slot worktree but no assignment
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "reuse-slot-branch"]},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="__erk-slot-01-br-stub__"),
+                ]
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+        )
+
+        # Create pool state with initialized slot but no assignment
+        from erk.core.worktree_pool import PoolState, SlotInfo, save_pool_state
+
+        initial_state = PoolState(
+            version="1.0",
+            pool_size=4,
+            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
+            assignments=(),
+        )
+        save_pool_state(env.repo.pool_json_path, initial_state)
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "1003"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned reuse-slot-branch to erk-slot-01" in result.output
+
+        # Verify checkout_branch was called (reusing existing worktree)
+        assert len(git.checked_out_branches) == 1
+        checkout_path, checkout_branch = git.checked_out_branches[0]
+        assert checkout_path == slot_worktree_path
+        assert checkout_branch == "reuse-slot-branch"
+
+        # Verify add_worktree was NOT called (reused existing)
+        assert len(git.added_worktrees) == 0
+
+
+def test_pr_checkout_force_unassigns_oldest() -> None:
+    """Test that --force unassigns oldest slot when pool is full."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Pre-create worktree directory for the slot
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        slot_worktree_path.mkdir(parents=True)
+
+        pr_details = _make_pr_details(
+            number=1004,
+            head_ref_name="force-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={1004: pr_details})
+
+        # Configure FakeGit with existing slot worktree
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "old-branch", "force-branch"]},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="old-branch"),
+                ]
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+        )
+
+        # Create a full pool (1 slot, 1 assignment)
+        from erk.cli.config import LoadedConfig
+        from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
+
+        full_state = PoolState.test(
+            pool_size=1,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="old-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=slot_worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, full_state)
+
+        local_config = LoadedConfig.test(pool_size=1)
+        ctx = build_workspace_test_context(env, git=git, github=github, local_config=local_config)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "--force", "1004"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Unassigned" in result.output
+        assert "old-branch" in result.output
+        assert "Assigned force-branch to erk-slot-01" in result.output
+
+        # Verify checkout_branch was called (reusing slot)
+        assert len(git.checked_out_branches) == 1
+        checkout_path, checkout_branch = git.checked_out_branches[0]
+        assert checkout_path == slot_worktree_path
+        assert checkout_branch == "force-branch"
+
+        # Verify new state
+        from erk.core.worktree_pool import load_pool_state
+
+        state = load_pool_state(env.repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "force-branch"
+
+
+def test_pr_checkout_pool_full_no_force_fails() -> None:
+    """Test that pool-full without --force fails in non-interactive mode."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Pre-create worktree directory for the slot
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        slot_worktree_path.mkdir(parents=True)
+
+        pr_details = _make_pr_details(
+            number=1005,
+            head_ref_name="blocked-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={1005: pr_details})
+
+        # Configure FakeGit
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "existing-branch", "blocked-branch"]},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="existing-branch"),
+                ]
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+        )
+
+        # Create a full pool
+        from erk.cli.config import LoadedConfig
+        from erk.core.worktree_pool import PoolState, SlotAssignment, save_pool_state
+
+        full_state = PoolState.test(
+            pool_size=1,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="existing-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=slot_worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, full_state)
+
+        local_config = LoadedConfig.test(pool_size=1)
+        ctx = build_workspace_test_context(env, git=git, github=github, local_config=local_config)
+
+        # CliRunner runs in non-interactive mode by default
+        result = runner.invoke(pr_group, ["checkout", "1005"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Pool is full" in result.output
