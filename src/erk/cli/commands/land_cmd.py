@@ -22,13 +22,13 @@ from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
     delete_branch_and_worktree,
-    find_assignment_by_worktree_path,
 )
 from erk.cli.commands.objective_helpers import (
     check_and_display_plan_issue_closure,
     get_objective_for_branch,
     prompt_objective_update,
 )
+from erk.cli.commands.slot.common import find_branch_assignment
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
@@ -253,11 +253,13 @@ def _cleanup_and_navigate(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     if worktree_path is not None:
-        # Check if this is a slot worktree
+        # Check if this is a slot worktree by branch name
+        # Using branch name is more reliable than path comparison which can fail
+        # with symlinks, different erk_root values, or path representation inconsistencies
         state = load_pool_state(repo.pool_json_path)
         assignment: SlotAssignment | None = None
         if state is not None:
-            assignment = find_assignment_by_worktree_path(state, worktree_path)
+            assignment = find_branch_assignment(state, branch)
 
         if assignment is not None:
             # Slot worktree: unassign instead of delete

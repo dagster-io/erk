@@ -514,3 +514,99 @@ def test_cleanup_and_navigate_uses_plain_git_delete_when_graphite_disabled(
 
     # Verify branch was deleted via plain git (not graphite)
     assert "feature-branch" in fake_git.deleted_branches
+
+
+def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> None:
+    """Test that slot detection uses branch name, not worktree path.
+
+    Regression test for bug where slot worktrees were not detected because
+    path comparison failed. The fix uses find_branch_assignment() instead of
+    find_assignment_by_worktree_path() to match by branch name.
+    """
+    # Use different paths to simulate path mismatch scenario
+    # In the bug, pool.json stored one path but git reported a different path
+    stored_worktree_path = tmp_path / "erk-root-a" / "worktrees" / "erk-slot-01"
+    actual_worktree_path = tmp_path / "erk-root-b" / "worktrees" / "erk-slot-01"
+    stored_worktree_path.mkdir(parents=True)
+    actual_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create pool state with assignment using stored path (different from actual)
+    assignment = _create_test_assignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-branch",
+        worktree_path=stored_worktree_path,  # Stored path differs from actual
+    )
+    from erk.core.worktree_pool import save_pool_state
+
+    initial_state = PoolState.test(assignments=(assignment,))
+    save_pool_state(pool_json_path, initial_state)
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=actual_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            actual_worktree_path,
+            stored_worktree_path,  # Assignment uses this path
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=actual_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate with the actual path (which differs from stored)
+    # The bug would cause this to NOT detect the slot and delete the worktree
+    # The fix should detect the slot by branch name and unassign instead
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=actual_worktree_path,  # Actual path differs from stored
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify slot was unassigned (detected as slot by branch name)
+    reloaded_state = load_pool_state(pool_json_path)
+    assert reloaded_state is not None
+    # Assignment should be removed (slot unassigned)
+    matching_assignments = [
+        a for a in reloaded_state.assignments if a.branch_name == "feature-branch"
+    ]
+    assert len(matching_assignments) == 0, "Slot should have been unassigned"
+
+    # Verify branch was deleted via Graphite (since FakeGraphite is used)
+    # GraphiteBranchManager.delete_branch calls graphite.delete_branch
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
