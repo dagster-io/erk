@@ -38,6 +38,12 @@ from erk.cli.commands.slot.common import (
     get_pool_size,
     handle_pool_full_interactive,
 )
+
+# Note: This command uses inline slot allocation logic instead of allocate_slot_for_branch()
+# because it has additional requirements:
+# 1. Uncommitted changes check before checkout (for friendly error messages)
+# 2. Dry-run mode needs slot preview before allocation
+# 3. Objective tracking and .impl/ folder creation interleaved with allocation
 from erk.cli.commands.wt.create_cmd import run_post_worktree_setup
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
