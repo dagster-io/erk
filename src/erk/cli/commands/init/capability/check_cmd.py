@@ -115,7 +115,7 @@ def _check_all(repo_root: Path | None) -> None:
         return
 
     user_output("Erk capabilities:")
-    for cap in sorted(caps, key=lambda c: (c.scope, c.name)):
+    for cap in sorted(caps, key=lambda c: c.name):
         scope_label = f"[{cap.scope}]"
         check_desc = f"({cap.installation_check_description})"
         cap_line = f"{cap.name:25} {scope_label:10} {cap.description}"

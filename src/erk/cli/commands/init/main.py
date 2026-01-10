@@ -733,22 +733,19 @@ def run_init(
                                 user_output("\n  Shell integration instructions shown above.")
                                 user_output("  You can use them now - erk just couldn't save.")
 
-    # 3c. Status line configuration
-    if interactive:
-        perform_statusline_setup(settings_path=None)
-
     # Show capability status
     all_caps = list_capabilities()
     if all_caps:
         user_output("\nCapabilities:")
-        for cap in all_caps:
-            if cap.is_installed(repo_root):
-                user_output(click.style("  ✓ ", fg="green") + f"{cap.name:20} {cap.description}")
+        for cap in sorted(all_caps, key=lambda c: c.name):
+            scope_label = f"[{cap.scope}]"
+            check_desc = f"({cap.installation_check_description})"
+            cap_line = f"{cap.name:25} {scope_label:10} {cap.description}"
+
+            check_repo_root = repo_root if cap.scope == "project" else None
+            if cap.is_installed(check_repo_root):
+                user_output(click.style("  ✓ ", fg="green") + cap_line + "  " + check_desc)
             else:
-                user_output(
-                    click.style("  ○ ", fg="yellow")
-                    + f"{cap.name:20} {cap.description} "
-                    + click.style("(not installed)", fg="yellow")
-                )
+                user_output(click.style("  ○ ", fg="yellow") + cap_line + "  " + check_desc)
 
     user_output(click.style("\n✓", fg="green") + " Initialization complete!")
