@@ -4,19 +4,29 @@ These tests verify:
 1. The Capability ABC contract
 2. The registry functions (register, get, list)
 3. The LearnedDocsCapability implementation
+4. Skill-based capabilities
 """
 
 from pathlib import Path
 
 from erk.core.capabilities import (
-    Capability,
-    CapabilityArtifact,
-    CapabilityResult,
     LearnedDocsCapability,
     get_capability,
     list_capabilities,
     register_capability,
 )
+from erk.core.capabilities.agents import DevrunAgentCapability
+from erk.core.capabilities.base import (
+    Capability,
+    CapabilityArtifact,
+    CapabilityResult,
+)
+from erk.core.capabilities.permissions import ErkBashPermissionsCapability
+from erk.core.capabilities.skills import (
+    DignifiedPythonCapability,
+    FakeDrivenTestingCapability,
+)
+from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 
 # =============================================================================
 # Tests for CapabilityResult
@@ -263,3 +273,273 @@ def test_custom_capability_install_and_is_installed(tmp_path: Path) -> None:
     result2 = cap.install(tmp_path)
     assert result2.success is True
     assert result2.message == "Already installed"
+
+
+# =============================================================================
+# Tests for Skill Capabilities
+# =============================================================================
+
+
+def test_dignified_python_capability_properties() -> None:
+    """Test DignifiedPythonCapability has correct properties."""
+    cap = DignifiedPythonCapability()
+    assert cap.name == "dignified-python"
+    assert cap.skill_name == "dignified-python"
+    assert "Python" in cap.description
+    assert ".claude/skills/dignified-python" in cap.installation_check_description
+
+
+def test_fake_driven_testing_capability_properties() -> None:
+    """Test FakeDrivenTestingCapability has correct properties."""
+    cap = FakeDrivenTestingCapability()
+    assert cap.name == "fake-driven-testing"
+    assert cap.skill_name == "fake-driven-testing"
+    assert "test" in cap.description.lower()
+
+
+def test_skill_capability_is_installed_false_when_missing(tmp_path: Path) -> None:
+    """Test skill capability is_installed returns False when skill directory missing."""
+    cap = DignifiedPythonCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_skill_capability_is_installed_true_when_exists(tmp_path: Path) -> None:
+    """Test skill capability is_installed returns True when skill directory exists."""
+    (tmp_path / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
+    cap = DignifiedPythonCapability()
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_skill_capability_artifacts() -> None:
+    """Test that skill capabilities list correct artifacts."""
+    cap = DignifiedPythonCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".claude/skills/dignified-python/"
+    assert artifacts[0].artifact_type == "directory"
+
+
+def test_all_skill_capabilities_registered() -> None:
+    """Test that all skill capabilities are registered."""
+    expected_skills = [
+        "dignified-python",
+        "fake-driven-testing",
+    ]
+    for skill_name in expected_skills:
+        cap = get_capability(skill_name)
+        assert cap is not None, f"Skill '{skill_name}' not registered"
+        assert cap.name == skill_name
+
+
+# =============================================================================
+# Tests for Workflow Capabilities
+# =============================================================================
+
+
+def test_erk_impl_workflow_capability_properties() -> None:
+    """Test ErkImplWorkflowCapability has correct properties."""
+    cap = ErkImplWorkflowCapability()
+    assert cap.name == "erk-impl-workflow"
+    assert "GitHub Action" in cap.description
+    assert "erk-impl.yml" in cap.installation_check_description
+
+
+def test_erk_impl_workflow_artifacts() -> None:
+    """Test ErkImplWorkflowCapability lists all artifacts."""
+    cap = ErkImplWorkflowCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 3
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/erk-impl.yml" in paths
+    assert ".github/actions/setup-claude-code/" in paths
+    assert ".github/actions/setup-claude-erk/" in paths
+
+
+def test_erk_impl_workflow_is_installed(tmp_path: Path) -> None:
+    """Test workflow is_installed checks for workflow file."""
+    cap = ErkImplWorkflowCapability()
+
+    # Not installed when workflow file missing
+    assert cap.is_installed(tmp_path) is False
+
+    # Installed when workflow file exists
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "erk-impl.yml").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_workflow_capability_registered() -> None:
+    """Test that workflow capability is registered."""
+    cap = get_capability("erk-impl-workflow")
+    assert cap is not None
+    assert cap.name == "erk-impl-workflow"
+
+
+# =============================================================================
+# Tests for Agent Capabilities
+# =============================================================================
+
+
+def test_devrun_agent_capability_properties() -> None:
+    """Test DevrunAgentCapability has correct properties."""
+    cap = DevrunAgentCapability()
+    assert cap.name == "devrun-agent"
+    assert "pytest" in cap.description or "execution" in cap.description.lower()
+    assert "devrun" in cap.installation_check_description
+
+
+def test_devrun_agent_artifacts() -> None:
+    """Test DevrunAgentCapability lists correct artifacts."""
+    cap = DevrunAgentCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".claude/agents/devrun.md"
+    assert artifacts[0].artifact_type == "file"
+
+
+def test_devrun_agent_is_installed(tmp_path: Path) -> None:
+    """Test agent is_installed checks for agent file."""
+    cap = DevrunAgentCapability()
+
+    # Not installed when agent file missing
+    assert cap.is_installed(tmp_path) is False
+
+    # Installed when agent file exists
+    (tmp_path / ".claude" / "agents").mkdir(parents=True)
+    (tmp_path / ".claude" / "agents" / "devrun.md").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_agent_capability_registered() -> None:
+    """Test that agent capability is registered."""
+    cap = get_capability("devrun-agent")
+    assert cap is not None
+    assert cap.name == "devrun-agent"
+
+
+# =============================================================================
+# Tests for Permission Capabilities
+# =============================================================================
+
+
+def test_erk_bash_permissions_capability_properties() -> None:
+    """Test ErkBashPermissionsCapability has correct properties."""
+    cap = ErkBashPermissionsCapability()
+    assert cap.name == "erk-bash-permissions"
+    assert "Bash(erk:*)" in cap.description
+    assert "settings.json" in cap.installation_check_description
+
+
+def test_erk_bash_permissions_artifacts() -> None:
+    """Test ErkBashPermissionsCapability lists correct artifacts."""
+    cap = ErkBashPermissionsCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".claude/settings.json"
+    assert artifacts[0].artifact_type == "file"
+
+
+def test_erk_bash_permissions_is_installed_false_when_no_settings(tmp_path: Path) -> None:
+    """Test is_installed returns False when settings.json doesn't exist."""
+    cap = ErkBashPermissionsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_erk_bash_permissions_is_installed_false_when_not_in_allow(tmp_path: Path) -> None:
+    """Test is_installed returns False when permission not in allow list."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(json.dumps({"permissions": {"allow": []}}), encoding="utf-8")
+
+    cap = ErkBashPermissionsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_erk_bash_permissions_is_installed_true_when_present(tmp_path: Path) -> None:
+    """Test is_installed returns True when permission is in allow list."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Bash(erk:*)"]}}),
+        encoding="utf-8",
+    )
+
+    cap = ErkBashPermissionsCapability()
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_erk_bash_permissions_install_creates_settings(tmp_path: Path) -> None:
+    """Test install creates settings.json if it doesn't exist."""
+    import json
+
+    cap = ErkBashPermissionsCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert ".claude/settings.json" in result.created_files
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    assert settings_path.exists()
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "Bash(erk:*)" in settings["permissions"]["allow"]
+
+
+def test_erk_bash_permissions_install_adds_to_existing(tmp_path: Path) -> None:
+    """Test install adds permission to existing settings.json."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Read(/tmp/*)"]}, "hooks": {}}),
+        encoding="utf-8",
+    )
+
+    cap = ErkBashPermissionsCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "Added" in result.message
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "Bash(erk:*)" in settings["permissions"]["allow"]
+    assert "Read(/tmp/*)" in settings["permissions"]["allow"]
+    assert "hooks" in settings  # Preserves existing keys
+
+
+def test_erk_bash_permissions_install_idempotent(tmp_path: Path) -> None:
+    """Test install is idempotent when permission already exists."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Bash(erk:*)"]}}),
+        encoding="utf-8",
+    )
+
+    cap = ErkBashPermissionsCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "already" in result.message
+
+    # Verify it wasn't duplicated
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert settings["permissions"]["allow"].count("Bash(erk:*)") == 1
+
+
+def test_permission_capability_registered() -> None:
+    """Test that permission capability is registered."""
+    cap = get_capability("erk-bash-permissions")
+    assert cap is not None
+    assert cap.name == "erk-bash-permissions"
