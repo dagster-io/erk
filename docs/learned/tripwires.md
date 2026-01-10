@@ -45,6 +45,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before passing array or object variables to gh api graphql with -F and json.dumps()** → Read [GitHub GraphQL API Patterns](architecture/github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
 
+**CRITICAL: Before using rm -rf on a git-tracked directory that needs removal in a commit** → Read [Implementation Folder Lifecycle](architecture/impl-folder-lifecycle.md) first. Use `git rm -rf` instead. Filesystem deletion (`rm`) doesn't stage the change - the directory remains in git's index and will still appear in commits.
+
 **CRITICAL: Before checking if get_pr_for_branch() returned a PR** → Read [Not-Found Sentinel Pattern](architecture/not-found-sentinel.md) first. Use `isinstance(pr, PRNotFound)` not `pr is not None`. PRNotFound is a sentinel object, not None.
 
 **CRITICAL: Before creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](architecture/protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.

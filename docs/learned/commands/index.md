@@ -3,5 +3,6 @@
 
 # Commands Documentation
 
+- **[explicitness.md](explicitness.md)** — writing slash commands with multi-step instructions, debugging why an agent skipped or misexecuted command steps, creating commands that involve filesystem or git operations
 - **[optimization-patterns.md](optimization-patterns.md)** — reducing command file size, using @ reference in commands, modularizing command content
 - **[tripwires.md](tripwires.md)** — adding documentation routing rules, making documentation more discoverable, preventing common agent mistakes
