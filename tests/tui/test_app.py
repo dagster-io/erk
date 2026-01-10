@@ -699,11 +699,12 @@ class TestPlanDetailScreenCopyActions:
         """Pressing 'c' in detail screen copies checkout command for local worktree."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123,
                     "Test Plan",
                     worktree_name="feature-123",
+                    worktree_branch="feature-123",
                     exists_locally=True,
                 )
             ],
@@ -723,7 +724,7 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("c")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk co feature-123"
+            assert clipboard.last_copied == "erk br co feature-123"
 
     @pytest.mark.asyncio
     async def test_copy_pr_checkout_shortcut_e(self) -> None:
