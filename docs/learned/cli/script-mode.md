@@ -48,19 +48,19 @@ Next steps:
 
 The shell integration handler can't parse this - it needs only the script path.
 
-## The Solution: UserFeedback Abstraction
+## The Solution: Console Gateway
 
-The `UserFeedback` abstraction eliminates threading `script` booleans through function signatures. Instead, functions call `ctx.feedback` methods which automatically handle output suppression based on the current mode.
+The `Console` gateway eliminates threading `script` booleans through function signatures. Instead, functions call `ctx.console` methods which automatically handle output suppression based on the current mode.
 
 ### Two Implementations
 
-**InteractiveFeedback** (default, `script=False`):
+**InteractiveConsole** (default, `script=False`):
 
 - `info()` → outputs to stderr
 - `success()` → outputs to stderr with green styling
 - `error()` → outputs to stderr with red styling
 
-**SuppressedFeedback** (`script=True`):
+**ScriptConsole** (`script=True`):
 
 - `info()` → suppressed
 - `success()` → suppressed
@@ -72,8 +72,8 @@ Commands still output activation scripts via `user_output()`:
 
 ```python
 # Diagnostic output (suppressed in script mode)
-ctx.feedback.info("Creating worktree...")
-ctx.feedback.success("✓ Created worktree")
+ctx.console.info("Creating worktree...")
+ctx.console.success("✓ Created worktree")
 
 # Activation script (always output)
 if script:
@@ -104,9 +104,9 @@ def implement(
     # Implementation...
 ```
 
-### 2. Use ctx.feedback for Diagnostics
+### 2. Use ctx.console for Diagnostics
 
-Replace direct `user_output()` calls with `ctx.feedback` methods:
+Replace direct `user_output()` calls with `ctx.console` methods:
 
 ```python
 # ❌ BAD: Direct output (always visible)
@@ -114,8 +114,8 @@ user_output("Fetching issue from GitHub...")
 user_output(click.style("✓ Created worktree", fg="green"))
 
 # ✅ GOOD: Mode-aware output (suppressed in script mode)
-ctx.feedback.info("Fetching issue from GitHub...")
-ctx.feedback.success("✓ Created worktree")
+ctx.console.info("Fetching issue from GitHub...")
+ctx.console.success("✓ Created worktree")
 ```
 
 ### 3. Provide Two Output Modes
@@ -141,18 +141,18 @@ else:
     user_output(f"  2. Run implementation:  claude ...")
 ```
 
-### 4. Inject Correct Feedback Implementation
+### 4. Inject Correct Console Implementation
 
 Context construction handles this automatically:
 
 ```python
 # In ErkContext creation (src/erk/core/context.py)
-feedback = (
-    SuppressedFeedback() if script else InteractiveFeedback()
+console = (
+    ScriptConsole() if script else InteractiveConsole()
 )
 
 ctx = ErkContext(
-    feedback=feedback,
+    console=console,
     # ... other dependencies
 )
 ```
@@ -190,9 +190,9 @@ Clean stdout with only the script path - perfect for shell integration.
 
 ## Testing Guidance
 
-### Testing with FakeUserFeedback
+### Testing with FakeConsole
 
-The `FakeUserFeedback` fake both captures messages and outputs them so `CliRunner` can capture them:
+The `FakeConsole` fake captures messages and confirmation prompts for test assertions:
 
 ```python
 def test_implement_from_issue() -> None:
@@ -207,11 +207,8 @@ def test_implement_from_issue() -> None:
 
     # Assert: Check CLI output (captured by CliRunner)
     assert result.exit_code == 0
-    assert "Created worktree" in result.output  # From ctx.feedback.success()
+    assert "Created worktree" in result.output  # From ctx.console.success()
     assert "Next steps:" in result.output       # From user_output()
-
-    # Could also assert on captured messages if needed
-    # assert "INFO: Fetching issue" in ctx.feedback.messages
 ```
 
 ### Testing Script Mode
@@ -309,7 +306,7 @@ For the underlying reason why this is necessary, see [Shell Integration Constrai
 2. Wrapper checks if shell integration is active
 3. If active, wrapper runs: `source <(erk implement 123 --script)`
 4. Command with `--script`:
-   - Suppresses diagnostics via `SuppressedFeedback`
+   - Suppresses diagnostics via `ScriptConsole`
    - Writes activation script to temp file
    - Outputs only script path to stdout
 5. Shell sources the script, activating worktree
@@ -453,8 +450,7 @@ Users see "Shell integration not detected" even with shell wrapper installed.
 
 ## Related Files
 
-- `src/erk/core/user_feedback.py` - UserFeedback abstraction and implementations
-- `tests/fakes/user_feedback.py` - FakeUserFeedback for testing
+- `packages/erk-shared/src/erk_shared/gateway/console/` - Console gateway (ABC, Real, Fake)
 - `src/erk/cli/commands/implement.py` - Example command with script mode
 - `src/erk/cli/activation.py` - Activation script rendering
 

@@ -69,6 +69,25 @@ System browser launch abstraction.
 
 **Fake Features**: Success mode toggle, launch call tracking via `launched_urls` property.
 
+### Console (`console/`)
+
+User interaction abstraction combining TTY detection, mode-aware output, and user prompts.
+
+**Key Methods**:
+
+- `is_stdin_interactive()` / `is_stdout_tty()` / `is_stderr_tty()`: TTY detection
+- `confirm()`: User confirmation prompts with yes/no response
+- `info()` / `success()` / `error()`: Mode-aware diagnostic output
+
+**Implementations**:
+
+- `InteractiveConsole`: Full TTY interaction with styled output
+- `ScriptConsole`: Suppressed diagnostics for shell integration (--script mode)
+
+**Fake Features**: Configurable TTY states, pre-programmed `confirm_responses` list, prompt tracking via `confirm_prompts` property.
+
+**When to use**: Any code that needs TTY detection or user confirmation should use `ctx.console` instead of direct stdin/stdout checks or click.confirm().
+
 ### ClaudeInstallation (`extraction/claude_installation/`)
 
 Gateway for `~/.claude/` filesystem operations (sessions, settings, plans).
