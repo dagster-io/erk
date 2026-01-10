@@ -15,7 +15,7 @@ from erk.cli.commands.land_cmd import (
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
-from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
+from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
@@ -208,7 +208,6 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
     initial_state = PoolState.test(assignments=(assignment,))
 
     # Write initial state to disk
-    from erk.core.worktree_pool import save_pool_state
 
     save_pool_state(pool_json_path, initial_state)
 
@@ -540,7 +539,6 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
         branch_name="feature-branch",
         worktree_path=stored_worktree_path,  # Stored path differs from actual
     )
-    from erk.core.worktree_pool import save_pool_state
 
     initial_state = PoolState.test(assignments=(assignment,))
     save_pool_state(pool_json_path, initial_state)
@@ -637,7 +635,6 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
     pool_json_path = main_repo_root / "pool.json"
 
     # Create empty pool state (no assignments)
-    from erk.core.worktree_pool import save_pool_state
 
     empty_state = PoolState.test(assignments=())
     save_pool_state(pool_json_path, empty_state)
@@ -734,7 +731,6 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
     pool_json_path = main_repo_root / "pool.json"
 
     # Create empty pool state (no slot assignments)
-    from erk.core.worktree_pool import save_pool_state
 
     empty_state = PoolState.test(assignments=())
     save_pool_state(pool_json_path, empty_state)
@@ -821,7 +817,6 @@ def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
     pool_json_path = main_repo_root / "pool.json"
 
     # Create empty pool state
-    from erk.core.worktree_pool import save_pool_state
 
     empty_state = PoolState.test(assignments=())
     save_pool_state(pool_json_path, empty_state)
