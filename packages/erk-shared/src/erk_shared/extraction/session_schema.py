@@ -31,6 +31,18 @@ from typing import Any
 
 
 @dataclass(frozen=True)
+class SessionExchange:
+    """A user prompt paired with the preceding assistant response (if any).
+
+    Represents a single conversational exchange in a Claude Code session.
+    The preceding_assistant is None for the first exchange in a session.
+    """
+
+    preceding_assistant: str | None
+    user_prompt: str
+
+
+@dataclass(frozen=True)
 class TaskInfo:
     """Information about a Task tool_use extracted from an assistant entry."""
 
@@ -446,3 +458,96 @@ def extract_user_prompts_from_jsonl(
             break
 
     return prompts
+
+
+def _extract_text_from_entry(entry: dict[str, Any]) -> str | None:
+    """Extract text content from a session entry (user or assistant).
+
+    Args:
+        entry: A session log entry.
+
+    Returns:
+        The text content from the entry, or None if no text found.
+    """
+    message = entry.get("message", {})
+    content_field = message.get("content", "")
+
+    # Content can be string or list of content blocks
+    if isinstance(content_field, str):
+        text = content_field.strip()
+        if text:
+            return text
+        return None
+    if isinstance(content_field, list):
+        extracted = extract_text_from_content_blocks(content_field)
+        if extracted is not None:
+            text = extracted.strip()
+            if text:
+                return text
+        return None
+    return None
+
+
+def _truncate_text(text: str | None, max_length: int) -> str | None:
+    """Truncate text to max_length, adding ellipsis if truncated.
+
+    Args:
+        text: Text to truncate, or None.
+        max_length: Maximum length for the result.
+
+    Returns:
+        Truncated text with ellipsis if needed, or None if input was None.
+    """
+    if text is None:
+        return None
+    if len(text) <= max_length:
+        return text
+    return text[: max_length - 3] + "..."
+
+
+def extract_session_exchanges_from_jsonl(
+    content: str,
+    *,
+    max_exchanges: int,
+    max_text_length: int,
+) -> list[SessionExchange]:
+    """Extract user prompts paired with preceding assistant responses.
+
+    Creates SessionExchange objects that pair each user prompt with the
+    assistant message that preceded it (if any). This provides context
+    for understanding user responses like "yes" or "proceed".
+
+    Args:
+        content: Raw JSONL content as a string.
+        max_exchanges: Maximum number of exchanges to extract.
+        max_text_length: Maximum length for each text field (truncated with ...).
+
+    Returns:
+        List of SessionExchange objects, with at most max_exchanges items.
+    """
+    exchanges: list[SessionExchange] = []
+    last_assistant_text: str | None = None
+
+    for entry in iter_jsonl_entries(content):
+        entry_type = entry.get("type")
+
+        if entry_type == "assistant":
+            # Store assistant text for the next user prompt
+            last_assistant_text = _extract_text_from_entry(entry)
+
+        elif entry_type == "user":
+            # Create exchange pairing last assistant with this user prompt
+            user_text = _extract_text_from_entry(entry)
+            if user_text is not None:
+                exchanges.append(
+                    SessionExchange(
+                        preceding_assistant=_truncate_text(last_assistant_text, max_text_length),
+                        user_prompt=_truncate_text(user_text, max_text_length) or "",
+                    )
+                )
+                last_assistant_text = None  # Reset after consuming
+
+                if len(exchanges) >= max_exchanges:
+                    break
+
+    return exchanges

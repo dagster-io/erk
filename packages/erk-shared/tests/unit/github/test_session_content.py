@@ -13,6 +13,7 @@ from erk_shared.github.metadata.session import (
     extract_session_content_from_comments,
     render_session_content_block,
     render_session_content_blocks,
+    render_session_exchanges_block,
     render_session_prompts_block,
 )
 
@@ -590,3 +591,116 @@ def test_session_prompts_roundtrip() -> None:
 
     assert extracted is not None
     assert extracted == original_prompts
+
+
+# =============================================================================
+# Tests for render_session_exchanges_block
+# =============================================================================
+
+
+def test_render_session_exchanges_block_basic() -> None:
+    """Basic rendering includes metadata block markers and numbered exchanges."""
+    exchanges = [(None, "First user prompt"), ("Assistant response", "Second prompt")]
+    result = render_session_exchanges_block(exchanges, max_text_display_length=500)
+
+    assert "<!-- erk:metadata-block:planning-session-prompts -->" in result
+    assert "<!-- /erk:metadata-block:planning-session-prompts -->" in result
+    assert "<details>" in result
+    assert "</details>" in result
+    assert "**Exchange 1:**" in result
+    assert "**Exchange 2:**" in result
+    assert "First user prompt" in result
+    assert "Assistant response" in result
+    assert "Second prompt" in result
+
+
+def test_render_session_exchanges_block_includes_warning() -> None:
+    """The machine-generated warning comment is included."""
+    result = render_session_exchanges_block([(None, "Test")], max_text_display_length=500)
+
+    assert "<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->" in result
+
+
+def test_render_session_exchanges_block_includes_summary_with_count() -> None:
+    """The summary tag includes exchange count."""
+    result = render_session_exchanges_block([(None, "Test")], max_text_display_length=500)
+    assert "(1 exchange)" in result
+
+    result2 = render_session_exchanges_block(
+        [(None, "A"), ("Response", "B")], max_text_display_length=500
+    )
+    assert "(2 exchanges)" in result2
+
+
+def test_render_session_exchanges_block_empty_list() -> None:
+    """Empty exchange list renders with count 0."""
+    result = render_session_exchanges_block([], max_text_display_length=500)
+
+    assert "(0 exchanges)" in result
+    # No exchange blocks for empty list
+    assert "**Exchange" not in result
+
+
+def test_render_session_exchanges_block_no_preceding_assistant() -> None:
+    """Exchange without preceding assistant only shows user prompt."""
+    exchanges = [(None, "User prompt without context")]
+    result = render_session_exchanges_block(exchanges, max_text_display_length=500)
+
+    assert "*User:*" in result
+    assert "User prompt without context" in result
+    # Should NOT include Assistant section for first exchange
+    assert result.count("*Assistant:*") == 0
+
+
+def test_render_session_exchanges_block_with_assistant() -> None:
+    """Exchange with preceding assistant shows both assistant and user."""
+    exchanges = [("Assistant asked a question", "User replied yes")]
+    result = render_session_exchanges_block(exchanges, max_text_display_length=500)
+
+    assert "*Assistant:*" in result
+    assert "Assistant asked a question" in result
+    assert "*User:*" in result
+    assert "User replied yes" in result
+
+
+def test_render_session_exchanges_block_truncates_long_text() -> None:
+    """Long text is truncated with ellipsis."""
+    long_text = "This is a very long text that should be truncated"
+    exchanges = [(long_text, long_text)]
+    result = render_session_exchanges_block(exchanges, max_text_display_length=25)
+
+    assert "This is a very long te..." in result
+    assert long_text not in result  # Full text should not appear
+
+
+def test_render_session_exchanges_block_preserves_special_characters() -> None:
+    """Exchanges with special characters are preserved."""
+    exchanges = [('Should I add "dark mode"?', "yes, that's what I want")]
+    result = render_session_exchanges_block(exchanges, max_text_display_length=500)
+
+    assert '"dark mode"' in result
+    assert "that's what" in result
+
+
+def test_render_session_exchanges_block_multiple_exchanges() -> None:
+    """Multiple exchanges are numbered sequentially."""
+    exchanges = [
+        (None, "First prompt"),
+        ("Response 1", "Second prompt"),
+        ("Response 2", "Third prompt"),
+    ]
+    result = render_session_exchanges_block(exchanges, max_text_display_length=500)
+
+    assert "**Exchange 1:**" in result
+    assert "**Exchange 2:**" in result
+    assert "**Exchange 3:**" in result
+    # First exchange has no assistant
+    lines = result.split("\n")
+    exchange1_start = next(i for i, line in enumerate(lines) if "**Exchange 1:**" in line)
+    exchange2_start = next(i for i, line in enumerate(lines) if "**Exchange 2:**" in line)
+    # Between Exchange 1 and Exchange 2, there should be no *Assistant:* (only *User:*)
+    between = lines[exchange1_start:exchange2_start]
+    assert "*User:*" in "\n".join(between)
+    # Exchange 2 should have *Assistant:*
+    after_exchange2 = lines[exchange2_start:]
+    assert "*Assistant:*" in "\n".join(after_exchange2)

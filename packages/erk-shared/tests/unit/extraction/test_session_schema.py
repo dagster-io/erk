@@ -5,10 +5,12 @@ import json
 import pytest
 
 from erk_shared.extraction.session_schema import (
+    SessionExchange,
     TaskInfo,
     extract_agent_id_from_tool_result,
     extract_agent_info_from_jsonl,
     extract_first_user_message_text,
+    extract_session_exchanges_from_jsonl,
     extract_task_info_from_entry,
     extract_task_tool_use_id,
     extract_text_from_content_blocks,
@@ -812,3 +814,189 @@ class TestExtractUserPromptsFromJsonl:
         result = extract_user_prompts_from_jsonl(content, max_prompts=10, max_prompt_length=100)
 
         assert result == ["Has text"]
+
+
+class TestExtractSessionExchangesFromJsonl:
+    """Tests for extract_session_exchanges_from_jsonl function."""
+
+    def test_extracts_exchanges_with_assistant_responses(self) -> None:
+        """Extracts exchanges pairing assistant messages with user prompts."""
+        entries = [
+            {"type": "user", "message": {"content": "First prompt"}},
+            {
+                "type": "assistant",
+                "message": {"content": [{"type": "text", "text": "Assistant response"}]},
+            },
+            {"type": "user", "message": {"content": "Second prompt"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 2
+        # First exchange has no preceding assistant
+        assert result[0] == SessionExchange(
+            preceding_assistant=None,
+            user_prompt="First prompt",
+        )
+        # Second exchange includes the assistant response
+        assert result[1] == SessionExchange(
+            preceding_assistant="Assistant response",
+            user_prompt="Second prompt",
+        )
+
+    def test_first_exchange_has_no_preceding_assistant(self) -> None:
+        """First exchange in session has preceding_assistant=None."""
+        entries = [{"type": "user", "message": {"content": "Hello"}}]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 1
+        assert result[0].preceding_assistant is None
+        assert result[0].user_prompt == "Hello"
+
+    def test_limits_to_max_exchanges(self) -> None:
+        """Stops extracting after max_exchanges is reached."""
+        entries = []
+        for i in range(10):
+            entries.append({"type": "user", "message": {"content": f"Prompt {i}"}})
+            text_block = [{"type": "text", "text": f"Response {i}"}]
+            entries.append({"type": "assistant", "message": {"content": text_block}})
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(content, max_exchanges=3, max_text_length=100)
+
+        assert len(result) == 3
+        assert result[0].user_prompt == "Prompt 0"
+        assert result[2].user_prompt == "Prompt 2"
+
+    def test_truncates_long_user_text(self) -> None:
+        """Truncates user text longer than max_text_length."""
+        long_text = "This is a very long prompt that needs truncation"
+        entries = [{"type": "user", "message": {"content": long_text}}]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(content, max_exchanges=10, max_text_length=20)
+
+        assert len(result) == 1
+        assert result[0].user_prompt == "This is a very lo..."
+        assert len(result[0].user_prompt) == 20
+
+    def test_truncates_long_assistant_text(self) -> None:
+        """Truncates assistant text longer than max_text_length."""
+        long_text = "This is a very long assistant response"
+        entries = [
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": long_text}]}},
+            {"type": "user", "message": {"content": "Short"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(content, max_exchanges=10, max_text_length=20)
+
+        assert len(result) == 1
+        assert result[0].preceding_assistant == "This is a very lo..."
+
+    def test_skips_empty_user_prompts(self) -> None:
+        """Skips user entries with empty or whitespace-only content."""
+        entries = [
+            {"type": "user", "message": {"content": "   "}},
+            {"type": "user", "message": {"content": ""}},
+            {"type": "user", "message": {"content": "Valid prompt"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 1
+        assert result[0].user_prompt == "Valid prompt"
+
+    def test_returns_empty_for_no_user_entries(self) -> None:
+        """Returns empty list when no user entries exist."""
+        text_block = [{"type": "text", "text": "Only assistant"}]
+        entries = [{"type": "assistant", "message": {"content": text_block}}]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert result == []
+
+    def test_returns_empty_for_empty_content(self) -> None:
+        """Returns empty list for empty JSONL content."""
+        result = extract_session_exchanges_from_jsonl("", max_exchanges=10, max_text_length=100)
+
+        assert result == []
+
+    def test_handles_multiple_assistant_entries_before_user(self) -> None:
+        """Only the last assistant entry before a user prompt is captured."""
+        first_text = [{"type": "text", "text": "First assistant"}]
+        second_text = [{"type": "text", "text": "Second assistant"}]
+        entries = [
+            {"type": "assistant", "message": {"content": first_text}},
+            {"type": "assistant", "message": {"content": second_text}},
+            {"type": "user", "message": {"content": "User prompt"}},
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 1
+        # The second assistant message should be captured (most recent)
+        assert result[0].preceding_assistant == "Second assistant"
+        assert result[0].user_prompt == "User prompt"
+
+    def test_resets_assistant_text_after_consuming(self) -> None:
+        """Assistant text is reset after being paired with a user prompt."""
+        entries = [
+            {"type": "assistant", "message": {"content": [{"type": "text", "text": "Response 1"}]}},
+            {"type": "user", "message": {"content": "Prompt 1"}},
+            {"type": "user", "message": {"content": "Prompt 2"}},  # No assistant before this
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 2
+        assert result[0].preceding_assistant == "Response 1"
+        assert result[1].preceding_assistant is None  # Reset, not reused
+
+    def test_extracts_from_content_blocks(self) -> None:
+        """Extracts text from user messages with content blocks."""
+        entries = [
+            {
+                "type": "user",
+                "message": {"content": [{"type": "text", "text": "From content blocks"}]},
+            }
+        ]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 1
+        assert result[0].user_prompt == "From content blocks"
+
+    def test_handles_string_content_in_user_message(self) -> None:
+        """Handles user messages where content is a string, not list."""
+        entries = [{"type": "user", "message": {"content": "Direct string content"}}]
+        content = "\n".join(json.dumps(e) for e in entries)
+
+        result = extract_session_exchanges_from_jsonl(
+            content, max_exchanges=10, max_text_length=100
+        )
+
+        assert len(result) == 1
+        assert result[0].user_prompt == "Direct string content"

@@ -245,13 +245,15 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
     assert output["session_context_chunks"] == 0
     assert output["session_ids"] == []
 
-    # Plan comment + session prompts comment are posted (but no session context)
+    # Plan comment + session exchanges comment are posted (but no session context)
     assert len(fake_gh.added_comments) == 2
     _issue_num, plan_comment, _comment_id = fake_gh.added_comments[0]
     assert "Step 1" in plan_comment
-    _issue_num2, prompts_comment, _comment_id2 = fake_gh.added_comments[1]
-    assert "planning-session-prompts" in prompts_comment
-    assert "Hello" in prompts_comment  # The user message from session_content
+    _issue_num2, exchanges_comment, _comment_id2 = fake_gh.added_comments[1]
+    assert "planning-session-prompts" in exchanges_comment
+    assert "Hello" in exchanges_comment  # The user message from session_content
+    # Verify it's using exchange format (with *User:* instead of **Prompt N:**)
+    assert "*User:*" in exchanges_comment
 
 
 def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
