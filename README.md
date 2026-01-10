@@ -2,7 +2,7 @@
 
 `erk` is a CLI tool for plan-oriented agentic engineering: create implementation plans with AI, save them to GitHub, execute them in isolated worktrees, and ship code via automated PR workflows.
 
-**[Read the Documentation](docs/)** for complete guides, tutorials, and reference.
+**[Read the Documentation](https://dagster-io.github.io/erk/)** for complete guides, tutorials, and reference. ([source](docs/))
 
 For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md).
 
