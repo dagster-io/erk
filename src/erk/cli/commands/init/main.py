@@ -291,7 +291,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
 
     # Confirm before overwriting
     user_output(f"\nThis will update: {settings_path}")
-    if not user_confirm("Proceed with writing changes?", default=False):
+    if not user_confirm("Proceed with writing changes?", default=True):
         user_output("Skipped. No changes made to settings.json")
         return NoBackupCreated()
 
