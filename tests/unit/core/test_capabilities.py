@@ -70,7 +70,7 @@ def test_learned_docs_capability_name() -> None:
 def test_learned_docs_capability_description() -> None:
     """Test that LearnedDocsCapability has a description."""
     cap = LearnedDocsCapability()
-    assert cap.description == "Agent documentation system"
+    assert cap.description == "Autolearning documentation system"
 
 
 def test_learned_docs_is_installed_false_when_missing(tmp_path: Path) -> None:
@@ -170,16 +170,18 @@ def test_learned_docs_artifacts() -> None:
     cap = LearnedDocsCapability()
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 4
+    assert len(artifacts) == 6
     paths = [a.path for a in artifacts]
     assert "docs/learned/" in paths
     assert "docs/learned/README.md" in paths
     assert "docs/learned/index.md" in paths
     assert "docs/learned/tripwires.md" in paths
+    assert ".claude/skills/learned-docs/" in paths
+    assert ".claude/skills/learned-docs/SKILL.md" in paths
 
     # Verify artifact types
     for artifact in artifacts:
-        if artifact.path == "docs/learned/":
+        if artifact.path in ("docs/learned/", ".claude/skills/learned-docs/"):
             assert artifact.artifact_type == "directory"
         else:
             assert artifact.artifact_type == "file"

@@ -31,7 +31,7 @@ def test_capability_list_shows_available_capabilities() -> None:
         assert result.exit_code == 0, result.output
         assert "Available capabilities:" in result.output
         assert "learned-docs" in result.output
-        assert "Agent documentation system" in result.output
+        assert "Autolearning documentation system" in result.output
 
 
 def test_capability_list_works_without_repo() -> None:

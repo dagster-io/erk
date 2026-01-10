@@ -278,7 +278,7 @@ class LearnedDocsCapability(Capability):
 
     @property
     def description(self) -> str:
-        return "Agent documentation system"
+        return "Autolearning documentation system"
 
     @property
     def installation_check_description(self) -> str:
@@ -332,12 +332,12 @@ class LearnedDocsCapability(Capability):
         if not created_files:
             return CapabilityResult(
                 success=True,
-                message="Already installed",
+                message="docs/learned/ already exists",
             )
 
         return CapabilityResult(
             success=True,
-            message="Installed",
+            message="Created docs/learned/",
             created_files=tuple(created_files),
         )
 

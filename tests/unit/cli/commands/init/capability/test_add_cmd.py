@@ -43,8 +43,11 @@ def test_capability_add_idempotent() -> None:
     """Test that adding an already installed capability is idempotent."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        # Pre-create the capability directory
+        # Pre-create the capability directories and files
         (env.cwd / "docs" / "learned").mkdir(parents=True)
+        skill_dir = env.cwd / ".claude" / "skills" / "learned-docs"
+        skill_dir.mkdir(parents=True)
+        (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(

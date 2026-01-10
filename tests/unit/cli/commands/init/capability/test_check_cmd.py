@@ -80,7 +80,7 @@ def test_capability_check_specific_name() -> None:
 
         assert result.exit_code == 0, result.output
         assert "learned-docs" in result.output
-        assert "Agent documentation system" in result.output
+        assert "Autolearning documentation system" in result.output
 
 
 def test_capability_check_unknown_name_fails() -> None:
