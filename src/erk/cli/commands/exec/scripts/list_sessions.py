@@ -64,6 +64,7 @@ class SessionInfo:
     summary: str
     is_current: bool
     branch: str | None  # Git branch active during session
+    session_path: str  # Absolute path to session .jsonl file
 
 
 @dataclass(frozen=True)
@@ -216,6 +217,24 @@ def _list_sessions_from_store(
         # Determine if this is the current session
         is_current = session.session_id == current_session_id
 
+        # Get session file path
+        session_path = claude_installation.get_session_path(cwd, session.session_id)
+        session_path_str = str(session_path) if session_path is not None else ""
+
+        # Extract branch from session content (gitBranch field in entries)
+        branch: str | None = None
+        if content is not None:
+            for line in content.main_content.split("\n"):
+                if not line.strip():
+                    continue
+                try:
+                    entry = json.loads(line)
+                    if "gitBranch" in entry:
+                        branch = entry["gitBranch"]
+                        break
+                except json.JSONDecodeError:
+                    continue
+
         session_infos.append(
             SessionInfo(
                 session_id=session.session_id,
@@ -226,6 +245,7 @@ def _list_sessions_from_store(
                 summary=summary,
                 is_current=is_current,
                 branch=branch,
+                session_path=session_path_str,
             )
         )
 

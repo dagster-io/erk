@@ -99,8 +99,8 @@ The JSON output includes:
 - `branch_context.current_branch`: The current git branch
 - `branch_context.is_on_trunk`: Whether on main/master branch
 - `current_session_id`: Current session ID from SESSION_CONTEXT env
-- `sessions`: List of recent sessions with metadata including `branch` field
-- `project_dir`: Path to session logs
+- `sessions`: List of recent sessions with metadata including `branch` and `session_path` fields
+- `project_dir`: Abstract project identifier (do not use for filesystem paths)
 
 **Behavior based on branch context:**
 
@@ -128,15 +128,12 @@ This approach eliminates the size-based heuristics - branch filtering is more pr
 
 **If explicit session IDs found in context:**
 
-Load and preprocess the session logs. Session logs are stored in `project_dir` as flat files:
+Load and preprocess the session logs. Each session in the `sessions` list includes a `session_path` field with the absolute path to the .jsonl file.
 
-- Main sessions: `<session-id>.jsonl`
-- Agent logs: `agent-<agent-id>.jsonl`
-
-Match session IDs against filenames (full or partial prefix match), then preprocess:
+Match session IDs against the `session_id` field (full or partial prefix match), then preprocess using the `session_path`:
 
 ```bash
-erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout
+erk exec preprocess-session <session.session_path> --stdout
 ```
 
 ### Step 1.5: Upload Raw Materials to Gist
@@ -145,17 +142,17 @@ After determining which session(s) to analyze, upload the preprocessed session X
 
 **For each selected session:**
 
-1. Create scratch directory and preprocess the session to XML:
+1. Create scratch directory and preprocess the session to XML (use `session.session_path` from list-sessions output):
 
    ```bash
-   mkdir -p .erk/scratch/sessions/<session-id>
-   erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout > .erk/scratch/sessions/<session-id>/session.xml
+   mkdir -p .erk/scratch/sessions
+   erk exec preprocess-session <session.session_path> --stdout > .erk/scratch/sessions/<session-id>.xml
    ```
 
-2. Create a secret gist with all preprocessed session files:
+2. Create a gist with all preprocessed session files (gists are secret by default):
 
    ```bash
-   gh gist create --secret --desc "Extraction plan raw materials: <session-ids>" .erk/scratch/sessions/*/session.xml
+   gh gist create --desc "Extraction plan raw materials: <session-ids>" .erk/scratch/sessions/*.xml
    ```
 
 3. Capture the gist URL from the output and display to the user:
