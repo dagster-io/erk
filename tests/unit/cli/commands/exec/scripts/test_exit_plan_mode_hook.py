@@ -612,7 +612,7 @@ class TestBuildBlockingMessage:
         # Statusline-style context should be present
         assert "(wt:erk-slot-02)" in message
         assert "(br:P4224-add-feature)" in message
-        assert "(gh:#4230)" in message
+        assert "(pr:#4230)" in message
         assert "(plan:#4224)" in message
         # Header should include branch context (truncated to 9 chars)
         assert 'header: "br:P4224-add"' in message
@@ -636,7 +636,7 @@ class TestBuildBlockingMessage:
         # Partial statusline context
         assert "(wt:erk-slot-02)" in message
         assert "(br:feature-branch)" in message
-        assert "(gh:#" not in message  # No PR
+        assert "(pr:#" not in message  # No PR
         assert "(plan:#4224)" in message
 
     def test_no_context_when_all_none(self) -> None:
