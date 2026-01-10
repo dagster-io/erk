@@ -185,8 +185,8 @@ jobs:
             echo "implementation_success=false" >> $GITHUB_OUTPUT
           fi
           if [ -d .worker-impl/ ]; then
-            rm -rf .worker-impl/
-            echo "Removed .worker-impl/ before submission"
+            git rm -rf .worker-impl/
+            echo "Staged .worker-impl/ removal for commit"
           fi
           exit 0
         env:
