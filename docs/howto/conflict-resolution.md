@@ -30,5 +30,5 @@ Handle merge conflicts with AI assistance.
 
 ## See Also
 
-- [Stacked PRs](../topics/stacked-prs.md) - Understanding stacks
+- [Graphite Integration](../tutorials/graphite-integration.md) - Understanding stacks
 - [Graphite Issues](../faq/graphite-issues.md) - Troubleshooting

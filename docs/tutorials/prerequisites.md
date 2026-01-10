@@ -43,7 +43,7 @@ gh auth status
 
 These tools unlock additional features but are not required to start:
 
-- **Graphite (gt)**: Enables stacked PRs. See [Stacked PRs tutorial](stacked-prs.md).
+- **Graphite (gt)**: Enables stacked PRs. See [Graphite Integration](graphite-integration.md).
 - **Shell integration**: Enables seamless directory switching. See [Shell Integration](shell-integration.md).
 
 ## See Also

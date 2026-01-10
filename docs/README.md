@@ -28,7 +28,7 @@ Step-by-step lessons to get you started.
 Core concepts that explain how erk works.
 
 - [Worktrees](topics/worktrees.md) - Parallel development with git worktrees
-- [Stacked PRs](topics/stacked-prs.md) - Building changes incrementally with Graphite
+- [Graphite Integration](tutorials/graphite-integration.md) - Stacked PR workflows with Graphite
 - [Plan Mode](topics/plan-mode.md) - Claude Code's planning workflow
 - [The Workflow](topics/the-workflow.md) - From idea to merged PR
 - [Plan-Oriented Engineering](topics/plan-oriented-engineering.md) - The philosophy behind erk

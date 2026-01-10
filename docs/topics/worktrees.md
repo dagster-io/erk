@@ -34,5 +34,5 @@ Git worktrees enable parallel development without branch switching.
 
 ## See Also
 
-- [Stacked PRs](stacked-prs.md) - How worktrees relate to stacks
+- [Graphite Integration](../tutorials/graphite-integration.md) - How worktrees relate to stacks
 - [Shell Integration](../tutorials/shell-integration.md) - Enable worktree switching

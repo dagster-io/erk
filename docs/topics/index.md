@@ -7,7 +7,7 @@ Topics are **understanding-oriented**. They provide background knowledge and con
 ## Contents
 
 - [Worktrees](worktrees.md) - Git worktrees enable parallel development without branch switching
-- [Stacked PRs](stacked-prs.md) - Graphite's approach to incremental, reviewable changes
+- [Graphite Integration](../tutorials/graphite-integration.md) - Stacked PR workflows with Graphite
 - [Plan Mode](plan-mode.md) - Claude Code's planning workflow and how erk extends it
 - [The Workflow](the-workflow.md) - The complete journey from idea to merged PR
 - [Plan-Oriented Engineering](plan-oriented-engineering.md) - Why planning first leads to better outcomes

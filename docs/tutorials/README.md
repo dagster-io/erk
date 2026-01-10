@@ -13,7 +13,7 @@ This section guides you through setting up erk and running your first plan-drive
 After completing your first plan, you may want to:
 
 - **[Shell Integration](shell-integration.md)** - Seamless `cd` instead of subshells (power users)
-- **[Stacked PRs](stacked-prs.md)** - Multi-branch workflows with Graphite
+- **[Graphite Integration](graphite-integration.md)** - Stacked PR workflows with Graphite
 
 ## Next Steps
 

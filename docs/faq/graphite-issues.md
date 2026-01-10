@@ -34,5 +34,5 @@ Solutions for stack and sync problems.
 
 ## See Also
 
-- [Stacked PRs](../topics/stacked-prs.md) - Understanding stacks
+- [Graphite Integration](../tutorials/graphite-integration.md) - Understanding stacks
 - [Resolve Merge Conflicts](../howto/conflict-resolution.md) - Handling conflicts

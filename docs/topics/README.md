@@ -5,7 +5,7 @@ Core ideas that power erk's plan-oriented workflow.
 ## Foundation
 
 - **[Worktrees](worktrees.md)** - Git worktrees enable parallel development without branch switching
-- **[Stacked PRs](stacked-prs.md)** - Graphite's approach to incremental, reviewable changes
+- **[Graphite Integration](../tutorials/graphite-integration.md)** - Stacked PR workflows with Graphite
 - **[Plan Mode](plan-mode.md)** - Claude Code's planning workflow and how erk extends it
 
 ## The Big Picture
