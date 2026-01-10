@@ -185,16 +185,12 @@ def test_capability_add_preflight_failure_blocks_install() -> None:
 
         # Try to install dignified-review without dignified-python skill
         # (preflight should fail)
-        result = runner.invoke(
-            cli, ["init", "capability", "add", "dignified-review"], obj=test_ctx
-        )
+        result = runner.invoke(cli, ["init", "capability", "add", "dignified-review"], obj=test_ctx)
 
         assert result.exit_code == 1
         assert "dignified-python" in result.output
         # Workflow should NOT have been installed
-        assert not (
-            env.cwd / ".github" / "workflows" / "dignified-python-review.yml"
-        ).exists()
+        assert not (env.cwd / ".github" / "workflows" / "dignified-python-review.yml").exists()
 
 
 def test_capability_add_preflight_success_allows_install() -> None:
@@ -218,9 +214,7 @@ def test_capability_add_preflight_success_allows_install() -> None:
         (env.cwd / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
 
         # Now dignified-review should pass preflight
-        result = runner.invoke(
-            cli, ["init", "capability", "add", "dignified-review"], obj=test_ctx
-        )
+        result = runner.invoke(cli, ["init", "capability", "add", "dignified-review"], obj=test_ctx)
 
         # Note: May still fail because bundled files don't exist in test env,
         # but preflight should have passed (no "dignified-python" error)
