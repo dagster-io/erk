@@ -208,7 +208,7 @@ class HelpScreen(ModalScreen):
 
 
 class IssueBodyScreen(ModalScreen):
-    """Modal screen displaying the full issue body text."""
+    """Modal screen displaying the full plan text fetched on-demand."""
 
     BINDINGS = [
         Binding("escape", "dismiss", "Close"),
@@ -270,36 +270,105 @@ class IssueBodyScreen(ModalScreen):
         color: $text-muted;
         text-style: italic;
     }
+
+    #body-loading {
+        color: $text-muted;
+        text-style: italic;
+    }
+
+    #body-error {
+        color: $error;
+        text-style: italic;
+    }
     """
 
-    def __init__(self, row: PlanRowData) -> None:
-        """Initialize with plan row data.
+    def __init__(
+        self,
+        *,
+        provider: PlanDataProvider,
+        issue_number: int,
+        issue_body: str,
+        full_title: str,
+    ) -> None:
+        """Initialize with plan metadata and provider for async loading.
 
         Args:
-            row: PlanRowData containing issue body and metadata
+            provider: Data provider for fetching plan content
+            issue_number: The GitHub issue number
+            issue_body: The issue body (contains metadata with comment ID)
+            full_title: The full plan title for display
         """
         super().__init__()
-        self._row = row
+        self._provider = provider
+        self._issue_number = issue_number
+        self._issue_body = issue_body
+        self._full_title = full_title
+        self._content: str | None = None
+        self._error: str | None = None
+        self._loading = True
 
     def compose(self) -> ComposeResult:
         """Create the issue body dialog content."""
         with Vertical(id="body-dialog"):
             # Header: Plan number + title
             with Vertical(id="body-header"):
-                yield Label(f"Plan #{self._row.issue_number}", id="body-plan-number")
-                yield Label(self._row.full_title, id="body-title", markup=False)
+                yield Label(f"Plan #{self._issue_number}", id="body-plan-number")
+                yield Label(self._full_title, id="body-title", markup=False)
 
             # Divider
             yield Label("", id="body-divider")
 
-            # Body content in scrollable container
+            # Body content in scrollable container - starts with loading state
             with Container(id="body-content-container"):
-                if self._row.issue_body:
-                    yield Static(self._row.issue_body, id="body-content", markup=False)
-                else:
-                    yield Label("(No issue body)", id="body-empty")
+                yield Label("Loading plan content...", id="body-loading")
 
             yield Label("Press Esc, q, or Space to close", id="body-footer")
+
+    def on_mount(self) -> None:
+        """Fetch plan content when screen mounts."""
+        self._fetch_content()
+
+    @work(thread=True)
+    def _fetch_content(self) -> None:
+        """Fetch plan content in background thread."""
+        content: str | None = None
+        error: str | None = None
+
+        # Error boundary: catch all exceptions from HTTP operations to display
+        # them in the UI rather than crashing the TUI.
+        try:
+            content = self._provider.fetch_plan_content(self._issue_number, self._issue_body)
+        except Exception as e:
+            error = str(e)
+
+        # Update UI on main thread
+        self.app.call_from_thread(self._on_content_loaded, content, error)
+
+    def _on_content_loaded(self, content: str | None, error: str | None) -> None:
+        """Handle content loaded - update the display.
+
+        Args:
+            content: The fetched plan content, or None if not found
+            error: Error message if fetch failed, or None
+        """
+        self._loading = False
+        self._content = content
+        self._error = error
+
+        # Get the container and replace its content
+        container = self.query_one("#body-content-container", Container)
+
+        # Remove the loading label
+        loading_label = container.query_one("#body-loading", Label)
+        loading_label.remove()
+
+        # Add the appropriate content
+        if error is not None:
+            container.mount(Label(f"Error: {error}", id="body-error"))
+        elif content:
+            container.mount(Static(content, id="body-content", markup=False))
+        else:
+            container.mount(Label("(No plan content found)", id="body-empty"))
 
 
 class PlanDetailScreen(ModalScreen):
@@ -1341,14 +1410,19 @@ class ErkDashApp(App):
         )
 
     def action_view_issue_body(self) -> None:
-        """Display the issue body in a modal."""
+        """Display the plan content in a modal (fetched on-demand)."""
         row = self._get_selected_row()
         if row is None:
             return
-        if not row.issue_body:
-            self.notify("No issue body available", severity="warning")
-            return
-        self.push_screen(IssueBodyScreen(row))
+        # Push screen that will fetch plan content on-demand
+        self.push_screen(
+            IssueBodyScreen(
+                provider=self._provider,
+                issue_number=row.issue_number,
+                issue_body=row.issue_body,
+                full_title=row.full_title,
+            )
+        )
 
     def action_cursor_down(self) -> None:
         """Move cursor down (vim j key)."""

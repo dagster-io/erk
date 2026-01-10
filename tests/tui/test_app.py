@@ -1141,15 +1141,15 @@ class TestClosePlanInProcess:
 
 
 class TestIssueBodyScreen:
-    """Tests for IssueBodyScreen modal (view plan text)."""
+    """Tests for IssueBodyScreen modal (view plan text with async loading)."""
 
     @pytest.mark.asyncio
     async def test_v_key_opens_issue_body_screen(self) -> None:
         """Pressing 'v' opens the issue body modal."""
-        body_text = "# Test Body\n\nThis is the plan text."
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body=body_text)]
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
         )
+        provider.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1157,7 +1157,7 @@ class TestIssueBodyScreen:
             await pilot.pause()
             await pilot.pause()
 
-            # Press 'v' to view issue body
+            # Press 'v' to view plan content
             await pilot.press("v")
             await pilot.pause()
             await pilot.pause()
@@ -1167,12 +1167,13 @@ class TestIssueBodyScreen:
             assert isinstance(app.screen_stack[-1], IssueBodyScreen)
 
     @pytest.mark.asyncio
-    async def test_issue_body_screen_shows_body_text(self) -> None:
-        """IssueBodyScreen displays the issue body text."""
-        body_text = "# Implementation Plan\n\n1. Step one\n2. Step two"
+    async def test_issue_body_screen_fetches_and_shows_content(self) -> None:
+        """IssueBodyScreen fetches and displays the plan content."""
+        plan_content = "# Implementation Plan\n\n1. Step one\n2. Step two"
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body=body_text)]
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
         )
+        provider.set_plan_content(123, plan_content)
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1182,18 +1183,22 @@ class TestIssueBodyScreen:
 
             await pilot.press("v")
             await pilot.pause()
-            await pilot.pause()
+            # Wait for async fetch to complete
+            await pilot.pause(0.3)
 
             body_screen = app.screen_stack[-1]
             assert isinstance(body_screen, IssueBodyScreen)
-            assert body_screen._row.issue_body == body_text
+            # Content should have been fetched
+            assert body_screen._content == plan_content
+            assert body_screen._loading is False
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_dismisses_on_escape(self) -> None:
         """IssueBodyScreen closes when pressing escape."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="Test body")]
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
         )
+        provider.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1218,8 +1223,9 @@ class TestIssueBodyScreen:
     async def test_issue_body_screen_dismisses_on_q(self) -> None:
         """IssueBodyScreen closes when pressing q."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="Test body")]
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
         )
+        provider.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1242,8 +1248,9 @@ class TestIssueBodyScreen:
     async def test_issue_body_screen_dismisses_on_space(self) -> None:
         """IssueBodyScreen closes when pressing space."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="Test body")]
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
         )
+        provider.set_plan_content(123, "Plan content")
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1263,11 +1270,12 @@ class TestIssueBodyScreen:
             assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
 
     @pytest.mark.asyncio
-    async def test_v_key_shows_warning_when_no_body(self) -> None:
-        """Pressing 'v' shows warning when issue has no body."""
+    async def test_issue_body_screen_shows_empty_message_when_no_content(self) -> None:
+        """IssueBodyScreen shows empty message when no plan content found."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", issue_body="")]  # Empty body
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
         )
+        # Don't set plan content - fetch will return None
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1275,22 +1283,25 @@ class TestIssueBodyScreen:
             await pilot.pause()
             await pilot.pause()
 
-            # Press 'v' with empty body
             await pilot.press("v")
             await pilot.pause()
-            await pilot.pause()
+            # Wait for async fetch to complete
+            await pilot.pause(0.3)
 
-            # Should NOT open body screen
-            for screen in app.screen_stack:
-                assert not isinstance(screen, IssueBodyScreen)
+            body_screen = app.screen_stack[-1]
+            assert isinstance(body_screen, IssueBodyScreen)
+            # Content should be None (not found)
+            assert body_screen._content is None
+            assert body_screen._loading is False
 
     @pytest.mark.asyncio
     async def test_issue_body_screen_shows_plan_number_and_title(self) -> None:
         """IssueBodyScreen shows plan number and full title in header."""
         full_title = "This is a very long plan title that should be shown in full"
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(456, full_title, issue_body="Body text")]
+            plans=[make_plan_row(456, full_title, issue_body="metadata body")]
         )
+        provider.set_plan_content(456, "Plan content")
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -1304,5 +1315,5 @@ class TestIssueBodyScreen:
 
             body_screen = app.screen_stack[-1]
             assert isinstance(body_screen, IssueBodyScreen)
-            assert body_screen._row.issue_number == 456
-            assert body_screen._row.full_title == full_title
+            assert body_screen._issue_number == 456
+            assert body_screen._full_title == full_title

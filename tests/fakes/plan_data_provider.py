@@ -42,6 +42,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._browser = browser if browser is not None else FakeBrowserLauncher()
         self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
         self._fetch_error = fetch_error
+        self._plan_content_by_issue: dict[int, str] = {}
 
     @property
     def repo_root(self) -> Path:
@@ -127,6 +128,29 @@ class FakePlanDataProvider(PlanDataProvider):
             Empty dict - no activity in fake implementation
         """
         return {}
+
+    def fetch_plan_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fake plan content fetch implementation.
+
+        Returns the plan_content if configured, otherwise None.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (unused in fake)
+
+        Returns:
+            The configured plan content for this issue, or None
+        """
+        return self._plan_content_by_issue.get(issue_number)
+
+    def set_plan_content(self, issue_number: int, content: str) -> None:
+        """Set the plan content to return for a specific issue.
+
+        Args:
+            issue_number: The GitHub issue number
+            content: The plan content to return
+        """
+        self._plan_content_by_issue[issue_number] = content
 
 
 def make_plan_row(
