@@ -95,6 +95,20 @@ class Capability(ABC):
         """
         ...
 
+    def preflight(self, repo_root: Path | None) -> CapabilityResult:
+        """Check preconditions before installation.
+
+        Override to add capability-specific checks (e.g., required dependencies).
+        Default implementation returns success.
+
+        Args:
+            repo_root: Path to the repository root (None for user-level capabilities)
+
+        Returns:
+            CapabilityResult with success=False and message if preconditions not met
+        """
+        return CapabilityResult(success=True, message="")
+
     @abstractmethod
     def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install this capability.

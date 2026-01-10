@@ -69,6 +69,15 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
             # User-level capability - no repo needed
             install_repo_root = None
 
+        # Run preflight checks before installation
+        preflight_result = cap.preflight(install_repo_root)
+        if not preflight_result.success:
+            user_output(
+                click.style("✗ ", fg="red") + f"{cap_name}: {preflight_result.message}"
+            )
+            any_failed = True
+            continue
+
         result = cap.install(install_repo_root)
         if result.success:
             user_output(click.style("✓ ", fg="green") + f"{cap_name}: {result.message}")
