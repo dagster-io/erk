@@ -169,16 +169,17 @@ After determining which session(s) to analyze, upload the preprocessed session X
 
 **For each selected session:**
 
-1. Preprocess the session to XML and save to a temp file:
+1. Create scratch directory and preprocess the session to XML:
 
    ```bash
-   erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout > /tmp/session-<session-id>.xml
+   mkdir -p .erk/scratch/sessions/<session-id>
+   erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout > .erk/scratch/sessions/<session-id>/session.xml
    ```
 
 2. Create a secret gist with all preprocessed session files:
 
    ```bash
-   gh gist create --secret --desc "Extraction plan raw materials: <session-ids>" /tmp/session-*.xml
+   gh gist create --secret --desc "Extraction plan raw materials: <session-ids>" .erk/scratch/sessions/*/session.xml
    ```
 
 3. Capture the gist URL from the output and display to the user:
