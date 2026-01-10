@@ -73,12 +73,12 @@ gh api repos/dagster-io/erk/issues/comments/<PLAN_COMMENT_ID> --jq '.body'
 
 Apply these classification rules:
 
-| Category                  | Signal                                       | Meaning                                              |
-| ------------------------- | -------------------------------------------- | ---------------------------------------------------- |
-| **Implementation Ended**  | `last_*_impl_event: ended`                   | Attempt ended - MUST verify in codebase (often fails)|
-| **Abandoned**             | `last_*_impl_event: started` only (no ended) | Implementation started but not finished              |
-| **Stale**                 | No impl timestamps + >7 days old             | Never attempted, possibly obsolete                   |
-| **Active**                | Recent creation or recent impl activity      | Still in progress                                    |
+| Category                 | Signal                                       | Meaning                                               |
+| ------------------------ | -------------------------------------------- | ----------------------------------------------------- |
+| **Implementation Ended** | `last_*_impl_event: ended`                   | Attempt ended - MUST verify in codebase (often fails) |
+| **Abandoned**            | `last_*_impl_event: started` only (no ended) | Implementation started but not finished               |
+| **Stale**                | No impl timestamps + >7 days old             | Never attempted, possibly obsolete                    |
+| **Active**               | Recent creation or recent impl activity      | Still in progress                                     |
 
 > **WARNING:** `impl_event: ended` only means an implementation attempt ended, NOT that it succeeded.
 > In practice, ~75% of these have no merged work. Always verify against codebase.
@@ -96,17 +96,18 @@ gh pr list --repo dagster-io/erk --state merged --search "<keywords from title>"
 **3.5.2 Check codebase for expected changes:**
 
 Read the plan content to find which files should be modified, then verify:
+
 - Do the expected files exist?
 - Do they contain the expected changes (use Grep)?
 
 **3.5.3 Reclassify based on verification:**
 
-| Verification Result | New Classification |
-|--------------------|--------------------|
-| PR merged AND changes in codebase | **Confirmed Done** - safe to close |
-| PR merged but scope changed | **Confirmed Done** - note the difference |
+| Verification Result                 | New Classification                            |
+| ----------------------------------- | --------------------------------------------- |
+| PR merged AND changes in codebase   | **Confirmed Done** - safe to close            |
+| PR merged but scope changed         | **Confirmed Done** - note the difference      |
 | No PR found, no changes in codebase | **Incomplete** - impl failed or PR not merged |
-| Changes exist but no PR found | **Confirmed Done** - work landed differently |
+| Changes exist but no PR found       | **Confirmed Done** - work landed differently  |
 
 ### Phase 4: Present Report
 
@@ -125,9 +126,9 @@ Plans verified complete - safe to close.
 
 Plans where implementation ended but work was NOT merged.
 
-| Issue | Title         | Attempted    | Missing                     |
-| ----- | ------------- | ------------ | --------------------------- |
-| #1236 | Add feature Y | remote: Jan 3| Expected file not in codebase|
+| Issue | Title         | Attempted     | Missing                       |
+| ----- | ------------- | ------------- | ----------------------------- |
+| #1236 | Add feature Y | remote: Jan 3 | Expected file not in codebase |
 
 ## Abandoned (X plans)
 
