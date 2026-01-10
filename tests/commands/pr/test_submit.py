@@ -898,3 +898,184 @@ def test_pr_submit_shows_graphite_url() -> None:
         # Both URLs should be in output
         assert "github.com/owner/repo/pull/123" in result.output
         assert "app.graphite" in result.output
+
+
+def test_pr_submit_shows_created_message_for_new_pr() -> None:
+    """Test that output shows 'created' when PR is newly created."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # No existing PR - FakeGitHub.create_pr will be called
+        # and return PR #999
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # No prs configured - PR will be created new
+        # pr_details must have entry for 999 (the fake PR number returned by create_pr)
+        pr_details_999 = PRDetails(
+            number=999,
+            url="https://github.com/owner/repo/pull/999",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={},  # No existing PR
+            pr_details={999: pr_details_999},  # Details for newly created PR
+            pr_bases={999: "main"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should show "created" message for new PR
+        assert "PR #999 created" in result.output
+        # Should NOT show "found" message
+        assert "found (already exists)" not in result.output
+
+
+def test_pr_submit_shows_found_message_for_existing_pr() -> None:
+    """Test that output shows 'found (already exists)' when PR already exists."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # Existing PR configured
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},  # Existing PR
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should show "found" message for existing PR
+        assert "PR #123 found (already exists)" in result.output
+        # Should NOT show "created" without qualifier
+        # (check it's not "PR #123 created" which would indicate the bug)
+        assert "PR #123 created" not in result.output

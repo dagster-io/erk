@@ -115,7 +115,8 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     if isinstance(core_result, CoreSubmitError):
         raise click.ClickException(core_result.message)
 
-    click.echo(click.style(f"   PR #{core_result.pr_number} created", fg="green"))
+    action = "created" if core_result.was_created else "found (already exists)"
+    click.echo(click.style(f"   PR #{core_result.pr_number} {action}", fg="green"))
     click.echo("")
 
     # Phase 2: Get diff for AI
