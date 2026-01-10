@@ -39,7 +39,7 @@ import click
 
 from erk_shared.context.helpers import require_claude_installation, require_cwd, require_git
 from erk_shared.extraction.claude_installation import ClaudeInstallation, Session
-from erk_shared.extraction.session_schema import extract_first_user_message_text
+from erk_shared.extraction.session_schema import extract_first_user_message_text, extract_git_branch
 from erk_shared.git.abc import Git
 
 
@@ -63,6 +63,7 @@ class SessionInfo:
     size_bytes: int
     summary: str
     is_current: bool
+    branch: str | None  # Git branch active during session
 
 
 @dataclass(frozen=True)
@@ -201,14 +202,16 @@ def _list_sessions_from_store(
     # Apply limit
     limited_sessions = filtered_sessions[:limit]
 
-    # Convert to SessionInfo with summaries
+    # Convert to SessionInfo with summaries and branch info
     session_infos: list[SessionInfo] = []
     for session in limited_sessions:
-        # Read session content for summary extraction
+        # Read session content for summary and branch extraction
         content = claude_installation.read_session(cwd, session.session_id, include_agents=False)
         summary = ""
+        branch: str | None = None
         if content is not None:
             summary = extract_first_user_message_text(content.main_content, max_length=60)
+            branch = extract_git_branch(content.main_content)
 
         # Determine if this is the current session
         is_current = session.session_id == current_session_id
@@ -222,6 +225,7 @@ def _list_sessions_from_store(
                 size_bytes=session.size_bytes,
                 summary=summary,
                 is_current=is_current,
+                branch=branch,
             )
         )
 

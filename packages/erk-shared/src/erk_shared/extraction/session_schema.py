@@ -233,6 +233,25 @@ def extract_first_user_message_text(content: str, max_length: int | None) -> str
     return ""
 
 
+def extract_git_branch(content: str) -> str | None:
+    """Extract gitBranch from JSONL content.
+
+    The gitBranch field is stored at the root level of session entries.
+    Returns the first gitBranch found in the session.
+
+    Args:
+        content: Raw JSONL session content.
+
+    Returns:
+        Branch name if found, None otherwise.
+    """
+    for entry in iter_jsonl_entries(content):
+        branch = entry.get("gitBranch")
+        if branch is not None:
+            return branch
+    return None
+
+
 def extract_agent_info_from_jsonl(content: str) -> dict[str, AgentInfo]:
     """Extract agent info from Task tool invocations and their results.
 
