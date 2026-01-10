@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import pytest
-
 from textual.widgets import Markdown
 
 from erk.tui.app import ErkDashApp, HelpScreen, IssueBodyScreen, PlanDetailScreen
