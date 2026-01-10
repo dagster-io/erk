@@ -18,7 +18,7 @@ from textual.containers import Container, Vertical
 from textual.events import Click
 from textual.screen import ModalScreen, Screen
 from textual.timer import Timer
-from textual.widgets import Header, Input, Label, Static
+from textual.widgets import Header, Input, Label, Markdown, Static
 
 from erk.tui.commands.executor import CommandExecutor
 from erk.tui.commands.provider import MainListCommandProvider, PlanCommandProvider
@@ -366,7 +366,7 @@ class IssueBodyScreen(ModalScreen):
         if error is not None:
             container.mount(Label(f"Error: {error}", id="body-error"))
         elif content:
-            container.mount(Static(content, id="body-content", markup=False))
+            container.mount(Markdown(content, id="body-content"))
         else:
             container.mount(Label("(No plan content found)", id="body-empty"))
 
