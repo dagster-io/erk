@@ -71,8 +71,8 @@ class TestExecuteCommandBrowserCommands:
 class TestExecuteCommandCopyCommands:
     """Tests for copy-related commands."""
 
-    def test_copy_checkout_copies_command(self) -> None:
-        """copy_checkout copies the checkout command."""
+    def test_copy_checkout_copies_command_with_branch(self) -> None:
+        """copy_checkout copies branch checkout command when branch is available."""
         row = make_plan_row(
             123,
             "Test",
@@ -85,6 +85,20 @@ class TestExecuteCommandCopyCommands:
         screen.execute_command("copy_checkout")
         assert executor.copied_texts == ["erk co br feature-123"]
         assert "Copied: erk co br feature-123" in executor.notifications
+
+    def test_copy_checkout_falls_back_to_worktree_name(self) -> None:
+        """copy_checkout falls back to worktree name when branch is None."""
+        row = make_plan_row(
+            123,
+            "Test",
+            worktree_name="feature-123",
+            exists_locally=True,
+        )
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("copy_checkout")
+        assert executor.copied_texts == ["erk co feature-123"]
+        assert "Copied: erk co feature-123" in executor.notifications
 
     def test_copy_pr_checkout_copies_command(self) -> None:
         """copy_pr_checkout copies the PR checkout command."""
