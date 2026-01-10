@@ -28,7 +28,11 @@ from erk.cli.commands.objective_helpers import (
     get_objective_for_branch,
     prompt_objective_update,
 )
-from erk.cli.commands.slot.common import find_branch_assignment
+from erk.cli.commands.slot.common import (
+    extract_slot_number,
+    find_branch_assignment,
+    get_placeholder_branch_name,
+)
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
@@ -282,6 +286,31 @@ def _cleanup_and_navigate(
             execute_unassign(ctx, repo, state, assignment)
             ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
+        elif extract_slot_number(worktree_path.name) is not None:
+            # Slot worktree without assignment (e.g., branch checked out via gt get)
+            # Don't delete the worktree - just delete branch and checkout placeholder
+            slot_name = worktree_path.name
+            user_output(
+                click.style("Warning:", fg="yellow")
+                + f" Slot '{slot_name}' has no assignment (branch checked out outside erk)."
+            )
+            user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
+
+            if not force and not ctx.dry_run:
+                if not user_confirm(
+                    f"Release slot '{slot_name}' and delete branch '{branch}'?",
+                    default=True,
+                ):
+                    user_output("Slot preserved. Branch still exists locally.")
+                    return
+
+            # Checkout placeholder branch before deleting the feature branch
+            placeholder = get_placeholder_branch_name(slot_name)
+            if placeholder is not None:
+                ctx.git.checkout_branch(worktree_path, placeholder)
+
+            ctx.branch_manager.delete_branch(main_repo_root, branch)
+            user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
         else:
             # Non-slot worktree: delete worktree and branch
             if not force and not ctx.dry_run:

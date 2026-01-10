@@ -610,3 +610,105 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
     # GraphiteBranchManager.delete_branch calls graphite.delete_branch
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
+    tmp_path: Path,
+) -> None:
+    """Test slot detection by worktree path pattern when no pool assignment exists.
+
+    Regression test for bug where slot worktrees (e.g., erk-slot-01) were deleted
+    when branches were checked out via 'gt get' instead of erk commands.
+
+    The bug occurred because:
+    1. 'gt get' checks out a branch without creating a pool.json assignment
+    2. _cleanup_and_navigate only checked pool.json for slot detection
+    3. With no assignment, it fell through to "delete worktree" path
+
+    The fix adds a fallback: if no assignment but worktree path matches erk-slot-XX
+    pattern, treat it as a slot and release (don't delete the worktree directory).
+    """
+    # Create a slot worktree without any pool assignment
+    slot_worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state (no assignments)
+    from erk.core.worktree_pool import save_pool_state
+
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    # Create the placeholder branch that should exist
+    placeholder_branch = "__erk-slot-01-br-stub__"
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch", placeholder_branch]},
+        existing_paths={
+            slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate
+    # Without the fix: would delete the worktree (bad!)
+    # With the fix: should detect slot by path pattern and release it (good!)
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify worktree was NOT deleted (key assertion!)
+    # The worktree should still exist in git's worktree list
+    assert slot_worktree_path not in fake_git.removed_worktrees
+
+    # Verify placeholder branch was checked out
+    checkout_calls = [
+        (path, branch)
+        for path, branch in fake_git.checked_out_branches
+        if branch == placeholder_branch
+    ]
+    assert len(checkout_calls) == 1, "Should have checked out placeholder branch"
+    assert checkout_calls[0][0] == slot_worktree_path
+
+    # Verify branch was deleted via Graphite
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
