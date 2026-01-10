@@ -16,12 +16,6 @@ from erk.core.context import ErkContext
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
 @click.option(
-    "--hooks",
-    "hooks_only",
-    is_flag=True,
-    help="Only set up Claude Code hooks.",
-)
-@click.option(
     "--statusline",
     "statusline_only",
     is_flag=True,
@@ -31,7 +25,7 @@ from erk.core.context import ErkContext
     "--no-interactive",
     "no_interactive",
     is_flag=True,
-    help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
+    help="Skip all interactive prompts (gitignore, permissions, shell setup).",
 )
 @click.option(
     "--with-dignified-review",
@@ -45,7 +39,6 @@ def init_group(
     *,
     force: bool,
     shell: bool,
-    hooks_only: bool,
     statusline_only: bool,
     no_interactive: bool,
     with_dignified_review: bool,
@@ -62,7 +55,6 @@ def init_group(
             erk_ctx,
             force=force,
             shell=shell,
-            hooks_only=hooks_only,
             statusline_only=statusline_only,
             no_interactive=no_interactive,
             with_dignified_review=with_dignified_review,

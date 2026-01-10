@@ -4,6 +4,7 @@ from functools import cache
 
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import Capability
+from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
@@ -15,6 +16,7 @@ from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 def _all_capabilities() -> tuple[Capability, ...]:
     """Return all registered capabilities. Cached for performance."""
     return (
+        HooksCapability(),
         LearnedDocsCapability(),
         DignifiedPythonCapability(),
         FakeDrivenTestingCapability(),
@@ -47,3 +49,15 @@ def list_capabilities() -> list[Capability]:
         List of all registered capabilities
     """
     return list(_all_capabilities())
+
+
+def list_required_capabilities() -> list[Capability]:
+    """Get capabilities that should be auto-installed during erk init.
+
+    Required capabilities are essential for erk to function properly and
+    are installed automatically without prompting the user.
+
+    Returns:
+        List of capabilities with required=True
+    """
+    return [cap for cap in _all_capabilities() if cap.required]

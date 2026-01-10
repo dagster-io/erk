@@ -83,6 +83,18 @@ class Capability(ABC):
         """
         ...
 
+    @property
+    def required(self) -> bool:
+        """If True, auto-install during erk init without prompting.
+
+        Required capabilities are essential for erk to function properly.
+        They are installed automatically during `erk init` and cannot be skipped.
+
+        Returns:
+            True if this capability should be auto-installed, False otherwise (default)
+        """
+        return False
+
     @abstractmethod
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if this capability is already installed.

@@ -1,4 +1,4 @@
-"""Tests for hooks flag and artifact sync during init.
+"""Tests for hooks auto-installation and artifact sync during init.
 
 Mock Usage Policy:
 ------------------
@@ -34,13 +34,18 @@ from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_init_hooks_flag_adds_hooks_to_empty_settings() -> None:
-    """Test that --hooks flag adds erk hooks to settings.json."""
+def test_init_installs_hooks_automatically() -> None:
+    """Test that init automatically installs hooks during initialization.
+
+    Hooks may be installed either by artifact sync or as a required capability,
+    depending on timing. This test verifies hooks are installed regardless of
+    which mechanism does it.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
 
-        # Create empty Claude settings
+        # Create empty Claude settings (no hooks)
         claude_settings_path = env.cwd / ".claude" / "settings.json"
         claude_settings_path.parent.mkdir(parents=True)
         claude_settings_path.write_text("{}", encoding="utf-8")
@@ -56,22 +61,22 @@ def test_init_hooks_flag_adds_hooks_to_empty_settings() -> None:
             global_config=global_config,
         )
 
-        # Accept hook addition
-        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="y\n")
+        # Run init with --no-interactive to skip interactive prompts
+        # HOME must be set for statusline setup to work
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Erk uses Claude Code hooks" in result.output
-        assert "Added erk hooks" in result.output
 
-        # Verify hooks were added
+        # Verify hooks were added (either by artifact sync or required capability)
         updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "hooks" in updated_settings
         assert "UserPromptSubmit" in updated_settings["hooks"]
         assert "PreToolUse" in updated_settings["hooks"]
 
 
-def test_init_hooks_flag_skips_when_already_configured() -> None:
-    """Test that --hooks flag skips when hooks already exist."""
+def test_init_skips_hooks_when_already_installed() -> None:
+    """Test that init skips hook installation when hooks already exist."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -83,7 +88,7 @@ def test_init_hooks_flag_skips_when_already_configured() -> None:
             "hooks": {
                 "UserPromptSubmit": [
                     {
-                        "matcher": "",
+                        "matcher": "*",
                         "hooks": [
                             {
                                 "type": "command",
@@ -122,49 +127,17 @@ def test_init_hooks_flag_skips_when_already_configured() -> None:
             global_config=global_config,
         )
 
-        # No input needed - should skip silently
-        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx)
+        # Run init - hooks should not be re-installed
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Hooks already configured" in result.output
+        # Should NOT see "Added erk hooks" since they already exist
+        assert "Added erk hooks" not in result.output
 
 
-def test_init_hooks_flag_handles_declined() -> None:
-    """Test that --hooks flag handles user declining gracefully."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        # Create empty Claude settings
-        claude_settings_path = env.cwd / ".claude" / "settings.json"
-        claude_settings_path.parent.mkdir(parents=True)
-        claude_settings_path.write_text("{}", encoding="utf-8")
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        erk_installation = FakeErkInstallation(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            erk_installation=erk_installation,
-            global_config=global_config,
-        )
-
-        # Decline hook addition
-        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="n\n")
-
-        assert result.exit_code == 0, result.output
-        assert "Skipped" in result.output
-        assert "erk init --hooks" in result.output
-
-        # Verify hooks were NOT added
-        unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
-        assert "hooks" not in unchanged_settings
-
-
-def test_init_hooks_flag_creates_settings_if_missing() -> None:
-    """Test that --hooks flag creates settings.json if it doesn't exist."""
+def test_init_creates_settings_json_for_hooks() -> None:
+    """Test that init creates .claude/settings.json if missing when installing hooks."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
@@ -183,11 +156,11 @@ def test_init_hooks_flag_creates_settings_if_missing() -> None:
             global_config=global_config,
         )
 
-        # Accept hook addition
-        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="y\n")
+        # Run init - should create settings.json with hooks
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Added erk hooks" in result.output
 
         # Verify file was created with hooks
         assert claude_settings_path.exists()
@@ -195,52 +168,16 @@ def test_init_hooks_flag_creates_settings_if_missing() -> None:
         assert "hooks" in created_settings
 
 
-def test_init_hooks_flag_only_does_hook_setup() -> None:
-    """Test that --hooks flag skips all other init steps."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
+def test_init_hooks_flag_removed() -> None:
+    """Test that the --hooks flag no longer exists.
 
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-
-        erk_installation = FakeErkInstallation(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            erk_installation=erk_installation,
-            global_config=global_config,
-        )
-
-        # Accept hook addition
-        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx, input="y\n")
-
-        assert result.exit_code == 0, result.output
-
-        # Verify no config.toml was created (other init steps skipped)
-        config_path = env.cwd / ".erk" / "config.toml"
-        assert not config_path.exists()
-
-
-def test_init_main_flow_syncs_hooks_automatically() -> None:
-    """Test that main init flow syncs hooks automatically via artifact sync.
-
-    Hooks are now part of artifact sync (since they're bundled artifacts),
-    so they're added automatically before the interactive hook prompt runs.
-    This test verifies that behavior.
+    The --hooks flag was removed because hooks are now a required capability
+    that is auto-installed during init.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         erk_root = env.cwd / "erks"
 
-        # Create Claude settings without erk permission or hooks
-        claude_settings_path = env.cwd / ".claude" / "settings.json"
-        claude_settings_path.parent.mkdir(parents=True)
-        claude_settings_path.write_text(
-            json.dumps({"permissions": {"allow": []}}),
-            encoding="utf-8",
-        )
-
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
@@ -252,20 +189,12 @@ def test_init_main_flow_syncs_hooks_automatically() -> None:
             global_config=global_config,
         )
 
-        # Decline permission (n) - hooks should already be synced via artifact sync
-        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
+        # Try using the old --hooks flag
+        result = runner.invoke(cli, ["init", "--hooks"], obj=test_ctx)
 
-        assert result.exit_code == 0, result.output
-        # Permission prompt should appear
-        assert "Bash(erk:*)" in result.output
-        # Hooks are synced as part of artifact sync, so the interactive prompt
-        # shows "Hooks already configured" instead of asking
-        assert "Hooks already configured" in result.output
-
-        # Verify hooks were added (by artifact sync)
-        updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
-        assert "hooks" in updated_settings
+        # Should fail because --hooks no longer exists
+        assert result.exit_code != 0
+        assert "No such option" in result.output or "no such option" in result.output.lower()
 
 
 def test_init_syncs_artifacts_successfully() -> None:
