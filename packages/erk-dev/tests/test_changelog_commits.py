@@ -9,6 +9,7 @@ from erk_dev.cli import cli
 from erk_dev.commands.changelog_commits.command import (
     extract_pr_number,
     parse_changelog_marker,
+    parse_last_release_version,
 )
 
 
@@ -59,6 +60,87 @@ As of `af8fa25c9`
         assert result is None
 
 
+class TestParseLastReleaseVersion:
+    """Tests for parse_last_release_version function."""
+
+    def test_finds_version_after_unreleased(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = """# Changelog
+
+## [Unreleased]
+
+### Added
+
+- New feature
+
+## [0.4.6] - 2025-01-06
+
+### Added
+
+- Previous feature
+"""
+        changelog.write_text(content, encoding="utf-8")
+        result = parse_last_release_version(changelog)
+        assert result == "0.4.6"
+
+    def test_finds_version_without_date(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = """# Changelog
+
+## [Unreleased]
+
+## [1.0.0]
+
+### Added
+"""
+        changelog.write_text(content, encoding="utf-8")
+        result = parse_last_release_version(changelog)
+        assert result == "1.0.0"
+
+    def test_returns_none_when_no_unreleased_section(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = """# Changelog
+
+## [1.0.0] - 2025-01-01
+
+### Added
+"""
+        changelog.write_text(content, encoding="utf-8")
+        result = parse_last_release_version(changelog)
+        assert result is None
+
+    def test_returns_none_when_no_release_version(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = """# Changelog
+
+## [Unreleased]
+
+### Added
+
+- New feature
+"""
+        changelog.write_text(content, encoding="utf-8")
+        result = parse_last_release_version(changelog)
+        assert result is None
+
+    def test_returns_none_when_file_not_exists(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        result = parse_last_release_version(changelog)
+        assert result is None
+
+    def test_handles_case_insensitive_unreleased(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = """# Changelog
+
+## [unreleased]
+
+## [2.0.0]
+"""
+        changelog.write_text(content, encoding="utf-8")
+        result = parse_last_release_version(changelog)
+        assert result == "2.0.0"
+
+
 class TestExtractPrNumber:
     """Tests for extract_pr_number function."""
 
@@ -107,7 +189,8 @@ class TestChangelogCommitsCommand:
             assert output["success"] is False
             assert "CHANGELOG.md not found" in output["error"]
 
-    def test_error_when_no_marker(self) -> None:
+    def test_error_when_no_marker_and_no_release_version(self) -> None:
+        """Error when no marker and no previous release version in CHANGELOG."""
         runner = CliRunner()
         with runner.isolated_filesystem():
             Path("CHANGELOG.md").write_text("# Changelog\n\n## [Unreleased]\n", encoding="utf-8")
@@ -116,6 +199,25 @@ class TestChangelogCommitsCommand:
             output = json.loads(result.output)
             assert output["success"] is False
             assert "No 'As of <commit>' marker found" in output["error"]
+            assert "no previous release version" in output["error"]
+
+    def test_error_when_no_marker_and_tag_missing(self) -> None:
+        """Error when no marker and the release tag doesn't exist."""
+        runner = CliRunner()
+        with runner.isolated_filesystem():
+            # CHANGELOG has a version but we're not in a git repo with that tag
+            content = """# Changelog
+
+## [Unreleased]
+
+## [0.4.6] - 2025-01-06
+"""
+            Path("CHANGELOG.md").write_text(content, encoding="utf-8")
+            result = runner.invoke(cli, ["changelog-commits", "--json-output"])
+            assert result.exit_code == 1
+            output = json.loads(result.output)
+            assert output["success"] is False
+            assert "tag v0.4.6 does not exist" in output["error"]
 
     def test_since_bypasses_marker_requirement(self) -> None:
         """Test that --since bypasses the CHANGELOG marker parsing."""

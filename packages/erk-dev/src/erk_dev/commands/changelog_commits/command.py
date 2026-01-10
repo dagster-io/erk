@@ -29,6 +29,51 @@ def parse_changelog_marker(changelog_path: Path) -> str | None:
     return None
 
 
+def parse_last_release_version(changelog_path: Path) -> str | None:
+    """Parse CHANGELOG.md to find the first release version after [Unreleased].
+
+    Returns the version string (e.g., "0.4.6") or None if not found.
+    """
+    if not changelog_path.exists():
+        return None
+
+    content = changelog_path.read_text(encoding="utf-8")
+
+    # Find [Unreleased] section first
+    unreleased_match = re.search(r"##\s*\[Unreleased\]", content, re.IGNORECASE)
+    if unreleased_match is None:
+        return None
+
+    # Search for the first version heading after [Unreleased]
+    # Pattern: ## [X.Y.Z] with optional date suffix
+    remaining_content = content[unreleased_match.end() :]
+    version_match = re.search(r"##\s*\[(\d+\.\d+\.\d+)\]", remaining_content)
+    if version_match:
+        return version_match.group(1)
+
+    return None
+
+
+def get_release_tag_commit(version: str) -> str | None:
+    """Get the commit hash for a release tag.
+
+    Given a version string like "0.4.6", finds the git tag "v0.4.6"
+    and returns the commit hash it points to.
+
+    Returns None if the tag doesn't exist.
+    """
+    tag_name = f"v{version}"
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", f"{tag_name}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip()
+
+
 def extract_pr_number(subject: str) -> int | None:
     """Extract PR number from commit subject if present.
 
@@ -149,12 +194,32 @@ def changelog_commits_command(json_output: bool, since_commit: str | None) -> No
 
         marker_commit = parse_changelog_marker(changelog_path)
         if marker_commit is None:
-            error_msg = "No 'As of <commit>' marker found in CHANGELOG.md Unreleased section"
-            if json_output:
-                machine_output(json.dumps({"success": False, "error": error_msg}))
+            # Fallback: try to use the last release version's tag
+            last_version = parse_last_release_version(changelog_path)
+            if last_version is not None:
+                tag_commit = get_release_tag_commit(last_version)
+                if tag_commit is not None:
+                    marker_commit = tag_commit
+                else:
+                    error_msg = (
+                        f"No 'As of <commit>' marker found and tag v{last_version} "
+                        "does not exist in repository"
+                    )
+                    if json_output:
+                        machine_output(json.dumps({"success": False, "error": error_msg}))
+                    else:
+                        user_output(f"Error: {error_msg}")
+                    raise SystemExit(1)
             else:
-                user_output(f"Error: {error_msg}")
-            raise SystemExit(1)
+                error_msg = (
+                    "No 'As of <commit>' marker found and no previous release version "
+                    "in CHANGELOG.md to fall back to"
+                )
+                if json_output:
+                    machine_output(json.dumps({"success": False, "error": error_msg}))
+                else:
+                    user_output(f"Error: {error_msg}")
+                raise SystemExit(1)
 
     # Verify commit exists
     verify_result = subprocess.run(
