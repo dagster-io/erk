@@ -36,8 +36,8 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.extraction.session_schema import extract_user_prompts_from_jsonl
-from erk_shared.github.metadata.session import render_session_prompts_block
+from erk_shared.extraction.session_schema import extract_session_exchanges_from_jsonl
+from erk_shared.github.metadata.session import render_session_exchanges_block
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
@@ -240,7 +240,9 @@ def plan_save_to_issue(
         if result.issue_number is not None:
             _create_plan_saved_issue_marker(effective_session_id, repo_root, result.issue_number)
 
-        # Step 9.0.2: Upload session prompts as a metadata block comment
+        # Step 9.0.2: Upload session exchanges as a metadata block comment
+        # Each exchange pairs a user prompt with the preceding assistant message
+        # for context (e.g., understanding what "yes" was responding to)
         if result.issue_number is not None:
             session_content = claude_installation.read_session(
                 cwd,
@@ -248,17 +250,19 @@ def plan_save_to_issue(
                 include_agents=False,
             )
             if session_content is not None:
-                prompts = extract_user_prompts_from_jsonl(
+                exchanges = extract_session_exchanges_from_jsonl(
                     session_content.main_content,
-                    max_prompts=20,
-                    max_prompt_length=500,
+                    max_exchanges=20,
+                    max_text_length=500,
                 )
-                if prompts:
-                    prompts_block = render_session_prompts_block(
-                        prompts,
-                        max_prompt_display_length=500,
+                if exchanges:
+                    # Convert SessionExchange objects to tuples for render function
+                    exchange_tuples = [(ex.preceding_assistant, ex.user_prompt) for ex in exchanges]
+                    exchanges_block = render_session_exchanges_block(
+                        exchange_tuples,
+                        max_text_display_length=500,
                     )
-                    github.add_comment(repo_root, result.issue_number, prompts_block)
+                    github.add_comment(repo_root, result.issue_number, exchanges_block)
 
         # Step 9.1: Snapshot the plan file to session-scoped storage
         # Determine plan file path
