@@ -59,10 +59,20 @@ Track which tripwires matched the diff (triggered tripwires).
 For EACH tripwire that matched in Step 4:
 
 1. Read the linked documentation file
-2. Extract ALL rules from that doc
-3. Verify the diff follows EVERY rule in the doc
+2. Extract ALL rules AND EXCEPTIONS from that doc
+3. Check if any exceptions apply to the code being reviewed
+4. Only flag as a violation if NO exception applies
 
-**Do NOT skip to pattern matching** - read the full doc to understand context and all requirements.
+**CRITICAL: Read the full doc to understand exceptions.**
+
+Many rules have explicit exceptions. For example, the "5+ parameters" rule has exceptions for:
+
+- ABC/Protocol method signatures
+- Click command callbacks (Click injects parameters positionally)
+
+If the code matches an exception, it is NOT a violation. Do not flag it.
+
+**You MUST load and read the linked documentation before deciding if something is a violation.** The tripwire summary in tripwires.md is abbreviated - the full exceptions are only in the linked docs.
 
 ## Step 6: Post Inline Comments for Violations
 

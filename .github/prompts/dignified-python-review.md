@@ -56,6 +56,17 @@ Check each Python file against dignified-python rules:
 - No default parameter values
 - Dependency injection with ABC
 - Frozen dataclasses
+- Keyword-only arguments for 5+ parameter functions
+
+**CRITICAL: Check for exceptions before flagging violations.**
+
+Many rules have explicit exceptions documented in the skill files you loaded in Step 1. Before flagging a violation, verify that NO exception applies. Common exceptions include:
+
+- **5+ parameters rule**: Does NOT apply to ABC/Protocol method signatures or Click command callbacks (Click injects parameters positionally)
+- **LBYL rule**: Exceptions allowed at error boundaries, for third-party API compatibility, or when adding context before re-raising
+- **Import-time side effects**: Static constants are acceptable
+
+If the code matches a documented exception, it is NOT a violation. Do not flag it.
 
 **For `__all__` / re-exports:**
 
