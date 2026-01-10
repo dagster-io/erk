@@ -7,6 +7,7 @@ import click
 from erk.cli.alias import alias
 from erk.cli.commands.checkout_helpers import navigate_to_worktree
 from erk.cli.commands.completions import complete_branch_names
+from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.graphite import find_worktrees_containing_branch
@@ -220,9 +221,11 @@ def _perform_checkout(
 @alias("co")
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("branch", metavar="BRANCH", shell_complete=complete_branch_names)
+@click.option("--no-slot", is_flag=True, help="Create worktree without slot assignment")
+@click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
 @script_option
 @click.pass_obj
-def branch_checkout(ctx: ErkContext, branch: str, script: bool) -> None:
+def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, script: bool) -> None:
     """Checkout BRANCH by finding and switching to its worktree.
 
     This command finds which worktree has the specified branch checked out
@@ -267,9 +270,58 @@ def branch_checkout(ctx: ErkContext, branch: str, script: bool) -> None:
             matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
         else:
             # Root not available or not trunk - auto-create worktree
-            _worktree_path, is_newly_created = ensure_worktree_for_branch(
-                ctx, repo, branch, is_plan_derived=False
-            )
+            if no_slot:
+                # Legacy behavior: branch-name-based paths
+                _worktree_path, is_newly_created = ensure_worktree_for_branch(
+                    ctx, repo, branch, is_plan_derived=False
+                )
+            else:
+                # New behavior: slot allocation
+                # First check if this is the trunk branch - trunk cannot have a slot
+                trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+                if branch == trunk_branch:
+                    user_output(
+                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+                        f"The trunk branch should be checked out in the root worktree.\n"
+                        f"To switch to {trunk_branch}, use:\n"
+                        f"  erk br co root"
+                    )
+                    raise SystemExit(1) from None
+
+                # Ensure branch exists (may need to create tracking branch)
+                local_branches = ctx.git.list_local_branches(repo.root)
+                if branch not in local_branches:
+                    remote_branches = ctx.git.list_remote_branches(repo.root)
+                    remote_ref = f"origin/{branch}"
+                    if remote_ref in remote_branches:
+                        user_output(
+                            f"Branch '{branch}' exists on origin, creating local tracking branch..."
+                        )
+                        ctx.git.fetch_branch(repo.root, "origin", branch)
+                        ctx.git.create_tracking_branch(repo.root, branch, remote_ref)
+                    else:
+                        user_output(
+                            f"Error: Branch '{branch}' does not exist.\n"
+                            f"To create a new branch and worktree, run:\n"
+                            f"  erk wt create --branch {branch}"
+                        )
+                        raise SystemExit(1) from None
+
+                # Allocate slot for the branch
+                result = allocate_slot_for_branch(
+                    ctx,
+                    repo,
+                    branch,
+                    force=force,
+                    reuse_inactive_slots=True,
+                    cleanup_artifacts=True,
+                )
+                _worktree_path = result.worktree_path
+                is_newly_created = not result.already_assigned
+                if is_newly_created:
+                    user_output(
+                        click.style(f"✓ Assigned {branch} to {result.slot_name}", fg="green")
+                    )
 
             # Refresh worktree list to include the newly created worktree
             worktrees = ctx.git.list_worktrees(repo.root)
