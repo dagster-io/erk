@@ -67,30 +67,26 @@ TERMINAL_EDITORS = frozenset(
 )
 
 
-def abbreviate_for_header(worktree_name: str | None) -> str:
-    """Abbreviate worktree name to fit in 12-char header for AskUserQuestion.
+def abbreviate_for_header(current_branch: str | None) -> str:
+    """Abbreviate branch name to fit in 12-char header for AskUserQuestion.
 
     Args:
-        worktree_name: Directory name of current worktree, or None.
+        current_branch: Current git branch name, or None.
 
     Returns:
         Abbreviated header string, max 12 characters.
         Examples:
-        - "erk-slot-02" -> "wt:slot-02" (10 chars)
-        - "myworktree" -> "wt:myworkt" (10 chars, truncated)
+        - "P4535-add-feature" -> "br:P4535-ad" (11 chars)
+        - "feature-x" -> "br:feature-x" (12 chars)
         - None -> "Plan Action"
     """
-    if worktree_name is None:
+    if current_branch is None:
         return "Plan Action"
-    # "erk-slot-02" -> "wt:slot-02" (strip erk- prefix)
-    if worktree_name.startswith("erk-"):
-        abbreviated = worktree_name[4:]
-    else:
-        abbreviated = worktree_name
-    # Truncate if too long: "wt:" + 9 chars = 12 max
+    # Truncate if too long: "br:" + 9 chars = 12 max
+    abbreviated = current_branch
     if len(abbreviated) > 9:
         abbreviated = abbreviated[:9]
-    return f"wt:{abbreviated}"
+    return f"br:{abbreviated}"
 
 
 def is_terminal_editor(editor: str | None) -> bool:
@@ -304,7 +300,7 @@ def build_blocking_message(
         question_text = "What would you like to do with this plan?"
 
     # Build header for AskUserQuestion (max 12 chars)
-    header = abbreviate_for_header(worktree_name)
+    header = abbreviate_for_header(current_branch)
 
     lines = [
         "PLAN SAVE PROMPT",
