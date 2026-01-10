@@ -23,3 +23,7 @@ Fix all merge conflicts and continue the git rebase.
 4. **Loop** - If the rebase continues with more conflicts, repeat the process
 
 5. **Verify completion** - Check git status and recent commit history to confirm success
+
+6. **Push changes** - After rebase, the branch will have diverged from origin. Push the rebased branch:
+   - For Graphite users: `gt submit` (or `gt ss`)
+   - For git-only users: `git push --force-with-lease`
