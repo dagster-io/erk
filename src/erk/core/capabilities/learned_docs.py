@@ -2,7 +2,12 @@
 
 from pathlib import Path
 
-from erk.core.capabilities.base import Capability, CapabilityArtifact, CapabilityResult
+from erk.core.capabilities.base import (
+    Capability,
+    CapabilityArtifact,
+    CapabilityResult,
+    CapabilityScope,
+)
 
 LEARNED_DOCS_README = """\
 ---
@@ -197,6 +202,10 @@ class LearnedDocsCapability(Capability):
         return "Autolearning documentation system"
 
     @property
+    def scope(self) -> CapabilityScope:
+        return "project"
+
+    @property
     def installation_check_description(self) -> str:
         return "docs/learned/ directory exists"
 
@@ -211,12 +220,14 @@ class LearnedDocsCapability(Capability):
             CapabilityArtifact(path=".claude/skills/learned-docs/SKILL.md", artifact_type="file"),
         ]
 
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
         """Check if docs/learned/ directory exists."""
+        assert repo_root is not None, "LearnedDocsCapability requires repo_root"
         return (repo_root / "docs" / "learned").exists()
 
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
         """Create docs/learned/ directory and learned-docs skill."""
+        assert repo_root is not None, "LearnedDocsCapability requires repo_root"
         created_files: list[str] = []
 
         # Create docs/learned/ directory

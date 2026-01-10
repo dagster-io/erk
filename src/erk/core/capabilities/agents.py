@@ -6,7 +6,12 @@ Agent capabilities install Claude agent definitions.
 import shutil
 from pathlib import Path
 
-from erk.core.capabilities.base import Capability, CapabilityArtifact, CapabilityResult
+from erk.core.capabilities.base import (
+    Capability,
+    CapabilityArtifact,
+    CapabilityResult,
+    CapabilityScope,
+)
 
 
 class DevrunAgentCapability(Capability):
@@ -25,6 +30,10 @@ class DevrunAgentCapability(Capability):
         return "Safe execution agent for pytest/ty/ruff/make/gt"
 
     @property
+    def scope(self) -> CapabilityScope:
+        return "project"
+
+    @property
     def installation_check_description(self) -> str:
         return ".claude/agents/devrun.md exists"
 
@@ -37,12 +46,14 @@ class DevrunAgentCapability(Capability):
             ),
         ]
 
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the agent file exists."""
+        assert repo_root is not None, "DevrunAgentCapability requires repo_root"
         return (repo_root / ".claude" / "agents" / "devrun.md").exists()
 
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the devrun agent definition."""
+        assert repo_root is not None, "DevrunAgentCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
         from erk.artifacts.sync import get_bundled_claude_dir
 

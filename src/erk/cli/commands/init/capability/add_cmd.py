@@ -1,5 +1,7 @@
 """Add capabilities to a repository."""
 
+from pathlib import Path
+
 import click
 
 from erk.core.capabilities.registry import get_capability, list_capabilities
@@ -12,30 +14,25 @@ from erk_shared.output.output import user_output
 @click.argument("names", nargs=-1, required=True)
 @click.pass_obj
 def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
-    """Install capabilities in the current repository.
+    """Install capabilities in the current repository or user settings.
 
     NAMES are the capability names to install. Multiple can be
     specified at once.
 
-    Requires being in a git repository.
+    Project-level capabilities require being in a git repository.
+    User-level capabilities can be installed from anywhere.
 
     Examples:
         erk init capability add learned-docs
         erk init capability add learned-docs dignified-python
+        erk init capability add statusline  # user-level, works outside repos
     """
-    # Discover repo using context's cwd and git
-    erk_root = ctx.erk_installation.root()
-    repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, erk_root, ctx.git)
-
-    if isinstance(repo_or_sentinel, NoRepoSentinel):
-        user_output(click.style("Error: ", fg="red") + "Not in a git repository.")
-        user_output("Run this command from within a git repository.")
-        raise SystemExit(1)
-
-    repo_root = repo_or_sentinel.root
-
     # Track success/failure for exit code
     any_failed = False
+
+    # Lazy repo discovery - only done if needed
+    repo_root: Path | None = None
+    repo_checked = False
 
     for cap_name in names:
         cap = get_capability(cap_name)
@@ -47,7 +44,32 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
             any_failed = True
             continue
 
-        result = cap.install(repo_root)
+        # Determine repo_root based on capability scope
+        if cap.scope == "project":
+            # Lazy repo discovery - only do it once
+            if not repo_checked:
+                erk_root = ctx.erk_installation.root()
+                repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, erk_root, ctx.git)
+                if isinstance(repo_or_sentinel, NoRepoSentinel):
+                    repo_root = None
+                else:
+                    repo_root = repo_or_sentinel.root
+                repo_checked = True
+
+            if repo_root is None:
+                user_output(
+                    click.style("✗ ", fg="red")
+                    + f"{cap_name}: Not in a git repository (required for project-level capability)"
+                )
+                any_failed = True
+                continue
+
+            install_repo_root = repo_root
+        else:
+            # User-level capability - no repo needed
+            install_repo_root = None
+
+        result = cap.install(install_repo_root)
         if result.success:
             user_output(click.style("✓ ", fg="green") + f"{cap_name}: {result.message}")
             for created_file in result.created_files:

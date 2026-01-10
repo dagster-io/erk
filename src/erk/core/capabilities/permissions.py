@@ -10,6 +10,7 @@ from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
     CapabilityResult,
+    CapabilityScope,
 )
 
 
@@ -25,6 +26,10 @@ class ErkBashPermissionsCapability(Capability):
         return "Allow Bash(erk:*) commands in Claude Code"
 
     @property
+    def scope(self) -> CapabilityScope:
+        return "project"
+
+    @property
     def installation_check_description(self) -> str:
         return "Bash(erk:*) in .claude/settings.json permissions.allow"
 
@@ -34,8 +39,9 @@ class ErkBashPermissionsCapability(Capability):
             CapabilityArtifact(path=".claude/settings.json", artifact_type="file"),
         ]
 
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
         """Check if Bash(erk:*) permission exists in settings.json."""
+        assert repo_root is not None, "ErkBashPermissionsCapability requires repo_root"
         settings_path = repo_root / ".claude" / "settings.json"
         if not settings_path.exists():
             return False
@@ -45,8 +51,9 @@ class ErkBashPermissionsCapability(Capability):
         allow_list = permissions.get("allow", [])
         return "Bash(erk:*)" in allow_list
 
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
         """Add Bash(erk:*) to permissions.allow in settings.json."""
+        assert repo_root is not None, "ErkBashPermissionsCapability requires repo_root"
         settings_path = repo_root / ".claude" / "settings.json"
         created_files: list[str] = []
 

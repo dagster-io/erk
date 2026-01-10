@@ -107,8 +107,8 @@ def test_capability_check_unknown_name_fails() -> None:
         assert "Available capabilities:" in result.output
 
 
-def test_capability_check_requires_repo() -> None:
-    """Test that check command fails outside a git repository."""
+def test_capability_check_outside_repo_shows_unknown_for_project_caps() -> None:
+    """Test that check command outside git repo shows '?' for project capabilities."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # FakeGit returns None for git_common_dir when not in a repo
@@ -127,8 +127,39 @@ def test_capability_check_requires_repo() -> None:
 
         result = runner.invoke(cli, ["init", "capability", "check"], obj=test_ctx)
 
+        # Should succeed because user-level capabilities can still be checked
+        assert result.exit_code == 0, result.output
+        # Project capabilities should show as "?" (unknown status)
+        assert "learned-docs" in result.output
+        assert "[project]" in result.output
+        # User capabilities should show normally
+        assert "statusline" in result.output
+        assert "[user]" in result.output
+
+
+def test_capability_check_specific_project_cap_requires_repo() -> None:
+    """Test that checking a specific project-level capability fails outside git repo."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # FakeGit returns None for git_common_dir when not in a repo
+        git_ops = FakeGit(git_common_dirs={})
+        global_config = GlobalConfig.test(
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
+
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        result = runner.invoke(cli, ["init", "capability", "check", "learned-docs"], obj=test_ctx)
+
         assert result.exit_code == 1
-        assert "Not in a git repository" in result.output
+        assert "project-level capability" in result.output
+        assert "git repository" in result.output
 
 
 def test_capability_check_shows_artifacts_when_installed() -> None:

@@ -7,6 +7,7 @@ from erk.core.capabilities.base import Capability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
+from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 
 
@@ -20,6 +21,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         ErkImplWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
+        StatuslineCapability(claude_installation=None),
     )
 
 

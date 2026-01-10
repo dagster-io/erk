@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+# Type alias for capability scope
+CapabilityScope = Literal["project", "user"]
+
 
 @dataclass(frozen=True)
 class CapabilityResult:
@@ -23,7 +26,7 @@ class CapabilityResult:
 class CapabilityArtifact:
     """Describes an artifact installed by a capability."""
 
-    path: str  # Relative to repo_root, e.g., "docs/learned/"
+    path: str  # Relative to repo_root for project-scope, or absolute for user-scope
     artifact_type: Literal["file", "directory"]
 
 
@@ -34,6 +37,7 @@ class Capability(ABC):
     Each capability must implement:
     - name: CLI-facing identifier
     - description: Short description for help text
+    - scope: Whether this is a "project" or "user" level capability
     - is_installed(): Check if already installed
     - install(): Install the capability
     """
@@ -48,6 +52,16 @@ class Capability(ABC):
     @abstractmethod
     def description(self) -> str:
         """Short description for help text."""
+        ...
+
+    @property
+    @abstractmethod
+    def scope(self) -> CapabilityScope:
+        """Whether this capability is project-level or user-level.
+
+        - "project": Installed per-repository (requires repo_root)
+        - "user": Installed globally for the user (repo_root is None)
+        """
         ...
 
     @property
@@ -70,11 +84,11 @@ class Capability(ABC):
         ...
 
     @abstractmethod
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
         """Check if this capability is already installed.
 
         Args:
-            repo_root: Path to the repository root
+            repo_root: Path to the repository root (None for user-level capabilities)
 
         Returns:
             True if the capability is already installed
@@ -82,11 +96,11 @@ class Capability(ABC):
         ...
 
     @abstractmethod
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install this capability.
 
         Args:
-            repo_root: Path to the repository root
+            repo_root: Path to the repository root (None for user-level capabilities)
 
         Returns:
             CapabilityResult with success status and message

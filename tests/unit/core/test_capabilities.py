@@ -5,6 +5,8 @@ These tests verify:
 2. The registry functions (get, list)
 3. The LearnedDocsCapability implementation
 4. Skill-based capabilities
+5. StatuslineCapability (user-level capability)
+6. Capability scope behavior
 """
 
 from pathlib import Path
@@ -14,6 +16,7 @@ from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
     CapabilityResult,
+    CapabilityScope,
 )
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
@@ -22,7 +25,9 @@ from erk.core.capabilities.skills import (
     DignifiedPythonCapability,
     FakeDrivenTestingCapability,
 )
+from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
+from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 
 # =============================================================================
 # Tests for CapabilityResult
@@ -222,6 +227,10 @@ class _TestCapability(Capability):
         return "Test capability"
 
     @property
+    def scope(self) -> CapabilityScope:
+        return "project"
+
+    @property
     def installation_check_description(self) -> str:
         return ".test-cap marker file exists"
 
@@ -229,10 +238,12 @@ class _TestCapability(Capability):
     def artifacts(self) -> list[CapabilityArtifact]:
         return [CapabilityArtifact(path=".test-cap", artifact_type="file")]
 
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
+        assert repo_root is not None, "_TestCapability requires repo_root"
         return (repo_root / ".test-cap").exists()
 
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
+        assert repo_root is not None, "_TestCapability requires repo_root"
         marker = repo_root / ".test-cap"
         if marker.exists():
             return CapabilityResult(success=True, message="Already installed")
@@ -529,3 +540,142 @@ def test_permission_capability_registered() -> None:
     cap = get_capability("erk-bash-permissions")
     assert cap is not None
     assert cap.name == "erk-bash-permissions"
+
+
+# =============================================================================
+# Tests for StatuslineCapability
+# =============================================================================
+
+
+def test_statusline_capability_properties() -> None:
+    """Test StatuslineCapability has correct properties."""
+    cap = StatuslineCapability(claude_installation=None)
+    assert cap.name == "statusline"
+    assert cap.scope == "user"
+    assert "status line" in cap.description.lower()
+    assert "statusLine" in cap.installation_check_description
+
+
+def test_statusline_capability_artifacts() -> None:
+    """Test StatuslineCapability lists correct artifacts."""
+    cap = StatuslineCapability(claude_installation=None)
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == "~/.claude/settings.json"
+    assert artifacts[0].artifact_type == "file"
+
+
+def test_statusline_is_installed_false_when_not_configured() -> None:
+    """Test is_installed returns False when statusline not configured."""
+    fake_claude = FakeClaudeInstallation.for_test(settings={})
+    cap = StatuslineCapability(claude_installation=fake_claude)
+
+    # User-level capability ignores repo_root
+    assert cap.is_installed(None) is False
+
+
+def test_statusline_is_installed_true_when_configured() -> None:
+    """Test is_installed returns True when erk-statusline is configured."""
+    fake_claude = FakeClaudeInstallation.for_test(
+        settings={
+            "statusLine": {
+                "type": "command",
+                "command": "uvx erk-statusline",
+            }
+        }
+    )
+    cap = StatuslineCapability(claude_installation=fake_claude)
+
+    # User-level capability ignores repo_root
+    assert cap.is_installed(None) is True
+
+
+def test_statusline_install_configures_statusline() -> None:
+    """Test install configures erk-statusline in settings."""
+    fake_claude = FakeClaudeInstallation.for_test(settings={})
+    cap = StatuslineCapability(claude_installation=fake_claude)
+
+    result = cap.install(None)
+
+    assert result.success is True
+    assert "Configured" in result.message
+
+    # Verify settings were written
+    assert len(fake_claude.settings_writes) == 1
+    written_settings = fake_claude.settings_writes[0]
+    assert "statusLine" in written_settings
+    assert "erk-statusline" in written_settings["statusLine"]["command"]
+
+
+def test_statusline_install_idempotent() -> None:
+    """Test install is idempotent when already configured."""
+    fake_claude = FakeClaudeInstallation.for_test(
+        settings={
+            "statusLine": {
+                "type": "command",
+                "command": "uvx erk-statusline",
+            }
+        }
+    )
+    cap = StatuslineCapability(claude_installation=fake_claude)
+
+    result = cap.install(None)
+
+    assert result.success is True
+    assert "already configured" in result.message
+
+    # Verify no writes were made
+    assert len(fake_claude.settings_writes) == 0
+
+
+def test_statusline_capability_registered() -> None:
+    """Test that statusline capability is registered."""
+    cap = get_capability("statusline")
+    assert cap is not None
+    assert cap.name == "statusline"
+    assert cap.scope == "user"
+
+
+# =============================================================================
+# Tests for Capability Scope
+# =============================================================================
+
+
+def test_all_project_capabilities_have_project_scope() -> None:
+    """Test that project-level capabilities have 'project' scope."""
+    project_caps = [
+        LearnedDocsCapability(),
+        DignifiedPythonCapability(),
+        FakeDrivenTestingCapability(),
+        ErkImplWorkflowCapability(),
+        DevrunAgentCapability(),
+        ErkBashPermissionsCapability(),
+    ]
+
+    for cap in project_caps:
+        assert cap.scope == "project", f"{cap.name} should have 'project' scope"
+
+
+def test_statusline_has_user_scope() -> None:
+    """Test that StatuslineCapability has 'user' scope."""
+    cap = StatuslineCapability(claude_installation=None)
+    assert cap.scope == "user"
+
+
+def test_all_registered_capabilities_have_valid_scope() -> None:
+    """Test that all registered capabilities have a valid scope."""
+    valid_scopes = {"project", "user"}
+    for cap in list_capabilities():
+        assert cap.scope in valid_scopes, f"{cap.name} has invalid scope: {cap.scope}"
+
+
+def test_capability_scope_values() -> None:
+    """Test that CapabilityScope type alias has expected values."""
+    # This tests the type at runtime - useful for documentation purposes
+    # The type is Literal["project", "user"]
+    project_cap = LearnedDocsCapability()
+    user_cap = StatuslineCapability(claude_installation=None)
+
+    assert project_cap.scope == "project"
+    assert user_cap.scope == "user"

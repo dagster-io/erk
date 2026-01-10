@@ -8,7 +8,12 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk.core.capabilities.base import Capability, CapabilityArtifact, CapabilityResult
+from erk.core.capabilities.base import (
+    Capability,
+    CapabilityArtifact,
+    CapabilityResult,
+    CapabilityScope,
+)
 
 if TYPE_CHECKING:
     pass
@@ -33,6 +38,11 @@ class SkillCapability(Capability):
         return self.skill_name
 
     @property
+    def scope(self) -> CapabilityScope:
+        """Skills are project-level capabilities."""
+        return "project"
+
+    @property
     def installation_check_description(self) -> str:
         """Human-readable description of what is_installed() checks."""
         return f".claude/skills/{self.skill_name}/ directory exists"
@@ -47,12 +57,14 @@ class SkillCapability(Capability):
             )
         ]
 
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the skill directory exists."""
+        assert repo_root is not None, "SkillCapability requires repo_root"
         return (repo_root / ".claude" / "skills" / self.skill_name).exists()
 
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the skill using artifact sync."""
+        assert repo_root is not None, "SkillCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
         from erk.artifacts.sync import get_bundled_claude_dir
 

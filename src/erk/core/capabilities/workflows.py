@@ -6,7 +6,12 @@ Workflow capabilities install GitHub Actions workflows and related actions.
 import shutil
 from pathlib import Path
 
-from erk.core.capabilities.base import Capability, CapabilityArtifact, CapabilityResult
+from erk.core.capabilities.base import (
+    Capability,
+    CapabilityArtifact,
+    CapabilityResult,
+    CapabilityScope,
+)
 
 
 class ErkImplWorkflowCapability(Capability):
@@ -25,6 +30,10 @@ class ErkImplWorkflowCapability(Capability):
     @property
     def description(self) -> str:
         return "GitHub Action for automated implementation"
+
+    @property
+    def scope(self) -> CapabilityScope:
+        return "project"
 
     @property
     def installation_check_description(self) -> str:
@@ -47,12 +56,14 @@ class ErkImplWorkflowCapability(Capability):
             ),
         ]
 
-    def is_installed(self, repo_root: Path) -> bool:
+    def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the workflow file exists."""
+        assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
         return (repo_root / ".github" / "workflows" / "erk-impl.yml").exists()
 
-    def install(self, repo_root: Path) -> CapabilityResult:
+    def install(self, repo_root: Path | None) -> CapabilityResult:
         """Install the workflow and related actions."""
+        assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
         from erk.artifacts.sync import get_bundled_github_dir
 
