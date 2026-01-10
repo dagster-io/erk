@@ -9,10 +9,6 @@ This file uses minimal mocking for external boundaries:
    - The prompt logic is a boundary (TTY interaction)
    - Here we test that statusline setup handles yes/no responses appropriately
 
-2. perform_statusline_setup mocking in CLI test:
-   - LEGITIMATE: Testing that CLI flag correctly invokes the function
-   - The function is tested directly in other tests
-
 NOTE: These tests use perform_statusline_setup() directly with path injection
 to avoid mocking HOME environment variable.
 """
@@ -22,14 +18,8 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
-from click.testing import CliRunner
 
-from erk.cli.cli import cli
 from erk.cli.commands.init.main import perform_statusline_setup
-from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-from erk_shared.git.fake import FakeGit
-from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
 def test_statusline_setup_configures_empty_settings(
@@ -148,36 +138,3 @@ def test_statusline_setup_replaces_when_confirmed(
     # Verify settings were updated
     updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
     assert "erk-statusline" in updated_settings["statusLine"]["command"]
-
-
-def test_init_statusline_flag_recognized() -> None:
-    """Test that --statusline flag is recognized and invokes statusline setup.
-
-    This is a minimal CLI integration test - detailed behavior is tested
-    via perform_statusline_setup() unit tests above.
-    """
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner) as env:
-        erk_root = env.cwd / "erks"
-
-        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
-        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
-        erk_installation = FakeErkInstallation(config=global_config)
-
-        test_ctx = env.build_context(
-            git=git_ops,
-            erk_installation=erk_installation,
-            global_config=global_config,
-        )
-
-        # Mock the function to avoid HOME dependency in CLI test
-        with mock.patch("erk.cli.commands.init.main.perform_statusline_setup") as mock_setup:
-            result = runner.invoke(cli, ["init", "--statusline"], obj=test_ctx)
-
-        assert result.exit_code == 0, result.output
-        # Verify the function was called with settings_path=None (uses default)
-        mock_setup.assert_called_once_with(settings_path=None)
-
-        # Verify no config.toml was created (other init steps skipped)
-        config_path = env.cwd / ".erk" / "config.toml"
-        assert not config_path.exists()

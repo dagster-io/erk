@@ -485,9 +485,7 @@ def run_init(
     force: bool,
     shell: bool,
     hooks_only: bool,
-    statusline_only: bool,
     no_interactive: bool,
-    with_dignified_review: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml.
 
@@ -558,11 +556,6 @@ def run_init(
         offer_claude_hook_setup(repo_root)
         return
 
-    # Handle --statusline flag: only do statusline setup
-    if statusline_only:
-        perform_statusline_setup(settings_path=None)
-        return
-
     # =========================================================================
     # STEP 2: Project Configuration
     # =========================================================================
@@ -628,17 +621,6 @@ def run_init(
             warn_msg = f"Artifact sync failed: {sync_result.message}"
             user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
             user_output("    Run 'erk artifact sync' to retry")
-
-        # Sync optional dignified-review feature if requested
-        if with_dignified_review:
-            from erk.artifacts.sync import sync_dignified_review
-
-            dr_result = sync_dignified_review(repo_context.root)
-            if dr_result.success:
-                user_output(click.style("  ✓ ", fg="green") + dr_result.message)
-            else:
-                warn_msg = f"dignified-review sync failed: {dr_result.message}"
-                user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
 
         # Create prompt hooks directory with README
         _create_prompt_hooks_directory(repo_root=repo_context.root)

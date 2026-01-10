@@ -4,6 +4,7 @@ from functools import cache
 
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import Capability
+from erk.core.capabilities.dignified_review import DignifiedReviewCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
@@ -18,6 +19,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         LearnedDocsCapability(),
         DignifiedPythonCapability(),
         FakeDrivenTestingCapability(),
+        DignifiedReviewCapability(),
         ErkImplWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),

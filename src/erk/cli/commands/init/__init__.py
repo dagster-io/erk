@@ -22,22 +22,10 @@ from erk.core.context import ErkContext
     help="Only set up Claude Code hooks.",
 )
 @click.option(
-    "--statusline",
-    "statusline_only",
-    is_flag=True,
-    help="Only configure erk-statusline in Claude Code.",
-)
-@click.option(
     "--no-interactive",
     "no_interactive",
     is_flag=True,
     help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
-)
-@click.option(
-    "--with-dignified-review",
-    "with_dignified_review",
-    is_flag=True,
-    help="Install dignified-python skill and review workflow.",
 )
 @click.pass_context
 def init_group(
@@ -46,9 +34,7 @@ def init_group(
     force: bool,
     shell: bool,
     hooks_only: bool,
-    statusline_only: bool,
     no_interactive: bool,
-    with_dignified_review: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml.
 
@@ -63,9 +49,7 @@ def init_group(
             force=force,
             shell=shell,
             hooks_only=hooks_only,
-            statusline_only=statusline_only,
             no_interactive=no_interactive,
-            with_dignified_review=with_dignified_review,
         )
 
 
