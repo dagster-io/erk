@@ -17,6 +17,7 @@ class CapabilityResult:
 
     success: bool
     message: str
+    created_files: tuple[str, ...] = ()  # Relative paths of files/dirs created
 
 
 @dataclass(frozen=True)
@@ -179,6 +180,94 @@ tripwires:
 <!-- Currently empty. Add tripwires to your documents and run 'erk docs sync'. -->
 """
 
+LEARNED_DOCS_SKILL = """\
+---
+name: learned-docs
+description: This skill should be used when writing, modifying, or reorganizing
+  documentation in docs/learned/. Use when creating new documents, updating frontmatter,
+  choosing categories, creating index files, updating routing tables, or moving
+  files between categories. Essential for maintaining consistent documentation structure.
+---
+
+# Learned Documentation Guide
+
+Overview: `docs/learned/` contains agent-focused documentation with:
+
+- YAML frontmatter for routing and discovery
+- Hierarchical category organization
+- Index files for category navigation
+
+## Document Registry
+
+@docs/learned/index.md
+
+## Frontmatter Requirements
+
+Every markdown file (except index.md) MUST have:
+
+```yaml
+---
+title: Document Title
+read_when:
+  - "first condition"
+  - "second condition"
+---
+```
+
+### Required Fields
+
+| Field       | Type         | Purpose                                    |
+| ----------- | ------------ | ------------------------------------------ |
+| `title`     | string       | Human-readable title for index tables      |
+| `read_when` | list[string] | Conditions when agent should read this doc |
+
+### Writing Effective read_when Values
+
+- Use gerund phrases: "creating a plan", "styling CLI output"
+- Be specific: "fixing merge conflicts in tests" not "tests"
+- Include 2-4 conditions covering primary use cases
+
+## Document Structure Template
+
+```markdown
+---
+title: [Clear Document Title]
+read_when:
+  - "[first condition]"
+  - "[second condition]"
+---
+
+# [Title Matching Frontmatter]
+
+[1-2 sentence overview]
+
+## [Main Content Sections]
+
+[Organized content with clear headers]
+```
+
+## Category Placement Guidelines
+
+1. **Match by topic** - Does the doc clearly fit one category?
+2. **Match by related docs** - Are similar docs already in a category?
+3. **When unclear** - Place at root level; categorize later when patterns emerge
+4. **Create new category** - When 3+ related docs exist at root level
+
+## Validation
+
+Run before committing:
+
+```bash
+erk docs sync      # Regenerate index files
+erk docs validate  # Check frontmatter
+```
+
+## Quick Reference
+
+- Category index: docs/learned/index.md
+- Regenerate indexes: `erk docs sync`
+"""
+
 
 class LearnedDocsCapability(Capability):
     """Capability for the learned-docs agent documentation system."""
@@ -202,6 +291,8 @@ class LearnedDocsCapability(Capability):
             CapabilityArtifact(path="docs/learned/README.md", artifact_type="file"),
             CapabilityArtifact(path="docs/learned/index.md", artifact_type="file"),
             CapabilityArtifact(path="docs/learned/tripwires.md", artifact_type="file"),
+            CapabilityArtifact(path=".claude/skills/learned-docs/", artifact_type="directory"),
+            CapabilityArtifact(path=".claude/skills/learned-docs/SKILL.md", artifact_type="file"),
         ]
 
     def is_installed(self, repo_root: Path) -> bool:
@@ -209,17 +300,45 @@ class LearnedDocsCapability(Capability):
         return (repo_root / "docs" / "learned").exists()
 
     def install(self, repo_root: Path) -> CapabilityResult:
-        """Create docs/learned/ directory with initial files."""
-        docs_dir = repo_root / "docs" / "learned"
-        if docs_dir.exists():
-            return CapabilityResult(success=True, message="docs/learned/ already exists")
+        """Create docs/learned/ directory and learned-docs skill."""
+        created_files: list[str] = []
 
-        docs_dir.mkdir(parents=True)
-        (docs_dir / "README.md").write_text(LEARNED_DOCS_README, encoding="utf-8")
-        (docs_dir / "index.md").write_text(LEARNED_DOCS_INDEX, encoding="utf-8")
-        (docs_dir / "tripwires.md").write_text(LEARNED_DOCS_TRIPWIRES, encoding="utf-8")
+        # Create docs/learned/ directory
+        docs_dir = repo_root / "docs" / "learned"
+        if not docs_dir.exists():
+            docs_dir.mkdir(parents=True)
+            created_files.append("docs/learned/")
+
+            (docs_dir / "README.md").write_text(LEARNED_DOCS_README, encoding="utf-8")
+            created_files.append("docs/learned/README.md")
+
+            (docs_dir / "index.md").write_text(LEARNED_DOCS_INDEX, encoding="utf-8")
+            created_files.append("docs/learned/index.md")
+
+            (docs_dir / "tripwires.md").write_text(LEARNED_DOCS_TRIPWIRES, encoding="utf-8")
+            created_files.append("docs/learned/tripwires.md")
+
+        # Create skill
+        skill_dir = repo_root / ".claude" / "skills" / "learned-docs"
+        if not skill_dir.exists():
+            skill_dir.mkdir(parents=True)
+            created_files.append(".claude/skills/learned-docs/")
+
+        skill_file = skill_dir / "SKILL.md"
+        if not skill_file.exists():
+            skill_file.write_text(LEARNED_DOCS_SKILL, encoding="utf-8")
+            created_files.append(".claude/skills/learned-docs/SKILL.md")
+
+        if not created_files:
+            return CapabilityResult(
+                success=True,
+                message="Already installed",
+            )
+
         return CapabilityResult(
-            success=True, message="Created docs/learned/ with README, index.md, tripwires.md"
+            success=True,
+            message="Installed",
+            created_files=tuple(created_files),
         )
 
 

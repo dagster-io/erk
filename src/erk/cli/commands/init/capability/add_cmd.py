@@ -50,6 +50,8 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
         result = cap.install(repo_root)
         if result.success:
             user_output(click.style("✓ ", fg="green") + f"{cap_name}: {result.message}")
+            for created_file in result.created_files:
+                user_output(f"    {created_file}")
         else:
             user_output(click.style("⚠ ", fg="yellow") + f"{cap_name}: {result.message}")
             any_failed = True

@@ -745,6 +745,10 @@ def run_init(
             if cap.is_installed(repo_root):
                 user_output(click.style("  ✓ ", fg="green") + f"{cap.name:20} {cap.description}")
             else:
-                user_output(click.style("  ○ ", fg="white") + f"{cap.name:20} {cap.description}")
+                user_output(
+                    click.style("  ○ ", fg="yellow")
+                    + f"{cap.name:20} {cap.description} "
+                    + click.style("(not installed)", fg="yellow")
+                )
 
     user_output(click.style("\n✓", fg="green") + " Initialization complete!")
