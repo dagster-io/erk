@@ -396,10 +396,12 @@ def _navigate_after_land(
             target_path, _ = ensure_worktree_for_branch(
                 ctx, post_deletion_repo, target_child_branch
             )
-        # Suggest running gt restack to update child branch's PR base
+        # Suggest running gt restack --downstack to update child branch's PR base
+        # Use --downstack to only restack the current branch, avoiding errors if
+        # upstack branches are checked out in other worktrees
         user_output(
             click.style("💡", fg="cyan")
-            + f" Run 'gt restack' in {target_child_branch} to update PR base branch"
+            + f" Run 'gt restack --downstack' in {target_child_branch} to update PR base"
         )
         activate_worktree(
             ctx=ctx,
