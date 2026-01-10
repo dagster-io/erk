@@ -136,6 +136,49 @@ Each markdown file requires YAML frontmatter:
 3. Run `erk docs sync` to generate index files
 """
 
+LEARNED_DOCS_INDEX = """\
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Run 'erk docs sync' to regenerate this file from document frontmatter. -->
+
+# Agent Documentation
+
+<!-- This index is automatically populated by 'erk docs sync'. -->
+<!-- It will list all categories and documents with their read_when conditions. -->
+
+## Categories
+
+<!-- Subdirectories will be listed here once created. -->
+
+## Uncategorized
+
+<!-- Top-level documents will be listed here. -->
+<!-- Example: **[my-doc.md](my-doc.md)** — when to read condition 1, condition 2 -->
+"""
+
+LEARNED_DOCS_TRIPWIRES = """\
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Run 'erk docs sync' to regenerate this file from document frontmatter. -->
+
+# Tripwires
+
+Action-triggered rules that fire when you're about to perform specific actions.
+
+<!-- Tripwires are collected from the 'tripwires' frontmatter field in documents. -->
+<!-- Each tripwire should follow this format in your document's frontmatter: -->
+<!--
+---
+title: "My Document"
+read_when:
+  - "working on feature X"
+tripwires:
+  - trigger: "Before doing action Y"
+    action: "Read this document first. Explains why Y needs special handling."
+---
+-->
+
+<!-- Currently empty. Add tripwires to your documents and run 'erk docs sync'. -->
+"""
+
 
 class LearnedDocsCapability(Capability):
     """Capability for the learned-docs agent documentation system."""
@@ -157,6 +200,8 @@ class LearnedDocsCapability(Capability):
         return [
             CapabilityArtifact(path="docs/learned/", artifact_type="directory"),
             CapabilityArtifact(path="docs/learned/README.md", artifact_type="file"),
+            CapabilityArtifact(path="docs/learned/index.md", artifact_type="file"),
+            CapabilityArtifact(path="docs/learned/tripwires.md", artifact_type="file"),
         ]
 
     def is_installed(self, repo_root: Path) -> bool:
@@ -164,15 +209,18 @@ class LearnedDocsCapability(Capability):
         return (repo_root / "docs" / "learned").exists()
 
     def install(self, repo_root: Path) -> CapabilityResult:
-        """Create docs/learned/ directory with README."""
+        """Create docs/learned/ directory with initial files."""
         docs_dir = repo_root / "docs" / "learned"
         if docs_dir.exists():
             return CapabilityResult(success=True, message="docs/learned/ already exists")
 
         docs_dir.mkdir(parents=True)
-        readme = docs_dir / "README.md"
-        readme.write_text(LEARNED_DOCS_README, encoding="utf-8")
-        return CapabilityResult(success=True, message="Created docs/learned/ with README")
+        (docs_dir / "README.md").write_text(LEARNED_DOCS_README, encoding="utf-8")
+        (docs_dir / "index.md").write_text(LEARNED_DOCS_INDEX, encoding="utf-8")
+        (docs_dir / "tripwires.md").write_text(LEARNED_DOCS_TRIPWIRES, encoding="utf-8")
+        return CapabilityResult(
+            success=True, message="Created docs/learned/ with README, index.md, tripwires.md"
+        )
 
 
 # =============================================================================

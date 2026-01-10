@@ -107,6 +107,32 @@ def test_learned_docs_install_creates_readme(tmp_path: Path) -> None:
     assert "read_when" in content
 
 
+def test_learned_docs_install_creates_index(tmp_path: Path) -> None:
+    """Test that install creates index.md in docs/learned/."""
+    cap = LearnedDocsCapability()
+    cap.install(tmp_path)
+
+    index_path = tmp_path / "docs" / "learned" / "index.md"
+    assert index_path.exists()
+    content = index_path.read_text(encoding="utf-8")
+    assert "AUTO-GENERATED FILE" in content
+    assert "erk docs sync" in content
+    assert "# Agent Documentation" in content
+
+
+def test_learned_docs_install_creates_tripwires(tmp_path: Path) -> None:
+    """Test that install creates tripwires.md in docs/learned/."""
+    cap = LearnedDocsCapability()
+    cap.install(tmp_path)
+
+    tripwires_path = tmp_path / "docs" / "learned" / "tripwires.md"
+    assert tripwires_path.exists()
+    content = tripwires_path.read_text(encoding="utf-8")
+    assert "AUTO-GENERATED FILE" in content
+    assert "erk docs sync" in content
+    assert "# Tripwires" in content
+
+
 def test_learned_docs_install_idempotent(tmp_path: Path) -> None:
     """Test that installing twice is idempotent and returns appropriate message."""
     cap = LearnedDocsCapability()
@@ -144,16 +170,18 @@ def test_learned_docs_artifacts() -> None:
     cap = LearnedDocsCapability()
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 2
+    assert len(artifacts) == 4
     paths = [a.path for a in artifacts]
     assert "docs/learned/" in paths
     assert "docs/learned/README.md" in paths
+    assert "docs/learned/index.md" in paths
+    assert "docs/learned/tripwires.md" in paths
 
     # Verify artifact types
     for artifact in artifacts:
         if artifact.path == "docs/learned/":
             assert artifact.artifact_type == "directory"
-        elif artifact.path == "docs/learned/README.md":
+        else:
             assert artifact.artifact_type == "file"
 
 
