@@ -10,8 +10,94 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
+import click
+
 from erk.cli.activation import render_activation_script
 from erk.core.context import ErkContext
+from erk_shared.output.output import user_output
+
+
+def _is_bot_author(author: str) -> bool:
+    """Check if commit author is a known bot (e.g., github-actions[bot])."""
+    return "[bot]" in author.lower()
+
+
+def format_sync_status(ahead: int, behind: int) -> str | None:
+    """Format sync status as arrows, or None if in sync.
+
+    Args:
+        ahead: Number of commits ahead of origin
+        behind: Number of commits behind origin
+
+    Returns:
+        Formatted string like "1↑", "2↓", "1↑ 3↓", or None if in sync
+    """
+    if ahead == 0 and behind == 0:
+        return None  # In sync, nothing to report
+    parts: list[str] = []
+    if ahead > 0:
+        parts.append(f"{ahead}↑")
+    if behind > 0:
+        parts.append(f"{behind}↓")
+    return " ".join(parts)
+
+
+def display_sync_status(
+    ctx: ErkContext,
+    *,
+    worktree_path: Path,
+    branch: str,
+    script: bool,
+) -> None:
+    """Display sync status after checkout if not in sync with remote.
+
+    Shows appropriate message based on sync state:
+    - In sync: No output
+    - Ahead: "Local is X↑ ahead of origin (X unpushed commit(s))"
+    - Behind: "Local is X↓ behind origin (run 'git pull' to update)"
+    - Diverged: Warning with instructions
+
+    Args:
+        ctx: Erk context with git operations
+        worktree_path: Path to the worktree
+        branch: Branch name
+        script: Whether running in script mode (suppresses educational output)
+    """
+    # Script mode: suppress educational output for machine-readability
+    if script:
+        return
+
+    ahead, behind = ctx.git.get_ahead_behind(worktree_path, branch)
+    sync_display = format_sync_status(ahead, behind)
+
+    if sync_display is None:
+        return  # In sync, nothing to report
+
+    # Format message based on sync state
+    if ahead > 0 and behind > 0:
+        # Diverged - most important case, needs warning
+        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+        styled_sync = click.style(sync_display, fg="yellow", bold=True)
+        user_output(f"  {warning} {styled_sync}")
+        user_output(
+            "  Run 'git fetch && git status' to see details, "
+            "or 'git reset --hard origin/<branch>' to sync"
+        )
+    elif ahead > 0:
+        # Ahead only
+        commit_word = "commit" if ahead == 1 else "commits"
+        styled_sync = click.style(sync_display, fg="cyan")
+        user_output(f"  Local is {styled_sync} ahead of origin ({ahead} unpushed {commit_word})")
+    else:
+        # Behind only - check if commits are from bots (e.g., autofix)
+        behind_authors = ctx.git.get_behind_commit_authors(worktree_path, branch)
+        has_bot_commits = any(_is_bot_author(author) for author in behind_authors)
+
+        styled_sync = click.style(sync_display, fg="yellow")
+        if has_bot_commits:
+            user_output(f"  Local is {styled_sync} behind origin - remote has autofix commits")
+        else:
+            user_output(f"  Local is {styled_sync} behind origin (run 'git pull' to update)")
 
 
 def navigate_to_worktree(

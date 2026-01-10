@@ -6,7 +6,7 @@ This command fetches PR code and creates a worktree for local review/testing.
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.checkout_helpers import navigate_to_worktree
+from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
 from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import worktree_path_for
@@ -90,6 +90,10 @@ def pr_checkout(
         )
         if should_output:
             user_output(f"PR #{pr_number} already checked out at {styled_path}")
+            # Display sync status for existing worktree
+            display_sync_status(
+                ctx, worktree_path=existing_worktree, branch=branch_name, script=script
+            )
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
@@ -178,3 +182,5 @@ def pr_checkout(
     )
     if should_output:
         user_output(f"Created worktree for PR #{pr_number} at {styled_path}")
+        # Display sync status for new worktree
+        display_sync_status(ctx, worktree_path=worktree_path, branch=branch_name, script=script)
