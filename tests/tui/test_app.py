@@ -724,7 +724,7 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("c")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk co br feature-123"
+            assert clipboard.last_copied == "erk br co feature-123"
 
     @pytest.mark.asyncio
     async def test_copy_pr_checkout_shortcut_e(self) -> None:

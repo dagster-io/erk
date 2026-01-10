@@ -77,7 +77,7 @@ def get_all_commands() -> list[CommandDefinition]:
         # === COPIES ===
         CommandDefinition(
             id="copy_checkout",
-            name="Copy: erk co br <branch_name>",
+            name="Copy: erk br co <branch_name>",
             description="Copy checkout command",
             shortcut="c",
             is_available=lambda ctx: True,

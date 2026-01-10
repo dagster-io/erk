@@ -83,8 +83,8 @@ class TestExecuteCommandCopyCommands:
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_checkout")
-        assert executor.copied_texts == ["erk co br feature-123"]
-        assert "Copied: erk co br feature-123" in executor.notifications
+        assert executor.copied_texts == ["erk br co feature-123"]
+        assert "Copied: erk br co feature-123" in executor.notifications
 
     def test_copy_pr_checkout_copies_command(self) -> None:
         """copy_pr_checkout copies the PR checkout command."""
