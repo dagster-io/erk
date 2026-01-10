@@ -181,3 +181,38 @@ def test_init_handles_declined_write_confirmation() -> None:
         # Verify permission was NOT added
         unchanged_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
         assert "Bash(erk:*)" not in unchanged_settings["permissions"]["allow"]
+
+
+def test_init_accepts_default_on_empty_input_for_write_confirmation() -> None:
+    """Test that hitting Enter at write confirmation accepts (default=True)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create Claude settings in repo without erk permission
+        claude_settings_path = env.cwd / ".claude" / "settings.json"
+        claude_settings_path.parent.mkdir(parents=True)
+        claude_settings_path.write_text(
+            json.dumps({"permissions": {"allow": ["Bash(git:*)"]}}),
+            encoding="utf-8",
+        )
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
+
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        # Accept permission (y), hit Enter for write confirmation (empty = default=True),
+        # decline hooks (n), delete backup (y)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\n\nn\ny\n")
+
+        assert result.exit_code == 0, result.output
+        # Verify permission was added (write happened with default=True)
+        updated_settings = json.loads(claude_settings_path.read_text(encoding="utf-8"))
+        assert "Bash(erk:*)" in updated_settings["permissions"]["allow"]
