@@ -3,31 +3,13 @@
 import click
 
 from erk.cli.commands.init.capability import capability_group
-from erk.cli.commands.init.main import (
-    _get_presets_dir,
-    discover_presets,
-    run_init,
-)
+from erk.cli.commands.init.main import run_init
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.context import ErkContext
 
 
 @click.group("init", cls=ErkCommandGroup, invoke_without_command=True)
 @click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
-@click.option(
-    "--preset",
-    type=str,
-    default="auto",
-    help=(
-        "Config template to use. 'auto' detects preset based on repo characteristics. "
-        f"Available: auto, {', '.join(discover_presets(_get_presets_dir()))}."
-    ),
-)
-@click.option(
-    "--list-presets",
-    is_flag=True,
-    help="List available presets and exit.",
-)
 @click.option(
     "--shell",
     is_flag=True,
@@ -62,8 +44,6 @@ def init_group(
     ctx: click.Context,
     *,
     force: bool,
-    preset: str,
-    list_presets: bool,
     shell: bool,
     hooks_only: bool,
     statusline_only: bool,
@@ -81,8 +61,6 @@ def init_group(
         run_init(
             erk_ctx,
             force=force,
-            preset=preset,
-            list_presets=list_presets,
             shell=shell,
             hooks_only=hooks_only,
             statusline_only=statusline_only,
