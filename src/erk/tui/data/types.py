@@ -29,6 +29,7 @@ class PlanRowData:
         run_state_display: Formatted workflow run state
         run_url: URL to the GitHub Actions run page
         full_title: Complete untruncated plan title
+        issue_body: Raw issue body text (markdown)
         pr_title: PR title if linked
         pr_state: PR state (e.g., "OPEN", "MERGED", "CLOSED")
         worktree_branch: Branch name in the worktree (if exists locally)
@@ -55,6 +56,7 @@ class PlanRowData:
     run_state_display: str
     run_url: str | None
     full_title: str
+    issue_body: str
     pr_title: str | None
     pr_state: str | None
     worktree_branch: str | None

@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from erk.tui.app import ErkDashApp, HelpScreen, PlanDetailScreen
+from erk.tui.app import ErkDashApp, HelpScreen, IssueBodyScreen, PlanDetailScreen
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
@@ -39,7 +39,7 @@ class TestErkDashAppDataLoading:
     async def test_fetches_data_on_mount(self) -> None:
         """App fetches data when mounted."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(123, "Plan A"),
                 make_plan_row(456, "Plan B"),
             ]
@@ -129,7 +129,7 @@ class TestErkDashAppRefresh:
     @pytest.mark.asyncio
     async def test_refresh_on_r(self) -> None:
         """Pressing r refreshes data."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -223,7 +223,7 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_slash_activates_filter_mode(self) -> None:
         """Pressing '/' shows filter input and focuses it."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -245,7 +245,7 @@ class TestFilterMode:
     async def test_filter_narrows_results(self) -> None:
         """Typing in filter input narrows displayed results."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(123, "Add user authentication"),
                 make_plan_row(456, "Fix login bug"),
                 make_plan_row(789, "Refactor database"),
@@ -273,7 +273,7 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_escape_clears_then_exits(self) -> None:
         """First escape clears text, second exits filter mode."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -309,7 +309,7 @@ class TestFilterMode:
     @pytest.mark.asyncio
     async def test_enter_returns_focus_to_table(self) -> None:
         """Pressing Enter in filter input returns focus to table."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Plan A")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Plan A")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -336,7 +336,7 @@ class TestFilterMode:
     async def test_filter_by_issue_number(self) -> None:
         """Filter can match by issue number."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(123, "Plan A"),
                 make_plan_row(456, "Plan B"),
                 make_plan_row(789, "Plan C"),
@@ -360,7 +360,7 @@ class TestFilterMode:
     async def test_filter_by_pr_number(self) -> None:
         """Filter can match by PR number."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(1, "Plan A", pr_number=100),
                 make_plan_row(2, "Plan B", pr_number=200),
                 make_plan_row(3, "Plan C"),
@@ -388,7 +388,7 @@ class TestOpenRow:
     async def test_o_opens_pr_when_available(self) -> None:
         """'o' key opens PR URL when PR is available."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123,
                     "Feature",
@@ -418,7 +418,7 @@ class TestOpenRow:
     async def test_o_opens_issue_when_no_pr(self) -> None:
         """'o' key opens issue URL when no PR is available."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123,
                     "Feature",
@@ -448,7 +448,7 @@ class TestPlanDetailScreen:
     async def test_space_opens_detail_screen(self) -> None:
         """Pressing space opens the plan detail modal."""
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan", pr_number=456, pr_title="Test PR")]
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_title="Test PR")]
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -469,7 +469,7 @@ class TestPlanDetailScreen:
     @pytest.mark.asyncio
     async def test_detail_modal_dismisses_on_escape(self) -> None:
         """Detail modal closes when pressing escape."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -495,7 +495,7 @@ class TestPlanDetailScreen:
     @pytest.mark.asyncio
     async def test_detail_modal_dismisses_on_q(self) -> None:
         """Detail modal closes when pressing q."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -517,7 +517,7 @@ class TestPlanDetailScreen:
     @pytest.mark.asyncio
     async def test_detail_modal_dismisses_on_space(self) -> None:
         """Detail modal closes when pressing space again."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -543,7 +543,7 @@ class TestPlanDetailScreen:
             "This is a very long plan title that would normally be truncated "
             "in the table view but should be fully visible in the detail modal"
         )
-        provider = FakePlanDataProvider([make_plan_row(123, long_title)])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, long_title)])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -564,7 +564,7 @@ class TestPlanDetailScreen:
     async def test_detail_modal_shows_pr_info_when_linked(self) -> None:
         """Detail modal shows PR information when PR is linked."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123,
                     "Test Plan",
@@ -601,7 +601,7 @@ class TestPlanDetailScreenCopyActions:
         """Pressing '1' in detail screen copies implement command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
@@ -627,7 +627,7 @@ class TestPlanDetailScreenCopyActions:
         """Pressing '2' in detail screen copies implement --dangerous command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
@@ -651,7 +651,7 @@ class TestPlanDetailScreenCopyActions:
         """Pressing '3' in detail screen copies implement --yolo command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
@@ -675,7 +675,7 @@ class TestPlanDetailScreenCopyActions:
         """Pressing '4' in detail screen copies submit command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
@@ -731,7 +731,7 @@ class TestPlanDetailScreenCopyActions:
         """Pressing 'e' in detail screen copies PR checkout command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123,
                     "Test Plan",
@@ -770,7 +770,7 @@ class TestCommandPaletteFromMain:
         """Execute palette command copies implement command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             clipboard=clipboard,
         )
         filters = PlanFilters.default()
@@ -789,7 +789,7 @@ class TestCommandPaletteFromMain:
     async def test_execute_palette_command_open_pr(self) -> None:
         """Execute palette command opens PR in browser."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123, "Test Plan", pr_number=456, pr_url="https://github.com/test/pr/456"
                 )
@@ -811,7 +811,7 @@ class TestCommandPaletteFromMain:
     async def test_execute_palette_command_with_no_selection(self) -> None:
         """Execute palette command with no selection does nothing."""
         clipboard = FakeClipboard()
-        provider = FakePlanDataProvider([], clipboard=clipboard)
+        provider = FakePlanDataProvider(plans=[], clipboard=clipboard)
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -828,7 +828,7 @@ class TestCommandPaletteFromMain:
     @pytest.mark.asyncio
     async def test_space_opens_detail_screen(self) -> None:
         """Space opens detail screen without palette."""
-        provider = FakePlanDataProvider([make_plan_row(123, "Test Plan")])
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
@@ -860,7 +860,7 @@ class TestExecutePaletteCommandLandPR:
     async def test_execute_palette_command_land_pr_with_no_pr(self) -> None:
         """Execute palette command land_pr does nothing if no PR."""
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")]  # No pr_number
+            plans=[make_plan_row(123, "Test Plan")]  # No pr_number
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
@@ -894,7 +894,7 @@ class TestStreamingCommandTimeout:
         the timeout handler fires and terminates the process.
         """
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -935,7 +935,7 @@ class TestStreamingCommandTimeout:
     async def test_successful_command_cancels_timer(self, tmp_path: Path) -> None:
         """Fast command completes before timeout and cancels timer."""
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -977,7 +977,7 @@ class TestStreamingCommandTimeout:
     async def test_timeout_disabled_when_zero(self, tmp_path: Path) -> None:
         """Setting timeout=0 disables the timeout timer."""
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1021,7 +1021,7 @@ class TestStreamingCommandTimeout:
     async def test_dismiss_blocked_during_command(self, tmp_path: Path) -> None:
         """Modal cannot be dismissed while command is running."""
         provider = FakePlanDataProvider(
-            [make_plan_row(123, "Test Plan")],
+            plans=[make_plan_row(123, "Test Plan")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -1069,7 +1069,7 @@ class TestClosePlanInProcess:
     async def test_close_plan_in_process_creates_output_panel(self) -> None:
         """In-process close plan creates and mounts output panel."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(
                     123,
                     "Test Plan",
@@ -1109,7 +1109,7 @@ class TestClosePlanInProcess:
     async def test_close_plan_in_process_removes_plan_from_list(self) -> None:
         """In-process close plan removes the plan from provider."""
         provider = FakePlanDataProvider(
-            [
+            plans=[
                 make_plan_row(123, "Plan A"),
                 make_plan_row(456, "Plan B"),
             ],
@@ -1139,3 +1139,182 @@ class TestClosePlanInProcess:
             # Plan should be removed from provider
             assert len(provider._plans) == 1
             assert provider._plans[0].issue_number == 456
+
+
+class TestIssueBodyScreen:
+    """Tests for IssueBodyScreen modal (view plan text with async loading)."""
+
+    @pytest.mark.asyncio
+    async def test_v_key_opens_issue_body_screen(self) -> None:
+        """Pressing 'v' opens the issue body modal."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        provider.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Press 'v' to view plan content
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            # IssueBodyScreen should be in the screen stack
+            assert len(app.screen_stack) > 1
+            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_fetches_and_shows_content(self) -> None:
+        """IssueBodyScreen fetches and displays the plan content."""
+        plan_content = "# Implementation Plan\n\n1. Step one\n2. Step two"
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        provider.set_plan_content(123, plan_content)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            # Wait for async fetch to complete
+            await pilot.pause(0.3)
+
+            body_screen = app.screen_stack[-1]
+            assert isinstance(body_screen, IssueBodyScreen)
+            # Content should have been fetched
+            assert body_screen._content == plan_content
+            assert body_screen._loading is False
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_dismisses_on_escape(self) -> None:
+        """IssueBodyScreen closes when pressing escape."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        provider.set_plan_content(123, "Plan content")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open body screen
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+            # Press escape to close
+            await pilot.press("escape")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_dismisses_on_q(self) -> None:
+        """IssueBodyScreen closes when pressing q."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        provider.set_plan_content(123, "Plan content")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+            await pilot.press("q")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_dismisses_on_space(self) -> None:
+        """IssueBodyScreen closes when pressing space."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        provider.set_plan_content(123, "Plan content")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+            await pilot.press("space")
+            await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], IssueBodyScreen)
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_shows_empty_message_when_no_content(self) -> None:
+        """IssueBodyScreen shows empty message when no plan content found."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        # Don't set plan content - fetch will return None
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            # Wait for async fetch to complete
+            await pilot.pause(0.3)
+
+            body_screen = app.screen_stack[-1]
+            assert isinstance(body_screen, IssueBodyScreen)
+            # Content should be None (not found)
+            assert body_screen._content is None
+            assert body_screen._loading is False
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_shows_plan_number_and_title(self) -> None:
+        """IssueBodyScreen shows plan number and full title in header."""
+        full_title = "This is a very long plan title that should be shown in full"
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(456, full_title, issue_body="metadata body")]
+        )
+        provider.set_plan_content(456, "Plan content")
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            await pilot.pause()
+
+            body_screen = app.screen_stack[-1]
+            assert isinstance(body_screen, IssueBodyScreen)
+            assert body_screen._issue_number == 456
+            assert body_screen._full_title == full_title

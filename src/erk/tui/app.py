@@ -185,6 +185,7 @@ class HelpScreen(ModalScreen):
                 yield Label("Actions", classes="help-section-title")
                 yield Label("Enter   View plan details", classes="help-binding")
                 yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
+                yield Label("v       View plan text", classes="help-binding")
                 yield Label("o       Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
@@ -204,6 +205,170 @@ class HelpScreen(ModalScreen):
 
             yield Label("")
             yield Label("Press any key to close", id="help-footer")
+
+
+class IssueBodyScreen(ModalScreen):
+    """Modal screen displaying the full plan text fetched on-demand."""
+
+    BINDINGS = [
+        Binding("escape", "dismiss", "Close"),
+        Binding("q", "dismiss", "Close"),
+        Binding("space", "dismiss", "Close"),
+    ]
+
+    DEFAULT_CSS = """
+    IssueBodyScreen {
+        align: center middle;
+    }
+
+    #body-dialog {
+        width: 90%;
+        max-width: 120;
+        height: 80%;
+        background: $surface;
+        border: solid $primary;
+        padding: 1 2;
+    }
+
+    #body-header {
+        width: 100%;
+        height: auto;
+        margin-bottom: 1;
+    }
+
+    #body-plan-number {
+        text-style: bold;
+        color: $primary;
+    }
+
+    #body-title {
+        color: $text;
+    }
+
+    #body-divider {
+        height: 1;
+        background: $primary-darken-2;
+        margin-bottom: 1;
+    }
+
+    #body-content-container {
+        height: 1fr;
+        overflow-y: auto;
+    }
+
+    #body-content {
+        width: 100%;
+    }
+
+    #body-footer {
+        text-align: center;
+        margin-top: 1;
+        color: $text-muted;
+    }
+
+    #body-empty {
+        color: $text-muted;
+        text-style: italic;
+    }
+
+    #body-loading {
+        color: $text-muted;
+        text-style: italic;
+    }
+
+    #body-error {
+        color: $error;
+        text-style: italic;
+    }
+    """
+
+    def __init__(
+        self,
+        *,
+        provider: PlanDataProvider,
+        issue_number: int,
+        issue_body: str,
+        full_title: str,
+    ) -> None:
+        """Initialize with plan metadata and provider for async loading.
+
+        Args:
+            provider: Data provider for fetching plan content
+            issue_number: The GitHub issue number
+            issue_body: The issue body (contains metadata with comment ID)
+            full_title: The full plan title for display
+        """
+        super().__init__()
+        self._provider = provider
+        self._issue_number = issue_number
+        self._issue_body = issue_body
+        self._full_title = full_title
+        self._content: str | None = None
+        self._error: str | None = None
+        self._loading = True
+
+    def compose(self) -> ComposeResult:
+        """Create the issue body dialog content."""
+        with Vertical(id="body-dialog"):
+            # Header: Plan number + title
+            with Vertical(id="body-header"):
+                yield Label(f"Plan #{self._issue_number}", id="body-plan-number")
+                yield Label(self._full_title, id="body-title", markup=False)
+
+            # Divider
+            yield Label("", id="body-divider")
+
+            # Body content in scrollable container - starts with loading state
+            with Container(id="body-content-container"):
+                yield Label("Loading plan content...", id="body-loading")
+
+            yield Label("Press Esc, q, or Space to close", id="body-footer")
+
+    def on_mount(self) -> None:
+        """Fetch plan content when screen mounts."""
+        self._fetch_content()
+
+    @work(thread=True)
+    def _fetch_content(self) -> None:
+        """Fetch plan content in background thread."""
+        content: str | None = None
+        error: str | None = None
+
+        # Error boundary: catch all exceptions from HTTP operations to display
+        # them in the UI rather than crashing the TUI.
+        try:
+            content = self._provider.fetch_plan_content(self._issue_number, self._issue_body)
+        except Exception as e:
+            error = str(e)
+
+        # Update UI on main thread
+        self.app.call_from_thread(self._on_content_loaded, content, error)
+
+    def _on_content_loaded(self, content: str | None, error: str | None) -> None:
+        """Handle content loaded - update the display.
+
+        Args:
+            content: The fetched plan content, or None if not found
+            error: Error message if fetch failed, or None
+        """
+        self._loading = False
+        self._content = content
+        self._error = error
+
+        # Get the container and replace its content
+        container = self.query_one("#body-content-container", Container)
+
+        # Remove the loading label
+        loading_label = container.query_one("#body-loading", Label)
+        loading_label.remove()
+
+        # Add the appropriate content
+        if error is not None:
+            container.mount(Label(f"Error: {error}", id="body-error"))
+        elif content:
+            container.mount(Static(content, id="body-content", markup=False))
+        else:
+            container.mount(Label("(No plan content found)", id="body-empty"))
 
 
 class PlanDetailScreen(ModalScreen):
@@ -949,6 +1114,7 @@ class ErkDashApp(App):
         # NOTE: 'c' binding removed - close_plan now accessible via command palette
         # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
+        Binding("v", "view_issue_body", "View", show=False),
         Binding("slash", "start_filter", "Filter", key_display="/"),
         Binding("s", "toggle_sort", "Sort"),
         Binding("ctrl+p", "command_palette", "Commands"),
@@ -1239,6 +1405,21 @@ class ErkDashApp(App):
                 browser=self._provider.browser,
                 executor=executor,
                 repo_root=self._provider.repo_root,
+            )
+        )
+
+    def action_view_issue_body(self) -> None:
+        """Display the plan content in a modal (fetched on-demand)."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        # Push screen that will fetch plan content on-demand
+        self.push_screen(
+            IssueBodyScreen(
+                provider=self._provider,
+                issue_number=row.issue_number,
+                issue_body=row.issue_body,
+                full_title=row.full_title,
             )
         )
 

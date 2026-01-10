@@ -22,6 +22,8 @@ from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata.plan_header import (
+    extract_plan_from_comment,
+    extract_plan_header_comment_id,
     extract_plan_header_local_impl_at,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
@@ -115,6 +117,19 @@ class PlanDataProvider(ABC):
         Returns:
             Mapping of issue_number to BranchActivity for plans with local worktrees.
             Plans without local worktrees are not included in the result.
+        """
+        ...
+
+    @abstractmethod
+    def fetch_plan_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fetch plan content from the first comment of an issue.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (to extract plan_comment_id from metadata)
+
+        Returns:
+            The extracted plan content, or None if not found
         """
         ...
 
@@ -364,6 +379,35 @@ class RealPlanDataProvider(PlanDataProvider):
 
         return result
 
+    def fetch_plan_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fetch plan content from the first comment of an issue.
+
+        Uses the plan_comment_id from the issue body metadata to fetch
+        the specific comment containing the plan content.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (to extract plan_comment_id from metadata)
+
+        Returns:
+            The extracted plan content, or None if not found
+        """
+        # Extract plan_comment_id from issue body metadata
+        comment_id = extract_plan_header_comment_id(issue_body)
+        if comment_id is None:
+            return None
+
+        # Fetch the comment via HTTP client
+        owner = self._location.repo_id.owner
+        repo = self._location.repo_id.repo
+        endpoint = f"repos/{owner}/{repo}/issues/comments/{comment_id}"
+
+        response = self._http_client.get(endpoint)
+        comment_body = response.get("body", "")
+
+        # Extract plan content from comment
+        return extract_plan_from_comment(comment_body)
+
     def _build_worktree_mapping(self) -> dict[int, tuple[str, str | None]]:
         """Build mapping of issue number to (worktree name, branch).
 
@@ -507,6 +551,7 @@ class RealPlanDataProvider(PlanDataProvider):
             run_state_display=run_state_display,
             run_url=run_url,
             full_title=full_title,
+            issue_body=plan.body or "",
             pr_title=pr_title,
             pr_state=pr_state,
             worktree_branch=worktree_branch,

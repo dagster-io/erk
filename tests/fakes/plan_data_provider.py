@@ -42,6 +42,7 @@ class FakePlanDataProvider(PlanDataProvider):
         self._browser = browser if browser is not None else FakeBrowserLauncher()
         self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
         self._fetch_error = fetch_error
+        self._plan_content_by_issue: dict[int, str] = {}
 
     @property
     def repo_root(self) -> Path:
@@ -128,12 +129,36 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         return {}
 
+    def fetch_plan_content(self, issue_number: int, issue_body: str) -> str | None:
+        """Fake plan content fetch implementation.
+
+        Returns the plan_content if configured, otherwise None.
+
+        Args:
+            issue_number: The GitHub issue number
+            issue_body: The issue body (unused in fake)
+
+        Returns:
+            The configured plan content for this issue, or None
+        """
+        return self._plan_content_by_issue.get(issue_number)
+
+    def set_plan_content(self, issue_number: int, content: str) -> None:
+        """Set the plan content to return for a specific issue.
+
+        Args:
+            issue_number: The GitHub issue number
+            content: The plan content to return
+        """
+        self._plan_content_by_issue[issue_number] = content
+
 
 def make_plan_row(
     issue_number: int,
     title: str = "Test Plan",
     *,
     issue_url: str | None = None,
+    issue_body: str = "",
     pr_number: int | None = None,
     pr_url: str | None = None,
     pr_title: str | None = None,
@@ -153,6 +178,7 @@ def make_plan_row(
         issue_number: GitHub issue number
         title: Plan title
         issue_url: URL to the issue (defaults to GitHub URL pattern)
+        issue_body: Raw issue body text (markdown)
         pr_number: PR number if linked
         pr_url: URL to PR
         pr_title: PR title
@@ -195,6 +221,7 @@ def make_plan_row(
         run_state_display="-",
         run_url=run_url,
         full_title=title,
+        issue_body=issue_body,
         pr_title=pr_title,
         pr_state=pr_state,
         worktree_branch=worktree_branch,
