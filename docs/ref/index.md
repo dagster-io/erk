@@ -13,5 +13,5 @@ Reference documentation is **information-oriented**. It provides accurate, compl
 
 ### Configuration
 
-- [Configuration Reference](configuration.md) - Config files, options, and presets
+- [Configuration Reference](configuration.md) - Config files and options
 - [File Location Reference](file-locations.md) - Where erk stores data and configuration

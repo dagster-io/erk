@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Config files, options, and presets.
+Config files and options.
 
 <!-- TODO: This document is a skeleton. Fill in the sections below. -->
 
@@ -15,10 +15,6 @@ Config files, options, and presets.
 ## Repository Configuration
 
 <!-- TODO: Options in .erk/config.toml -->
-
-## Presets
-
-<!-- TODO: auto, generic, dagster presets -->
 
 ## GitHub Planning
 

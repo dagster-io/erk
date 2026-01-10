@@ -26,12 +26,9 @@ from erk.core.claude_settings import (
 from erk.core.context import ErkContext
 from erk.core.init_utils import (
     add_gitignore_entry,
-    discover_presets,
     get_shell_wrapper_content,
     has_shell_integration_in_rc,
     is_repo_erk_ified,
-    is_repo_named,
-    render_config_template,
 )
 from erk.core.release_notes import get_current_version
 from erk.core.repo_discovery import (
@@ -47,6 +44,22 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
 from erk_shared.output.output import user_confirm, user_output
+
+# Default config template for new repositories
+DEFAULT_CONFIG_TEMPLATE = """\
+# work config for this repository
+# Available template variables: {worktree_path}, {repo_root}, {name}
+
+[env]
+# EXAMPLE_KEY = "{worktree_path}"
+
+[post_create]
+# shell = "bash"
+# commands = [
+#   "uv venv",
+#   "uv run make dev_install",
+# ]
+"""
 
 
 def detect_graphite(shell_ops: Shell) -> bool:
@@ -226,11 +239,6 @@ def perform_shell_setup(shell_ops: Shell) -> bool:
     print_shell_setup_instructions(shell, rc_file, completion_line, wrapper_content)
 
     return True
-
-
-def _get_presets_dir() -> Path:
-    """Get the path to the presets directory."""
-    return Path(__file__).parent.parent / "presets"
 
 
 def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
@@ -468,20 +476,6 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
 @click.command("init")
 @click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
-    "--preset",
-    type=str,
-    default="auto",
-    help=(
-        "Config template to use. 'auto' detects preset based on repo characteristics. "
-        f"Available: auto, {', '.join(discover_presets(_get_presets_dir()))}."
-    ),
-)
-@click.option(
-    "--list-presets",
-    is_flag=True,
-    help="List available presets and exit.",
-)
-@click.option(
     "--shell",
     is_flag=True,
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
@@ -515,8 +509,6 @@ def init_cmd(
     ctx: ErkContext,
     *,
     force: bool,
-    preset: str,
-    list_presets: bool,
     shell: bool,
     hooks_only: bool,
     statusline_only: bool,
@@ -530,18 +522,6 @@ def init_cmd(
     2. Project setup - erk-ifies the repo (if not already)
     3. User setup - configures shell integration and Claude Code status line
     """
-    # Discover available presets on demand (needed for --list-presets)
-    presets_dir = _get_presets_dir()
-    available_presets = discover_presets(presets_dir)
-    valid_choices = ["auto"] + available_presets
-
-    # Handle --list-presets flag (doesn't require repo)
-    if list_presets:
-        user_output("Available presets:")
-        for p in available_presets:
-            user_output(f"  - {p}")
-        return
-
     # Handle --shell flag: only do shell setup (doesn't require repo)
     if shell:
         if ctx.global_config is None:
@@ -609,11 +589,6 @@ def init_cmd(
         perform_statusline_setup(settings_path=None)
         return
 
-    # Validate preset choice
-    if preset not in valid_choices:
-        user_output(f"Invalid preset '{preset}'. Available options: {', '.join(valid_choices)}")
-        raise SystemExit(1)
-
     # =========================================================================
     # STEP 2: Project Configuration
     # =========================================================================
@@ -662,16 +637,7 @@ def init_cmd(
         # Also ensure metadata directory exists (needed for worktrees dir)
         ensure_erk_metadata_dir(repo_context)
 
-        effective_preset: str | None
-        choice = preset.lower()
-        if choice == "auto":
-            is_dagster = is_repo_named(repo_context.root, "dagster")
-            effective_preset = "dagster" if is_dagster else "generic"
-        else:
-            effective_preset = choice
-
-        content = render_config_template(presets_dir, effective_preset)
-        cfg_path.write_text(content, encoding="utf-8")
+        cfg_path.write_text(DEFAULT_CONFIG_TEMPLATE, encoding="utf-8")
         user_output(f"  Wrote {cfg_path}")
 
         # Create required version file

@@ -7,7 +7,6 @@ from erk.cli.commands.init import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
 from erk.core.context import context_for_test
-from erk.core.init_utils import discover_presets
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
@@ -192,30 +191,6 @@ def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
 
 # def test_create_global_config_detects_graphite(tmp_path: Path) -> None:
 #     ... (removed - was testing FakeConfigStore)
-
-
-def test_discover_presets(tmp_path: Path) -> None:
-    # Create structure: tmp_path/presets/*.toml
-    presets_dir = tmp_path / "presets"
-    presets_dir.mkdir()
-    (presets_dir / "generic.toml").write_text("# generic preset\n", encoding="utf-8")
-    (presets_dir / "dagster.toml").write_text("# dagster preset\n", encoding="utf-8")
-    (presets_dir / "custom.toml").write_text("# custom preset\n", encoding="utf-8")
-    (presets_dir / "README.md").write_text("# readme\n", encoding="utf-8")
-    (presets_dir / "subdir").mkdir()
-
-    presets = discover_presets(presets_dir)
-
-    assert presets == ["custom", "dagster", "generic"]
-
-
-def test_discover_presets_missing_directory(tmp_path: Path) -> None:
-    # Test with non-existent presets directory
-    presets_dir = tmp_path / "nonexistent"
-
-    presets = discover_presets(presets_dir)
-
-    assert presets == []
 
 
 def test_load_config_with_post_create_commands(tmp_path: Path) -> None:

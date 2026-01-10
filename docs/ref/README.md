@@ -9,7 +9,7 @@ Complete reference documentation for erk commands, configuration, and file locat
 
 ## Configuration
 
-- **[Configuration Reference](configuration.md)** - Config files, options, and presets
+- **[Configuration Reference](configuration.md)** - Config files and options
 - **[File Location Reference](file-locations.md)** - Where erk stores data and configuration
 
 ## See Also
