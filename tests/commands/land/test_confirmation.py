@@ -105,14 +105,14 @@ def test_land_cleanup_confirmation_decline() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was NOT removed (user declined)
+        # Verify worktree was NOT removed (worktrees are always preserved)
         assert feature_1_path not in git_ops.removed_worktrees
 
-        # Verify message about preserved worktree
-        assert "Worktree preserved" in result.output
+        # Verify message about preserved branch (user declined)
+        assert "Branch preserved" in result.output
 
-        # Verify confirmation prompt includes both worktree name and branch
-        assert "Delete worktree 'feature-1' and branch 'feature-1'" in result.output
+        # Verify confirmation prompt mentions branch and worktree preservation
+        assert "Delete branch 'feature-1'? (worktree preserved)" in result.output
 
         # Verify NO navigation script was written (user stays in current worktree)
         assert env.script_writer.last_script is None
@@ -201,8 +201,8 @@ def test_land_force_skips_cleanup_confirmation() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was removed (--force skipped confirmation)
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
@@ -374,8 +374,8 @@ def test_land_from_different_worktree() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
