@@ -24,13 +24,13 @@ If not installed, see [graphite.dev/docs/getting-started](https://graphite.dev/d
 
 Erk auto-detects Graphite. If `gt` is on your PATH, erk uses it automatically.
 
-To verify Graphite is enabled:
+To verify Graphite is installed and detected:
 
 ```bash
-erk status
+erk doctor
 ```
 
-Look for "Graphite: enabled" in the output.
+Look for "Graphite CLI installed" in the output.
 
 ## How Erk Uses Graphite
 
@@ -66,7 +66,7 @@ This ensures your entire stack stays synchronized.
 ### Landing PRs
 
 ```bash
-erk pr land
+erk land
 ```
 
 When landing a stacked PR:
@@ -76,6 +76,16 @@ When landing a stacked PR:
 3. Restacks child branches automatically
 
 Child branches in the stack are rebased onto the new trunk state.
+
+#### Navigating After Landing
+
+By default, `erk land` returns you to the root worktree. When working in a stack, use `--up` to navigate to the next child branch instead:
+
+```bash
+erk land --up
+```
+
+This lands the current PR and moves you to the child worktree, allowing you to continue working up the stack.
 
 ## Stacking Plans
 
