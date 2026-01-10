@@ -86,9 +86,3 @@ class ErkBashPermissionsCapability(Capability):
             message="Added Bash(erk:*) to permissions.allow",
             created_files=tuple(created_files),
         )
-
-
-# All permission capabilities for easy iteration
-PERMISSION_CAPABILITIES: list[type[Capability]] = [
-    ErkBashPermissionsCapability,
-]

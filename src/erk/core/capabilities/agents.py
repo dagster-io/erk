@@ -82,9 +82,3 @@ class DevrunAgentCapability(Capability):
                 target_path = target / relative
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source_path, target_path)
-
-
-# All agent capabilities for easy iteration
-AGENT_CAPABILITIES: list[type[Capability]] = [
-    DevrunAgentCapability,
-]

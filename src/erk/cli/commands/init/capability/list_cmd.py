@@ -2,7 +2,7 @@
 
 import click
 
-from erk.core.capabilities import list_capabilities
+from erk.core.capabilities.registry import list_capabilities
 from erk_shared.output.output import user_output
 
 
