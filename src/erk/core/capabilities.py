@@ -143,8 +143,12 @@ LEARNED_DOCS_INDEX = """\
 
 # Agent Documentation
 
+This index provides top-down navigation for agent-discoverable documentation.
+Use the `read_when` conditions listed with each document to decide what to read
+based on your current task. This enables progressive disclosure - read only what
+you need, when you need it.
+
 <!-- This index is automatically populated by 'erk docs sync'. -->
-<!-- It will list all categories and documents with their read_when conditions. -->
 
 ## Categories
 
@@ -163,6 +167,13 @@ LEARNED_DOCS_TRIPWIRES = """\
 # Tripwires
 
 Action-triggered rules that fire when you're about to perform specific actions.
+
+Tripwires serve as a last line of defense against rule violations. Agents balance
+competing objectives and can inadvertently violate codebase rules despite their
+best efforts. Tripwires catch these cases by triggering when an agent is about
+to take a specific action, prompting them to read the full document before
+proceeding. Code review agents can also use tripwires to detect violations and
+examine the referenced documentation to determine if an issue is real.
 
 <!-- Tripwires are collected from the 'tripwires' frontmatter field in documents. -->
 <!-- Each tripwire should follow this format in your document's frontmatter: -->
