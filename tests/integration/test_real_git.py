@@ -1038,3 +1038,199 @@ def test_pull_rebase_integrates_remote_commits(tmp_path: Path) -> None:
     assert "Add local file" in result.stdout.split("\n")[0]
     # Remote commit should be below
     assert "Add remote file" in result.stdout
+
+
+def test_get_behind_commit_authors_no_upstream(tmp_path: Path) -> None:
+    """Test get_behind_commit_authors returns empty list when no upstream tracking branch."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act: Branch has no upstream (local-only repo)
+    authors = git_ops.get_behind_commit_authors(repo, "main")
+
+    # Assert: No upstream, so empty list
+    assert authors == []
+
+
+def test_get_behind_commit_authors_up_to_date(tmp_path: Path) -> None:
+    """Test get_behind_commit_authors returns empty list when local is up to date with remote."""
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Clone the remote
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    git_ops = RealGit()
+
+    # Act: Local is at same commit as remote
+    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+
+    # Assert: Up to date, so empty list
+    assert authors == []
+
+
+def test_get_behind_commit_authors_returns_authors_from_remote(tmp_path: Path) -> None:
+    """Test get_behind_commit_authors returns author names for commits on remote but not locally."""
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Clone the remote
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    # Add commits to remote (simulating CI or other users)
+    (remote_repo / "file1.txt").write_text("content1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file1.txt"], cwd=remote_repo, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Alice",
+            "-c",
+            "user.email=alice@example.com",
+            "commit",
+            "-m",
+            "Add file1",
+        ],
+        cwd=remote_repo,
+        check=True,
+    )
+
+    # Fetch but don't merge/pull
+    subprocess.run(["git", "fetch", "origin"], cwd=local_repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+
+    # Assert: Should contain Alice's commit
+    assert len(authors) == 1
+    assert authors[0] == "Alice"
+
+
+def test_get_behind_commit_authors_multiple_authors(tmp_path: Path) -> None:
+    """Test get_behind_commit_authors handles multiple authors correctly."""
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Clone the remote
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    # Add commits from multiple authors to remote
+    (remote_repo / "file1.txt").write_text("content1\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file1.txt"], cwd=remote_repo, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Alice",
+            "-c",
+            "user.email=alice@example.com",
+            "commit",
+            "-m",
+            "Add file1",
+        ],
+        cwd=remote_repo,
+        check=True,
+    )
+
+    (remote_repo / "file2.txt").write_text("content2\n", encoding="utf-8")
+    subprocess.run(["git", "add", "file2.txt"], cwd=remote_repo, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=Bob",
+            "-c",
+            "user.email=bob@example.com",
+            "commit",
+            "-m",
+            "Add file2",
+        ],
+        cwd=remote_repo,
+        check=True,
+    )
+
+    # Fetch but don't merge/pull
+    subprocess.run(["git", "fetch", "origin"], cwd=local_repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+
+    # Assert: Should contain both authors (most recent first from git log)
+    assert len(authors) == 2
+    assert "Alice" in authors
+    assert "Bob" in authors
+
+
+def test_get_behind_commit_authors_with_bot_author(tmp_path: Path) -> None:
+    """Test get_behind_commit_authors handles bot authors like github-actions[bot]."""
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Clone the remote
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    # Add commit from a bot author (simulating CI autofix)
+    (remote_repo / "autofix.txt").write_text("autofix content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "autofix.txt"], cwd=remote_repo, check=True)
+    subprocess.run(
+        [
+            "git",
+            "-c",
+            "user.name=github-actions[bot]",
+            "-c",
+            "user.email=github-actions[bot]@users.noreply.github.com",
+            "commit",
+            "-m",
+            "Autofix: format code",
+        ],
+        cwd=remote_repo,
+        check=True,
+    )
+
+    # Fetch but don't merge/pull
+    subprocess.run(["git", "fetch", "origin"], cwd=local_repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    authors = git_ops.get_behind_commit_authors(local_repo, "main")
+
+    # Assert: Should contain the bot author name
+    assert len(authors) == 1
+    assert authors[0] == "github-actions[bot]"
