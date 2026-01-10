@@ -115,7 +115,7 @@ Submit the entire stack with `erk pr submit` from any branch in the stack.
 
 ## Stack Navigation
 
-Navigate between worktrees in your stack:
+Navigate between branches in your stack just like regular git branching—erk handles the worktree switching automatically as you move up and down.
 
 ### Move Up the Stack
 
@@ -123,7 +123,7 @@ Navigate between worktrees in your stack:
 erk up
 ```
 
-Moves to the child worktree (away from trunk).
+Moves to the child branch (away from trunk). Erk switches you to the corresponding worktree.
 
 ### Move Down the Stack
 
@@ -131,7 +131,7 @@ Moves to the child worktree (away from trunk).
 erk down
 ```
 
-Moves to the parent worktree (toward trunk).
+Moves to the parent branch (toward trunk). Erk switches you to the corresponding worktree.
 
 ### View the Stack
 
@@ -139,12 +139,12 @@ Moves to the parent worktree (toward trunk).
 erk stack list
 ```
 
-Shows the stack structure with worktree locations:
+Shows your stack structure with current position:
 
 ```
 master
-└── feature-auth [~/code/project/worktrees/worktree-100] ← you are here
-    └── feature-api [~/code/project/worktrees/worktree-101]
+└── feature-auth ← you are here
+    └── feature-api
 ```
 
 ## See Also
