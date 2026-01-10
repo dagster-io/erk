@@ -4,6 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from textual.widgets import Markdown
+
 from erk.tui.app import ErkDashApp, HelpScreen, IssueBodyScreen, PlanDetailScreen
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
@@ -1322,8 +1324,6 @@ class TestIssueBodyScreen:
     @pytest.mark.asyncio
     async def test_issue_body_screen_renders_content_as_markdown(self) -> None:
         """IssueBodyScreen renders plan content using Markdown widget."""
-        from textual.widgets import Markdown
-
         plan_content = "# Header\n\n- List item 1\n- List item 2"
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
