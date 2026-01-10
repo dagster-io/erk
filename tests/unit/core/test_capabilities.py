@@ -21,11 +21,11 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
 )
+from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.skills import (
     DignifiedPythonCapability,
     FakeDrivenTestingCapability,
 )
-from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 
 # =============================================================================
