@@ -489,6 +489,38 @@ class RealGit(Git):
 
         return 0, 0
 
+    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
+        """Get authors of commits on remote that are not in local branch."""
+        # Check if branch has upstream
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", f"{branch}@{{upstream}}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            # No upstream branch
+            return []
+
+        upstream = result.stdout.strip()
+
+        # Get authors of commits on upstream but not locally
+        result = subprocess.run(
+            ["git", "log", "--format=%an", f"HEAD..{upstream}"],
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            return []
+
+        authors = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        return authors
+
     def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
         """Get sync status for all local branches via git for-each-ref."""
         result = subprocess.run(

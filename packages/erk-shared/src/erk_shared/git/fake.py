@@ -92,6 +92,7 @@ class FakeGit(Git):
         staged_repos: set[Path] | None = None,
         file_statuses: dict[Path, tuple[list[str], list[str], list[str]]] | None = None,
         ahead_behind: dict[tuple[Path, str], tuple[int, int]] | None = None,
+        behind_commit_authors: dict[tuple[Path, str], list[str]] | None = None,
         branch_sync_info: dict[str, BranchSyncInfo] | None = None,
         recent_commits: dict[Path, list[dict[str, str]]] | None = None,
         existing_paths: set[Path] | None = None,
@@ -138,6 +139,8 @@ class FakeGit(Git):
             staged_repos: Set of repo roots that should report staged changes
             file_statuses: Mapping of cwd -> (staged, modified, untracked) files
             ahead_behind: Mapping of (cwd, branch) -> (ahead, behind) counts
+            behind_commit_authors: Mapping of (cwd, branch) -> list of author names
+                for commits on remote but not locally
             branch_sync_info: Mapping of branch name -> BranchSyncInfo for batch queries
             recent_commits: Mapping of cwd -> list of commit info dicts
             existing_paths: Set of paths that should be treated as existing (for pure mode)
@@ -185,6 +188,7 @@ class FakeGit(Git):
         self._repos_with_staged_changes: set[Path] = staged_repos or set()
         self._file_statuses = file_statuses or {}
         self._ahead_behind = ahead_behind or {}
+        self._behind_commit_authors = behind_commit_authors or {}
         self._branch_sync_info = branch_sync_info or {}
         self._recent_commits = recent_commits or {}
         self._existing_paths = existing_paths or set()
@@ -504,6 +508,10 @@ class FakeGit(Git):
     def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
         """Get number of commits ahead and behind tracking branch."""
         return self._ahead_behind.get((cwd, branch), (0, 0))
+
+    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
+        """Get authors of commits on remote that are not in local branch."""
+        return self._behind_commit_authors.get((cwd, branch), [])
 
     def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
         """Get sync status for all local branches (fake implementation)."""

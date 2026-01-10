@@ -17,6 +17,11 @@ from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 
 
+def _is_bot_author(author: str) -> bool:
+    """Check if commit author is a known bot (e.g., github-actions[bot])."""
+    return "[bot]" in author.lower()
+
+
 def format_sync_status(ahead: int, behind: int) -> str | None:
     """Format sync status as arrows, or None if in sync.
 
@@ -84,9 +89,15 @@ def display_sync_status(
         styled_sync = click.style(sync_display, fg="cyan")
         user_output(f"  Local is {styled_sync} ahead of origin ({ahead} unpushed {commit_word})")
     else:
-        # Behind only
+        # Behind only - check if commits are from bots (e.g., autofix)
+        behind_authors = ctx.git.get_behind_commit_authors(worktree_path, branch)
+        has_bot_commits = any(_is_bot_author(author) for author in behind_authors)
+
         styled_sync = click.style(sync_display, fg="yellow")
-        user_output(f"  Local is {styled_sync} behind origin (run 'git pull' to update)")
+        if has_bot_commits:
+            user_output(f"  Local is {styled_sync} behind origin - remote has autofix commits")
+        else:
+            user_output(f"  Local is {styled_sync} behind origin (run 'git pull' to update)")
 
 
 def navigate_to_worktree(

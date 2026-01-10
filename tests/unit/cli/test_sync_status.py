@@ -8,7 +8,11 @@ import sys
 from io import StringIO
 from pathlib import Path
 
-from erk.cli.commands.checkout_helpers import display_sync_status, format_sync_status
+from erk.cli.commands.checkout_helpers import (
+    _is_bot_author,
+    display_sync_status,
+    format_sync_status,
+)
 from erk.core.context import ErkContext
 from erk_shared.git.fake import FakeGit
 
@@ -45,6 +49,35 @@ class TestFormatSyncStatus:
         """Single commit behind shows 1↓."""
         result = format_sync_status(ahead=0, behind=1)
         assert result == "1↓"
+
+
+class TestIsBotAuthor:
+    """Pure unit tests for _is_bot_author (Layer 3 - no dependencies)."""
+
+    def test_github_actions_bot(self) -> None:
+        """Detects github-actions[bot] as a bot."""
+        assert _is_bot_author("github-actions[bot]") is True
+
+    def test_dependabot(self) -> None:
+        """Detects dependabot[bot] as a bot."""
+        assert _is_bot_author("dependabot[bot]") is True
+
+    def test_generic_bot(self) -> None:
+        """Detects any author with [bot] suffix."""
+        assert _is_bot_author("some-service[bot]") is True
+
+    def test_case_insensitive(self) -> None:
+        """Bot detection is case insensitive."""
+        assert _is_bot_author("GitHub-Actions[BOT]") is True
+
+    def test_human_author(self) -> None:
+        """Human authors are not detected as bots."""
+        assert _is_bot_author("John Doe") is False
+
+    def test_bot_in_name_without_brackets(self) -> None:
+        """Author named 'bot' without brackets is not a bot."""
+        assert _is_bot_author("bot") is False
+        assert _is_bot_author("robotics-team") is False
 
 
 class TestDisplaySyncStatus:
@@ -157,3 +190,49 @@ class TestDisplaySyncStatus:
         assert "diverged" in output
         assert "1↑ 3↓" in output
         assert "git fetch" in output or "git reset" in output
+
+    def test_behind_with_bot_commits_shows_autofix_message(self, tmp_path: Path) -> None:
+        """When behind with bot commits, shows autofix message."""
+        git = FakeGit(
+            ahead_behind={(tmp_path, "feature"): (0, 2)},
+            behind_commit_authors={(tmp_path, "feature"): ["github-actions[bot]", "John Doe"]},
+        )
+        ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+
+        captured = StringIO()
+        old_stderr = sys.stderr
+        sys.stderr = captured
+
+        try:
+            display_sync_status(ctx, worktree_path=tmp_path, branch="feature", script=False)
+        finally:
+            sys.stderr = old_stderr
+
+        output = captured.getvalue()
+        assert "2↓" in output
+        assert "behind origin" in output
+        assert "autofix" in output
+        assert "git pull" not in output
+
+    def test_behind_with_only_human_commits_shows_pull_message(self, tmp_path: Path) -> None:
+        """When behind with only human commits, shows git pull message."""
+        git = FakeGit(
+            ahead_behind={(tmp_path, "feature"): (0, 1)},
+            behind_commit_authors={(tmp_path, "feature"): ["John Doe"]},
+        )
+        ctx = ErkContext.for_test(git=git, cwd=tmp_path)
+
+        captured = StringIO()
+        old_stderr = sys.stderr
+        sys.stderr = captured
+
+        try:
+            display_sync_status(ctx, worktree_path=tmp_path, branch="feature", script=False)
+        finally:
+            sys.stderr = old_stderr
+
+        output = captured.getvalue()
+        assert "1↓" in output
+        assert "behind origin" in output
+        assert "git pull" in output
+        assert "autofix" not in output

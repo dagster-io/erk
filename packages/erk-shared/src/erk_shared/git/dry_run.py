@@ -176,6 +176,10 @@ class DryRunGit(Git):
         """Get ahead/behind counts (read-only, delegates to wrapped)."""
         return self._wrapped.get_ahead_behind(cwd, branch)
 
+    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
+        """Get behind commit authors (read-only, delegates to wrapped)."""
+        return self._wrapped.get_behind_commit_authors(cwd, branch)
+
     def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
         """Get all branch sync info (read-only, delegates to wrapped)."""
         return self._wrapped.get_all_branch_sync_info(repo_root)

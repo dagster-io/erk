@@ -413,6 +413,22 @@ class Git(ABC):
         ...
 
     @abstractmethod
+    def get_behind_commit_authors(self, cwd: Path, branch: str) -> list[str]:
+        """Get authors of commits on remote that are not in local branch.
+
+        Used to detect server-side commits (e.g., autofix from CI).
+
+        Args:
+            cwd: Working directory
+            branch: Local branch name
+
+        Returns:
+            List of author names for commits on origin/branch but not locally.
+            Empty list if no tracking branch or no behind commits.
+        """
+        ...
+
+    @abstractmethod
     def get_all_branch_sync_info(self, repo_root: Path) -> dict[str, BranchSyncInfo]:
         """Get sync status for all local branches in a single git call.
 
