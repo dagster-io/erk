@@ -283,13 +283,13 @@ def build_blocking_message(
     if current_branch:
         statusline_parts.append(f"br:{current_branch}")
     if pr_number is not None:
-        statusline_parts.append(f"gh:#{pr_number}")
+        statusline_parts.append(f"pr:#{pr_number}")
     if plan_issue_number is not None:
         statusline_parts.append(f"plan:#{plan_issue_number}")
 
     if statusline_parts:
         statusline = " ".join(f"({part})" for part in statusline_parts)
-        context_lines.append(statusline)
+        context_lines.append(f"Current context: {statusline}")
 
     context_block = "\n".join(context_lines)
 
