@@ -83,8 +83,8 @@ def _check_all(repo_root: Path) -> None:
         user_output("No capabilities registered.")
         return
 
-    user_output(f"Capabilities in {repo_root.name}:")
-    for cap in caps:
+    user_output("Erk project capabilities:")
+    for cap in sorted(caps, key=lambda c: c.name):
         if cap.is_installed(repo_root):
             user_output(click.style("  ✓ ", fg="green") + f"{cap.name:25} {cap.description}")
         else:
