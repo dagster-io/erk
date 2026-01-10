@@ -129,6 +129,10 @@ def check_and_display_plan_issue_closure(
             click.style("⚠ ", fg="yellow")
             + f"PR missing closing reference - plan issue #{plan_number} won't auto-close"
         )
+        # Offer to close the issue manually
+        if user_confirm(f"Close issue #{plan_number} now?", default=True):
+            ctx.issues.close_issue(repo_root, plan_number)
+            user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
 
     return plan_number
 

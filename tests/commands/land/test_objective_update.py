@@ -9,6 +9,7 @@ Tests the behavior when landing a PR linked to an objective:
 
 from dataclasses import replace
 from datetime import UTC, datetime
+from unittest import mock
 
 from click.testing import CliRunner
 
@@ -131,12 +132,15 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        result = runner.invoke(
-            cli,
-            ["land", "123", "--script", "--force"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
+        # Mock user_confirm in objective_helpers to decline closing plan issue
+        # (the new prompt added for offering to close issues missing closing refs)
+        with mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False):
+            result = runner.invoke(
+                cli,
+                ["land", "123", "--script", "--force"],
+                obj=test_ctx,
+                catch_exceptions=False,
+            )
 
         assert result.exit_code == 0
 
@@ -238,13 +242,13 @@ def test_land_user_declines_objective_update_shows_command() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # User says "n" to objective update prompt, then "y" to worktree cleanup
+        # User says "n" to close plan issue, "n" to objective update, "y" to worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="n\ny\n",
+            input="n\nn\ny\n",
         )
 
         assert result.exit_code == 0
@@ -340,13 +344,13 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # User says "y" to objective update prompt, then "y" to worktree cleanup
+        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="y\ny\n",
+            input="n\ny\ny\n",
         )
 
         assert result.exit_code == 0
@@ -449,13 +453,13 @@ def test_land_claude_failure_shows_retry_command() -> None:
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # User says "y" to objective update prompt, then "y" to worktree cleanup
+        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="y\ny\n",
+            input="n\ny\ny\n",
         )
 
         assert result.exit_code == 0

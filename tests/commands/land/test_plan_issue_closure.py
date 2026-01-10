@@ -10,6 +10,7 @@ Tests the check_and_display_plan_issue_closure helper that shows:
 from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
+from unittest import mock
 from unittest.mock import patch
 
 from erk.cli.commands.objective_helpers import check_and_display_plan_issue_closure
@@ -263,7 +264,10 @@ def test_without_closing_ref_warns_issue_wont_close(tmp_path: Path) -> None:
     )
 
     captured = StringIO()
-    with patch("sys.stderr", captured):
+    with (
+        patch("sys.stderr", captured),
+        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False),
+    ):
         result = check_and_display_plan_issue_closure(
             ctx,
             tmp_path,
@@ -277,6 +281,8 @@ def test_without_closing_ref_warns_issue_wont_close(tmp_path: Path) -> None:
     assert "#42 won't auto-close" in output
     # No retries when closing ref is missing
     assert fake_time.sleep_calls == []
+    # Issue should NOT have been closed (user declined)
+    assert issues_ops.closed_issues == []
 
 
 def test_without_closing_ref_succeeds_if_already_closed(tmp_path: Path) -> None:
@@ -352,7 +358,10 @@ def test_cross_repo_missing_reference_warns(tmp_path: Path) -> None:
     )
 
     captured = StringIO()
-    with patch("sys.stderr", captured):
+    with (
+        patch("sys.stderr", captured),
+        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False),
+    ):
         result = check_and_display_plan_issue_closure(
             ctx,
             tmp_path,
@@ -439,3 +448,73 @@ def test_handles_branch_with_complex_prefix(tmp_path: Path) -> None:
     assert result == 1234
     output = captured.getvalue()
     assert "Closed plan issue #1234" in output
+
+
+def test_without_closing_ref_offers_to_close_and_user_accepts(tmp_path: Path) -> None:
+    """Test that user confirming closes the issue when PR missing closing ref."""
+    issue = _create_issue(42, "OPEN")
+    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_time = FakeTime()
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        cwd=tmp_path,
+        time=fake_time,
+    )
+
+    captured = StringIO()
+    with (
+        patch("sys.stderr", captured),
+        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=True),
+    ):
+        result = check_and_display_plan_issue_closure(
+            ctx,
+            tmp_path,
+            "P42-test-feature",
+            pr_body="Some PR body without closing reference",
+        )
+
+    assert result == 42
+    output = captured.getvalue()
+    # Should show warning about missing closing reference
+    assert "PR missing closing reference" in output
+    assert "#42 won't auto-close" in output
+    # Should show confirmation that issue was closed
+    assert "Closed plan issue #42" in output
+    # Issue should have been closed
+    assert issues_ops.closed_issues == [42]
+
+
+def test_without_closing_ref_offers_to_close_and_user_declines(tmp_path: Path) -> None:
+    """Test that user declining leaves issue open when PR missing closing ref."""
+    issue = _create_issue(42, "OPEN")
+    issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
+    fake_time = FakeTime()
+
+    ctx = context_for_test(
+        issues=issues_ops,
+        cwd=tmp_path,
+        time=fake_time,
+    )
+
+    captured = StringIO()
+    with (
+        patch("sys.stderr", captured),
+        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False),
+    ):
+        result = check_and_display_plan_issue_closure(
+            ctx,
+            tmp_path,
+            "P42-test-feature",
+            pr_body="Some PR body without closing reference",
+        )
+
+    assert result == 42
+    output = captured.getvalue()
+    # Should show warning about missing closing reference
+    assert "PR missing closing reference" in output
+    assert "#42 won't auto-close" in output
+    # Should NOT show confirmation message (user declined)
+    assert "Closed plan issue #42" not in output
+    # Issue should NOT have been closed
+    assert issues_ops.closed_issues == []
