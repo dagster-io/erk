@@ -312,6 +312,15 @@ def _cleanup_and_navigate(
             user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
         else:
             # Non-slot worktree: preserve worktree, delete branch only
+            # Check for uncommitted changes before switching branches
+            if ctx.git.has_uncommitted_changes(worktree_path):
+                user_output(
+                    click.style("Error: ", fg="red")
+                    + f"Worktree has uncommitted changes at {worktree_path}.\n"
+                    "Commit or stash your changes before landing."
+                )
+                raise SystemExit(1)
+
             if not force and not ctx.dry_run:
                 if not user_confirm(
                     f"Delete branch '{branch}'? (worktree preserved)",
@@ -319,10 +328,18 @@ def _cleanup_and_navigate(
                 ):
                     user_output("Branch preserved.")
                     return
+
+            # Checkout detached HEAD at trunk before deleting feature branch
+            # (git won't delete a branch that's checked out in any worktree)
+            # Use detached HEAD instead of checkout_branch because trunk may already
+            # be checked out in the root worktree
+            trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
+            ctx.git.checkout_detached(worktree_path, trunk_branch)
+
             ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(
                 click.style("✓", fg="green")
-                + f" Deleted branch (worktree '{worktree_path.name}' preserved)"
+                + f" Deleted branch (worktree '{worktree_path.name}' detached at '{trunk_branch}')"
             )
     else:
         # No worktree - check if branch exists locally before deletion (LBYL)

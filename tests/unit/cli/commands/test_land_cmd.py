@@ -712,3 +712,175 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
     # Verify branch was deleted via Graphite
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_branch(
+    tmp_path: Path,
+) -> None:
+    """Test that non-slot worktree cleanup checks out trunk before deleting branch.
+
+    Regression test for bug where `erk land` failed from a non-slot worktree with:
+    "branch is currently checked out in another worktree and cannot be deleted"
+
+    The fix checks out the trunk branch before deleting the feature branch,
+    allowing git to delete a branch that was previously checked out.
+    """
+    # Create a non-slot worktree (name doesn't match erk-slot-XX pattern)
+    non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
+    non_slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state (no slot assignments)
+    from erk.core.worktree_pool import save_pool_state
+
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=non_slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            non_slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=non_slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate
+    # Without the fix: would fail because branch is checked out
+    # With the fix: should checkout trunk first, then delete branch
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=non_slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Verify detached HEAD at trunk was checked out before deletion
+    # (we use detached HEAD because trunk may be checked out in root worktree)
+    detached_calls = [(path, ref) for path, ref in fake_git.detached_checkouts if ref == "main"]
+    assert len(detached_calls) == 1, "Should have checked out detached HEAD at trunk"
+    assert detached_calls[0][0] == non_slot_worktree_path
+
+    # Verify worktree was NOT removed (preserved)
+    assert non_slot_worktree_path not in fake_git.removed_worktrees
+
+    # Verify branch was deleted via Graphite
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
+    tmp_path: Path,
+) -> None:
+    """Test that non-slot worktree cleanup fails if there are uncommitted changes.
+
+    Before switching to trunk, we must check for uncommitted changes to prevent
+    accidental loss of work.
+    """
+    # Create a non-slot worktree
+    non_slot_worktree_path = tmp_path / "worktrees" / "my-feature-worktree"
+    non_slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state
+    from erk.core.worktree_pool import save_pool_state
+
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=non_slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            non_slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+        # Simulate uncommitted changes in the worktree (modified files)
+        file_statuses={non_slot_worktree_path: ([], ["modified_file.py"], [])},
+    )
+
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=non_slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate - should fail with uncommitted changes
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=non_slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+        )
+        pytest.fail("Expected SystemExit(1) for uncommitted changes")
+    except SystemExit as e:
+        assert e.code == 1
+
+    # Verify no checkout was attempted
+    assert len(fake_git.checked_out_branches) == 0
+
+    # Verify branch was NOT deleted
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" not in deleted_branches
