@@ -16,16 +16,16 @@ from erk.core.context import ErkContext
     help="Show shell integration setup instructions (completion + auto-activation wrapper).",
 )
 @click.option(
-    "--hooks",
-    "hooks_only",
+    "--statusline",
+    "statusline_only",
     is_flag=True,
-    help="Only set up Claude Code hooks.",
+    help="Only configure erk-statusline in Claude Code.",
 )
 @click.option(
     "--no-interactive",
     "no_interactive",
     is_flag=True,
-    help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
+    help="Skip all interactive prompts (gitignore, permissions, shell setup).",
 )
 @click.pass_context
 def init_group(
@@ -33,7 +33,7 @@ def init_group(
     *,
     force: bool,
     shell: bool,
-    hooks_only: bool,
+    statusline_only: bool,
     no_interactive: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml.
@@ -48,7 +48,7 @@ def init_group(
             erk_ctx,
             force=force,
             shell=shell,
-            hooks_only=hooks_only,
+            statusline_only=statusline_only,
             no_interactive=no_interactive,
         )
 

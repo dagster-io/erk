@@ -8,12 +8,11 @@ import click
 
 from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
-from erk.core.capabilities.registry import list_capabilities
+from erk.core.capabilities.registry import list_capabilities, list_required_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     NoBackupCreated,
     StatuslineNotConfigured,
-    add_erk_hooks,
     add_erk_permission,
     add_erk_statusline,
     get_erk_statusline_command,
@@ -21,8 +20,6 @@ from erk.core.claude_settings import (
     get_statusline_config,
     has_erk_permission,
     has_erk_statusline,
-    has_exit_plan_hook,
-    has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
 )
@@ -317,49 +314,6 @@ def offer_backup_cleanup(backup_path: Path) -> None:
         user_output(click.style("✓", fg="green") + " Backup deleted")
 
 
-def offer_claude_hook_setup(repo_root: Path) -> None:
-    """Offer to add erk hooks to repo's Claude Code settings.
-
-    This checks if the repo's .claude/settings.json exists and whether the erk
-    hooks are already configured. If the file exists but hooks are missing,
-    it prompts the user to add them.
-
-    Args:
-        repo_root: Path to the repository root
-    """
-    settings_path = get_repo_claude_settings_path(repo_root)
-
-    try:
-        settings = read_claude_settings(settings_path)
-    except json.JSONDecodeError as e:
-        warning = click.style("⚠️  Warning: ", fg="yellow")
-        user_output(warning + "Invalid JSON in .claude/settings.json")
-        user_output(f"   {e}")
-        return
-
-    # No settings file - will create one
-    creating_new_file = settings is None
-    if creating_new_file:
-        settings = {}
-        user_output(f"\nNo .claude/settings.json found. Will create: {settings_path}")
-
-    assert settings is not None  # Type narrowing: set to {} if was None above
-    if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):
-        user_output(click.style("✓", fg="green") + " Hooks already configured")
-        return
-
-    # Explain what hooks do
-    user_output("\nErk uses Claude Code hooks for session management and plan tracking.")
-
-    if not user_confirm("Add erk hooks to .claude/settings.json?", default=False):
-        user_output("Skipped. You can add hooks later with: erk init --hooks")
-        return
-
-    new_settings = add_erk_hooks(settings)
-    write_claude_settings(settings_path, new_settings)
-    user_output(click.style("✓", fg="green") + " Added erk hooks")
-
-
 def create_plans_repo_labels(
     repo_root: Path,
     plans_repo: str,
@@ -484,7 +438,7 @@ def run_init(
     *,
     force: bool,
     shell: bool,
-    hooks_only: bool,
+    statusline_only: bool,
     no_interactive: bool,
 ) -> None:
     """Initialize erk for this repo and scaffold config.toml.
@@ -551,9 +505,9 @@ def run_init(
     repo_root = repo_or_sentinel.root
     user_output(click.style("✓", fg="green") + f" Git repository detected: {repo_root.name}")
 
-    # Handle --hooks flag: only do hook setup
-    if hooks_only:
-        offer_claude_hook_setup(repo_root)
+    # Handle --statusline flag: only do statusline setup
+    if statusline_only:
+        perform_statusline_setup(settings_path=None)
         return
 
     # =========================================================================
@@ -622,6 +576,17 @@ def run_init(
             user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
             user_output("    Run 'erk artifact sync' to retry")
 
+        # Auto-install required capabilities (e.g., hooks)
+        for cap in list_required_capabilities():
+            check_repo_root = repo_context.root if cap.scope == "project" else None
+            if not cap.is_installed(check_repo_root):
+                result = cap.install(check_repo_root)
+                if result.success:
+                    user_output(click.style("  ✓ ", fg="green") + result.message)
+                else:
+                    warn_msg = f"{cap.name} install failed: {result.message}"
+                    user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
+
         # Create prompt hooks directory with README
         _create_prompt_hooks_directory(repo_root=repo_context.root)
 
@@ -634,7 +599,6 @@ def run_init(
         if interactive:
             _run_gitignore_prompts(repo_context.root)
             pending_backup = offer_claude_permission_setup(repo_context.root)
-            offer_claude_hook_setup(repo_context.root)
 
             # Check if plans_repo is configured and offer label setup
             from erk.cli.config import load_config as load_repo_config

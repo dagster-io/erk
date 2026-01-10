@@ -95,6 +95,15 @@ class Capability(ABC):
         """
         ...
 
+    @property
+    def required(self) -> bool:
+        """If True, auto-install during erk init without prompting.
+
+        Default is False. Override to return True for capabilities that should
+        always be installed (e.g., hooks).
+        """
+        return False
+
     def preflight(self, repo_root: Path | None) -> CapabilityResult:
         """Check preconditions before installation.
 

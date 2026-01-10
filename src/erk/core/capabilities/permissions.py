@@ -35,9 +35,8 @@ class ErkBashPermissionsCapability(Capability):
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
-        return [
-            CapabilityArtifact(path=".claude/settings.json", artifact_type="file"),
-        ]
+        # settings.json is shared by multiple capabilities, so not listed here
+        return []
 
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if Bash(erk:*) permission exists in settings.json."""

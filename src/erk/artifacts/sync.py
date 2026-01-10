@@ -13,7 +13,6 @@ from erk.artifacts.state import save_artifact_state
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
-    add_erk_hooks,
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
@@ -294,64 +293,6 @@ def _sync_actions(
     return count, synced
 
 
-def _sync_hooks(target_claude_dir: Path) -> tuple[int, list[SyncedArtifact]]:
-    """Sync erk-managed hooks to project's .claude/settings.json.
-
-    Hooks are configuration entries, not files. This adds missing hooks
-    to settings.json using the existing add_erk_hooks() function.
-
-    Returns:
-        Tuple of (hooks_added, synced_artifacts)
-    """
-    settings_path = target_claude_dir / "settings.json"
-
-    # Read existing settings or start with empty
-    if settings_path.exists():
-        content = settings_path.read_text(encoding="utf-8")
-        settings = json.loads(content)
-    else:
-        settings = {}
-
-    # Count hooks before adding
-    had_user_prompt = has_user_prompt_hook(settings)
-    had_exit_plan = has_exit_plan_hook(settings)
-
-    # Add missing hooks
-    updated_settings = add_erk_hooks(settings)
-
-    # Write updated settings
-    target_claude_dir.mkdir(parents=True, exist_ok=True)
-    settings_path.write_text(json.dumps(updated_settings, indent=2), encoding="utf-8")
-
-    # Count how many hooks were newly added
-    added = 0
-    if not had_user_prompt:
-        added += 1
-    if not had_exit_plan:
-        added += 1
-
-    # ALWAYS record state for installed hooks (not just newly added)
-    # This ensures hooks from older erk versions get tracked in state.toml
-    synced: list[SyncedArtifact] = []
-    if has_user_prompt_hook(updated_settings):
-        synced.append(
-            SyncedArtifact(
-                key="hooks/user-prompt-hook",
-                hash=_compute_hook_hash(ERK_USER_PROMPT_HOOK_COMMAND),
-                file_count=1,
-            )
-        )
-    if has_exit_plan_hook(updated_settings):
-        synced.append(
-            SyncedArtifact(
-                key="hooks/exit-plan-mode-hook",
-                hash=_compute_hook_hash(ERK_EXIT_PLAN_HOOK_COMMAND),
-                file_count=1,
-            )
-        )
-    return added, synced
-
-
 def _hash_directory_artifacts(
     parent_dir: Path, names: frozenset[str], key_prefix: str
 ) -> list[SyncedArtifact]:
@@ -604,10 +545,14 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
         total_copied += count
         all_synced.extend(synced)
 
-    # Sync hooks to settings.json
-    count, synced = _sync_hooks(target_claude_dir)
-    total_copied += count
-    all_synced.extend(synced)
+    # Sync installed capabilities - for each project-scoped capability that is
+    # already installed, call install() to ensure it's up-to-date. Since install()
+    # is idempotent, this safely updates existing capabilities.
+    from erk.core.capabilities.registry import list_capabilities
+
+    for cap in list_capabilities():
+        if cap.scope == "project" and cap.is_installed(project_dir):
+            cap.install(project_dir)
 
     # Build per-artifact state from synced artifacts
     current_version = get_current_version()

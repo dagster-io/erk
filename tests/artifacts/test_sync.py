@@ -10,7 +10,6 @@ from erk.artifacts.sync import (
     _sync_actions,
     _sync_commands,
     _sync_directory_artifacts,
-    _sync_hooks,
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
@@ -65,8 +64,8 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # 1 skill file + 2 hooks = 3 artifacts
-    assert result.artifacts_installed == 3
+    # 1 skill file (hooks are handled by HooksCapability, not artifact sync)
+    assert result.artifacts_installed == 1
 
     # Verify file was copied
     copied_file = target_dir / ".claude" / "skills" / "learned-docs" / "SKILL.md"
@@ -200,8 +199,8 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # erk-impl.yml + 2 hooks = 3 artifacts
-    assert result.artifacts_installed == 3
+    # erk-impl.yml (hooks are handled by HooksCapability, not artifact sync)
+    assert result.artifacts_installed == 1
 
     # Verify erk-impl.yml was copied
     copied_workflow = target_dir / ".github" / "workflows" / "erk-impl.yml"
@@ -382,8 +381,8 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # Should copy: 1 skill + 1 agent + 1 command + 2 hooks = 5 artifacts
-    assert result.artifacts_installed == 5
+    # Should copy: 1 skill + 1 agent + 1 command (hooks handled by HooksCapability)
+    assert result.artifacts_installed == 3
 
     # Bundled artifacts should exist
     assert (target_dir / ".claude" / "skills" / "learned-docs" / "SKILL.md").exists()
@@ -396,132 +395,27 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     assert not (target_dir / ".claude" / "commands" / "local").exists()
 
 
-def test_sync_hooks_adds_missing_hooks(tmp_path: Path) -> None:
-    """_sync_hooks adds missing hooks to settings.json."""
-    import json
+def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
+    """sync_artifacts updates installed capabilities.
 
-    from erk.core.claude_settings import (
-        ERK_EXIT_PLAN_HOOK_COMMAND,
-        ERK_USER_PROMPT_HOOK_COMMAND,
-    )
-
-    target_claude_dir = tmp_path / ".claude"
-    target_claude_dir.mkdir(parents=True)
-
-    # No settings.json exists yet
-    added, _ = _sync_hooks(target_claude_dir)
-
-    # Both hooks should be added
-    assert added == 2
-
-    # Verify hooks were written
-    settings_path = target_claude_dir / "settings.json"
-    assert settings_path.exists()
-
-    settings = json.loads(settings_path.read_text(encoding="utf-8"))
-    assert "hooks" in settings
-    assert "UserPromptSubmit" in settings["hooks"]
-    assert "PreToolUse" in settings["hooks"]
-
-    # Verify hook commands
-    user_prompt_hooks = settings["hooks"]["UserPromptSubmit"]
-    assert any(
-        hook.get("command") == ERK_USER_PROMPT_HOOK_COMMAND
-        for entry in user_prompt_hooks
-        for hook in entry.get("hooks", [])
-    )
-
-    pre_tool_hooks = settings["hooks"]["PreToolUse"]
-    assert any(
-        entry.get("matcher") == "ExitPlanMode"
-        and any(
-            hook.get("command") == ERK_EXIT_PLAN_HOOK_COMMAND for hook in entry.get("hooks", [])
-        )
-        for entry in pre_tool_hooks
-    )
-
-
-def test_sync_hooks_preserves_existing_settings(tmp_path: Path) -> None:
-    """_sync_hooks preserves existing settings when adding hooks."""
-    import json
-
-    target_claude_dir = tmp_path / ".claude"
-    target_claude_dir.mkdir(parents=True)
-
-    # Create existing settings with permissions
-    existing_settings = {"permissions": {"allow": ["Bash(git:*)"]}}
-    settings_path = target_claude_dir / "settings.json"
-    settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
-
-    _sync_hooks(target_claude_dir)
-
-    # Verify existing settings preserved
-    settings = json.loads(settings_path.read_text(encoding="utf-8"))
-    assert "permissions" in settings
-    assert "Bash(git:*)" in settings["permissions"]["allow"]
-    assert "hooks" in settings
-
-
-def test_sync_hooks_skips_existing_hooks(tmp_path: Path) -> None:
-    """_sync_hooks returns 0 when hooks already exist."""
-    import json
-
-    from erk.core.claude_settings import add_erk_hooks
-
-    target_claude_dir = tmp_path / ".claude"
-    target_claude_dir.mkdir(parents=True)
-
-    # Create settings with hooks already configured
-    settings = add_erk_hooks({})
-    settings_path = target_claude_dir / "settings.json"
-    settings_path.write_text(json.dumps(settings), encoding="utf-8")
-
-    added, _ = _sync_hooks(target_claude_dir)
-
-    # No hooks should be added
-    assert added == 0
-
-
-def test_sync_hooks_returns_synced_artifacts_for_existing_hooks(tmp_path: Path) -> None:
-    """_sync_hooks returns synced artifacts even when hooks already exist.
-
-    Regression test: Previously, hooks were only recorded in state.toml when
-    newly added. This caused 'erk doctor' to show hooks as changed after
-    running 'erk sync' on repos with pre-existing hooks from older versions.
+    After syncing file-based artifacts, sync_artifacts iterates through
+    installed capabilities and calls install() to ensure they're up-to-date.
     """
     import json
 
     from erk.core.claude_settings import add_erk_hooks
-
-    target_claude_dir = tmp_path / ".claude"
-    target_claude_dir.mkdir(parents=True)
-
-    # Create settings with hooks already configured (simulates older erk install)
-    settings = add_erk_hooks({})
-    settings_path = target_claude_dir / "settings.json"
-    settings_path.write_text(json.dumps(settings), encoding="utf-8")
-
-    added, synced = _sync_hooks(target_claude_dir)
-
-    # No hooks should be added (they already exist)
-    assert added == 0
-
-    # BUT synced artifacts should still be returned for state tracking
-    assert len(synced) == 2
-    synced_keys = {artifact.key for artifact in synced}
-    assert "hooks/user-prompt-hook" in synced_keys
-    assert "hooks/exit-plan-mode-hook" in synced_keys
-
-
-def test_sync_artifacts_includes_hooks(tmp_path: Path) -> None:
-    """sync_artifacts also syncs hooks to settings.json."""
-    import json
 
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
     target_dir = tmp_path / "project"
     target_dir.mkdir()
+
+    # Pre-install hooks (simulates HooksCapability already installed)
+    settings_path = target_dir / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings = add_erk_hooks({})
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     nonexistent = tmp_path / "nonexistent"
     with (
@@ -532,14 +426,13 @@ def test_sync_artifacts_includes_hooks(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # Should include 2 hooks in the count
-    assert result.artifacts_installed == 2
+    # Hooks are managed by capability, not counted as file artifacts
+    assert result.artifacts_installed == 0
 
-    # Verify hooks were synced
-    settings_path = target_dir / ".claude" / "settings.json"
-    assert settings_path.exists()
+    # Verify hooks still exist (capability install() is idempotent)
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
     assert "hooks" in settings
+    assert "UserPromptSubmit" in settings["hooks"]
 
 
 def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
@@ -609,8 +502,8 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
         result = sync_artifacts(target_dir, force=False)
 
     assert result.success is True
-    # 2 actions + 2 hooks = 4 artifacts
-    assert result.artifacts_installed == 4
+    # 2 actions (hooks are handled by HooksCapability, not artifact sync)
+    assert result.artifacts_installed == 2
 
     # Verify both actions were copied
     assert (target_dir / ".github" / "actions" / "setup-claude-erk" / "action.yml").exists()

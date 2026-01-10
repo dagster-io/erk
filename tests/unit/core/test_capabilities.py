@@ -19,9 +19,14 @@ from erk.core.capabilities.base import (
     CapabilityScope,
 )
 from erk.core.capabilities.dignified_review import DignifiedReviewCapability
+from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
-from erk.core.capabilities.registry import get_capability, list_capabilities
+from erk.core.capabilities.registry import (
+    get_capability,
+    list_capabilities,
+    list_required_capabilities,
+)
 from erk.core.capabilities.skills import (
     DignifiedPythonCapability,
     FakeDrivenTestingCapability,
@@ -436,9 +441,8 @@ def test_erk_bash_permissions_artifacts() -> None:
     cap = ErkBashPermissionsCapability()
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 1
-    assert artifacts[0].path == ".claude/settings.json"
-    assert artifacts[0].artifact_type == "file"
+    # settings.json is shared by multiple capabilities, so not listed
+    assert len(artifacts) == 0
 
 
 def test_erk_bash_permissions_is_installed_false_when_no_settings(tmp_path: Path) -> None:
@@ -562,9 +566,8 @@ def test_statusline_capability_artifacts() -> None:
     cap = StatuslineCapability(claude_installation=None)
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 1
-    assert artifacts[0].path == "~/.claude/settings.json"
-    assert artifacts[0].artifact_type == "file"
+    # settings.json is shared by multiple capabilities, so not listed
+    assert len(artifacts) == 0
 
 
 def test_statusline_is_installed_false_when_not_configured() -> None:
@@ -772,3 +775,316 @@ def test_dignified_review_capability_registered() -> None:
     cap = get_capability("dignified-review")
     assert cap is not None
     assert cap.name == "dignified-review"
+
+
+# =============================================================================
+# Tests for HooksCapability
+# =============================================================================
+
+
+def test_hooks_capability_properties() -> None:
+    """Test HooksCapability has correct properties."""
+    cap = HooksCapability()
+    assert cap.name == "erk-hooks"
+    assert cap.scope == "project"
+    assert "hooks" in cap.description.lower() or "session" in cap.description.lower()
+    assert "UserPromptSubmit" in cap.installation_check_description
+    assert "ExitPlanMode" in cap.installation_check_description
+
+
+def test_hooks_capability_is_required() -> None:
+    """Test HooksCapability is marked as required."""
+    cap = HooksCapability()
+    assert cap.required is True
+
+
+def test_hooks_capability_artifacts() -> None:
+    """Test HooksCapability lists correct artifacts."""
+    cap = HooksCapability()
+    artifacts = cap.artifacts
+
+    # settings.json is shared by multiple capabilities, so not listed
+    assert len(artifacts) == 0
+
+
+def test_hooks_is_installed_false_when_no_settings(tmp_path: Path) -> None:
+    """Test is_installed returns False when settings.json doesn't exist."""
+    cap = HooksCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_hooks_is_installed_false_when_hooks_missing(tmp_path: Path) -> None:
+    """Test is_installed returns False when hooks not configured."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(json.dumps({}), encoding="utf-8")
+
+    cap = HooksCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_hooks_is_installed_false_when_only_user_prompt_hook(tmp_path: Path) -> None:
+    """Test is_installed returns False when only UserPromptSubmit hook exists."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    cap = HooksCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None:
+    """Test is_installed returns True when both hooks are configured."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                        }
+                    ],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": (
+                                "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+                            ),
+                        }
+                    ],
+                }
+            ],
+        }
+    }
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    cap = HooksCapability()
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_hooks_install_creates_settings(tmp_path: Path) -> None:
+    """Test install creates settings.json if it doesn't exist."""
+    import json
+
+    cap = HooksCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert ".claude/settings.json" in result.created_files
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    assert settings_path.exists()
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "hooks" in settings
+    assert "UserPromptSubmit" in settings["hooks"]
+    assert "PreToolUse" in settings["hooks"]
+
+
+def test_hooks_install_adds_to_existing(tmp_path: Path) -> None:
+    """Test install adds hooks to existing settings.json."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Read(/tmp/*)"]}}),
+        encoding="utf-8",
+    )
+
+    cap = HooksCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "Added" in result.message
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "hooks" in settings
+    assert "UserPromptSubmit" in settings["hooks"]
+    assert "PreToolUse" in settings["hooks"]
+    # Preserves existing keys
+    assert "permissions" in settings
+    assert "Read(/tmp/*)" in settings["permissions"]["allow"]
+
+
+def test_hooks_install_idempotent(tmp_path: Path) -> None:
+    """Test install is idempotent when hooks already exist."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                        }
+                    ],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": (
+                                "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+                            ),
+                        }
+                    ],
+                }
+            ],
+        }
+    }
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    cap = HooksCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "already" in result.message
+
+
+def test_hooks_install_handles_invalid_json(tmp_path: Path) -> None:
+    """Test install fails gracefully with invalid JSON."""
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text("invalid json {{{", encoding="utf-8")
+
+    cap = HooksCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is False
+    assert "Invalid JSON" in result.message
+
+
+def test_hooks_capability_registered() -> None:
+    """Test that hooks capability is registered."""
+    cap = get_capability("erk-hooks")
+    assert cap is not None
+    assert cap.name == "erk-hooks"
+
+
+def test_hooks_is_installed_returns_false_with_none_repo_root() -> None:
+    """Test is_installed returns False when repo_root is None."""
+    cap = HooksCapability()
+    assert cap.is_installed(None) is False
+
+
+def test_hooks_install_fails_with_none_repo_root() -> None:
+    """Test install fails when repo_root is None."""
+    cap = HooksCapability()
+    result = cap.install(None)
+
+    assert result.success is False
+    assert "requires repo_root" in result.message
+
+
+# =============================================================================
+# Tests for Required Capabilities
+# =============================================================================
+
+
+def test_list_required_capabilities_returns_only_required() -> None:
+    """Test that list_required_capabilities returns only capabilities with required=True."""
+    required_caps = list_required_capabilities()
+
+    # All returned capabilities should have required=True
+    for cap in required_caps:
+        assert cap.required is True, f"{cap.name} has required=False but was returned"
+
+
+def test_list_required_capabilities_includes_hooks() -> None:
+    """Test that HooksCapability is in the list of required capabilities."""
+    required_caps = list_required_capabilities()
+    names = [cap.name for cap in required_caps]
+
+    assert "erk-hooks" in names
+
+
+def test_default_capabilities_not_required() -> None:
+    """Test that default capabilities are NOT required."""
+    # Most capabilities should be optional
+    optional_caps = [
+        LearnedDocsCapability(),
+        DignifiedPythonCapability(),
+        FakeDrivenTestingCapability(),
+        ErkImplWorkflowCapability(),
+        DevrunAgentCapability(),
+        ErkBashPermissionsCapability(),
+        StatuslineCapability(claude_installation=None),
+    ]
+
+    for cap in optional_caps:
+        assert cap.required is False, f"{cap.name} should not be required"
+
+
+def test_capability_base_required_default_is_false() -> None:
+    """Test that Capability ABC has required=False by default."""
+
+    class TestCap(Capability):
+        """Test capability with default required behavior."""
+
+        @property
+        def name(self) -> str:
+            return "test"
+
+        @property
+        def description(self) -> str:
+            return "test"
+
+        @property
+        def scope(self) -> CapabilityScope:
+            return "project"
+
+        @property
+        def installation_check_description(self) -> str:
+            return "test"
+
+        @property
+        def artifacts(self) -> list[CapabilityArtifact]:
+            return []
+
+        def is_installed(self, repo_root: Path | None) -> bool:
+            return False
+
+        def install(self, repo_root: Path | None) -> CapabilityResult:
+            return CapabilityResult(success=True, message="test")
+
+    cap = TestCap()
+    assert cap.required is False
