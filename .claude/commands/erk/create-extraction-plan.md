@@ -87,19 +87,19 @@ Parse the context argument (if provided) for:
 
 **If no explicit session IDs provided:**
 
-Run the session discovery helper with size filtering to exclude tiny sessions:
+Run the session discovery helper to get all sessions with branch metadata:
 
 ```bash
-erk exec list-sessions --min-size 1024
+erk exec list-sessions
 ```
 
 The JSON output includes:
 
+- `branch_context.current_branch`: The current git branch
 - `branch_context.is_on_trunk`: Whether on main/master branch
 - `current_session_id`: Current session ID from SESSION_CONTEXT env
-- `sessions`: List of recent sessions with metadata (only meaningful sessions >= 1KB)
+- `sessions`: List of recent sessions with metadata including `branch` field
 - `project_dir`: Path to session logs
-- `filtered_count`: Number of tiny sessions filtered out
 
 **Behavior based on branch context:**
 
@@ -109,45 +109,21 @@ Use `current_session_id` only. Skip user prompt - analyze current conversation.
 
 **If `branch_context.is_on_trunk` is false (feature branch):**
 
-First, determine if the current session is "trivial" (< 1KB, typically just launching a command like this one). Check if the current session appears in the filtered results - if not, it was filtered out as tiny.
+Filter sessions by branch: only include sessions where `session.branch` matches `branch_context.current_branch`.
 
-**Common pattern**: User launches a fresh session solely to run `/erk:create-extraction-plan` on substantial work from a previous session. In this case, auto-select the substantial session(s) without prompting.
+**If 0 sessions match the current branch:**
 
-**If current session is tiny AND exactly 1 substantial session exists:**
+Use current session only. Inform user:
 
-Auto-select the substantial session without prompting. Briefly inform user:
+> "No sessions found for branch [branch-name]. Analyzing current conversation."
 
-> "Auto-selected session [id] (current session is trivial, analyzing the substantial session)"
+**If 1+ sessions match the current branch:**
 
-**If current session is tiny AND 2+ substantial sessions exist:**
+Auto-select ALL matching sessions without prompting. Briefly inform user:
 
-Auto-select ALL substantial sessions without prompting. Briefly inform user:
+> "Found [N] session(s) for branch [branch-name]"
 
-> "Auto-selected [N] sessions (current session is trivial, analyzing all substantial sessions)"
-
-**If current session is substantial AND exactly 1 total session (itself):**
-
-Proceed with current session analysis. No prompt needed.
-
-**If current session is substantial AND other substantial sessions exist:**
-
-Present sessions to user for selection:
-
-> "Found these sessions for this worktree:
->
-> 1. [Dec 3, 11:38 AM] 4f852cdc... - how many session ids does... (current)
-> 2. [Dec 3, 11:35 AM] d8f6bb38... - no rexporting due to backwards...
-> 3. [Dec 3, 11:28 AM] d82e9306... - /gt:pr-submit
->
-> Which sessions should I analyze? (1=current only, 2=all, or list session numbers like '1,3')"
-
-Wait for user selection before proceeding.
-
-**If 0 sessions remain after filtering (all tiny including current):**
-
-Use current session only despite being tiny. Inform user:
-
-> "No meaningful sessions found (all sessions were < 1KB). Analyzing current conversation anyway."
+This approach eliminates the size-based heuristics - branch filtering is more precise and ensures we only analyze work relevant to the current feature.
 
 **If explicit session IDs found in context:**
 

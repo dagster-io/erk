@@ -23,13 +23,21 @@ from erk_shared.extraction.claude_installation import (
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.extraction.session_schema import extract_first_user_message_text
+from erk_shared.extraction.session_schema import extract_first_user_message_text, extract_git_branch
 from erk_shared.git.fake import FakeGit
 
 
-def _user_msg(text: str) -> str:
-    """Create JSON content for a user message."""
-    return json.dumps({"type": "user", "message": {"content": text}})
+def _user_msg(text: str, branch: str | None = None) -> str:
+    """Create JSON content for a user message.
+
+    Args:
+        text: The user message text.
+        branch: Optional git branch to include in the entry.
+    """
+    entry: dict[str, object] = {"type": "user", "message": {"content": text}}
+    if branch is not None:
+        entry["gitBranch"] = branch
+    return json.dumps(entry)
 
 
 # ============================================================================
@@ -183,6 +191,41 @@ def test_extract_summary_content_with_newlines() -> None:
     content = json.dumps({"type": "user", "message": {"content": "Line one"}})
     result = extract_first_user_message_text(content, max_length=None)
     assert result == "Line one"
+
+
+# ============================================================================
+# 3. Git Branch Extraction Tests (4 tests)
+# ============================================================================
+
+
+def test_extract_git_branch_from_first_entry() -> None:
+    """Test that gitBranch is extracted from the first entry with that field."""
+    content = _user_msg("Hello", branch="feature-xyz")
+    result = extract_git_branch(content)
+    assert result == "feature-xyz"
+
+
+def test_extract_git_branch_finds_first_branch() -> None:
+    """Test that gitBranch returns the first branch found."""
+    # First entry with branch, second entry with different branch
+    line1 = json.dumps({"type": "user", "message": {"content": "First"}, "gitBranch": "feature-a"})
+    line2 = json.dumps({"type": "user", "message": {"content": "Second"}, "gitBranch": "feature-b"})
+    content = f"{line1}\n{line2}"
+    result = extract_git_branch(content)
+    assert result == "feature-a"
+
+
+def test_extract_git_branch_no_branch_field() -> None:
+    """Test that None is returned when no gitBranch field exists."""
+    content = _user_msg("No branch here")
+    result = extract_git_branch(content)
+    assert result is None
+
+
+def test_extract_git_branch_empty_content() -> None:
+    """Test handling of empty content."""
+    result = extract_git_branch("")
+    assert result is None
 
 
 # ============================================================================
@@ -359,6 +402,52 @@ def test_list_sessions_extracts_summaries(tmp_path: Path) -> None:
     assert sessions[0].summary == "Hello world"
 
 
+def test_list_sessions_extracts_branch(tmp_path: Path) -> None:
+    """Test that branch is extracted from session content."""
+    fake_store = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session1": FakeSessionData(
+                        content=_user_msg("Hello", branch="feature-xyz"),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    )
+                }
+            )
+        }
+    )
+
+    sessions, _ = _list_sessions_from_store(
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
+    )
+    assert len(sessions) == 1
+    assert sessions[0].branch == "feature-xyz"
+
+
+def test_list_sessions_branch_none_when_missing(tmp_path: Path) -> None:
+    """Test that branch is None when session has no gitBranch field."""
+    fake_store = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "session1": FakeSessionData(
+                        content=_user_msg("Hello"),  # No branch
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    )
+                }
+            )
+        }
+    )
+
+    sessions, _ = _list_sessions_from_store(
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
+    )
+    assert len(sessions) == 1
+    assert sessions[0].branch is None
+
+
 # ============================================================================
 # 5. Branch Context Tests (5 tests)
 # ============================================================================
@@ -533,6 +622,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
         assert "size_bytes" in session
         assert "summary" in session
         assert "is_current" in session
+        assert "branch" in session
 
 
 def test_cli_limit_option(tmp_path: Path) -> None:
