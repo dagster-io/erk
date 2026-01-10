@@ -124,8 +124,8 @@ def test_land_merges_and_deletes_worktree() -> None:
         assert script_content is not None
         assert str(repo.root) in script_content
 
-        # Verify "Deleted branch (worktree preserved)" message
-        assert "Deleted branch (worktree 'feature-1' preserved)" in result.output
+        # Verify "Deleted branch (worktree detached)" message
+        assert "Deleted branch (worktree 'feature-1' detached at 'main')" in result.output
 
 
 def test_land_error_from_execute_land_pr() -> None:
