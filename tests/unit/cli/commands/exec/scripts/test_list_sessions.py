@@ -27,12 +27,15 @@ from erk_shared.extraction.session_schema import extract_first_user_message_text
 from erk_shared.git.fake import FakeGit
 
 
-def _user_msg(text: str, branch: str | None = None) -> str:
+def _user_msg(text: str, *, branch: str | None = None) -> str:
     """Create JSON content for a user message.
 
     Args:
-        text: The user message text.
-        branch: Optional git branch to include in the entry.
+        text: The message content.
+        branch: Optional git branch to include as gitBranch field.
+
+    Returns:
+        JSON string representing a user message entry.
     """
     entry: dict[str, object] = {"type": "user", "message": {"content": text}}
     if branch is not None:
@@ -448,6 +451,31 @@ def test_list_sessions_branch_none_when_missing(tmp_path: Path) -> None:
     assert sessions[0].branch is None
 
 
+def test_list_sessions_populates_session_path(tmp_path: Path) -> None:
+    """Test that session_path is populated with absolute path to session file."""
+    fake_store = FakeClaudeInstallation.for_test(
+        projects={
+            tmp_path: FakeProject(
+                sessions={
+                    "abc123": FakeSessionData(
+                        content=_user_msg("Test session"),
+                        size_bytes=100,
+                        modified_at=1000.0,
+                    )
+                }
+            )
+        }
+    )
+
+    sessions, _ = _list_sessions_from_store(
+        claude_installation=fake_store, cwd=tmp_path, current_session_id=None, limit=10, min_size=0
+    )
+    assert len(sessions) == 1
+    # FakeClaudeInstallation returns project_path / "<session_id>.jsonl"
+    expected_path = str(tmp_path / "abc123.jsonl")
+    assert sessions[0].session_path == expected_path
+
+
 # ============================================================================
 # 5. Branch Context Tests (5 tests)
 # ============================================================================
@@ -623,6 +651,7 @@ def test_cli_output_structure(tmp_path: Path) -> None:
         assert "summary" in session
         assert "is_current" in session
         assert "branch" in session
+        assert "session_path" in session
 
 
 def test_cli_limit_option(tmp_path: Path) -> None:
