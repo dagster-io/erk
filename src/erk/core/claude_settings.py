@@ -315,3 +315,68 @@ def add_erk_statusline(settings: dict) -> dict:
     }
 
     return new_settings
+
+
+# Ruff format hook configuration
+ERK_RUFF_FORMAT_HOOK_COMMAND = (
+    '[[ "${file_path}" == *.py ]] && uv run ruff format "${file_path}" || true'
+)
+
+
+def has_ruff_format_hook(settings: Mapping[str, Any]) -> bool:
+    """Check if ruff format PostToolUse hook is configured.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if the ruff format PostToolUse hook for Write|Edit is configured
+    """
+    hooks = settings.get("hooks", {})
+    post_tool_hooks = hooks.get("PostToolUse", [])
+    for entry in post_tool_hooks:
+        matcher = entry.get("matcher", "")
+        # Check if matcher includes both Write and Edit (in either order)
+        if "Write" in matcher and "Edit" in matcher:
+            for hook in entry.get("hooks", []):
+                command = hook.get("command", "")
+                # Check for ruff format command
+                if "ruff format" in command:
+                    return True
+    return False
+
+
+def add_ruff_format_hook(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a new settings dict with ruff format PostToolUse hook added.
+
+    This is a pure function that doesn't modify the input.
+    Adds a PostToolUse hook for Write|Edit that runs ruff format on Python files.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with ruff format hook added
+    """
+    # Deep copy to avoid mutating input
+    new_settings = json.loads(json.dumps(settings))
+
+    # Use defaultdict for cleaner hook list initialization
+    hooks: defaultdict[str, list] = defaultdict(list, new_settings.get("hooks", {}))
+
+    # Add PostToolUse hook for Write|Edit if not already present
+    if not has_ruff_format_hook(settings):
+        hooks["PostToolUse"].append(
+            {
+                "matcher": "Write|Edit",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ERK_RUFF_FORMAT_HOOK_COMMAND,
+                    }
+                ],
+            }
+        )
+
+    new_settings["hooks"] = dict(hooks)
+    return new_settings
