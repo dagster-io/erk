@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.checkout_helpers import navigate_to_worktree
+from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
 from erk.cli.commands.completions import complete_branch_names
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
@@ -216,6 +216,8 @@ def _perform_checkout(
 
     if should_output_message:
         user_output(user_message)
+        # Display sync status after checkout message
+        display_sync_status(ctx, worktree_path=target_path, branch=branch, script=script)
 
 
 @alias("co")
