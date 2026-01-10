@@ -133,6 +133,14 @@ jobs:
           fi
           exit 0
 
+      - name: Cleanup worker-impl before submission
+        if: steps.implement.outputs.implementation_success == 'true'
+        run: |
+          if [ -d .worker-impl/ ]; then
+            rm -rf .worker-impl/
+            echo "Removed .worker-impl/ before submission"
+          fi
+
       # =================================================================
       # PHASE 4: SUBMISSION
       # =================================================================
