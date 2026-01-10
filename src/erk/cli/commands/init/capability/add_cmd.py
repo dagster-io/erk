@@ -14,14 +14,14 @@ from erk_shared.output.output import user_output
 def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
     """Install capabilities in the current repository.
 
-    NAMES are the capability names to install. Multiple capabilities can be
+    NAMES are the capability names to install. Multiple can be
     specified at once.
 
     Requires being in a git repository.
 
     Examples:
         erk init capability add learned-docs
-        erk init capability add learned-docs other-capability
+        erk init capability add learned-docs dignified-python
     """
     # Discover repo using context's cwd and git
     erk_root = ctx.erk_installation.root()

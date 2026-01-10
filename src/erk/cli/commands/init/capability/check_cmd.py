@@ -1,5 +1,7 @@
 """Check capability installation status."""
 
+from pathlib import Path
+
 import click
 
 from erk.core.capabilities import get_capability, list_capabilities
@@ -31,50 +33,59 @@ def check_cmd(ctx: ErkContext, name: str | None) -> None:
     repo_root = repo_or_sentinel.root
 
     if name is not None:
-        # Check specific capability
-        cap = get_capability(name)
-        if cap is None:
-            user_output(click.style("Error: ", fg="red") + f"Unknown capability: {name}")
-            user_output("\nAvailable capabilities:")
-            for c in list_capabilities():
-                user_output(f"  {c.name}")
-            raise SystemExit(1)
-
-        is_installed = cap.is_installed(repo_root)
-        if is_installed:
-            user_output(click.style("✓ ", fg="green") + f"{cap.name}: installed")
-        else:
-            user_output(click.style("○ ", fg="white") + f"{cap.name}: not installed")
-        user_output(f"  {cap.description}")
-
-        # Show what the check looks for
-        user_output(f"\n  Checks for: {cap.installation_check_description}")
-
-        # Show artifacts
-        if is_installed:
-            user_output("\n  Artifacts:")
-        else:
-            add_cmd = f"erk init capability add {cap.name}"
-            user_output(f"\n  Artifacts (would be created by '{add_cmd}'):")
-
-        for artifact in cap.artifacts:
-            artifact_path = repo_root / artifact.path
-            exists = artifact_path.exists()
-            if exists:
-                status = click.style("✓", fg="green")
-            else:
-                status = click.style("○", fg="white")
-            user_output(f"    {status} {artifact.path:25} ({artifact.artifact_type})")
+        _check_capability(name, repo_root)
     else:
-        # Check all capabilities
-        caps = list_capabilities()
-        if not caps:
-            user_output("No capabilities registered.")
-            return
+        _check_all(repo_root)
 
-        user_output(f"Capabilities in {repo_root.name}:")
-        for cap in caps:
-            if cap.is_installed(repo_root):
-                user_output(click.style("  ✓ ", fg="green") + f"{cap.name:20} {cap.description}")
-            else:
-                user_output(click.style("  ○ ", fg="white") + f"{cap.name:20} {cap.description}")
+
+def _check_capability(name: str, repo_root: Path) -> None:
+    """Check a specific capability."""
+    cap = get_capability(name)
+    if cap is None:
+        user_output(click.style("Error: ", fg="red") + f"Unknown capability: {name}")
+        user_output("\nAvailable capabilities:")
+        for c in list_capabilities():
+            user_output(f"  {c.name}")
+        raise SystemExit(1)
+
+    is_installed = cap.is_installed(repo_root)
+    if is_installed:
+        user_output(click.style("✓ ", fg="green") + f"{cap.name}: installed")
+    else:
+        user_output(click.style("○ ", fg="white") + f"{cap.name}: not installed")
+    user_output(f"  {cap.description}")
+
+    # Show what the check looks for
+    user_output(f"\n  Checks for: {cap.installation_check_description}")
+
+    # Show artifacts
+    if is_installed:
+        user_output("\n  Artifacts:")
+    else:
+        add_cmd = f"erk init capability add {cap.name}"
+        user_output(f"\n  Artifacts (would be created by '{add_cmd}'):")
+
+    for artifact in cap.artifacts:
+        artifact_path = repo_root / artifact.path
+        exists = artifact_path.exists()
+        if exists:
+            status = click.style("✓", fg="green")
+        else:
+            status = click.style("○", fg="white")
+        user_output(f"    {status} {artifact.path:25} ({artifact.artifact_type})")
+
+
+def _check_all(repo_root: Path) -> None:
+    """Check all capabilities."""
+    caps = list_capabilities()
+
+    if not caps:
+        user_output("No capabilities registered.")
+        return
+
+    user_output("Erk project capabilities:")
+    for cap in sorted(caps, key=lambda c: c.name):
+        if cap.is_installed(repo_root):
+            user_output(click.style("  ✓ ", fg="green") + f"{cap.name:25} {cap.description}")
+        else:
+            user_output(click.style("  ○ ", fg="white") + f"{cap.name:25} {cap.description}")
