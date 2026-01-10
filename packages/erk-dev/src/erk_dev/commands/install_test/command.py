@@ -149,6 +149,28 @@ def repo(name: str) -> None:
     run_docker_command(["repo", name], repo_root)
 
 
+@install_test_command.command(name="ready")
+@click.argument("scenario")
+def ready(scenario: str) -> None:
+    """Drop into shell with scenario ready for testing.
+
+    Sets up the specified scenario, installs erk, and drops to shell.
+    Unlike 'repo', does not run automatic tests.
+
+    \b
+    Scenarios:
+        blank            - Fresh project with no .erk or .claude config
+        dagster-compass  - Existing repo fixture
+
+    \b
+    Example:
+        erk-dev install-test ready blank
+        # Now just type: erk init
+    """
+    repo_root = get_repo_root()
+    run_docker_command(["ready", scenario], repo_root)
+
+
 def list_available_repos() -> list[str]:
     """List available repo fixtures."""
     fixtures_dir = get_fixtures_repos_dir()

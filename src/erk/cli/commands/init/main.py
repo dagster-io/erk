@@ -1,3 +1,5 @@
+"""Main init command implementation."""
+
 import dataclasses
 import json
 from pathlib import Path
@@ -6,6 +8,7 @@ import click
 
 from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
+from erk.core.capabilities import list_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     NoBackupCreated,
@@ -70,6 +73,7 @@ def detect_graphite(shell_ops: Shell) -> bool:
 def create_and_save_global_config(
     ctx: ErkContext,
     erk_root: Path,
+    *,
     shell_setup_complete: bool,
 ) -> GlobalConfig:
     """Create and save global config, returning the created config."""
@@ -122,7 +126,8 @@ def _create_prompt_hooks_directory(repo_root: Path) -> None:
     prompt_hooks_dir.mkdir(parents=True, exist_ok=True)
 
     # Install README template
-    template_path = Path(__file__).parent.parent / "prompt_hooks_templates" / "README.md"
+    # parent.parent.parent = commands/ (from init/main.py -> init/ -> commands/)
+    template_path = Path(__file__).parent.parent.parent / "prompt_hooks_templates" / "README.md"
     readme_path = prompt_hooks_dir / "README.md"
 
     if template_path.exists():
@@ -232,7 +237,8 @@ def perform_shell_setup(shell_ops: Shell) -> bool:
 
     # Generate the instructions
     completion_line = f"source <(erk completion {shell})"
-    shell_integration_dir = Path(__file__).parent.parent / "shell_integration"
+    # parent.parent.parent = commands/ (from init/main.py -> init/ -> commands/)
+    shell_integration_dir = Path(__file__).parent.parent.parent / "shell_integration"
     wrapper_content = get_shell_wrapper_content(shell_integration_dir, shell)
 
     # Print the formatted instructions
@@ -473,39 +479,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     return True
 
 
-@click.command("init")
-@click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
-@click.option(
-    "--shell",
-    is_flag=True,
-    help="Show shell integration setup instructions (completion + auto-activation wrapper).",
-)
-@click.option(
-    "--hooks",
-    "hooks_only",
-    is_flag=True,
-    help="Only set up Claude Code hooks.",
-)
-@click.option(
-    "--statusline",
-    "statusline_only",
-    is_flag=True,
-    help="Only configure erk-statusline in Claude Code.",
-)
-@click.option(
-    "--no-interactive",
-    "no_interactive",
-    is_flag=True,
-    help="Skip all interactive prompts (gitignore, permissions, hooks, shell setup).",
-)
-@click.option(
-    "--with-dignified-review",
-    "with_dignified_review",
-    is_flag=True,
-    help="Install dignified-python skill and review workflow.",
-)
-@click.pass_obj
-def init_cmd(
+def run_init(
     ctx: ErkContext,
     *,
     force: bool,
@@ -762,5 +736,19 @@ def init_cmd(
     # 3c. Status line configuration
     if interactive:
         perform_statusline_setup(settings_path=None)
+
+    # Show capability status
+    all_caps = list_capabilities()
+    if all_caps:
+        user_output("\nCapabilities:")
+        for cap in all_caps:
+            if cap.is_installed(repo_root):
+                user_output(click.style("  ✓ ", fg="green") + f"{cap.name:20} {cap.description}")
+            else:
+                user_output(
+                    click.style("  ○ ", fg="yellow")
+                    + f"{cap.name:20} {cap.description} "
+                    + click.style("(not installed)", fg="yellow")
+                )
 
     user_output(click.style("\n✓", fg="green") + " Initialization complete!")

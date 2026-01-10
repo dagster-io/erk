@@ -3,7 +3,7 @@ from unittest import mock
 
 import pytest
 
-from erk.cli.commands.init import create_and_save_global_config
+from erk.cli.commands.init.main import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
 from erk.core.context import context_for_test
@@ -180,7 +180,7 @@ def test_create_global_config_creates_parent_directory(tmp_path: Path) -> None:
         cwd=tmp_path,
     )
 
-    with mock.patch("erk.cli.commands.init.detect_graphite", return_value=False):
+    with mock.patch("erk.cli.commands.init.main.detect_graphite", return_value=False):
         create_and_save_global_config(ctx, Path("/tmp/erks"), shell_setup_complete=False)
 
     # Verify config was saved to in-memory installation
