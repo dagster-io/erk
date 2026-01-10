@@ -117,6 +117,7 @@ def _check_all(repo_root: Path | None) -> None:
     user_output("Erk capabilities:")
     for cap in sorted(caps, key=lambda c: (c.scope, c.name)):
         scope_label = f"[{cap.scope}]"
+        check_desc = f"({cap.installation_check_description})"
         cap_line = f"{cap.name:25} {scope_label:10} {cap.description}"
 
         # Determine if we can check this capability
@@ -126,6 +127,6 @@ def _check_all(repo_root: Path | None) -> None:
         else:
             check_repo_root = repo_root if cap.scope == "project" else None
             if cap.is_installed(check_repo_root):
-                user_output(click.style("  ✓ ", fg="green") + cap_line)
+                user_output(click.style("  ✓ ", fg="green") + cap_line + "  " + check_desc)
             else:
-                user_output(click.style("  ○ ", fg="white") + cap_line)
+                user_output(click.style("  ○ ", fg="white") + cap_line + "  " + check_desc)
