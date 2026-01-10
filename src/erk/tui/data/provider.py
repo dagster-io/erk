@@ -507,6 +507,7 @@ class RealPlanDataProvider(PlanDataProvider):
             run_state_display=run_state_display,
             run_url=run_url,
             full_title=full_title,
+            issue_body=plan.body or "",
             pr_title=pr_title,
             pr_state=pr_state,
             worktree_branch=worktree_branch,

@@ -185,6 +185,7 @@ class HelpScreen(ModalScreen):
                 yield Label("Actions", classes="help-section-title")
                 yield Label("Enter   View plan details", classes="help-binding")
                 yield Label("Ctrl+P  Commands (opens detail modal)", classes="help-binding")
+                yield Label("v       View plan text", classes="help-binding")
                 yield Label("o       Open PR (or issue if no PR)", classes="help-binding")
                 yield Label("p       Open PR in browser", classes="help-binding")
                 yield Label("i       Show implement command", classes="help-binding")
@@ -204,6 +205,101 @@ class HelpScreen(ModalScreen):
 
             yield Label("")
             yield Label("Press any key to close", id="help-footer")
+
+
+class IssueBodyScreen(ModalScreen):
+    """Modal screen displaying the full issue body text."""
+
+    BINDINGS = [
+        Binding("escape", "dismiss", "Close"),
+        Binding("q", "dismiss", "Close"),
+        Binding("space", "dismiss", "Close"),
+    ]
+
+    DEFAULT_CSS = """
+    IssueBodyScreen {
+        align: center middle;
+    }
+
+    #body-dialog {
+        width: 90%;
+        max-width: 120;
+        height: 80%;
+        background: $surface;
+        border: solid $primary;
+        padding: 1 2;
+    }
+
+    #body-header {
+        width: 100%;
+        height: auto;
+        margin-bottom: 1;
+    }
+
+    #body-plan-number {
+        text-style: bold;
+        color: $primary;
+    }
+
+    #body-title {
+        color: $text;
+    }
+
+    #body-divider {
+        height: 1;
+        background: $primary-darken-2;
+        margin-bottom: 1;
+    }
+
+    #body-content-container {
+        height: 1fr;
+        overflow-y: auto;
+    }
+
+    #body-content {
+        width: 100%;
+    }
+
+    #body-footer {
+        text-align: center;
+        margin-top: 1;
+        color: $text-muted;
+    }
+
+    #body-empty {
+        color: $text-muted;
+        text-style: italic;
+    }
+    """
+
+    def __init__(self, row: PlanRowData) -> None:
+        """Initialize with plan row data.
+
+        Args:
+            row: PlanRowData containing issue body and metadata
+        """
+        super().__init__()
+        self._row = row
+
+    def compose(self) -> ComposeResult:
+        """Create the issue body dialog content."""
+        with Vertical(id="body-dialog"):
+            # Header: Plan number + title
+            with Vertical(id="body-header"):
+                yield Label(f"Plan #{self._row.issue_number}", id="body-plan-number")
+                yield Label(self._row.full_title, id="body-title", markup=False)
+
+            # Divider
+            yield Label("", id="body-divider")
+
+            # Body content in scrollable container
+            with Container(id="body-content-container"):
+                if self._row.issue_body:
+                    yield Static(self._row.issue_body, id="body-content", markup=False)
+                else:
+                    yield Label("(No issue body)", id="body-empty")
+
+            yield Label("Press Esc, q, or Space to close", id="body-footer")
 
 
 class PlanDetailScreen(ModalScreen):
@@ -950,6 +1046,7 @@ class ErkDashApp(App):
         # NOTE: 'c' binding removed - close_plan now accessible via command palette
         # in the plan detail modal (Enter → Ctrl+P → "Close Plan")
         Binding("i", "show_implement", "Implement"),
+        Binding("v", "view_issue_body", "View", show=False),
         Binding("slash", "start_filter", "Filter", key_display="/"),
         Binding("s", "toggle_sort", "Sort"),
         Binding("ctrl+p", "command_palette", "Commands"),
@@ -1242,6 +1339,16 @@ class ErkDashApp(App):
                 repo_root=self._provider.repo_root,
             )
         )
+
+    def action_view_issue_body(self) -> None:
+        """Display the issue body in a modal."""
+        row = self._get_selected_row()
+        if row is None:
+            return
+        if not row.issue_body:
+            self.notify("No issue body available", severity="warning")
+            return
+        self.push_screen(IssueBodyScreen(row))
 
     def action_cursor_down(self) -> None:
         """Move cursor down (vim j key)."""

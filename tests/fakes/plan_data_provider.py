@@ -134,6 +134,7 @@ def make_plan_row(
     title: str = "Test Plan",
     *,
     issue_url: str | None = None,
+    issue_body: str = "",
     pr_number: int | None = None,
     pr_url: str | None = None,
     pr_title: str | None = None,
@@ -153,6 +154,7 @@ def make_plan_row(
         issue_number: GitHub issue number
         title: Plan title
         issue_url: URL to the issue (defaults to GitHub URL pattern)
+        issue_body: Raw issue body text (markdown)
         pr_number: PR number if linked
         pr_url: URL to PR
         pr_title: PR title
@@ -195,6 +197,7 @@ def make_plan_row(
         run_state_display="-",
         run_url=run_url,
         full_title=title,
+        issue_body=issue_body,
         pr_title=pr_title,
         pr_state=pr_state,
         worktree_branch=worktree_branch,
