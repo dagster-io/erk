@@ -166,10 +166,17 @@ If this fails, you have violated instructions. The .impl/ folder must be preserv
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
-After CI passes:
+After CI passes, clean up `.worker-impl/` if present:
 
-- `.worker-impl/`: delete folder, commit cleanup, push
-- `.impl/`: **NEVER DELETE** - leave for user review (no auto-commit)
+```bash
+if [ -d .worker-impl/ ]; then
+  git rm -rf .worker-impl/
+  git commit -m "Remove .worker-impl/ after implementation"
+  git push
+fi
+```
+
+**CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
 
 ### Step 14: Create/Update PR (if .worker-impl/ present)
 
