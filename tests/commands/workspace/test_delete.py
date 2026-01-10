@@ -317,11 +317,11 @@ def test_delete_with_branch_with_graphite() -> None:
 
 
 def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
-    """Test --branch with Graphite enabled still uses gt delete even for untracked branches.
+    """Test --branch with Graphite enabled falls back to git for untracked branches.
 
-    When use_graphite=True, all branch deletions go through the Graphite gateway
-    (via BranchManager). The actual `gt delete` command handles untracked branches
-    gracefully, so there's no need for fallback logic in the BranchManager.
+    When use_graphite=True but the branch is not tracked by Graphite, the
+    GraphiteBranchManager uses LBYL to detect this and falls back to git delete.
+    This avoids Graphite errors for untracked/diverged branches.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -357,11 +357,13 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
             obj=test_ctx,
         )
 
-        # Assert: Command should succeed; deletion goes through Graphite gateway
-        # even for untracked branches (gt delete handles this gracefully)
+        # Assert: Command should succeed
         assert_cli_success(result)
-        # Branch deletion goes through Graphite gateway since use_graphite=True
-        assert any(
+        # Branch deletion falls back to git (not Graphite) since branch is untracked
+        # GraphiteBranchManager.delete_branch does LBYL check and uses git fallback
+        assert "untracked-feature" in fake_git_ops.deleted_branches
+        # Graphite delete was NOT called for this untracked branch
+        assert not any(
             branch == "untracked-feature" for _path, branch in graphite_ops.delete_branch_calls
         )
 

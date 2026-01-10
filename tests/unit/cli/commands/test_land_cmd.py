@@ -18,6 +18,7 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -559,7 +560,19 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
         },
     )
 
-    fake_graphite = FakeGraphite()
+    # Configure FakeGraphite to track the branch so GraphiteBranchManager uses Graphite delete
+    # (GraphiteBranchManager.delete_branch does LBYL check before calling graphite.delete_branch)
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
 
     ctx = context_for_test(
         git=fake_git,
@@ -604,8 +617,8 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
     ]
     assert len(matching_assignments) == 0, "Slot should have been unassigned"
 
-    # Verify branch was deleted via Graphite (since FakeGraphite is used)
-    # GraphiteBranchManager.delete_branch calls graphite.delete_branch
+    # Verify branch was deleted via Graphite (since FakeGraphite is used and branch is tracked)
+    # GraphiteBranchManager.delete_branch calls graphite.delete_branch when branch is tracked
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
 
@@ -657,7 +670,19 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
         },
     )
 
-    fake_graphite = FakeGraphite()
+    # Configure FakeGraphite to track the branch so GraphiteBranchManager uses Graphite delete
+    # (GraphiteBranchManager.delete_branch does LBYL check before calling graphite.delete_branch)
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
 
     ctx = context_for_test(
         git=fake_git,
@@ -706,7 +731,8 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
     assert len(checkout_calls) == 1, "Should have checked out placeholder branch"
     assert checkout_calls[0][0] == slot_worktree_path
 
-    # Verify branch was deleted via Graphite
+    # Verify branch was deleted via Graphite (since FakeGraphite is used and branch is tracked)
+    # GraphiteBranchManager.delete_branch calls graphite.delete_branch when branch is tracked
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
 
@@ -750,7 +776,19 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
         },
     )
 
-    fake_graphite = FakeGraphite()
+    # Configure FakeGraphite to track the branch so GraphiteBranchManager uses Graphite delete
+    # (GraphiteBranchManager.delete_branch does LBYL check before calling graphite.delete_branch)
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
 
     ctx = context_for_test(
         git=fake_git,
@@ -795,7 +833,8 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
     # Verify worktree was NOT removed (preserved)
     assert non_slot_worktree_path not in fake_git.removed_worktrees
 
-    # Verify branch was deleted via Graphite
+    # Verify branch was deleted via Graphite (since FakeGraphite is used and branch is tracked)
+    # GraphiteBranchManager.delete_branch calls graphite.delete_branch when branch is tracked
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
 
