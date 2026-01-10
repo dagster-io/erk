@@ -54,9 +54,10 @@ If `docs/learned/` is missing or empty, the command will fail with a suggestion 
 ## What It Does
 
 1. Analyzes session(s) for documentation gaps
-2. Identifies both learning gaps (Category A) and teaching gaps (Category B)
-3. Creates a GitHub issue with `erk-plan` + `erk-extraction` labels
-4. Outputs next steps for implementation
+2. Uploads preprocessed session XML to a secret gist for review
+3. Identifies both learning gaps (Category A) and teaching gaps (Category B)
+4. Creates a GitHub issue with `erk-plan` + `erk-extraction` labels
+5. Outputs next steps for implementation
 
 ## What You'll Get
 
@@ -161,6 +162,40 @@ Match session IDs against filenames (full or partial prefix match), then preproc
 ```bash
 erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout
 ```
+
+### Step 1.5: Upload Raw Materials to Gist
+
+After determining which session(s) to analyze, upload the preprocessed session XML to a secret gist for user review.
+
+**For each selected session:**
+
+1. Create scratch directory and preprocess the session to XML:
+
+   ```bash
+   mkdir -p .erk/scratch/sessions/<session-id>
+   erk exec preprocess-session <project-dir>/<session-id>.jsonl --stdout > .erk/scratch/sessions/<session-id>/session.xml
+   ```
+
+2. Create a secret gist with all preprocessed session files:
+
+   ```bash
+   gh gist create --secret --desc "Extraction plan raw materials: <session-ids>" .erk/scratch/sessions/*/session.xml
+   ```
+
+3. Capture the gist URL from the output and display to the user:
+
+   ```
+   📋 Raw materials uploaded to gist for review:
+      <gist-url>
+
+   Proceeding with analysis...
+   ```
+
+4. **Save the gist URL** for inclusion in the extraction plan issue (Step 11)
+
+5. Continue with Step 2
+
+**Note:** This step allows users to review the raw session content that will be analyzed. The gist is secret (not publicly discoverable) but shareable via URL.
 
 ### Step 2: Check for Associated Plan Issue Session Content
 
@@ -297,6 +332,7 @@ Format the selected suggestions as an implementation plan with this structure:
 
 - **Objective**: Brief statement of what documentation will be added/improved
 - **Source Information**: Session ID(s) that were analyzed
+- **Raw Materials**: Link to the gist containing preprocessed session XML (from Step 1.5)
 - **Documentation Items**: Each suggestion should include:
   - Type (Category A or B)
   - Location (where in the docs structure)
