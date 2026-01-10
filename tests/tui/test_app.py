@@ -3,6 +3,7 @@
 from pathlib import Path
 
 import pytest
+from textual.widgets import Markdown
 
 from erk.tui.app import ErkDashApp, HelpScreen, IssueBodyScreen, PlanDetailScreen
 from erk.tui.data.types import PlanFilters
@@ -1318,3 +1319,30 @@ class TestIssueBodyScreen:
             assert isinstance(body_screen, IssueBodyScreen)
             assert body_screen._issue_number == 456
             assert body_screen._full_title == full_title
+
+    @pytest.mark.asyncio
+    async def test_issue_body_screen_renders_content_as_markdown(self) -> None:
+        """IssueBodyScreen renders plan content using Markdown widget."""
+        plan_content = "# Header\n\n- List item 1\n- List item 2"
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", issue_body="metadata body")]
+        )
+        provider.set_plan_content(123, plan_content)
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("v")
+            await pilot.pause()
+            # Wait for async fetch to complete
+            await pilot.pause(0.3)
+
+            body_screen = app.screen_stack[-1]
+            assert isinstance(body_screen, IssueBodyScreen)
+
+            # Verify content is rendered as Markdown widget
+            content_widget = body_screen.query_one("#body-content", Markdown)
+            assert content_widget is not None
