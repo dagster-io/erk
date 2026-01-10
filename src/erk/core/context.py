@@ -45,9 +45,10 @@ from erk_shared.extraction.claude_installation import ClaudeInstallation
 
 # Import erk-specific integrations
 from erk_shared.gateway.completion import Completion
+from erk_shared.gateway.console.abc import Console
+from erk_shared.gateway.console.real import InteractiveConsole, ScriptConsole
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
-from erk_shared.gateway.feedback import InteractiveFeedback, SuppressedFeedback, UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
@@ -56,8 +57,6 @@ from erk_shared.gateway.graphite.disabled import (
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
 from erk_shared.gateway.shell import Shell
-from erk_shared.gateway.terminal.abc import Terminal
-from erk_shared.gateway.terminal.real import RealTerminal
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
@@ -101,11 +100,10 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_installation import FakeClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
-    from erk_shared.gateway.terminal.fake import FakeTerminal
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
@@ -115,7 +113,12 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
     fake_graphite = FakeGraphite()
-    fake_terminal = FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None)
+    fake_console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=None,
+    )
     fake_time = FakeTime()
     return ErkContext(
         git=git,
@@ -124,14 +127,13 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         issues=fake_issues,
         plan_store=GitHubPlanStore(fake_issues, fake_time),
         graphite=fake_graphite,
-        terminal=fake_terminal,
+        console=fake_console,
         shell=FakeShell(),
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
-        feedback=FakeUserFeedback(),
         plan_list_service=FakePlanListService(),
         planner_registry=FakePlannerRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
@@ -154,14 +156,13 @@ def context_for_test(
     issues: GitHubIssues | None = None,
     plan_store: PlanStore | None = None,
     graphite: Graphite | None = None,
-    terminal: Terminal | None = None,
+    console: Console | None = None,
     shell: Shell | None = None,
     claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
     time: Time | None = None,
     erk_installation: ErkInstallation | None = None,
     script_writer: ScriptWriter | None = None,
-    feedback: UserFeedback | None = None,
     plan_list_service: PlanListService | None = None,
     planner_registry: PlannerRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
@@ -187,6 +188,7 @@ def context_for_test(
                    If None, creates empty FakeGitHubIssues.
         graphite: Optional Graphite implementation.
                      If None, creates empty FakeGraphite.
+        console: Optional Console implementation. If None, creates FakeConsole.
         shell: Optional Shell implementation. If None, creates empty FakeShell.
         completion: Optional Completion implementation.
                        If None, creates empty FakeCompletion.
@@ -194,8 +196,6 @@ def context_for_test(
                           If None, creates FakeErkInstallation with test config.
         script_writer: Optional ScriptWriter implementation.
                       If None, creates empty FakeScriptWriter.
-        feedback: Optional UserFeedback implementation.
-                    If None, creates FakeUserFeedback.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         cwd: Optional current working directory. If None, uses sentinel_path().
         global_config: Optional GlobalConfig. If None, uses test defaults.
@@ -215,12 +215,11 @@ def context_for_test(
     from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.extraction.claude_installation import FakeClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
-    from erk_shared.gateway.terminal.fake import FakeTerminal
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -259,8 +258,13 @@ def context_for_test(
         else:
             graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
-    if terminal is None:
-        terminal = FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None)
+    if console is None:
+        console = FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=None,
+            is_stderr_tty=None,
+            confirm_responses=None,
+        )
 
     if shell is None:
         shell = FakeShell()
@@ -276,9 +280,6 @@ def context_for_test(
 
     if script_writer is None:
         script_writer = FakeScriptWriter()
-
-    if feedback is None:
-        feedback = FakeUserFeedback()
 
     if plan_list_service is None:
         # If github and issues were provided, wire them up via RealPlanListService
@@ -325,14 +326,13 @@ def context_for_test(
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
-        terminal=terminal,
+        console=console,
         shell=shell,
         claude_executor=claude_executor,
         completion=completion,
         time=time,
         erk_installation=erk_installation,
         script_writer=script_writer,
-        feedback=feedback,
         plan_list_service=plan_list_service,
         planner_registry=planner_registry,
         claude_installation=claude_installation,
@@ -424,7 +424,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     Args:
         dry_run: If True, wrap all dependencies with dry-run wrappers that
                  print intended actions without executing them
-        script: If True, use SuppressedFeedback to suppress diagnostic output
+        script: If True, use ScriptConsole to suppress diagnostic output
                 for shell integration mode (default False)
         debug: If True, enable debug mode for error handling (default False)
 
@@ -461,9 +461,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         global_config = None
 
     # 4. Create integration classes (need git for repo discovery)
-    # Create time and terminal first
+    # Create time and console first
     time: Time = RealTime()
-    terminal: Terminal = RealTerminal()
+    console: Console = ScriptConsole() if script else InteractiveConsole()
     git: Git = RealGit()
 
     # Create Graphite based on config and availability
@@ -513,27 +513,20 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = RealPlanListService(github, issues)
 
-    # 9. Choose feedback implementation based on mode
-    feedback: UserFeedback
-    if script:
-        feedback = SuppressedFeedback()  # Suppress diagnostics
-    else:
-        feedback = InteractiveFeedback()  # Show all messages
-
-    # 10. Apply dry-run wrappers if needed
+    # 9. Apply dry-run wrappers if needed
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
         github = DryRunGitHub(github)
         issues = DryRunGitHubIssues(issues)
 
-    # 11. Create claude installation and prompt executor
+    # 10. Create claude installation and prompt executor
     from erk_shared.extraction.claude_installation import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
 
-    # 12. Create context with all values
+    # 11. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -541,14 +534,13 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         issues=issues,
         plan_store=plan_store,
         graphite=graphite,
-        terminal=terminal,
+        console=console,
         shell=RealShell(),
-        claude_executor=RealClaudeExecutor(terminal=terminal),
+        claude_executor=RealClaudeExecutor(console=console),
         completion=RealCompletion(),
         time=time,
         erk_installation=erk_installation,
         script_writer=RealScriptWriter(),
-        feedback=feedback,
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(erk_installation.get_planners_config_path()),
         claude_installation=real_claude_installation,

@@ -709,14 +709,19 @@ def test_checkout_tracks_untracked_branch_with_graphite() -> None:
         )
 
         # use_graphite=True is required for Graphite tracking behavior
-        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, use_graphite=True)
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[True],  # Confirm tracking
+        )
 
-        # Checkout the untracked branch (non-script mode, confirm with 'y')
+        # Checkout the untracked branch (non-script mode)
         result = runner.invoke(
             cli,
             ["branch", "checkout", "feature-untracked"],
             obj=test_ctx,
-            input="y\n",
             catch_exceptions=False,
         )
 
@@ -769,14 +774,19 @@ def test_checkout_skips_tracking_when_user_declines() -> None:
         )
 
         # use_graphite=True is required for Graphite tracking prompt
-        test_ctx = env.build_context(git=git_ops, graphite=graphite, repo=repo, use_graphite=True)
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[False],  # Decline tracking
+        )
 
-        # Checkout the untracked branch (non-script mode, decline with 'n')
+        # Checkout the untracked branch (non-script mode)
         result = runner.invoke(
             cli,
             ["branch", "checkout", "feature-untracked"],
             obj=test_ctx,
-            input="n\n",
             catch_exceptions=False,
         )
 

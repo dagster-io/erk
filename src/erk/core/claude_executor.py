@@ -30,8 +30,8 @@ from erk_shared.core.claude_executor import PrUrlEvent as PrUrlEvent
 from erk_shared.core.claude_executor import SpinnerUpdateEvent as SpinnerUpdateEvent
 from erk_shared.core.claude_executor import TextEvent as TextEvent
 from erk_shared.core.claude_executor import ToolEvent as ToolEvent
-from erk_shared.gateway.terminal.abc import Terminal
-from erk_shared.gateway.terminal.real import RealTerminal
+from erk_shared.gateway.console.abc import Console
+from erk_shared.gateway.console.real import InteractiveConsole
 
 # Constants for process execution
 PROCESS_TIMEOUT_SECONDS = 600  # 10 minutes
@@ -43,14 +43,14 @@ logger = logging.getLogger(__name__)
 class RealClaudeExecutor(ClaudeExecutor):
     """Production implementation using subprocess and Claude CLI."""
 
-    def __init__(self, terminal: Terminal | None) -> None:
-        """Initialize RealClaudeExecutor with Terminal dependency.
+    def __init__(self, console: Console | None) -> None:
+        """Initialize RealClaudeExecutor with Console dependency.
 
         Args:
-            terminal: Terminal gateway for TTY detection.
-                If None, creates a RealTerminal instance.
+            console: Console gateway for TTY detection.
+                If None, creates an InteractiveConsole instance.
         """
-        self._terminal = terminal if terminal is not None else RealTerminal()
+        self._console = console if console is not None else InteractiveConsole()
 
     def is_claude_available(self) -> bool:
         """Check if Claude CLI is in PATH using shutil.which."""
@@ -459,7 +459,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         # captured stdout (e.g., shell integration), while avoiding unnecessary
         # redirection when already running in a terminal (which can break tools
         # like Bun that expect specific TTY capabilities).
-        if not (self._terminal.is_stdout_tty() and self._terminal.is_stderr_tty()):
+        if not (self._console.is_stdout_tty() and self._console.is_stderr_tty()):
             try:
                 tty_fd = os.open("/dev/tty", os.O_RDWR)
                 os.dup2(tty_fd, 0)  # stdin

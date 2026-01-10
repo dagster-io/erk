@@ -15,7 +15,8 @@ from erk.cli.shell_utils import (
 from erk.cli.uvx_detection import get_uvx_warning_message, is_running_via_uvx
 from erk.core.context import create_context
 from erk_shared.debug import debug_log
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.output.output import user_output
 
 PASSTHROUGH_MARKER: Final[str] = "__ERK_PASSTHROUGH__"
 PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}
@@ -166,7 +167,7 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     if is_running_via_uvx():
         user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message(command_name))
         user_output("")  # Blank line for readability
-        if not user_confirm("Continue anyway?", default=False):
+        if not InteractiveConsole().confirm("Continue anyway?", default=False):
             return ShellIntegrationResult(passthrough=False, script=None, exit_code=1)
 
     # Clean up stale scripts before running (opportunistic cleanup)

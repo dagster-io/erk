@@ -10,12 +10,12 @@ Tests the check_and_display_plan_issue_closure helper that shows:
 from datetime import UTC, datetime
 from io import StringIO
 from pathlib import Path
-from unittest import mock
 from unittest.mock import patch
 
 from erk.cli.commands.objective_helpers import check_and_display_plan_issue_closure
 from erk.core.context import context_for_test
 from erk_shared.context.types import LoadedConfig
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -257,17 +257,22 @@ def test_without_closing_ref_warns_issue_wont_close(tmp_path: Path) -> None:
     issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
     fake_time = FakeTime()
 
+    # User declines to close issue
+    console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=[False],
+    )
     ctx = context_for_test(
         issues=issues_ops,
         cwd=tmp_path,
         time=fake_time,
+        console=console,
     )
 
     captured = StringIO()
-    with (
-        patch("sys.stderr", captured),
-        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False),
-    ):
+    with patch("sys.stderr", captured):
         result = check_and_display_plan_issue_closure(
             ctx,
             tmp_path,
@@ -350,18 +355,23 @@ def test_cross_repo_missing_reference_warns(tmp_path: Path) -> None:
     # Configure plans_repo for cross-repo reference
     local_config = LoadedConfig.test(plans_repo="owner/plans-repo")
 
+    # User declines to close issue
+    console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=[False],
+    )
     ctx = context_for_test(
         issues=issues_ops,
         cwd=tmp_path,
         time=fake_time,
         local_config=local_config,
+        console=console,
     )
 
     captured = StringIO()
-    with (
-        patch("sys.stderr", captured),
-        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False),
-    ):
+    with patch("sys.stderr", captured):
         result = check_and_display_plan_issue_closure(
             ctx,
             tmp_path,
@@ -456,17 +466,22 @@ def test_without_closing_ref_offers_to_close_and_user_accepts(tmp_path: Path) ->
     issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
     fake_time = FakeTime()
 
+    # User accepts to close issue
+    console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=[True],
+    )
     ctx = context_for_test(
         issues=issues_ops,
         cwd=tmp_path,
         time=fake_time,
+        console=console,
     )
 
     captured = StringIO()
-    with (
-        patch("sys.stderr", captured),
-        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=True),
-    ):
+    with patch("sys.stderr", captured):
         result = check_and_display_plan_issue_closure(
             ctx,
             tmp_path,
@@ -491,17 +506,22 @@ def test_without_closing_ref_offers_to_close_and_user_declines(tmp_path: Path) -
     issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
     fake_time = FakeTime()
 
+    # User declines to close issue
+    console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=[False],
+    )
     ctx = context_for_test(
         issues=issues_ops,
         cwd=tmp_path,
         time=fake_time,
+        console=console,
     )
 
     captured = StringIO()
-    with (
-        patch("sys.stderr", captured),
-        mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False),
-    ):
+    with patch("sys.stderr", captured):
         result = check_and_display_plan_issue_closure(
             ctx,
             tmp_path,

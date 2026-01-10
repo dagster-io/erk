@@ -660,15 +660,18 @@ def test_down_delete_current_force_with_open_pr_confirmed() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[True, False],  # Confirm delete, decline close PR
         )
 
-        # Simulate user confirming delete with 'y', declining close PR with 'n'
         result = runner.invoke(
             cli,
             ["down", "--delete-current", "-f", "--script"],
             obj=test_ctx,
-            input="y\nn\n",
             catch_exceptions=False,
         )
 
@@ -762,15 +765,18 @@ def test_down_delete_current_force_with_open_pr_declined() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[False],  # Decline delete
         )
 
-        # Simulate user declining with 'n'
         result = runner.invoke(
             cli,
             ["down", "--delete-current", "-f", "--script"],
             obj=test_ctx,
-            input="n\n",
             catch_exceptions=False,
         )
 
@@ -852,15 +858,18 @@ def test_down_delete_current_force_with_open_pr_close_confirmed() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[True, True],  # Confirm delete, confirm close PR
         )
 
-        # Simulate user confirming delete with 'y', AND confirming close PR with 'y'
         result = runner.invoke(
             cli,
             ["down", "--delete-current", "-f", "--script"],
             obj=test_ctx,
-            input="y\ny\n",
             catch_exceptions=False,
         )
 
@@ -954,15 +963,18 @@ def test_down_delete_current_force_with_open_pr_close_declined() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[True, False],  # Confirm delete, decline close PR
         )
 
-        # Simulate user confirming delete with 'y', but declining close PR with 'n'
         result = runner.invoke(
             cli,
             ["down", "--delete-current", "-f", "--script"],
             obj=test_ctx,
-            input="y\nn\n",
             catch_exceptions=False,
         )
 

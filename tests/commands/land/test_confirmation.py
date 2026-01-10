@@ -90,15 +90,26 @@ def test_land_cleanup_confirmation_decline() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # User declines cleanup confirmation
+        from erk_shared.gateway.console.fake import FakeConsole
+
+        console = FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=None,
+            is_stderr_tty=None,
+            confirm_responses=[False],  # Decline branch deletion
+        )
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            console=console,
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Provide "n" as input to decline the confirmation
-        result = runner.invoke(
-            cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False, input="n\n"
-        )
+        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
 
@@ -112,7 +123,7 @@ def test_land_cleanup_confirmation_decline() -> None:
         assert "Branch preserved" in result.output
 
         # Verify confirmation prompt mentions branch and worktree preservation
-        assert "Delete branch 'feature-1'? (worktree preserved)" in result.output
+        assert "Delete branch 'feature-1'? (worktree preserved)" in console.confirm_prompts
 
         # Verify NO navigation script was written (user stays in current worktree)
         assert env.script_writer.last_script is None

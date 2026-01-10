@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     import click
 
 from erk_shared.context.types import NoRepoSentinel
-from erk_shared.gateway.terminal.real import RealTerminal
+from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.hooks.logging import (
     MAX_STDERR_BYTES,
     MAX_STDIN_BYTES,
@@ -59,8 +59,8 @@ def _read_stdin_once() -> str:
 
     This is a one-time read - stdin cannot be read again after this.
     """
-    terminal = RealTerminal()
-    if terminal.is_stdin_interactive():
+    console = InteractiveConsole()
+    if console.is_stdin_interactive():
         return ""
     return sys.stdin.read()
 

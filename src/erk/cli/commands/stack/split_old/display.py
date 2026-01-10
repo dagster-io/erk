@@ -5,7 +5,8 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.stack.split_old.plan import SplitPlan
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.gateway.console.abc import Console
+from erk_shared.output.output import user_output
 
 
 def display_stack_preview(
@@ -71,10 +72,11 @@ def display_creation_preview(
         user_output("\n✅ All branches already have worktrees or are excluded")
 
 
-def confirm_split(force: bool, dry_run: bool) -> None:
+def confirm_split(console: Console, *, force: bool, dry_run: bool) -> None:
     """Prompt user for confirmation unless --force or --dry-run.
 
     Args:
+        console: Console for user prompts
         force: Whether to skip confirmation
         dry_run: Whether this is a dry run
 
@@ -83,7 +85,7 @@ def confirm_split(force: bool, dry_run: bool) -> None:
     """
     if not force and not dry_run:
         user_output("")
-        if not user_confirm("Proceed with creating worktrees?", default=False):
+        if not console.confirm("Proceed with creating worktrees?", default=False):
             user_output(click.style("⭕ Aborted", fg="yellow"))
             raise SystemExit(1)
 

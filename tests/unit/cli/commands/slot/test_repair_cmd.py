@@ -252,12 +252,12 @@ def test_slot_repair_confirmation_required_without_force() -> None:
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
-
-        # Simulate user saying 'n' to confirmation
-        result = runner.invoke(
-            cli, ["slot", "repair"], obj=test_ctx, input="n\n", catch_exceptions=False
+        # User declines confirmation
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, erk_installation=erk_install, confirm_responses=[False]
         )
+
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Found 1 repairable issue" in result.output
@@ -297,12 +297,12 @@ def test_slot_repair_confirmation_yes() -> None:
         initial_state = PoolState.test(assignments=(assignment,))
         erk_install = FakeErkInstallation(initial_pool_state=initial_state)
 
-        test_ctx = env.build_context(git=git_ops, repo=repo, erk_installation=erk_install)
-
-        # Simulate user saying 'y' to confirmation
-        result = runner.invoke(
-            cli, ["slot", "repair"], obj=test_ctx, input="y\n", catch_exceptions=False
+        # User confirms
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, erk_installation=erk_install, confirm_responses=[True]
         )
+
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 0
         assert "Removed 1 stale assignment" in result.output

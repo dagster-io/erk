@@ -50,7 +50,7 @@ from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.types import PRDetails, PRNotFound
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 
 
 class ParsedArgument(NamedTuple):
@@ -149,14 +149,14 @@ def check_unresolved_comments(
             click.style("⚠ ", fg="yellow")
             + f"PR #{pr_number} has {len(threads)} unresolved review comment(s)."
         )
-        if not ctx.terminal.is_stdin_interactive():
+        if not ctx.console.is_stdin_interactive():
             user_output(
                 click.style("Error: ", fg="red")
                 + "Cannot prompt for confirmation in non-interactive mode.\n"
                 + "Use --force to skip this check."
             )
             raise SystemExit(1)
-        if not user_confirm("Continue anyway?", default=False):
+        if not ctx.console.confirm("Continue anyway?", default=False):
             raise SystemExit(0)
 
 
@@ -269,7 +269,7 @@ def _cleanup_and_navigate(
             # state is guaranteed to be non-None since assignment was found in it
             assert state is not None
             if not force and not ctx.dry_run:
-                if not user_confirm(
+                if not ctx.console.confirm(
                     f"Unassign slot '{assignment.slot_name}' and delete branch '{branch}'?",
                     default=True,
                 ):
@@ -296,7 +296,7 @@ def _cleanup_and_navigate(
             user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
 
             if not force and not ctx.dry_run:
-                if not user_confirm(
+                if not ctx.console.confirm(
                     f"Release slot '{slot_name}' and delete branch '{branch}'?",
                     default=True,
                 ):
@@ -322,7 +322,7 @@ def _cleanup_and_navigate(
                 raise SystemExit(1)
 
             if not force and not ctx.dry_run:
-                if not user_confirm(
+                if not ctx.console.confirm(
                     f"Delete branch '{branch}'? (worktree preserved)",
                     default=True,
                 ):

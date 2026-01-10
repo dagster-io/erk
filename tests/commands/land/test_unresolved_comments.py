@@ -13,9 +13,9 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from erk_shared.gateway.terminal.fake import FakeTerminal
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -111,24 +111,22 @@ def test_land_warns_on_unresolved_comments() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # User declines to continue when prompted about unresolved comments
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            terminal=FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None),
+            confirm_responses=[False],  # Decline unresolved comments prompt
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # User declines to continue when prompted about unresolved comments
-        # (FakeTerminal configured as interactive)
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="n\n",
         )
 
         # Should exit cleanly (user chose not to continue)
@@ -136,7 +134,6 @@ def test_land_warns_on_unresolved_comments() -> None:
 
         # Should show warning about unresolved comments
         assert "has 2 unresolved review comment(s)" in result.output
-        assert "Continue anyway?" in result.output
 
         # PR should NOT have been merged (user declined)
         assert len(github_ops.merged_prs) == 0
@@ -329,24 +326,22 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # User confirms both prompts (unresolved comments + cleanup)
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            terminal=FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None),
+            confirm_responses=[True, True],  # Confirm unresolved comments, confirm cleanup
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # User confirms with "y\n" for unresolved comments, then "y\n" for cleanup
-        # (FakeTerminal configured as interactive)
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="y\ny\n",
         )
 
         assert result.exit_code == 0
@@ -434,18 +429,22 @@ def test_land_handles_rate_limit_gracefully() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # Confirm branch deletion prompt
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            confirm_responses=[True],  # Confirm branch deletion
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # "y\n" to confirm worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="y\n",
         )
 
         assert result.exit_code == 0
@@ -544,17 +543,24 @@ def test_land_fails_non_interactive_with_unresolved_comments() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # Non-interactive mode: console has no confirm_responses (would raise)
+        console = FakeConsole(
+            is_interactive=False,
+            is_stdout_tty=None,
+            is_stderr_tty=None,
+            confirm_responses=None,
+        )
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            terminal=FakeTerminal(is_interactive=False, is_stdout_tty=None, is_stderr_tty=None),
+            console=console,
         )
         test_ctx = replace(test_ctx, issues=issues_ops)
 
-        # Run in non-interactive mode (FakeTerminal configured as non-interactive)
+        # Run in non-interactive mode
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],

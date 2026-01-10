@@ -16,7 +16,7 @@ from erk.core.worktree_utils import (
     find_worktree_with_branch,
     get_worktree_branch,
 )
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 
 
 def _resolve_current_worktree(ctx: ErkContext, repo_root: Path) -> Path:
@@ -196,7 +196,7 @@ def execute_swap(
         user_output("This will swap branches between worktrees:")
         user_output(f"  '{source_wt.name}': '{source_branch}' → '{target_branch}'")
         user_output(f"  '{target_wt.name}': '{target_branch}' → '{source_branch}'")
-        if not user_confirm("Continue?", default=False):
+        if not ctx.console.confirm("Continue?", default=False):
             user_output("Swap cancelled")
             raise SystemExit(0)
 

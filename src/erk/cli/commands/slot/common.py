@@ -10,8 +10,9 @@ import click
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+from erk_shared.gateway.console.abc import Console
 from erk_shared.git.abc import Git
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 
 
 @dataclass(frozen=True)
@@ -262,9 +263,10 @@ def display_pool_assignments(state: PoolState) -> None:
 
 
 def handle_pool_full_interactive(
+    console: Console,
     state: PoolState,
+    *,
     force: bool,
-    is_tty: bool,
 ) -> SlotAssignment | None:
     """Handle pool-full condition: prompt to unassign oldest or error.
 
@@ -274,9 +276,9 @@ def handle_pool_full_interactive(
     - If non-interactive (no TTY): error with instructions
 
     Args:
+        console: Console for user prompts
         state: Current pool state
         force: If True, auto-unassign oldest without prompting
-        is_tty: Whether running in an interactive terminal
 
     Returns:
         SlotAssignment to unassign, or None if user declined/error
@@ -289,7 +291,7 @@ def handle_pool_full_interactive(
         user_output(f"Pool is full. --force specified, unassigning oldest: {oldest.branch_name}")
         return oldest
 
-    if not is_tty:
+    if not console.is_stdin_interactive():
         user_output(
             f"Error: Pool is full ({state.pool_size} slots). "
             "Use --force to auto-unassign the oldest branch, "
@@ -302,7 +304,7 @@ def handle_pool_full_interactive(
     user_output(f"Pool is full ({state.pool_size} slots).")
     user_output(f"Oldest assignment: {oldest.branch_name} ({oldest.slot_name})")
 
-    if user_confirm(f"Unassign '{oldest.branch_name}' to make room?", default=False):
+    if console.confirm(f"Unassign '{oldest.branch_name}' to make room?", default=False):
         return oldest
 
     user_output("Aborted.")
@@ -398,9 +400,7 @@ def allocate_slot_for_branch(
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
         if slot_num is None:
             # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(
-                state, force, ctx.terminal.is_stdin_interactive()
-            )
+            to_unassign = handle_pool_full_interactive(ctx.console, state, force=force)
             if to_unassign is None:
                 raise SystemExit(1) from None
 

@@ -9,7 +9,6 @@ Tests the behavior when landing a PR linked to an objective:
 
 from dataclasses import replace
 from datetime import UTC, datetime
-from unittest import mock
 
 from click.testing import CliRunner
 
@@ -123,24 +122,24 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # With --force, objective update runs automatically
+        # Decline closing plan issue (missing closing ref prompt)
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
+            confirm_responses=[False],  # Decline closing plan issue prompt
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # Mock user_confirm in objective_helpers to decline closing plan issue
-        # (the new prompt added for offering to close issues missing closing refs)
-        with mock.patch("erk.cli.commands.objective_helpers.user_confirm", return_value=False):
-            result = runner.invoke(
-                cli,
-                ["land", "123", "--script", "--force"],
-                obj=test_ctx,
-                catch_exceptions=False,
-            )
+        result = runner.invoke(
+            cli,
+            ["land", "123", "--script", "--force"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
 
@@ -233,22 +232,26 @@ def test_land_user_declines_objective_update_shows_command() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # User says "n" to close plan issue, "n" to objective update, "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
+            confirm_responses=[
+                False,
+                False,
+                True,
+            ],  # Decline close, decline update, confirm cleanup
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # User says "n" to close plan issue, "n" to objective update, "y" to worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="n\nn\ny\n",
         )
 
         assert result.exit_code == 0
@@ -335,22 +338,22 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
+            confirm_responses=[False, True, True],  # Decline close, confirm update, confirm cleanup
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="n\ny\ny\n",
         )
 
         assert result.exit_code == 0
@@ -444,22 +447,22 @@ def test_land_claude_failure_shows_retry_command() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
+        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
+            confirm_responses=[False, True, True],  # Decline close, confirm update, confirm cleanup
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
-        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
         result = runner.invoke(
             cli,
             ["land", "123", "--script"],
             obj=test_ctx,
             catch_exceptions=False,
-            input="n\ny\ny\n",
         )
 
         assert result.exit_code == 0

@@ -45,17 +45,17 @@ def pr_checkout(
     Ensure.gh_authenticated(ctx)
 
     if isinstance(ctx.repo, NoRepoSentinel):
-        ctx.feedback.error("Not in a git repository")
+        ctx.console.error("Not in a git repository")
         raise SystemExit(1)
     repo: RepoContext = ctx.repo
 
     pr_number = parse_pr_reference(pr_reference)
 
     # Get PR details from GitHub
-    ctx.feedback.info(f"Fetching PR #{pr_number}...")
+    ctx.console.info(f"Fetching PR #{pr_number}...")
     pr = ctx.github.get_pr(repo.root, pr_number)
     if isinstance(pr, PRNotFound):
-        ctx.feedback.error(
+        ctx.console.error(
             f"Could not find PR #{pr_number}\n\n"
             "Check the PR number and ensure you're authenticated with gh CLI."
         )
@@ -63,7 +63,7 @@ def pr_checkout(
 
     # Warn for closed/merged PRs
     if pr.state != "OPEN":
-        ctx.feedback.info(f"Warning: PR #{pr_number} is {pr.state}")
+        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
 
     # Determine branch name strategy
     # For cross-repository PRs (forks), use pr/<number> to avoid conflicts
@@ -151,15 +151,15 @@ def pr_checkout(
     # which `gt track` requires for proper stacking
     trunk_branch = ctx.git.detect_trunk_branch(repo.root)
     if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
-        ctx.feedback.info(f"Fetching base branch '{pr.base_ref_name}'...")
+        ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
         ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)
 
-        ctx.feedback.info("Rebasing onto base branch...")
+        ctx.console.info("Rebasing onto base branch...")
         rebase_result = ctx.git.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
 
         if not rebase_result.success:
             ctx.git.rebase_abort(worktree_path)
-            ctx.feedback.info(
+            ctx.console.info(
                 f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )

@@ -73,8 +73,8 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
     from erk_shared.extraction.claude_installation import RealClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
-    from erk_shared.gateway.feedback import SuppressedFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
@@ -117,8 +117,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         )
 
     # Use fake implementations for erk-specific services that erk-kits doesn't need
-    from erk_shared.gateway.terminal.real import RealTerminal
-
     fake_graphite = FakeGraphite()
     github_issues = RealGitHubIssues(target_repo=None)
     time = RealTime()
@@ -131,13 +129,12 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         claude_installation=RealClaudeInstallation(),
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,
-        terminal=RealTerminal(),
+        console=ScriptConsole(),
         time=fake_time,
         erk_installation=erk_installation,
         plan_store=GitHubPlanStore(github_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
-        feedback=SuppressedFeedback(),
         claude_executor=FakeClaudeExecutor(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),

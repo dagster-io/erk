@@ -163,7 +163,7 @@ def _create_worktree_with_plan_content(
         # Branch already has a slot - use it
         slot_name = existing_assignment.slot_name
         wt_path = existing_assignment.worktree_path
-        ctx.feedback.info(f"Branch '{branch}' already assigned to {slot_name}")
+        ctx.console.info(f"Branch '{branch}' already assigned to {slot_name}")
 
         # Handle dry-run mode
         if dry_run:
@@ -178,13 +178,13 @@ def _create_worktree_with_plan_content(
             return None
 
         # Just update .impl/ folder with new plan content
-        ctx.feedback.info("Updating .impl/ folder with plan...")
+        ctx.console.info("Updating .impl/ folder with plan...")
         create_impl_folder(
             worktree_path=wt_path,
             plan_content=plan_source.plan_content,
             overwrite=True,
         )
-        ctx.feedback.success("✓ Updated .impl/ folder")
+        ctx.console.success("✓ Updated .impl/ folder")
 
         return WorktreeCreationResult(
             worktree_path=wt_path,
@@ -205,9 +205,7 @@ def _create_worktree_with_plan_content(
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
         if slot_num is None:
             # Pool is full - handle interactively or with --force
-            to_unassign = handle_pool_full_interactive(
-                state, force, ctx.terminal.is_stdin_interactive()
-            )
+            to_unassign = handle_pool_full_interactive(ctx.console, state, force=force)
             if to_unassign is None:
                 raise SystemExit(1) from None
 
@@ -248,7 +246,7 @@ def _create_worktree_with_plan_content(
         return None
 
     # Create worktree at slot path
-    ctx.feedback.info(f"Assigning to slot '{slot_name}'...")
+    ctx.console.info(f"Assigning to slot '{slot_name}'...")
 
     # Load local config
     config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
@@ -261,11 +259,11 @@ def _create_worktree_with_plan_content(
         # Check for uncommitted changes before checkout
         _check_worktree_clean_for_checkout(ctx, wt_path, slot_name)
         if use_existing_branch:
-            ctx.feedback.info(f"Checking out existing branch '{branch}'...")
+            ctx.console.info(f"Checking out existing branch '{branch}'...")
             ctx.git.checkout_branch(wt_path, branch)
         else:
             # Create branch and checkout
-            ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
+            ctx.console.info(f"Creating branch '{branch}' from {base_branch}...")
             ctx.git.create_branch(repo_root, branch, base_branch)
             if use_graphite:
                 ctx.graphite.track_branch(repo_root, branch, base_branch)
@@ -274,7 +272,7 @@ def _create_worktree_with_plan_content(
         # On-demand slot creation
         if not use_existing_branch:
             # Create branch first
-            ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
+            ctx.console.info(f"Creating branch '{branch}' from {base_branch}...")
             ctx.git.create_branch(repo_root, branch, base_branch)
             if use_graphite:
                 ctx.graphite.track_branch(repo_root, branch, base_branch)
@@ -298,7 +296,7 @@ def _create_worktree_with_plan_content(
                 create_branch=False,
             )
 
-    ctx.feedback.success(f"✓ Assigned {branch} to {slot_name}")
+    ctx.console.success(f"✓ Assigned {branch} to {slot_name}")
 
     # Create slot assignment
     now = ctx.time.now().isoformat()
@@ -337,7 +335,7 @@ def _create_worktree_with_plan_content(
                 assignments=new_state.assignments,
             )
         save_pool_state(repo.pool_json_path, new_state)
-        ctx.feedback.info(f"Linked to objective #{objective_issue}")
+        ctx.console.info(f"Linked to objective #{objective_issue}")
 
     # Run post-worktree setup
     run_post_worktree_setup(
@@ -345,13 +343,13 @@ def _create_worktree_with_plan_content(
     )
 
     # Create .impl/ folder with plan content at worktree root
-    ctx.feedback.info("Creating .impl/ folder with plan...")
+    ctx.console.info("Creating .impl/ folder with plan...")
     create_impl_folder(
         worktree_path=wt_path,
         plan_content=plan_source.plan_content,
         overwrite=True,
     )
-    ctx.feedback.success("✓ Created .impl/ folder")
+    ctx.console.success("✓ Created .impl/ folder")
 
     return WorktreeCreationResult(
         worktree_path=wt_path,
@@ -455,11 +453,11 @@ def _implement_from_issue(
 
     # Save issue reference for PR linking (issue-specific)
     # Use impl_dir from result to handle monorepo project-root placement
-    ctx.feedback.info("Saving issue reference for PR linking...")
+    ctx.console.info("Saving issue reference for PR linking...")
     plan = ctx.plan_store.get_plan(repo.root, issue_number)
     save_issue_reference(result.impl_dir, int(issue_number), plan.url, plan.title)
 
-    ctx.feedback.success(f"✓ Saved issue reference: {plan.url}")
+    ctx.console.success(f"✓ Saved issue reference: {plan.url}")
 
     # Execute based on mode
     if script:
@@ -560,10 +558,10 @@ def _implement_from_file(
     wt_path = result.worktree_path
 
     # Delete original plan file (move semantics, file-specific)
-    ctx.feedback.info(f"Removing original plan file: {plan_file.name}...")
+    ctx.console.info(f"Removing original plan file: {plan_file.name}...")
     plan_file.unlink()
 
-    ctx.feedback.success("✓ Moved plan file to worktree")
+    ctx.console.success("✓ Moved plan file to worktree")
 
     # Execute based on mode
     if script:
@@ -691,9 +689,9 @@ def implement(
 
     # Output target detection diagnostic
     if target_info.target_type in ("issue_number", "issue_url"):
-        ctx.feedback.info(f"Detected GitHub issue #{target_info.issue_number}")
+        ctx.console.info(f"Detected GitHub issue #{target_info.issue_number}")
     elif target_info.target_type == "file_path":
-        ctx.feedback.info(f"Detected plan file: {target}")
+        ctx.console.info(f"Detected plan file: {target}")
 
     if target_info.target_type in ("issue_number", "issue_url"):
         # GitHub issue mode

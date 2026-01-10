@@ -89,6 +89,7 @@ from erk.core.context import ErkContext, context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.script_writer import RealScriptWriter
 from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import Git, WorktreeInfo
@@ -387,6 +388,8 @@ class ErkIsolatedFsEnv:
         shell: FakeShell | None = None,
         repo: RepoContext | None = None,
         dry_run: bool = False,
+        confirm_responses: list[bool] | None = None,
+        console: FakeConsole | None = None,
         **kwargs,
     ) -> ErkContext:
         """Build ErkContext with smart defaults for test scenarios.
@@ -405,6 +408,8 @@ class ErkIsolatedFsEnv:
             shell: Custom FakeShell instance
             repo: Custom RepoContext (default: None)
             dry_run: Whether to wrap with DryRunGit
+            confirm_responses: List of boolean responses for console.confirm() calls
+            console: Custom FakeConsole instance (overrides confirm_responses)
             **kwargs: Additional context_for_test() parameters
 
         Returns:
@@ -545,11 +550,21 @@ class ErkIsolatedFsEnv:
         if "trunk_branch" in kwargs:
             kwargs.pop("trunk_branch")
 
+        # Use provided console or create one with confirm responses
+        if console is None:
+            console = FakeConsole(
+                is_interactive=True,
+                is_stdout_tty=None,
+                is_stderr_tty=None,
+                confirm_responses=confirm_responses,
+            )
+
         return context_for_test(
             git=git,
             graphite=graphite,
             github=github,
             shell=shell,
+            console=console,
             global_config=global_config,
             repo=repo,
             dry_run=dry_run,
@@ -812,6 +827,8 @@ class ErkInMemEnv:
         existing_paths: set[Path] | None = None,
         file_contents: dict[Path, str] | None = None,
         dry_run: bool = False,
+        confirm_responses: list[bool] | None = None,
+        console: FakeConsole | None = None,
         **kwargs,
     ) -> ErkContext:
         """Build ErkContext with smart defaults for test scenarios.
@@ -832,6 +849,8 @@ class ErkInMemEnv:
             existing_paths: Set of sentinel paths to treat as existing (pure mode only)
             file_contents: Mapping of sentinel paths to file content (pure mode only)
             dry_run: Whether to wrap with DryRunGit
+            confirm_responses: List of boolean responses for console.confirm() calls
+            console: Custom FakeConsole instance (overrides confirm_responses)
             **kwargs: Additional context_for_test() parameters
 
         Returns:
@@ -972,11 +991,21 @@ class ErkInMemEnv:
         if "trunk_branch" in kwargs:
             kwargs.pop("trunk_branch")
 
+        # Use provided console or create one with confirm responses
+        if console is None:
+            console = FakeConsole(
+                is_interactive=True,
+                is_stdout_tty=None,
+                is_stderr_tty=None,
+                confirm_responses=confirm_responses,
+            )
+
         return context_for_test(
             git=git,
             graphite=graphite,
             github=github,
             shell=shell,
+            console=console,
             global_config=global_config,
             repo=repo,
             dry_run=dry_run,

@@ -14,7 +14,7 @@ from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
 from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.naming import extract_leading_issue_number
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +130,7 @@ def check_and_display_plan_issue_closure(
             + f"PR missing closing reference - plan issue #{plan_number} won't auto-close"
         )
         # Offer to close the issue manually
-        if user_confirm(f"Close issue #{plan_number} now?", default=True):
+        if ctx.console.confirm(f"Close issue #{plan_number} now?", default=True):
             ctx.issues.close_issue(repo_root, plan_number)
             user_output(click.style("✓", fg="green") + f" Closed plan issue #{plan_number}")
 
@@ -213,7 +213,7 @@ def prompt_objective_update(
 
     # Ask y/n prompt
     user_output("")
-    if not user_confirm("Update objective now? (runs Claude agent)", default=True):
+    if not ctx.console.confirm("Update objective now? (runs Claude agent)", default=True):
         user_output("")
         user_output("Skipped. To update later, run:")
         user_output(f"  {cmd}")

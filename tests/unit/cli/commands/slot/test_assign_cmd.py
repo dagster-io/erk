@@ -7,7 +7,7 @@ from erk.cli.commands.slot.common import cleanup_worktree_artifacts
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
-from erk_shared.gateway.terminal.fake import FakeTerminal
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -314,12 +314,15 @@ def test_slot_assign_pool_full_non_tty_fails() -> None:
         save_pool_state(repo.pool_json_path, full_state)
 
         local_config = LoadedConfig.test(pool_size=1)
-        # Terminal must be non-interactive to test the non-TTY failure path
+        # Console must be non-interactive to test the non-TTY failure path
+        console = FakeConsole(
+            is_interactive=False, is_stdout_tty=None, is_stderr_tty=None, confirm_responses=None
+        )
         test_ctx = env.build_context(
             git=git_ops,
             repo=repo,
             local_config=local_config,
-            terminal=FakeTerminal(is_interactive=False, is_stdout_tty=None, is_stderr_tty=None),
+            console=console,
         )
 
         # Try to assign without --force (non-interactive terminal)

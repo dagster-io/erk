@@ -24,7 +24,7 @@ from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import SlotAssignment, load_pool_state
 from erk.core.worktree_utils import find_worktree_with_branch
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanState
 
 
@@ -179,7 +179,7 @@ def _format_plan_text(plan_info: tuple[int, PlanState] | None) -> str:
         return f"Plan #{number} already {state_text}"
 
 
-def _confirm_branch_delete(force: bool, dry_run: bool) -> bool:
+def _confirm_branch_delete(ctx: ErkContext, *, force: bool, dry_run: bool) -> bool:
     """Prompt for confirmation unless force or dry-run mode.
 
     Returns True if operations should proceed, False if aborted.
@@ -188,7 +188,7 @@ def _confirm_branch_delete(force: bool, dry_run: bool) -> bool:
         return True
 
     user_output()
-    if not user_confirm("Proceed with these operations?", default=True):
+    if not ctx.console.confirm("Proceed with these operations?", default=True):
         user_output(click.style("⭕ Aborted.", fg="red", bold=True))
         return False
 
@@ -307,7 +307,7 @@ def _delete_branch(
     )
 
     # Confirm with user
-    if not _confirm_branch_delete(force, dry_run):
+    if not _confirm_branch_delete(ctx, force=force, dry_run=dry_run):
         return
 
     # Execute operations in order:

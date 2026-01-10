@@ -214,7 +214,7 @@ def split_cmd(ctx: ErkContext, *, force: bool, dry_run: bool, up: bool, down: bo
         return
 
     # 8. Get user confirmation
-    confirm_split(force, dry_run)
+    confirm_split(ctx.console, force=force, dry_run=dry_run)
 
     # 9. Execute or simulate
     user_output("")

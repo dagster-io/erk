@@ -28,12 +28,11 @@ from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.completion import Completion
+from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
-from erk_shared.gateway.feedback import UserFeedback
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.shell import Shell
-from erk_shared.gateway.terminal.abc import Terminal
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -71,7 +70,7 @@ class ErkContext:
     github_admin: GitHubAdmin  # GitHub Actions admin operations
     issues: GitHubIssues  # Note: ErkContext naming (was github_issues in DotAgentContext)
     graphite: Graphite
-    terminal: Terminal  # TTY detection for interactive prompts
+    console: Console  # TTY detection, user feedback, and confirmation prompts
     time: Time
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
@@ -81,7 +80,6 @@ class ErkContext:
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell
     completion: Completion
-    feedback: UserFeedback
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
     claude_executor: ClaudeExecutor
@@ -164,6 +162,24 @@ class ErkContext:
         if isinstance(self.graphite, GraphiteDisabled):
             return GitBranchManager(git=self.git, github=self.github)
         return GraphiteBranchManager(git=self.git, graphite=self.graphite)
+
+    @property
+    def terminal(self) -> Console:
+        """Deprecated alias for console - use ctx.console instead.
+
+        This property provides backward compatibility during migration.
+        Console provides all Terminal methods (is_stdin_interactive, is_stdout_tty, is_stderr_tty).
+        """
+        return self.console
+
+    @property
+    def feedback(self) -> Console:
+        """Deprecated alias for console - use ctx.console instead.
+
+        This property provides backward compatibility during migration.
+        Console provides all UserFeedback methods (info, success, error).
+        """
+        return self.console
 
     @staticmethod
     def for_test(

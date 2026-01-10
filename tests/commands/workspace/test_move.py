@@ -175,11 +175,11 @@ def test_move_swap_requires_confirmation() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        test_ctx = env.build_context(git=git_ops, existing_paths={source_wt, target_wt})
-
-        result = runner.invoke(
-            cli, ["stack", "move", "--worktree", "wt1", "wt2"], input="n\n", obj=test_ctx
+        test_ctx = env.build_context(
+            git=git_ops, existing_paths={source_wt, target_wt}, confirm_responses=[False]
         )
+
+        result = runner.invoke(cli, ["stack", "move", "--worktree", "wt1", "wt2"], obj=test_ctx)
 
         assert result.exit_code == 0
         assert "This will swap branches between worktrees:" in result.output

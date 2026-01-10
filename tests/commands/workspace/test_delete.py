@@ -100,8 +100,8 @@ def test_delete_prompts_and_aborts_on_no() -> None:
         repo_name = env.cwd.name
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "bar"
 
-        test_ctx = build_workspace_test_context(env, existing_paths={wt})
-        result = runner.invoke(cli, ["wt", "delete", "bar"], input="n\n", obj=test_ctx)
+        test_ctx = build_workspace_test_context(env, existing_paths={wt}, confirm_responses=[False])
+        result = runner.invoke(cli, ["wt", "delete", "bar"], obj=test_ctx)
 
         assert_cli_success(result)
         # User aborted, so worktree should still exist (check via git_ops state)
@@ -583,12 +583,11 @@ def test_delete_all_shows_plan_steps_in_confirmation() -> None:
             git=fake_git,
             shell=FakeShell(),
             existing_paths={wt},
+            confirm_responses=[False],  # Abort at confirmation
         )
 
         # Don't force, abort at confirmation to see the plan
-        result = runner.invoke(
-            cli, ["wt", "delete", "test-feature", "-a"], input="n\n", obj=test_ctx
-        )
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a"], obj=test_ctx)
 
         assert_cli_success(result)
         # Should show PR and plan closing steps (no PR/plan exists, so shows "if any")
@@ -688,12 +687,11 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
             issues=fake_issues,
             shell=FakeShell(),
             existing_paths={wt},
+            confirm_responses=[False],  # Abort at confirmation
         )
 
         # Abort at confirmation to see the planning output
-        result = runner.invoke(
-            cli, ["wt", "delete", "test-feature", "-a"], input="n\n", obj=test_ctx
-        )
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a"], obj=test_ctx)
 
         assert_cli_success(result)
         # Should show actual PR and plan numbers in planning phase
@@ -727,12 +725,11 @@ def test_delete_all_shows_merged_pr_status_in_confirmation() -> None:
             github=fake_github,
             shell=FakeShell(),
             existing_paths={wt},
+            confirm_responses=[False],  # Abort at confirmation
         )
 
         # Abort at confirmation to see the planning output
-        result = runner.invoke(
-            cli, ["wt", "delete", "test-feature", "-a"], input="n\n", obj=test_ctx
-        )
+        result = runner.invoke(cli, ["wt", "delete", "test-feature", "-a"], obj=test_ctx)
 
         assert_cli_success(result)
         # Should show that PR is already merged in planning phase

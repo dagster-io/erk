@@ -13,7 +13,7 @@ from erk.cli.commands.slot.diagnostics import (
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 
 # Issue codes that can be repaired by removing the assignment
 REPAIRABLE_CODES = frozenset(
@@ -211,7 +211,7 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
 
     # Prompt for confirmation unless --force or --dry-run
     if not force and not dry_run:
-        if not user_confirm("\nRemove these stale assignments?", default=True):
+        if not ctx.console.confirm("\nRemove these stale assignments?", default=True):
             user_output("Aborted.")
             return
 

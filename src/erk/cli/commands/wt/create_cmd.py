@@ -984,7 +984,7 @@ def run_commands_in_worktree(
 
     for cmd in commands:
         # Output per-command diagnostic
-        ctx.feedback.info(f"Running: {cmd}")
+        ctx.console.info(f"Running: {cmd}")
         cmd_list = [shell, "-lc", cmd] if shell else shlex.split(cmd)
         run_with_error_reporting(
             cmd_list,

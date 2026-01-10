@@ -517,17 +517,17 @@ def prepare_plan_source_from_issue(
         SystemExit: If issue not found or doesn't have erk-plan label
     """
     # Output fetching diagnostic
-    ctx.feedback.info("Fetching issue from GitHub...")
+    ctx.console.info("Fetching issue from GitHub...")
 
     # Fetch plan from GitHub
     try:
         plan = ctx.plan_store.get_plan(repo_root, issue_number)
     except RuntimeError as e:
-        ctx.feedback.error(f"Error: {e}")
+        ctx.console.error(f"Error: {e}")
         raise SystemExit(1) from e
 
     # Output issue title
-    ctx.feedback.info(f"Issue: {plan.title}")
+    ctx.console.info(f"Issue: {plan.title}")
 
     # Prepare and validate using shared helper (returns union type)
     result = prepare_plan_for_worktree(plan, ctx.time.now())
@@ -574,11 +574,11 @@ def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSourc
     """
     # Validate plan file exists
     if not plan_file.exists():
-        ctx.feedback.error(f"Error: Plan file not found: {plan_file}")
+        ctx.console.error(f"Error: Plan file not found: {plan_file}")
         raise SystemExit(1) from None
 
     # Output reading diagnostic
-    ctx.feedback.info("Reading plan file...")
+    ctx.console.info("Reading plan file...")
 
     # Read plan content
     plan_content = plan_file.read_text(encoding="utf-8")
@@ -593,7 +593,7 @@ def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSourc
             break
 
     # Output plan title
-    ctx.feedback.info(f"Plan: {title}")
+    ctx.console.info(f"Plan: {title}")
 
     # Derive base name from filename
     plan_stem = plan_file.stem

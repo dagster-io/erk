@@ -39,11 +39,15 @@ from erk.core.repo_discovery import (
 from erk.core.shell import Shell
 from erk_shared.context.types import GlobalConfig
 from erk_shared.extraction.claude_installation import RealClaudeInstallation
+from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.git.real import RealGit
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
+
+# Console for init command prompts (always interactive)
+_console = InteractiveConsole()
 
 # Default config template for new repositories
 DEFAULT_CONFIG_TEMPLATE = """\
@@ -279,7 +283,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
     user_output("\nClaude settings found. The erk permission allows Claude to run")
     user_output("erk commands without prompting for approval each time.")
 
-    if not user_confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
+    if not _console.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
         user_output("Skipped. You can add the permission manually to .claude/settings.json")
         return NoBackupCreated()
 
@@ -288,7 +292,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
 
     # Confirm before overwriting
     user_output(f"\nThis will update: {settings_path}")
-    if not user_confirm("Proceed with writing changes?", default=True):
+    if not _console.confirm("Proceed with writing changes?", default=True):
         user_output("Skipped. No changes made to settings.json")
         return NoBackupCreated()
 
@@ -356,7 +360,7 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
     user_output(f"\nPlans repo configured: {plans_repo}")
     user_output("Erk uses labels (erk-plan, erk-extraction, erk-objective) to organize issues.")
 
-    if not user_confirm(f"Set up erk labels in {plans_repo}?", default=True):
+    if not _console.confirm(f"Set up erk labels in {plans_repo}?", default=True):
         user_output("Skipped. You can set up labels later with: erk doctor --fix")
         return
 
@@ -419,7 +423,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     # Different statusline configured - warn and prompt
     if not isinstance(current_config, StatuslineNotConfigured):
         user_output(f"\n  Existing statusLine found: {current_config.command}")
-        if not user_confirm(f"  Replace with {get_erk_statusline_command()}?", default=False):
+        if not _console.confirm(f"  Replace with {get_erk_statusline_command()}?", default=False):
             user_output("  Skipped. Keeping existing statusLine configuration.")
             return False
 
@@ -463,7 +467,7 @@ def run_init(
             user_output("\nTo remember that shell setup is complete, erk needs to update:")
             user_output(f"  {config_path}")
 
-            if not user_confirm("Proceed with updating global config?", default=False):
+            if not _console.confirm("Proceed with updating global config?", default=False):
                 user_output("\nShell integration instructions shown above.")
                 user_output("Run 'erk init --shell' to save this preference.")
                 return
@@ -657,7 +661,7 @@ def run_init(
                         user_output(f"    {config_path}")
 
                         prompt = "  Proceed with updating global config?"
-                        if not user_confirm(prompt, default=False):
+                        if not _console.confirm(prompt, default=False):
                             user_output("\n  Shell integration instructions shown above.")
                             user_output("  Run 'erk init --shell' to save this preference.")
                         else:

@@ -65,11 +65,10 @@ def context_for_test(
     """
     from erk_shared.extraction.claude_installation import FakeClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
-    from erk_shared.gateway.feedback import FakeUserFeedback
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell import FakeShell
-    from erk_shared.gateway.terminal.fake import FakeTerminal
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -107,7 +106,12 @@ def context_for_test(
     )
 
     fake_time = FakeTime()
-    fake_terminal = FakeTerminal(is_interactive=True, is_stdout_tty=None, is_stderr_tty=None)
+    fake_console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=None,
+    )
     return ErkContext(
         git=resolved_git,
         github=resolved_github,
@@ -116,13 +120,12 @@ def context_for_test(
         claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
-        terminal=fake_terminal,
+        console=fake_console,
         time=fake_time,
         erk_installation=FakeErkInstallation(),
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
-        feedback=FakeUserFeedback(),
         claude_executor=FakeClaudeExecutor(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),

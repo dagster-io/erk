@@ -228,6 +228,8 @@ def test_consolidate_dry_run_shows_preview() -> None:
 
 def test_consolidate_confirmation_prompt() -> None:
     """Test consolidate prompts for confirmation without --force."""
+    from erk_shared.gateway.console.fake import FakeConsole
+
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Configure graphite with stack (main -> feature-1)
@@ -248,18 +250,29 @@ def test_consolidate_confirmation_prompt() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             current_branches={env.cwd: "feature-1"},
         )
+
+        # Create console with response to capture prompt
+        console = FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=None,
+            is_stderr_tty=None,
+            confirm_responses=[False],  # Say "no" to prompt
+        )
         test_ctx = build_workspace_test_context(
             env,
             use_graphite=True,
             git=git_ops,
             graphite=graphite_ops,
+            console=console,
         )
 
         # Test saying "no" to prompt
-        result = runner.invoke(cli, ["stack", "consolidate"], input="n\n", obj=test_ctx)
+        result = runner.invoke(cli, ["stack", "consolidate"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Proceed with removal?" in result.output
+        # Verify the confirmation prompt was shown (prompt includes full context)
+        assert len(console.confirm_prompts) == 1
+        assert "Proceed with removal?" in console.confirm_prompts[0]
         assert "Aborted" in result.output
         assert len(test_ctx.git.removed_worktrees) == 0
 

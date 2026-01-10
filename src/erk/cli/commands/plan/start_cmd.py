@@ -174,7 +174,7 @@ def plan_start(
     else:
         branch = _generate_timestamp_name()
 
-    ctx.feedback.info(f"Planning branch: {branch}")
+    ctx.console.info(f"Planning branch: {branch}")
 
     # Get pool size from config
     pool_size = get_pool_size(ctx)
@@ -203,7 +203,7 @@ def plan_start(
         # Branch already has a slot - use it
         slot_name = existing_assignment.slot_name
         wt_path = existing_assignment.worktree_path
-        ctx.feedback.info(f"Branch '{branch}' already assigned to {slot_name}")
+        ctx.console.info(f"Branch '{branch}' already assigned to {slot_name}")
 
         # Handle dry-run mode
         if dry_run:
@@ -247,7 +247,7 @@ def plan_start(
     # Create branch if needed (BEFORE slot allocation)
     use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
     if not use_existing_branch:
-        ctx.feedback.info(f"Creating branch '{branch}' from {base_branch}...")
+        ctx.console.info(f"Creating branch '{branch}' from {base_branch}...")
         ctx.git.create_branch(repo_root, branch, base_branch)
         if use_graphite:
             ctx.graphite.track_branch(repo_root, branch, base_branch)
@@ -264,7 +264,7 @@ def plan_start(
     slot_name = result.slot_name
     wt_path = result.worktree_path
 
-    ctx.feedback.success(f"✓ Assigned {branch} to {slot_name}")
+    ctx.console.success(f"✓ Assigned {branch} to {slot_name}")
 
     # Load local config for post-worktree setup
     config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()

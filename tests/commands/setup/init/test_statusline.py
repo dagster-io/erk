@@ -4,7 +4,7 @@ Mock Usage Policy:
 ------------------
 This file uses minimal mocking for external boundaries:
 
-1. user_confirm mocking:
+1. _console mocking:
    - LEGITIMATE: Testing CLI's response to user confirmation
    - The prompt logic is a boundary (TTY interaction)
    - Here we test that statusline setup handles yes/no responses appropriately
@@ -15,7 +15,7 @@ to avoid mocking HOME environment variable.
 
 import json
 from pathlib import Path
-from unittest import mock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -34,9 +34,8 @@ def test_statusline_setup_configures_empty_settings(
     settings_path = claude_dir / "settings.json"
     settings_path.write_text("{}", encoding="utf-8")
 
-    # Mock user_confirm to return True (confirm write)
-    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=True):
-        perform_statusline_setup(settings_path=settings_path)
+    # No prompt needed for empty settings - just writes directly
+    perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were written
     updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
@@ -54,9 +53,8 @@ def test_statusline_setup_creates_settings_if_missing(
     # No settings.json file
     settings_path = tmp_path / ".claude" / "settings.json"
 
-    # Mock user_confirm to return True (confirm write)
-    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=True):
-        perform_statusline_setup(settings_path=settings_path)
+    # No prompt needed for missing settings - just writes directly
+    perform_statusline_setup(settings_path=settings_path)
 
     # Verify file was created
     assert settings_path.exists()
@@ -104,8 +102,10 @@ def test_statusline_setup_prompts_for_different_command(tmp_path: Path) -> None:
     }
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
-    # Mock user_confirm to return False (decline replacement)
-    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=False):
+    # Mock _console.confirm to return False (decline replacement)
+    mock_console = MagicMock()
+    mock_console.confirm.return_value = False
+    with patch("erk.cli.commands.init.main._console", mock_console):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were NOT changed
@@ -131,8 +131,10 @@ def test_statusline_setup_replaces_when_confirmed(
     }
     settings_path.write_text(json.dumps(existing_settings), encoding="utf-8")
 
-    # Mock user_confirm to return True for both prompts
-    with mock.patch("erk.cli.commands.init.main.user_confirm", return_value=True):
+    # Mock _console.confirm to return True (confirm replacement)
+    mock_console = MagicMock()
+    mock_console.confirm.return_value = True
+    with patch("erk.cli.commands.init.main._console", mock_console):
         perform_statusline_setup(settings_path=settings_path)
 
     # Verify settings were updated

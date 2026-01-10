@@ -26,7 +26,7 @@ from erk.core.worktree_utils import (
 from erk_shared.git.abc import Git
 from erk_shared.github.metadata.plan_header import extract_plan_header_worktree_name
 from erk_shared.github.types import PRNotFound
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanQuery, PlanState
 
 
@@ -303,7 +303,7 @@ def _format_plan_text(plan_info: tuple[int, PlanState] | None) -> str:
         return f"Plan #{number} already {state_text}"
 
 
-def _confirm_operations(force: bool, dry_run: bool) -> bool:
+def _confirm_operations(ctx: ErkContext, *, force: bool, dry_run: bool) -> bool:
     """Prompt for confirmation unless force or dry-run mode.
 
     Returns True if operations should proceed, False if aborted.
@@ -312,7 +312,7 @@ def _confirm_operations(force: bool, dry_run: bool) -> bool:
         return True
 
     user_output()
-    if not user_confirm("Proceed with these operations?", default=True):
+    if not ctx.console.confirm("Proceed with these operations?", default=True):
         user_output(click.style("⭕ Aborted.", fg="red", bold=True))
         return False
 
@@ -497,7 +497,7 @@ def _delete_worktree(
             plan_info=plan_info,
         )
 
-    if not _confirm_operations(force, dry_run):
+    if not _confirm_operations(ctx, force=force, dry_run=dry_run):
         return
 
     # Order of operations: worktree delete → PR close → plan close → branch delete

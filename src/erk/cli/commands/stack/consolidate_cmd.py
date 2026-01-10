@@ -16,7 +16,7 @@ from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import load_pool_state
 from erk_shared.git.abc import WorktreeInfo
-from erk_shared.output.output import user_confirm, user_output
+from erk_shared.output.output import user_output
 
 
 def _format_section_header(text: str, separator_length: int = 59) -> str:
@@ -394,7 +394,7 @@ def consolidate_stack(
     # Get confirmation unless --force or --script
     if not force and not script:
         user_output()
-        if not user_confirm("All worktrees are clean. Proceed with removal?", default=False):
+        if not ctx.console.confirm("All worktrees are clean. Proceed with removal?", default=False):
             user_output(click.style("⭕ Aborted", fg="red", bold=True))
             return
 
