@@ -163,24 +163,6 @@ class ErkContext:
             return GitBranchManager(git=self.git, github=self.github)
         return GraphiteBranchManager(git=self.git, graphite=self.graphite)
 
-    @property
-    def terminal(self) -> Console:
-        """Deprecated alias for console - use ctx.console instead.
-
-        This property provides backward compatibility during migration.
-        Console provides all Terminal methods (is_stdin_interactive, is_stdout_tty, is_stderr_tty).
-        """
-        return self.console
-
-    @property
-    def feedback(self) -> Console:
-        """Deprecated alias for console - use ctx.console instead.
-
-        This property provides backward compatibility during migration.
-        Console provides all UserFeedback methods (info, success, error).
-        """
-        return self.console
-
     @staticmethod
     def for_test(
         *,

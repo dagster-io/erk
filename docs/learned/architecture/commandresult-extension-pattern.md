@@ -193,44 +193,41 @@ def execute_command(
     )
 ```
 
-### 6. Update `stream_command_with_feedback()` in `output.py`
+### 6. Update Streaming Consumer Code
 
-**File:** `src/erk/core/output.py`
-
-Add logic to capture and use the field during streaming with feedback:
+If you have code that consumes streaming events and builds CommandResult, add capture logic:
 
 ```python
-def stream_command_with_feedback(
+def execute_and_capture(
     ctx: ErkContext,
     command: str,
     worktree_path: Path,
 ) -> CommandResult:
-    """Execute command with real-time feedback and spinner."""
-    with ctx.feedback.spinner(f"Running {command}..."):
-        # ... existing setup ...
-        session_id: str | None = None  # <-- NEW VARIABLE
+    """Execute command and capture streaming events into CommandResult."""
+    # ... existing setup ...
+    session_id: str | None = None  # <-- NEW VARIABLE
 
-        for event in ctx.claude.execute_command_streaming(
-            command=command,
-            worktree_path=worktree_path,
-            dangerous=ctx.dangerous,
-        ):
-            # ... existing event handlers ...
-            elif event.event_type == "session_id":
-                session_id = event.content  # <-- NEW HANDLER
+    for event in ctx.claude_executor.execute_command_streaming(
+        command=command,
+        worktree_path=worktree_path,
+        dangerous=ctx.dry_run,
+    ):
+        # ... existing event handlers ...
+        if event.event_type == "session_id":
+            session_id = event.content  # <-- NEW HANDLER
 
-        # ... build CommandResult ...
-        return CommandResult(
-            success=success,
-            pr_url=pr_url,
-            pr_number=pr_number,
-            pr_title=pr_title,
-            issue_number=issue_number,
-            session_id=session_id,  # <-- NEW FIELD
-            duration_seconds=duration,
-            error_message=error_message,
-            filtered_messages=filtered_messages,
-        )
+    # ... build CommandResult ...
+    return CommandResult(
+        success=success,
+        pr_url=pr_url,
+        pr_number=pr_number,
+        pr_title=pr_title,
+        issue_number=issue_number,
+        session_id=session_id,  # <-- NEW FIELD
+        duration_seconds=duration,
+        error_message=error_message,
+        filtered_messages=filtered_messages,
+    )
 ```
 
 ### 7. Add `simulated_*` Parameter to `FakeClaudeExecutor`
