@@ -14,6 +14,7 @@ import pytest
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_PERMISSION,
+    ERK_RUFF_FORMAT_HOOK_COMMAND,
     ERK_STATUSLINE_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
     NoBackupCreated,
@@ -22,12 +23,14 @@ from erk.core.claude_settings import (
     add_erk_hooks,
     add_erk_permission,
     add_erk_statusline,
+    add_ruff_format_hook,
     get_erk_statusline_command,
     get_repo_claude_settings_path,
     get_statusline_config,
     has_erk_permission,
     has_erk_statusline,
     has_exit_plan_hook,
+    has_ruff_format_hook,
     has_user_prompt_hook,
     read_claude_settings,
     write_claude_settings,
@@ -913,3 +916,197 @@ def test_add_erk_statusline_is_pure_function() -> None:
 
     # Original should be unchanged
     assert original == original_copy
+
+
+# --- Tests for ruff format hook functions ---
+
+
+def test_ruff_format_hook_command_constant() -> None:
+    """Test that ERK_RUFF_FORMAT_HOOK_COMMAND has expected value."""
+    assert "ruff format" in ERK_RUFF_FORMAT_HOOK_COMMAND
+    assert "${file_path}" in ERK_RUFF_FORMAT_HOOK_COMMAND
+    assert "*.py" in ERK_RUFF_FORMAT_HOOK_COMMAND
+
+
+def test_has_ruff_format_hook_returns_false_for_empty_settings() -> None:
+    """Test has_ruff_format_hook returns False for empty settings."""
+    settings: dict = {}
+    assert has_ruff_format_hook(settings) is False
+
+
+def test_has_ruff_format_hook_returns_false_when_no_hooks() -> None:
+    """Test has_ruff_format_hook returns False when hooks key is missing."""
+    settings = {"permissions": {"allow": []}}
+    assert has_ruff_format_hook(settings) is False
+
+
+def test_has_ruff_format_hook_returns_false_when_no_post_tool_use() -> None:
+    """Test has_ruff_format_hook returns False when PostToolUse is missing."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [],
+        }
+    }
+    assert has_ruff_format_hook(settings) is False
+
+
+def test_has_ruff_format_hook_returns_false_for_different_matcher() -> None:
+    """Test has_ruff_format_hook returns False when matcher doesn't match Write|Edit."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": "uv run ruff format"}],
+                }
+            ]
+        }
+    }
+    assert has_ruff_format_hook(settings) is False
+
+
+def test_has_ruff_format_hook_returns_false_for_different_command() -> None:
+    """Test has_ruff_format_hook returns False when command doesn't contain ruff format."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": "other-command"}],
+                }
+            ]
+        }
+    }
+    assert has_ruff_format_hook(settings) is False
+
+
+def test_has_ruff_format_hook_returns_true_when_configured() -> None:
+    """Test has_ruff_format_hook returns True when properly configured."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert has_ruff_format_hook(settings) is True
+
+
+def test_has_ruff_format_hook_returns_true_for_any_ruff_format_command() -> None:
+    """Test has_ruff_format_hook returns True for any command containing 'ruff format'."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": "uv run ruff format ${file_path}"}],
+                }
+            ]
+        }
+    }
+    assert has_ruff_format_hook(settings) is True
+
+
+def test_has_ruff_format_hook_finds_hook_among_multiple_entries() -> None:
+    """Test has_ruff_format_hook finds the hook among multiple PostToolUse entries."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": "other-hook"}],
+                },
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                },
+            ]
+        }
+    }
+    assert has_ruff_format_hook(settings) is True
+
+
+def test_add_ruff_format_hook_to_empty_settings() -> None:
+    """Test add_ruff_format_hook adds hook to empty settings."""
+    settings: dict = {}
+    result = add_ruff_format_hook(settings)
+
+    assert "hooks" in result
+    assert "PostToolUse" in result["hooks"]
+    assert len(result["hooks"]["PostToolUse"]) == 1
+
+    hook_entry = result["hooks"]["PostToolUse"][0]
+    assert hook_entry["matcher"] == "Write|Edit"
+    assert hook_entry["hooks"][0]["command"] == ERK_RUFF_FORMAT_HOOK_COMMAND
+
+    # Original should not be modified
+    assert "hooks" not in settings
+
+
+def test_add_ruff_format_hook_preserves_existing_hooks() -> None:
+    """Test add_ruff_format_hook preserves existing hooks."""
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {"matcher": "*", "hooks": [{"type": "command", "command": "echo test"}]}
+            ],
+            "PostToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "lint"}]}],
+        }
+    }
+    result = add_ruff_format_hook(settings)
+
+    # UserPromptSubmit should be preserved
+    assert "UserPromptSubmit" in result["hooks"]
+    assert len(result["hooks"]["UserPromptSubmit"]) == 1
+
+    # PostToolUse should have both entries
+    assert len(result["hooks"]["PostToolUse"]) == 2
+
+
+def test_add_ruff_format_hook_does_not_duplicate() -> None:
+    """Test add_ruff_format_hook doesn't add if already present."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    result = add_ruff_format_hook(settings)
+
+    # Should not have duplicates
+    assert len(result["hooks"]["PostToolUse"]) == 1
+
+
+def test_add_ruff_format_hook_is_pure_function() -> None:
+    """Test add_ruff_format_hook doesn't modify the input."""
+    original = {"hooks": {"UserPromptSubmit": [{"matcher": "*", "hooks": []}]}}
+    original_copy = json.loads(json.dumps(original))
+
+    add_ruff_format_hook(original)
+
+    # Original should be unchanged
+    assert original == original_copy
+
+
+def test_add_ruff_format_hook_preserves_other_settings() -> None:
+    """Test add_ruff_format_hook preserves other top-level settings."""
+    settings = {
+        "permissions": {"allow": ["Bash(git:*)"]},
+        "statusLine": {"type": "command", "command": "echo status"},
+        "alwaysThinkingEnabled": True,
+    }
+    result = add_ruff_format_hook(settings)
+
+    # Other settings should be preserved
+    assert result["permissions"]["allow"] == ["Bash(git:*)"]
+    assert result["statusLine"]["type"] == "command"
+    assert result["alwaysThinkingEnabled"] is True
+    # Hook should be added
+    assert "PostToolUse" in result["hooks"]

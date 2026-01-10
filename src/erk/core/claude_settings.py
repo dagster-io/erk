@@ -22,6 +22,11 @@ ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan
 # Statusline command - can be overridden via ERK_STATUSLINE_COMMAND env var for dev mode
 ERK_STATUSLINE_COMMAND = "uvx erk-statusline"
 
+# Ruff format command for PostToolUse hook
+ERK_RUFF_FORMAT_HOOK_COMMAND = (
+    '[[ "${file_path}" == *.py ]] && uv run ruff format "${file_path}" || true'
+)
+
 
 def get_erk_statusline_command() -> str:
     """Get the statusline command, checking env var for dev mode override.
@@ -314,4 +319,60 @@ def add_erk_statusline(settings: dict) -> dict:
         "command": get_erk_statusline_command(),
     }
 
+    return new_settings
+
+
+def has_ruff_format_hook(settings: Mapping[str, Any]) -> bool:
+    """Check if ruff format PostToolUse hook is configured.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        True if a PostToolUse hook with Write|Edit matcher and ruff format command exists
+    """
+    hooks = settings.get("hooks", {})
+    post_tool_hooks = hooks.get("PostToolUse", [])
+    for entry in post_tool_hooks:
+        if entry.get("matcher") == "Write|Edit":
+            for hook in entry.get("hooks", []):
+                command = hook.get("command", "")
+                if "ruff format" in command:
+                    return True
+    return False
+
+
+def add_ruff_format_hook(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a new settings dict with ruff format PostToolUse hook added.
+
+    This is a pure function that doesn't modify the input.
+    Adds the hook while preserving existing settings.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with ruff format PostToolUse hook added
+    """
+    # Deep copy to avoid mutating input
+    new_settings = json.loads(json.dumps(settings))
+
+    # Use defaultdict for cleaner hook list initialization
+    hooks: defaultdict[str, list] = defaultdict(list, new_settings.get("hooks", {}))
+
+    # Add PostToolUse hook if missing
+    if not has_ruff_format_hook(settings):
+        hooks["PostToolUse"].append(
+            {
+                "matcher": "Write|Edit",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": ERK_RUFF_FORMAT_HOOK_COMMAND,
+                    }
+                ],
+            }
+        )
+
+    new_settings["hooks"] = dict(hooks)
     return new_settings
