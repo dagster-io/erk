@@ -220,18 +220,40 @@ case "${1:-shell}" in
         exec /bin/bash
         ;;
 
+    ready)
+        SCENARIO_NAME="${2:-}"
+        if [ -z "$SCENARIO_NAME" ]; then
+            echo "Usage: $0 ready <scenario>"
+            echo ""
+            echo "Scenarios:"
+            echo "  blank  - Fresh project with no configuration"
+            list_repo_fixtures
+            exit 1
+        fi
+
+        echo "=== Ready: $SCENARIO_NAME ==="
+        setup_test_repo "$SCENARIO_NAME"
+        install_erk_from_source
+
+        cd "$TEST_REPO"
+        echo ""
+        echo "Ready! You're in $TEST_REPO with erk installed."
+        exec /bin/bash
+        ;;
+
     list-repos)
         list_repo_fixtures
         ;;
 
     *)
-        echo "Usage: $0 {shell|fresh|upgrade|repo <name>|list-repos}"
+        echo "Usage: $0 {shell|fresh|upgrade|repo <name>|ready <name>|list-repos}"
         echo ""
         echo "Commands:"
         echo "  shell            - Interactive shell for manual exploration"
         echo "  fresh            - Test fresh install scenario"
         echo "  upgrade          - Test upgrade scenario"
-        echo "  repo <name>      - Test with specific repo fixture"
+        echo "  repo <name>      - Test with specific repo fixture (runs tests)"
+        echo "  ready <name>     - Setup scenario and drop to shell (no tests)"
         echo "  list-repos       - List available repo fixtures"
         echo ""
         list_repo_fixtures
