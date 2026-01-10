@@ -18,6 +18,7 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
 )
+from erk.core.capabilities.dignified_review import DignifiedReviewCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.registry import get_capability, list_capabilities
@@ -679,3 +680,95 @@ def test_capability_scope_values() -> None:
 
     assert project_cap.scope == "project"
     assert user_cap.scope == "user"
+
+
+# =============================================================================
+# Tests for Capability.preflight()
+# =============================================================================
+
+
+def test_default_preflight_returns_success(tmp_path: Path) -> None:
+    """Test that default preflight() implementation returns success."""
+    cap = LearnedDocsCapability()
+    result = cap.preflight(tmp_path)
+
+    assert result.success is True
+    assert result.message == ""
+
+
+def test_preflight_called_before_install_pattern() -> None:
+    """Test that preflight can be called to check preconditions."""
+    # This tests the pattern: check preflight, then install
+    cap = LearnedDocsCapability()
+
+    # Default preflight always succeeds
+    preflight_result = cap.preflight(None)
+    assert preflight_result.success is True
+
+
+# =============================================================================
+# Tests for DignifiedReviewCapability
+# =============================================================================
+
+
+def test_dignified_review_capability_properties() -> None:
+    """Test DignifiedReviewCapability has correct properties."""
+    cap = DignifiedReviewCapability()
+    assert cap.name == "dignified-review"
+    assert cap.scope == "project"
+    assert "GitHub Action" in cap.description or "code review" in cap.description
+    assert "dignified-python-review.yml" in cap.installation_check_description
+
+
+def test_dignified_review_artifacts() -> None:
+    """Test DignifiedReviewCapability lists correct artifacts."""
+    cap = DignifiedReviewCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 2
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/dignified-python-review.yml" in paths
+    assert ".github/prompts/dignified-python-review.md" in paths
+
+
+def test_dignified_review_is_installed_false_when_missing(tmp_path: Path) -> None:
+    """Test is_installed returns False when workflow file doesn't exist."""
+    cap = DignifiedReviewCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_dignified_review_is_installed_true_when_exists(tmp_path: Path) -> None:
+    """Test is_installed returns True when workflow file exists."""
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "dignified-python-review.yml").write_text(
+        "", encoding="utf-8"
+    )
+    cap = DignifiedReviewCapability()
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_dignified_review_preflight_fails_when_skill_missing(tmp_path: Path) -> None:
+    """Test preflight fails when dignified-python skill is not installed."""
+    cap = DignifiedReviewCapability()
+    result = cap.preflight(tmp_path)
+
+    assert result.success is False
+    assert "dignified-python" in result.message
+
+
+def test_dignified_review_preflight_succeeds_when_skill_present(tmp_path: Path) -> None:
+    """Test preflight succeeds when dignified-python skill is installed."""
+    # Create the skill directory
+    (tmp_path / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
+
+    cap = DignifiedReviewCapability()
+    result = cap.preflight(tmp_path)
+
+    assert result.success is True
+
+
+def test_dignified_review_capability_registered() -> None:
+    """Test that dignified-review capability is registered."""
+    cap = get_capability("dignified-review")
+    assert cap is not None
+    assert cap.name == "dignified-review"

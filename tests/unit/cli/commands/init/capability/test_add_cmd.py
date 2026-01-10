@@ -164,3 +164,64 @@ def test_capability_add_requires_at_least_one_name() -> None:
         # Click should fail because NAMES is required
         assert result.exit_code == 2
         assert "Missing argument" in result.output or "NAMES" in result.output
+
+
+def test_capability_add_preflight_failure_blocks_install() -> None:
+    """Test that preflight failure prevents capability installation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
+
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        # Try to install dignified-review without dignified-python skill
+        # (preflight should fail)
+        result = runner.invoke(
+            cli, ["init", "capability", "add", "dignified-review"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "dignified-python" in result.output
+        # Workflow should NOT have been installed
+        assert not (
+            env.cwd / ".github" / "workflows" / "dignified-python-review.yml"
+        ).exists()
+
+
+def test_capability_add_preflight_success_allows_install() -> None:
+    """Test that preflight success allows capability installation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        global_config = GlobalConfig.test(
+            env.cwd / "fake-erks", use_graphite=False, shell_setup_complete=False
+        )
+
+        erk_installation = FakeErkInstallation(config=global_config)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=global_config,
+        )
+
+        # Pre-install the required dignified-python skill
+        (env.cwd / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
+
+        # Now dignified-review should pass preflight
+        result = runner.invoke(
+            cli, ["init", "capability", "add", "dignified-review"], obj=test_ctx
+        )
+
+        # Note: May still fail because bundled files don't exist in test env,
+        # but preflight should have passed (no "dignified-python" error)
+        assert "Requires 'dignified-python'" not in result.output
