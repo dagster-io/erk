@@ -22,9 +22,16 @@ Audits open erk-plan issues to identify stale or completed plans that may need a
 Fetch all open erk-plan issues, sorted oldest first:
 
 ```bash
-gh issue list --repo dagster-io/erk --label "erk-plan" --state open --limit 100 \
-  --json number,title,createdAt,labels --jq 'sort_by(.createdAt)'
+gh api repos/dagster-io/erk/issues \
+  -X GET \
+  --paginate \
+  -f labels=erk-plan \
+  -f state=open \
+  -f per_page=100 \
+  --jq 'sort_by(.created_at) | map({number, title, createdAt: .created_at, labels})'
 ```
+
+Note: Uses REST API (not `gh issue list`) to avoid GraphQL rate limits.
 
 Report:
 
@@ -40,7 +47,7 @@ For each plan, extract metadata and analyze status:
 **2.1 Get issue body:**
 
 ```bash
-gh issue view <NUMBER> --json body --jq '.body'
+gh api repos/dagster-io/erk/issues/<NUMBER> --jq '.body'
 ```
 
 **2.2 Parse plan-header metadata:**
@@ -126,7 +133,10 @@ After presenting the report:
 If user selects plans to close:
 
 ```bash
-gh issue close <NUMBER> --comment "Closing via plan audit: <reason>"
+# Add closing comment
+gh api repos/dagster-io/erk/issues/<NUMBER>/comments -X POST -f body="Closing via plan audit: <reason>"
+# Close the issue
+gh api repos/dagster-io/erk/issues/<NUMBER> -X PATCH -f state=closed
 ```
 
 Report results and any failures.
