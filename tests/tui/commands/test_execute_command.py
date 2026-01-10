@@ -73,12 +73,18 @@ class TestExecuteCommandCopyCommands:
 
     def test_copy_checkout_copies_command(self) -> None:
         """copy_checkout copies the checkout command."""
-        row = make_plan_row(123, "Test", worktree_name="feature-123", exists_locally=True)
+        row = make_plan_row(
+            123,
+            "Test",
+            worktree_name="feature-123",
+            worktree_branch="feature-123",
+            exists_locally=True,
+        )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_checkout")
-        assert executor.copied_texts == ["erk co feature-123"]
-        assert "Copied: erk co feature-123" in executor.notifications
+        assert executor.copied_texts == ["erk co br feature-123"]
+        assert "Copied: erk co br feature-123" in executor.notifications
 
     def test_copy_pr_checkout_copies_command(self) -> None:
         """copy_pr_checkout copies the PR checkout command."""

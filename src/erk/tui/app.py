@@ -493,8 +493,8 @@ class PlanDetailScreen(ModalScreen):
 
     def action_copy_checkout(self) -> None:
         """Copy local checkout command to clipboard."""
-        if self._row.exists_locally:
-            cmd = f"erk co {self._row.worktree_name}"
+        if self._row.exists_locally and self._row.worktree_branch is not None:
+            cmd = f"erk co br {self._row.worktree_branch}"
             self._copy_and_notify(cmd)
 
     def action_copy_pr_checkout(self) -> None:
@@ -755,7 +755,7 @@ class PlanDetailScreen(ModalScreen):
                 executor.notify(f"Opened run {row.run_id_display}")
 
         elif command_id == "copy_checkout":
-            cmd = f"erk co {row.worktree_name}"
+            cmd = f"erk co br {row.worktree_branch}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
@@ -1360,9 +1360,9 @@ class ErkDashApp(App):
             row: The plan row data to generate command from
         """
         # Determine which command to use
-        if row.exists_locally:
+        if row.exists_locally and row.worktree_branch is not None:
             # Local worktree exists - use branch checkout
-            cmd = f"erk co {row.worktree_name}"
+            cmd = f"erk co br {row.worktree_branch}"
         elif row.pr_number is not None:
             # No local worktree but PR exists - use PR checkout
             cmd = f"erk pr co {row.pr_number}"
@@ -1420,7 +1420,7 @@ class ErkDashApp(App):
                 self.notify(f"Opened run {row.run_id_display}")
 
         elif command_id == "copy_checkout":
-            cmd = f"erk co {row.worktree_name}"
+            cmd = f"erk co br {row.worktree_branch}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

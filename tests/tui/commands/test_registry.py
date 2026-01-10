@@ -85,9 +85,11 @@ def test_open_run_not_available_when_no_run() -> None:
     assert "open_run" not in cmd_ids
 
 
-def test_copy_checkout_available_when_exists_locally() -> None:
-    """copy_checkout should be available when worktree exists locally."""
-    row = make_plan_row(123, "Test", worktree_name="feature-123", exists_locally=True)
+def test_copy_checkout_available_when_exists_locally_with_branch() -> None:
+    """copy_checkout should be available when worktree exists locally and has branch."""
+    row = make_plan_row(
+        123, "Test", worktree_name="feature-123", worktree_branch="feature-123", exists_locally=True
+    )
     ctx = CommandContext(row=row)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
@@ -97,6 +99,15 @@ def test_copy_checkout_available_when_exists_locally() -> None:
 def test_copy_checkout_not_available_when_not_local() -> None:
     """copy_checkout should not be available when worktree doesn't exist locally."""
     row = make_plan_row(123, "Test", exists_locally=False)
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_checkout" not in cmd_ids
+
+
+def test_copy_checkout_not_available_when_no_branch() -> None:
+    """copy_checkout should not be available when exists_locally but no branch."""
+    row = make_plan_row(123, "Test", worktree_name="feature-123", exists_locally=True)
     ctx = CommandContext(row=row)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]

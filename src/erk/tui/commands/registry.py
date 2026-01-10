@@ -77,10 +77,10 @@ def get_all_commands() -> list[CommandDefinition]:
         # === COPIES ===
         CommandDefinition(
             id="copy_checkout",
-            name="Copy: erk co <worktree>",
+            name="Copy: erk co br <branch_name>",
             description="Copy checkout command",
             shortcut="c",
-            is_available=lambda ctx: ctx.row.exists_locally,
+            is_available=lambda ctx: ctx.row.exists_locally and ctx.row.worktree_branch is not None,
         ),
         CommandDefinition(
             id="copy_pr_checkout",
