@@ -1,14 +1,3 @@
-# Plan: Write Install-Test Guide
-
-## Task
-Create a guide documenting how to use `erk-dev install-test` for testing installation processes.
-
-## Location
-`docs/learned/testing/install-test.md`
-
-## Content
-
-```markdown
 ---
 title: "Install-Test Guide"
 read_when:
@@ -25,6 +14,7 @@ Docker-based testing environment for validating erk installation and upgrade sce
 ## Why Install-Test?
 
 Catches real-world issues that automated tests miss:
+
 - Installing erk on repos with existing `.erk/` configuration
 - Upgrade paths from older versions
 - Repository-specific configuration edge cases
@@ -44,15 +34,15 @@ erk-dev install-test shell
 
 ## Commands
 
-| Command | Purpose |
-|---------|---------|
-| `build` | Build Docker image (required first) |
-| `shell` | Interactive bash with helper functions |
-| `fresh` | Test fresh install scenario |
-| `upgrade` | Test upgrade scenario |
-| `repo <name>` | Test with repo-specific fixture |
+| Command            | Purpose                                       |
+| ------------------ | --------------------------------------------- |
+| `build`            | Build Docker image (required first)           |
+| `shell`            | Interactive bash with helper functions        |
+| `fresh`            | Test fresh install scenario                   |
+| `upgrade`          | Test upgrade scenario                         |
+| `repo <name>`      | Test with repo-specific fixture               |
 | `ready <scenario>` | Setup scenario, drop to shell (no auto-tests) |
-| `list-repos` | List available repo fixtures |
+| `list-repos`       | List available repo fixtures                  |
 
 ## Shell Helper Functions
 
@@ -121,6 +111,7 @@ fixtures/repos/
 ```
 
 To add a new repo fixture:
+
 1. Create `fixtures/repos/<name>/`
 2. Copy `.erk/` and `.claude/` directories from real repo
 3. Rebuild: `erk-dev install-test build`
@@ -138,10 +129,3 @@ To add a new repo fixture:
 - **Docker**: `dev/install-test/Dockerfile`
 - **Entrypoint**: `dev/install-test/entrypoint.sh`
 - **Fixtures**: `dev/install-test/fixtures/`
-```
-
-## Verification
-
-1. Run `erk docs validate` to check frontmatter
-2. Run `erk docs sync` to regenerate index
-3. Verify the document appears in `docs/learned/index.md`
