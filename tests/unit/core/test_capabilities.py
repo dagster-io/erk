@@ -5,7 +5,6 @@ These tests verify:
 2. The registry functions (register, get, list)
 3. The LearnedDocsCapability implementation
 4. Skill-based capabilities
-5. Capability groups
 """
 
 from pathlib import Path
@@ -22,20 +21,11 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
 )
-from erk.core.capabilities.groups import (
-    CAPABILITY_GROUPS,
-    CapabilityGroup,
-    expand_capability_names,
-    get_group,
-    is_group,
-    list_groups,
-)
 from erk.core.capabilities.skills import (
     DignifiedPythonCapability,
     FakeDrivenTestingCapability,
-    GhCapability,
-    GtCapability,
 )
+from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 
 # =============================================================================
@@ -307,22 +297,6 @@ def test_fake_driven_testing_capability_properties() -> None:
     assert "test" in cap.description.lower()
 
 
-def test_gh_capability_properties() -> None:
-    """Test GhCapability has correct properties."""
-    cap = GhCapability()
-    assert cap.name == "gh"
-    assert cap.skill_name == "gh"
-    assert "GitHub" in cap.description
-
-
-def test_gt_capability_properties() -> None:
-    """Test GtCapability has correct properties."""
-    cap = GtCapability()
-    assert cap.name == "gt"
-    assert cap.skill_name == "gt"
-    assert "Graphite" in cap.description
-
-
 def test_skill_capability_is_installed_false_when_missing(tmp_path: Path) -> None:
     """Test skill capability is_installed returns False when skill directory missing."""
     cap = DignifiedPythonCapability()
@@ -351,11 +325,6 @@ def test_all_skill_capabilities_registered() -> None:
     expected_skills = [
         "dignified-python",
         "fake-driven-testing",
-        "gh",
-        "gt",
-        "command-creator",
-        "cli-skill-creator",
-        "ci-iteration",
     ]
     for skill_name in expected_skills:
         cap = get_capability(skill_name)
@@ -452,115 +421,125 @@ def test_agent_capability_registered() -> None:
 
 
 # =============================================================================
-# Tests for Capability Groups
+# Tests for Permission Capabilities
 # =============================================================================
 
 
-def test_capability_group_is_frozen() -> None:
-    """Test that CapabilityGroup is immutable."""
-    group = CapabilityGroup(
-        name="test-group",
-        description="Test group",
-        members=("cap1", "cap2"),
+def test_erk_bash_permissions_capability_properties() -> None:
+    """Test ErkBashPermissionsCapability has correct properties."""
+    cap = ErkBashPermissionsCapability()
+    assert cap.name == "erk-bash-permissions"
+    assert "Bash(erk:*)" in cap.description
+    assert "settings.json" in cap.installation_check_description
+
+
+def test_erk_bash_permissions_artifacts() -> None:
+    """Test ErkBashPermissionsCapability lists correct artifacts."""
+    cap = ErkBashPermissionsCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".claude/settings.json"
+    assert artifacts[0].artifact_type == "file"
+
+
+def test_erk_bash_permissions_is_installed_false_when_no_settings(tmp_path: Path) -> None:
+    """Test is_installed returns False when settings.json doesn't exist."""
+    cap = ErkBashPermissionsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_erk_bash_permissions_is_installed_false_when_not_in_allow(tmp_path: Path) -> None:
+    """Test is_installed returns False when permission not in allow list."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(json.dumps({"permissions": {"allow": []}}), encoding="utf-8")
+
+    cap = ErkBashPermissionsCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_erk_bash_permissions_is_installed_true_when_present(tmp_path: Path) -> None:
+    """Test is_installed returns True when permission is in allow list."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Bash(erk:*)"]}}),
+        encoding="utf-8",
     )
-    assert group.name == "test-group"
-    assert group.description == "Test group"
-    assert group.members == ("cap1", "cap2")
+
+    cap = ErkBashPermissionsCapability()
+    assert cap.is_installed(tmp_path) is True
 
 
-def test_is_group_returns_true_for_groups() -> None:
-    """Test is_group returns True for registered groups."""
-    assert is_group("python-dev") is True
-    assert is_group("github-workflow") is True
-    assert is_group("graphite-workflow") is True
-    assert is_group("skill-authoring") is True
+def test_erk_bash_permissions_install_creates_settings(tmp_path: Path) -> None:
+    """Test install creates settings.json if it doesn't exist."""
+    import json
+
+    cap = ErkBashPermissionsCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert ".claude/settings.json" in result.created_files
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    assert settings_path.exists()
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "Bash(erk:*)" in settings["permissions"]["allow"]
 
 
-def test_is_group_returns_false_for_non_groups() -> None:
-    """Test is_group returns False for non-groups."""
-    assert is_group("dignified-python") is False
-    assert is_group("nonexistent") is False
-    assert is_group("learned-docs") is False
+def test_erk_bash_permissions_install_adds_to_existing(tmp_path: Path) -> None:
+    """Test install adds permission to existing settings.json."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Read(/tmp/*)"]}, "hooks": {}}),
+        encoding="utf-8",
+    )
+
+    cap = ErkBashPermissionsCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "Added" in result.message
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert "Bash(erk:*)" in settings["permissions"]["allow"]
+    assert "Read(/tmp/*)" in settings["permissions"]["allow"]
+    assert "hooks" in settings  # Preserves existing keys
 
 
-def test_get_group_returns_group() -> None:
-    """Test get_group returns the group for registered groups."""
-    group = get_group("python-dev")
-    assert group is not None
-    assert group.name == "python-dev"
-    assert "dignified-python" in group.members
+def test_erk_bash_permissions_install_idempotent(tmp_path: Path) -> None:
+    """Test install is idempotent when permission already exists."""
+    import json
+
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings_path.write_text(
+        json.dumps({"permissions": {"allow": ["Bash(erk:*)"]}}),
+        encoding="utf-8",
+    )
+
+    cap = ErkBashPermissionsCapability()
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "already" in result.message
+
+    # Verify it wasn't duplicated
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert settings["permissions"]["allow"].count("Bash(erk:*)") == 1
 
 
-def test_get_group_returns_none_for_unknown() -> None:
-    """Test get_group returns None for unknown groups."""
-    assert get_group("nonexistent") is None
-    assert get_group("dignified-python") is None  # This is a capability, not a group
-
-
-def test_list_groups_returns_all() -> None:
-    """Test list_groups returns all registered groups."""
-    groups = list_groups()
-    names = [g.name for g in groups]
-    assert "python-dev" in names
-    assert "github-workflow" in names
-    assert "graphite-workflow" in names
-    assert "skill-authoring" in names
-
-
-def test_expand_capability_names_passes_through_capabilities() -> None:
-    """Test expand_capability_names passes through individual capabilities."""
-    result = expand_capability_names(["dignified-python", "learned-docs"])
-    assert result == ["dignified-python", "learned-docs"]
-
-
-def test_expand_capability_names_expands_groups() -> None:
-    """Test expand_capability_names expands groups to members."""
-    result = expand_capability_names(["python-dev"])
-    assert "dignified-python" in result
-    assert "fake-driven-testing" in result
-    assert "devrun-agent" in result
-
-
-def test_expand_capability_names_mixed() -> None:
-    """Test expand_capability_names handles mix of groups and capabilities."""
-    result = expand_capability_names(["learned-docs", "python-dev"])
-    assert result[0] == "learned-docs"  # Individual comes first
-    assert "dignified-python" in result
-    assert "fake-driven-testing" in result
-
-
-def test_expand_capability_names_removes_duplicates() -> None:
-    """Test expand_capability_names removes duplicates preserving order."""
-    result = expand_capability_names(["dignified-python", "python-dev"])
-    # dignified-python appears first, then rest of python-dev (excluding dignified-python)
-    assert result.count("dignified-python") == 1
-    assert result[0] == "dignified-python"
-
-
-def test_python_dev_group_members() -> None:
-    """Test python-dev group has expected members."""
-    group = CAPABILITY_GROUPS["python-dev"]
-    assert "dignified-python" in group.members
-    assert "fake-driven-testing" in group.members
-    assert "devrun-agent" in group.members
-
-
-def test_github_workflow_group_members() -> None:
-    """Test github-workflow group has expected members."""
-    group = CAPABILITY_GROUPS["github-workflow"]
-    assert "gh" in group.members
-    assert "erk-impl-workflow" in group.members
-
-
-def test_graphite_workflow_group_members() -> None:
-    """Test graphite-workflow group has expected members."""
-    group = CAPABILITY_GROUPS["graphite-workflow"]
-    assert "gt" in group.members
-
-
-def test_skill_authoring_group_members() -> None:
-    """Test skill-authoring group has expected members."""
-    group = CAPABILITY_GROUPS["skill-authoring"]
-    assert "command-creator" in group.members
-    assert "cli-skill-creator" in group.members
-    assert "learned-docs" in group.members
+def test_permission_capability_registered() -> None:
+    """Test that permission capability is registered."""
+    cap = get_capability("erk-bash-permissions")
+    assert cap is not None
+    assert cap.name == "erk-bash-permissions"

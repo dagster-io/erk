@@ -16,6 +16,7 @@ from pathlib import Path
 # Internal imports for _register_all_capabilities
 from erk.core.capabilities.agents import AGENT_CAPABILITIES
 from erk.core.capabilities.base import Capability, CapabilityArtifact, CapabilityResult
+from erk.core.capabilities.permissions import PERMISSION_CAPABILITIES
 from erk.core.capabilities.skills import SKILL_CAPABILITIES
 from erk.core.capabilities.workflows import WORKFLOW_CAPABILITIES
 
@@ -331,6 +332,10 @@ def _register_all_capabilities() -> None:
 
     # Agent capabilities
     for cap_class in AGENT_CAPABILITIES:
+        register_capability(cap_class())
+
+    # Permission capabilities
+    for cap_class in PERMISSION_CAPABILITIES:
         register_capability(cap_class())
 
 
