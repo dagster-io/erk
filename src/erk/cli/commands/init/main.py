@@ -8,7 +8,7 @@ import click
 
 from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
-from erk.core.capabilities import list_capabilities
+from erk.core.capabilities.registry import list_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     NoBackupCreated,

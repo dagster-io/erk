@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk.core.capabilities import get_capability, list_capabilities
+from erk.core.capabilities.registry import get_capability, list_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
 from erk_shared.output.output import user_output

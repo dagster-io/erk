@@ -29,10 +29,3 @@ class FakeDrivenTestingCapability(SkillCapability):
     @property
     def description(self) -> str:
         return "5-layer test architecture with fakes"
-
-
-# All skill capabilities for easy iteration
-SKILL_CAPABILITIES: list[type[SkillCapability]] = [
-    DignifiedPythonCapability,
-    FakeDrivenTestingCapability,
-]

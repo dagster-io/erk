@@ -102,9 +102,3 @@ class ErkImplWorkflowCapability(Capability):
                 target_path = target / relative
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source_path, target_path)
-
-
-# All workflow capabilities for easy iteration
-WORKFLOW_CAPABILITIES: list[type[Capability]] = [
-    ErkImplWorkflowCapability,
-]

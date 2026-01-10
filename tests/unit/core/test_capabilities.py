@@ -2,26 +2,22 @@
 
 These tests verify:
 1. The Capability ABC contract
-2. The registry functions (register, get, list)
+2. The registry functions (get, list)
 3. The LearnedDocsCapability implementation
 4. Skill-based capabilities
 """
 
 from pathlib import Path
 
-from erk.core.capabilities import (
-    LearnedDocsCapability,
-    get_capability,
-    list_capabilities,
-    register_capability,
-)
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
     CapabilityResult,
 )
+from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
+from erk.core.capabilities.registry import get_capability, list_capabilities
 from erk.core.capabilities.skills import (
     DignifiedPythonCapability,
     FakeDrivenTestingCapability,
@@ -242,16 +238,6 @@ class _TestCapability(Capability):
             return CapabilityResult(success=True, message="Already installed")
         marker.write_text("installed", encoding="utf-8")
         return CapabilityResult(success=True, message="Installed")
-
-
-def test_register_capability_adds_to_registry() -> None:
-    """Test that registering a capability makes it retrievable."""
-    test_cap = _TestCapability()
-    register_capability(test_cap)
-
-    retrieved = get_capability("test-cap")
-    assert retrieved is not None
-    assert retrieved.name == "test-cap"
 
 
 def test_custom_capability_install_and_is_installed(tmp_path: Path) -> None:
