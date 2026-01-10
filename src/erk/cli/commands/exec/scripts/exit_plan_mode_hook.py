@@ -67,6 +67,32 @@ TERMINAL_EDITORS = frozenset(
 )
 
 
+def abbreviate_for_header(worktree_name: str | None) -> str:
+    """Abbreviate worktree name to fit in 12-char header for AskUserQuestion.
+
+    Args:
+        worktree_name: Directory name of current worktree, or None.
+
+    Returns:
+        Abbreviated header string, max 12 characters.
+        Examples:
+        - "erk-slot-02" -> "wt:slot-02" (10 chars)
+        - "myworktree" -> "wt:myworkt" (10 chars, truncated)
+        - None -> "Plan Action"
+    """
+    if worktree_name is None:
+        return "Plan Action"
+    # "erk-slot-02" -> "wt:slot-02" (strip erk- prefix)
+    if worktree_name.startswith("erk-"):
+        abbreviated = worktree_name[4:]
+    else:
+        abbreviated = worktree_name
+    # Truncate if too long: "wt:" + 9 chars = 12 max
+    if len(abbreviated) > 9:
+        abbreviated = abbreviated[:9]
+    return f"wt:{abbreviated}"
+
+
 def is_terminal_editor(editor: str | None) -> bool:
     """Check if editor is a terminal-based (TUI) editor.
 
@@ -277,13 +303,17 @@ def build_blocking_message(
     else:
         question_text = "What would you like to do with this plan?"
 
+    # Build header for AskUserQuestion (max 12 chars)
+    header = abbreviate_for_header(worktree_name)
+
     lines = [
         "PLAN SAVE PROMPT",
         "",
         "A plan exists for this session but has not been saved.",
         "",
         "Use AskUserQuestion to ask the user:",
-        f'  "{question_text}"',
+        f'  question: "{question_text}"',
+        f'  header: "{header}"',
         "",
         "IMPORTANT: Present options in this exact order:",
         '  1. "Save the plan" (Recommended) - Save plan as a GitHub issue and stop. '

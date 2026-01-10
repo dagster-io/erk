@@ -13,6 +13,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     ExitAction,
     HookInput,
+    abbreviate_for_header,
     build_blocking_message,
     determine_exit_action,
     exit_plan_mode_hook,
@@ -301,6 +302,50 @@ class TestIsTerminalEditor:
 
 
 # ============================================================================
+# Pure Logic Tests for abbreviate_for_header() - NO MOCKING REQUIRED
+# ============================================================================
+
+
+class TestAbbreviateForHeader:
+    """Tests for the pure abbreviate_for_header() function."""
+
+    def test_erk_prefix_stripped(self) -> None:
+        """erk- prefix is stripped from worktree name."""
+        assert abbreviate_for_header("erk-slot-02") == "wt:slot-02"
+
+    def test_erk_prefix_with_long_suffix(self) -> None:
+        """erk- prefix stripped, long suffix truncated to 9 chars."""
+        # "erk-" + "verylongname" -> "verylongname" -> truncated to "verylongn"
+        assert abbreviate_for_header("erk-verylongname") == "wt:verylongn"
+
+    def test_no_prefix_short_name(self) -> None:
+        """Short name without erk- prefix is truncated to 9 chars."""
+        # "myworktree" is 10 chars, truncated to 9 -> "myworktre"
+        assert abbreviate_for_header("myworktree") == "wt:myworktre"
+
+    def test_no_prefix_fits_in_limit(self) -> None:
+        """Name that fits in 9 chars is not truncated."""
+        assert abbreviate_for_header("slot-02") == "wt:slot-02"
+
+    def test_long_name_truncated(self) -> None:
+        """Long names are truncated to fit 12-char limit."""
+        # "wt:" + 9 chars = 12 chars max
+        assert abbreviate_for_header("verylongworktreename") == "wt:verylongw"
+
+    def test_none_returns_default(self) -> None:
+        """None returns 'Plan Action' fallback."""
+        assert abbreviate_for_header(None) == "Plan Action"
+
+    def test_exactly_nine_chars(self) -> None:
+        """Name exactly 9 chars is not truncated."""
+        assert abbreviate_for_header("123456789") == "wt:123456789"
+
+    def test_ten_chars_truncated(self) -> None:
+        """Name of 10 chars is truncated to 9."""
+        assert abbreviate_for_header("1234567890") == "wt:123456789"
+
+
+# ============================================================================
 # Pure Logic Tests for build_blocking_message() - NO MOCKING REQUIRED
 # ============================================================================
 
@@ -339,6 +384,40 @@ class TestBuildBlockingMessage:
         # Verify the "Save plan and implement here" option runs plan-save first, then creates marker
         assert "If user chooses 'Save plan and implement here':" in message
         assert "/erk:system:impl-execute" in message
+
+    def test_includes_header_instruction(self) -> None:
+        """Message includes header instruction for AskUserQuestion."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name="erk-slot-02",
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
+        )
+        # Should have both question: and header: instructions
+        assert 'question: "' in message
+        assert 'header: "wt:slot-02"' in message
+
+    def test_header_default_when_no_worktree(self) -> None:
+        """Header defaults to 'Plan Action' when worktree_name is None."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            objective_issue=None,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_issue_number=None,
+            editor=None,
+        )
+        assert 'header: "Plan Action"' in message
 
     def test_trunk_branch_main_shows_warning(self) -> None:
         """Warning shown when on main branch."""
@@ -536,6 +615,8 @@ class TestBuildBlockingMessage:
         assert "(br:P4224-add-feature)" in message
         assert "(gh:#4230)" in message
         assert "(plan:#4224)" in message
+        # Header should include worktree context
+        assert 'header: "wt:slot-02"' in message
 
     def test_includes_statusline_context_partial(self) -> None:
         """Question includes partial statusline context when some fields are None."""
