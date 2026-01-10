@@ -3,6 +3,7 @@
 
 # Cli Documentation
 
+- **[capability-commands.md](capability-commands.md)** — using erk init capability commands, troubleshooting capability installation
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally

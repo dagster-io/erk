@@ -36,11 +36,37 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 
 ## Gateway Locations
 
-| Gateway  | Location                                               |
-| -------- | ------------------------------------------------------ |
-| Git      | `packages/erk-shared/src/erk_shared/git/`              |
-| GitHub   | `packages/erk-shared/src/erk_shared/github/`           |
-| Graphite | `packages/erk-shared/src/erk_shared/gateway/graphite/` |
+| Gateway            | Location                                                             |
+| ------------------ | -------------------------------------------------------------------- |
+| Git                | `packages/erk-shared/src/erk_shared/git/`                            |
+| GitHub             | `packages/erk-shared/src/erk_shared/github/`                         |
+| Graphite           | `packages/erk-shared/src/erk_shared/gateway/graphite/`               |
+| ClaudeInstallation | `packages/erk-shared/src/erk_shared/extraction/claude_installation/` |
+
+### ClaudeInstallation
+
+**Location:** `packages/erk-shared/src/erk_shared/extraction/claude_installation/`
+
+| Implementation             | Purpose                                              |
+| -------------------------- | ---------------------------------------------------- |
+| `ClaudeInstallation` (ABC) | Abstract interface for Claude Code settings/sessions |
+| `RealClaudeInstallation`   | Production - reads from ~/.claude/                   |
+| `FakeClaudeInstallation`   | Testing - in-memory with configurable state          |
+
+**Key methods:**
+
+- `read_settings()`: Read ~/.claude/settings.json
+- `write_settings(settings)`: Write settings with backup
+- `settings_exists()`: Check if settings file exists
+
+**Test usage:**
+
+```python
+fake_claude = FakeClaudeInstallation.for_test(
+    settings={"statusLine": {"type": "command", "command": "uvx erk-statusline"}}
+)
+cap = StatuslineCapability(claude_installation=fake_claude)
+```
 
 ## Checklist for New Gateway Methods
 
