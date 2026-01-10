@@ -21,7 +21,6 @@ from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
     check_clean_working_tree,
-    delete_branch_and_worktree,
 )
 from erk.cli.commands.objective_helpers import (
     check_and_display_plan_issue_closure,
@@ -312,16 +311,19 @@ def _cleanup_and_navigate(
             ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
         else:
-            # Non-slot worktree: delete worktree and branch
+            # Non-slot worktree: preserve worktree, delete branch only
             if not force and not ctx.dry_run:
                 if not user_confirm(
-                    f"Delete worktree '{worktree_path.name}' and branch '{branch}'?",
+                    f"Delete branch '{branch}'? (worktree preserved)",
                     default=True,
                 ):
-                    user_output("Worktree preserved. Branch still exists locally.")
+                    user_output("Branch preserved.")
                     return
-            delete_branch_and_worktree(ctx, repo, branch, worktree_path)
-            user_output(click.style("✓", fg="green") + " Deleted worktree and branch")
+            ctx.branch_manager.delete_branch(main_repo_root, branch)
+            user_output(
+                click.style("✓", fg="green")
+                + f" Deleted branch (worktree '{worktree_path.name}' preserved)"
+            )
     else:
         # No worktree - check if branch exists locally before deletion (LBYL)
         local_branches = ctx.git.list_local_branches(main_repo_root)

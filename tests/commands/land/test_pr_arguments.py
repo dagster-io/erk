@@ -104,8 +104,8 @@ def test_land_by_number() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
@@ -197,8 +197,8 @@ def test_land_by_url() -> None:
         # Verify PR was merged
         assert 456 in github_ops.merged_prs
 
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
 
 def test_land_by_branch_name() -> None:
@@ -286,8 +286,8 @@ def test_land_by_branch_name() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)

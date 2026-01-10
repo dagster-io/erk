@@ -106,8 +106,8 @@ def test_land_with_up_navigates_to_child_branch() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree of feature-1 was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree of feature-1 was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch feature-1 was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
@@ -411,8 +411,8 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree of feature-1 was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree of feature-1 was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch feature-1 was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)

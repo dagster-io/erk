@@ -112,8 +112,8 @@ def test_land_merges_and_deletes_worktree() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
@@ -124,8 +124,8 @@ def test_land_merges_and_deletes_worktree() -> None:
         assert script_content is not None
         assert str(repo.root) in script_content
 
-        # Verify "Deleted worktree" message
-        assert "Deleted worktree and branch" in result.output
+        # Verify "Deleted branch (worktree preserved)" message
+        assert "Deleted branch (worktree 'feature-1' preserved)" in result.output
 
 
 def test_land_error_from_execute_land_pr() -> None:
@@ -642,8 +642,8 @@ def test_land_updates_upstack_pr_base_branches() -> None:
         # Verify PR was merged
         assert 123 in github_ops.merged_prs
 
-        # Verify worktree was removed
-        assert feature_1_path in git_ops.removed_worktrees
+        # Verify worktree was NOT removed (worktrees are always preserved)
+        assert feature_1_path not in git_ops.removed_worktrees
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
