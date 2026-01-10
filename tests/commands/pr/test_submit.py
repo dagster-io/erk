@@ -987,6 +987,88 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
         assert "found (already exists)" not in result.output
 
 
+def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
+    """Test that submit fails with helpful message when parent branch has no PR.
+
+    When submitting a branch that's part of a Graphite stack, if the parent
+    branch doesn't have a PR on GitHub yet, the command should fail with
+    a helpful message directing users to use 'gt submit' instead.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        # Current branch: feature (no existing PR)
+        # Graphite parent: parent-branch (also no PR)
+        # Should fail because parent needs PR first
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "parent-branch", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "parent-branch"): 1},  # Has commits to submit
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={
+                (env.cwd, "parent-branch"): "diff --git a/file.py b/file.py\n+new content"
+            },
+        )
+
+        # Configure Graphite stack: main → parent-branch → feature
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="parent-branch",  # Parent is parent-branch, NOT main
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "parent-branch": BranchMetadata(
+                    name="parent-branch",
+                    parent="main",
+                    children=["feature"],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["parent-branch"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # Neither feature nor parent-branch has a PR
+        github = FakeGitHub(
+            authenticated=True,
+            prs={},  # No PRs exist
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        # Should fail with helpful error message
+        assert result.exit_code != 0
+        assert "parent branch 'parent-branch' does not have a PR yet" in result.output
+        assert "gt submit" in result.output
+
+
 def test_pr_submit_shows_found_message_for_existing_pr() -> None:
     """Test that output shows 'found (already exists)' when PR already exists."""
     runner = CliRunner()

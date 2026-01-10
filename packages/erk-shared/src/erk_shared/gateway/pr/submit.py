@@ -288,6 +288,28 @@ def execute_core_submit(
     existing_pr = ctx.github.get_pr_for_branch(repo_root, branch_name)
 
     if isinstance(existing_pr, PRNotFound):
+        # Check if parent branch exists as a PR on GitHub (for stacked PRs)
+        # If parent is not trunk and has no PR, we can't create a PR targeting it
+        if parent_branch != trunk_branch:
+            parent_pr = ctx.github.get_pr_for_branch(repo_root, parent_branch)
+            if isinstance(parent_pr, PRNotFound):
+                yield CompletionEvent(
+                    CoreSubmitError(
+                        success=False,
+                        error_type="parent_branch_no_pr",
+                        message=(
+                            f"Cannot create PR: parent branch '{parent_branch}' "
+                            f"does not have a PR yet.\n\n"
+                            f"This branch is part of a Graphite stack. Use 'gt submit' "
+                            f"to submit the entire stack at once, which will create PRs "
+                            f"for all branches in the correct order.\n\n"
+                            f"Run: gt submit -s"
+                        ),
+                        details={"branch": branch_name, "parent_branch": parent_branch},
+                    )
+                )
+                return
+
         # Create new PR
         yield ProgressEvent("Creating new PR...")
 
