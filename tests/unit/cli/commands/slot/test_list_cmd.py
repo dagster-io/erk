@@ -209,3 +209,51 @@ def test_slot_list_shows_dirty_for_uncommitted_changes() -> None:
         assert "dirty" in result.output
         # Other slots without changes should show "-"
         assert "Changes" in result.output
+
+
+def test_slot_list_shows_exists_column() -> None:
+    """Test that slot list shows Exists column indicating physical worktree presence."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Create worktree directory for slot 01 (exists physically)
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main", worktree_path: "feature-xyz"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Pre-populate pool state with assignment
+        state = PoolState.test(
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="feature-xyz",
+                    assigned_at="2025-01-03T10:30:00+00:00",
+                    worktree_path=worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(repo.pool_json_path, state)
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(cli, ["slot", "list"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        # Exists column header should be shown
+        assert "Exists" in result.output
+        # Slot 01 should show "yes" (physically exists)
+        assert "yes" in result.output

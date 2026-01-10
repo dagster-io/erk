@@ -124,6 +124,7 @@ def slot_list(ctx: ErkContext) -> None:
     # Create Rich table
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("Worktree", style="cyan", no_wrap=True)
+    table.add_column("Exists", no_wrap=True)
     table.add_column("Branch", style="yellow", no_wrap=True)
     table.add_column("Objective", no_wrap=True)
     table.add_column("Assigned", no_wrap=True)
@@ -197,8 +198,12 @@ def slot_list(ctx: ErkContext) -> None:
         else:
             objective_display = "[dim]-[/dim]"
 
+        # Format exists display
+        exists_display = "[green]yes[/green]" if worktree_exists else "[dim]-[/dim]"
+
         table.add_row(
             slot_name,
+            exists_display,
             branch_display,
             objective_display,
             assigned_time,
