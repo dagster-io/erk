@@ -20,11 +20,13 @@ def parse_changelog_marker(changelog_path: Path) -> str | None:
 
     content = changelog_path.read_text(encoding="utf-8")
 
-    # Look for "As of `<commit_hash>`" pattern in the Unreleased section
-    # The hash is typically 9 characters but could vary
-    match = re.search(r"As of `([a-f0-9]{7,40})`", content)
+    # Look for "As of <commit_hash>" pattern in the Unreleased section
+    # Supports two formats:
+    # 1. As of `hash` (backticks - visible in rendered markdown)
+    # 2. <!-- As of hash --> (HTML comment - invisible in rendered markdown)
+    match = re.search(r"(?:As of `([a-f0-9]{7,40})`|<!-- As of ([a-f0-9]{7,40}) -->)", content)
     if match:
-        return match.group(1)
+        return match.group(1) or match.group(2)
 
     return None
 

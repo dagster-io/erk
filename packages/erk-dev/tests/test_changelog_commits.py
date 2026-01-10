@@ -59,6 +59,20 @@ As of `af8fa25c9`
         result = parse_changelog_marker(changelog)
         assert result is None
 
+    def test_finds_marker_in_html_comment(self, tmp_path: Path) -> None:
+        changelog = tmp_path / "CHANGELOG.md"
+        content = """# Changelog
+
+## [Unreleased]
+
+<!-- As of 74819a14e -->
+
+### Added
+"""
+        changelog.write_text(content, encoding="utf-8")
+        result = parse_changelog_marker(changelog)
+        assert result == "74819a14e"
+
 
 class TestParseLastReleaseVersion:
     """Tests for parse_last_release_version function."""
