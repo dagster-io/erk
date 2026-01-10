@@ -133,6 +133,7 @@ build: clean
 # Reinstall erk tools in editable mode
 reinstall-erk-tools:
 	uv tool install --force -e .
+	uv tool install --force -e packages/erk-statusline
 
 # Publish packages to PyPI
 # Use erk-dev publish-to-pypi command instead (recommended)
