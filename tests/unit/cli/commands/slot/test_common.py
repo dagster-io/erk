@@ -282,6 +282,49 @@ class TestFindInactiveSlot:
 
         assert result is None
 
+    def test_skips_slot_with_uncommitted_changes(self, tmp_path: Path) -> None:
+        """Skips slots with uncommitted changes, returns next clean slot."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        wt2_path = tmp_path / "worktrees" / "erk-slot-02"
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+                ]
+            },
+            # Slot 1 has uncommitted changes
+            file_statuses={wt1_path: ([], ["dirty.py"], [])},
+        )
+        state = PoolState.test(pool_size=4)
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        # Should skip dirty slot 1 and return clean slot 2
+        assert result is not None
+        slot_name, worktree_path = result
+        assert slot_name == "erk-slot-02"
+        assert worktree_path == wt2_path
+
+    def test_returns_none_when_all_slots_dirty(self, tmp_path: Path) -> None:
+        """Returns None when all available slots have uncommitted changes."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                ]
+            },
+            file_statuses={wt1_path: ([], ["dirty.py"], [])},
+        )
+        state = PoolState.test(pool_size=4)
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        assert result is None
+
 
 class TestIsSlotInitialized:
     """Tests for is_slot_initialized function."""

@@ -208,13 +208,12 @@ def test_implement_respects_config_pool_size_over_stored_state() -> None:
 # Uncommitted Changes Detection Tests
 
 
-def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
-    """Test that implement fails with friendly error when slot has uncommitted changes.
+def test_implement_skips_slot_with_uncommitted_changes() -> None:
+    """Test that implement skips dirty slots and uses next clean slot.
 
-    When a pre-existing slot directory has uncommitted changes that would be
-    overwritten by git checkout, we should detect this BEFORE attempting checkout
-    and provide actionable remediation steps instead of letting git fail with
-    an ugly traceback.
+    When a pre-existing slot has uncommitted changes, find_inactive_slot()
+    should skip it and try the next slot. If no clean slots exist, it falls
+    through to creating a new slot via find_next_available_slot().
     """
     plan_issue = create_sample_plan_issue()
 
@@ -247,19 +246,17 @@ def test_implement_fails_with_uncommitted_changes_in_slot() -> None:
 
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
-        # Should fail with friendly error message
-        assert result.exit_code != 0
+        # Should succeed by skipping dirty slot and creating a new slot
+        assert result.exit_code == 0, f"Expected success but got: {result.output}"
 
-        # Verify error message contains remediation options
-        assert "uncommitted changes" in result.output
-        assert "erk-slot-01" in result.output
-        assert "git stash" in result.output
-        assert "git commit" in result.output
-        assert "erk slot unassign" in result.output
+        # Verify it used slot 02, not dirty slot 01
+        assert "erk-slot-02" in result.output
 
-        # Verify no worktree operations were attempted after the check
-        assert len(git.added_worktrees) == 0
-        assert len(git.checked_out_branches) == 0
+        # Verify pool state has the new assignment
+        final_state = load_pool_state(env.repo.pool_json_path)
+        assert final_state is not None
+        assignments = {a.slot_name: a.branch_name for a in final_state.assignments}
+        assert "erk-slot-02" in assignments
 
 
 # Tests for Implementing from Managed Slots (Maximize Parallelism)

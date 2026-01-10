@@ -145,6 +145,7 @@ def find_inactive_slot(
     Searches for worktrees that exist but are not assigned.
     Uses git as source of truth for which worktrees exist.
     Prefers slots in order (lowest slot number first).
+    Skips slots with uncommitted changes.
 
     Args:
         state: Current pool state
@@ -171,7 +172,11 @@ def find_inactive_slot(
     for slot_num in range(1, state.pool_size + 1):
         slot_name = generate_slot_name(slot_num)
         if slot_name in managed_worktrees and slot_name not in assigned_slots:
-            return (slot_name, managed_worktrees[slot_name])
+            wt_path = managed_worktrees[slot_name]
+            # Skip slots with uncommitted changes
+            if git.has_uncommitted_changes(wt_path):
+                continue
+            return (slot_name, wt_path)
 
     return None
 
