@@ -1,6 +1,10 @@
 {
   "permissions": {
-    "allow": ["Bash(erk:*)", "Read(/tmp/*)", "Write(/tmp/*)"],
+    "allow": [
+      "Bash(erk:*)",
+      "Read(/tmp/*)",
+      "Write(/tmp/*)"
+    ],
     "deny": []
   },
   "hooks": {
@@ -28,6 +32,17 @@
             "type": "command",
             "command": "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook",
             "timeout": 30
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[[ \"${file_path}\" == *.py ]] && uv run ruff format \"${file_path}\" || true"
           }
         ]
       }
