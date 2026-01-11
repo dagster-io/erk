@@ -32,6 +32,7 @@ class LearnResult:
     readable_session_ids: list[str]
     session_paths: list[str]
     local_session_ids: list[str]  # Sessions found locally (fallback when GitHub has none)
+    last_remote_impl_at: str | None  # Timestamp if implemented remotely via GitHub Actions
 
 
 def _extract_issue_number(identifier: str) -> int | None:
@@ -176,6 +177,7 @@ def learn_cmd(
         readable_session_ids=readable_session_ids,
         session_paths=session_paths,
         local_session_ids=local_session_ids,
+        last_remote_impl_at=sessions_for_plan.last_remote_impl_at,
     )
 
     # Track invocation (unless disabled)
@@ -247,6 +249,11 @@ def _display_human_readable(result: LearnResult) -> None:
         user_output(f"Implementation sessions ({len(result.implementation_session_ids)}):")
         for sid in result.implementation_session_ids:
             user_output(f"  - {click.style(sid, fg='green')}")
+    elif result.last_remote_impl_at is not None:
+        user_output(
+            "Implementation sessions: "
+            + click.style("(ran remotely - logs not accessible locally)", dim=True)
+        )
     else:
         user_output("Implementation sessions: " + click.style("(none)", dim=True))
 

@@ -37,6 +37,7 @@ def test_sessions_for_plan_all_session_ids_empty() -> None:
         planning_session_id=None,
         implementation_session_ids=[],
         learn_session_ids=[],
+        last_remote_impl_at=None,
     )
     assert sessions.all_session_ids() == []
 
@@ -47,6 +48,7 @@ def test_sessions_for_plan_all_session_ids_planning_only() -> None:
         planning_session_id="planning-123",
         implementation_session_ids=[],
         learn_session_ids=[],
+        last_remote_impl_at=None,
     )
     assert sessions.all_session_ids() == ["planning-123"]
 
@@ -57,6 +59,7 @@ def test_sessions_for_plan_all_session_ids_deduplicates() -> None:
         planning_session_id="shared-session",
         implementation_session_ids=["shared-session", "impl-only"],
         learn_session_ids=["learn-only", "shared-session"],
+        last_remote_impl_at=None,
     )
     # shared-session should only appear once (from planning)
     result = sessions.all_session_ids()
@@ -69,6 +72,7 @@ def test_sessions_for_plan_all_session_ids_order() -> None:
         planning_session_id="plan-session",
         implementation_session_ids=["impl-1", "impl-2"],
         learn_session_ids=["learn-1"],
+        last_remote_impl_at=None,
     )
     result = sessions.all_session_ids()
     assert result == ["plan-session", "impl-1", "impl-2", "learn-1"]
@@ -89,6 +93,7 @@ def test_find_sessions_for_plan_no_sessions() -> None:
     assert result.planning_session_id is None
     assert result.implementation_session_ids == []
     assert result.learn_session_ids == []
+    assert result.last_remote_impl_at is None
 
 
 def test_find_sessions_for_plan_with_created_from_session() -> None:
@@ -182,3 +187,38 @@ def test_find_sessions_for_plan_combines_all_sources() -> None:
         "comment-impl-session",
     ]
     assert result.learn_session_ids == ["learn-session"]
+
+
+def test_find_sessions_for_plan_with_remote_impl() -> None:
+    """Find sessions extracts last_remote_impl_at from plan-header."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:00:00Z",
+        created_by="testuser",
+        last_remote_impl_at="2024-01-16T14:30:00Z",
+    )
+    issue = create_test_issue(number=42, title="Plan", body=body)
+    fake_gh = FakeGitHubIssues(issues={42: issue})
+
+    result = find_sessions_for_plan(fake_gh, Path("/repo"), 42)
+
+    assert result.last_remote_impl_at == "2024-01-16T14:30:00Z"
+    # No local implementation sessions
+    assert result.implementation_session_ids == []
+
+
+def test_find_sessions_for_plan_with_both_local_and_remote_impl() -> None:
+    """Find sessions returns both local sessions and remote timestamp."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:00:00Z",
+        created_by="testuser",
+        last_local_impl_session="local-impl-session",
+        last_remote_impl_at="2024-01-16T14:30:00Z",
+    )
+    issue = create_test_issue(number=42, title="Plan", body=body)
+    fake_gh = FakeGitHubIssues(issues={42: issue})
+
+    result = find_sessions_for_plan(fake_gh, Path("/repo"), 42)
+
+    # Both should be present
+    assert result.implementation_session_ids == ["local-impl-session"]
+    assert result.last_remote_impl_at == "2024-01-16T14:30:00Z"
