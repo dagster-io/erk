@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 
 import click
+import tomlkit
 
 from erk.artifacts.sync import sync_artifacts
 from erk.cli.core import discover_repo_context
@@ -49,21 +50,35 @@ from erk_shared.output.output import user_output
 # Console for init command prompts (always interactive)
 _console = InteractiveConsole()
 
-# Default config template for new repositories
-DEFAULT_CONFIG_TEMPLATE = """\
-# work config for this repository
-# Available template variables: {worktree_path}, {repo_root}, {name}
 
-[env]
-# EXAMPLE_KEY = "{worktree_path}"
+def _build_repo_config_toml() -> str:
+    """Build repo config.toml content using tomlkit.
 
-[post_create]
-# shell = "bash"
-# commands = [
-#   "uv venv",
-#   "uv run make dev_install",
-# ]
-"""
+    Returns:
+        TOML content as a string
+    """
+    doc = tomlkit.document()
+    doc.add(tomlkit.comment("work config for this repository"))
+    doc.add(tomlkit.comment("Available template variables: {worktree_path}, {repo_root}, {name}"))
+    doc.add(tomlkit.nl())
+
+    # [env] section
+    env_table = tomlkit.table()
+    env_table.add(tomlkit.comment(' EXAMPLE_KEY = "{worktree_path}"'))
+    doc["env"] = env_table
+
+    doc.add(tomlkit.nl())
+
+    # [post_create] section
+    post_create_table = tomlkit.table()
+    post_create_table.add(tomlkit.comment(' shell = "bash"'))
+    post_create_table.add(tomlkit.comment(" commands = ["))
+    post_create_table.add(tomlkit.comment('   "uv venv",'))
+    post_create_table.add(tomlkit.comment('   "uv run make dev_install",'))
+    post_create_table.add(tomlkit.comment(" ]"))
+    doc["post_create"] = post_create_table
+
+    return tomlkit.dumps(doc)
 
 
 def detect_graphite(shell_ops: Shell) -> bool:
@@ -562,7 +577,7 @@ def run_init(
         # Also ensure metadata directory exists (needed for worktrees dir)
         ensure_erk_metadata_dir(repo_context)
 
-        cfg_path.write_text(DEFAULT_CONFIG_TEMPLATE, encoding="utf-8")
+        cfg_path.write_text(_build_repo_config_toml(), encoding="utf-8")
         user_output(f"  Wrote {cfg_path}")
 
         # Create required version file

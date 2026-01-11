@@ -12,6 +12,8 @@ import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import tomlkit
+
 from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 
@@ -125,33 +127,41 @@ class RealErkInstallation(ErkInstallation):
                 f"  Or edit the file directly to add: shell_setup_complete = true"
             )
 
-        content = f"""# Global erk configuration
-erk_root = "{config.erk_root}"
-use_graphite = {str(config.use_graphite).lower()}
-shell_setup_complete = {str(config.shell_setup_complete).lower()}
-github_planning = {str(config.github_planning).lower()}
-fix_conflicts_require_dangerous_flag = {str(config.fix_conflicts_require_dangerous_flag).lower()}
-show_hidden_commands = {str(config.show_hidden_commands).lower()}
-"""
+        # Build TOML document using tomlkit for proper formatting
+        doc = tomlkit.document()
+        doc.add(tomlkit.comment("Global erk configuration"))
+        doc["erk_root"] = str(config.erk_root)
+        doc["use_graphite"] = config.use_graphite
+        doc["shell_setup_complete"] = config.shell_setup_complete
+        doc["github_planning"] = config.github_planning
+        doc["fix_conflicts_require_dangerous_flag"] = config.fix_conflicts_require_dangerous_flag
+        doc["show_hidden_commands"] = config.show_hidden_commands
+
         # Add [interactive-claude] section if any non-default values are set
         ic = config.interactive_claude
         ic_default = InteractiveClaudeConfig.default()
-        ic_lines: list[str] = []
-        if ic.model is not None:
-            ic_lines.append(f'model = "{ic.model}"')
-        if ic.verbose != ic_default.verbose:
-            ic_lines.append(f"verbose = {str(ic.verbose).lower()}")
-        if ic.permission_mode != ic_default.permission_mode:
-            ic_lines.append(f'permission_mode = "{ic.permission_mode}"')
-        if ic.dangerous != ic_default.dangerous:
-            ic_lines.append(f"dangerous = {str(ic.dangerous).lower()}")
+        ic_table = tomlkit.table()
+        has_ic_values = False
 
-        if ic_lines:
-            content += "\n[interactive-claude]\n"
-            content += "\n".join(ic_lines) + "\n"
+        if ic.model is not None:
+            ic_table["model"] = ic.model
+            has_ic_values = True
+        if ic.verbose != ic_default.verbose:
+            ic_table["verbose"] = ic.verbose
+            has_ic_values = True
+        if ic.permission_mode != ic_default.permission_mode:
+            ic_table["permission_mode"] = ic.permission_mode
+            has_ic_values = True
+        if ic.dangerous != ic_default.dangerous:
+            ic_table["dangerous"] = ic.dangerous
+            has_ic_values = True
+
+        if has_ic_values:
+            doc.add(tomlkit.nl())
+            doc["interactive-claude"] = ic_table
 
         try:
-            config_path.write_text(content, encoding="utf-8")
+            config_path.write_text(tomlkit.dumps(doc), encoding="utf-8")
         except PermissionError:
             raise PermissionError(
                 f"Cannot write to file: {config_path}\n"

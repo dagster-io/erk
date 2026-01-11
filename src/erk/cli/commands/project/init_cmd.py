@@ -1,33 +1,55 @@
 """Project init command - initialize a project in the current directory."""
 
 import click
+import tomlkit
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 
-# Template for project.toml
-PROJECT_TOML_TEMPLATE = """\
-# Project configuration for erk
-# This file identifies this directory as an erk project within a monorepo.
 
-# Optional: custom project name (defaults to directory name)
-# name = "{project_name}"
+def _build_project_toml(project_name: str) -> str:
+    """Build project.toml content using tomlkit.
 
-[env]
-# Project-specific environment variables (merged with repo-level config)
-# These variables are available in .env files created for worktrees
-# Example:
-# DAGSTER_HOME = "{{project_root}}"
+    Args:
+        project_name: Name of the project (typically the directory name)
 
-[post_create]
-# Commands to run after worktree creation, FROM the project directory
-# These run AFTER repo-level post_create commands
-# shell = "bash"
-# commands = [
-#   "source .venv/bin/activate",
-# ]
-"""
+    Returns:
+        TOML content as a string
+    """
+    doc = tomlkit.document()
+    doc.add(tomlkit.comment("Project configuration for erk"))
+    doc.add(tomlkit.comment("This file identifies this directory as an erk project"))
+    doc.add(tomlkit.comment("within a monorepo."))
+    doc.add(tomlkit.nl())
+    doc.add(tomlkit.comment("Optional: custom project name (defaults to directory name)"))
+    doc.add(tomlkit.comment(f' name = "{project_name}"'))
+    doc.add(tomlkit.nl())
+
+    # [env] section
+    env_table = tomlkit.table()
+    env_table.add(tomlkit.comment("Project-specific environment variables"))
+    env_table.add(tomlkit.comment("(merged with repo-level config)"))
+    env_table.add(tomlkit.comment("These variables are available in .env files"))
+    env_table.add(tomlkit.comment("created for worktrees"))
+    env_table.add(tomlkit.comment("Example:"))
+    env_table.add(tomlkit.comment(' DAGSTER_HOME = "{project_root}"'))
+    doc["env"] = env_table
+
+    doc.add(tomlkit.nl())
+
+    # [post_create] section
+    post_create_table = tomlkit.table()
+    post_create_table.add(tomlkit.comment("Commands to run after worktree creation,"))
+    post_create_table.add(tomlkit.comment("FROM the project directory"))
+    post_create_table.add(tomlkit.comment("These run AFTER repo-level post_create commands"))
+    post_create_table.add(tomlkit.comment(' shell = "bash"'))
+    post_create_table.add(tomlkit.comment(" commands = ["))
+    post_create_table.add(tomlkit.comment('   "source .venv/bin/activate",'))
+    post_create_table.add(tomlkit.comment(" ]"))
+    doc["post_create"] = post_create_table
+
+    return tomlkit.dumps(doc)
 
 
 @click.command("init")
@@ -73,7 +95,7 @@ def init_project(ctx: ErkContext) -> None:
     erk_dir.mkdir(parents=True, exist_ok=True)
 
     project_name = ctx.cwd.name
-    content = PROJECT_TOML_TEMPLATE.format(project_name=project_name)
+    content = _build_project_toml(project_name)
     project_toml_path.write_text(content, encoding="utf-8")
 
     # Calculate path from repo root for display
