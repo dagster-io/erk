@@ -28,7 +28,6 @@ Examples:
 
 import getpass
 import json
-import os
 import subprocess
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -197,7 +196,8 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
 
     # Capture metadata
     timestamp = datetime.now(UTC).isoformat()
-    session_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    # session_id is passed as parameter, not from env var
+    # (erk code never has access to CLAUDE_CODE_SESSION_ID env var)
     user = getpass.getuser()
 
     # Write local state file first (fast, no network)
@@ -269,7 +269,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     raise SystemExit(0)
 
 
-def _signal_ended(ctx: click.Context) -> None:
+def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
     """Handle 'ended' event - update metadata."""
     event = "ended"
 
@@ -293,7 +293,8 @@ def _signal_ended(ctx: click.Context) -> None:
 
     # Capture metadata
     timestamp = datetime.now(UTC).isoformat()
-    session_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
+    # session_id is passed as parameter, not from env var
+    # (erk code never has access to CLAUDE_CODE_SESSION_ID env var)
     user = getpass.getuser()
 
     # Write local state file first
@@ -372,4 +373,4 @@ def impl_signal(ctx: click.Context, event: str, session_id: str | None) -> None:
     if event == "started":
         _signal_started(ctx, session_id)
     else:
-        _signal_ended(ctx)
+        _signal_ended(ctx, session_id)

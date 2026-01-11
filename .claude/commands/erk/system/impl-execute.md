@@ -148,7 +148,7 @@ Confirm all tasks executed, success criteria met, note deviations, summarize cha
 ### Step 11: Signal GitHub Ended
 
 ```bash
-erk exec impl-signal ended 2>/dev/null || true
+erk exec impl-signal ended --session-id="<session-id>" 2>/dev/null || true
 ```
 
 ### Step 12: Verify .impl/ Preserved
