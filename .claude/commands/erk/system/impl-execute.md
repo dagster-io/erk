@@ -201,6 +201,16 @@ If checks fail, display output and warn user.
 - **Each phase**: "Phase X: [brief description]" with code changes
 - **End**: "Plan execution complete. [Summary]"
 
+### Step 16: Submit PR
+
+After all phases complete and CI passes, submit the PR:
+
+```
+/erk:pr-submit
+```
+
+This delegates to `erk pr submit` which handles commit message generation, Graphite submission, and PR metadata.
+
 ---
 
 ## Related Commands
