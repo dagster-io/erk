@@ -32,6 +32,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -70,6 +71,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=["session-abc", "session-def"],
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -101,6 +103,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -125,6 +128,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -148,6 +152,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -171,6 +176,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -195,6 +201,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo="owner/impl-repo",
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -222,6 +229,7 @@ class TestCreatePlanIssueSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -252,6 +260,7 @@ class TestCreatePlanIssueTitleExtraction:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.title == "Feature: Add Auth"
@@ -273,6 +282,7 @@ class TestCreatePlanIssueTitleExtraction:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.title == "Add Feature X"
@@ -294,6 +304,7 @@ class TestCreatePlanIssueTitleExtraction:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.title == "Refactor Y"
@@ -319,6 +330,7 @@ class TestCreatePlanIssueErrors:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is False
@@ -351,6 +363,7 @@ class TestCreatePlanIssueErrors:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is False
@@ -380,6 +393,7 @@ class TestCreatePlanIssueErrors:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is False
@@ -414,6 +428,7 @@ class TestCreatePlanIssuePartialSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         # Partial success: issue created but comment failed
@@ -445,6 +460,7 @@ class TestCreatePlanIssuePartialSuccess:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is False
@@ -471,6 +487,7 @@ class TestCreatePlanIssueLabelManagement:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -498,6 +515,7 @@ class TestCreatePlanIssueLabelManagement:
             extraction_session_ids=["abc"],
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -524,6 +542,7 @@ class TestCreatePlanIssueLabelManagement:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -547,6 +566,7 @@ class TestCreatePlanIssueLabelManagement:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -740,6 +760,7 @@ class TestCreatePlanIssueCommandsSection:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -773,6 +794,7 @@ class TestCreatePlanIssueCommandsSection:
             extraction_session_ids=["session-abc"],
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True
@@ -804,6 +826,7 @@ class TestCreatePlanIssueCommandsSection:
             extraction_session_ids=None,
             source_repo=None,
             objective_issue=None,
+            created_from_session=None,
         )
 
         assert result.success is True

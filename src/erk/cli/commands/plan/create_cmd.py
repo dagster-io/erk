@@ -94,6 +94,7 @@ def create_plan(
         extraction_session_ids=None,
         source_repo=source_repo,
         objective_issue=None,
+        created_from_session=None,
     )
 
     if not result.success:

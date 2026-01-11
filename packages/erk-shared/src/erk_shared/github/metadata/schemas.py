@@ -329,6 +329,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
+        created_from_session: Session ID that created this plan (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -354,6 +355,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "extraction_session_ids",
             "source_repo",
             "objective_issue",
+            "created_from_session",
         }
 
         # Check required fields exist
@@ -492,6 +494,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("objective_issue must be an integer or null")
             if data["objective_issue"] <= 0:
                 raise ValueError("objective_issue must be positive when provided")
+
+        # Validate optional created_from_session field
+        if "created_from_session" in data and data["created_from_session"] is not None:
+            if not isinstance(data["created_from_session"], str):
+                raise ValueError("created_from_session must be a string or null")
+            if len(data["created_from_session"]) == 0:
+                raise ValueError("created_from_session must not be empty when provided")
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

@@ -45,6 +45,7 @@ def create_plan_header_block(
     extraction_session_ids: list[str] | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
+    created_from_session: str | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -66,6 +67,7 @@ def create_plan_header_block(
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
+        created_from_session: Optional session ID that created this plan (for learn discovery)
 
     Returns:
         MetadataBlock with plan-header schema
@@ -108,6 +110,10 @@ def create_plan_header_block(
     if objective_issue is not None:
         data["objective_issue"] = objective_issue
 
+    # Include created_from_session if provided
+    if created_from_session is not None:
+        data["created_from_session"] = created_from_session
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -134,6 +140,7 @@ def format_plan_header_body(
     extraction_session_ids: list[str] | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
+    created_from_session: str | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -158,6 +165,7 @@ def format_plan_header_body(
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
+        created_from_session: Optional session ID that created this plan (for learn discovery)
 
     Returns:
         Issue body string with metadata block only
@@ -180,6 +188,7 @@ def format_plan_header_body(
         extraction_session_ids=extraction_session_ids,
         source_repo=source_repo,
         objective_issue=objective_issue,
+        created_from_session=created_from_session,
     )
 
     return render_metadata_block(block)
@@ -629,3 +638,35 @@ def extract_plan_header_objective_issue(issue_body: str) -> int | None:
         return None
 
     return block.data.get("objective_issue")
+
+
+def extract_plan_header_created_from_session(issue_body: str) -> str | None:
+    """Extract created_from_session from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Session ID that created this plan if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("created_from_session")
+
+
+def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
+    """Extract last_local_impl_session from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Session ID of last local implementation if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_local_impl_session")

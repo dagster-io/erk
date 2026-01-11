@@ -206,6 +206,7 @@ def create_extraction_plan(
         extraction_session_ids=session_ids,
         source_repo=None,
         objective_issue=None,
+        created_from_session=session_id,
     )
 
     if not result.success:

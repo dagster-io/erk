@@ -71,6 +71,7 @@ def create_plan_issue(
     extraction_session_ids: list[str] | None,
     source_repo: str | None,
     objective_issue: int | None,
+    created_from_session: str | None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2/v3 plan issue with proper structure.
 
@@ -93,6 +94,7 @@ def create_plan_issue(
         extraction_session_ids: For extraction plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_issue: Optional parent objective issue number
+        created_from_session: Optional session ID that created this plan (for learn discovery)
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -168,6 +170,7 @@ def create_plan_issue(
         extraction_session_ids=extraction_session_ids if extraction_session_ids else [],
         source_repo=source_repo,
         objective_issue=objective_issue,
+        created_from_session=created_from_session,
     )
 
     # Create issue

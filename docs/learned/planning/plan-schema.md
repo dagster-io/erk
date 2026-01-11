@@ -70,6 +70,12 @@ last_remote_impl_at: null
 | `last_remote_impl_at`     | string\|null | GitHub Actions implementation timestamp  |
 | `source_repo`             | string\|null | Implementation repo for cross-repo plans |
 
+**Session tracking fields:**
+
+| Field                  | Type         | Description                                         |
+| ---------------------- | ------------ | --------------------------------------------------- |
+| `created_from_session` | string\|null | Session ID that created this plan (for `erk learn`) |
+
 **Extraction plan fields (when `plan_type: extraction`):**
 
 | Field                    | Type         | Description                    |

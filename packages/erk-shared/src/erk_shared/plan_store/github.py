@@ -287,6 +287,12 @@ class GitHubPlanStore(PlanBackend):
         # since create_plan_issue adds it automatically
         extra_labels = [lbl for lbl in labels if lbl != "erk-plan"]
 
+        # Extract created_from_session from metadata if provided
+        created_from_session_raw = metadata.get("created_from_session")
+        created_from_session_str: str | None = (
+            str(created_from_session_raw) if created_from_session_raw is not None else None
+        )
+
         result = create_plan_issue(
             github_issues=self._github_issues,
             repo_root=repo_root,
@@ -299,6 +305,7 @@ class GitHubPlanStore(PlanBackend):
             extraction_session_ids=extraction_session_ids_list,
             source_repo=source_repo_str,
             objective_issue=objective_issue_int,
+            created_from_session=created_from_session_str,
         )
 
         if not result.success:

@@ -163,6 +163,7 @@ def plan_save_to_issue(
         extraction_session_ids=None,
         source_repo=source_repo,
         objective_issue=objective_issue,
+        created_from_session=effective_session_id,
     )
 
     if not result.success:
