@@ -24,7 +24,10 @@ def test_next_plan_shows_error_when_claude_not_installed() -> None:
 
 
 def test_next_plan_launches_claude_with_issue_number() -> None:
-    """Test next-plan launches Claude with the correct command for issue number."""
+    """Test next-plan launches Claude with the correct command for issue number.
+
+    The next-plan command uses plan mode since it's for creating implementation plans.
+    """
     runner = CliRunner()
 
     with (
@@ -37,10 +40,11 @@ def test_next_plan_launches_claude_with_issue_number() -> None:
     call_args = mock_execvp.call_args
     assert call_args[0][0] == "claude"
     args_list = call_args[0][1]
+    # Uses plan mode since this is for creating implementation plans
     assert args_list == [
         "claude",
         "--permission-mode",
-        "acceptEdits",
+        "plan",
         "/erk:objective-next-plan 3679",
     ]
 
@@ -60,10 +64,11 @@ def test_next_plan_launches_claude_with_url() -> None:
     call_args = mock_execvp.call_args
     assert call_args[0][0] == "claude"
     args_list = call_args[0][1]
+    # Uses plan mode since this is for creating implementation plans
     assert args_list == [
         "claude",
         "--permission-mode",
-        "acceptEdits",
+        "plan",
         f"/erk:objective-next-plan {url}",
     ]
 

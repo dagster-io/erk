@@ -7,7 +7,7 @@ from erk.cli.commands.init.main import create_and_save_global_config
 from erk.cli.commands.wt.create_cmd import make_env_content
 from erk.cli.config import load_config
 from erk.core.context import context_for_test
-from erk_shared.context.types import GlobalConfig
+from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from tests.fakes.shell import FakeShell
@@ -241,3 +241,225 @@ def test_load_config_with_partial_post_create(tmp_path: Path) -> None:
     assert cfg.env == {}
     assert cfg.post_create_shell is None
     assert cfg.post_create_commands == ["echo 'hello'"]
+
+
+def test_load_config_with_interactive_claude_section(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealErkInstallation correctly loads [interactive-claude] section."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        f"""
+erk_root = "{tmp_path / "erks"}"
+use_graphite = true
+shell_setup_complete = true
+
+[interactive-claude]
+model = "claude-opus-4-5"
+verbose = true
+permission_mode = "plan"
+dangerous = true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    installation = RealErkInstallation()
+    loaded = installation.load_config()
+
+    assert loaded.interactive_claude.model == "claude-opus-4-5"
+    assert loaded.interactive_claude.verbose is True
+    assert loaded.interactive_claude.permission_mode == "plan"
+    assert loaded.interactive_claude.dangerous is True
+
+
+def test_load_config_interactive_claude_defaults(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that missing [interactive-claude] section uses defaults."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        f"""
+erk_root = "{tmp_path / "erks"}"
+use_graphite = true
+shell_setup_complete = true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    installation = RealErkInstallation()
+    loaded = installation.load_config()
+
+    # Should get default values
+    assert loaded.interactive_claude.model is None
+    assert loaded.interactive_claude.verbose is False
+    assert loaded.interactive_claude.permission_mode == "acceptEdits"
+    assert loaded.interactive_claude.dangerous is False
+
+
+def test_load_config_interactive_claude_partial(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that partial [interactive-claude] section uses defaults for missing fields."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        f"""
+erk_root = "{tmp_path / "erks"}"
+use_graphite = true
+shell_setup_complete = true
+
+[interactive-claude]
+model = "opus"
+""".strip(),
+        encoding="utf-8",
+    )
+
+    installation = RealErkInstallation()
+    loaded = installation.load_config()
+
+    # Only model is set, others should be defaults
+    assert loaded.interactive_claude.model == "opus"
+    assert loaded.interactive_claude.verbose is False
+    assert loaded.interactive_claude.permission_mode == "acceptEdits"
+    assert loaded.interactive_claude.dangerous is False
+
+
+def test_save_config_with_interactive_claude(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealErkInstallation correctly saves [interactive-claude] section."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    installation = RealErkInstallation()
+
+    # Create config with non-default interactive_claude values
+    config = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        github_planning=True,
+        interactive_claude=InteractiveClaudeConfig(
+            model="claude-opus-4-5",
+            verbose=True,
+            permission_mode="plan",
+            dangerous=True,
+        ),
+    )
+    installation.save_config(config)
+
+    # Verify file content
+    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
+    assert "[interactive-claude]" in content
+    assert 'model = "claude-opus-4-5"' in content
+    assert "verbose = true" in content
+    assert 'permission_mode = "plan"' in content
+    assert "dangerous = true" in content
+
+
+def test_save_config_interactive_claude_defaults_not_written(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that default interactive_claude values are not written to file."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    installation = RealErkInstallation()
+
+    # Create config with default interactive_claude
+    config = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        github_planning=True,
+        # interactive_claude defaults to InteractiveClaudeConfig.default()
+    )
+    installation.save_config(config)
+
+    # Verify file content does NOT contain [interactive-claude] section
+    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
+    assert "[interactive-claude]" not in content
+
+
+def test_save_config_interactive_claude_partial_non_defaults(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that only non-default interactive_claude values are written."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    installation = RealErkInstallation()
+
+    # Create config with only model set (dangerous and verbose are defaults)
+    config = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        github_planning=True,
+        interactive_claude=InteractiveClaudeConfig(
+            model="opus",
+            verbose=False,  # default
+            permission_mode="acceptEdits",  # default
+            dangerous=False,  # default
+        ),
+    )
+    installation.save_config(config)
+
+    # Verify file content
+    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
+    assert "[interactive-claude]" in content
+    assert 'model = "opus"' in content
+    # Defaults should not be written (check exact patterns within [interactive-claude])
+    assert "verbose =" not in content
+    assert "permission_mode =" not in content
+    # Check that "dangerous =" is not in [interactive-claude] section
+    # (note: "requires_dangerous_flag" is a different field that exists elsewhere)
+    assert "\ndangerous =" not in content
+
+
+def test_roundtrip_interactive_claude_config(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test save then load preserves interactive_claude config."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    installation = RealErkInstallation()
+
+    # Create config with custom interactive_claude
+    original = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        github_planning=True,
+        interactive_claude=InteractiveClaudeConfig(
+            model="opus",
+            verbose=True,
+            permission_mode="plan",
+            dangerous=True,
+        ),
+    )
+    installation.save_config(original)
+
+    # Load and verify round-trip
+    loaded = installation.load_config()
+    assert loaded.interactive_claude.model == "opus"
+    assert loaded.interactive_claude.verbose is True
+    assert loaded.interactive_claude.permission_mode == "plan"
+    assert loaded.interactive_claude.dangerous is True

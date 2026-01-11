@@ -414,6 +414,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
+        permission_mode: str = "acceptEdits",
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -445,7 +446,7 @@ class RealClaudeExecutor(ClaudeExecutor):
             os.chdir(worktree_path)
 
         # Build command arguments
-        cmd_args = ["claude", "--permission-mode", "acceptEdits"]
+        cmd_args = ["claude", "--permission-mode", permission_mode]
         if dangerous:
             cmd_args.append("--dangerously-skip-permissions")
         if model is not None:

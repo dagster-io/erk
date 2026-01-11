@@ -115,7 +115,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_prompt_error = simulated_prompt_error
         self._simulated_no_work_events = simulated_no_work_events
         self._executed_commands: list[tuple[str, Path, bool, bool, str | None]] = []
-        self._interactive_calls: list[tuple[Path, bool, str, Path | None, str | None]] = []
+        self._interactive_calls: list[tuple[Path, bool, str, Path | None, str | None, str]] = []
         self._prompt_calls: list[tuple[str, str | None]] = []
 
     def is_claude_available(self) -> bool:
@@ -266,6 +266,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
+        permission_mode: str = "acceptEdits",
     ) -> None:
         """Track interactive execution without replacing process.
 
@@ -279,7 +280,9 @@ class FakeClaudeExecutor(ClaudeExecutor):
         if not self._claude_available:
             raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
 
-        self._interactive_calls.append((worktree_path, dangerous, command, target_subpath, model))
+        self._interactive_calls.append(
+            (worktree_path, dangerous, command, target_subpath, model, permission_mode)
+        )
 
     @property
     def executed_commands(self) -> list[tuple[str, Path, bool, bool, str | None]]:
@@ -292,10 +295,13 @@ class FakeClaudeExecutor(ClaudeExecutor):
         return self._executed_commands.copy()
 
     @property
-    def interactive_calls(self) -> list[tuple[Path, bool, str, Path | None, str | None]]:
+    def interactive_calls(
+        self,
+    ) -> list[tuple[Path, bool, str, Path | None, str | None, str]]:
         """Get the list of execute_interactive() calls that were made.
 
-        Returns list of (worktree_path, dangerous, command, target_subpath, model) tuples.
+        Returns list of tuples:
+        (worktree_path, dangerous, command, target_subpath, model, permission_mode)
 
         This property is for test assertions only.
         """

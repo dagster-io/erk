@@ -5,12 +5,14 @@ This module provides the core data types used by ErkContext:
 - NoRepoSentinel: Sentinel for when not in a repository
 - GlobalConfig: Global erk configuration
 - LoadedConfig: Repository-level configuration
+- InteractiveClaudeConfig: Configuration for interactive Claude launches
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Self
 
 from erk_shared.github.types import GitHubRepoId
 
@@ -61,6 +63,68 @@ class NoRepoSentinel:
 
 
 @dataclass(frozen=True)
+class InteractiveClaudeConfig:
+    """Configuration for interactive Claude CLI launches.
+
+    All fields are optional in the config file. CLI flags always override
+    config values. This is loaded from [interactive-claude] section in
+    ~/.erk/config.toml.
+
+    Attributes:
+        model: Claude model to use (e.g., "claude-opus-4-5")
+        verbose: Whether to show verbose output
+        permission_mode: Permission mode ("acceptEdits", "plan", "bypassPermissions")
+        dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
+    """
+
+    model: str | None
+    verbose: bool
+    permission_mode: str
+    dangerous: bool
+
+    @staticmethod
+    def default() -> InteractiveClaudeConfig:
+        """Create default configuration with sensible defaults."""
+        return InteractiveClaudeConfig(
+            model=None,
+            verbose=False,
+            permission_mode="acceptEdits",
+            dangerous=False,
+        )
+
+    def with_overrides(
+        self: Self,
+        *,
+        permission_mode_override: str | None,
+        model_override: str | None,
+        dangerous_override: bool | None,
+    ) -> InteractiveClaudeConfig:
+        """Create a new config with CLI overrides applied.
+
+        CLI flags always override config values. Pass None to keep config value.
+
+        Args:
+            permission_mode_override: Override permission_mode if not None
+            model_override: Override model if not None
+            dangerous_override: Override dangerous if not None
+
+        Returns:
+            New InteractiveClaudeConfig with overrides applied
+        """
+        new_permission_mode = (
+            permission_mode_override
+            if permission_mode_override is not None
+            else self.permission_mode
+        )
+        return InteractiveClaudeConfig(
+            model=model_override if model_override is not None else self.model,
+            verbose=self.verbose,
+            permission_mode=new_permission_mode,
+            dangerous=dangerous_override if dangerous_override is not None else self.dangerous,
+        )
+
+
+@dataclass(frozen=True)
 class GlobalConfig:
     """Immutable global configuration data.
 
@@ -74,6 +138,7 @@ class GlobalConfig:
     github_planning: bool
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
+    interactive_claude: InteractiveClaudeConfig = InteractiveClaudeConfig.default()
 
     @staticmethod
     def test(
@@ -84,6 +149,7 @@ class GlobalConfig:
         github_planning: bool = True,
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
+        interactive_claude: InteractiveClaudeConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
         return GlobalConfig(
@@ -93,6 +159,11 @@ class GlobalConfig:
             github_planning=github_planning,
             fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,
+            interactive_claude=(
+                interactive_claude
+                if interactive_claude is not None
+                else InteractiveClaudeConfig.default()
+            ),
         )
 
 

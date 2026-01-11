@@ -96,7 +96,7 @@ def test_plan_start_interactive_calls_executor() -> None:
 
         # Verify execute_interactive was called with empty command
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
         assert "erk-slot-" in str(worktree_path)
         assert dangerous is False
         assert command == ""  # No slash command for planning
@@ -121,7 +121,7 @@ def test_plan_start_interactive_with_dangerous() -> None:
 
         # Verify dangerous flag was passed
         assert len(executor.interactive_calls) == 1
-        _, dangerous, _, _, _ = executor.interactive_calls[0]
+        _, dangerous, _, _, _, _ = executor.interactive_calls[0]
         assert dangerous is True
 
 
@@ -143,7 +143,7 @@ def test_plan_start_interactive_with_model() -> None:
 
         # Verify model was passed
         assert len(executor.interactive_calls) == 1
-        _, _, _, _, model = executor.interactive_calls[0]
+        _, _, _, _, model, _ = executor.interactive_calls[0]
         assert model == "opus"
 
 
@@ -442,5 +442,5 @@ def test_plan_start_preserves_relative_path() -> None:
 
         # Verify target_subpath is passed
         assert len(executor.interactive_calls) == 1
-        _, _, _, target_subpath, _ = executor.interactive_calls[0]
+        _, _, _, target_subpath, _, _ = executor.interactive_calls[0]
         assert target_subpath == Path("src/lib")

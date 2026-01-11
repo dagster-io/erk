@@ -12,7 +12,7 @@ import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk_shared.context.types import GlobalConfig
+from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 
 if TYPE_CHECKING:
@@ -57,6 +57,15 @@ class RealErkInstallation(ErkInstallation):
         if not root:
             raise ValueError(f"Missing 'erk_root' in {config_path}")
 
+        # Parse optional [interactive-claude] section
+        ic_data = data.get("interactive-claude", {})
+        interactive_claude = InteractiveClaudeConfig(
+            model=ic_data.get("model"),
+            verbose=bool(ic_data.get("verbose", False)),
+            permission_mode=ic_data.get("permission_mode", "acceptEdits"),
+            dangerous=bool(ic_data.get("dangerous", False)),
+        )
+
         return GlobalConfig(
             erk_root=Path(root).expanduser().resolve(),
             use_graphite=bool(data.get("use_graphite", False)),
@@ -66,6 +75,7 @@ class RealErkInstallation(ErkInstallation):
                 data.get("fix_conflicts_require_dangerous_flag", True)
             ),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
+            interactive_claude=interactive_claude,
         )
 
     def save_config(self, config: GlobalConfig) -> None:
@@ -123,6 +133,22 @@ github_planning = {str(config.github_planning).lower()}
 fix_conflicts_require_dangerous_flag = {str(config.fix_conflicts_require_dangerous_flag).lower()}
 show_hidden_commands = {str(config.show_hidden_commands).lower()}
 """
+        # Add [interactive-claude] section if any non-default values are set
+        ic = config.interactive_claude
+        ic_default = InteractiveClaudeConfig.default()
+        ic_lines: list[str] = []
+        if ic.model is not None:
+            ic_lines.append(f'model = "{ic.model}"')
+        if ic.verbose != ic_default.verbose:
+            ic_lines.append(f"verbose = {str(ic.verbose).lower()}")
+        if ic.permission_mode != ic_default.permission_mode:
+            ic_lines.append(f'permission_mode = "{ic.permission_mode}"')
+        if ic.dangerous != ic_default.dangerous:
+            ic_lines.append(f"dangerous = {str(ic.dangerous).lower()}")
+
+        if ic_lines:
+            content += "\n[interactive-claude]\n"
+            content += "\n".join(ic_lines) + "\n"
 
         try:
             config_path.write_text(content, encoding="utf-8")

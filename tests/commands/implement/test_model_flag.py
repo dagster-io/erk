@@ -37,7 +37,7 @@ def test_model_flag_in_interactive_mode() -> None:
 
         # Verify model was passed to execute_interactive
         assert len(executor.interactive_calls) == 1
-        _, _, _, _, model = executor.interactive_calls[0]
+        _, _, _, _, model, _ = executor.interactive_calls[0]
         assert model == "opus"
 
 
@@ -65,7 +65,7 @@ def test_model_flag_short_form_in_interactive_mode() -> None:
 
         # Verify model was passed to execute_interactive
         assert len(executor.interactive_calls) == 1
-        _, _, _, _, model = executor.interactive_calls[0]
+        _, _, _, _, model, _ = executor.interactive_calls[0]
         assert model == "sonnet"
 
 
@@ -91,7 +91,7 @@ def test_model_alias_in_interactive_mode() -> None:
 
         # Verify model alias was expanded to full name
         assert len(executor.interactive_calls) == 1
-        _, _, _, _, model = executor.interactive_calls[0]
+        _, _, _, _, model, _ = executor.interactive_calls[0]
         assert model == "haiku"
 
 

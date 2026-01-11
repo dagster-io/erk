@@ -42,7 +42,7 @@ def test_interactive_mode_calls_executor() -> None:
         assert len(executor.interactive_calls) == 1
         assert len(executor.executed_commands) == 0
 
-        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
         # Slot-based path
         assert "erk-slot-" in str(worktree_path)
         assert dangerous is False
@@ -74,7 +74,7 @@ def test_interactive_mode_with_dangerous_flag() -> None:
 
         # Verify dangerous flag was passed to execute_interactive
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
         assert dangerous is True
         assert command == "/erk:system:impl-execute"
         assert model is None
@@ -104,7 +104,7 @@ def test_interactive_mode_from_plan_file() -> None:
 
         # Verify execute_interactive was called
         assert len(executor.interactive_calls) == 1
-        worktree_path, dangerous, command, target_subpath, model = executor.interactive_calls[0]
+        worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
         assert "erk-slot-" in str(worktree_path)
         assert dangerous is False
         assert command == "/erk:system:impl-execute"

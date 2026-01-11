@@ -29,6 +29,7 @@ class InteractiveCall(NamedTuple):
     command: str
     target_subpath: Path | None
     model: str | None
+    permission_mode: str
 
 
 class PromptCall(NamedTuple):
@@ -89,6 +90,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
+        permission_mode: str = "acceptEdits",
     ) -> None:
         self.interactive_calls.append(
             InteractiveCall(
@@ -97,6 +99,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
                 command=command,
                 target_subpath=target_subpath,
                 model=model,
+                permission_mode=permission_mode,
             )
         )
 

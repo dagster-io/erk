@@ -306,6 +306,7 @@ class ClaudeExecutor(ABC):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
+        permission_mode: str = "acceptEdits",
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -318,6 +319,8 @@ class ClaudeExecutor(ABC):
                 instead of the worktree root. This preserves the user's relative
                 directory position when switching worktrees.
             model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+            permission_mode: Permission mode for Claude CLI (default: "acceptEdits")
+                Options: "acceptEdits", "plan", "bypassPermissions"
 
         Raises:
             RuntimeError: If Claude CLI is not available
