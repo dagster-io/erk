@@ -6,9 +6,9 @@ Erk orchestrates several tools to enable plan-oriented agentic engineering. This
 
 ## Required Tools
 
-### Python 3.10+
+### Python 3.11+
 
-Erk is a Python CLI tool. You need Python 3.10 or higher.
+Erk is a Python CLI tool. You need Python 3.11 or higher.
 
 **Check your version:**
 
@@ -16,7 +16,7 @@ Erk is a Python CLI tool. You need Python 3.10 or higher.
 python --version
 ```
 
-You should see `Python 3.10.x` or higher (3.11, 3.12, 3.13 all work).
+You should see `Python 3.11.x` or higher (3.12, 3.13 also work).
 
 If you need to install Python, see [Install Python](https://www.python.org/downloads/).
 
