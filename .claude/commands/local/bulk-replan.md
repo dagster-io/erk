@@ -154,7 +154,7 @@ gh api repos/dagster-io/erk/issues/<number>/labels/erk-plan -X DELETE
 **Create fresh plan (NEEDS_FRESH_PLAN):**
 
 1. Display: "Creating fresh plan for #<number>..."
-2. Run `/local:replan <number>` to create new plan and close original
+2. Run `/erk:replan <number>` to create new plan and close original
 
 ### Step 8: Display Summary
 
@@ -186,5 +186,5 @@ Replanned: #<original> → #<new> (for each)
 
 - Parallel agents reduce total time from O(n) to ~O(1) for investigation phase
 - User approval is REQUIRED before executing any actions
-- Fresh plan creation via `/local:replan` is sequential (each requires plan mode)
+- Fresh plan creation via `/erk:replan` is sequential (each requires plan mode)
 - Uses REST API to avoid GraphQL rate limits
