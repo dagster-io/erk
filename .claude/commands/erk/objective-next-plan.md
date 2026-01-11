@@ -171,21 +171,23 @@ This will:
 
 ### Step 9: Verify Objective Link
 
-After saving, verify the issue has the objective link:
+After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
+
+**If the objective-context marker was created in Step 2.5:**
+The hook will automatically suggest `/erk:plan-save --objective-issue=<objective-number>`.
+
+When you run this command, it will:
+
+- Save the plan to GitHub with objective metadata
+- Automatically verify the objective link was saved correctly
+- Display "Verified objective link: #<number>" on success
+- Fail with remediation steps if verification fails
+
+**Note:** If using `erk exec plan-save-to-issue` directly (not recommended), you must verify manually:
 
 ```bash
 gh issue view <new-issue-number> --json body | grep -q "objective_issue"
 ```
-
-**If verification fails** (objective_issue not found in body):
-
-The plan was saved without the objective link. Fix it by updating the issue body:
-
-1. Get current body: `gh issue view <issue-number> --json body -q '.body'`
-2. Add `objective_issue: <objective-number>` to the YAML metadata block
-3. Update: `gh issue edit <issue-number> --body "..."`
-
-Or simply close the incorrectly-created issue and re-run Step 8 with the correct command.
 
 ---
 
@@ -201,14 +203,14 @@ Or simply close the incorrectly-created issue and re-run Step 8 with the correct
 
 ## Error Cases
 
-| Scenario                                | Action                                          |
-| --------------------------------------- | ----------------------------------------------- |
-| Issue not found                         | Report error and exit                           |
-| Issue is erk-plan                       | Redirect to `/erk:system:impl-execute`          |
-| No pending steps                        | Report all steps complete, suggest closing      |
-| Invalid argument format                 | Prompt for valid issue number                   |
-| Roadmap not parseable                   | Ask user to specify which step to plan          |
-| Verification fails (no objective_issue) | Fix issue body or recreate with correct command |
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Issue not found                         | Report error and exit                                            |
+| Issue is erk-plan                       | Redirect to `/erk:system:impl-execute`                           |
+| No pending steps                        | Report all steps complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which step to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
 
 ---
 
