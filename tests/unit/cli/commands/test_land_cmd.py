@@ -13,7 +13,7 @@ from erk.cli.commands.land_cmd import (
     parse_argument,
 )
 from erk.cli.commands.navigation_helpers import find_assignment_by_worktree_path
-from erk.core.context import context_for_test
+from erk.core.context import ErkContext, context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
@@ -251,6 +251,8 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
             target_child_branch=None,
             objective_number=123,  # This would trigger pool state save
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -318,6 +320,8 @@ def test_cleanup_and_navigate_dry_run_shows_summary() -> None:
                 target_child_branch=None,
                 objective_number=None,
                 no_delete=False,
+                autolearn=False,
+                pr_number=123,
             )
         except SystemExit as e:
             assert e.code == 0  # Should exit cleanly
@@ -511,6 +515,8 @@ def test_cleanup_and_navigate_uses_plain_git_delete_when_graphite_disabled(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -608,6 +614,8 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -719,6 +727,8 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -826,6 +836,8 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -914,6 +926,8 @@ def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
         pytest.fail("Expected SystemExit(1) for uncommitted changes")
     except SystemExit as e:
@@ -1030,6 +1044,8 @@ def test_cleanup_ensures_branch_not_checked_out_before_delete_with_stale_pool_st
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -1198,6 +1214,8 @@ def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -1312,6 +1330,8 @@ def test_cleanup_and_navigate_no_delete_preserves_branch_and_slot(
             target_child_branch=None,
             objective_number=None,
             no_delete=True,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -1402,6 +1422,8 @@ def test_cleanup_and_navigate_no_delete_preserves_non_slot_branch(
             target_child_branch=None,
             objective_number=None,
             no_delete=True,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -1519,6 +1541,8 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
             target_child_branch="child-branch",  # Navigate to child (--up behavior)
             objective_number=None,
             no_delete=True,
+            autolearn=False,
+            pr_number=123,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -1532,3 +1556,318 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
     reloaded_state = load_pool_state(pool_json_path)
     assert reloaded_state is not None
     assert len(reloaded_state.assignments) == 2  # Both assignments preserved
+
+
+# Tests for autolearn gating behavior
+
+
+def test_cleanup_and_navigate_autolearn_called_after_confirmation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that autolearn is called AFTER user confirmation, not before.
+
+    This is a regression test for the bug where autolearn was called before
+    the confirmation prompt, creating unnecessary learn plans when user declined.
+    """
+    from erk.cli.commands import land_cmd
+
+    # Track autolearn calls
+    autolearn_calls: list[tuple[Path, str, int]] = []
+
+    def mock_autolearn(
+        ctx: ErkContext,
+        *,
+        repo_root: Path,
+        branch: str,
+        pr_number: int,
+    ) -> None:
+        autolearn_calls.append((repo_root, branch, pr_number))
+
+    monkeypatch.setattr(
+        land_cmd,
+        "maybe_create_autolearn_issue",
+        mock_autolearn,
+    )
+
+    # Create a non-slot worktree (simpler setup)
+    worktree_path = tmp_path / "worktrees" / "feature-wt"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={main_repo_root: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call with autolearn=True and force=True (skips confirmation)
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+            no_delete=False,
+            autolearn=True,
+            pr_number=456,
+        )
+    except SystemExit:
+        pass
+
+    # Verify autolearn was called with correct arguments
+    assert len(autolearn_calls) == 1, "Autolearn should be called after confirmation"
+    repo_root, branch, pr_number = autolearn_calls[0]
+    assert repo_root == main_repo_root
+    assert branch == "feature-branch"
+    assert pr_number == 456
+
+
+def test_cleanup_and_navigate_autolearn_not_called_when_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that autolearn is NOT called when autolearn=False."""
+    from erk.cli.commands import land_cmd
+
+    # Track autolearn calls
+    autolearn_calls: list[tuple[Path, str, int]] = []
+
+    def mock_autolearn(
+        ctx: ErkContext,
+        *,
+        repo_root: Path,
+        branch: str,
+        pr_number: int,
+    ) -> None:
+        autolearn_calls.append((repo_root, branch, pr_number))
+
+    monkeypatch.setattr(
+        land_cmd,
+        "maybe_create_autolearn_issue",
+        mock_autolearn,
+    )
+
+    # Create a non-slot worktree
+    worktree_path = tmp_path / "worktrees" / "feature-wt"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    fake_git = FakeGit(
+        worktrees={main_repo_root: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call with autolearn=False
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+            no_delete=False,
+            autolearn=False,
+            pr_number=456,
+        )
+    except SystemExit:
+        pass
+
+    # Verify autolearn was NOT called
+    assert len(autolearn_calls) == 0, "Autolearn should not be called when disabled"
+
+
+def test_cleanup_and_navigate_autolearn_not_called_when_no_delete(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that autolearn is NOT called when --no-delete is used.
+
+    The --no-delete flag preserves the branch, meaning the user may want to
+    continue working on it. Creating a learn plan in this case would be premature.
+    """
+    from erk.cli.commands import land_cmd
+
+    # Track autolearn calls
+    autolearn_calls: list[tuple[Path, str, int]] = []
+
+    def mock_autolearn(
+        ctx: ErkContext,
+        *,
+        repo_root: Path,
+        branch: str,
+        pr_number: int,
+    ) -> None:
+        autolearn_calls.append((repo_root, branch, pr_number))
+
+    monkeypatch.setattr(
+        land_cmd,
+        "maybe_create_autolearn_issue",
+        mock_autolearn,
+    )
+
+    # Create a slot worktree with assignment
+    worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create pool state with assignment
+    assignment = _create_test_assignment(
+        slot_name="erk-slot-01",
+        branch_name="feature-branch",
+        worktree_path=worktree_path,
+    )
+    initial_state = PoolState.test(assignments=(assignment,))
+    save_pool_state(pool_json_path, initial_state)
+
+    fake_git = FakeGit(
+        worktrees={main_repo_root: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={
+            worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    fake_graphite = FakeGraphite()
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call with autolearn=True but no_delete=True
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+            no_delete=True,  # Branch is preserved
+            autolearn=True,
+            pr_number=456,
+        )
+    except SystemExit:
+        pass
+
+    # Verify autolearn was NOT called (branch preserved = no learn plan)
+    assert len(autolearn_calls) == 0, (
+        "Autolearn should not be called when --no-delete preserves the branch"
+    )

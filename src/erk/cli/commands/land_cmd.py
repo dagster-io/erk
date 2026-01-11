@@ -273,6 +273,8 @@ def _cleanup_and_navigate(
     target_child_branch: str | None,
     objective_number: int | None,
     no_delete: bool,
+    autolearn: bool,
+    pr_number: int,
 ) -> None:
     """Handle worktree/branch cleanup and navigation after PR merge.
 
@@ -290,6 +292,8 @@ def _cleanup_and_navigate(
         target_child_branch: Target child branch for --up navigation (None for trunk)
         objective_number: Issue number of the objective linked to this branch (if any)
         no_delete: Whether to preserve the branch and slot assignment
+        autolearn: Whether to create autolearn issue after confirmation
+        pr_number: PR number that was merged (for autolearn)
     """
     # Handle --no-delete: skip cleanup, optionally navigate
     if no_delete:
@@ -416,6 +420,13 @@ def _cleanup_and_navigate(
     if ctx.dry_run:
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
+
+    # Create autolearn issue if enabled (after confirmation, before navigation)
+    if autolearn:
+        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+        maybe_create_autolearn_issue(
+            ctx, repo_root=main_repo_root, branch=branch, pr_number=pr_number
+        )
 
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
@@ -762,13 +773,7 @@ def _land_current_branch(
             force=force,
         )
 
-    # Create autolearn issue if enabled
-    if autolearn:
-        maybe_create_autolearn_issue(
-            ctx, repo_root=main_repo_root, branch=current_branch, pr_number=merged_pr_number
-        )
-
-    # Step 2: Cleanup and navigate
+    # Step 2: Cleanup and navigate (autolearn happens inside after confirmation)
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -781,6 +786,8 @@ def _land_current_branch(
         target_child_branch=target_child_branch,
         objective_number=objective_number,
         no_delete=no_delete,
+        autolearn=autolearn,
+        pr_number=merged_pr_number,
     )
 
 
@@ -881,13 +888,7 @@ def _land_specific_pr(
             force=force,
         )
 
-    # Create autolearn issue if enabled
-    if autolearn:
-        maybe_create_autolearn_issue(
-            ctx, repo_root=main_repo_root, branch=branch, pr_number=pr_number
-        )
-
-    # Cleanup and navigate
+    # Cleanup and navigate (autolearn happens inside after confirmation)
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -900,6 +901,8 @@ def _land_specific_pr(
         target_child_branch=None,
         objective_number=objective_number,
         no_delete=no_delete,
+        autolearn=autolearn,
+        pr_number=pr_number,
     )
 
 
@@ -995,13 +998,7 @@ def _land_by_branch(
             force=force,
         )
 
-    # Create autolearn issue if enabled
-    if autolearn:
-        maybe_create_autolearn_issue(
-            ctx, repo_root=main_repo_root, branch=branch_name, pr_number=pr_number
-        )
-
-    # Cleanup and navigate (uses shared function)
+    # Cleanup and navigate (autolearn happens inside after confirmation)
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -1014,4 +1011,6 @@ def _land_by_branch(
         target_child_branch=None,
         objective_number=objective_number,
         no_delete=no_delete,
+        autolearn=autolearn,
+        pr_number=pr_number,
     )
