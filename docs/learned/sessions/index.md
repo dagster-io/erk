@@ -11,4 +11,4 @@
 - **[parallel-session-awareness.md](parallel-session-awareness.md)** — working with session-specific data, implementing session-scoped features, accessing plans, scratch files, or session metadata
 - **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format
 - **[session-hierarchy.md](session-hierarchy.md)** — understanding Claude Code session structure, working with parent and agent sessions, finding session files on disk, correlating agent logs to parent sessions
-- **[tools.md](tools.md)** — finding session logs, inspecting agent execution, debugging session issues
+- **[tools.md](tools.md)** — finding session logs, inspecting agent execution, debugging session issues, measuring learned docs effectiveness, analyzing which docs are used
