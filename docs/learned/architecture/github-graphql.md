@@ -239,6 +239,12 @@ Some GitHub features are only available via GraphQL:
 | PR timeline events                 | Richer data than REST              |
 | Minimized comments                 | Status not exposed in REST         |
 
+### Note: Review Thread Resolution Has No REST Equivalent
+
+The `isResolved` field on `PullRequestReviewThread` is **GraphQL-only**. REST API endpoints for PR comments have no resolution status field or thread grouping. Alternatives (webhooks, branch protection rules) require maintaining external state. We use GraphQL for this data.
+
+See: [GitHub Community Discussion #24854](https://github.com/orgs/community/discussions/24854)
+
 ## Related Topics
 
 - [GitHub Interface Patterns](github-interface-patterns.md) - REST API patterns
