@@ -68,9 +68,11 @@ If no plan-body found, display error:
 Error: No plan content found in issue #<number>. Expected plan-body metadata block in first comment.
 ```
 
-### Step 4: Analyze Codebase
+### Step 4: Deep Investigation
 
-Use the Explore agent (Task tool with subagent_type=Explore) to check the current codebase state against each item in the original plan.
+Use the Explore agent (Task tool with subagent_type=Explore) to perform deep investigation of the codebase. This is the most important step - surface-level analysis leads to poor plans.
+
+#### 4a: Check Plan Items Against Codebase
 
 For each implementation item in the plan:
 
@@ -83,24 +85,48 @@ Build a comparison table showing:
 | --------- | -------------- | ----- |
 | ...       | ...            | ...   |
 
-### Step 5: Create Assessment
+#### 4b: Deep Investigation (MANDATORY)
 
-Based on the analysis, determine the overall status:
+Go beyond the plan items to understand the actual implementation:
 
-1. **Fully implemented**: All items are complete
-   - Display: "Plan #<number> appears to be fully implemented. No replan needed."
-   - Ask user if they want to close the issue
+1. **Data Structures**: Find all relevant types, dataclasses, and their fields
+2. **Helper Functions**: Identify utility functions and their purposes
+3. **Lifecycle & State**: Understand how state flows through the system
+4. **Naming Conventions**: Document actual names used (not guessed names)
+5. **Entry Points**: Map all places that trigger the relevant functionality
+6. **Configuration**: Find config options, defaults, and overrides
 
-2. **Fully obsolete**: The approach is no longer valid (e.g., feature removed, architecture changed)
-   - Display: "Plan #<number> is obsolete due to [reasons]."
-   - Suggest closing the original issue
+#### 4c: Document Corrections and Discoveries
 
-3. **Partial work remains**: Some items implemented, others pending
-   - Continue to Step 6
+Create two lists:
 
-### Step 6: Enter Plan Mode
+1. **Corrections to Original Plan**: Wrong assumptions, incorrect names, outdated information
+2. **Additional Details**: Implementation specifics, architectural insights, edge cases
 
-If partial work remains, use EnterPlanMode to create an updated plan.
+These lists will be posted to the original issue and included in the new plan.
+
+### Step 5: Post Investigation to Original Issue
+
+Before creating the new plan, post the investigation findings to the original issue as a comment. This preserves context if the new plan is also replanned later.
+
+```bash
+gh issue comment <original_number> --body "## Deep Investigation Notes (for implementing agent)
+
+### Corrections to Original Plan
+- [List corrections discovered]
+
+### Additional Details Not in Original Plan
+- [List new details discovered]
+
+### Key Architectural Insights
+- [List important discoveries]"
+```
+
+### Step 6: Create New Plan (Always)
+
+**Always create a new plan issue**, regardless of implementation status. Even if the original plan is fully implemented or obsolete, a fresh plan with investigation context is valuable.
+
+Use EnterPlanMode to create an updated plan.
 
 The new plan should include:
 
@@ -121,6 +147,21 @@ The new plan should include:
 - [Reference specific PRs or commits if relevant]
 ```
 
+#### Investigation Findings Section
+
+```markdown
+## Investigation Findings
+
+### Corrections to Original Plan
+
+- [List any wrong assumptions or incorrect names from original plan]
+
+### Additional Details Discovered
+
+- [List implementation specifics not in original plan]
+- [Include data structures, helper functions, naming conventions]
+```
+
 #### Remaining Gaps Section
 
 ```markdown
@@ -128,6 +169,7 @@ The new plan should include:
 
 - [List items from original plan that still need implementation]
 - [Note any items that are partially done]
+- [Note if plan is fully implemented or obsolete - still document for context]
 ```
 
 #### Implementation Steps Section
@@ -172,8 +214,6 @@ Next steps:
 | Issue not found          | `Error: Issue #<number> not found.`                                           |
 | Not an erk-plan          | `Error: Issue #<number> is not an erk-plan issue (missing erk-plan label).`   |
 | No plan content          | `Error: No plan content found in issue #<number>.`                            |
-| Plan fully implemented   | `Plan #<number> appears to be fully implemented. No replan needed.`           |
-| Plan fully obsolete      | `Plan #<number> is obsolete. Consider closing it.`                            |
 | GitHub CLI not available | `Error: GitHub CLI (gh) not available. Run: brew install gh && gh auth login` |
 | No network               | `Error: Unable to reach GitHub. Check network connectivity.`                  |
 
