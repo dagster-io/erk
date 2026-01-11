@@ -12,6 +12,7 @@ from erk.core.capabilities.ruff_format import RuffFormatCapability
 from erk.core.capabilities.shell_integration import ShellIntegrationCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
 from erk.core.capabilities.statusline import StatuslineCapability
+from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 
 
@@ -23,6 +24,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         DignifiedPythonCapability(),
         FakeDrivenTestingCapability(),
         DignifiedReviewCapability(),
+        TripwiresReviewCapability(),
         ErkImplWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
