@@ -292,6 +292,7 @@ def execute_interactive_mode(
                     ctx.git.list_worktrees(repo_root), ctx.cwd
                 ),
                 model=model,
+                permission_mode="acceptEdits",
             )
         except RuntimeError as e:
             raise click.ClickException(str(e)) from e

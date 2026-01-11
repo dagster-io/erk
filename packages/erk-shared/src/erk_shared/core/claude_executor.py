@@ -311,8 +311,8 @@ class ClaudeExecutor(ABC):
         dangerous: bool,
         command: str,
         target_subpath: Path | None,
-        model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        model: str | None,
+        permission_mode: ClaudePermissionMode,
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 

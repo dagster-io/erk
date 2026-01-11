@@ -397,6 +397,7 @@ def _launch_claude_interactive(
                 ctx.git.list_worktrees(repo_root), ctx.cwd
             ),
             model=model,
+            permission_mode="plan",
         )
     except RuntimeError as e:
         raise click.ClickException(str(e)) from e

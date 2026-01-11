@@ -90,8 +90,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         dangerous: bool,
         command: str,
         target_subpath: Path | None,
-        model: str | None = None,
-        permission_mode: ClaudePermissionMode = "acceptEdits",
+        model: str | None,
+        permission_mode: ClaudePermissionMode,
     ) -> None:
         self.interactive_calls.append(
             InteractiveCall(
