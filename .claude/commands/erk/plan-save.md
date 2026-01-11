@@ -93,11 +93,26 @@ Exit without creating the plan-saved marker. The session continues so the user c
 
 ### Step 5: Display Results
 
-On success:
+On success, display:
 
-- Display "Plan saved as issue #<issue_number>"
-- If objective verified, display the verification success message
-- Include the URL to the issue
+```
+Plan saved as issue #<issue_number>
+URL: <issue_url>
+
+Next steps:
+
+View Issue: gh issue view <issue_number> --web
+
+In Claude Code: /erk:plan-submit
+
+OR exit Claude Code first, then run one of:
+  Interactive: erk implement <issue_number>
+  Dangerous Interactive: erk implement <issue_number> --dangerous
+  Auto-Submit: erk implement <issue_number> --yolo
+  Submit to Queue: erk plan submit <issue_number>
+```
+
+If objective was verified, also display: `Verified objective link: #<objective-number>`
 
 On failure, display the error message and suggest:
 
