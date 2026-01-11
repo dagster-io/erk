@@ -6,7 +6,7 @@ import click
 
 from erk.cli.commands.completions import complete_worktree_names
 from erk.cli.commands.navigation_helpers import (
-    check_pending_extraction_marker,
+    check_pending_learn_marker,
     find_assignment_by_worktree_path,
 )
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
@@ -470,8 +470,8 @@ def _delete_worktree(
 
     Ensure.path_exists(ctx, wt_path, f"Worktree not found: {wt_path}")
 
-    # Check for pending extraction marker
-    check_pending_extraction_marker(wt_path, force)
+    # Check for pending learn marker
+    check_pending_learn_marker(wt_path, force)
 
     # main_repo_root is always set by RepoContext.__post_init__, but ty doesn't know
     main_repo = repo.main_repo_root if repo.main_repo_root else repo.root

@@ -4,18 +4,18 @@ This package provides a domain-driven interface for Claude installation operatio
 All filesystem details are hidden behind the ClaudeInstallation ABC.
 """
 
-from erk_shared.extraction.claude_installation.abc import (
+from erk_shared.learn.extraction.claude_installation.abc import (
     ClaudeInstallation,
     FoundSession,
     Session,
     SessionContent,
 )
-from erk_shared.extraction.claude_installation.fake import (
+from erk_shared.learn.extraction.claude_installation.fake import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.extraction.claude_installation.real import (
+from erk_shared.learn.extraction.claude_installation.real import (
     RealClaudeInstallation,
 )
 

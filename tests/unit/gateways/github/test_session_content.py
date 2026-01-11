@@ -160,27 +160,27 @@ def test_render_session_content_block_with_all_parameters() -> None:
         chunk_number=1,
         total_chunks=3,
         session_label="fix-auth-bug",
-        extraction_hints=["Error handling patterns", "Test fixture setup"],
+        learn_hints=["Error handling patterns", "Test fixture setup"],
     )
 
     # Verify summary includes chunk and label
     assert "<summary><strong>Session Data (1/3): fix-auth-bug</strong></summary>" in rendered
 
-    # Verify extraction hints section
-    assert "**Extraction Hints:**" in rendered
+    # Verify learn hints section
+    assert "**Learn Hints:**" in rendered
     assert "- Error handling patterns" in rendered
     assert "- Test fixture setup" in rendered
 
 
-def test_render_session_content_block_extraction_hints_only() -> None:
-    """Test rendering with only extraction hints."""
+def test_render_session_content_block_learn_hints_only() -> None:
+    """Test rendering with only learn hints."""
     content = "<session>...</session>"
     rendered = render_session_content_block(
         content,
-        extraction_hints=["CLI patterns", "Config management"],
+        learn_hints=["CLI patterns", "Config management"],
     )
 
-    assert "**Extraction Hints:**" in rendered
+    assert "**Learn Hints:**" in rendered
     assert "- CLI patterns" in rendered
     assert "- Config management" in rendered
     # No chunk numbering
@@ -192,10 +192,10 @@ def test_render_session_content_block_empty_hints_list() -> None:
     content = "<session>...</session>"
     rendered = render_session_content_block(
         content,
-        extraction_hints=[],
+        learn_hints=[],
     )
 
-    assert "**Extraction Hints:**" not in rendered
+    assert "**Learn Hints:**" not in rendered
 
 
 def test_render_session_content_block_preserves_xml_content() -> None:
@@ -252,25 +252,25 @@ def test_render_session_content_blocks_large_content_multiple_blocks() -> None:
 
 
 def test_render_session_content_blocks_hints_only_in_first_chunk() -> None:
-    """Test that extraction hints appear only in the first chunk."""
+    """Test that learn hints appear only in the first chunk."""
     lines = [f"<message>{i}</message>" for i in range(100)]
     content = "<session>\n" + "\n".join(lines) + "\n</session>"
 
     blocks = render_session_content_blocks(
         content,
-        extraction_hints=["Pattern A", "Pattern B"],
+        learn_hints=["Pattern A", "Pattern B"],
         max_chunk_size=500,
     )
 
     assert len(blocks) > 1
 
     # First block should have hints
-    assert "**Extraction Hints:**" in blocks[0]
+    assert "**Learn Hints:**" in blocks[0]
     assert "- Pattern A" in blocks[0]
 
     # Subsequent blocks should not have hints
     for block in blocks[1:]:
-        assert "**Extraction Hints:**" not in block
+        assert "**Learn Hints:**" not in block
 
 
 def test_render_session_content_blocks_all_parameters() -> None:
@@ -279,12 +279,12 @@ def test_render_session_content_blocks_all_parameters() -> None:
     blocks = render_session_content_blocks(
         content,
         session_label="my-feature",
-        extraction_hints=["Hint 1"],
+        learn_hints=["Hint 1"],
     )
 
     assert len(blocks) == 1
     assert "Session Data: my-feature" in blocks[0]
-    assert "**Extraction Hints:**" in blocks[0]
+    assert "**Learn Hints:**" in blocks[0]
     assert "- Hint 1" in blocks[0]
 
 

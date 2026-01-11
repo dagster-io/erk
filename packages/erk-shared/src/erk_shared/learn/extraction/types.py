@@ -1,4 +1,4 @@
-"""Types for session extraction workflow."""
+"""Types for session learn workflow."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,8 +25,8 @@ class BranchContext:
 
 
 @dataclass(frozen=True)
-class RawExtractionResult:
-    """Result of creating a raw extraction plan."""
+class RawLearnResult:
+    """Result of creating a raw learn plan."""
 
     success: bool
     issue_url: str | None

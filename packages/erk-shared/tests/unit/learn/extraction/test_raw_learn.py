@@ -1,20 +1,20 @@
-"""Tests for raw extraction orchestrator."""
+"""Tests for raw learn orchestrator."""
 
 import json
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store import (
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.learn.extraction.claude_code_session_store import (
     FakeClaudeCodeSessionStore,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-from erk_shared.git.fake import FakeGit
-from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.learn.extraction.raw_learn import create_raw_learn_plan
 
 
-class TestCreateRawExtractionPlan:
-    """Tests for create_raw_extraction_plan orchestrator."""
+class TestCreateRawLearnPlan:
+    """Tests for create_raw_learn_plan orchestrator."""
 
     def test_returns_error_when_project_not_found(self, tmp_path: Path) -> None:
         """Returns error when project doesn't exist in session store."""
@@ -26,7 +26,7 @@ class TestCreateRawExtractionPlan:
         # Session store with no projects
         session_store = FakeClaudeCodeSessionStore()
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -50,7 +50,7 @@ class TestCreateRawExtractionPlan:
             projects={tmp_path: FakeProject(sessions={})},
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -85,7 +85,7 @@ class TestCreateRawExtractionPlan:
             },
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -125,7 +125,7 @@ class TestCreateRawExtractionPlan:
             },
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -165,7 +165,7 @@ class TestCreateRawExtractionPlan:
             },
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -185,9 +185,9 @@ class TestCreateRawExtractionPlan:
         # Verify issue was created with correct labels
         assert len(github_issues.created_issues) == 1
         title, body, labels = github_issues.created_issues[0]
-        assert "[erk-extraction]" in title
+        assert "[erk-learn]" in title
         assert "erk-plan" in labels
-        assert "erk-extraction" in labels
+        assert "erk-learn" in labels
 
         # Verify comments were added
         assert len(github_issues.added_comments) >= 1
@@ -219,7 +219,7 @@ class TestCreateRawExtractionPlan:
             },
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -232,8 +232,8 @@ class TestCreateRawExtractionPlan:
         assert result.success is True
         title, _, _ = github_issues.created_issues[0]
         # Title now uses extract_title_from_plan() which extracts from the plan H1
-        # "Extraction Plan: feature-awesome" becomes the title
-        assert "[erk-extraction]" in title
+        # "Learn Plan: feature-awesome" becomes the title
+        assert "[erk-learn]" in title
         # The plan title includes the branch name
         assert "feature-awesome" in title
 
@@ -264,7 +264,7 @@ class TestCreateRawExtractionPlan:
             },
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,
@@ -277,7 +277,7 @@ class TestCreateRawExtractionPlan:
         assert result.success is True
         label_names = {label[0] for label in github_issues.created_labels}
         assert "erk-plan" in label_names
-        assert "erk-extraction" in label_names
+        assert "erk-learn" in label_names
 
     def test_issue_body_contains_metadata_only_and_plan_in_first_comment(
         self, tmp_path: Path
@@ -308,7 +308,7 @@ class TestCreateRawExtractionPlan:
             },
         )
 
-        result = create_raw_extraction_plan(
+        result = create_raw_learn_plan(
             github_issues=github_issues,
             git=git,
             session_store=session_store,

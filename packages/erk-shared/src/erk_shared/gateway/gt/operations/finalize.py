@@ -16,9 +16,9 @@ from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import GitHubRepoId, PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
-# Label added to PRs that originate from extraction plans.
-# Checked by land_cmd.py to skip creating pending-extraction marker.
-ERK_SKIP_EXTRACTION_LABEL = "erk-skip-extraction"
+# Label added to PRs that originate from learn plans.
+# Checked by land_cmd.py to skip creating pending-learn marker.
+ERK_SKIP_LEARN_LABEL = "erk-skip-learn"
 
 
 def is_learn_plan(impl_dir: Path) -> bool:
@@ -114,10 +114,10 @@ def execute_finalize(
     )
     yield ProgressEvent("PR metadata updated", style="success")
 
-    # Add extraction skip label if this is a learn plan
+    # Add learn skip label if this is a learn plan
     if is_learn_origin:
-        yield ProgressEvent("Adding erk-skip-extraction label...")
-        ops.github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+        yield ProgressEvent("Adding erk-skip-learn label...")
+        ops.github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_LEARN_LABEL)
         yield ProgressEvent("Label added", style="success")
 
     # Amend local commit with PR title and body (without metadata footer)

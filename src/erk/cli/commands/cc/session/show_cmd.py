@@ -11,8 +11,8 @@ from erk.cli.commands.cc.session.list_cmd import (
 )
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
-from erk_shared.extraction.claude_installation import ClaudeInstallation
-from erk_shared.extraction.session_schema import (
+from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.session_schema import (
     AgentInfo,
     extract_agent_info_from_jsonl,
     extract_first_user_message_text,

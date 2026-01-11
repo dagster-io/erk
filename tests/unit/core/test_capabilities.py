@@ -37,9 +37,9 @@ from erk.core.capabilities.skills import (
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
-from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.shell.fake import FakeShell
+from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
 
 # =============================================================================
 # Tests for CapabilityResult

@@ -16,15 +16,15 @@ from erk_shared.debug import debug_log
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.github.types import PRNotFound
 from erk_shared.output.output import machine_output, user_output
-from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, marker_exists
+from erk_shared.scratch.markers import PENDING_LEARN_MARKER, marker_exists
 
 
-def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
-    """Check for pending extraction marker and block deletion if present.
+def check_pending_learn_marker(worktree_path: Path, force: bool) -> None:
+    """Check for pending learn marker and block deletion if present.
 
     This provides friction before worktree deletion to ensure insights are
     extracted from the session logs. The marker is created by `erk pr land`
-    and deleted by `erk plan extraction raw`.
+    and deleted by `erk plan learn raw`.
 
     Args:
         worktree_path: Path to the worktree being deleted
@@ -33,19 +33,19 @@ def check_pending_extraction_marker(worktree_path: Path, force: bool) -> None:
     Raises:
         SystemExit: If marker exists and force is False
     """
-    if not marker_exists(worktree_path, PENDING_EXTRACTION_MARKER):
+    if not marker_exists(worktree_path, PENDING_LEARN_MARKER):
         return
 
     if force:
         user_output(
-            click.style("Warning: ", fg="yellow") + "Skipping pending extraction (--force used).\n"
+            click.style("Warning: ", fg="yellow") + "Skipping pending learn (--force used).\n"
         )
         return
 
     user_output(
-        click.style("Error: ", fg="red") + "Worktree has pending extraction.\n"
-        "Run: erk plan extraction raw\n"
-        "Or use --force to skip extraction."
+        click.style("Error: ", fg="red") + "Worktree has pending learn.\n"
+        "Run: erk plan learn raw\n"
+        "Or use --force to skip learn."
     )
     raise SystemExit(1)
 

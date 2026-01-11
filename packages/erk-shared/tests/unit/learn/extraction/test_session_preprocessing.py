@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from erk_shared.extraction.session_preprocessing import (
+from erk_shared.learn.extraction.session_preprocessing import (
     compact_whitespace,
     deduplicate_assistant_messages,
     escape_xml,

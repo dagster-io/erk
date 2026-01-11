@@ -20,7 +20,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
-from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
+from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata.core import (
     create_submission_queued_block,
@@ -387,7 +387,7 @@ def _create_branch_and_pr(
 
     # Add extraction skip label if this is a learn plan
     if validated.is_learn_origin:
-        ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+        ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
 
     # Close any orphaned draft PRs for this issue
     closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
@@ -499,7 +499,7 @@ def _submit_single_issue(
 
             # Add extraction skip label if this is a learn plan
             if validated.is_learn_origin:
-                ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+                ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
 
             # Close any orphaned draft PRs
             closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)

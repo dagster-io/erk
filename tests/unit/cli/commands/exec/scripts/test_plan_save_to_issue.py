@@ -10,13 +10,13 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
 )
 from erk_shared.context import ErkContext
-from erk_shared.extraction.claude_installation import (
+from erk_shared.git.fake import FakeGit
+from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.learn.extraction.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.git.fake import FakeGit
-from erk_shared.github.issues import FakeGitHubIssues
 
 
 def test_plan_save_to_issue_success() -> None:

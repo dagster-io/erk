@@ -31,11 +31,11 @@ from erk.core.init_utils import has_shell_integration_in_rc
 from erk.core.repo_discovery import RepoContext
 from erk.core.version_check import get_required_version, is_version_mismatch
 from erk.core.worktree_pool import load_pool_state
-from erk_shared.extraction.claude_installation import ClaudeInstallation
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.plan_issues import LabelDefinition, get_required_erk_labels
 from erk_shared.github_admin.abc import GitHubAdmin
+from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
 
 
 @dataclass(frozen=True)
