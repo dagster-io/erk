@@ -18,10 +18,12 @@ Streamlines the "plan small change -> implement -> submit" loop for PR iteration
 
 ### Step 1: Create Marker File
 
-Before entering plan mode, create the incremental-plan marker to skip the "save as GitHub issue?" prompt later:
+Before entering plan mode, create the incremental-plan marker to skip the "save as GitHub issue?" prompt later.
+
+**Get the session ID** from the `session:` system reminder in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`).
 
 ```bash
-erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID incremental-plan
+erk exec marker create --session-id <session-id-from-reminder> incremental-plan
 ```
 
 **IMPORTANT:** You must create this marker BEFORE calling EnterPlanMode.

@@ -71,9 +71,16 @@ def _get_current_branch(cwd: Path) -> str | None:
     return git.get_current_branch(repo_root)
 
 
-def _get_session_id() -> str | None:
-    """Get Claude Code session ID if available."""
-    return os.environ.get("CLAUDE_CODE_SESSION_ID")
+def _get_session_id(cwd: Path) -> str | None:
+    """Get Claude Code session ID if available.
+
+    Session ID is read from the file written by session-id-injector hook.
+    Erk code never has access to CLAUDE_CODE_SESSION_ID environment variable.
+    """
+    session_file = cwd / ".erk" / "scratch" / "current-session-id"
+    if session_file.exists():
+        return session_file.read_text(encoding="utf-8").strip()
+    return None
 
 
 def _rotate_log_if_needed(log_path: Path) -> None:
@@ -148,7 +155,7 @@ def log_command_start(args: list[str], cwd: Path) -> str | None:
         "cwd": str(cwd),
         "branch": _get_current_branch(cwd),
         "exit_code": None,  # Will be filled by log_command_end
-        "session_id": _get_session_id(),
+        "session_id": _get_session_id(cwd),
         "pid": os.getpid(),
     }
 

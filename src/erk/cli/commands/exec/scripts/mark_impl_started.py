@@ -27,7 +27,6 @@ Examples:
 
 import getpass
 import json
-import os
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 
@@ -66,8 +65,13 @@ class MarkImplError:
 
 
 @click.command(name="mark-impl-started")
+@click.option(
+    "--session-id",
+    default=None,
+    help="Session ID for tracking (passed from hooks/commands)",
+)
 @click.pass_context
-def mark_impl_started(ctx: click.Context) -> None:
+def mark_impl_started(ctx: click.Context, session_id: str | None) -> None:
     """Update implementation started event in GitHub issue and local state file.
 
     Reads issue number from .impl/issue.json, fetches the issue from GitHub,
@@ -98,8 +102,9 @@ def mark_impl_started(ctx: click.Context) -> None:
         raise SystemExit(0)
 
     # Capture metadata
+    # session_id is passed as parameter, not from env var
+    # (erk code never has access to CLAUDE_CODE_SESSION_ID env var)
     timestamp = datetime.now(UTC).isoformat()
-    session_id = os.environ.get("CLAUDE_CODE_SESSION_ID")
     user = getpass.getuser()
 
     # Write local state file first (fast, no network)
