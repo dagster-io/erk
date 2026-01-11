@@ -3,6 +3,7 @@
 
 # Erk Documentation
 
+- **[autolearn.md](autolearn.md)** — landing a PR and wanting to capture session insights, configuring automatic learn plan creation, understanding the autolearn workflow
 - **[branch-cleanup.md](branch-cleanup.md)** — cleaning up branches, removing dormant worktrees, managing branch lifecycle
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues

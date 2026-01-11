@@ -31,15 +31,15 @@ The erk plan lifecycle manages implementation plans from creation through automa
 ### Lifecycle Overview
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Create    │────▶│   Submit    │────▶│  Dispatch   │────▶│  Implement  │────▶│    Merge    │
-│    Plan     │     │    Plan     │     │  Workflow   │     │    Plan     │     │     PR      │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-       │                  │                   │                   │                   │
-       ▼                  ▼                   ▼                   ▼                   ▼
- GitHub Issue       git branch            GitHub Actions      Code Changes        Issue Closed
- with erk-plan      creates branch        finds existing      committed           via commit
- label              + draft PR            PR and executes     and pushed          message
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Create    │────▶│   Submit    │────▶│  Dispatch   │────▶│  Implement  │────▶│    Merge    │────▶│  Autolearn  │
+│    Plan     │     │    Plan     │     │  Workflow   │     │    Plan     │     │     PR      │     │  (optional) │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+       │                  │                   │                   │                   │                   │
+       ▼                  ▼                   ▼                   ▼                   ▼                   ▼
+ GitHub Issue       git branch            GitHub Actions      Code Changes        Issue Closed       Learn Plan
+ with erk-plan      creates branch        finds existing      committed           via commit         Issue Created
+ label              + draft PR            PR and executes     and pushed          message            (if enabled)
 ```
 
 ### Key File Locations at a Glance
@@ -425,6 +425,43 @@ This is needed because workflow dispatch doesn't trigger PR workflows.
 GitHub automatically closes the linked issue when the PR is merged if the commit message contains "Closes #N" or similar keywords.
 
 The `gt finalize` command (used during PR finalization) adds the closing keyword to the commit message, ensuring the issue is closed when the PR merges.
+
+---
+
+## Phase 6: Autolearn (Optional)
+
+After a PR is landed via `erk land`, autolearn can automatically create a learn plan issue to capture session insights.
+
+### When Autolearn Triggers
+
+Autolearn activates when ALL conditions are met:
+
+1. `autolearn: true` in `~/.erk/config.yaml` OR `--autolearn` flag passed
+2. Branch name starts with an issue number (e.g., `123-feature-name`)
+3. The source issue is NOT already a learn plan (no `erk-learn` label)
+4. Sessions exist for the plan issue
+
+### What Gets Created
+
+The learn plan issue contains:
+
+- Title: `Learn: [original plan title] [erk-learn]`
+- Labels: `erk-plan`, `erk-learn`
+- Links to source plan issue and merged PR
+- Session IDs for later extraction
+
+### Fail-Open Design
+
+Autolearn follows a fail-open pattern: errors are reported as warnings but never block the landing operation. This ensures landing always succeeds even if autolearn encounters issues.
+
+### CLI Override
+
+Override config per-command:
+
+- `--autolearn` - Force enable
+- `--no-autolearn` - Force disable
+
+For full details, see [Autolearn Feature](../erk/autolearn.md).
 
 ---
 
