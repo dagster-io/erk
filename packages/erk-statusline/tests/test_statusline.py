@@ -23,10 +23,12 @@ from erk_statusline.statusline import (
     _categorize_check_buckets,
     _fetch_check_runs,
     _fetch_pr_details,
+    _fetch_review_thread_counts,
     _get_cache_path,
     _get_cached_pr_info,
     _parse_github_repo_from_url,
     _set_cached_pr_info,
+    build_comment_count_label,
     build_gh_label,
     build_new_plan_label,
     build_plan_label,
@@ -137,6 +139,7 @@ class TestGetRepoInfo:
             is_draft=True,
             mergeable="MERGEABLE",
             check_contexts=[],
+            review_thread_counts=(0, 0),
         )
         result = get_repo_info(github_data)
         assert result.pr_state == "draft"
@@ -154,6 +157,7 @@ class TestGetRepoInfo:
             is_draft=False,
             mergeable="CONFLICTING",
             check_contexts=[],
+            review_thread_counts=(0, 0),
         )
         result = get_repo_info(github_data)
         assert result.has_conflicts is True
@@ -177,6 +181,7 @@ class TestGetChecksStatus:
             is_draft=False,
             mergeable="MERGEABLE",
             check_contexts=[],
+            review_thread_counts=(0, 0),
         )
         result = get_checks_status(github_data)
         assert result == ""
@@ -198,6 +203,7 @@ class TestGetChecksStatus:
                     "name": "test",
                 }
             ],
+            review_thread_counts=(0, 0),
         )
         result = get_checks_status(github_data)
         assert result == "[✅:1]"
@@ -231,6 +237,7 @@ class TestGetChecksStatus:
                     "name": "test3",
                 },
             ],
+            review_thread_counts=(0, 0),
         )
         result = get_checks_status(github_data)
         assert result == "[✅:3]"
@@ -282,6 +289,7 @@ class TestGetChecksStatus:
                     "name": "test6",
                 },
             ],
+            review_thread_counts=(0, 0),
         )
         result = get_checks_status(github_data)
         assert result == "[✅:3 🚫:1 🔄:2]"
@@ -303,6 +311,7 @@ class TestGetChecksStatus:
                     "name": "test1",
                 },
             ],
+            review_thread_counts=(0, 0),
         )
         result = get_checks_status(github_data)
         assert result == "[🚫:1]"
@@ -336,6 +345,7 @@ class TestGetChecksStatus:
                     "name": "test3",
                 },
             ],
+            review_thread_counts=(0, 0),
         )
         result = get_checks_status(github_data)
         assert result == "[✅:2 🔄:1]"
@@ -382,6 +392,7 @@ class TestBuildGhLabel:
             is_draft=False,
             mergeable="MERGEABLE",
             check_contexts=[],
+            review_thread_counts=(0, 0),
         )
 
         result = build_gh_label(repo_info, github_data)
@@ -410,6 +421,7 @@ class TestBuildGhLabel:
             is_draft=False,
             mergeable="MERGEABLE",
             check_contexts=[],
+            review_thread_counts=(0, 0),
         )
 
         result = build_gh_label(repo_info, github_data, issue_number=456)
@@ -439,6 +451,86 @@ class TestBuildGhLabel:
         # Render TokenSeq to text to verify format
         result_text = result.render()
         assert "plan:" not in result_text
+
+    def test_with_review_threads_includes_cmts(self) -> None:
+        """When review threads exist, should include cmts: in label."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(3, 5),
+        )
+
+        result = build_gh_label(repo_info, github_data)
+
+        result_text = result.render()
+        assert "cmts:" in result_text
+        assert "3/5" in result_text
+
+    def test_all_resolved_shows_checkmark(self) -> None:
+        """When all review threads resolved, should show checkmark."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(5, 5),
+        )
+
+        result = build_gh_label(repo_info, github_data)
+
+        result_text = result.render()
+        assert "cmts:" in result_text
+        assert "✓" in result_text
+
+    def test_no_review_threads_omits_cmts(self) -> None:
+        """When no review threads exist, should not include cmts: in label."""
+        repo_info = RepoInfo(
+            owner="testowner",
+            repo="testrepo",
+            pr_number="123",
+            pr_url="https://app.graphite.dev/github/pr/testowner/testrepo/123/",
+            pr_state="published",
+            has_conflicts=False,
+        )
+        github_data = GitHubData(
+            owner="testowner",
+            repo="testrepo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+        )
+
+        result = build_gh_label(repo_info, github_data)
+
+        result_text = result.render()
+        assert "cmts:" not in result_text
 
 
 class TestGetIssueNumber:
@@ -897,6 +989,173 @@ class TestFetchCheckRuns:
         assert result == []
 
 
+class TestFetchReviewThreadCounts:
+    """Test review thread counts fetching."""
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_counts_on_success(self, mock_run: MagicMock) -> None:
+        """Should return resolved/total counts on success."""
+        graphql_response = {
+            "data": {
+                "repository": {
+                    "pullRequest": {
+                        "reviewThreads": {
+                            "nodes": [
+                                {"isResolved": True},
+                                {"isResolved": True},
+                                {"isResolved": False},
+                                {"isResolved": False},
+                                {"isResolved": False},
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(graphql_response))
+
+        result = _fetch_review_thread_counts(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == (2, 5)
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_zero_on_failure(self, mock_run: MagicMock) -> None:
+        """Should return (0, 0) on API failure."""
+        mock_run.return_value = MagicMock(returncode=1, stdout="")
+
+        result = _fetch_review_thread_counts(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == (0, 0)
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_returns_zero_on_no_threads(self, mock_run: MagicMock) -> None:
+        """Should return (0, 0) when no review threads exist."""
+        graphql_response = {
+            "data": {"repository": {"pullRequest": {"reviewThreads": {"nodes": []}}}}
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(graphql_response))
+
+        result = _fetch_review_thread_counts(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == (0, 0)
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_all_resolved_returns_equal_counts(self, mock_run: MagicMock) -> None:
+        """Should return equal counts when all threads resolved."""
+        graphql_response = {
+            "data": {
+                "repository": {
+                    "pullRequest": {
+                        "reviewThreads": {
+                            "nodes": [
+                                {"isResolved": True},
+                                {"isResolved": True},
+                                {"isResolved": True},
+                            ]
+                        }
+                    }
+                }
+            }
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(graphql_response))
+
+        result = _fetch_review_thread_counts(
+            owner="owner", repo="repo", pr_number=123, cwd="/cwd", timeout=1.5
+        )
+
+        assert result == (3, 3)
+
+
+class TestBuildCommentCountLabel:
+    """Test comment count label building."""
+
+    def test_none_input_returns_empty(self) -> None:
+        """None input should return empty string."""
+        result = build_comment_count_label(None)
+        assert result == ""
+
+    def test_no_pr_returns_empty(self) -> None:
+        """pr_number=0 should return empty string."""
+        github_data = GitHubData(
+            owner="owner",
+            repo="repo",
+            pr_number=0,
+            pr_state="",
+            is_draft=False,
+            mergeable="",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+        )
+        result = build_comment_count_label(github_data)
+        assert result == ""
+
+    def test_no_threads_returns_empty(self) -> None:
+        """Zero total threads should return empty string."""
+        github_data = GitHubData(
+            owner="owner",
+            repo="repo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 0),
+        )
+        result = build_comment_count_label(github_data)
+        assert result == ""
+
+    def test_partial_resolved_returns_fraction(self) -> None:
+        """Partially resolved should return 'resolved/total' format."""
+        github_data = GitHubData(
+            owner="owner",
+            repo="repo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(3, 5),
+        )
+        result = build_comment_count_label(github_data)
+        assert result == "3/5"
+
+    def test_all_resolved_returns_checkmark(self) -> None:
+        """All resolved should return checkmark."""
+        github_data = GitHubData(
+            owner="owner",
+            repo="repo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(5, 5),
+        )
+        result = build_comment_count_label(github_data)
+        assert result == "✓"
+
+    def test_none_resolved_returns_zero_fraction(self) -> None:
+        """None resolved should return '0/total' format."""
+        github_data = GitHubData(
+            owner="owner",
+            repo="repo",
+            pr_number=123,
+            pr_state="OPEN",
+            is_draft=False,
+            mergeable="MERGEABLE",
+            check_contexts=[],
+            review_thread_counts=(0, 5),
+        )
+        result = build_comment_count_label(github_data)
+        assert result == "0/5"
+
+
 class TestParseGitHubRepoFromUrl:
     """Test URL parsing helper function."""
 
@@ -1166,10 +1425,14 @@ class TestFetchGitHubDataViaGateway:
         assert result.pr_number == 0
         assert result.pr_state == ""
 
+    @patch("erk_statusline.statusline._fetch_review_thread_counts")
     @patch("erk_statusline.statusline._fetch_check_runs")
     @patch("erk_statusline.statusline._fetch_pr_details")
     def test_with_pr_returns_github_data(
-        self, mock_fetch_details: MagicMock, mock_fetch_checks: MagicMock
+        self,
+        mock_fetch_details: MagicMock,
+        mock_fetch_checks: MagicMock,
+        mock_fetch_threads: MagicMock,
     ) -> None:
         """Should return full GitHubData when PR exists."""
         repo_root = Path("/fake/repo")
@@ -1194,7 +1457,7 @@ class TestFetchGitHubDataViaGateway:
             branch_manager=fake_branch_manager,
         )
 
-        # Mock the REST API calls for checks and mergeable status
+        # Mock the REST API calls for checks, mergeable status, and review threads
         mock_fetch_details.return_value = PRDetailsResult(mergeable="MERGEABLE", head_sha="abc123")
         mock_fetch_checks.return_value = [
             {
@@ -1204,6 +1467,7 @@ class TestFetchGitHubDataViaGateway:
                 "name": "test",
             }
         ]
+        mock_fetch_threads.return_value = (3, 5)
 
         result = fetch_github_data_via_gateway(ctx, repo_root, "feature-branch")
 
@@ -1215,3 +1479,4 @@ class TestFetchGitHubDataViaGateway:
         assert result.is_draft is False
         assert result.mergeable == "MERGEABLE"
         assert len(result.check_contexts) == 1
+        assert result.review_thread_counts == (3, 5)

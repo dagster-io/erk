@@ -140,6 +140,7 @@ class GitHubData(NamedTuple):
     is_draft: bool  # True if PR is draft
     mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN" (empty if no PR)
     check_contexts: list[dict[str, str]]  # List of check contexts from statusCheckRollup
+    review_thread_counts: tuple[int, int]  # (resolved, total) counts for PR review threads
 
 
 def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
@@ -576,6 +577,137 @@ def _fetch_check_runs(
         return []
 
 
+def _fetch_review_thread_counts(
+    *,
+    owner: str,
+    repo: str,
+    pr_number: int,
+    cwd: str,
+    timeout: float,
+) -> tuple[int, int]:
+    """Fetch resolved/total review thread counts via GraphQL.
+
+    Args:
+        owner: Repository owner
+        repo: Repository name
+        pr_number: Pull request number
+        cwd: Working directory for subprocess
+        timeout: Timeout in seconds
+
+    Returns:
+        Tuple of (resolved_count, total_count). Returns (0, 0) on error.
+    """
+    _logger.debug("Fetching review threads: %s/%s #%d", owner, repo, pr_number)
+    start_time = time.time()
+
+    query = """query($owner: String!, $repo: String!, $number: Int!) {
+      repository(owner: $owner, name: $repo) {
+        pullRequest(number: $number) {
+          reviewThreads(first: 100) {
+            nodes {
+              isResolved
+            }
+          }
+        }
+      }
+    }"""
+
+    cmd = [
+        "gh",
+        "api",
+        "graphql",
+        "-f",
+        f"query={query}",
+        "-f",
+        f"owner={owner}",
+        "-f",
+        f"repo={repo}",
+        "-F",
+        f"number={pr_number}",
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+
+        elapsed = time.time() - start_time
+        if result.returncode != 0:
+            _logger.debug(
+                "Review threads fetch failed: %s/%s #%d returncode=%d in %.2fs",
+                owner,
+                repo,
+                pr_number,
+                result.returncode,
+                elapsed,
+            )
+            return (0, 0)
+
+        data = json.loads(result.stdout)
+
+        # Navigate to reviewThreads.nodes
+        pr_data = data.get("data", {}).get("repository", {}).get("pullRequest")
+        if pr_data is None:
+            _logger.debug(
+                "Review threads: no PR data for %s/%s #%d",
+                owner,
+                repo,
+                pr_number,
+            )
+            return (0, 0)
+
+        threads = pr_data.get("reviewThreads", {}).get("nodes", [])
+        if not threads:
+            _logger.debug(
+                "Review threads: no threads for %s/%s #%d in %.2fs",
+                owner,
+                repo,
+                pr_number,
+                elapsed,
+            )
+            return (0, 0)
+
+        total = len(threads)
+        resolved = sum(1 for t in threads if t.get("isResolved") is True)
+
+        _logger.debug(
+            "Review threads fetched: %s/%s #%d in %.2fs -> %d/%d resolved",
+            owner,
+            repo,
+            pr_number,
+            elapsed,
+            resolved,
+            total,
+        )
+        return (resolved, total)
+
+    except subprocess.TimeoutExpired:
+        elapsed = time.time() - start_time
+        _logger.debug(
+            "Review threads timeout: %s/%s #%d after %.2fs",
+            owner,
+            repo,
+            pr_number,
+            elapsed,
+        )
+        return (0, 0)
+    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+        elapsed = time.time() - start_time
+        _logger.debug(
+            "Review threads error: %s/%s #%d in %.2fs - %s",
+            owner,
+            repo,
+            pr_number,
+            elapsed,
+            e,
+        )
+        return (0, 0)
+
+
 def fetch_github_data_via_gateway(
     ctx: StatuslineContext, repo_root: Path, branch: str
 ) -> GitHubData | None:
@@ -616,6 +748,7 @@ def fetch_github_data_via_gateway(
             is_draft=False,
             mergeable="",
             check_contexts=[],
+            review_thread_counts=(0, 0),
         )
 
     pr_number, pr_state, is_draft = pr_info
@@ -623,12 +756,13 @@ def fetch_github_data_via_gateway(
         "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
     )
 
-    # Fetch PR details and check runs in parallel
+    # Fetch PR details, check runs, and review threads in parallel
     # Note: check runs uses branch name (not local SHA) which resolves to GitHub's HEAD,
     # avoiding issues when local branch differs from remote (e.g., after Graphite squash)
     cwd = str(ctx.cwd)
+    review_thread_counts: tuple[int, int] = (0, 0)
     try:
-        with ThreadPoolExecutor(max_workers=2) as executor:
+        with ThreadPoolExecutor(max_workers=3) as executor:
             pr_future = executor.submit(
                 lambda: _fetch_pr_details(
                     owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
@@ -637,10 +771,16 @@ def fetch_github_data_via_gateway(
             checks_future = executor.submit(
                 lambda: _fetch_check_runs(owner=owner, repo=repo, ref=branch, cwd=cwd, timeout=1.5)
             )
+            threads_future = executor.submit(
+                lambda: _fetch_review_thread_counts(
+                    owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
+                )
+            )
 
-            # Wait for both with combined timeout
+            # Wait for all three with combined timeout
             pr_details = pr_future.result(timeout=2)
             check_contexts = checks_future.result(timeout=2)
+            review_thread_counts = threads_future.result(timeout=2)
         mergeable = pr_details.mergeable
     except TimeoutError:
         # If parallel execution times out, use defaults
@@ -648,14 +788,18 @@ def fetch_github_data_via_gateway(
         _logger.debug("GitHub data fetch: ThreadPoolExecutor timeout after %.2fs", parallel_elapsed)
         mergeable = "UNKNOWN"
         check_contexts = []
+        review_thread_counts = (0, 0)
 
     elapsed = time.time() - start_time
+    resolved, total = review_thread_counts
     _logger.debug(
-        "GitHub data fetch complete: branch=%s pr=%d mergeable=%s checks=%d in %.2fs",
+        "GitHub data fetch complete: branch=%s pr=%d mergeable=%s checks=%d threads=%d/%d in %.2fs",
         branch,
         pr_number,
         mergeable,
         len(check_contexts),
+        resolved,
+        total,
         elapsed,
     )
 
@@ -667,6 +811,7 @@ def fetch_github_data_via_gateway(
         is_draft=is_draft,
         mergeable=mergeable,
         check_contexts=check_contexts,
+        review_thread_counts=review_thread_counts,
     )
 
 
@@ -742,6 +887,31 @@ def get_checks_status(github_data: GitHubData | None) -> str:
         parts.append(f"🔄:{pending_count}")
 
     return "[" + " ".join(parts) + "]"
+
+
+def build_comment_count_label(github_data: GitHubData | None) -> str:
+    """Build comment count label like 'cmts:3/5' or 'cmts:✓' if all resolved.
+
+    Args:
+        github_data: GitHub data from GraphQL query, or None if unavailable
+
+    Returns:
+        Label string like "3/5" or "✓" if all resolved, empty string if no threads.
+    """
+    if github_data is None:
+        return ""
+
+    if github_data.pr_number == 0:
+        return ""
+
+    resolved, total = github_data.review_thread_counts
+    if total == 0:
+        return ""  # No review threads
+
+    if resolved == total:
+        return "✓"  # All resolved
+
+    return f"{resolved}/{total}"
 
 
 def get_repo_info(github_data: GitHubData | None) -> RepoInfo:
@@ -875,12 +1045,12 @@ def build_gh_label(
 
     Args:
         repo_info: Repository and PR information
-        github_data: GitHub data from GraphQL query (for checks status)
+        github_data: GitHub data from GraphQL query (for checks status and comments)
         issue_number: Optional issue number from .impl/issue.json
 
     Returns:
         TokenSeq for the complete GitHub label like:
-        (gh:#123 plan:#456 st:👀💥 chks:✅)
+        (gh:#123 plan:#456 st:👀💥 chks:✅ cmts:3/5)
     """
     parts = [Token("(gh:")]
 
@@ -929,6 +1099,11 @@ def build_gh_label(
                     Token(checks_status),
                 ]
             )
+
+        # Add comment count if there are review threads
+        comment_label = build_comment_count_label(github_data)
+        if comment_label:
+            parts.extend([Token(" cmts:"), Token(comment_label)])
     else:
         parts.append(Token("no-pr"))
 
