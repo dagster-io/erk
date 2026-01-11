@@ -180,6 +180,8 @@ Present your findings to the user with:
 
 3. **Ask for validation** - Are there insights to add, remove, or refine?
 
+If the user decides to **skip** creating documentation (no valuable insights, or insights already documented), proceed directly to Step 9 to track the evaluation.
+
 ### Step 8: Create Documentation Plan Issue
 
 **CRITICAL: Front-load context into the issue.**
@@ -235,6 +237,18 @@ Display the result:
 Documentation plan created: <issue-url>
 Raw materials: <gist-url>
 ```
+
+### Step 9: Track Learn Evaluation
+
+**CRITICAL: Always run this step**, regardless of whether you created a documentation plan or skipped.
+
+This ensures `erk land` won't warn about unlearned plans:
+
+```bash
+erk learn <issue-number> --track-only --session-id="<session-id-from-SESSION_CONTEXT>"
+```
+
+This posts a tracking comment to the plan issue, marking it as "learned from".
 
 ### Tips
 
