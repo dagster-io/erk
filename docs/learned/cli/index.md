@@ -8,6 +8,7 @@
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[json-schema.md](json-schema.md)** — adding --json flag to CLI commands, parsing JSON output from erk commands, implementing kit CLI commands with JSON output
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
+- **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[script-mode.md](script-mode.md)** — implementing script mode, suppressing diagnostic output, integrating with shell handlers, debugging shell integration, global flag handling in shell integration, shell integration handler not recognizing commands, adding a command with --script flag
 - **[shell-aliases.md](shell-aliases.md)** — setting up shell aliases for erk commands, debugging shell integration issues, understanding why a command leaves shell stranded
