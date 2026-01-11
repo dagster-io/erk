@@ -509,6 +509,7 @@ class PlanDetailScreen(ModalScreen):
             cwd=cwd,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            stdin=subprocess.DEVNULL,
             text=True,
             bufsize=1,
         )
