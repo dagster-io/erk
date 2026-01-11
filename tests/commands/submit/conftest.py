@@ -29,16 +29,12 @@ def make_plan_body(content: str = "Implementation details...") -> str:
 def make_learn_plan_body(content: str = "Documentation learning...") -> str:
     """Create a valid learn plan issue body with plan-header metadata block.
 
-    The plan-header block with plan_type: "learn" is used to identify PRs
-    that originate from learn plans.
+    Note: Learn plans are identified by the erk-learn label, not by metadata fields.
     """
     plan_header_data = {
         "schema_version": "2",
         "created_at": "2024-01-01T00:00:00Z",
         "created_by": "test-user",
-        "plan_type": "learn",
-        "source_plan_issues": [100],
-        "extraction_session_ids": ["session-abc"],
     }
     header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
     return f"{header_block}\n\n# Learn Plan\n\n{content}"

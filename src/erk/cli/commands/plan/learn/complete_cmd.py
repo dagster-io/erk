@@ -1,18 +1,16 @@
-"""Command to complete a learn plan and mark source plans as extracted."""
+"""Command to complete a learn plan and mark source plans as extracted.
+
+DEPRECATED: This command is deprecated because the source_plan_issues
+metadata field has been removed from the schema.
+"""
 
 import click
 
-from erk.cli.constants import (
-    DOCS_EXTRACTED_LABEL,
-    DOCS_EXTRACTED_LABEL_COLOR,
-    DOCS_EXTRACTED_LABEL_DESCRIPTION,
-)
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.github.metadata.core import find_metadata_block
-from erk_shared.output.output import user_output
 
 
 @click.command("complete")
@@ -21,10 +19,8 @@ from erk_shared.output.output import user_output
 def complete_learn(ctx: ErkContext, identifier: str) -> None:
     """Complete a learn plan by marking source plans as docs-extracted.
 
-    Reads the learn plan's metadata to find source_plan_issues,
-    then adds the docs-extracted label to each source plan.
-
-    This command is idempotent - safe to run multiple times.
+    DEPRECATED: This command is deprecated because the source_plan_issues
+    metadata field has been removed from the schema.
 
     Args:
         identifier: Learn plan identifier (e.g., "42" or GitHub URL)
@@ -50,52 +46,16 @@ def complete_learn(ctx: ErkContext, identifier: str) -> None:
             "Is this an erk plan issue?"
         )
 
-    # Check plan_type
-    plan_type = plan_header.data.get("plan_type")
-    if plan_type != "learn":
+    # Check for erk-learn label
+    if "erk-learn" not in issue_info.labels:
         raise click.ClickException(
-            f"Issue #{issue_number} is not a learn plan (plan_type: {plan_type}). "
+            f"Issue #{issue_number} is not a learn plan (missing erk-learn label). "
             "This command only works on learn plans."
         )
 
-    # Get source_plan_issues
-    source_plan_issues = plan_header.data.get("source_plan_issues")
-    if not source_plan_issues:
-        raise click.ClickException(
-            f"Issue #{issue_number} has no source_plan_issues in its metadata. "
-            "Cannot determine which plans to mark as extracted."
-        )
-
-    # Ensure docs-extracted label exists
-    try:
-        ctx.issues.ensure_label_exists(
-            repo_root=repo_root,
-            label=DOCS_EXTRACTED_LABEL,
-            description=DOCS_EXTRACTED_LABEL_DESCRIPTION,
-            color=DOCS_EXTRACTED_LABEL_COLOR,
-        )
-    except RuntimeError as e:
-        raise click.ClickException(f"Failed to ensure label exists: {e}") from e
-
-    # Mark each source plan as docs-extracted
-    marked_count = 0
-    for source_issue_number in source_plan_issues:
-        try:
-            ctx.issues.ensure_label_on_issue(repo_root, source_issue_number, DOCS_EXTRACTED_LABEL)
-            user_output(f"  Marked plan #{source_issue_number} as docs-extracted")
-            marked_count += 1
-        except RuntimeError as e:
-            # Log the error but continue with other issues
-            click.echo(f"  Warning: Failed to mark plan #{source_issue_number}: {e}", err=True)
-
-    # Summary
-    if marked_count == len(source_plan_issues):
-        user_output(
-            f"\nLearn plan #{issue_number} completed: "
-            f"marked {marked_count} source plan(s) as docs-extracted"
-        )
-    else:
-        user_output(
-            f"\nLearn plan #{issue_number} partially completed: "
-            f"marked {marked_count}/{len(source_plan_issues)} source plan(s) as docs-extracted"
-        )
+    # source_plan_issues field has been removed from the schema
+    # This command is deprecated and will be removed in a future version
+    raise click.ClickException(
+        "The 'complete' command is deprecated. "
+        "source_plan_issues metadata field has been removed from the schema."
+    )

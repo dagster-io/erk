@@ -64,11 +64,8 @@ def create_plan_issue(
     plan_content: str,
     *,
     title: str | None,
-    plan_type: str | None,
     extra_labels: list[str] | None,
     title_suffix: str | None,
-    source_plan_issues: list[int] | None,
-    extraction_session_ids: list[str] | None,
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
@@ -87,11 +84,8 @@ def create_plan_issue(
         repo_root: Repository root directory
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
-        plan_type: Optional type discriminator ("learn" or None for standard)
-        extra_labels: Additional labels beyond erk-plan
-        title_suffix: Suffix for issue title (default: "[erk-plan]" or "[erk-learn]")
-        source_plan_issues: For learn plans, list of source issue numbers
-        extraction_session_ids: For learn plans, list of session IDs analyzed
+        extra_labels: Additional labels beyond erk-plan (include "erk-learn" for learn plans)
+        title_suffix: Suffix for issue title (defaults based on labels)
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -118,10 +112,9 @@ def create_plan_issue(
     if title is None:
         title = extract_title_from_plan(plan_content)
 
-    # Step 3: Determine labels based on plan_type
+    # Step 3: Determine labels - start with erk-plan, add extra_labels
+    # Learn plans are identified by having "erk-learn" in extra_labels
     labels = [_LABEL_ERK_PLAN]
-    if plan_type == "learn":
-        labels.append(_LABEL_ERK_LEARN)
 
     # Add any extra labels
     if extra_labels:
@@ -129,8 +122,11 @@ def create_plan_issue(
             if label not in labels:
                 labels.append(label)
 
+    # Check if this is a learn plan (erk-learn label present)
+    is_learn_plan = _LABEL_ERK_LEARN in labels
+
     # Ensure labels exist
-    label_errors = _ensure_labels_exist(github_issues, repo_root, labels, plan_type)
+    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
     if label_errors:
         return CreatePlanIssueResult(
             success=False,
@@ -142,7 +138,7 @@ def create_plan_issue(
 
     # Step 4: Determine title suffix
     if title_suffix is None:
-        if plan_type == "learn":
+        if is_learn_plan:
             title_suffix = "[erk-learn]"
         else:
             title_suffix = "[erk-plan]"
@@ -165,9 +161,6 @@ def create_plan_issue(
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
-        plan_type=plan_type,
-        source_plan_issues=source_plan_issues if source_plan_issues else [],
-        extraction_session_ids=extraction_session_ids if extraction_session_ids else [],
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
@@ -208,7 +201,7 @@ def create_plan_issue(
     updated_body = update_plan_header_comment_id(issue_body, comment_id)
 
     # Step 7: Add commands section for standard plans only (not learn)
-    if plan_type != "learn":
+    if not is_learn_plan:
         commands_section = format_plan_commands_section(result.number)
         updated_body = updated_body + "\n\n" + commands_section
 
@@ -277,7 +270,7 @@ def create_objective_issue(
                 labels.append(label)
 
     # Ensure labels exist
-    label_errors = _ensure_labels_exist(github_issues, repo_root, labels, None)
+    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
     if label_errors:
         return CreatePlanIssueResult(
             success=False,
@@ -318,7 +311,6 @@ def _ensure_labels_exist(
     github_issues: GitHubIssues,
     repo_root: Path,
     labels: list[str],
-    plan_type: str | None,
 ) -> str | None:
     """Ensure all required labels exist in the repository.
 
@@ -326,7 +318,6 @@ def _ensure_labels_exist(
         github_issues: GitHubIssues interface
         repo_root: Repository root directory
         labels: List of label names to ensure exist
-        plan_type: Plan type for determining label descriptions
 
     Returns:
         Error message if failed, None if success

@@ -24,7 +24,6 @@ from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_EXTRACTION_LABEL
 from erk_shared.github.issues import IssueInfo
 from erk_shared.github.metadata.core import (
     create_submission_queued_block,
-    find_metadata_block,
     render_erk_issue_event,
 )
 from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
@@ -77,23 +76,16 @@ def branch_rollback(ctx: ErkContext, repo_root: Path, original_branch: str) -> I
         raise
 
 
-def is_issue_learn_plan(issue_body: str) -> bool:
-    """Check if an issue is a learn plan by examining its plan-header metadata.
+def is_issue_learn_plan(labels: list[str]) -> bool:
+    """Check if an issue is a learn plan by checking for erk-learn label.
 
     Args:
-        issue_body: The full issue body text
+        labels: The issue's labels
 
     Returns:
-        True if the issue has plan_type: "learn" in its plan-header block,
-        False otherwise (including if no plan-header block exists)
+        True if the issue has the erk-learn label, False otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
-
-    if block is None:
-        return False
-
-    plan_type = block.data.get("plan_type")
-    return plan_type == "learn"
+    return "erk-learn" in labels
 
 
 def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
@@ -298,7 +290,7 @@ def _validate_issue_for_submit(
             pr_number = pr_details.number
 
     # Check if this issue is a learn plan
-    is_learn_origin = is_issue_learn_plan(issue.body)
+    is_learn_origin = is_issue_learn_plan(issue.labels)
 
     return ValidatedIssue(
         number=issue_number,

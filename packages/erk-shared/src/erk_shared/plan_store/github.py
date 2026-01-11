@@ -237,12 +237,9 @@ class GitHubPlanStore(PlanBackend):
             repo_root: Repository root directory
             title: Plan title
             content: Plan body/description
-            labels: Labels to apply (immutable tuple)
+            labels: Labels to apply (immutable tuple, include "erk-learn" for learn plans)
             metadata: Provider-specific metadata. Supported keys:
-                - plan_type: str | None (e.g., "extraction")
                 - title_suffix: str | None
-                - source_plan_issues: list[int] | None
-                - extraction_session_ids: list[str] | None
                 - source_repo: str | None
                 - objective_issue: int | None
 
@@ -253,9 +250,6 @@ class GitHubPlanStore(PlanBackend):
             RuntimeError: If plan creation fails completely (no partial success)
         """
         # Extract and convert metadata fields with explicit type handling
-        plan_type_raw = metadata.get("plan_type")
-        plan_type_str: str | None = str(plan_type_raw) if plan_type_raw is not None else None
-
         title_suffix_raw = metadata.get("title_suffix")
         title_suffix_str: str | None = None
         if title_suffix_raw is not None:
@@ -263,19 +257,6 @@ class GitHubPlanStore(PlanBackend):
 
         source_repo_raw = metadata.get("source_repo")
         source_repo_str: str | None = str(source_repo_raw) if source_repo_raw is not None else None
-
-        # Handle list fields - must be iterables
-        source_plan_issues_raw = metadata.get("source_plan_issues")
-        source_plan_issues_list: list[int] | None = None
-        if source_plan_issues_raw is not None and hasattr(source_plan_issues_raw, "__iter__"):
-            source_plan_issues_list = [int(x) for x in source_plan_issues_raw]  # type: ignore[union-attr]
-
-        extraction_session_ids_raw = metadata.get("extraction_session_ids")
-        extraction_session_ids_list: list[str] | None = None
-        if extraction_session_ids_raw is not None:
-            if hasattr(extraction_session_ids_raw, "__iter__"):
-                ids_raw: list[object] = list(extraction_session_ids_raw)  # type: ignore[arg-type]
-                extraction_session_ids_list = [str(x) for x in ids_raw]
 
         # Handle int field
         objective_issue_raw = metadata.get("objective_issue")
@@ -298,11 +279,8 @@ class GitHubPlanStore(PlanBackend):
             repo_root=repo_root,
             plan_content=content,
             title=title,
-            plan_type=plan_type_str,
             extra_labels=extra_labels if extra_labels else None,
             title_suffix=title_suffix_str,
-            source_plan_issues=source_plan_issues_list,
-            extraction_session_ids=extraction_session_ids_list,
             source_repo=source_repo_str,
             objective_issue=objective_issue_int,
             created_from_session=created_from_session_str,

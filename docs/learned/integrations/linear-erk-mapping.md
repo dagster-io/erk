@@ -86,8 +86,6 @@ Erk's `plan-header` metadata fields map to:
 | `last_dispatched_*`      | Custom field or AgentSession                 |
 | `last_local_impl_*`      | **AgentSession** (native tracking)           |
 | `last_remote_impl_at`    | Custom field or AgentSession                 |
-| `plan_type`              | Label or custom field                        |
-| `source_plan_issues`     | Issue relations                              |
 | `objective_issue`        | Parent issue link                            |
 | `steps` / `current_step` | Sub-issues or checklist                      |
 

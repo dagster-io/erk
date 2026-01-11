@@ -40,9 +40,6 @@ def create_plan_header_block(
     last_local_impl_session: str | None = None,
     last_local_impl_user: str | None = None,
     last_remote_impl_at: str | None = None,
-    plan_type: str | None = None,
-    source_plan_issues: list[int] | None = None,
-    extraction_session_ids: list[str] | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
     created_from_session: str | None = None,
@@ -62,9 +59,6 @@ def create_plan_header_block(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
-        plan_type: Optional type discriminator ("standard" or "learn")
-        source_plan_issues: For learn plans, list of issue numbers analyzed
-        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -91,16 +85,6 @@ def create_plan_header_block(
     # Only include worktree_name if provided
     if worktree_name is not None:
         data["worktree_name"] = worktree_name
-
-    # Include plan_type if provided (defaults to "standard" conceptually, but we don't store it)
-    if plan_type is not None:
-        data["plan_type"] = plan_type
-
-    # Include extraction mixin fields if provided
-    if source_plan_issues is not None:
-        data["source_plan_issues"] = source_plan_issues
-    if extraction_session_ids is not None:
-        data["extraction_session_ids"] = extraction_session_ids
 
     # Include source_repo for cross-repo plans
     if source_repo is not None:
@@ -135,9 +119,6 @@ def format_plan_header_body(
     last_local_impl_session: str | None = None,
     last_local_impl_user: str | None = None,
     last_remote_impl_at: str | None = None,
-    plan_type: str | None = None,
-    source_plan_issues: list[int] | None = None,
-    extraction_session_ids: list[str] | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
     created_from_session: str | None = None,
@@ -160,9 +141,6 @@ def format_plan_header_body(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp
-        plan_type: Optional type discriminator ("standard" or "learn")
-        source_plan_issues: For learn plans, list of issue numbers analyzed
-        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -183,9 +161,6 @@ def format_plan_header_body(
         last_local_impl_session=last_local_impl_session,
         last_local_impl_user=last_local_impl_user,
         last_remote_impl_at=last_remote_impl_at,
-        plan_type=plan_type,
-        source_plan_issues=source_plan_issues,
-        extraction_session_ids=extraction_session_ids,
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,

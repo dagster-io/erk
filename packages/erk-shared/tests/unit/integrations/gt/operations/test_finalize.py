@@ -1,20 +1,21 @@
 """Unit tests for is_learn_plan function.
 
-Tests extraction plan detection for PR bodies.
+Tests learn plan detection based on issue.json labels.
 
 Note: build_pr_body_footer tests are in tests/unit/github/test_pr_footer.py
 """
 
+import json
 from pathlib import Path
 
 from erk_shared.gateway.gt.operations.finalize import is_learn_plan
 
 
-class TestIsExtractionPlan:
+class TestIsLearnPlan:
     """Tests for is_learn_plan function."""
 
-    def test_returns_false_when_plan_md_does_not_exist(self, tmp_path: Path) -> None:
-        """Test that function returns False when plan.md doesn't exist."""
+    def test_returns_false_when_issue_json_does_not_exist(self, tmp_path: Path) -> None:
+        """Test that function returns False when issue.json doesn't exist."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
 
@@ -30,120 +31,90 @@ class TestIsExtractionPlan:
 
         assert result is False
 
-    def test_returns_false_when_no_plan_header_block(self, tmp_path: Path) -> None:
-        """Test returns False when plan.md has no plan-header metadata block."""
+    def test_returns_false_when_labels_field_is_missing(self, tmp_path: Path) -> None:
+        """Test returns False when issue.json has no labels field."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
-        plan_file = impl_dir / "plan.md"
-        plan_file.write_text("# Plan\n\nJust a regular plan.", encoding="utf-8")
+        issue_file = impl_dir / "issue.json"
+        issue_data = {
+            "issue_number": 42,
+            "issue_url": "https://github.com/org/repo/issues/42",
+            "created_at": "2025-01-01T00:00:00Z",
+            "synced_at": "2025-01-01T00:00:00Z",
+        }
+        issue_file.write_text(json.dumps(issue_data), encoding="utf-8")
 
         result = is_learn_plan(impl_dir)
 
         assert result is False
 
-    def test_returns_false_when_plan_type_is_standard(self, tmp_path: Path) -> None:
-        """Test returns False when plan_type is 'standard'."""
+    def test_returns_false_when_labels_is_empty(self, tmp_path: Path) -> None:
+        """Test returns False when labels is an empty list."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
-        plan_file = impl_dir / "plan.md"
-        plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
-
-```yaml
-
-schema_version: "2"
-created_at: "2025-01-01T00:00:00Z"
-created_by: "testuser"
-plan_type: standard
-last_dispatched_run_id: null
-last_dispatched_node_id: null
-last_dispatched_at: null
-
-```
-
-</details>
-<!-- /erk:metadata-block:plan-header -->
-
-# Plan
-
-Standard plan content.
-"""
-        plan_file.write_text(plan_content, encoding="utf-8")
+        issue_file = impl_dir / "issue.json"
+        issue_data = {
+            "issue_number": 42,
+            "issue_url": "https://github.com/org/repo/issues/42",
+            "created_at": "2025-01-01T00:00:00Z",
+            "synced_at": "2025-01-01T00:00:00Z",
+            "labels": [],
+        }
+        issue_file.write_text(json.dumps(issue_data), encoding="utf-8")
 
         result = is_learn_plan(impl_dir)
 
         assert result is False
 
-    def test_returns_false_when_plan_type_is_missing(self, tmp_path: Path) -> None:
-        """Test returns False when plan_type field is not present."""
+    def test_returns_false_when_erk_learn_label_not_present(self, tmp_path: Path) -> None:
+        """Test returns False when erk-learn label is not in labels."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
-        plan_file = impl_dir / "plan.md"
-        plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
-
-```yaml
-
-schema_version: "2"
-created_at: "2025-01-01T00:00:00Z"
-created_by: "testuser"
-last_dispatched_run_id: null
-last_dispatched_node_id: null
-last_dispatched_at: null
-
-```
-
-</details>
-<!-- /erk:metadata-block:plan-header -->
-
-# Plan
-
-Plan without plan_type field.
-"""
-        plan_file.write_text(plan_content, encoding="utf-8")
+        issue_file = impl_dir / "issue.json"
+        issue_data = {
+            "issue_number": 42,
+            "issue_url": "https://github.com/org/repo/issues/42",
+            "created_at": "2025-01-01T00:00:00Z",
+            "synced_at": "2025-01-01T00:00:00Z",
+            "labels": ["erk-plan", "bug"],
+        }
+        issue_file.write_text(json.dumps(issue_data), encoding="utf-8")
 
         result = is_learn_plan(impl_dir)
 
         assert result is False
 
-    def test_returns_true_when_plan_type_is_learn(self, tmp_path: Path) -> None:
-        """Test returns True when plan_type is 'learn'."""
+    def test_returns_true_when_erk_learn_label_present(self, tmp_path: Path) -> None:
+        """Test returns True when erk-learn label is in labels."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
-        plan_file = impl_dir / "plan.md"
-        plan_content = """<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:plan-header -->
-<details>
-<summary><code>plan-header</code></summary>
+        issue_file = impl_dir / "issue.json"
+        issue_data = {
+            "issue_number": 42,
+            "issue_url": "https://github.com/org/repo/issues/42",
+            "created_at": "2025-01-01T00:00:00Z",
+            "synced_at": "2025-01-01T00:00:00Z",
+            "labels": ["erk-plan", "erk-learn"],
+        }
+        issue_file.write_text(json.dumps(issue_data), encoding="utf-8")
 
-```yaml
+        result = is_learn_plan(impl_dir)
 
-schema_version: "2"
-created_at: "2025-01-01T00:00:00Z"
-created_by: "testuser"
-plan_type: learn
-source_plan_issues:
-- 123
-extraction_session_ids:
-- "abc123"
-last_dispatched_run_id: null
-last_dispatched_node_id: null
-last_dispatched_at: null
+        assert result is True
 
-```
-
-</details>
-<!-- /erk:metadata-block:plan-header -->
-
-# Learn Plan
-
-Plan for documenting learnings.
-"""
-        plan_file.write_text(plan_content, encoding="utf-8")
+    def test_returns_true_when_erk_learn_is_only_label(self, tmp_path: Path) -> None:
+        """Test returns True when erk-learn is the only label."""
+        impl_dir = tmp_path / ".impl"
+        impl_dir.mkdir()
+        issue_file = impl_dir / "issue.json"
+        issue_data = {
+            "issue_number": 42,
+            "issue_url": "https://github.com/org/repo/issues/42",
+            "created_at": "2025-01-01T00:00:00Z",
+            "synced_at": "2025-01-01T00:00:00Z",
+            "labels": ["erk-learn"],
+        }
+        issue_file.write_text(json.dumps(issue_data), encoding="utf-8")
 
         result = is_learn_plan(impl_dir)
 
