@@ -211,7 +211,7 @@ def create_raw_extraction_plan(
         repo_root=repo_root,
         plan_content=raw_body,
         title=None,
-        plan_type="extraction",
+        plan_type="learn",
         extra_labels=None,
         title_suffix=None,
         source_plan_issues=None,

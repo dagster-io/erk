@@ -324,9 +324,9 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_local_impl_session: Claude Code session ID from environment (nullable)
         last_local_impl_user: User who ran the implementation (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
-        plan_type: Type discriminator - "standard" or "extraction"
-        source_plan_issues: For extraction plans, list of issue numbers analyzed
-        extraction_session_ids: For extraction plans, list of session IDs analyzed
+        plan_type: Type discriminator - "standard" or "learn"
+        source_plan_issues: For learn plans, list of issue numbers analyzed
+        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
@@ -439,7 +439,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
                     raise ValueError("last_local_impl_user must be a string or null")
 
         # Validate plan_type field
-        valid_plan_types = {"standard", "extraction"}
+        valid_plan_types = {"standard", "learn"}
         if "plan_type" in data and data["plan_type"] is not None:
             if not isinstance(data["plan_type"], str):
                 raise ValueError("plan_type must be a string or null")
@@ -478,15 +478,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
             if "/" not in data["source_repo"]:
                 raise ValueError("source_repo must be in 'owner/repo' format")
 
-        # Validate extraction mixin: when plan_type is "extraction", mixin fields should be present
+        # Validate learn mixin: when plan_type is "learn", mixin fields should be present
         plan_type = data.get("plan_type")
-        if plan_type == "extraction":
+        if plan_type == "learn":
             if "source_plan_issues" not in data or data.get("source_plan_issues") is None:
-                raise ValueError("source_plan_issues is required when plan_type is 'extraction'")
+                raise ValueError("source_plan_issues is required when plan_type is 'learn'")
             if "extraction_session_ids" not in data or data.get("extraction_session_ids") is None:
-                raise ValueError(
-                    "extraction_session_ids is required when plan_type is 'extraction'"
-                )
+                raise ValueError("extraction_session_ids is required when plan_type is 'learn'")
 
         # Validate optional objective_issue field
         if "objective_issue" in data and data["objective_issue"] is not None:

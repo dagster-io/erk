@@ -17,7 +17,7 @@
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
 - **[event-progress-pattern.md](event-progress-pattern.md)** — implementing operations that need progress reporting, separating business logic from UI output, building testable CLI operations, using ProgressEvent or CompletionEvent
-- **[extraction-origin-tracking.md](extraction-origin-tracking.md)** — understanding how extraction PRs are identified, modifying erk pr land behavior, working with erk-skip-extraction label
+- **[extraction-origin-tracking.md](extraction-origin-tracking.md)** — understanding how learn PRs are identified, modifying erk pr land behavior, working with erk-skip-extraction label
 - **[gateway-abc-implementation.md](gateway-abc-implementation.md)** — adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite), implementing new gateway operations
 - **[gateway-hierarchy.md](gateway-hierarchy.md)** — understanding gateway relationships, deciding which gateway to use for an operation, understanding BranchManager abstraction, understanding GraphiteDisabled sentinel pattern
 - **[gateway-inventory.md](gateway-inventory.md)** — understanding available gateways, adding a new gateway, creating test doubles for external services

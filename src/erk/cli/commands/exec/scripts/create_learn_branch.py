@@ -45,7 +45,7 @@ def create_learn_branch(
     """Create and push a branch for learn documentation.
 
     Creates a new branch from the trunk branch for implementing
-    documentation extraction from a GitHub issue.
+    documentation learning from a GitHub issue.
     """
     git = require_git(ctx)
     repo_root = require_repo_root(ctx)

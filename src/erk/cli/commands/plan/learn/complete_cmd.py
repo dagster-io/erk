@@ -1,4 +1,4 @@
-"""Command to complete an extraction plan and mark source plans as extracted."""
+"""Command to complete a learn plan and mark source plans as extracted."""
 
 import click
 
@@ -18,25 +18,25 @@ from erk_shared.output.output import user_output
 @click.command("complete")
 @click.argument("identifier", type=str)
 @click.pass_obj
-def complete_extraction(ctx: ErkContext, identifier: str) -> None:
-    """Complete an extraction plan by marking source plans as docs-extracted.
+def complete_learn(ctx: ErkContext, identifier: str) -> None:
+    """Complete a learn plan by marking source plans as docs-extracted.
 
-    Reads the extraction plan's metadata to find source_plan_issues,
+    Reads the learn plan's metadata to find source_plan_issues,
     then adds the docs-extracted label to each source plan.
 
     This command is idempotent - safe to run multiple times.
 
     Args:
-        identifier: Extraction plan identifier (e.g., "42" or GitHub URL)
+        identifier: Learn plan identifier (e.g., "42" or GitHub URL)
     """
     repo = discover_repo_context(ctx, ctx.cwd)
     ensure_erk_metadata_dir(repo)
     repo_root = repo.root
 
-    # Parse extraction plan issue number
+    # Parse learn plan issue number
     issue_number = parse_issue_identifier(identifier)
 
-    # Fetch the extraction plan issue to read its metadata
+    # Fetch the learn plan issue to read its metadata
     try:
         issue_info = ctx.issues.get_issue(repo_root, issue_number)
     except RuntimeError as e:
@@ -52,10 +52,10 @@ def complete_extraction(ctx: ErkContext, identifier: str) -> None:
 
     # Check plan_type
     plan_type = plan_header.data.get("plan_type")
-    if plan_type != "extraction":
+    if plan_type != "learn":
         raise click.ClickException(
-            f"Issue #{issue_number} is not an extraction plan (plan_type: {plan_type}). "
-            "This command only works on extraction plans."
+            f"Issue #{issue_number} is not a learn plan (plan_type: {plan_type}). "
+            "This command only works on learn plans."
         )
 
     # Get source_plan_issues
@@ -91,11 +91,11 @@ def complete_extraction(ctx: ErkContext, identifier: str) -> None:
     # Summary
     if marked_count == len(source_plan_issues):
         user_output(
-            f"\nExtraction plan #{issue_number} completed: "
+            f"\nLearn plan #{issue_number} completed: "
             f"marked {marked_count} source plan(s) as docs-extracted"
         )
     else:
         user_output(
-            f"\nExtraction plan #{issue_number} partially completed: "
+            f"\nLearn plan #{issue_number} partially completed: "
             f"marked {marked_count}/{len(source_plan_issues)} source plan(s) as docs-extracted"
         )

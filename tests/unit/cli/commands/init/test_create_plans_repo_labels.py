@@ -21,7 +21,7 @@ def test_create_plans_repo_labels_creates_all_labels() -> None:
 
     assert result is None  # Success
     assert "erk-plan" in github_issues.labels
-    assert "erk-extraction" in github_issues.labels
+    assert "erk-learn" in github_issues.labels
     assert "erk-objective" in github_issues.labels
 
 
@@ -41,7 +41,7 @@ def test_create_plans_repo_labels_tracks_created_labels() -> None:
 
     label_names = [label[0] for label in created]
     assert "erk-plan" in label_names
-    assert "erk-extraction" in label_names
+    assert "erk-learn" in label_names
     assert "erk-objective" in label_names
 
 
@@ -55,14 +55,14 @@ def test_create_plans_repo_labels_idempotent_with_existing() -> None:
         github_issues=github_issues,
     )
 
-    # Only one label should be created (erk-extraction was missing)
+    # Only one label should be created (erk-learn was missing)
     assert len(github_issues.created_labels) == 1
-    assert github_issues.created_labels[0][0] == "erk-extraction"
+    assert github_issues.created_labels[0][0] == "erk-learn"
 
 
 def test_create_plans_repo_labels_all_exist_no_creation() -> None:
     """Test that no labels are created when all already exist."""
-    github_issues = FakeGitHubIssues(labels={"erk-plan", "erk-extraction", "erk-objective"})
+    github_issues = FakeGitHubIssues(labels={"erk-plan", "erk-learn", "erk-objective"})
 
     create_plans_repo_labels(
         repo_root=sentinel_path(),

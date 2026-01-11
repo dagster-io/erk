@@ -103,6 +103,12 @@ def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numb
     default=None,
     help="Link plan to parent objective issue number",
 )
+@click.option(
+    "--plan-type",
+    type=click.Choice(["standard", "learn"]),
+    default=None,
+    help="Plan type: standard (default) or learn (for documentation learning plans)",
+)
 @click.pass_context
 def plan_save_to_issue(
     ctx: click.Context,
@@ -111,6 +117,7 @@ def plan_save_to_issue(
     plan_file: Path | None,
     session_id: str | None,
     objective_issue: int | None,
+    plan_type: str | None,
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
@@ -156,7 +163,7 @@ def plan_save_to_issue(
         repo_root=repo_root,
         plan_content=plan,
         title=None,
-        plan_type=None,
+        plan_type=plan_type,
         extra_labels=None,
         title_suffix=None,
         source_plan_issues=None,

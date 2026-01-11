@@ -1,24 +1,24 @@
 ---
-title: Extraction Origin Tracking
+title: Learn Origin Tracking
 read_when:
-  - "understanding how extraction PRs are identified"
+  - "understanding how learn PRs are identified"
   - "modifying erk pr land behavior"
   - "working with erk-skip-extraction label"
 ---
 
-# Extraction Origin Tracking
+# Learn Origin Tracking
 
-PRs that originate from extraction plans need to be identified during `erk pr land` to prevent infinite extraction loops.
+PRs that originate from learn plans need to be identified during `erk pr land` to prevent infinite extraction loops.
 
 ## The Problem
 
 When a PR is landed via `erk pr land`, the command normally queues the worktree for "pending extraction" - a state that enables later session analysis to extract documentation improvements.
 
-However, PRs that _originate from_ extraction plans should not trigger another extraction cycle. Otherwise:
+However, PRs that _originate from_ learn plans should not trigger another extraction cycle. Otherwise:
 
-1. Extraction plan creates documentation PR
+1. Learn plan creates documentation PR
 2. PR lands → queued for extraction
-3. Extraction runs → finds documentation changes → creates new extraction plan
+3. Extraction runs → finds documentation changes → creates new learn plan
 4. Repeat forever
 
 ## Design Decision: Labels over Body Markers
@@ -29,7 +29,7 @@ However, PRs that _originate from_ extraction plans should not trigger another e
 
 ### Rationale
 
-1. **Visibility**: Labels are visible in GitHub UI, making it easy to identify extraction PRs at a glance
+1. **Visibility**: Labels are visible in GitHub UI, making it easy to identify learn PRs at a glance
 2. **Simplicity**: Label checks are simpler than parsing PR body content
 3. **Separation**: PR body content remains focused on the actual PR description
 4. **Flexibility**: Labels can be manually added/removed for edge cases
@@ -38,19 +38,19 @@ However, PRs that _originate from_ extraction plans should not trigger another e
 
 ### 1. PR Creation (`submit.py`, `finalize.py`)
 
-When creating a PR from an extraction plan:
+When creating a PR from a learn plan:
 
 ```python
-# Check if source is extraction plan
-if is_extraction_plan(plan_metadata) or is_issue_extraction_plan(issue_metadata):
-    # Add label to mark as extraction-originated
+# Check if source is learn plan
+if is_learn_plan(plan_metadata) or is_issue_learn_plan(issue_metadata):
+    # Add label to mark as learn-originated
     github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 ```
 
 The label is applied by:
 
 - `erk plan submit` - Checks issue's `plan_type` field in plan-header metadata
-- `gt finalize` - Checks `.impl/plan.md` for `plan_type: extraction`
+- `gt finalize` - Checks `.impl/plan.md` for `plan_type: learn`
 
 ### 2. PR Landing (`land_cmd.py`)
 
@@ -193,6 +193,6 @@ def test_land_marks_extraction_for_normal_pr() -> None:
 ## Related Documentation
 
 - [Glossary: erk-skip-extraction](../glossary.md#erk-skip-extraction)
-- [Glossary: Extraction Plan](../glossary.md#extraction-plan)
+- [Glossary: Learn Plan](../glossary.md#learn-plan)
 - [Erk Architecture Patterns](erk-architecture.md) - Four-layer integration pattern
 - [Plan Lifecycle](../planning/lifecycle.md) - Full plan workflow

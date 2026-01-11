@@ -31,7 +31,7 @@ jobs:
   setup-and-dispatch:
     if: |
       (github.event_name == 'workflow_dispatch') ||
-      (contains(github.event.issue.labels.*.name, 'erk-extraction') &&
+      (contains(github.event.issue.labels.*.name, 'erk-learn') &&
        contains(github.event.issue.labels.*.name, 'erk-plan'))
     runs-on: ubuntu-latest
     timeout-minutes: 10

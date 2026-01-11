@@ -1,6 +1,6 @@
-"""Tests for erk plan extraction complete command.
+"""Tests for erk plan learn complete command.
 
-Layer 4 (Business Logic Tests): Tests extraction complete command using fakes.
+Layer 4 (Business Logic Tests): Tests learn complete command using fakes.
 """
 
 from datetime import UTC, datetime
@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.constants import DOCS_EXTRACTED_LABEL, ERK_EXTRACTION_LABEL, ERK_PLAN_LABEL
+from erk.cli.constants import DOCS_EXTRACTED_LABEL, ERK_LEARN_LABEL, ERK_PLAN_LABEL
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import format_plan_header_body
@@ -16,12 +16,12 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def _make_extraction_issue(
+def _make_learn_issue(
     number: int,
     source_plan_issues: list[int],
     extraction_session_ids: list[str],
 ) -> IssueInfo:
-    """Create an extraction plan IssueInfo for testing."""
+    """Create a learn plan IssueInfo for testing."""
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
@@ -35,7 +35,7 @@ def _make_extraction_issue(
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
-        plan_type="extraction",
+        plan_type="learn",
         source_plan_issues=source_plan_issues,
         extraction_session_ids=extraction_session_ids,
         source_repo=None,
@@ -43,11 +43,11 @@ def _make_extraction_issue(
     )
     return IssueInfo(
         number=number,
-        title=f"Extraction Plan #{number} [erk-extraction]",
+        title=f"Learn Plan #{number} [erk-learn]",
         body=body,
         state="OPEN",
         url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=[ERK_PLAN_LABEL, ERK_EXTRACTION_LABEL],
+        labels=[ERK_PLAN_LABEL, ERK_LEARN_LABEL],
         assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
@@ -74,14 +74,14 @@ def _make_source_issue(number: int, title: str) -> IssueInfo:
 def test_complete_marks_source_plans() -> None:
     """Test complete adds docs-extracted label to all source plans."""
     # Arrange
-    extraction_issue = _make_extraction_issue(
+    learn_issue = _make_learn_issue(
         number=100,
         source_plan_issues=[42, 43],
         extraction_session_ids=["session-abc"],
     )
     issues = FakeGitHubIssues(
         issues={
-            100: extraction_issue,
+            100: learn_issue,
             42: _make_source_issue(42, "Source Plan 1"),
             43: _make_source_issue(43, "Source Plan 2"),
         }
@@ -92,7 +92,7 @@ def test_complete_marks_source_plans() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "100"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -110,14 +110,14 @@ def test_complete_marks_source_plans() -> None:
 def test_complete_creates_label_if_missing() -> None:
     """Test complete creates docs-extracted label in repo if needed."""
     # Arrange
-    extraction_issue = _make_extraction_issue(
+    learn_issue = _make_learn_issue(
         number=100,
         source_plan_issues=[42],
         extraction_session_ids=["session-abc"],
     )
     issues = FakeGitHubIssues(
         issues={
-            100: extraction_issue,
+            100: learn_issue,
             42: _make_source_issue(42, "Source Plan"),
         },
         labels=set(),  # No labels in repo
@@ -128,7 +128,7 @@ def test_complete_creates_label_if_missing() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "100"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
@@ -138,7 +138,7 @@ def test_complete_creates_label_if_missing() -> None:
 def test_complete_idempotent() -> None:
     """Test complete can be run multiple times safely."""
     # Arrange - source plan already has the label
-    extraction_issue = _make_extraction_issue(
+    learn_issue = _make_learn_issue(
         number=100,
         source_plan_issues=[42],
         extraction_session_ids=["session-abc"],
@@ -159,7 +159,7 @@ def test_complete_idempotent() -> None:
     )
     issues = FakeGitHubIssues(
         issues={
-            100: extraction_issue,
+            100: learn_issue,
             42: source_issue,
         },
         labels={DOCS_EXTRACTED_LABEL},
@@ -170,14 +170,14 @@ def test_complete_idempotent() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "100"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0
 
 
-def test_complete_rejects_non_extraction_plan() -> None:
-    """Test complete fails for non-extraction plan types."""
+def test_complete_rejects_non_learn_plan() -> None:
+    """Test complete fails for non-learn plan types."""
     # Arrange - standard plan (no plan_type or plan_type: standard)
     standard_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
@@ -217,11 +217,11 @@ def test_complete_rejects_non_extraction_plan() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "100"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
         # Assert
         assert result.exit_code != 0
-        assert "not an extraction plan" in result.output
+        assert "not a learn plan" in result.output
 
 
 def test_complete_rejects_issue_without_plan_header() -> None:
@@ -246,7 +246,7 @@ def test_complete_rejects_issue_without_plan_header() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "100"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
         # Assert
         assert result.exit_code != 0
@@ -255,15 +255,15 @@ def test_complete_rejects_issue_without_plan_header() -> None:
 
 def test_complete_handles_missing_source_issue() -> None:
     """Test complete continues when a source issue is missing."""
-    # Arrange - extraction references issue 42, but 42 doesn't exist
-    extraction_issue = _make_extraction_issue(
+    # Arrange - learn references issue 42, but 42 doesn't exist
+    learn_issue = _make_learn_issue(
         number=100,
         source_plan_issues=[42, 43],  # 42 doesn't exist
         extraction_session_ids=["session-abc"],
     )
     issues = FakeGitHubIssues(
         issues={
-            100: extraction_issue,
+            100: learn_issue,
             43: _make_source_issue(43, "Source Plan 2"),
             # Issue 42 is missing
         }
@@ -274,7 +274,7 @@ def test_complete_handles_missing_source_issue() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "100"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
         # Assert - should partially complete with warning
         assert result.exit_code == 0
@@ -293,7 +293,7 @@ def test_complete_with_invalid_identifier() -> None:
         ctx = build_workspace_test_context(env, issues=issues)
 
         # Act
-        result = runner.invoke(cli, ["plan", "extraction", "complete", "not-a-number"], obj=ctx)
+        result = runner.invoke(cli, ["plan", "learn", "complete", "not-a-number"], obj=ctx)
 
         # Assert
         assert result.exit_code != 0
@@ -303,14 +303,14 @@ def test_complete_with_invalid_identifier() -> None:
 def test_complete_with_github_url() -> None:
     """Test complete accepts GitHub URL as identifier."""
     # Arrange
-    extraction_issue = _make_extraction_issue(
+    learn_issue = _make_learn_issue(
         number=100,
         source_plan_issues=[42],
         extraction_session_ids=["session-abc"],
     )
     issues = FakeGitHubIssues(
         issues={
-            100: extraction_issue,
+            100: learn_issue,
             42: _make_source_issue(42, "Source Plan"),
         }
     )
@@ -324,7 +324,7 @@ def test_complete_with_github_url() -> None:
             cli,
             [
                 "plan",
-                "extraction",
+                "learn",
                 "complete",
                 "https://github.com/owner/repo/issues/100",
             ],
