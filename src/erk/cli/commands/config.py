@@ -29,6 +29,7 @@ def get_global_config_keys() -> dict[str, str]:
         "github_planning": "Enable GitHub issues integration for planning",
         "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",
+        "autolearn": "Automatically create learn plan when landing PRs",
     }
 
 

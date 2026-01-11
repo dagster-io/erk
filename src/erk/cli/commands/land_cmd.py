@@ -18,6 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
+from erk.cli.commands.autolearn import maybe_create_autolearn_issue
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -463,6 +464,11 @@ def _navigate_after_land(
     is_flag=True,
     help="Print what would be done without executing destructive operations.",
 )
+@click.option(
+    "--no-autolearn",
+    is_flag=True,
+    help="Skip automatic learn plan creation",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -473,6 +479,7 @@ def land(
     force: bool,
     pull_flag: bool,
     dry_run: bool,
+    no_autolearn: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -524,7 +531,13 @@ def land(
     if target is None:
         # Landing current branch's PR (original behavior)
         _land_current_branch(
-            ctx, repo=repo, script=script, up_flag=up_flag, force=force, pull_flag=pull_flag
+            ctx,
+            repo=repo,
+            script=script,
+            up_flag=up_flag,
+            force=force,
+            pull_flag=pull_flag,
+            no_autolearn=no_autolearn,
         )
     else:
         # Parse the target argument
@@ -533,7 +546,13 @@ def land(
         if parsed.arg_type == "branch":
             # Landing a PR for a specific branch
             _land_by_branch(
-                ctx, repo=repo, script=script, force=force, pull_flag=pull_flag, branch_name=target
+                ctx,
+                repo=repo,
+                script=script,
+                force=force,
+                pull_flag=pull_flag,
+                branch_name=target,
+                no_autolearn=no_autolearn,
             )
         else:
             # Landing a specific PR by number or URL
@@ -551,11 +570,19 @@ def land(
                 force=force,
                 pull_flag=pull_flag,
                 pr_number=parsed.pr_number,
+                no_autolearn=no_autolearn,
             )
 
 
 def _land_current_branch(
-    ctx: ErkContext, *, repo: RepoContext, script: bool, up_flag: bool, force: bool, pull_flag: bool
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    script: bool,
+    up_flag: bool,
+    force: bool,
+    pull_flag: bool,
+    no_autolearn: bool,
 ) -> None:
     """Land the current branch's PR (original behavior)."""
     check_clean_working_tree(ctx)
@@ -654,6 +681,12 @@ def _land_current_branch(
             force=force,
         )
 
+    # Create autolearn issue if enabled
+    if not no_autolearn:
+        maybe_create_autolearn_issue(
+            ctx, main_repo_root, current_branch, pr_number=merged_pr_number
+        )
+
     # Step 2: Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
@@ -678,6 +711,7 @@ def _land_specific_pr(
     force: bool,
     pull_flag: bool,
     pr_number: int,
+    no_autolearn: bool,
 ) -> None:
     """Land a specific PR by number."""
     # Validate --up is not used with PR argument
@@ -764,6 +798,10 @@ def _land_specific_pr(
             force=force,
         )
 
+    # Create autolearn issue if enabled
+    if not no_autolearn:
+        maybe_create_autolearn_issue(ctx, main_repo_root, branch, pr_number=pr_number)
+
     # Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
@@ -787,6 +825,7 @@ def _land_by_branch(
     force: bool,
     pull_flag: bool,
     branch_name: str,
+    no_autolearn: bool,
 ) -> None:
     """Land a PR for a specific branch."""
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
@@ -868,6 +907,10 @@ def _land_by_branch(
             branch=branch_name,
             force=force,
         )
+
+    # Create autolearn issue if enabled
+    if not no_autolearn:
+        maybe_create_autolearn_issue(ctx, main_repo_root, branch_name, pr_number=pr_number)
 
     # Cleanup and navigate (uses shared function)
     _cleanup_and_navigate(
