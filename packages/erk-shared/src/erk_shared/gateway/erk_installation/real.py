@@ -12,6 +12,8 @@ import tomllib
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+import tomli_w
+
 from erk_shared.context.types import GlobalConfig, InteractiveClaudeConfig
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 
@@ -125,33 +127,34 @@ class RealErkInstallation(ErkInstallation):
                 f"  Or edit the file directly to add: shell_setup_complete = true"
             )
 
-        content = f"""# Global erk configuration
-erk_root = "{config.erk_root}"
-use_graphite = {str(config.use_graphite).lower()}
-shell_setup_complete = {str(config.shell_setup_complete).lower()}
-github_planning = {str(config.github_planning).lower()}
-fix_conflicts_require_dangerous_flag = {str(config.fix_conflicts_require_dangerous_flag).lower()}
-show_hidden_commands = {str(config.show_hidden_commands).lower()}
-"""
+        # Build config dict for TOML serialization
+        data: dict[str, object] = {
+            "erk_root": str(config.erk_root),
+            "use_graphite": config.use_graphite,
+            "shell_setup_complete": config.shell_setup_complete,
+            "github_planning": config.github_planning,
+            "fix_conflicts_require_dangerous_flag": config.fix_conflicts_require_dangerous_flag,
+            "show_hidden_commands": config.show_hidden_commands,
+        }
+
         # Add [interactive-claude] section if any non-default values are set
         ic = config.interactive_claude
         ic_default = InteractiveClaudeConfig.default()
-        ic_lines: list[str] = []
+        ic_data: dict[str, object] = {}
         if ic.model is not None:
-            ic_lines.append(f'model = "{ic.model}"')
+            ic_data["model"] = ic.model
         if ic.verbose != ic_default.verbose:
-            ic_lines.append(f"verbose = {str(ic.verbose).lower()}")
+            ic_data["verbose"] = ic.verbose
         if ic.permission_mode != ic_default.permission_mode:
-            ic_lines.append(f'permission_mode = "{ic.permission_mode}"')
+            ic_data["permission_mode"] = ic.permission_mode
         if ic.dangerous != ic_default.dangerous:
-            ic_lines.append(f"dangerous = {str(ic.dangerous).lower()}")
+            ic_data["dangerous"] = ic.dangerous
 
-        if ic_lines:
-            content += "\n[interactive-claude]\n"
-            content += "\n".join(ic_lines) + "\n"
+        if ic_data:
+            data["interactive-claude"] = ic_data
 
         try:
-            config_path.write_text(content, encoding="utf-8")
+            config_path.write_bytes(tomli_w.dumps(data).encode("utf-8"))
         except PermissionError:
             raise PermissionError(
                 f"Cannot write to file: {config_path}\n"

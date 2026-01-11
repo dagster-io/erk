@@ -12,9 +12,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Self
+from typing import Literal, Self
 
 from erk_shared.github.types import GitHubRepoId
+
+# Claude CLI permission modes:
+# - "default": Default mode with permission prompts
+# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
 
 
 @dataclass(frozen=True)
@@ -73,13 +80,13 @@ class InteractiveClaudeConfig:
     Attributes:
         model: Claude model to use (e.g., "claude-opus-4-5")
         verbose: Whether to show verbose output
-        permission_mode: Permission mode ("acceptEdits", "plan", "bypassPermissions")
+        permission_mode: Claude CLI permission mode. See ClaudePermissionMode for options.
         dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
     """
 
     model: str | None
     verbose: bool
-    permission_mode: str
+    permission_mode: ClaudePermissionMode
     dangerous: bool
 
     @staticmethod
@@ -95,7 +102,7 @@ class InteractiveClaudeConfig:
     def with_overrides(
         self: Self,
         *,
-        permission_mode_override: str | None,
+        permission_mode_override: ClaudePermissionMode | None,
         model_override: str | None,
         dangerous_override: bool | None,
     ) -> InteractiveClaudeConfig:
@@ -111,7 +118,7 @@ class InteractiveClaudeConfig:
         Returns:
             New InteractiveClaudeConfig with overrides applied
         """
-        new_permission_mode = (
+        new_permission_mode: ClaudePermissionMode = (
             permission_mode_override
             if permission_mode_override is not None
             else self.permission_mode

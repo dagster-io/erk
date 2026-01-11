@@ -4,8 +4,14 @@ This fake enables testing Claude command execution without
 requiring the actual Claude CLI or using subprocess mocks.
 """
 
+from __future__ import annotations
+
 from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk_shared.context.types import ClaudePermissionMode
 
 from erk.core.claude_executor import (
     ClaudeEvent,
@@ -266,7 +272,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: str = "acceptEdits",
+        permission_mode: ClaudePermissionMode = "acceptEdits",
     ) -> None:
         """Track interactive execution without replacing process.
 

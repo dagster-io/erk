@@ -4,11 +4,17 @@ This module provides the abstract interface and typed events for Claude CLI exec
 The real implementation (RealClaudeExecutor) remains in erk.core.claude_executor.
 """
 
+from __future__ import annotations
+
 import time
 from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk_shared.context.types import ClaudePermissionMode
 
 # =============================================================================
 # Typed Claude CLI Events
@@ -306,7 +312,7 @@ class ClaudeExecutor(ABC):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: str = "acceptEdits",
+        permission_mode: ClaudePermissionMode = "acceptEdits",
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 
@@ -319,8 +325,7 @@ class ClaudeExecutor(ABC):
                 instead of the worktree root. This preserves the user's relative
                 directory position when switching worktrees.
             model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
-            permission_mode: Permission mode for Claude CLI (default: "acceptEdits")
-                Options: "acceptEdits", "plan", "bypassPermissions"
+            permission_mode: Permission mode for Claude CLI. See ClaudePermissionMode.
 
         Raises:
             RuntimeError: If Claude CLI is not available

@@ -4,6 +4,8 @@ This module provides the RealClaudeExecutor implementation and re-exports
 ABC and types from erk_shared.core for backward compatibility.
 """
 
+from __future__ import annotations
+
 import json
 import logging
 import os
@@ -13,6 +15,10 @@ import sys
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk_shared.context.types import ClaudePermissionMode
 
 # Re-export ABC and types from erk_shared.core for backward compatibility
 from erk_shared.core.claude_executor import ClaudeEvent as ClaudeEvent
@@ -414,7 +420,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: str = "acceptEdits",
+        permission_mode: ClaudePermissionMode = "acceptEdits",
     ) -> None:
         """Execute Claude CLI in interactive mode by replacing current process.
 

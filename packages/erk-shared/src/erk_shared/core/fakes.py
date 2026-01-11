@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
 
+from erk_shared.context.types import ClaudePermissionMode
 from erk_shared.core.claude_executor import (
     ClaudeEvent,
     ClaudeExecutor,
@@ -29,7 +30,7 @@ class InteractiveCall(NamedTuple):
     command: str
     target_subpath: Path | None
     model: str | None
-    permission_mode: str
+    permission_mode: ClaudePermissionMode
 
 
 class PromptCall(NamedTuple):
@@ -90,7 +91,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         command: str,
         target_subpath: Path | None,
         model: str | None = None,
-        permission_mode: str = "acceptEdits",
+        permission_mode: ClaudePermissionMode = "acceptEdits",
     ) -> None:
         self.interactive_calls.append(
             InteractiveCall(
