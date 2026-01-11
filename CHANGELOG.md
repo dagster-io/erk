@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 6c46c8a90 -->
+<!-- As of e20aec05b -->
 
 ### Major Changes
 
@@ -15,9 +15,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add `--no-delete` flag to `erk land` to preserve branch and worktree slot after merging PR (4402f189d)
+- Add `-f/--force` hint to error message when deleting branch with open PR (49de2dcad)
+- Add `learn-workflow` as installable capability via `erk init capability add learn-workflow` (4ee2a9339)
 - Add opt-in reminder system for coding standards enforcement via capability markers in `.erk/state.toml` (d2f445ea3)
 - Add configurable Claude CLI launcher with `[interactive-claude]` config section for model, permission mode, and other settings (6b44877b9)
 - Expand tutorial and topic documentation with installation guides and design explanations (d742c2ad3, 900ebe556, a9742438f)
+
+### Changed
+
+- Suppress slot warning when `--force` flag is specified in land command (c5751858e)
+
+### Fixed
+
+- Fix `erk dash -l` hanging by setting subprocess stdin to DEVNULL (e20aec05b)
+- Fix token reduction metric in session preprocessing to include agent logs in calculation (80567ad5d)
+- Fix `erk land` failing when branch is checked out in stale pool state (38983246a)
+- Skip dirty slots in `find_inactive_slot()` instead of failing, enabling concurrent slot allocation (e3c4ca050)
 
 ### Removed
 
