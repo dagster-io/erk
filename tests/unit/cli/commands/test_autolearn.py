@@ -58,7 +58,9 @@ def test_autolearn_disabled_does_nothing(tmp_path: Path) -> None:
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        maybe_create_autolearn_issue(ctx, tmp_path, "P42-feature-branch", pr_number=100)
+        maybe_create_autolearn_issue(
+            ctx, repo_root=tmp_path, branch="P42-feature-branch", pr_number=100
+        )
 
     # No issues created
     assert issues_ops.created_issues == []
@@ -78,7 +80,9 @@ def test_autolearn_no_plan_prefix_does_nothing(tmp_path: Path) -> None:
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        maybe_create_autolearn_issue(ctx, tmp_path, "feature-branch", pr_number=100)
+        maybe_create_autolearn_issue(
+            ctx, repo_root=tmp_path, branch="feature-branch", pr_number=100
+        )
 
     # No issues created
     assert issues_ops.created_issues == []
@@ -106,7 +110,9 @@ def test_autolearn_skips_learn_plans(tmp_path: Path) -> None:
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        maybe_create_autolearn_issue(ctx, tmp_path, "P42-learn-topic", pr_number=100)
+        maybe_create_autolearn_issue(
+            ctx, repo_root=tmp_path, branch="P42-learn-topic", pr_number=100
+        )
 
     # No issues created (source was already a learn plan)
     assert issues_ops.created_issues == []
@@ -131,7 +137,9 @@ def test_autolearn_creates_learn_issue(tmp_path: Path) -> None:
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        maybe_create_autolearn_issue(ctx, tmp_path, "P42-add-feature", pr_number=100)
+        maybe_create_autolearn_issue(
+            ctx, repo_root=tmp_path, branch="P42-add-feature", pr_number=100
+        )
 
     # Verify an issue was created
     # created_issues is a list of (title, body, labels) tuples
@@ -160,7 +168,9 @@ def test_autolearn_handles_source_issue_not_found(tmp_path: Path) -> None:
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        maybe_create_autolearn_issue(ctx, tmp_path, "P42-feature-branch", pr_number=100)
+        maybe_create_autolearn_issue(
+            ctx, repo_root=tmp_path, branch="P42-feature-branch", pr_number=100
+        )
 
     # No issues created
     assert issues_ops.created_issues == []
@@ -181,7 +191,9 @@ def test_autolearn_with_none_global_config_does_nothing(tmp_path: Path) -> None:
 
     captured = StringIO()
     with patch("sys.stderr", captured):
-        maybe_create_autolearn_issue(ctx, tmp_path, "P42-feature-branch", pr_number=100)
+        maybe_create_autolearn_issue(
+            ctx, repo_root=tmp_path, branch="P42-feature-branch", pr_number=100
+        )
 
     # No issues created
     assert issues_ops.created_issues == []

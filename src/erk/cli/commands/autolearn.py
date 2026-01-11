@@ -9,34 +9,30 @@ from pathlib import Path
 import click
 
 from erk.core.context import ErkContext
-from erk_shared.github.metadata.core import find_metadata_block
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
 
 
-def _is_learn_plan(issue_body: str) -> bool:
-    """Check if an issue is already a learn plan.
+def _is_learn_plan(issue: IssueInfo) -> bool:
+    """Check if an issue is already a learn plan by checking for erk-learn label.
 
     Args:
-        issue_body: Issue body content
+        issue: IssueInfo to check
 
     Returns:
-        True if the issue has plan_type: "learn", False otherwise
+        True if the issue has the erk-learn label, False otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
-    if block is None:
-        return False
-    plan_type = block.data.get("plan_type")
-    return plan_type == "learn"
+    return "erk-learn" in issue.labels
 
 
 def maybe_create_autolearn_issue(
     ctx: ErkContext,
+    *,
     repo_root: Path,
     branch: str,
-    *,
     pr_number: int,
 ) -> None:
     """Create a learn plan issue if autolearn is enabled and conditions are met.
@@ -71,7 +67,7 @@ def maybe_create_autolearn_issue(
         return
 
     # Skip if source is already a learn plan (avoid recursive learn plans)
-    if _is_learn_plan(source_issue.body):
+    if _is_learn_plan(source_issue):
         return
 
     # Discover sessions associated with the plan
