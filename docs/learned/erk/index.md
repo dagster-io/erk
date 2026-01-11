@@ -7,3 +7,4 @@
 - **[graphite-branch-setup.md](graphite-branch-setup.md)** — submitting a PR with Graphite, encountering no_parent error, setting up branch tracking for gt
 - **[issue-pr-linkage-storage.md](issue-pr-linkage-storage.md)** — understanding how plans link to PRs, debugging why a PR isn't linked to its issue, working with .impl/issue.json, creating PRs that close issues
 - **[pr-sync-workflow.md](pr-sync-workflow.md)** — synchronizing a PR with Graphite, after erk pr checkout, enabling gt commands on external PR
+- **[slot-pool-architecture.md](slot-pool-architecture.md)** — understanding slot pool design, implementing slot-related features, debugging slot assignment issues
