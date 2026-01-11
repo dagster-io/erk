@@ -40,6 +40,7 @@ def test_get_readable_sessions_finds_global_sessions() -> None:
         planning_session_id="planning-session",
         implementation_session_ids=["impl-session"],
         learn_session_ids=[],
+        last_remote_impl_at=None,
     )
 
     result = get_readable_sessions(sessions_for_plan, installation)
@@ -74,6 +75,7 @@ def test_get_readable_sessions_returns_paths() -> None:
         planning_session_id="session-123",
         implementation_session_ids=[],
         learn_session_ids=[],
+        last_remote_impl_at=None,
     )
 
     result = get_readable_sessions(sessions_for_plan, installation)
@@ -104,6 +106,7 @@ def test_get_readable_sessions_filters_missing_sessions() -> None:
         planning_session_id="existing-session",
         implementation_session_ids=["nonexistent-session"],
         learn_session_ids=["another-missing"],
+        last_remote_impl_at=None,
     )
 
     result = get_readable_sessions(sessions_for_plan, installation)
@@ -144,6 +147,7 @@ def test_get_readable_sessions_finds_sessions_across_projects() -> None:
         planning_session_id="session-in-a",
         implementation_session_ids=["session-in-b"],
         learn_session_ids=[],
+        last_remote_impl_at=None,
     )
 
     result = get_readable_sessions(sessions_for_plan, installation)
@@ -162,6 +166,7 @@ def test_get_readable_sessions_empty_when_no_sessions_exist() -> None:
         planning_session_id="nonexistent",
         implementation_session_ids=["also-missing"],
         learn_session_ids=[],
+        last_remote_impl_at=None,
     )
 
     result = get_readable_sessions(sessions_for_plan, installation)
@@ -205,6 +210,7 @@ def test_get_readable_sessions_preserves_order() -> None:
         planning_session_id="planning",
         implementation_session_ids=["impl-1", "impl-2"],
         learn_session_ids=["learn-1"],
+        last_remote_impl_at=None,
     )
 
     result = get_readable_sessions(sessions_for_plan, installation)

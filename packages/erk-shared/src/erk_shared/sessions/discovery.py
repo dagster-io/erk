@@ -11,6 +11,7 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
     extract_plan_header_local_impl_session,
+    extract_plan_header_remote_impl_at,
 )
 from erk_shared.learn.extraction.claude_installation.abc import (
     ClaudeInstallation,
@@ -30,11 +31,13 @@ class SessionsForPlan:
         planning_session_id: Session that created the plan (from created_from_session)
         implementation_session_ids: Sessions where plan was implemented
         learn_session_ids: Sessions where learn was previously invoked
+        last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
     """
 
     planning_session_id: str | None
     implementation_session_ids: list[str]
     learn_session_ids: list[str]
+    last_remote_impl_at: str | None
 
     def all_session_ids(self) -> list[str]:
         """Return all session IDs in logical order.
@@ -90,6 +93,7 @@ def find_sessions_for_plan(
     issue_info = github.get_issue(repo_root, issue_number)
     planning_session_id = extract_plan_header_created_from_session(issue_info.body)
     metadata_impl_session = extract_plan_header_local_impl_session(issue_info.body)
+    last_remote_impl_at = extract_plan_header_remote_impl_at(issue_info.body)
 
     # Get comments to find implementation and learn sessions
     comments = github.get_issue_comments(repo_root, issue_number)
@@ -114,6 +118,7 @@ def find_sessions_for_plan(
         planning_session_id=planning_session_id,
         implementation_session_ids=implementation_session_ids,
         learn_session_ids=learn_session_ids,
+        last_remote_impl_at=last_remote_impl_at,
     )
 
 
