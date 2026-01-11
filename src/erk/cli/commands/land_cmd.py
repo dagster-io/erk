@@ -54,6 +54,40 @@ from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.output.output import user_output
 
 
+def _ensure_branch_not_checked_out(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    branch: str,
+) -> Path | None:
+    """Ensure branch is not checked out in any worktree.
+
+    If the branch is checked out in a worktree, checkout detached HEAD
+    at trunk to release the branch for deletion.
+
+    This is a defensive check to handle scenarios where:
+    - Pool state has a stale worktree_path that doesn't match the actual worktree
+    - execute_unassign() checked out a placeholder in the wrong location
+    - Any other scenario where the branch remains checked out
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path
+        branch: Branch name to check
+
+    Returns:
+        Path of the worktree where branch was found and detached, or None
+        if branch was not checked out anywhere.
+    """
+    worktree_path = ctx.git.find_worktree_for_branch(repo_root, branch)
+    if worktree_path is None:
+        return None
+
+    trunk_branch = ctx.git.detect_trunk_branch(repo_root)
+    ctx.git.checkout_detached(worktree_path, trunk_branch)
+    return worktree_path
+
+
 class ParsedArgument(NamedTuple):
     """Result of parsing a land command argument."""
 
@@ -284,6 +318,9 @@ def _cleanup_and_navigate(
                 else:
                     save_pool_state(repo.pool_json_path, state)
             execute_unassign(ctx, repo, state, assignment)
+            # Defensive: ensure branch is released before deletion
+            # (handles stale pool state where worktree_path doesn't match actual location)
+            _ensure_branch_not_checked_out(ctx, repo_root=main_repo_root, branch=branch)
             ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
         elif extract_slot_number(worktree_path.name) is not None:
@@ -309,6 +346,8 @@ def _cleanup_and_navigate(
             if placeholder is not None:
                 ctx.git.checkout_branch(worktree_path, placeholder)
 
+            # Defensive: ensure branch is released before deletion
+            _ensure_branch_not_checked_out(ctx, repo_root=main_repo_root, branch=branch)
             ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
         else:
@@ -337,6 +376,8 @@ def _cleanup_and_navigate(
             trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
             ctx.git.checkout_detached(worktree_path, trunk_branch)
 
+            # Defensive: verify checkout succeeded before deletion
+            _ensure_branch_not_checked_out(ctx, repo_root=main_repo_root, branch=branch)
             ctx.branch_manager.delete_branch(main_repo_root, branch)
             user_output(
                 click.style("✓", fg="green")
