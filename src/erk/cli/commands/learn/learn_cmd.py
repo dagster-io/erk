@@ -224,7 +224,7 @@ def learn_cmd(
     if not interactive:
         user_output("")
         should_launch = user_confirm(
-            "Launch Claude to extract insights from these sessions?",
+            "Use Claude to learn from these sessions and produce documentation in docs/learned?",
             default=True,
         )
 
