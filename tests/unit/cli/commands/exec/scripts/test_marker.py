@@ -16,7 +16,7 @@ class TestMarkerCreate:
     """Tests for 'erk exec marker create' subcommand."""
 
     def test_create_marker_success(self, tmp_path: Path) -> None:
-        """Test creating a marker file succeeds."""
+        """Test creating a marker file succeeds with --session-id flag."""
         runner = CliRunner()
         session_id = "test-session-123"
 
@@ -24,9 +24,8 @@ class TestMarkerCreate:
 
         result = runner.invoke(
             marker,
-            ["create", "my-marker"],
+            ["create", "--session-id", session_id, "my-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -61,36 +60,31 @@ class TestMarkerCreate:
         marker_file = tmp_path / ".erk" / "scratch" / "sessions" / session_id / "my-marker.marker"
         assert marker_file.exists()
 
-    def test_create_marker_session_id_option_takes_precedence_over_env(
-        self, tmp_path: Path
-    ) -> None:
-        """Test that --session-id flag takes precedence over environment variable."""
+    def test_create_marker_requires_session_id_flag(self, tmp_path: Path) -> None:
+        """Test that --session-id flag is required (env var is NOT read)."""
         runner = CliRunner()
         env_session_id = "env-session-789"
-        flag_session_id = "flag-session-999"
 
         ctx = ErkContext.for_test(repo_root=tmp_path, cwd=tmp_path)
 
+        # Even with env var set, should fail without --session-id flag
         result = runner.invoke(
             marker,
-            ["create", "--session-id", flag_session_id, "my-marker"],
+            ["create", "my-marker"],
             obj=ctx,
             env={"CLAUDE_CODE_SESSION_ID": env_session_id},
         )
 
-        assert result.exit_code == 0
+        assert result.exit_code == 1
         data = json.loads(result.output)
-        assert data["success"] is True
+        assert data["success"] is False
+        assert "session ID" in data["message"]
 
-        # Verify marker file was created using flag value, not env var
-        marker_file_flag = (
-            tmp_path / ".erk" / "scratch" / "sessions" / flag_session_id / "my-marker.marker"
-        )
-        marker_file_env = (
+        # Verify marker file was NOT created
+        marker_file = (
             tmp_path / ".erk" / "scratch" / "sessions" / env_session_id / "my-marker.marker"
         )
-        assert marker_file_flag.exists()
-        assert not marker_file_env.exists()
+        assert not marker_file.exists()
 
     def test_create_marker_missing_session_id(self, tmp_path: Path) -> None:
         """Test creating marker fails without session ID."""
@@ -102,13 +96,12 @@ class TestMarkerCreate:
             marker,
             ["create", "my-marker"],
             obj=ctx,
-            env={},  # No CLAUDE_CODE_SESSION_ID
         )
 
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
+        assert "session ID" in data["message"]
 
     def test_create_marker_with_associated_objective(self, tmp_path: Path) -> None:
         """Test creating marker with --associated-objective stores the issue number."""
@@ -120,9 +113,15 @@ class TestMarkerCreate:
 
         result = runner.invoke(
             marker,
-            ["create", "--associated-objective", str(objective_issue), "objective-context"],
+            [
+                "create",
+                "--session-id",
+                session_id,
+                "--associated-objective",
+                str(objective_issue),
+                "objective-context",
+            ],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -148,9 +147,8 @@ class TestMarkerCreate:
 
         result = runner.invoke(
             marker,
-            ["create", "some-marker"],
+            ["create", "--session-id", session_id, "some-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -170,9 +168,8 @@ class TestMarkerCreate:
 
         result = runner.invoke(
             marker,
-            ["create", "--content", content_value, "plan-saved-issue"],
+            ["create", "--session-id", session_id, "--content", content_value, "plan-saved-issue"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -200,6 +197,8 @@ class TestMarkerCreate:
             marker,
             [
                 "create",
+                "--session-id",
+                session_id,
                 "--associated-objective",
                 "100",
                 "--content",
@@ -207,7 +206,6 @@ class TestMarkerCreate:
                 "test-marker",
             ],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -237,9 +235,8 @@ class TestMarkerRead:
 
         result = runner.invoke(
             marker,
-            ["read", "plan-saved-issue"],
+            ["read", "--session-id", session_id, "plan-saved-issue"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -278,9 +275,8 @@ class TestMarkerRead:
 
         result = runner.invoke(
             marker,
-            ["read", "missing-marker"],
+            ["read", "--session-id", session_id, "missing-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 1
@@ -297,13 +293,12 @@ class TestMarkerRead:
             marker,
             ["read", "my-marker"],
             obj=ctx,
-            env={},  # No CLAUDE_CODE_SESSION_ID
         )
 
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
+        assert "session ID" in data["message"]
 
     def test_read_strips_whitespace(self, tmp_path: Path) -> None:
         """Test read strips leading/trailing whitespace from content."""
@@ -321,9 +316,8 @@ class TestMarkerRead:
 
         result = runner.invoke(
             marker,
-            ["read", "plan-saved-issue"],
+            ["read", "--session-id", session_id, "plan-saved-issue"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -344,9 +338,8 @@ class TestMarkerRead:
 
         result = runner.invoke(
             marker,
-            ["read", "empty-marker"],
+            ["read", "--session-id", session_id, "empty-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -371,9 +364,8 @@ class TestMarkerExists:
 
         result = runner.invoke(
             marker,
-            ["exists", "my-marker"],
+            ["exists", "--session-id", session_id, "my-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -415,9 +407,8 @@ class TestMarkerExists:
 
         result = runner.invoke(
             marker,
-            ["exists", "missing-marker"],
+            ["exists", "--session-id", session_id, "missing-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 1
@@ -435,13 +426,12 @@ class TestMarkerExists:
             marker,
             ["exists", "my-marker"],
             obj=ctx,
-            env={},  # No CLAUDE_CODE_SESSION_ID
         )
 
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
+        assert "session ID" in data["message"]
 
 
 class TestMarkerDelete:
@@ -462,9 +452,8 @@ class TestMarkerDelete:
 
         result = runner.invoke(
             marker,
-            ["delete", "my-marker"],
+            ["delete", "--session-id", session_id, "my-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -512,9 +501,8 @@ class TestMarkerDelete:
 
         result = runner.invoke(
             marker,
-            ["delete", "missing-marker"],
+            ["delete", "--session-id", session_id, "missing-marker"],
             obj=ctx,
-            env={"CLAUDE_CODE_SESSION_ID": session_id},
         )
 
         assert result.exit_code == 0
@@ -532,10 +520,9 @@ class TestMarkerDelete:
             marker,
             ["delete", "my-marker"],
             obj=ctx,
-            env={},  # No CLAUDE_CODE_SESSION_ID
         )
 
         assert result.exit_code == 1
         data = json.loads(result.output)
         assert data["success"] is False
-        assert "CLAUDE_CODE_SESSION_ID" in data["message"] or "session ID" in data["message"]
+        assert "session ID" in data["message"]

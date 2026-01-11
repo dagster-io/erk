@@ -65,14 +65,16 @@ gh issue view <issue-number> --json number,title,body,labels
 
 ### Step 2.5: Create Objective Context Marker
 
-Create a marker to persist the objective issue number for the exit-plan-mode hook:
+Create a marker to persist the objective issue number for the exit-plan-mode hook.
+
+**Get the session ID** from the `session:` system reminder in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`).
 
 ```bash
-erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID \
+erk exec marker create --session-id <session-id-from-reminder> \
   --associated-objective <objective-number> objective-context
 ```
 
-Replace `<objective-number>` with the issue number from Step 2.
+Replace `<session-id-from-reminder>` with the session ID from the system reminder, and `<objective-number>` with the issue number from Step 2.
 
 This enables the exit-plan-mode-hook to suggest the correct save command with `--objective-issue` automatically.
 

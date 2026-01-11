@@ -7,10 +7,9 @@ Usage:
     erk exec marker delete --session-id SESSION_ID <name>
 
 Marker files are stored in `.erk/scratch/sessions/<session-id>/` and are used for
-inter-process communication between hooks and commands. Session ID can be provided
-via `--session-id` flag or `$CLAUDE_CODE_SESSION_ID` environment variable.
-
-The `--session-id` flag takes precedence over the environment variable.
+inter-process communication between hooks and commands. Session ID MUST be provided
+via the `--session-id` flag (erk code never has access to CLAUDE_CODE_SESSION_ID
+environment variable - session IDs must be passed explicitly).
 
 Exit codes:
     create: 0 = created, 1 = error (missing session ID)
@@ -20,7 +19,6 @@ Exit codes:
 """
 
 import json
-import os
 
 import click
 
@@ -31,16 +29,12 @@ MARKER_EXTENSION = ".marker"
 
 
 def _resolve_session_id(session_id: str | None) -> str | None:
-    """Resolve session ID from explicit argument or environment variable.
+    """Resolve session ID from explicit argument.
 
-    Priority:
-    1. Explicit session_id argument (if provided)
-    2. CLAUDE_CODE_SESSION_ID environment variable
-    3. None (if neither available)
+    Session ID must be provided via --session-id flag.
+    Erk code never has access to CLAUDE_CODE_SESSION_ID environment variable.
     """
-    if session_id is not None:
-        return session_id
-    return os.environ.get("CLAUDE_CODE_SESSION_ID")
+    return session_id
 
 
 def _output_json(success: bool, message: str) -> None:
@@ -58,7 +52,7 @@ def marker() -> None:
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for marker storage (default: $CLAUDE_CODE_SESSION_ID)",
+    help="Session ID for marker storage (required)",
 )
 @click.option(
     "--associated-objective",
@@ -90,10 +84,7 @@ def marker_create(
     """
     resolved_session_id = _resolve_session_id(session_id)
     if resolved_session_id is None:
-        msg = (
-            "Missing session ID: provide --session-id or set "
-            "CLAUDE_CODE_SESSION_ID environment variable"
-        )
+        msg = "Missing session ID: provide --session-id flag"
         _output_json(False, msg)
         raise SystemExit(1) from None
 
@@ -114,7 +105,7 @@ def marker_create(
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for marker storage (default: $CLAUDE_CODE_SESSION_ID)",
+    help="Session ID for marker storage (required)",
 )
 @click.pass_context
 def marker_read(ctx: click.Context, name: str, session_id: str | None) -> None:
@@ -126,10 +117,7 @@ def marker_read(ctx: click.Context, name: str, session_id: str | None) -> None:
     """
     resolved_session_id = _resolve_session_id(session_id)
     if resolved_session_id is None:
-        msg = (
-            "Missing session ID: provide --session-id or set "
-            "CLAUDE_CODE_SESSION_ID environment variable"
-        )
+        msg = "Missing session ID: provide --session-id flag"
         _output_json(False, msg)
         raise SystemExit(1) from None
 
@@ -149,7 +137,7 @@ def marker_read(ctx: click.Context, name: str, session_id: str | None) -> None:
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for marker storage (default: $CLAUDE_CODE_SESSION_ID)",
+    help="Session ID for marker storage (required)",
 )
 @click.pass_context
 def marker_exists(ctx: click.Context, name: str, session_id: str | None) -> None:
@@ -160,10 +148,7 @@ def marker_exists(ctx: click.Context, name: str, session_id: str | None) -> None
     """
     resolved_session_id = _resolve_session_id(session_id)
     if resolved_session_id is None:
-        msg = (
-            "Missing session ID: provide --session-id or set "
-            "CLAUDE_CODE_SESSION_ID environment variable"
-        )
+        msg = "Missing session ID: provide --session-id flag"
         _output_json(False, msg)
         raise SystemExit(1) from None
 
@@ -183,7 +168,7 @@ def marker_exists(ctx: click.Context, name: str, session_id: str | None) -> None
 @click.option(
     "--session-id",
     default=None,
-    help="Session ID for marker storage (default: $CLAUDE_CODE_SESSION_ID)",
+    help="Session ID for marker storage (required)",
 )
 @click.pass_context
 def marker_delete(ctx: click.Context, name: str, session_id: str | None) -> None:
@@ -194,10 +179,7 @@ def marker_delete(ctx: click.Context, name: str, session_id: str | None) -> None
     """
     resolved_session_id = _resolve_session_id(session_id)
     if resolved_session_id is None:
-        msg = (
-            "Missing session ID: provide --session-id or set "
-            "CLAUDE_CODE_SESSION_ID environment variable"
-        )
+        msg = "Missing session ID: provide --session-id flag"
         _output_json(False, msg)
         raise SystemExit(1) from None
 
