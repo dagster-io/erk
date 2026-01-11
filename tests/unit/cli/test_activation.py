@@ -1,8 +1,15 @@
 """Tests for activation script generation."""
 
+import sys
 from pathlib import Path
 
+import pytest
+
 from erk.cli.activation import _render_logging_helper, render_activation_script
+
+# Get the actual activation module from sys.modules to avoid erk.cli shadowing
+# (The erk module's cli attribute shadows the erk.cli package)
+activation_module = sys.modules["erk.cli.activation"]
 
 
 def test_render_activation_script_without_subpath() -> None:
@@ -284,3 +291,28 @@ def test_render_activation_script_post_cd_commands_empty_list_no_section() -> No
         comment="work activate-script",
     )
     assert "# Post-activation commands" not in script
+
+
+# Git lock cleanup tests
+
+
+def test_render_logging_helper_includes_lock_cleanup_when_enabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Logging helper includes __erk_git_with_lock_cleanup when flag is enabled."""
+    monkeypatch.setattr(activation_module, "ENABLE_GIT_LOCK_CLEANUP", True)
+    helper = _render_logging_helper()
+    assert "__erk_git_with_lock_cleanup()" in helper
+    assert "index.lock" in helper
+    assert "Removing index.lock and retrying" in helper
+
+
+def test_render_logging_helper_excludes_lock_cleanup_when_disabled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Logging helper excludes __erk_git_with_lock_cleanup when flag is disabled."""
+    monkeypatch.setattr(activation_module, "ENABLE_GIT_LOCK_CLEANUP", False)
+    helper = _render_logging_helper()
+    assert "__erk_git_with_lock_cleanup()" not in helper
+    assert "__erk_log()" in helper  # Basic helpers still present
+    assert "__erk_log_verbose()" in helper

@@ -8,6 +8,10 @@ import shlex
 from collections.abc import Sequence
 from pathlib import Path
 
+# Feature flag: Enable automatic git index.lock cleanup on error.
+# Set to False to disable lock cleanup and run git commands directly.
+ENABLE_GIT_LOCK_CLEANUP: bool = True
+
 
 def _render_logging_helper() -> str:
     """Return shell helper functions for transparency logging.
@@ -18,8 +22,11 @@ def _render_logging_helper() -> str:
     Normal mode (default): Shows brief progress indicators
     Quiet mode (ERK_QUIET=1): Suppresses transparency output (errors still shown)
     Verbose mode (ERK_VERBOSE=1): Shows full details with paths
+
+    When ENABLE_GIT_LOCK_CLEANUP is True, also includes __erk_git_with_lock_cleanup
+    which removes stale index.lock files and retries git commands on failure.
     """
-    return """# Transparency logging helper
+    base_helpers = """# Transparency logging helper
 __erk_log() {
   [ -n "$ERK_QUIET" ] && return
   local prefix="$1" msg="$2"
@@ -33,6 +40,47 @@ __erk_log_verbose() {
   [ -z "$ERK_VERBOSE" ] && return
   __erk_log "$1" "$2"
 }"""
+
+    if not ENABLE_GIT_LOCK_CLEANUP:
+        return base_helpers
+
+    lock_cleanup_helper = """
+# Git lock cleanup helper: removes index.lock and retries on failure
+__erk_git_with_lock_cleanup() {
+  local output
+  local exit_code
+
+  # First attempt
+  output=$("$@" 2>&1)
+  exit_code=$?
+
+  if [ $exit_code -eq 0 ]; then
+    [ -n "$output" ] && printf '%s\\n' "$output"
+    return 0
+  fi
+
+  # Check if this is an index.lock error
+  if printf '%s' "$output" | grep -q "index.lock"; then
+    local lock_file=".git/index.lock"
+    if [ -f "$lock_file" ]; then
+      __erk_log "⚠️" "Removing index.lock and retrying..."
+      rm -f "$lock_file"
+      # Retry once after removal
+      output=$("$@" 2>&1)
+      exit_code=$?
+      if [ $exit_code -eq 0 ]; then
+        [ -n "$output" ] && printf '%s\\n' "$output"
+        return 0
+      fi
+    fi
+  fi
+
+  # Failed (not lock error, or retry failed)
+  printf '%s\\n' "$output" >&2
+  return $exit_code
+}"""
+
+    return base_helpers + lock_cleanup_helper
 
 
 def render_activation_script(

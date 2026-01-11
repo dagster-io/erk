@@ -17,6 +17,7 @@ from typing import Literal, NamedTuple
 
 import click
 
+from erk.cli.activation import ENABLE_GIT_LOCK_CLEANUP
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -418,10 +419,13 @@ def _navigate_after_land(
         post_commands: list[str] | None = None
         if pull_flag:
             trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
+            # Use lock cleanup wrapper when enabled to handle stale index.lock files
+            git_pull_cmd = f"git pull --ff-only origin {trunk_branch}"
+            if ENABLE_GIT_LOCK_CLEANUP:
+                git_pull_cmd = f"__erk_git_with_lock_cleanup {git_pull_cmd}"
             post_commands = [
                 f'__erk_log "->" "git pull origin {trunk_branch}"',
-                f"git pull --ff-only origin {trunk_branch} || "
-                f'echo "Warning: git pull failed (try running manually)" >&2',
+                f'{git_pull_cmd} || echo "Warning: git pull failed (try running manually)" >&2',
             ]
         # Output activation script pointing to trunk/root repo
         activate_root_repo(
