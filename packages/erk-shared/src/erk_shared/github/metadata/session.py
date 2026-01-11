@@ -5,6 +5,7 @@ These support storing session prompts in GitHub issue comments for erk plan issu
 
 import re
 
+
 def render_session_prompts_block(
     prompts: list[str],
     *,
