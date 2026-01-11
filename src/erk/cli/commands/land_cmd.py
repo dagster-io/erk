@@ -11,6 +11,7 @@ Usage:
 """
 
 import re
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 from typing import Literal, NamedTuple
@@ -414,22 +415,24 @@ def _navigate_after_land(
         )
         # activate_worktree raises SystemExit(0)
     else:
-        # Construct git pull commands if pull_flag is set
-        post_commands: list[str] | None = None
+        # Execute git pull in Python (before activation script) to avoid race condition
+        # with stale index.lock files from earlier git operations
         if pull_flag:
             trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
-            post_commands = [
-                f'__erk_log "->" "git pull origin {trunk_branch}"',
-                f"git pull --ff-only origin {trunk_branch} || "
-                f'echo "Warning: git pull failed (try running manually)" >&2',
-            ]
+            user_output(f"Pulling latest changes from origin/{trunk_branch}...")
+            try:
+                ctx.git.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
+            except subprocess.CalledProcessError:
+                user_output(
+                    click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
+                )
         # Output activation script pointing to trunk/root repo
         activate_root_repo(
             ctx,
             repo=post_deletion_repo,
             script=script,
             command_name="land",
-            post_cd_commands=post_commands,
+            post_cd_commands=None,
         )
         # activate_root_repo raises SystemExit(0)
 

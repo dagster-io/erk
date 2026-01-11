@@ -50,7 +50,7 @@ def render_activation_script(
       - creates .venv with `uv sync` if not present
       - sources `.venv/bin/activate` if present
       - exports variables from `.env` if present
-      - runs optional post-activation commands (e.g., git pull)
+      - runs optional post-activation commands
     Works in bash and zsh.
 
     Args:
@@ -59,7 +59,7 @@ def render_activation_script(
             If the subpath doesn't exist, a warning is shown and the script
             falls back to the worktree root.
         post_cd_commands: Optional sequence of shell commands to run after venv
-            activation, before final message. Useful for git pull after landing a PR.
+            activation, before final message.
             Pass None if no post-cd commands are needed.
         final_message: Shell command for final echo message
         comment: Comment line for script identification
