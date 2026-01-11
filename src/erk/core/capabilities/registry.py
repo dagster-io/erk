@@ -9,6 +9,7 @@ from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.ruff_format import RuffFormatCapability
+from erk.core.capabilities.shell_integration import ShellIntegrationCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
@@ -28,6 +29,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         StatuslineCapability(claude_installation=None),
         HooksCapability(),
         RuffFormatCapability(),
+        ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None),
     )
 
 
