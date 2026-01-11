@@ -18,22 +18,7 @@ python --version
 
 You should see `Python 3.10.x` or higher (3.11, 3.12, 3.13 all work).
 
-**macOS (Homebrew):**
-
-```bash
-brew install python@3.13
-```
-
-**Linux (Ubuntu/Debian):**
-
-```bash
-sudo apt update
-sudo apt install python3.13
-```
-
-**Troubleshooting:**
-
-- If `python --version` shows Python 2.x, try `python3 --version` instead
+If you need to install Python, see [Install Python](https://www.python.org/downloads/).
 
 ### Claude Code CLI
 
@@ -159,12 +144,12 @@ See [Shell Integration](shell-integration.md) for setup instructions.
 
 ## Quick Reference
 
-| Tool       | Install Command (macOS)                            | Verify Command     |
-| ---------- | -------------------------------------------------- | ------------------ |
-| Python     | `brew install python@3.13`                         | `python --version` |
-| Claude CLI | `curl -fsSL https://claude.ai/install.sh \| bash`  | `claude --version` |
-| uv         | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | `uv --version`     |
-| GitHub CLI | `brew install gh`                                  | `gh --version`     |
+| Tool       | Install Command                                           | Verify Command     |
+| ---------- | --------------------------------------------------------- | ------------------ |
+| Python     | [python.org/downloads](https://www.python.org/downloads/) | `python --version` |
+| Claude CLI | `curl -fsSL https://claude.ai/install.sh \| bash`         | `claude --version` |
+| uv         | `curl -LsSf https://astral.sh/uv/install.sh \| sh`        | `uv --version`     |
+| GitHub CLI | `brew install gh`                                         | `gh --version`     |
 
 ## Next Steps
 
