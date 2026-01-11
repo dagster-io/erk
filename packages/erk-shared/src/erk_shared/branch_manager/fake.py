@@ -21,6 +21,8 @@ class FakeBranchManager(BranchManager):
     pr_info: dict[str, PrInfo] = field(default_factory=dict)
     # Whether to simulate Graphite mode
     graphite_mode: bool = False
+    # Mapping of branch name -> stack (list of branches from trunk to leaf)
+    stacks: dict[str, list[str]] = field(default_factory=dict)
     # Track created branches for assertions: list of (branch_name, base_branch) tuples
     _created_branches: list[tuple[str, str]] = field(default_factory=list)
     # Track deleted branches for assertions
@@ -79,6 +81,18 @@ class FakeBranchManager(BranchManager):
             branch: Branch name to submit
         """
         self._submitted_branches.append(branch)
+
+    def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
+        """Get stack from configured test data.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch: Branch name to look up
+
+        Returns:
+            List of branch names in the stack if configured, None otherwise.
+        """
+        return self.stacks.get(branch)
 
     def is_graphite_managed(self) -> bool:
         """Returns the configured graphite_mode value."""

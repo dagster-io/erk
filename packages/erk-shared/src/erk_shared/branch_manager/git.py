@@ -85,6 +85,18 @@ class GitBranchManager(BranchManager):
         """
         self.git.push_to_remote(repo_root, "origin", branch, set_upstream=True, force=True)
 
+    def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
+        """Git-only mode doesn't track stacks.
+
+        Args:
+            repo_root: Repository root directory (unused)
+            branch: Name of the branch (unused)
+
+        Returns:
+            None - stacks are a Graphite-only feature.
+        """
+        return None
+
     def is_graphite_managed(self) -> bool:
         """Returns False - this implementation uses plain Git."""
         return False

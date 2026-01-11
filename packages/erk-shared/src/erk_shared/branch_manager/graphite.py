@@ -121,6 +121,19 @@ class GraphiteBranchManager(BranchManager):
         """
         self.graphite.submit_stack(repo_root, quiet=True, force=True)
 
+    def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
+        """Get stack from Graphite's local cache.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to get the stack for
+
+        Returns:
+            List of branch names in the stack (ordered trunk to leaf),
+            or None if branch is not tracked by Graphite.
+        """
+        return self.graphite.get_branch_stack(self.git, repo_root, branch)
+
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""
         return True

@@ -79,6 +79,23 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
+        """Get the linear worktree stack for a given branch.
+
+        For Graphite: Returns the stack from trunk to leaf containing this branch.
+        For Git: Returns None (stacks are a Graphite-only feature).
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to get the stack for
+
+        Returns:
+            List of branch names in the stack (ordered trunk to leaf),
+            or None if branch is not tracked/stacks unavailable.
+        """
+        ...
+
+    @abstractmethod
     def is_graphite_managed(self) -> bool:
         """Returns True if using Graphite for branch operations.
 

@@ -163,7 +163,7 @@ def slot_list(ctx: ErkContext) -> None:
         same_stack = False
         if assigned_branch is not None and actual_branch is not None:
             if assigned_branch != actual_branch:
-                stack = ctx.graphite.get_branch_stack(ctx.git, repo.root, assigned_branch)
+                stack = ctx.branch_manager.get_branch_stack(repo.root, assigned_branch)
                 if stack is not None and actual_branch in stack:
                     same_stack = True
 
