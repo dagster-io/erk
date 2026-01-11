@@ -76,11 +76,11 @@ last_remote_impl_at: null
 | ---------------------- | ------------ | --------------------------------------------------- |
 | `created_from_session` | string\|null | Session ID that created this plan (for `erk learn`) |
 
-**Extraction plan fields (when `plan_type: extraction`):**
+**Learn plan fields (when `plan_type: learn`):**
 
 | Field                    | Type         | Description                    |
 | ------------------------ | ------------ | ------------------------------ |
-| `plan_type`              | string       | "standard" or "extraction"     |
+| `plan_type`              | string       | "standard" or "learn"          |
 | `source_plan_issues`     | list[int]    | Issue numbers of source plans  |
 | `extraction_session_ids` | list[string] | Session IDs that were analyzed |
 
@@ -131,9 +131,9 @@ from erk_shared.github.metadata import format_plan_header_body
 body = format_plan_header_body(
     created_at=timestamp,
     created_by=username,
-    plan_type="extraction",  # Optional
-    source_plan_issues=[123],  # For extraction plans
-    extraction_session_ids=["abc123"],  # For extraction plans
+    plan_type="learn",  # Optional
+    source_plan_issues=[123],  # For learn plans
+    extraction_session_ids=["abc123"],  # For learn plans
 )
 
 # Create plan-body for first comment

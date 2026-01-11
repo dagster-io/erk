@@ -29,9 +29,9 @@ _LABEL_ERK_PLAN = "erk-plan"
 _LABEL_ERK_PLAN_DESC = "Implementation plan for manual execution"
 _LABEL_ERK_PLAN_COLOR = "0E8A16"
 
-_LABEL_ERK_EXTRACTION = "erk-extraction"
-_LABEL_ERK_EXTRACTION_DESC = "Documentation extraction plan"
-_LABEL_ERK_EXTRACTION_COLOR = "D93F0B"
+_LABEL_ERK_LEARN = "erk-learn"
+_LABEL_ERK_LEARN_DESC = "Documentation learning plan"
+_LABEL_ERK_LEARN_COLOR = "D93F0B"
 
 _LABEL_ERK_OBJECTIVE = "erk-objective"
 _LABEL_ERK_OBJECTIVE_DESC = "Multi-phase objective with roadmap"
@@ -87,11 +87,11 @@ def create_plan_issue(
         repo_root: Repository root directory
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
-        plan_type: Optional type discriminator ("extraction" or None for standard)
+        plan_type: Optional type discriminator ("learn" or None for standard)
         extra_labels: Additional labels beyond erk-plan
-        title_suffix: Suffix for issue title (default: "[erk-plan]" or "[erk-extraction]")
-        source_plan_issues: For extraction plans, list of source issue numbers
-        extraction_session_ids: For extraction plans, list of session IDs analyzed
+        title_suffix: Suffix for issue title (default: "[erk-plan]" or "[erk-learn]")
+        source_plan_issues: For learn plans, list of source issue numbers
+        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -120,8 +120,8 @@ def create_plan_issue(
 
     # Step 3: Determine labels based on plan_type
     labels = [_LABEL_ERK_PLAN]
-    if plan_type == "extraction":
-        labels.append(_LABEL_ERK_EXTRACTION)
+    if plan_type == "learn":
+        labels.append(_LABEL_ERK_LEARN)
 
     # Add any extra labels
     if extra_labels:
@@ -142,8 +142,8 @@ def create_plan_issue(
 
     # Step 4: Determine title suffix
     if title_suffix is None:
-        if plan_type == "extraction":
-            title_suffix = "[erk-extraction]"
+        if plan_type == "learn":
+            title_suffix = "[erk-learn]"
         else:
             title_suffix = "[erk-plan]"
 
@@ -207,8 +207,8 @@ def create_plan_issue(
     # Step 6: Update issue body with plan_comment_id for direct lookup
     updated_body = update_plan_header_comment_id(issue_body, comment_id)
 
-    # Step 7: Add commands section for standard plans only (not extraction)
-    if plan_type != "extraction":
+    # Step 7: Add commands section for standard plans only (not learn)
+    if plan_type != "learn":
         commands_section = format_plan_commands_section(result.number)
         updated_body = updated_body + "\n\n" + commands_section
 
@@ -340,12 +340,12 @@ def _ensure_labels_exist(
                     description=_LABEL_ERK_PLAN_DESC,
                     color=_LABEL_ERK_PLAN_COLOR,
                 )
-            elif label == _LABEL_ERK_EXTRACTION:
+            elif label == _LABEL_ERK_LEARN:
                 github_issues.ensure_label_exists(
                     repo_root=repo_root,
-                    label=_LABEL_ERK_EXTRACTION,
-                    description=_LABEL_ERK_EXTRACTION_DESC,
-                    color=_LABEL_ERK_EXTRACTION_COLOR,
+                    label=_LABEL_ERK_LEARN,
+                    description=_LABEL_ERK_LEARN_DESC,
+                    color=_LABEL_ERK_LEARN_COLOR,
                 )
             elif label == _LABEL_ERK_OBJECTIVE:
                 github_issues.ensure_label_exists(
@@ -374,7 +374,7 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
     """Get all erk label definitions.
 
     Returns list of LabelDefinition for all erk labels (erk-plan,
-    erk-extraction, erk-objective). Used by init command to set up
+    erk-learn, erk-objective). Used by init command to set up
     labels in target issue repositories.
     """
     return [
@@ -384,9 +384,9 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
             color=_LABEL_ERK_PLAN_COLOR,
         ),
         LabelDefinition(
-            name=_LABEL_ERK_EXTRACTION,
-            description=_LABEL_ERK_EXTRACTION_DESC,
-            color=_LABEL_ERK_EXTRACTION_COLOR,
+            name=_LABEL_ERK_LEARN,
+            description=_LABEL_ERK_LEARN_DESC,
+            color=_LABEL_ERK_LEARN_COLOR,
         ),
         LabelDefinition(
             name=_LABEL_ERK_OBJECTIVE,
@@ -400,7 +400,7 @@ def get_required_erk_labels() -> list[LabelDefinition]:
     """Get erk labels required for doctor check.
 
     Returns subset of labels checked by doctor command. Excludes
-    erk-extraction (optional, for documentation workflows).
+    erk-learn (optional, for documentation workflows).
 
     Used by doctor command to verify required labels exist.
     """

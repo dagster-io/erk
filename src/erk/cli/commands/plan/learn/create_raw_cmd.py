@@ -1,4 +1,4 @@
-"""Command to create a raw extraction plan from session data."""
+"""Command to create a raw learn plan from session data."""
 
 import json
 from dataclasses import asdict
@@ -26,13 +26,13 @@ from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
 )
 @click.pass_obj
 def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
-    """Create extraction plan with raw session context.
+    """Create learn plan with raw session context.
 
     This command:
     1. Discovers Claude Code sessions in the project directory
     2. Auto-selects sessions based on branch context and size
     3. Preprocesses sessions to compressed XML format
-    4. Creates a GitHub issue with erk-plan and erk-extraction labels
+    4. Creates a GitHub issue with erk-plan and erk-learn labels
     5. Posts session content as chunked comments
     6. Deletes the pending-extraction marker if successful
 

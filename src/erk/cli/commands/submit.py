@@ -77,14 +77,14 @@ def branch_rollback(ctx: ErkContext, repo_root: Path, original_branch: str) -> I
         raise
 
 
-def is_issue_extraction_plan(issue_body: str) -> bool:
-    """Check if an issue is an extraction plan by examining its plan-header metadata.
+def is_issue_learn_plan(issue_body: str) -> bool:
+    """Check if an issue is a learn plan by examining its plan-header metadata.
 
     Args:
         issue_body: The full issue body text
 
     Returns:
-        True if the issue has plan_type: "extraction" in its plan-header block,
+        True if the issue has plan_type: "learn" in its plan-header block,
         False otherwise (including if no plan-header block exists)
     """
     block = find_metadata_block(issue_body, "plan-header")
@@ -93,7 +93,7 @@ def is_issue_extraction_plan(issue_body: str) -> bool:
         return False
 
     plan_type = block.data.get("plan_type")
-    return plan_type == "extraction"
+    return plan_type == "learn"
 
 
 def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
@@ -141,7 +141,7 @@ class ValidatedIssue:
     branch_name: str
     branch_exists: bool
     pr_number: int | None
-    is_extraction_origin: bool
+    is_learn_origin: bool
 
 
 @dataclass(frozen=True)
@@ -297,8 +297,8 @@ def _validate_issue_for_submit(
         if not isinstance(pr_details, PRNotFound):
             pr_number = pr_details.number
 
-    # Check if this issue is an extraction plan
-    is_extraction_origin = is_issue_extraction_plan(issue.body)
+    # Check if this issue is a learn plan
+    is_learn_origin = is_issue_learn_plan(issue.body)
 
     return ValidatedIssue(
         number=issue_number,
@@ -306,7 +306,7 @@ def _validate_issue_for_submit(
         branch_name=branch_name,
         branch_exists=branch_exists,
         pr_number=pr_number,
-        is_extraction_origin=is_extraction_origin,
+        is_learn_origin=is_learn_origin,
     )
 
 
@@ -393,8 +393,8 @@ def _create_branch_and_pr(
     )
     ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
-    # Add extraction skip label if this is an extraction plan
-    if validated.is_extraction_origin:
+    # Add extraction skip label if this is a learn plan
+    if validated.is_learn_origin:
         ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
     # Close any orphaned draft PRs for this issue
@@ -505,8 +505,8 @@ def _submit_single_issue(
             )
             ctx.github.update_pr_body(repo.root, pr_number, pr_body + footer)
 
-            # Add extraction skip label if this is an extraction plan
-            if validated.is_extraction_origin:
+            # Add extraction skip label if this is a learn plan
+            if validated.is_learn_origin:
                 ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
 
             # Close any orphaned draft PRs

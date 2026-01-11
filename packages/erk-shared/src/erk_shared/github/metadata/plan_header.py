@@ -62,9 +62,9 @@ def create_plan_header_block(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
-        plan_type: Optional type discriminator ("standard" or "extraction")
-        source_plan_issues: For extraction plans, list of issue numbers analyzed
-        extraction_session_ids: For extraction plans, list of session IDs analyzed
+        plan_type: Optional type discriminator ("standard" or "learn")
+        source_plan_issues: For learn plans, list of issue numbers analyzed
+        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -160,9 +160,9 @@ def format_plan_header_body(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp
-        plan_type: Optional type discriminator ("standard" or "extraction")
-        source_plan_issues: For extraction plans, list of issue numbers analyzed
-        extraction_session_ids: For extraction plans, list of session IDs analyzed
+        plan_type: Optional type discriminator ("standard" or "learn")
+        source_plan_issues: For learn plans, list of issue numbers analyzed
+        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)

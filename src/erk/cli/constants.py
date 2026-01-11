@@ -23,7 +23,7 @@ DOCS_EXTRACTED_LABEL = "docs-extracted"
 DOCS_EXTRACTED_LABEL_DESCRIPTION = "Session logs analyzed for documentation improvements"
 DOCS_EXTRACTED_LABEL_COLOR = "5319E7"  # Purple
 
-# Extraction plan label (for plans that extract documentation from sessions)
-ERK_EXTRACTION_LABEL = "erk-extraction"
-ERK_EXTRACTION_LABEL_DESCRIPTION = "Documentation extraction plan"
-ERK_EXTRACTION_LABEL_COLOR = "D93F0B"  # Orange-red
+# Learn plan label (for plans that learn from sessions)
+ERK_LEARN_LABEL = "erk-learn"
+ERK_LEARN_LABEL_DESCRIPTION = "Documentation learning plan"
+ERK_LEARN_LABEL_COLOR = "D93F0B"  # Orange-red

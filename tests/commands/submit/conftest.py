@@ -26,22 +26,22 @@ def make_plan_body(content: str = "Implementation details...") -> str:
     return f"{header_block}\n\n# Plan\n\n{content}"
 
 
-def make_extraction_plan_body(content: str = "Documentation extraction...") -> str:
-    """Create a valid extraction plan issue body with plan-header metadata block.
+def make_learn_plan_body(content: str = "Documentation learning...") -> str:
+    """Create a valid learn plan issue body with plan-header metadata block.
 
-    The plan-header block with plan_type: "extraction" is used to identify PRs
-    that originate from extraction plans.
+    The plan-header block with plan_type: "learn" is used to identify PRs
+    that originate from learn plans.
     """
     plan_header_data = {
         "schema_version": "2",
         "created_at": "2024-01-01T00:00:00Z",
         "created_by": "test-user",
-        "plan_type": "extraction",
+        "plan_type": "learn",
         "source_plan_issues": [100],
         "extraction_session_ids": ["session-abc"],
     }
     header_block = render_metadata_block(MetadataBlock("plan-header", plan_header_data))
-    return f"{header_block}\n\n# Extraction Plan\n\n{content}"
+    return f"{header_block}\n\n# Learn Plan\n\n{content}"
 
 
 def create_plan(

@@ -16,9 +16,9 @@ Capture patterns for future agents.
 
 <!-- TODO: Signs that a pattern should be documented -->
 
-## Creating an Extraction Plan
+## Creating a Learn Plan
 
-<!-- TODO: /erk:create-extraction-plan command -->
+<!-- TODO: /erk:learn command -->
 
 ## Documentation Structure
 

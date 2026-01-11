@@ -1,4 +1,4 @@
-"""Unit tests for is_extraction_plan function.
+"""Unit tests for is_learn_plan function.
 
 Tests extraction plan detection for PR bodies.
 
@@ -7,18 +7,18 @@ Note: build_pr_body_footer tests are in tests/unit/github/test_pr_footer.py
 
 from pathlib import Path
 
-from erk_shared.gateway.gt.operations.finalize import is_extraction_plan
+from erk_shared.gateway.gt.operations.finalize import is_learn_plan
 
 
 class TestIsExtractionPlan:
-    """Tests for is_extraction_plan function."""
+    """Tests for is_learn_plan function."""
 
     def test_returns_false_when_plan_md_does_not_exist(self, tmp_path: Path) -> None:
         """Test that function returns False when plan.md doesn't exist."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
 
-        result = is_extraction_plan(impl_dir)
+        result = is_learn_plan(impl_dir)
 
         assert result is False
 
@@ -26,7 +26,7 @@ class TestIsExtractionPlan:
         """Test that function returns False when .impl/ doesn't exist."""
         impl_dir = tmp_path / ".impl"
 
-        result = is_extraction_plan(impl_dir)
+        result = is_learn_plan(impl_dir)
 
         assert result is False
 
@@ -37,7 +37,7 @@ class TestIsExtractionPlan:
         plan_file = impl_dir / "plan.md"
         plan_file.write_text("# Plan\n\nJust a regular plan.", encoding="utf-8")
 
-        result = is_extraction_plan(impl_dir)
+        result = is_learn_plan(impl_dir)
 
         assert result is False
 
@@ -72,7 +72,7 @@ Standard plan content.
 """
         plan_file.write_text(plan_content, encoding="utf-8")
 
-        result = is_extraction_plan(impl_dir)
+        result = is_learn_plan(impl_dir)
 
         assert result is False
 
@@ -106,12 +106,12 @@ Plan without plan_type field.
 """
         plan_file.write_text(plan_content, encoding="utf-8")
 
-        result = is_extraction_plan(impl_dir)
+        result = is_learn_plan(impl_dir)
 
         assert result is False
 
-    def test_returns_true_when_plan_type_is_extraction(self, tmp_path: Path) -> None:
-        """Test returns True when plan_type is 'extraction'."""
+    def test_returns_true_when_plan_type_is_learn(self, tmp_path: Path) -> None:
+        """Test returns True when plan_type is 'learn'."""
         impl_dir = tmp_path / ".impl"
         impl_dir.mkdir()
         plan_file = impl_dir / "plan.md"
@@ -125,7 +125,7 @@ Plan without plan_type field.
 schema_version: "2"
 created_at: "2025-01-01T00:00:00Z"
 created_by: "testuser"
-plan_type: extraction
+plan_type: learn
 source_plan_issues:
 - 123
 extraction_session_ids:
@@ -139,12 +139,12 @@ last_dispatched_at: null
 </details>
 <!-- /erk:metadata-block:plan-header -->
 
-# Extraction Plan
+# Learn Plan
 
-Plan for extracting documentation.
+Plan for documenting learnings.
 """
         plan_file.write_text(plan_content, encoding="utf-8")
 
-        result = is_extraction_plan(impl_dir)
+        result = is_learn_plan(impl_dir)
 
         assert result is True

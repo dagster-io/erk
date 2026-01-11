@@ -26,7 +26,7 @@ Claude Code slash commands for in-session use.
 
 ## Documentation Commands
 
-<!-- TODO: /erk:create-extraction-plan -->
+<!-- TODO: /erk:learn -->
 
 ## Local Commands
 

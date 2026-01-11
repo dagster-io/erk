@@ -184,13 +184,32 @@ Include context you've gathered so the implementing agent doesn't have to redisc
    - Draft content (as complete as possible)
    - Source (which session/insight it came from)
 
-Get the session ID from the `SESSION_CONTEXT` reminder.
+Write the plan content to a temporary file and get the session ID from the `SESSION_CONTEXT` reminder.
 
 ```bash
-erk exec create-extraction-plan \
-    --plan-content="<the formatted plan content>" \
+# Write plan content to a file (example - use actual content)
+cat > .erk/scratch/sessions/<session-id>/learn-plan.md << 'EOF'
+# Documentation Plan: <title>
+
+## Context
+
+<rich context section here>
+
+## Raw Materials
+
+<gist-url-from-step-4>
+
+## Documentation Items
+
+<items with location, action, draft content, source>
+EOF
+
+# Create the learn plan issue
+erk exec plan-save-to-issue \
+    --plan-type learn \
+    --plan-file .erk/scratch/sessions/<session-id>/learn-plan.md \
     --session-id="<session-id-from-SESSION_CONTEXT>" \
-    --extraction-session-ids="<comma-separated-session-ids-that-were-analyzed>"
+    --format display
 ```
 
 Display the result:

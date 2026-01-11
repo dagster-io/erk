@@ -15,9 +15,6 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
-from erk.cli.commands.exec.scripts.create_extraction_plan import (
-    create_extraction_plan,
-)
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
 )
@@ -116,9 +113,8 @@ def exec_group() -> None:
 exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(check_impl, name="check-impl")
-exec_group.add_command(create_learn_branch, name="create-learn-branch")
-exec_group.add_command(create_extraction_plan, name="create-extraction-plan")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
+exec_group.add_command(create_learn_branch, name="create-learn-branch")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")

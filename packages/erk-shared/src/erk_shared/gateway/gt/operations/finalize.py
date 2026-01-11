@@ -22,16 +22,16 @@ from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 ERK_SKIP_EXTRACTION_LABEL = "erk-skip-extraction"
 
 
-def is_extraction_plan(impl_dir: Path) -> bool:
-    """Check if the plan in the impl folder is an extraction plan.
+def is_learn_plan(impl_dir: Path) -> bool:
+    """Check if the plan in the impl folder is a learn plan.
 
-    Reads plan.md and checks the plan-header metadata block for plan_type: "extraction".
+    Reads plan.md and checks the plan-header metadata block for plan_type: "learn".
 
     Args:
         impl_dir: Path to .impl/ directory
 
     Returns:
-        True if plan_type is "extraction", False otherwise (including if plan.md
+        True if plan_type is "learn", False otherwise (including if plan.md
         doesn't exist or metadata block is missing)
     """
     plan_file = impl_dir / "plan.md"
@@ -46,7 +46,7 @@ def is_extraction_plan(impl_dir: Path) -> bool:
         return False
 
     plan_type = block.data.get("plan_type")
-    return plan_type == "extraction"
+    return plan_type == "learn"
 
 
 def execute_finalize(
@@ -99,8 +99,8 @@ def execute_finalize(
         if issue_ref is not None:
             issue_number = issue_ref.issue_number
 
-    # Check if this is an extraction plan
-    is_extraction_origin = is_extraction_plan(impl_dir)
+    # Check if this is a learn plan
+    is_learn_origin = is_learn_plan(impl_dir)
 
     # Build metadata section and combine with AI body
     metadata_section = build_pr_body_footer(
@@ -123,8 +123,8 @@ def execute_finalize(
     )
     yield ProgressEvent("PR metadata updated", style="success")
 
-    # Add extraction skip label if this is an extraction plan
-    if is_extraction_origin:
+    # Add extraction skip label if this is a learn plan
+    if is_learn_origin:
         yield ProgressEvent("Adding erk-skip-extraction label...")
         ops.github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
         yield ProgressEvent("Label added", style="success")

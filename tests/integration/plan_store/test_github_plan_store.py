@@ -726,28 +726,28 @@ def test_create_plan_standard() -> None:
     assert "erk-plan" in labels
 
 
-def test_create_plan_with_extraction_type() -> None:
-    """Test creating an extraction plan with extra labels."""
-    fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan", "erk-extraction"})
+def test_create_plan_with_learn_type() -> None:
+    """Test creating a learn plan with extra labels."""
+    fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan", "erk-learn"})
     store = GitHubPlanStore(fake_github)
 
     result = store.create_plan(
         repo_root=Path("/fake/repo"),
-        title="Extraction Plan",
-        content="# Extraction Plan\n\nContent",
-        labels=("erk-plan", "erk-extraction"),
+        title="Learn Plan",
+        content="# Learn Plan\n\nContent",
+        labels=("erk-plan", "erk-learn"),
         metadata={
-            "plan_type": "extraction",
+            "plan_type": "learn",
             "extraction_session_ids": ["session-abc", "session-def"],
         },
     )
 
     # Verify result
     assert result.plan_id == "1"
-    # Verify labels include extraction
+    # Verify labels include learn
     _title, _body, labels = fake_github.created_issues[0]
     assert "erk-plan" in labels
-    assert "erk-extraction" in labels
+    assert "erk-learn" in labels
 
 
 def test_create_plan_with_objective_link() -> None:

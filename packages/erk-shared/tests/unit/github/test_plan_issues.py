@@ -29,7 +29,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -54,8 +54,8 @@ class TestCreatePlanIssueSuccess:
         assert "My Feature Plan" in comment
         assert "Implementation steps" in comment
 
-    def test_creates_extraction_plan_issue(self, tmp_path: Path) -> None:
-        """Create an extraction plan issue with extraction-specific labels."""
+    def test_creates_learn_plan_issue(self, tmp_path: Path) -> None:
+        """Create an learn plan issue with learn-specific labels."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# Extraction Plan: main\n\nAnalysis..."
 
@@ -64,11 +64,11 @@ class TestCreatePlanIssueSuccess:
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="extraction",
+            plan_type="learn",
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=["session-abc", "session-def"],
+            learn_session_ids=["session-abc", "session-def"],
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -77,14 +77,14 @@ class TestCreatePlanIssueSuccess:
         assert result.success is True
         assert result.title == "Extraction Plan: main"
 
-        # Verify labels include both erk-plan and erk-extraction
+        # Verify labels include both erk-plan and erk-learn
         title, body, labels = fake_gh.created_issues[0]
-        assert title == "Extraction Plan: main [erk-extraction]"
+        assert title == "Extraction Plan: main [erk-learn]"
         assert "erk-plan" in labels
-        assert "erk-extraction" in labels
+        assert "erk-learn" in labels
 
         # Verify both labels were created
-        assert fake_gh.labels == {"erk-plan", "erk-extraction"}
+        assert fake_gh.labels == {"erk-plan", "erk-learn"}
 
     def test_uses_provided_title(self, tmp_path: Path) -> None:
         """Use provided title instead of extracting from H1."""
@@ -100,7 +100,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -125,7 +125,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix="[custom-suffix]",
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -149,7 +149,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=["bug", "priority-high"],
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -169,11 +169,11 @@ class TestCreatePlanIssueSuccess:
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="extraction",
+            plan_type="learn",
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=[123, 456],
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -198,7 +198,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo="owner/impl-repo",
             objective_issue=None,
             created_from_session=None,
@@ -226,7 +226,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -241,7 +241,7 @@ class TestCreatePlanIssueSuccess:
 
 
 class TestCreatePlanIssueTitleExtraction:
-    """Test title extraction from various plan formats."""
+    """Test title learn from various plan formats."""
 
     def test_extracts_h1_title(self, tmp_path: Path) -> None:
         """Extract title from H1 heading."""
@@ -257,7 +257,7 @@ class TestCreatePlanIssueTitleExtraction:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -279,7 +279,7 @@ class TestCreatePlanIssueTitleExtraction:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -301,7 +301,7 @@ class TestCreatePlanIssueTitleExtraction:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -327,7 +327,7 @@ class TestCreatePlanIssueErrors:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -360,7 +360,7 @@ class TestCreatePlanIssueErrors:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -390,7 +390,7 @@ class TestCreatePlanIssueErrors:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -425,7 +425,7 @@ class TestCreatePlanIssuePartialSuccess:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -457,7 +457,7 @@ class TestCreatePlanIssuePartialSuccess:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -484,7 +484,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -498,8 +498,8 @@ class TestCreatePlanIssueLabelManagement:
         assert label_name == "erk-plan"
         assert color == "0E8A16"
 
-    def test_creates_both_labels_for_extraction(self, tmp_path: Path) -> None:
-        """Create both erk-plan and erk-extraction labels for extraction plans."""
+    def test_creates_both_labels_for_learn(self, tmp_path: Path) -> None:
+        """Create both erk-plan and erk-learn labels for learn plans."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# Extraction Plan\n\nContent..."
 
@@ -508,11 +508,11 @@ class TestCreatePlanIssueLabelManagement:
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="extraction",
+            plan_type="learn",
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=["abc"],
+            learn_session_ids=["abc"],
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -520,7 +520,7 @@ class TestCreatePlanIssueLabelManagement:
 
         assert result.success is True
         assert "erk-plan" in fake_gh.labels
-        assert "erk-extraction" in fake_gh.labels
+        assert "erk-learn" in fake_gh.labels
 
     def test_does_not_create_existing_labels(self, tmp_path: Path) -> None:
         """Don't create labels that already exist."""
@@ -539,7 +539,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -563,7 +563,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=["erk-plan", "bug"],  # erk-plan would be duplicate
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -613,7 +613,7 @@ class TestCreateObjectiveIssue:
     """Test objective issue creation using create_objective_issue()."""
 
     def test_creates_objective_issue_with_correct_labels(self, tmp_path: Path) -> None:
-        """Objective issues use erk-plan + erk-objective labels (like extraction)."""
+        """Objective issues use erk-plan + erk-objective labels (like learn)."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild a feature..."
 
@@ -629,7 +629,7 @@ class TestCreateObjectiveIssue:
         assert result.issue_number == 1
         assert result.title == "My Objective"
 
-        # Verify labels include both erk-plan and erk-objective (like extraction)
+        # Verify labels include both erk-plan and erk-objective (like learn)
         _, body, labels = fake_gh.created_issues[0]
         assert labels == ["erk-plan", "erk-objective"]
 
@@ -757,7 +757,7 @@ class TestCreatePlanIssueCommandsSection:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -777,7 +777,7 @@ class TestCreatePlanIssueCommandsSection:
         assert "erk implement 1 --dangerous" in updated_body
         assert "erk plan submit 1" in updated_body
 
-    def test_extraction_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
+    def test_learn_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
         """Extraction plans should NOT include commands section."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# Extraction Plan\n\nAnalysis..."
@@ -787,11 +787,11 @@ class TestCreatePlanIssueCommandsSection:
             repo_root=tmp_path,
             plan_content=plan_content,
             title=None,
-            plan_type="extraction",
+            plan_type="learn",
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=["session-abc"],
+            learn_session_ids=["session-abc"],
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
@@ -823,7 +823,7 @@ class TestCreatePlanIssueCommandsSection:
             extra_labels=None,
             title_suffix=None,
             source_plan_issues=None,
-            extraction_session_ids=None,
+            learn_session_ids=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,

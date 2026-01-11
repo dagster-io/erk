@@ -26,17 +26,17 @@ def test_get_erk_label_definitions_contains_erk_plan() -> None:
     assert erk_plan.color == "0E8A16"  # Green
 
 
-def test_get_erk_label_definitions_contains_erk_extraction() -> None:
-    """Test that erk-extraction label is included with correct properties."""
+def test_get_erk_label_definitions_contains_erk_learn() -> None:
+    """Test that erk-learn label is included with correct properties."""
     labels = get_erk_label_definitions()
 
-    erk_extraction_labels = [label for label in labels if label.name == "erk-extraction"]
-    assert len(erk_extraction_labels) == 1
+    erk_learn_labels = [label for label in labels if label.name == "erk-learn"]
+    assert len(erk_learn_labels) == 1
 
-    erk_extraction = erk_extraction_labels[0]
-    assert erk_extraction.name == "erk-extraction"
-    assert erk_extraction.description == "Documentation extraction plan"
-    assert erk_extraction.color == "D93F0B"  # Orange
+    erk_learn = erk_learn_labels[0]
+    assert erk_learn.name == "erk-learn"
+    assert erk_learn.description == "Documentation learning plan"
+    assert erk_learn.color == "D93F0B"  # Orange
 
 
 def test_get_erk_label_definitions_contains_erk_objective() -> None:
@@ -90,12 +90,12 @@ def test_get_required_erk_labels_contains_erk_objective() -> None:
     assert "erk-objective" in label_names
 
 
-def test_get_required_erk_labels_excludes_erk_extraction() -> None:
-    """Test that erk-extraction label is NOT included (optional for docs workflows)."""
+def test_get_required_erk_labels_excludes_erk_learn() -> None:
+    """Test that erk-learn label is NOT included (optional for docs workflows)."""
     labels = get_required_erk_labels()
 
     label_names = [label.name for label in labels]
-    assert "erk-extraction" not in label_names
+    assert "erk-learn" not in label_names
 
 
 def test_get_required_erk_labels_is_subset_of_all_definitions() -> None:
