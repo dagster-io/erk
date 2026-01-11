@@ -1573,20 +1573,19 @@ def test_cleanup_and_navigate_autolearn_called_after_confirmation(
     from erk.cli.commands import land_cmd
 
     # Track autolearn calls
-    autolearn_calls: list[tuple[Path, str, int]] = []
+    autolearn_calls: list[tuple[Path, str]] = []
 
     def mock_autolearn(
         ctx: ErkContext,
         *,
         repo_root: Path,
         branch: str,
-        pr_number: int,
     ) -> None:
-        autolearn_calls.append((repo_root, branch, pr_number))
+        autolearn_calls.append((repo_root, branch))
 
     monkeypatch.setattr(
         land_cmd,
-        "maybe_create_autolearn_issue",
+        "maybe_run_autolearn",
         mock_autolearn,
     )
 
@@ -1664,10 +1663,9 @@ def test_cleanup_and_navigate_autolearn_called_after_confirmation(
 
     # Verify autolearn was called with correct arguments
     assert len(autolearn_calls) == 1, "Autolearn should be called after confirmation"
-    repo_root, branch, pr_number = autolearn_calls[0]
+    repo_root, branch = autolearn_calls[0]
     assert repo_root == main_repo_root
     assert branch == "feature-branch"
-    assert pr_number == 456
 
 
 def test_cleanup_and_navigate_autolearn_not_called_when_disabled(
@@ -1678,20 +1676,19 @@ def test_cleanup_and_navigate_autolearn_not_called_when_disabled(
     from erk.cli.commands import land_cmd
 
     # Track autolearn calls
-    autolearn_calls: list[tuple[Path, str, int]] = []
+    autolearn_calls: list[tuple[Path, str]] = []
 
     def mock_autolearn(
         ctx: ErkContext,
         *,
         repo_root: Path,
         branch: str,
-        pr_number: int,
     ) -> None:
-        autolearn_calls.append((repo_root, branch, pr_number))
+        autolearn_calls.append((repo_root, branch))
 
     monkeypatch.setattr(
         land_cmd,
-        "maybe_create_autolearn_issue",
+        "maybe_run_autolearn",
         mock_autolearn,
     )
 
@@ -1783,20 +1780,19 @@ def test_cleanup_and_navigate_autolearn_not_called_when_no_delete(
     from erk.cli.commands import land_cmd
 
     # Track autolearn calls
-    autolearn_calls: list[tuple[Path, str, int]] = []
+    autolearn_calls: list[tuple[Path, str]] = []
 
     def mock_autolearn(
         ctx: ErkContext,
         *,
         repo_root: Path,
         branch: str,
-        pr_number: int,
     ) -> None:
-        autolearn_calls.append((repo_root, branch, pr_number))
+        autolearn_calls.append((repo_root, branch))
 
     monkeypatch.setattr(
         land_cmd,
-        "maybe_create_autolearn_issue",
+        "maybe_run_autolearn",
         mock_autolearn,
     )
 

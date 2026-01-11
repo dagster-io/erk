@@ -18,7 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
-from erk.cli.commands.autolearn import maybe_create_autolearn_issue
+from erk.cli.commands.autolearn import maybe_run_autolearn
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -424,9 +424,7 @@ def _cleanup_and_navigate(
     # Create autolearn issue if enabled (after confirmation, before navigation)
     if autolearn:
         main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-        maybe_create_autolearn_issue(
-            ctx, repo_root=main_repo_root, branch=branch, pr_number=pr_number
-        )
+        maybe_run_autolearn(ctx, repo_root=main_repo_root, branch=branch)
 
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
