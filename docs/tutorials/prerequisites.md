@@ -2,50 +2,174 @@
 
 Tools you need before installing erk.
 
+Erk orchestrates several tools to enable plan-oriented agentic engineering. This guide helps you install and verify each one.
+
 ## Required Tools
 
 ### Python 3.10+
+
+Erk is a Python CLI tool. You need Python 3.10 or higher.
+
+**Check your version:**
 
 ```bash
 python --version
 ```
 
-You should see `Python 3.10.x` or higher.
+You should see `Python 3.10.x` or higher (3.11, 3.12, 3.13 all work).
 
-[Install Python](https://www.python.org/downloads/) if needed.
+**macOS (Homebrew):**
+
+```bash
+brew install python@3.13
+```
+
+**Linux (Ubuntu/Debian):**
+
+```bash
+sudo apt update
+sudo apt install python3.13
+```
+
+**Troubleshooting:**
+
+- If `python --version` shows Python 2.x, try `python3 --version` instead
+- On some systems, you may need to use `python3` instead of `python` for all commands
 
 ### Claude Code CLI
+
+Claude Code is the AI agent that powers erk's planning and implementation. You need an active Anthropic account with API access.
+
+**Install:**
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+**Verify:**
 
 ```bash
 claude --version
 ```
 
-[Install from https://docs.anthropic.com/en/docs/claude-code/getting-started](https://docs.anthropic.com/en/docs/claude-code/getting-started)
+You should see output like `claude-code 1.x.x`.
+
+**First-time setup:**
+
+When you first run `claude`, you'll be prompted to authenticate with your Anthropic account. Follow the browser prompts to complete setup.
+
+**Troubleshooting:**
+
+- Requires Node.js 18+ (install via `brew install node` on macOS)
+- If you see authentication errors, run `claude` and follow the login prompts
 
 ### uv (Python Package Manager)
+
+Erk uses uv for fast, reproducible Python package management. It's significantly faster than pip and ensures consistent environments.
+
+**Install:**
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Verify:**
 
 ```bash
 uv --version
 ```
 
-[Install from https://docs.astral.sh/uv/getting-started/installation/](https://docs.astral.sh/uv/getting-started/installation/)
+You should see output like `uv 0.x.x`.
+
+**Why uv instead of pip?**
+
+- **Speed**: 10-100x faster than pip
+- **Reproducibility**: Lockfiles ensure consistent installs
+- **Simplicity**: Handles Python version management too
 
 ### GitHub CLI
 
+The GitHub CLI (`gh`) enables erk to create issues, PRs, and interact with your repositories programmatically.
+
+**macOS (Homebrew):**
+
+```bash
+brew install gh
+```
+
+**Linux (Ubuntu/Debian):**
+
+```bash
+sudo apt install gh
+```
+
+**Verify installation:**
+
 ```bash
 gh --version
+```
+
+You should see output like `gh version 2.x.x`.
+
+**Authenticate with GitHub:**
+
+```bash
+gh auth login
+```
+
+Follow the prompts to authenticate via browser or token.
+
+**Verify authentication:**
+
+```bash
 gh auth status
 ```
 
-[Install from https://cli.github.com/](https://cli.github.com/)
+You should see output confirming you're logged into github.com.
+
+**Troubleshooting:**
+
+- If `gh auth status` shows "not logged in", run `gh auth login` again
+- For GitHub Enterprise, use `gh auth login --hostname your-enterprise.com`
 
 ## Optional Enhancements
 
 These tools unlock additional features but are not required to start:
 
-- **Graphite (gt)**: Enables stacked PRs. See [Graphite Integration](graphite-integration.md).
-- **Shell integration**: Enables seamless directory switching. See [Shell Integration](shell-integration.md).
+### Graphite (gt)
+
+Graphite enables **stacked PRs**—a workflow where you build features as a stack of dependent branches. This is powerful for large features that benefit from incremental review.
+
+**What it enables:**
+
+- Stack multiple PRs that depend on each other
+- Rebase entire stacks with a single command
+- Track stack status in erk dashboard
+
+See [Graphite Integration](graphite-integration.md) for setup instructions.
+
+### Shell Integration
+
+Shell integration enables **seamless directory switching** when you navigate between worktrees. Without it, you need to manually `cd` after switching branches.
+
+**What it enables:**
+
+- Automatic directory changes when switching worktrees
+- `erk br co <branch>` changes your shell's working directory
+
+See [Shell Integration](shell-integration.md) for setup instructions.
+
+## Quick Reference
+
+| Tool       | Install Command (macOS)                            | Verify Command     |
+| ---------- | -------------------------------------------------- | ------------------ |
+| Python     | `brew install python@3.13`                         | `python --version` |
+| Claude CLI | `npm install -g @anthropic-ai/claude-code`         | `claude --version` |
+| uv         | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | `uv --version`     |
+| GitHub CLI | `brew install gh`                                  | `gh --version`     |
 
 ## Next Steps
 
-- [Installation](installation.md) - Next step after prerequisites
+Once all required tools are installed and verified:
+
+- [Installation](installation.md) - Install erk itself
