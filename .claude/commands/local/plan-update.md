@@ -54,5 +54,5 @@ On failure, display the error and suggest:
 ## Related
 
 - `/erk:plan-save` - Create new plan issue (instead of updating)
-- `/local:replan` - Recreate an obsolete plan from scratch
+- `/erk:replan` - Recreate an obsolete plan from scratch
 - `erk-planning` skill - Complete plan management documentation

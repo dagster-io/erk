@@ -8,7 +8,7 @@ This document describes the complete workflow for updating an existing plan issu
 | ----------------------------- | ---------------------- | ------------------------- |
 | Typos, clarifications         | Update                 | Preserves issue history   |
 | Adding implementation details | Update                 | Same plan, more context   |
-| Plan fundamentally wrong      | `/local:replan`        | Creates new with analysis |
+| Plan fundamentally wrong      | `/erk:replan`          | Creates new with analysis |
 | Major scope change            | Create new, close old  | Different work item       |
 | Plan partially implemented    | Update remaining steps | Continue tracking         |
 
