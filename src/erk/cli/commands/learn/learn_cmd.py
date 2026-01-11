@@ -61,6 +61,11 @@ def _extract_issue_number(identifier: str) -> int | None:
 @click.argument("issue", type=str, required=False)
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
 @click.option("--no-track", is_flag=True, help="Don't post tracking comment to issue")
+@click.option(
+    "--track-only",
+    is_flag=True,
+    help="Just post tracking comment without discovering or prompting",
+)
 @click.option("--session-id", default=None, help="Session ID for tracking (passed by Claude hooks)")
 @click.option(
     "-i",
@@ -79,6 +84,7 @@ def learn_cmd(
     issue: str | None,
     output_json: bool,
     no_track: bool,
+    track_only: bool,
     session_id: str | None,
     interactive: bool,
     no_interactive: bool,
@@ -134,6 +140,21 @@ def learn_cmd(
     # Discover repository context
     repo = discover_repo_context(ctx, ctx.cwd)
     repo_root = repo.root
+
+    # Track-only mode: just post tracking comment and exit
+    if track_only:
+        track_learn_invocation(
+            ctx.issues,
+            repo_root,
+            issue_number,
+            session_id=session_id,
+            readable_count=0,
+            total_count=0,
+        )
+        user_output(
+            click.style("✓", fg="green") + f" Learn evaluation tracked for plan #{issue_number}"
+        )
+        return
 
     # Find sessions for the plan
     try:
