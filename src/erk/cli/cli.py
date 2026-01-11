@@ -20,7 +20,7 @@ from erk.cli.commands.implement import implement
 from erk.cli.commands.info import info_group
 from erk.cli.commands.init import init_group
 from erk.cli.commands.land_cmd import land
-from erk.cli.commands.learn import learn_cmd
+from erk.cli.commands.learn.learn_cmd import learn_cmd
 from erk.cli.commands.log_cmd import log_cmd
 from erk.cli.commands.md.group import md_group
 from erk.cli.commands.objective import objective_group

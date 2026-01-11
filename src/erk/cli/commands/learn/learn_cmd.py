@@ -43,20 +43,15 @@ def _extract_issue_number(identifier: str) -> int | None:
     Returns:
         Issue number or None if invalid
     """
-    # Try direct number
-    try:
+    # Try direct number (LBYL: check before converting)
+    if identifier.isdigit():
         return int(identifier)
-    except ValueError:
-        pass
 
     # Try URL format: https://github.com/owner/repo/issues/123
     if "/issues/" in identifier:
         parts = identifier.rstrip("/").split("/")
-        if parts:
-            try:
-                return int(parts[-1])
-            except ValueError:
-                pass
+        if parts and parts[-1].isdigit():
+            return int(parts[-1])
 
     return None
 
