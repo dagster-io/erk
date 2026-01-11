@@ -272,6 +272,7 @@ def _cleanup_and_navigate(
     is_current_branch: bool,
     target_child_branch: str | None,
     objective_number: int | None,
+    no_delete: bool,
 ) -> None:
     """Handle worktree/branch cleanup and navigation after PR merge.
 
@@ -288,7 +289,26 @@ def _cleanup_and_navigate(
         is_current_branch: True if landing from the branch's worktree
         target_child_branch: Target child branch for --up navigation (None for trunk)
         objective_number: Issue number of the objective linked to this branch (if any)
+        no_delete: Whether to preserve the branch and slot assignment
     """
+    # Handle --no-delete: skip cleanup, optionally navigate
+    if no_delete:
+        user_output(
+            click.style("✓", fg="green")
+            + f" Branch '{branch}' and slot assignment preserved (--no-delete)"
+        )
+        if is_current_branch:
+            _navigate_after_land(
+                ctx,
+                repo=repo,
+                script=script,
+                pull_flag=pull_flag,
+                target_child_branch=target_child_branch,
+            )
+        else:
+            raise SystemExit(0)
+        return
+
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     if worktree_path is not None:
@@ -511,6 +531,12 @@ def _navigate_after_land(
     default=None,
     help="Override config to enable/disable automatic learn plan creation",
 )
+@click.option(
+    "--no-delete",
+    "no_delete",
+    is_flag=True,
+    help="Preserve the local branch and its slot assignment after landing.",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -522,6 +548,7 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     autolearn_flag: bool | None,
+    no_delete: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -588,6 +615,7 @@ def land(
             force=force,
             pull_flag=pull_flag,
             autolearn=autolearn,
+            no_delete=no_delete,
         )
     else:
         # Parse the target argument
@@ -603,6 +631,7 @@ def land(
                 pull_flag=pull_flag,
                 branch_name=target,
                 autolearn=autolearn,
+                no_delete=no_delete,
             )
         else:
             # Landing a specific PR by number or URL
@@ -621,6 +650,7 @@ def land(
                 pull_flag=pull_flag,
                 pr_number=parsed.pr_number,
                 autolearn=autolearn,
+                no_delete=no_delete,
             )
 
 
@@ -633,6 +663,7 @@ def _land_current_branch(
     force: bool,
     pull_flag: bool,
     autolearn: bool,
+    no_delete: bool,
 ) -> None:
     """Land the current branch's PR (original behavior)."""
     check_clean_working_tree(ctx)
@@ -749,6 +780,7 @@ def _land_current_branch(
         is_current_branch=True,
         target_child_branch=target_child_branch,
         objective_number=objective_number,
+        no_delete=no_delete,
     )
 
 
@@ -762,6 +794,7 @@ def _land_specific_pr(
     pull_flag: bool,
     pr_number: int,
     autolearn: bool,
+    no_delete: bool,
 ) -> None:
     """Land a specific PR by number."""
     # Validate --up is not used with PR argument
@@ -866,6 +899,7 @@ def _land_specific_pr(
         is_current_branch=is_current_branch,
         target_child_branch=None,
         objective_number=objective_number,
+        no_delete=no_delete,
     )
 
 
@@ -878,6 +912,7 @@ def _land_by_branch(
     pull_flag: bool,
     branch_name: str,
     autolearn: bool,
+    no_delete: bool,
 ) -> None:
     """Land a PR for a specific branch."""
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
@@ -978,4 +1013,5 @@ def _land_by_branch(
         is_current_branch=is_current_branch,
         target_child_branch=None,
         objective_number=objective_number,
+        no_delete=no_delete,
     )
