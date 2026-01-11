@@ -1,6 +1,6 @@
-"""Tests for erk learn --track-only flag.
+"""Tests for erk learn tracking behavior.
 
-Layer 4 (Business Logic Tests): Tests learn command --track-only behavior using fakes.
+Layer 4 (Business Logic Tests): Tests learn command tracking using fakes.
 """
 
 from click.testing import CliRunner
@@ -12,8 +12,8 @@ from tests.test_utils.env_helpers import erk_inmem_env
 from tests.test_utils.github_helpers import create_test_issue
 
 
-def test_track_only_posts_comment_and_exits() -> None:
-    """Track-only mode posts tracking comment without session discovery."""
+def test_no_interactive_tracks_evaluation() -> None:
+    """Non-interactive mode posts tracking comment."""
     issue = create_test_issue(number=42, title="Plan #42", body="content")
     issues = FakeGitHubIssues(issues={42: issue})
 
@@ -23,13 +23,11 @@ def test_track_only_posts_comment_and_exits() -> None:
 
         result = runner.invoke(
             cli,
-            ["learn", "42", "--track-only", "--session-id=test-session-123"],
+            ["learn", "42", "--no-interactive", "--session-id=test-session-123"],
             obj=ctx,
         )
 
         assert result.exit_code == 0
-        assert "Learn evaluation tracked" in result.output
-        assert "#42" in result.output
 
         # Verify tracking comment was posted
         assert len(issues.added_comments) == 1
@@ -39,8 +37,8 @@ def test_track_only_posts_comment_and_exits() -> None:
         assert "test-session-123" in comment_body
 
 
-def test_track_only_without_session_id() -> None:
-    """Track-only works without session ID."""
+def test_json_mode_tracks_evaluation() -> None:
+    """JSON output mode also tracks evaluation."""
     issue = create_test_issue(number=100, title="Plan #100", body="content")
     issues = FakeGitHubIssues(issues={100: issue})
 
@@ -48,24 +46,48 @@ def test_track_only_without_session_id() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues)
 
-        result = runner.invoke(cli, ["learn", "100", "--track-only"], obj=ctx)
+        result = runner.invoke(
+            cli,
+            ["learn", "100", "--json", "--session-id=session-456"],
+            obj=ctx,
+        )
 
         assert result.exit_code == 0
-        assert "Learn evaluation tracked" in result.output
 
-        # Verify comment was posted
+        # Verify tracking comment was posted
         assert len(issues.added_comments) == 1
 
 
-def test_track_only_requires_issue_number() -> None:
-    """Track-only fails if no issue number provided and branch doesn't match."""
+def test_no_track_suppresses_tracking() -> None:
+    """--no-track flag prevents tracking even in non-interactive mode."""
+    issue = create_test_issue(number=42, title="Plan #42", body="content")
+    issues = FakeGitHubIssues(issues={42: issue})
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        ctx = build_workspace_test_context(env, issues=issues)
+
+        result = runner.invoke(
+            cli,
+            ["learn", "42", "--no-interactive", "--no-track"],
+            obj=ctx,
+        )
+
+        assert result.exit_code == 0
+
+        # Verify NO tracking comment was posted
+        assert len(issues.added_comments) == 0
+
+
+def test_requires_issue_number() -> None:
+    """Command fails if no issue number provided and branch doesn't match."""
     issues = FakeGitHubIssues(issues={})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues)
 
-        result = runner.invoke(cli, ["learn", "--track-only"], obj=ctx)
+        result = runner.invoke(cli, ["learn", "--no-interactive"], obj=ctx)
 
         # Should fail because no issue number provided
         assert result.exit_code == 1

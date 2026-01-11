@@ -245,10 +245,10 @@ Raw materials: <gist-url>
 This ensures `erk land` won't warn about unlearned plans:
 
 ```bash
-erk learn <issue-number> --track-only --session-id="<session-id-from-SESSION_CONTEXT>"
+erk learn <issue-number> --no-interactive --session-id="<session-id-from-SESSION_CONTEXT>"
 ```
 
-This posts a tracking comment to the plan issue, marking it as "learned from".
+This runs through the learn flow without prompting, which automatically tracks that evaluation completed.
 
 ### Tips
 
