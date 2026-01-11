@@ -1,14 +1,14 @@
-"""Create and push a branch for extraction documentation.
+"""Create and push a branch for learn documentation.
 
 Usage:
-    erk exec create-extraction-branch \
+    erk exec create-learn-branch \
         --issue-number 123 \
         --trunk-branch master
 
 This command:
 1. Checks out the trunk branch
 2. Pulls latest changes
-3. Creates a new branch named extraction-docs-{issue_number}
+3. Creates a new branch named learn-docs-P{issue_number}
 4. Pushes the branch with upstream tracking
 
 Output:
@@ -23,7 +23,7 @@ import click
 from erk_shared.context.helpers import require_git, require_repo_root
 
 
-@click.command(name="create-extraction-branch")
+@click.command(name="create-learn-branch")
 @click.option(
     "--issue-number",
     type=int,
@@ -37,12 +37,12 @@ from erk_shared.context.helpers import require_git, require_repo_root
     help="Name of trunk branch (main/master)",
 )
 @click.pass_context
-def create_extraction_branch(
+def create_learn_branch(
     ctx: click.Context,
     issue_number: int,
     trunk_branch: str,
 ) -> None:
-    """Create and push a branch for extraction documentation.
+    """Create and push a branch for learn documentation.
 
     Creates a new branch from the trunk branch for implementing
     documentation extraction from a GitHub issue.
@@ -51,7 +51,7 @@ def create_extraction_branch(
     repo_root = require_repo_root(ctx)
     cwd = Path.cwd()
 
-    branch_name = f"extraction-docs-P{issue_number}"
+    branch_name = f"learn-docs-P{issue_number}"
 
     # Check if branch already exists locally
     local_branches = git.list_local_branches(repo_root)
@@ -135,4 +135,4 @@ def create_extraction_branch(
 
 
 if __name__ == "__main__":
-    create_extraction_branch()
+    create_learn_branch()

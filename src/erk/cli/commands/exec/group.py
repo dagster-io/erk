@@ -15,14 +15,14 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
-from erk.cli.commands.exec.scripts.create_extraction_branch import (
-    create_extraction_branch,
-)
 from erk.cli.commands.exec.scripts.create_extraction_plan import (
     create_extraction_plan,
 )
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
+)
+from erk.cli.commands.exec.scripts.create_learn_branch import (
+    create_learn_branch,
 )
 from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
@@ -63,9 +63,6 @@ from erk.cli.commands.exec.scripts.objective_save_to_issue import (
 )
 from erk.cli.commands.exec.scripts.plan_save_to_issue import plan_save_to_issue
 from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
-from erk.cli.commands.exec.scripts.post_extraction_comment import (
-    post_extraction_comment,
-)
 from erk.cli.commands.exec.scripts.post_or_update_pr_summary import (
     post_or_update_pr_summary,
 )
@@ -119,7 +116,7 @@ def exec_group() -> None:
 exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(check_impl, name="check-impl")
-exec_group.add_command(create_extraction_branch, name="create-extraction-branch")
+exec_group.add_command(create_learn_branch, name="create-learn-branch")
 exec_group.add_command(create_extraction_plan, name="create-extraction-plan")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
@@ -147,7 +144,6 @@ exec_group.add_command(marker, name="marker")
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(plan_update_issue, name="plan-update-issue")
-exec_group.add_command(post_extraction_comment, name="post-extraction-comment")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
 exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")

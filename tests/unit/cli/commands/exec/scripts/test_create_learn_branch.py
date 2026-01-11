@@ -1,6 +1,6 @@
-"""Unit tests for create_extraction_branch kit CLI command.
+"""Unit tests for create_learn_branch kit CLI command.
 
-Tests branch creation for extraction documentation workflow.
+Tests branch creation for learn documentation workflow.
 Uses FakeGit for fast, reliable testing without subprocess calls.
 """
 
@@ -9,8 +9,8 @@ from pathlib import Path
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.create_extraction_branch import (
-    create_extraction_branch,
+from erk.cli.commands.exec.scripts.create_learn_branch import (
+    create_learn_branch,
 )
 from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
@@ -21,7 +21,7 @@ from erk_shared.github.issues import FakeGitHubIssues
 # ============================================================================
 
 
-def test_create_extraction_branch_success(tmp_path: Path) -> None:
+def test_create_learn_branch_success(tmp_path: Path) -> None:
     """Test successful branch creation."""
     fake_git = FakeGit(
         trunk_branches={tmp_path: "master"},
@@ -38,7 +38,7 @@ def test_create_extraction_branch_success(tmp_path: Path) -> None:
         )
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "123", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -46,17 +46,17 @@ def test_create_extraction_branch_success(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["branch_name"] == "extraction-docs-P123"
+    assert output["branch_name"] == "learn-docs-P123"
     assert output["issue_number"] == 123
 
     # Verify git operations occurred
     assert len(fake_git.checked_out_branches) >= 1
     assert len(fake_git.created_branches) == 1
-    assert fake_git.created_branches[0][1] == "extraction-docs-P123"
+    assert fake_git.created_branches[0][1] == "learn-docs-P123"
     assert len(fake_git.pushed_branches) == 1
 
 
-def test_create_extraction_branch_with_main(tmp_path: Path) -> None:
+def test_create_learn_branch_with_main(tmp_path: Path) -> None:
     """Test branch creation with main as trunk branch."""
     runner = CliRunner()
 
@@ -69,7 +69,7 @@ def test_create_extraction_branch_with_main(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "456", "--trunk-branch", "main"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -77,7 +77,7 @@ def test_create_extraction_branch_with_main(tmp_path: Path) -> None:
     assert result.exit_code == 0, result.output
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["branch_name"] == "extraction-docs-P456"
+    assert output["branch_name"] == "learn-docs-P456"
 
 
 # ============================================================================
@@ -85,7 +85,7 @@ def test_create_extraction_branch_with_main(tmp_path: Path) -> None:
 # ============================================================================
 
 
-def test_create_extraction_branch_already_exists(tmp_path: Path) -> None:
+def test_create_learn_branch_already_exists(tmp_path: Path) -> None:
     """Test error when branch already exists locally."""
     runner = CliRunner()
 
@@ -93,12 +93,12 @@ def test_create_extraction_branch_already_exists(tmp_path: Path) -> None:
         cwd = Path.cwd()
         fake_git = FakeGit(
             trunk_branches={cwd: "master"},
-            local_branches={cwd: ["master", "extraction-docs-P123"]},  # Already exists
+            local_branches={cwd: ["master", "learn-docs-P123"]},  # Already exists
         )
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "123", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -109,7 +109,7 @@ def test_create_extraction_branch_already_exists(tmp_path: Path) -> None:
     assert "already exists locally" in output["error"]
 
 
-def test_create_extraction_branch_checkout_fails(tmp_path: Path) -> None:
+def test_create_learn_branch_checkout_fails(tmp_path: Path) -> None:
     """Test error when checkout of trunk branch fails."""
 
     class FailingCheckoutGit(FakeGit):
@@ -127,7 +127,7 @@ def test_create_extraction_branch_checkout_fails(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "789", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -138,7 +138,7 @@ def test_create_extraction_branch_checkout_fails(tmp_path: Path) -> None:
     assert "Failed to checkout" in output["error"]
 
 
-def test_create_extraction_branch_pull_fails(tmp_path: Path) -> None:
+def test_create_learn_branch_pull_fails(tmp_path: Path) -> None:
     """Test error when pull of trunk branch fails."""
 
     class FailingPullGit(FakeGit):
@@ -156,7 +156,7 @@ def test_create_extraction_branch_pull_fails(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "101", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -167,7 +167,7 @@ def test_create_extraction_branch_pull_fails(tmp_path: Path) -> None:
     assert "Failed to pull" in output["error"]
 
 
-def test_create_extraction_branch_create_fails(tmp_path: Path) -> None:
+def test_create_learn_branch_create_fails(tmp_path: Path) -> None:
     """Test error when branch creation fails."""
 
     class FailingCreateGit(FakeGit):
@@ -185,7 +185,7 @@ def test_create_extraction_branch_create_fails(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "202", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -196,7 +196,7 @@ def test_create_extraction_branch_create_fails(tmp_path: Path) -> None:
     assert "Failed to create branch" in output["error"]
 
 
-def test_create_extraction_branch_push_fails(tmp_path: Path) -> None:
+def test_create_learn_branch_push_fails(tmp_path: Path) -> None:
     """Test error when push fails."""
 
     class FailingPushGit(FakeGit):
@@ -222,7 +222,7 @@ def test_create_extraction_branch_push_fails(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "303", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -251,7 +251,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "404", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -271,7 +271,7 @@ def test_json_output_structure_success(tmp_path: Path) -> None:
 
     # Verify values
     assert output["success"] is True
-    assert output["branch_name"] == "extraction-docs-P404"
+    assert output["branch_name"] == "learn-docs-P404"
     assert output["issue_number"] == 404
 
 
@@ -283,12 +283,12 @@ def test_json_output_structure_error(tmp_path: Path) -> None:
         cwd = Path.cwd()
         fake_git = FakeGit(
             trunk_branches={cwd: "master"},
-            local_branches={cwd: ["master", "extraction-docs-P505"]},
+            local_branches={cwd: ["master", "learn-docs-P505"]},
         )
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "505", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -324,7 +324,7 @@ def test_git_operations_sequence(tmp_path: Path) -> None:
         fake_gh = FakeGitHubIssues()
 
         result = runner.invoke(
-            create_extraction_branch,
+            create_learn_branch,
             ["--issue-number", "606", "--trunk-branch", "master"],
             obj=ErkContext.for_test(github_issues=fake_gh, git=fake_git, repo_root=cwd, cwd=cwd),
         )
@@ -343,13 +343,13 @@ def test_git_operations_sequence(tmp_path: Path) -> None:
     # Verify branch was created from trunk
     assert len(fake_git.created_branches) == 1
     _, branch_name, start_point = fake_git.created_branches[0]
-    assert branch_name == "extraction-docs-P606"
+    assert branch_name == "learn-docs-P606"
     assert start_point == "master"
 
     # Verify push with upstream tracking
     assert len(fake_git.pushed_branches) == 1
     remote, branch, set_upstream, force = fake_git.pushed_branches[0]
     assert remote == "origin"
-    assert branch == "extraction-docs-P606"
+    assert branch == "learn-docs-P606"
     assert set_upstream is True
     assert force is False

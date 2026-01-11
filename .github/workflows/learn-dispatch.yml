@@ -1,0 +1,120 @@
+# REQUIRED REPOSITORY SETTING:
+# Settings > Actions > General > Workflow permissions
+# ✓ Enable "Allow GitHub Actions to create and approve pull requests"
+#
+# Without this setting, PR creation will fail with:
+# "GitHub Actions is not permitted to create or approve pull requests"
+
+name: learn-dispatch
+run-name: "Learn: #${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}"
+
+on:
+  issues:
+    types: [opened, labeled]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to process"
+        required: true
+        type: string
+      model_name:
+        description: "Claude model to use"
+        required: false
+        type: string
+        default: "claude-sonnet-4-5"
+
+concurrency:
+  group: learn-dispatch-${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}
+  cancel-in-progress: true
+
+jobs:
+  setup-and-dispatch:
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (contains(github.event.issue.labels.*.name, 'erk-extraction') &&
+       contains(github.event.issue.labels.*.name, 'erk-plan'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install erk
+        run: uv tool install --from . --with ./packages/erk-shared erk
+
+      - name: Configure git
+        run: |
+          git config user.name "erk-bot"
+          git config user.email "erk-bot@users.noreply.github.com"
+
+      - name: Detect trunk branch
+        id: trunk
+        run: |
+          result=$(erk exec detect-trunk-branch)
+          echo "branch=$(echo "$result" | jq -r '.trunk_branch')" >> $GITHUB_OUTPUT
+
+      - name: Get issue context
+        id: issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            ISSUE_NUMBER="${{ inputs.issue_number }}"
+            MODEL_NAME="${{ inputs.model_name }}"
+          else
+            ISSUE_NUMBER="${{ github.event.issue.number }}"
+            MODEL_NAME="claude-sonnet-4-5"
+          fi
+          TITLE=$(gh issue view "$ISSUE_NUMBER" --json title -q '.title')
+          echo "number=$ISSUE_NUMBER" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "model=$MODEL_NAME" >> $GITHUB_OUTPUT
+
+      - name: Create branch
+        id: branch
+        run: |
+          result=$(erk exec create-learn-branch \
+            --issue-number "${{ steps.issue.outputs.number }}" \
+            --trunk-branch "${{ steps.trunk.outputs.branch }}")
+          echo "name=$(echo "$result" | jq -r '.branch_name')" >> $GITHUB_OUTPUT
+
+      - name: Create draft PR
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_URL=$(gh pr create \
+            --base "${{ steps.trunk.outputs.branch }}" \
+            --head "${{ steps.branch.outputs.name }}" \
+            --title "${{ steps.issue.outputs.title }}" \
+            --body "Implementing #${{ steps.issue.outputs.number }}" \
+            --draft)
+          PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
+          echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Generate distinct_id
+        id: distinct
+        run: echo "id=$(printf '%x' $(date +%s))" >> $GITHUB_OUTPUT
+
+      - name: Dispatch to erk-impl
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+        run: |
+          gh workflow run erk-impl.yml \
+            -f issue_number="${{ steps.issue.outputs.number }}" \
+            -f submitted_by="erk-bot" \
+            -f distinct_id="${{ steps.distinct.outputs.id }}" \
+            -f issue_title="${{ steps.issue.outputs.title }}" \
+            -f branch_name="${{ steps.branch.outputs.name }}" \
+            -f pr_number="${{ steps.pr.outputs.number }}" \
+            -f model_name="${{ steps.issue.outputs.model }}" \
+            -f base_branch="${{ steps.trunk.outputs.branch }}"
