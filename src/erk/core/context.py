@@ -41,7 +41,7 @@ from erk_shared.core import (
     PlannerRegistry,
     ScriptWriter,
 )
-from erk_shared.extraction.claude_installation import ClaudeInstallation
+from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
 
 # Import erk-specific integrations
 from erk_shared.gateway.completion import Completion
@@ -98,7 +98,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
-    from erk_shared.extraction.claude_installation import FakeClaudeInstallation
+    from erk_shared.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -213,7 +213,7 @@ def context_for_test(
     from tests.test_utils.paths import sentinel_path
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
-    from erk_shared.extraction.claude_installation import FakeClaudeInstallation
+    from erk_shared.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -521,7 +521,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         issues = DryRunGitHubIssues(issues)
 
     # 10. Create claude installation and prompt executor
-    from erk_shared.extraction.claude_installation import RealClaudeInstallation
+    from erk_shared.extraction.claude_installation.real import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
