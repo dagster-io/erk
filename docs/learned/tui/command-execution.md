@@ -4,6 +4,9 @@ read_when:
   - "executing commands in TUI"
   - "choosing between sync and streaming execution"
   - "implementing command runners"
+tripwires:
+  - action: "using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL"
+    warning: "Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls."
 ---
 
 # Command Execution Strategies
@@ -97,8 +100,9 @@ def execute_streaming(
         cwd=cwd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        stdin=subprocess.DEVNULL,  # CRITICAL: Prevents deadlock if child prompts
         text=True,
-        bufsize=1
+        bufsize=1,
     )
 
     assert process.stdout is not None
@@ -150,6 +154,32 @@ class FakeCommandExecutor(CommandExecutor):
 | Unit tests           | FakeCommandExecutor  | Fast, deterministic          |
 | Script mode          | Executor pattern     | Simpler, no UI               |
 | Quick commands       | Executor pattern     | No need for streaming        |
+
+## Common Pitfalls
+
+### stdin Inheritance Deadlock
+
+When executing subprocesses from a TUI, child processes inherit stdin from the parent. If the child attempts to prompt for user input (e.g., `click.confirm()` for confirmation dialogs), a deadlock occurs:
+
+1. TUI manages terminal input via Textual event loop
+2. Child process tries to read from inherited stdin (same TTY)
+3. Neither can proceed → permanent hang
+
+**Prevention:** Always pass `stdin=subprocess.DEVNULL` when spawning subprocesses from TUI code:
+
+```python
+process = subprocess.Popen(
+    command,
+    cwd=cwd,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.STDOUT,
+    stdin=subprocess.DEVNULL,  # CRITICAL: Prevents deadlock
+    text=True,
+    bufsize=1,
+)
+```
+
+**Note:** This means child processes cannot prompt for input. If a command requires user confirmation, the TUI must handle this before executing (e.g., show confirmation dialog in TUI first, then run command with `--force` or `--yes` flag).
 
 ## Related Documentation
 
