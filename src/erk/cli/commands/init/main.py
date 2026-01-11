@@ -39,7 +39,7 @@ from erk.core.repo_discovery import (
 )
 from erk.core.shell import Shell
 from erk_shared.context.types import GlobalConfig
-from erk_shared.extraction.claude_installation import RealClaudeInstallation
+from erk_shared.extraction.claude_installation.real import RealClaudeInstallation
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.git.real import RealGit
 from erk_shared.github.issues.abc import GitHubIssues

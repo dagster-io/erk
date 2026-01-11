@@ -7,7 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk_shared.context import ErkContext
-from erk_shared.extraction.claude_installation import FakeClaudeInstallation
+from erk_shared.extraction.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueComment, IssueInfo
 

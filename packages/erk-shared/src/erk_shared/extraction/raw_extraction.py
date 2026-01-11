@@ -14,7 +14,7 @@ import uuid
 import warnings
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation import ClaudeInstallation
+from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.extraction.llm_distillation import distill_with_haiku
 from erk_shared.extraction.session_context import collect_session_context
 from erk_shared.extraction.types import RawExtractionResult

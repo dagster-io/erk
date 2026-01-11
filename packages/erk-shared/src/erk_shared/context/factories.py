@@ -71,7 +71,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     """
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
-    from erk_shared.extraction.claude_installation import RealClaudeInstallation
+    from erk_shared.extraction.claude_installation.real import RealClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation

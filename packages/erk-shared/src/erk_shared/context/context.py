@@ -26,7 +26,7 @@ from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
-from erk_shared.extraction.claude_installation import ClaudeInstallation
+from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.completion import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
