@@ -34,7 +34,6 @@ sudo apt install python3.13
 **Troubleshooting:**
 
 - If `python --version` shows Python 2.x, try `python3 --version` instead
-- On some systems, you may need to use `python3` instead of `python` for all commands
 
 ### Claude Code CLI
 
@@ -43,7 +42,7 @@ Claude Code is the AI agent that powers erk's planning and implementation. You n
 **Install:**
 
 ```bash
-npm install -g @anthropic-ai/claude-code
+curl -fsSL https://claude.ai/install.sh | bash
 ```
 
 **Verify:**
@@ -60,7 +59,6 @@ When you first run `claude`, you'll be prompted to authenticate with your Anthro
 
 **Troubleshooting:**
 
-- Requires Node.js 18+ (install via `brew install node` on macOS)
 - If you see authentication errors, run `claude` and follow the login prompts
 
 ### uv (Python Package Manager)
@@ -164,7 +162,7 @@ See [Shell Integration](shell-integration.md) for setup instructions.
 | Tool       | Install Command (macOS)                            | Verify Command     |
 | ---------- | -------------------------------------------------- | ------------------ |
 | Python     | `brew install python@3.13`                         | `python --version` |
-| Claude CLI | `npm install -g @anthropic-ai/claude-code`         | `claude --version` |
+| Claude CLI | `curl -fsSL https://claude.ai/install.sh \| bash`  | `claude --version` |
 | uv         | `curl -LsSf https://astral.sh/uv/install.sh \| sh` | `uv --version`     |
 | GitHub CLI | `brew install gh`                                  | `gh --version`     |
 
