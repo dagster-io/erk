@@ -202,22 +202,6 @@ def get_worktree_info_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tu
     return False, ""
 
 
-def has_plan_file(git_root: str) -> bool:
-    """Check if .impl folder exists at git repository root.
-
-    Args:
-        git_root: Absolute path to git repository root
-
-    Returns:
-        True if .impl folder exists at repo root, False otherwise.
-    """
-    if not git_root:
-        return False
-
-    plan_path = Path(git_root) / ".impl"
-    return plan_path.is_dir()
-
-
 def get_issue_number(git_root: str) -> int | None:
     """Load issue number from .impl/issue.json file.
 
@@ -1014,15 +998,6 @@ def build_context_labels(
     return labels
 
 
-def build_plan_label() -> Token:
-    """Build (.impl) label.
-
-    Returns:
-        Token with (.impl) indicator.
-    """
-    return Token("(.impl)")
-
-
 def build_new_plan_label(filename: str) -> Token:
     """Build (🆕:basename) label for new plan file.
 
@@ -1192,7 +1167,6 @@ def main():
                     branch=branch,
                     relative_cwd=relative_cwd,
                 ),
-                *([build_plan_label()] if git_root and has_plan_file(git_root) else []),
                 *([build_new_plan_label(new_plan_file)] if new_plan_file else []),
                 *([Token("✗")] if is_dirty else []),
                 Token("|"),

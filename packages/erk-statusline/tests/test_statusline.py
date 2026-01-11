@@ -31,7 +31,6 @@ from erk_statusline.statusline import (
     build_comment_count_label,
     build_gh_label,
     build_new_plan_label,
-    build_plan_label,
     fetch_github_data_via_gateway,
     find_new_plan_file,
     get_checks_status,
@@ -614,15 +613,6 @@ class TestGetIssueNumber:
 
             result = get_issue_number(tmpdir)
             assert result is None
-
-
-class TestBuildPlanLabel:
-    """Test plan label building."""
-
-    def test_returns_simple_label(self) -> None:
-        """Should return (.impl) label."""
-        result = build_plan_label()
-        assert result.text == "(.impl)"
 
 
 class TestFindNewPlanFile:

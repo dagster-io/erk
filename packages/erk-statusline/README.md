@@ -12,7 +12,6 @@ The status line displays (left to right):
 - **Worktree**: `({wt, br}:name)` or `(wt:name)` - Git worktree info ("root" for main worktree, or worktree name for linked worktrees)
 - **Branch**: `(br:branch-name)` - Current git branch (combined with worktree if names match)
 - **Current directory**: `(cwd:path)` - Relative path from git root (only shown if not at root)
-- **Plan indicator**: `(.impl)` - Shows when `.impl/` folder exists
 - **Dirty indicator**: `✗` - Shows when there are uncommitted changes
 - **GitHub PR info**: `(gh:#123 plan:#456 st:XX chks:XX)`:
   - `#123` - PR number
