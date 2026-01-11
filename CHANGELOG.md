@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 98b4a452e -->
+<!-- As of c1f856711 -->
 
 ### Major Changes
 
@@ -17,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add sync status display to branch and PR checkout commands showing ahead/behind/diverged state with bot commit detection (e56d16a38)
+- Add ruff auto-format capability for automatic Python formatting on Write/Edit (eb2816db3)
+- Add "Exists" column to `erk slot list` showing physical worktree directory status (21fa60af1)
+- Add error message when submitting stacked PR without parent PR, guiding users to `gt submit -s` (85e86a821)
+- Offer to close plan issues missing closing references during `erk land` (935c0ad49)
 - Add `erk admin test-erk-impl-gh-workflow` command for testing workflow changes before merge (f8fb27fb8)
 - Validate Claude credentials in erk-impl workflow before execution (47ec0bf79)
 - Add Anthropic API authentication secret health check to `erk doctor` (aa5f943c1)
@@ -34,6 +39,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Replace `--statusline` and `--with-dignified-review` flags with `erk init capability add` commands (e5773dd90)
+- Graphite branch delete now falls back to git when branch is untracked or diverged (d511d409e)
+- Improve capability display formatting in init command output (860848619)
 - Support `erk land` without Graphite enabled (1f78eab5d)
 - Migrate diff extraction from GitHub API to local git to handle large diffs exceeding GitHub's ~20k line limit (74819a14e)
 - Fix PR submit output to distinguish between created and existing PRs (46e5ad324)

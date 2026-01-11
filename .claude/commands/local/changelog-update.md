@@ -142,6 +142,8 @@ Example format:
 - Internal-only refactors that don't affect user-facing behavior
 - Infrastructure/architecture changes invisible to users
 - Vague commit messages like "update", "WIP", "wip"
+- Internal abstraction consolidation (merging/refactoring internal types like Terminal+UserFeedback→Console)
+- Changes to erk-dev commands and internal development tooling
 
 **Likely internal (verify before including):**
 
@@ -172,6 +174,27 @@ Example format:
 - "Consolidate", "Relocate", "Migrate" internal modules → internal
 - "Eliminate default parameter values" → internal
 - "Migrate dataclasses to frozen=True" → internal
+
+#### Abstraction Consolidation Pattern
+
+When internal abstractions are merged, consolidated, or refactored, filter them out even if many files change. The test is **user-visible behavior**, not code organization.
+
+Examples of internal consolidation (always filter):
+
+- "Consolidate X and Y into Z" where X, Y, Z are internal types
+- "Unify X gateway" where the gateway interface is internal
+- "Merge X module into Y" for internal modules
+
+The key question: Does an end user calling `erk` commands see different behavior? If no, filter it.
+
+#### Internal Tooling Pattern
+
+Changes to development tooling used only by erk developers should be filtered:
+
+- `erk-dev` commands and their implementations
+- Changelog tooling (`changelog-commits`, marker parsing)
+- Internal scripts in `scripts/`
+- Test utilities and fixtures
 
 #### Roll-Up Detection
 
