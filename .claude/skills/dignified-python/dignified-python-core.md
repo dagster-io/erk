@@ -518,9 +518,18 @@ If any answer is "yes", wrap in a `@cache`-decorated function instead.
 
 ## Dependency Injection
 
-### Core Rule
+### ABC vs Protocol: Choosing the Right Interface
 
-**Use ABC for interfaces, NEVER Protocol**
+**ABCs (nominal typing)** and **Protocols (structural typing)** serve different purposes. Choose based on ownership and coupling needs.
+
+| Use Case                                  | Recommended | Why                                                  |
+| ----------------------------------------- | ----------- | ---------------------------------------------------- |
+| Internal interfaces you control           | ABC         | Explicit enforcement, runtime validation, code reuse |
+| Third-party library boundaries            | Protocol    | No inheritance required, loose coupling              |
+| Plugin systems with isinstance checks     | ABC         | Reliable runtime type validation                     |
+| Minimal interface contracts (1-2 methods) | Protocol    | Less boilerplate, focused contracts                  |
+
+**Default for erk internal code: ABC. Default for external library facades: Protocol.**
 
 ### ABC Interface Pattern
 
@@ -547,21 +556,21 @@ class PostgresRepository(Repository):
     def load(self, id: str) -> Entity:
         # Implementation
         pass
-
-# ❌ WRONG: Using Protocol
-from typing import Protocol
-
-class Repository(Protocol):
-    def save(self, entity: Entity) -> None: ...
-    def load(self, id: str) -> Entity: ...
 ```
 
-### Benefits of ABC
+### Benefits of ABC (Internal Interfaces)
 
-1. **Explicit inheritance** - Clear class hierarchy
-2. **Runtime validation** - Errors if abstract methods not implemented
-3. **Better IDE support** - Autocomplete and refactoring work better
-4. **Documentation** - Clear contract definition
+1. **Explicit inheritance** - Clear class hierarchy, explicit opt-in
+2. **Runtime validation** - Errors at instantiation if abstract methods missing
+3. **Code reuse** - Can include concrete methods and shared logic
+4. **Reliable isinstance()** - Full signature checking at runtime
+
+### Benefits of Protocol (External Boundaries)
+
+1. **No inheritance required** - Works with code you don't control
+2. **Loose coupling** - Implementations don't know about the protocol
+3. **Minimal contracts** - Define only the methods you need
+4. **Duck typing** - Aligns with Python's philosophy
 
 ### Complete DI Example
 
@@ -616,6 +625,45 @@ class Service:
             result = cached
         use_result(result)
 ```
+
+### When to Use Protocol
+
+**Protocols excel at defining interfaces for code you don't control:**
+
+```python
+# ✅ CORRECT: Protocol for third-party library facade
+from typing import Protocol
+
+class HttpClient(Protocol):
+    """Interface for HTTP operations - decouples from requests/httpx/aiohttp."""
+    def get(self, url: str) -> Response: ...
+    def post(self, url: str, data: dict) -> Response: ...
+
+# Any HTTP library that has these methods works - no inheritance needed
+def fetch_data(client: HttpClient, endpoint: str) -> dict:
+    response = client.get(endpoint)
+    return response.json()
+```
+
+**Protocols are also appropriate for minimal, focused interfaces:**
+
+```python
+# ✅ CORRECT: Protocol for structural typing with minimal interface
+from typing import Protocol
+
+class Closeable(Protocol):
+    def close(self) -> None: ...
+
+def cleanup_resources(resources: list[Closeable]) -> None:
+    for r in resources:
+        r.close()
+```
+
+### Protocol Limitations
+
+1. **No runtime validation** - `@runtime_checkable` only checks method existence, not signatures
+2. **No code reuse** - Protocols shouldn't have method implementations
+3. **Weaker isinstance() checks** - ABCs provide more reliable runtime type checking
 
 ---
 
@@ -1227,6 +1275,16 @@ Benefits:
 - [ ] If skipping for performance, have I documented the measured overhead?
 
 **Default: Always add runtime assertion before cast when cost is trivial**
+
+### Before defining an interface (ABC or Protocol):
+
+- [ ] Do I own all implementations? → Prefer ABC
+- [ ] Am I wrapping a third-party library? → Prefer Protocol
+- [ ] Do I need runtime isinstance() validation? → Use ABC
+- [ ] Is this a minimal interface (1-2 methods)? → Protocol may be simpler
+- [ ] Do I need shared method implementations? → Use ABC
+
+**Default for erk internal code: ABC. Default for external library facades: Protocol.**
 
 ### Before preserving backwards compatibility:
 
