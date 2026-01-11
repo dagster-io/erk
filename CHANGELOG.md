@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of c1f856711 -->
+<!-- As of 1ab72af2f -->
 
 ### Major Changes
 
@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add PR review thread counts to statusline (1ab72af2f)
+- Add tripwires-review as an installable capability (a82c98660)
+- Add ShellIntegrationCapability for shell wrapper installation (e0cd55f13)
 - Add sync status display to branch and PR checkout commands showing ahead/behind/diverged state with bot commit detection (e56d16a38)
 - Add ruff auto-format capability for automatic Python formatting on Write/Edit (eb2816db3)
 - Add "Exists" column to `erk slot list` showing physical worktree directory status (21fa60af1)
@@ -39,6 +42,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improve capability list formatting with scope grouping (c62aade13)
+- Refactor capability check output formatting (092db0f0e)
 - Replace `--statusline` and `--with-dignified-review` flags with `erk init capability add` commands (e5773dd90)
 - Graphite branch delete now falls back to git when branch is untracked or diverged (d511d409e)
 - Improve capability display formatting in init command output (860848619)
@@ -51,6 +56,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix false branch-mismatch error for stacked branches in slot list (dcb4c4ffc)
+- Fix index.lock race condition in erk land (cf60e2444)
 - Fix CI autofix prompt variable substitution (b95cac421)
 - Fix statusline crash when creating RealGitHub instances without repo_info (25a7c2e51)
 - Fix GitHub integration by properly resolving Graphite implementation based on config (71c4bd811)
