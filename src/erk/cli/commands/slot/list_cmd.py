@@ -50,6 +50,8 @@ def _determine_slot_status(
 def _get_slot_reason(
     assigned_branch: str | None,
     actual_branch: str | None,
+    *,
+    same_stack: bool,
 ) -> SlotReason:
     """Determine the reason for slot state.
 
@@ -61,6 +63,7 @@ def _get_slot_reason(
     Args:
         assigned_branch: Branch assigned in pool.json (if any)
         actual_branch: Actual branch on filesystem (if any)
+        same_stack: Whether actual_branch is in the same stack as assigned_branch
 
     Returns:
         Reason literal explaining any issues
@@ -78,6 +81,8 @@ def _get_slot_reason(
     # Both exist - check if they match
     if actual_branch == assigned_branch:
         return "-"  # Healthy - branches match
+    if same_stack:
+        return "-"  # Stacked branch is healthy
     return "branch-mismatch"
 
 
@@ -154,8 +159,16 @@ def slot_list(ctx: ErkContext) -> None:
         if slot_name in assignments_by_slot:
             assigned_branch, assigned_time = assignments_by_slot[slot_name]
 
+        # Check if branches are in the same stack (stacked branches are healthy)
+        same_stack = False
+        if assigned_branch is not None and actual_branch is not None:
+            if assigned_branch != actual_branch:
+                stack = ctx.graphite.get_branch_stack(ctx.git, repo.root, assigned_branch)
+                if stack is not None and actual_branch in stack:
+                    same_stack = True
+
         # Determine reason for any issues (needed before status)
-        reason = _get_slot_reason(assigned_branch, actual_branch)
+        reason = _get_slot_reason(assigned_branch, actual_branch, same_stack=same_stack)
 
         # Determine status (depends on reason)
         status = _determine_slot_status(slot_name, assigned_slots, reason)
