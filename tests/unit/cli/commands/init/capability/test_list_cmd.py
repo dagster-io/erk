@@ -29,9 +29,14 @@ def test_capability_list_shows_available_capabilities() -> None:
         result = runner.invoke(cli, ["init", "capability", "list"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
-        assert "Available capabilities:" in result.output
+        # Check section headers
+        assert "Project capabilities:" in result.output
+        assert "User capabilities:" in result.output
+        # Check a project capability
         assert "learned-docs" in result.output
         assert "Autolearning documentation system" in result.output
+        # Check a user capability
+        assert "statusline" in result.output
 
 
 def test_capability_list_works_without_repo() -> None:
