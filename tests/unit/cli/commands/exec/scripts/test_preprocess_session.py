@@ -912,6 +912,53 @@ def test_full_workflow_deduplicates_correctly(tmp_path: Path) -> None:
         assert '<tool_use name="Edit"' in content  # Tool preserved
 
 
+def test_compression_metric_includes_agent_logs(tmp_path: Path) -> None:
+    """Regression test: Token reduction metric must include agent log sizes.
+
+    Bug: The compression metric was only measuring the main session log size,
+    missing agent logs that were included in the output. This caused inaccurate
+    compression ratios when agent logs were included.
+
+    Fix: Track combined size of all included logs (main session + agent logs)
+    before compression, providing an accurate compression ratio.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Create main session log with 3+ entries (required to pass empty session check)
+        main_entries = [
+            json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING)),
+            json.dumps(json.loads(fixtures.JSONL_ASSISTANT_TEXT)),
+            json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING)),
+        ]
+        main_log = Path("session-123.jsonl")
+        main_log.write_text("\n".join(main_entries), encoding="utf-8")
+        main_size = main_log.stat().st_size
+
+        # Create agent log with same content
+        agent_log = Path("agent-abc.jsonl")
+        agent_log.write_text("\n".join(main_entries), encoding="utf-8")
+        agent_size = agent_log.stat().st_size
+
+        # Combined size is what should be reported as "original"
+        combined_size = main_size + agent_size
+
+        # Run with filtering enabled (to trigger compression metrics output)
+        # Click mixes stderr into result.output by default
+        result = runner.invoke(
+            preprocess_session,
+            [str(main_log), "--stdout"],
+            catch_exceptions=False,
+        )
+        assert result.exit_code == 0
+
+        # Verify compression metric uses combined size (main + agent logs)
+        # The output should contain: "({combined_size:,} → {compressed_size:,} chars)"
+        assert f"({combined_size:,} →" in result.output, (
+            f"Expected original size {combined_size:,} (main={main_size} + agent={agent_size}) "
+            f"in compression stats, but got: {result.output}"
+        )
+
+
 # ============================================================================
 # 9. Stdout Output Mode Tests
 # ============================================================================
