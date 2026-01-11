@@ -324,9 +324,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_local_impl_session: Claude Code session ID from environment (nullable)
         last_local_impl_user: User who ran the implementation (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
-        plan_type: Type discriminator - "standard" or "learn"
-        source_plan_issues: For learn plans, list of issue numbers analyzed
-        extraction_session_ids: For learn plans, list of session IDs analyzed
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
@@ -350,9 +347,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "last_local_impl_session",
             "last_local_impl_user",
             "last_remote_impl_at",
-            "plan_type",
-            "source_plan_issues",
-            "extraction_session_ids",
             "source_repo",
             "objective_issue",
             "created_from_session",
@@ -438,36 +432,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 if not isinstance(data["last_local_impl_user"], str):
                     raise ValueError("last_local_impl_user must be a string or null")
 
-        # Validate plan_type field
-        valid_plan_types = {"standard", "learn"}
-        if "plan_type" in data and data["plan_type"] is not None:
-            if not isinstance(data["plan_type"], str):
-                raise ValueError("plan_type must be a string or null")
-            if data["plan_type"] not in valid_plan_types:
-                raise ValueError(
-                    f"Invalid plan_type '{data['plan_type']}'. "
-                    f"Must be one of: {', '.join(sorted(valid_plan_types))}"
-                )
-
-        # Validate extraction mixin fields
-        if "source_plan_issues" in data and data["source_plan_issues"] is not None:
-            if not isinstance(data["source_plan_issues"], list):
-                raise ValueError("source_plan_issues must be a list or null")
-            for item in data["source_plan_issues"]:
-                if not isinstance(item, int):
-                    raise ValueError("source_plan_issues must contain only integers")
-                if item <= 0:
-                    raise ValueError("source_plan_issues must contain positive integers")
-
-        if "extraction_session_ids" in data and data["extraction_session_ids"] is not None:
-            if not isinstance(data["extraction_session_ids"], list):
-                raise ValueError("extraction_session_ids must be a list or null")
-            for item in data["extraction_session_ids"]:
-                if not isinstance(item, str):
-                    raise ValueError("extraction_session_ids must contain only strings")
-                if len(item) == 0:
-                    raise ValueError("extraction_session_ids must not contain empty strings")
-
         # Validate source_repo field - must be "owner/repo" format if present
         if "source_repo" in data and data["source_repo"] is not None:
             if not isinstance(data["source_repo"], str):
@@ -477,14 +441,6 @@ class PlanHeaderSchema(MetadataBlockSchema):
             # Validate owner/repo format
             if "/" not in data["source_repo"]:
                 raise ValueError("source_repo must be in 'owner/repo' format")
-
-        # Validate learn mixin: when plan_type is "learn", mixin fields should be present
-        plan_type = data.get("plan_type")
-        if plan_type == "learn":
-            if "source_plan_issues" not in data or data.get("source_plan_issues") is None:
-                raise ValueError("source_plan_issues is required when plan_type is 'learn'")
-            if "extraction_session_ids" not in data or data.get("extraction_session_ids") is None:
-                raise ValueError("extraction_session_ids is required when plan_type is 'learn'")
 
         # Validate optional objective_issue field
         if "objective_issue" in data and data["objective_issue"] is not None:

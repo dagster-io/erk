@@ -86,6 +86,7 @@ class IssueReference:
     issue_url: str
     created_at: str
     synced_at: str
+    labels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -115,6 +116,7 @@ def save_issue_reference(
     issue_number: int,
     issue_url: str,
     issue_title: str | None = None,
+    labels: list[str] | None = None,
 ) -> None:
     """Save GitHub issue reference to .impl/issue.json.
 
@@ -123,6 +125,7 @@ def save_issue_reference(
         issue_number: GitHub issue number
         issue_url: Full GitHub issue URL
         issue_title: Optional issue title for reference
+        labels: Optional list of issue labels (used to detect learn plans)
 
     Raises:
         FileNotFoundError: If impl_dir doesn't exist
@@ -134,12 +137,16 @@ def save_issue_reference(
     issue_file = impl_dir / "issue.json"
     now = datetime.now(UTC).isoformat()
 
-    data: dict[str, str | int] = {
+    data: dict[str, str | int | list[str]] = {
         "issue_number": issue_number,
         "issue_url": issue_url,
         "created_at": now,
         "synced_at": now,
-    } | ({"issue_title": issue_title} if issue_title is not None else {})
+    }
+    if issue_title is not None:
+        data["issue_title"] = issue_title
+    if labels is not None:
+        data["labels"] = labels
 
     issue_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
@@ -175,11 +182,16 @@ def read_issue_reference(impl_dir: Path) -> IssueReference | None:
         # logger.debug(f"issue.json missing required fields: {missing_fields}")
         return None
 
+    # Read optional labels field (for backward compatibility with older issue.json files)
+    labels_list = data.get("labels", [])
+    labels = tuple(labels_list) if isinstance(labels_list, list) else ()
+
     return IssueReference(
         issue_number=data["issue_number"],
         issue_url=data["issue_url"],
         created_at=data["created_at"],
         synced_at=data["synced_at"],
+        labels=labels,
     )
 
 

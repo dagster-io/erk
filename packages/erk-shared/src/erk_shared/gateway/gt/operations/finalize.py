@@ -11,7 +11,6 @@ from pathlib import Path
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
-from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.pr_footer import build_pr_body_footer
 from erk_shared.github.types import GitHubRepoId, PRNotFound
@@ -25,28 +24,20 @@ ERK_SKIP_EXTRACTION_LABEL = "erk-skip-extraction"
 def is_learn_plan(impl_dir: Path) -> bool:
     """Check if the plan in the impl folder is a learn plan.
 
-    Reads plan.md and checks the plan-header metadata block for plan_type: "learn".
+    Checks the labels stored in .impl/issue.json for the "erk-learn" label.
 
     Args:
         impl_dir: Path to .impl/ directory
 
     Returns:
-        True if plan_type is "learn", False otherwise (including if plan.md
-        doesn't exist or metadata block is missing)
+        True if "erk-learn" label is present, False otherwise (including if
+        issue.json doesn't exist or labels field is missing)
     """
-    plan_file = impl_dir / "plan.md"
-
-    if not plan_file.exists():
+    issue_ref = read_issue_reference(impl_dir)
+    if issue_ref is None:
         return False
 
-    plan_content = plan_file.read_text(encoding="utf-8")
-    block = find_metadata_block(plan_content, "plan-header")
-
-    if block is None:
-        return False
-
-    plan_type = block.data.get("plan_type")
-    return plan_type == "learn"
+    return "erk-learn" in issue_ref.labels
 
 
 def execute_finalize(

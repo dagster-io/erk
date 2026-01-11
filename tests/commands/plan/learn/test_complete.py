@@ -1,6 +1,9 @@
 """Tests for erk plan learn complete command.
 
 Layer 4 (Business Logic Tests): Tests learn complete command using fakes.
+
+NOTE: The complete command is deprecated because source_plan_issues
+metadata field has been removed from the schema.
 """
 
 from datetime import UTC, datetime
@@ -8,7 +11,7 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.constants import DOCS_EXTRACTED_LABEL, ERK_LEARN_LABEL, ERK_PLAN_LABEL
+from erk.cli.constants import ERK_LEARN_LABEL, ERK_PLAN_LABEL
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import format_plan_header_body
@@ -16,30 +19,14 @@ from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def _make_learn_issue(
-    number: int,
-    source_plan_issues: list[int],
-    extraction_session_ids: list[str],
-) -> IssueInfo:
-    """Create a learn plan IssueInfo for testing."""
+def _make_learn_issue(number: int) -> IssueInfo:
+    """Create a learn plan IssueInfo for testing.
+
+    Learn plans are identified by the erk-learn label.
+    """
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
-        worktree_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        plan_type="learn",
-        source_plan_issues=source_plan_issues,
-        extraction_session_ids=extraction_session_ids,
-        source_repo=None,
-        objective_issue=None,
     )
     return IssueInfo(
         number=number,
@@ -55,148 +42,28 @@ def _make_learn_issue(
     )
 
 
-def _make_source_issue(number: int, title: str) -> IssueInfo:
-    """Create a source plan IssueInfo for testing."""
-    return IssueInfo(
-        number=number,
-        title=title,
-        body="Source plan body",
-        state="CLOSED",
-        url=f"https://github.com/test-owner/test-repo/issues/{number}",
-        labels=[ERK_PLAN_LABEL],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        author="test-user",
-    )
-
-
-def test_complete_marks_source_plans() -> None:
-    """Test complete adds docs-extracted label to all source plans."""
-    # Arrange
-    learn_issue = _make_learn_issue(
-        number=100,
-        source_plan_issues=[42, 43],
-        extraction_session_ids=["session-abc"],
-    )
-    issues = FakeGitHubIssues(
-        issues={
-            100: learn_issue,
-            42: _make_source_issue(42, "Source Plan 1"),
-            43: _make_source_issue(43, "Source Plan 2"),
-        }
-    )
+def test_complete_is_deprecated() -> None:
+    """Test that complete command shows deprecation error."""
+    learn_issue = _make_learn_issue(number=100)
+    issues = FakeGitHubIssues(issues={100: learn_issue})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act
         result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
-        # Assert
-        assert result.exit_code == 0
-        assert "Marked plan #42 as docs-extracted" in result.output
-        assert "Marked plan #43 as docs-extracted" in result.output
-        assert "marked 2 source plan(s)" in result.output
-
-        # Verify labels were added
-        source_42 = issues.get_issue(env.cwd, 42)
-        source_43 = issues.get_issue(env.cwd, 43)
-        assert DOCS_EXTRACTED_LABEL in source_42.labels
-        assert DOCS_EXTRACTED_LABEL in source_43.labels
-
-
-def test_complete_creates_label_if_missing() -> None:
-    """Test complete creates docs-extracted label in repo if needed."""
-    # Arrange
-    learn_issue = _make_learn_issue(
-        number=100,
-        source_plan_issues=[42],
-        extraction_session_ids=["session-abc"],
-    )
-    issues = FakeGitHubIssues(
-        issues={
-            100: learn_issue,
-            42: _make_source_issue(42, "Source Plan"),
-        },
-        labels=set(),  # No labels in repo
-    )
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
-
-        # Assert
-        assert result.exit_code == 0
-        assert DOCS_EXTRACTED_LABEL in issues.labels
-
-
-def test_complete_idempotent() -> None:
-    """Test complete can be run multiple times safely."""
-    # Arrange - source plan already has the label
-    learn_issue = _make_learn_issue(
-        number=100,
-        source_plan_issues=[42],
-        extraction_session_ids=["session-abc"],
-    )
-    source_issue = _make_source_issue(42, "Source Plan")
-    # Add the label to source issue
-    source_issue = IssueInfo(
-        number=source_issue.number,
-        title=source_issue.title,
-        body=source_issue.body,
-        state=source_issue.state,
-        url=source_issue.url,
-        labels=[ERK_PLAN_LABEL, DOCS_EXTRACTED_LABEL],
-        assignees=[],
-        created_at=source_issue.created_at,
-        updated_at=source_issue.updated_at,
-        author="test-user",
-    )
-    issues = FakeGitHubIssues(
-        issues={
-            100: learn_issue,
-            42: source_issue,
-        },
-        labels={DOCS_EXTRACTED_LABEL},
-    )
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
-
-        # Assert
-        assert result.exit_code == 0
+        # Command should fail with deprecation message
+        assert result.exit_code != 0
+        assert "deprecated" in result.output.lower()
 
 
 def test_complete_rejects_non_learn_plan() -> None:
     """Test complete fails for non-learn plan types."""
-    # Arrange - standard plan (no plan_type or plan_type: standard)
+    # Standard plan (without erk-learn label)
     standard_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
-        worktree_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        plan_type=None,
-        source_plan_issues=None,
-        extraction_session_ids=None,
-        source_repo=None,
-        objective_issue=None,
     )
     standard_issue = IssueInfo(
         number=100,
@@ -216,17 +83,15 @@ def test_complete_rejects_non_learn_plan() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act
         result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
-        # Assert
+        # Should fail because it's not a learn plan
         assert result.exit_code != 0
         assert "not a learn plan" in result.output
 
 
 def test_complete_rejects_issue_without_plan_header() -> None:
     """Test complete fails for issue without plan-header block."""
-    # Arrange - issue without plan-header metadata
     plain_issue = IssueInfo(
         number=100,
         title="Plain Issue",
@@ -245,43 +110,10 @@ def test_complete_rejects_issue_without_plan_header() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act
         result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
 
-        # Assert
         assert result.exit_code != 0
         assert "plan-header" in result.output
-
-
-def test_complete_handles_missing_source_issue() -> None:
-    """Test complete continues when a source issue is missing."""
-    # Arrange - learn references issue 42, but 42 doesn't exist
-    learn_issue = _make_learn_issue(
-        number=100,
-        source_plan_issues=[42, 43],  # 42 doesn't exist
-        extraction_session_ids=["session-abc"],
-    )
-    issues = FakeGitHubIssues(
-        issues={
-            100: learn_issue,
-            43: _make_source_issue(43, "Source Plan 2"),
-            # Issue 42 is missing
-        }
-    )
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(cli, ["plan", "learn", "complete", "100"], obj=ctx)
-
-        # Assert - should partially complete with warning
-        assert result.exit_code == 0
-        assert "Warning" in result.output or "partially completed" in result.output
-        # Issue 43 should still be marked
-        source_43 = issues.get_issue(env.cwd, 43)
-        assert DOCS_EXTRACTED_LABEL in source_43.labels
 
 
 def test_complete_with_invalid_identifier() -> None:
@@ -292,45 +124,7 @@ def test_complete_with_invalid_identifier() -> None:
     with erk_inmem_env(runner) as env:
         ctx = build_workspace_test_context(env, issues=issues)
 
-        # Act
         result = runner.invoke(cli, ["plan", "learn", "complete", "not-a-number"], obj=ctx)
 
-        # Assert
         assert result.exit_code != 0
         assert "Invalid issue number or URL" in result.output
-
-
-def test_complete_with_github_url() -> None:
-    """Test complete accepts GitHub URL as identifier."""
-    # Arrange
-    learn_issue = _make_learn_issue(
-        number=100,
-        source_plan_issues=[42],
-        extraction_session_ids=["session-abc"],
-    )
-    issues = FakeGitHubIssues(
-        issues={
-            100: learn_issue,
-            42: _make_source_issue(42, "Source Plan"),
-        }
-    )
-
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        ctx = build_workspace_test_context(env, issues=issues)
-
-        # Act
-        result = runner.invoke(
-            cli,
-            [
-                "plan",
-                "learn",
-                "complete",
-                "https://github.com/owner/repo/issues/100",
-            ],
-            obj=ctx,
-        )
-
-        # Assert
-        assert result.exit_code == 0
-        assert "Marked plan #42 as docs-extracted" in result.output

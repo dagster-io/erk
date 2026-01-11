@@ -727,7 +727,10 @@ def test_create_plan_standard() -> None:
 
 
 def test_create_plan_with_learn_type() -> None:
-    """Test creating a learn plan with extra labels."""
+    """Test creating a learn plan with extra labels.
+
+    Learn plans are identified by the erk-learn label, not by metadata.
+    """
     fake_github = FakeGitHubIssues(username="testuser", labels={"erk-plan", "erk-learn"})
     store = GitHubPlanStore(fake_github)
 
@@ -736,10 +739,7 @@ def test_create_plan_with_learn_type() -> None:
         title="Learn Plan",
         content="# Learn Plan\n\nContent",
         labels=("erk-plan", "erk-learn"),
-        metadata={
-            "plan_type": "learn",
-            "extraction_session_ids": ["session-abc", "session-def"],
-        },
+        metadata={},
     )
 
     # Verify result

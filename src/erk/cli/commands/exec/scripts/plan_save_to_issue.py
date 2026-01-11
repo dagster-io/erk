@@ -157,17 +157,19 @@ def plan_save_to_issue(
     if config.plans_repo is not None:
         source_repo = get_repo_identifier(ctx)
 
+    # Convert plan_type to extra_labels (erk-learn label indicates learn plans)
+    extra_labels: list[str] | None = None
+    if plan_type == "learn":
+        extra_labels = ["erk-learn"]
+
     # Use consolidated create_plan_issue for the entire workflow
     result = create_plan_issue(
         github_issues=github,
         repo_root=repo_root,
         plan_content=plan,
         title=None,
-        plan_type=plan_type,
-        extra_labels=None,
+        extra_labels=extra_labels,
         title_suffix=None,
-        source_plan_issues=None,
-        extraction_session_ids=None,
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=effective_session_id,

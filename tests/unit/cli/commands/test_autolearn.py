@@ -17,27 +17,26 @@ def _create_plan_issue(
     number: int,
     title: str,
     *,
-    plan_type: str | None = None,
+    is_learn_plan: bool = False,
     created_from_session: str | None = None,
-    source_plan_issues: list[int] | None = None,
-    extraction_session_ids: list[str] | None = None,
 ) -> IssueInfo:
-    """Create a test plan issue with optional plan_type in metadata."""
+    """Create a test plan issue.
+
+    Learn plans are identified by the erk-learn label, not by metadata.
+    """
     body = format_plan_header_body(
         created_at=datetime.now(UTC).isoformat(),
         created_by="testuser",
-        plan_type=plan_type,
         created_from_session=created_from_session,
-        source_plan_issues=source_plan_issues,
-        extraction_session_ids=extraction_session_ids,
     )
+    labels = ["erk-plan", "erk-learn"] if is_learn_plan else ["erk-plan"]
     return IssueInfo(
         number=number,
         title=title,
         body=body,
         state="OPEN",
         url=f"https://github.com/owner/repo/issues/{number}",
-        labels=["erk-plan"] if plan_type is None else ["erk-plan", "erk-learn"],
+        labels=labels,
         assignees=[],
         created_at=datetime.now(UTC),
         updated_at=datetime.now(UTC),
@@ -91,13 +90,11 @@ def test_autolearn_no_plan_prefix_does_nothing(tmp_path: Path) -> None:
 
 def test_autolearn_skips_learn_plans(tmp_path: Path) -> None:
     """Test that autolearn skips branches from learn plan issues."""
-    # Learn plan issues require source_plan_issues and extraction_session_ids to be set
+    # Learn plan issues are identified by the erk-learn label
     issue = _create_plan_issue(
         42,
         "Learn: Some Topic",
-        plan_type="learn",
-        source_plan_issues=[10],
-        extraction_session_ids=["session-123"],
+        is_learn_plan=True,
     )
     issues_ops = FakeGitHubIssues(username="testuser", issues={42: issue})
     global_config = GlobalConfig.test(erk_root=tmp_path, autolearn=True)

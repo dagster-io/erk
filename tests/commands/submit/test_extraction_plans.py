@@ -14,32 +14,37 @@ from tests.commands.submit.conftest import (
 )
 
 
-def test_is_issue_learn_plan_returns_true_for_learn_plan() -> None:
-    """Test is_issue_learn_plan returns True when plan_type is 'learn'."""
-    body = make_learn_plan_body()
-    result = is_issue_learn_plan(body)
+def test_is_issue_learn_plan_returns_true_when_erk_learn_label_present() -> None:
+    """Test is_issue_learn_plan returns True when erk-learn label is present."""
+    labels = ["erk-plan", "erk-learn"]
+    result = is_issue_learn_plan(labels)
     assert result is True
 
 
-def test_is_issue_learn_plan_returns_false_for_standard_plan() -> None:
-    """Test is_issue_learn_plan returns False when plan_type is not 'learn'."""
-    body = make_plan_body()
-    result = is_issue_learn_plan(body)
+def test_is_issue_learn_plan_returns_false_when_erk_learn_label_absent() -> None:
+    """Test is_issue_learn_plan returns False when erk-learn label is not present."""
+    labels = ["erk-plan", "bug"]
+    result = is_issue_learn_plan(labels)
     assert result is False
 
 
-def test_is_issue_learn_plan_returns_false_for_no_metadata() -> None:
-    """Test is_issue_learn_plan returns False when there's no plan-header block."""
-    body = "# Just a plain issue\n\nNo metadata here."
-    result = is_issue_learn_plan(body)
+def test_is_issue_learn_plan_returns_false_for_empty_labels() -> None:
+    """Test is_issue_learn_plan returns False for empty labels list."""
+    labels: list[str] = []
+    result = is_issue_learn_plan(labels)
     assert result is False
 
 
 def test_submit_learn_plan_adds_skip_extraction_label(tmp_path: Path) -> None:
     """Test submit adds erk-skip-extraction label to PR for learn plans."""
-    # Plan with learn plan_type in metadata
+    # Plan with erk-learn label
     learn_body = make_learn_plan_body()
-    plan = create_plan("123", "Extract documentation from session X", body=learn_body)
+    plan = create_plan(
+        "123",
+        "Extract documentation from session X",
+        body=learn_body,
+        labels=["erk-plan", "erk-learn"],
+    )
     ctx, _, fake_github, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
@@ -61,9 +66,9 @@ def test_submit_learn_plan_adds_skip_extraction_label(tmp_path: Path) -> None:
 
 def test_submit_standard_plan_does_not_add_skip_extraction_label(tmp_path: Path) -> None:
     """Test submit does NOT add erk-skip-extraction label for standard plans."""
-    # Standard plan (not learn)
+    # Standard plan (no erk-learn label)
     standard_body = make_plan_body()
-    plan = create_plan("456", "Implement feature Y", body=standard_body)
+    plan = create_plan("456", "Implement feature Y", body=standard_body, labels=["erk-plan"])
     ctx, _, fake_github, _, _ = setup_submit_context(tmp_path, {"456": plan})
 
     runner = CliRunner()
