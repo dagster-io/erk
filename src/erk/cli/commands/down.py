@@ -4,7 +4,7 @@ from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
     check_clean_working_tree,
-    check_pending_extraction_marker,
+    check_pending_learn_marker,
     render_activation_script,
     resolve_down_navigation,
     unallocate_worktree_and_branch,
@@ -73,8 +73,8 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     if delete_current and current_worktree_path is not None:
         check_clean_working_tree(ctx)
         verify_pr_closed_or_merged(ctx, repo.root, current_branch, force)
-        # Check for pending extraction marker
-        check_pending_extraction_marker(current_worktree_path, force)
+        # Check for pending learn marker
+        check_pending_learn_marker(current_worktree_path, force)
 
     # Get all worktrees for checking if target has a worktree
     worktrees = ctx.git.list_worktrees(repo.root)

@@ -5,21 +5,21 @@ state conditions. They persist across sessions and provide friction before
 destructive operations like worktree deletion.
 
 Example:
-    # Create a pending extraction marker after landing a PR
-    create_marker(worktree_path, PENDING_EXTRACTION_MARKER)
+    # Create a pending learn marker after landing a PR
+    create_marker(worktree_path, PENDING_LEARN_MARKER)
 
     # Check if marker exists before deletion
-    if marker_exists(worktree_path, PENDING_EXTRACTION_MARKER):
+    if marker_exists(worktree_path, PENDING_LEARN_MARKER):
         # Block deletion or require --force
 
-    # Delete marker after extraction completes
-    delete_marker(worktree_path, PENDING_EXTRACTION_MARKER)
+    # Delete marker after learn completes
+    delete_marker(worktree_path, PENDING_LEARN_MARKER)
 """
 
 from pathlib import Path
 
 # Marker name constants
-PENDING_EXTRACTION_MARKER = "pending-extraction"
+PENDING_LEARN_MARKER = "pending-learn"
 
 
 def get_marker_path(worktree_path: Path, marker_name: str) -> Path:

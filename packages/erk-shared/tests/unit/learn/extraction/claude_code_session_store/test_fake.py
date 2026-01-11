@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store import (
+from erk_shared.learn.extraction.claude_code_session_store import (
     FakeClaudeCodeSessionStore,
     FakeProject,
     FakeSessionData,

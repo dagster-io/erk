@@ -7,14 +7,14 @@ associated with a plan issue.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation.abc import (
-    ClaudeInstallation,
-    FoundSession,
-)
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
     extract_plan_header_local_impl_session,
+)
+from erk_shared.learn.extraction.claude_installation.abc import (
+    ClaudeInstallation,
+    FoundSession,
 )
 from erk_shared.learn.impl_events import (
     extract_implementation_sessions,

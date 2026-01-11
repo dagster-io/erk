@@ -36,9 +36,9 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
-from erk_shared.extraction.session_schema import extract_session_exchanges_from_jsonl
 from erk_shared.github.metadata.session import render_session_exchanges_block
 from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.learn.extraction.session_schema import extract_session_exchanges_from_jsonl
 from erk_shared.output.next_steps import format_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
@@ -199,10 +199,10 @@ def plan_save_to_issue(
                 click.echo(json.dumps({"success": False, "error": result.error}))
         raise SystemExit(1)
 
-    # DISABLED: Session context embedding is temporarily disabled while rethinking extraction plans
+    # DISABLED: Session context embedding is temporarily disabled while rethinking learn plans
     # To re-enable, uncomment the following block and restore imports:
     #   from erk_shared.context.helpers import require_git
-    #   from erk_shared.extraction.session_context import collect_session_context
+    #   from erk_shared.learn.extraction.session_context import collect_session_context
     #   from erk_shared.github.metadata import render_session_content_blocks
     #
     #   git = require_git(ctx)

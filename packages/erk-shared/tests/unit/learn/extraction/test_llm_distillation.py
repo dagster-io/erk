@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from erk_shared.extraction.llm_distillation import (
+from erk_shared.learn.extraction.llm_distillation import (
     DISTILLATION_PROMPT,
     distill_with_haiku,
 )

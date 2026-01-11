@@ -148,15 +148,15 @@ def test_render_session_content_block_with_chunk_and_label() -> None:
     assert "Session Data (1/3): refactor-cli" in result
 
 
-def test_render_session_content_block_with_extraction_hints() -> None:
-    """Extraction hints are rendered as a bulleted list."""
+def test_render_session_content_block_with_learn_hints() -> None:
+    """Learn hints are rendered as a bulleted list."""
     hints = ["Error handling patterns", "Test fixture setup"]
     result = render_session_content_block(
         "content",
-        extraction_hints=hints,
+        learn_hints=hints,
     )
 
-    assert "**Extraction Hints:**" in result
+    assert "**Learn Hints:**" in result
     assert "- Error handling patterns" in result
     assert "- Test fixture setup" in result
 
@@ -165,7 +165,7 @@ def test_render_session_content_block_without_hints_no_section() -> None:
     """When no hints provided, the hints section is not rendered."""
     result = render_session_content_block("content")
 
-    assert "**Extraction Hints:**" not in result
+    assert "**Learn Hints:**" not in result
 
 
 def test_render_session_content_block_includes_warning_comment() -> None:
@@ -204,22 +204,22 @@ def test_render_session_content_blocks_multiple_chunks() -> None:
 
 
 def test_render_session_content_blocks_hints_only_in_first() -> None:
-    """Extraction hints are only included in the first chunk."""
+    """Learn hints are only included in the first chunk."""
     content = "x" * 5000
     hints = ["Hint 1", "Hint 2"]
     blocks = render_session_content_blocks(
         content,
-        extraction_hints=hints,
+        learn_hints=hints,
         max_chunk_size=1000,
     )
 
     assert len(blocks) > 1
     # First block has hints
-    assert "**Extraction Hints:**" in blocks[0]
+    assert "**Learn Hints:**" in blocks[0]
     assert "- Hint 1" in blocks[0]
     # Subsequent blocks don't have hints
     for block in blocks[1:]:
-        assert "**Extraction Hints:**" not in block
+        assert "**Learn Hints:**" not in block
 
 
 def test_render_session_content_blocks_with_label() -> None:

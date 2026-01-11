@@ -7,8 +7,8 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
+from erk_shared.learn.extraction.raw_learn import create_raw_learn_plan
+from erk_shared.scratch.markers import PENDING_LEARN_MARKER, delete_marker
 
 
 @click.command("raw")
@@ -22,7 +22,7 @@ from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, delete_marker
     "--session-id",
     default=None,
     type=str,
-    help="Current session ID (for extraction)",
+    help="Current session ID (for learn)",
 )
 @click.pass_obj
 def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
@@ -34,7 +34,7 @@ def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
     3. Preprocesses sessions to compressed XML format
     4. Creates a GitHub issue with erk-plan and erk-learn labels
     5. Posts session content as chunked comments
-    6. Deletes the pending-extraction marker if successful
+    6. Deletes the pending-learn marker if successful
 
     Output is JSON with success status, issue URL, and chunk count.
     """
@@ -42,7 +42,7 @@ def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
     repo_root = repo.root
 
     # Call the orchestrator
-    result = create_raw_extraction_plan(
+    result = create_raw_learn_plan(
         github_issues=ctx.issues,
         git=ctx.git,
         claude_installation=ctx.claude_installation,
@@ -52,9 +52,9 @@ def create_raw(ctx: ErkContext, min_size: int, session_id: str | None) -> None:
         min_size=min_size,
     )
 
-    # Delete pending extraction marker if successful
+    # Delete pending learn marker if successful
     if result.success:
-        delete_marker(repo_root, PENDING_EXTRACTION_MARKER)
+        delete_marker(repo_root, PENDING_LEARN_MARKER)
 
     # Output JSON result
     click.echo(json.dumps(asdict(result)))

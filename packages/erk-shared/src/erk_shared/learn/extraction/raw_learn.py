@@ -1,6 +1,6 @@
-"""Raw extraction plan creation orchestrator.
+"""Raw learn plan creation orchestrator.
 
-This module provides the main orchestrator for creating raw extraction plans
+This module provides the main orchestrator for creating raw learn plans
 from Claude Code session logs.
 
 Two-stage preprocessing architecture:
@@ -14,22 +14,22 @@ import uuid
 import warnings
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation import ClaudeInstallation
-from erk_shared.extraction.llm_distillation import distill_with_haiku
-from erk_shared.extraction.session_context import collect_session_context
-from erk_shared.extraction.types import RawExtractionResult
 from erk_shared.git.abc import Git
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata.session import render_session_content_blocks
 from erk_shared.github.plan_issues import create_plan_issue
+from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.llm_distillation import distill_with_haiku
+from erk_shared.learn.extraction.session_context import collect_session_context
+from erk_shared.learn.extraction.types import RawLearnResult
 
 # Enable/disable Stage 2 Haiku distillation
 # When True: Stage 1 mechanical reduction + Stage 2 Haiku distillation
 # When False: Stage 1 only (deterministic, no LLM cost)
 USE_LLM_DISTILLATION = False
 
-# Template for raw extraction plan body (branch_name will be interpolated)
-RAW_EXTRACTION_BODY_TEMPLATE = """# Extraction Plan: {branch_name}
+# Template for raw learn plan body (branch_name will be interpolated)
+RAW_LEARN_BODY_TEMPLATE = """# Learn Plan: {branch_name}
 
 ## Objective
 
@@ -104,19 +104,19 @@ For each documentation item created, report:
 """
 
 
-def get_raw_extraction_body(branch_name: str) -> str:
-    """Get the raw extraction plan body with branch name interpolated.
+def get_raw_learn_body(branch_name: str) -> str:
+    """Get the raw learn plan body with branch name interpolated.
 
     Args:
         branch_name: The branch name to include in the plan.
 
     Returns:
-        The formatted extraction plan body.
+        The formatted learn plan body.
     """
-    return RAW_EXTRACTION_BODY_TEMPLATE.format(branch_name=branch_name)
+    return RAW_LEARN_BODY_TEMPLATE.format(branch_name=branch_name)
 
 
-def create_raw_extraction_plan(
+def create_raw_learn_plan(
     *,
     github_issues: GitHubIssues,
     git: Git,
@@ -125,8 +125,8 @@ def create_raw_extraction_plan(
     cwd: Path,
     current_session_id: str | None,
     min_size: int,
-) -> RawExtractionResult:
-    """Create an extraction plan with raw session context.
+) -> RawLearnResult:
+    """Create a learn plan with raw session context.
 
     This is the main orchestrator function that:
     1. Collects session context via collect_session_context()
@@ -146,11 +146,11 @@ def create_raw_extraction_plan(
         min_size: Minimum session size in bytes for selection
 
     Returns:
-        RawExtractionResult with success status and created issue info
+        RawLearnResult with success status and created issue info
     """
     # Generate fallback session ID if not provided (e.g., running outside Claude session)
     if current_session_id is None:
-        current_session_id = f"extraction-{uuid.uuid4().hex[:8]}"
+        current_session_id = f"learn-{uuid.uuid4().hex[:8]}"
 
     # Collect session context using shared helper
     session_result = collect_session_context(
@@ -163,7 +163,7 @@ def create_raw_extraction_plan(
     )
 
     if session_result is None:
-        return RawExtractionResult(
+        return RawLearnResult(
             success=False,
             issue_url=None,
             issue_number=None,
@@ -195,15 +195,15 @@ def create_raw_extraction_plan(
 
     # Render session content blocks (handles chunking)
     session_label = branch_context.current_branch or "session"
-    extraction_hints = ["Session data for future documentation extraction"]
+    learn_hints = ["Session data for future documentation learning"]
     content_blocks = render_session_content_blocks(
         content=combined_xml,
         session_label=session_label,
-        extraction_hints=extraction_hints,
+        learn_hints=learn_hints,
     )
 
-    # Get raw extraction body (plan content)
-    raw_body = get_raw_extraction_body(session_label)
+    # Get raw learn body (plan content)
+    raw_body = get_raw_learn_body(session_label)
 
     # Use consolidated create_plan_issue for core workflow
     plan_result = create_plan_issue(
@@ -219,7 +219,7 @@ def create_raw_extraction_plan(
     )
 
     if not plan_result.success:
-        return RawExtractionResult(
+        return RawLearnResult(
             success=False,
             issue_url=plan_result.issue_url,
             issue_number=plan_result.issue_number,
@@ -232,7 +232,7 @@ def create_raw_extraction_plan(
     issue_number = plan_result.issue_number
     if issue_number is None:
         # Defensive check - should never happen when success=True
-        return RawExtractionResult(
+        return RawLearnResult(
             success=False,
             issue_url=plan_result.issue_url,
             issue_number=None,
@@ -241,12 +241,12 @@ def create_raw_extraction_plan(
             error="Internal error: issue_number is None after successful creation",
         )
 
-    # Add session XML chunks as additional comments (raw extraction specific)
+    # Add session XML chunks as additional comments (raw learn specific)
     try:
         for block in content_blocks:
             github_issues.add_comment(repo_root, issue_number, block)
     except RuntimeError as e:
-        return RawExtractionResult(
+        return RawLearnResult(
             success=False,
             issue_url=plan_result.issue_url,
             issue_number=issue_number,
@@ -255,7 +255,7 @@ def create_raw_extraction_plan(
             error=f"Issue created but failed to add session content: {e}",
         )
 
-    return RawExtractionResult(
+    return RawLearnResult(
         success=True,
         issue_url=plan_result.issue_url,
         issue_number=issue_number,

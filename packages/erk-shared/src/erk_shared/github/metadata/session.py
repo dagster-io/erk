@@ -3,7 +3,7 @@
 These support storing session content in GitHub issue comments, with:
 - Chunking for large sessions (GitHub comment size limit is 65536 bytes)
 - Numbered chunks for navigation
-- Extraction hints about potential documentation patterns
+- Learn hints about potential documentation patterns
 - Metadata-derived naming (branch name, first message)
 """
 
@@ -93,7 +93,7 @@ def render_session_content_block(
     chunk_number: int | None = None,
     total_chunks: int | None = None,
     session_label: str | None = None,
-    extraction_hints: list[str] | None = None,
+    learn_hints: list[str] | None = None,
 ) -> str:
     """Render session content in a code fence within metadata block structure.
 
@@ -105,7 +105,7 @@ def render_session_content_block(
         chunk_number: Current chunk number (1-indexed), if chunked
         total_chunks: Total number of chunks, if chunked
         session_label: Label for the session (e.g., branch name, "fix-auth-bug")
-        extraction_hints: List of hints about potential extractions
+        learn_hints: List of hints about potential learnings
 
     Returns:
         Rendered metadata block markdown string
@@ -116,7 +116,7 @@ def render_session_content_block(
         <details>
         <summary><strong>Session Data (1/3): fix-auth-bug</strong></summary>
 
-        **Extraction Hints:**
+        **Learn Hints:**
         - Error handling patterns
         - Test fixture setup
 
@@ -142,11 +142,11 @@ def render_session_content_block(
 
     summary_text = "".join(summary_parts)
 
-    # Build extraction hints section if provided
+    # Build learn hints section if provided
     hints_section = ""
-    if extraction_hints:
-        hints_lines = ["**Extraction Hints:**"]
-        for hint in extraction_hints:
+    if learn_hints:
+        hints_lines = ["**Learn Hints:**"]
+        for hint in learn_hints:
             hints_lines.append(f"- {hint}")
         hints_section = "\n".join(hints_lines) + "\n\n"
 
@@ -178,7 +178,7 @@ def extract_session_content_from_block(block_body: str) -> str | None:
     # <details>
     # <summary><strong>Session Data...</strong></summary>
     #
-    # [Optional: **Extraction Hints:**...]
+    # [Optional: **Learn Hints:**...]
     #
     # ```xml
     # <session content here>
@@ -281,7 +281,7 @@ def render_session_content_blocks(
     content: str,
     *,
     session_label: str | None = None,
-    extraction_hints: list[str] | None = None,
+    learn_hints: list[str] | None = None,
     max_chunk_size: int | None = None,
 ) -> list[str]:
     """Render session content as one or more metadata blocks.
@@ -292,7 +292,7 @@ def render_session_content_blocks(
     Args:
         content: The full session XML content
         session_label: Label for the session (e.g., branch name)
-        extraction_hints: List of hints about potential extractions
+        learn_hints: List of hints about potential learnings
             (only included in first chunk)
         max_chunk_size: Maximum size per chunk in bytes. If None, uses
             GITHUB_COMMENT_SIZE_LIMIT - CHUNK_SAFETY_BUFFER.
@@ -308,9 +308,9 @@ def render_session_content_blocks(
 
     # Hints overhead is only in first chunk
     hints_overhead = 0
-    if extraction_hints:
-        hints_overhead = sum(len(f"- {hint}\n".encode()) for hint in extraction_hints)
-        hints_overhead += len(b"**Extraction Hints:**\n\n")
+    if learn_hints:
+        hints_overhead = sum(len(f"- {hint}\n".encode()) for hint in learn_hints)
+        hints_overhead += len(b"**Learn Hints:**\n\n")
 
     # Adjust chunk size for wrapper overhead
     content_max_size = max_chunk_size - wrapper_overhead
@@ -321,7 +321,7 @@ def render_session_content_blocks(
     blocks: list[str] = []
     for i, chunk_content in enumerate(chunks, start=1):
         # Only include hints in the first chunk
-        chunk_hints = extraction_hints if i == 1 else None
+        chunk_hints = learn_hints if i == 1 else None
 
         # Only include chunk numbers if there are multiple chunks
         chunk_num = i if total_chunks > 1 else None
@@ -332,7 +332,7 @@ def render_session_content_blocks(
             chunk_number=chunk_num,
             total_chunks=total,
             session_label=session_label,
-            extraction_hints=chunk_hints,
+            learn_hints=chunk_hints,
         )
         blocks.append(block)
 

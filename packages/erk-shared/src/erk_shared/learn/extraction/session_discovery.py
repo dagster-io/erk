@@ -6,8 +6,8 @@ in a project directory.
 
 from pathlib import Path
 
-from erk_shared.extraction.types import BranchContext, SessionInfo
 from erk_shared.git.abc import Git
+from erk_shared.learn.extraction.types import BranchContext, SessionInfo
 
 
 def get_branch_context(git: Git, cwd: Path) -> BranchContext:

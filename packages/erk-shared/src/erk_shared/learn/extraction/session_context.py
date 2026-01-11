@@ -8,12 +8,12 @@ plan-save-to-issue and raw extraction workflows.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation import ClaudeInstallation
-from erk_shared.extraction.session_discovery import get_branch_context
-from erk_shared.extraction.session_preprocessing import preprocess_session_content
-from erk_shared.extraction.session_selection import auto_select_sessions
-from erk_shared.extraction.types import BranchContext
 from erk_shared.git.abc import Git
+from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.session_discovery import get_branch_context
+from erk_shared.learn.extraction.session_preprocessing import preprocess_session_content
+from erk_shared.learn.extraction.session_selection import auto_select_sessions
+from erk_shared.learn.extraction.types import BranchContext
 
 
 @dataclass(frozen=True)

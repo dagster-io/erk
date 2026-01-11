@@ -2,16 +2,16 @@
 
 from pathlib import Path
 
-from erk_shared.extraction.claude_code_session_store import (
+from erk_shared.git.fake import FakeGit
+from erk_shared.learn.extraction.claude_code_session_store import (
     FakeClaudeCodeSessionStore,
     FakeProject,
     FakeSessionData,
 )
-from erk_shared.extraction.session_context import (
+from erk_shared.learn.extraction.session_context import (
     SessionContextResult,
     collect_session_context,
 )
-from erk_shared.git.fake import FakeGit
 
 
 def test_collect_session_context_success(tmp_path: Path) -> None:

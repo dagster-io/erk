@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from erk_shared.extraction.session_selection import auto_select_sessions
-from erk_shared.extraction.types import BranchContext, SessionInfo
+from erk_shared.learn.extraction.session_selection import auto_select_sessions
+from erk_shared.learn.extraction.types import BranchContext, SessionInfo
 
 
 def make_session(

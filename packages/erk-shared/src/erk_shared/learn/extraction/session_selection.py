@@ -4,8 +4,8 @@ This module provides the auto-selection algorithm for choosing
 which sessions to include in an extraction plan.
 """
 
-from erk_shared.extraction.claude_installation import Session
-from erk_shared.extraction.types import BranchContext
+from erk_shared.learn.extraction.claude_installation import Session
+from erk_shared.learn.extraction.types import BranchContext
 
 # Default threshold for considering a session "substantial"
 DEFAULT_MIN_SUBSTANTIAL_SIZE = 1024

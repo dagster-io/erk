@@ -3,14 +3,14 @@
 import json
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation.abc import (
+from erk_shared.learn.extraction.claude_installation.abc import (
     ClaudeInstallation,
     FoundSession,
     Session,
     SessionContent,
     SessionNotFound,
 )
-from erk_shared.extraction.session_schema import (
+from erk_shared.learn.extraction.session_schema import (
     extract_agent_id_from_tool_result,
     extract_task_tool_use_id,
 )

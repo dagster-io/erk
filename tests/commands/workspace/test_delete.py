@@ -19,7 +19,7 @@ from erk_shared.github.metadata.core import render_metadata_block
 from erk_shared.github.metadata.types import MetadataBlock
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from erk_shared.plan_store.types import Plan, PlanState
-from erk_shared.scratch.markers import PENDING_EXTRACTION_MARKER, create_marker
+from erk_shared.scratch.markers import PENDING_LEARN_MARKER, create_marker
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -368,15 +368,15 @@ def test_delete_with_branch_graphite_enabled_but_untracked() -> None:
         )
 
 
-def test_delete_blocks_when_pending_extraction_marker_exists() -> None:
-    """Test that delete blocks when pending extraction marker exists."""
+def test_delete_blocks_when_pending_learn_marker_exists() -> None:
+    """Test that delete blocks when pending learn marker exists."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "foo"
 
-        # Create the pending extraction marker
-        create_marker(wt, PENDING_EXTRACTION_MARKER)
+        # Create the pending learn marker
+        create_marker(wt, PENDING_LEARN_MARKER)
 
         test_ctx = build_workspace_test_context(env, existing_paths={wt})
         result = runner.invoke(cli, ["wt", "delete", "foo"], obj=test_ctx)
@@ -384,30 +384,30 @@ def test_delete_blocks_when_pending_extraction_marker_exists() -> None:
         assert_cli_error(
             result,
             1,
-            "Worktree has pending extraction",
-            "erk plan extraction raw",
+            "Worktree has pending learn",
+            "erk plan learn raw",
         )
 
         # Verify worktree was NOT deleted
         assert test_ctx.git.path_exists(wt)
 
 
-def test_delete_force_bypasses_pending_extraction_marker() -> None:
-    """Test that delete --force bypasses the pending extraction marker check."""
+def test_delete_force_bypasses_pending_learn_marker() -> None:
+    """Test that delete --force bypasses the pending learn marker check."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_name = env.cwd.name
         wt = env.erk_root / "repos" / repo_name / "worktrees" / "foo"
 
-        # Create the pending extraction marker
-        create_marker(wt, PENDING_EXTRACTION_MARKER)
+        # Create the pending learn marker
+        create_marker(wt, PENDING_LEARN_MARKER)
 
         test_ctx = build_workspace_test_context(env, existing_paths={wt})
         result = runner.invoke(cli, ["wt", "delete", "foo", "-f"], obj=test_ctx)
 
         # Should succeed with warning
         assert result.exit_code == 0
-        assert "Skipping pending extraction" in result.output
+        assert "Skipping pending learn" in result.output
 
         # Verify worktree was deleted
         assert not test_ctx.git.path_exists(wt)

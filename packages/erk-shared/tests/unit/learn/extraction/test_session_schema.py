@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from erk_shared.extraction.session_schema import (
+from erk_shared.learn.extraction.session_schema import (
     SessionExchange,
     TaskInfo,
     extract_agent_id_from_tool_result,
