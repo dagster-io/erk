@@ -30,9 +30,6 @@ from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
-from erk.cli.commands.exec.scripts.extract_session_from_issue import (
-    extract_session_from_issue,
-)
 from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
 from erk.cli.commands.exec.scripts.generate_pr_summary import generate_pr_summary
 from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
@@ -120,7 +117,6 @@ exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-f
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
-exec_group.add_command(extract_session_from_issue, name="extract-session-from-issue")
 exec_group.add_command(find_project_dir, name="find-project-dir")
 exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")

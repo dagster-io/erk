@@ -192,8 +192,8 @@ Steps here"""
     assert color == "0E8A16"
 
 
-def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
-    """Test that session context is NOT captured (feature disabled)."""
+def test_plan_save_to_issue_session_context_removed(tmp_path: Path) -> None:
+    """Test that session context embedding feature has been removed."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature-branch"},
@@ -241,9 +241,9 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    # Session context embedding is disabled - always returns 0 chunks and empty session_ids
-    assert output["session_context_chunks"] == 0
-    assert output["session_ids"] == []
+    # Session embedding fields are no longer present in output
+    assert "session_context_chunks" not in output
+    assert "session_ids" not in output
 
     # Plan comment + session exchanges comment are posted (but no session context)
     assert len(fake_gh.added_comments) == 2
@@ -256,8 +256,8 @@ def test_plan_save_to_issue_session_context_disabled(tmp_path: Path) -> None:
     assert "*User:*" in exchanges_comment
 
 
-def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
-    """Test session context is skipped when no session ID provided."""
+def test_plan_save_to_issue_no_session_exchanges_without_session_id() -> None:
+    """Test session exchanges comment is skipped when no session ID provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     plan_content = """# Feature Plan
@@ -281,15 +281,16 @@ def test_plan_save_to_issue_session_context_skipped_when_none() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
     assert output["success"] is True
-    assert output["session_context_chunks"] == 0
-    assert output["session_ids"] == []
+    # Session embedding fields are no longer present
+    assert "session_context_chunks" not in output
+    assert "session_ids" not in output
 
-    # Only plan comment, no session context
+    # Only plan comment, no session exchanges without session ID
     assert len(fake_gh.added_comments) == 1
 
 
-def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
-    """Test JSON output includes session_context_chunks and session_ids fields."""
+def test_plan_save_to_issue_json_output_no_session_metadata() -> None:
+    """Test JSON output no longer includes session embedding fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     plan_content = """# Feature
@@ -312,17 +313,19 @@ def test_plan_save_to_issue_json_output_includes_session_metadata() -> None:
     assert result.exit_code == 0
     output = json.loads(result.output)
 
-    # Verify both fields are always present
-    assert "session_context_chunks" in output
-    assert "session_ids" in output
-    assert isinstance(output["session_context_chunks"], int)
-    assert isinstance(output["session_ids"], list)
+    # Verify session embedding fields are NOT present (feature removed)
+    assert "session_context_chunks" not in output
+    assert "session_ids" not in output
+    # Verify core fields are present
+    assert "success" in output
+    assert "issue_number" in output
+    assert "title" in output
 
 
 def test_plan_save_to_issue_session_id_still_creates_marker(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """Test that --session-id argument still creates marker file even with context disabled."""
+    """Test that --session-id argument still creates marker file."""
     _ = monkeypatch  # Unused but kept for test signature compatibility
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -355,11 +358,11 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
         assert result.exit_code == 0, f"Failed: {result.output}"
         output = json.loads(result.output)
         assert output["success"] is True
-        # Session context embedding is disabled - session_ids will be empty
-        assert output["session_ids"] == []
-        assert output["session_context_chunks"] == 0
+        # Session embedding fields are no longer present
+        assert "session_ids" not in output
+        assert "session_context_chunks" not in output
 
-        # But marker file should still be created
+        # Marker file should still be created
         marker_file = (
             Path(td)
             / ".erk"
@@ -418,8 +421,8 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
     assert "Session context:" not in result.output
 
 
-def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path) -> None:
-    """Test that no session context is captured when --session-id is not provided."""
+def test_plan_save_to_issue_no_session_exchanges_without_flag(tmp_path: Path) -> None:
+    """Test that no session exchanges are posted when --session-id is not provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
         current_branches={tmp_path: "feature"},
@@ -464,16 +467,16 @@ def test_plan_save_to_issue_no_session_context_without_session_id(tmp_path: Path
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    # Without --session-id, no session context is captured
-    assert output["session_ids"] == []
-    assert output["session_context_chunks"] == 0
+    # Session embedding fields are no longer present
+    assert "session_ids" not in output
+    assert "session_context_chunks" not in output
 
 
-def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: Path) -> None:
-    """Test --session-id flag does NOT capture context (feature disabled).
+def test_plan_save_to_issue_session_id_posts_exchanges_comment(tmp_path: Path) -> None:
+    """Test --session-id flag posts session exchanges comment.
 
-    Even when --session-id is provided, session context is not captured
-    because the feature is disabled.
+    When --session-id is provided, session exchanges (prompts with context)
+    are posted as a comment, but NOT the full session embedding.
     """
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit(
@@ -521,9 +524,9 @@ def test_plan_save_to_issue_session_id_flag_does_not_capture_context(tmp_path: P
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
-    # Session context embedding is disabled - session_ids will be empty
-    assert output["session_ids"] == []
-    assert output["session_context_chunks"] == 0
+    # Session embedding fields are no longer present
+    assert "session_ids" not in output
+    assert "session_context_chunks" not in output
 
 
 def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:

@@ -1,11 +1,11 @@
 # Extraction Module API Reference
 
 Complete reference for the `erk_shared.extraction` module - programmatic access to session
-discovery, selection, preprocessing, and extraction.
+discovery, selection, and preprocessing.
 
 ## Module Overview
 
-The extraction module provides a two-stage pipeline for converting Claude Code session logs
+The extraction module provides a pipeline for converting Claude Code session logs
 into usable documentation material:
 
 ```
@@ -13,16 +13,10 @@ discover_sessions()
     ↓ [min_size filter, newest-first sort]
 auto_select_sessions()
     ↓ [branch context determines behavior]
-collect_session_context()
-    ↓ [orchestrates all steps]
 preprocess_session()
-    ↓ [Stage 1: mechanical reduction]
+    ↓ [mechanical reduction]
 (distill_with_haiku() if enabled)
-    ↓ [Stage 2: optional semantic filtering]
-render_session_content_blocks()
-    ↓ [chunk if needed for GitHub]
-create_raw_extraction_plan()
-    ↓ [create GitHub issue + comments]
+    ↓ [optional semantic filtering]
 ```
 
 ---
@@ -53,33 +47,6 @@ class BranchContext:
     current_branch: str   # Current git branch name
     trunk_branch: str     # Trunk branch (main/master)
     is_on_trunk: bool     # True if current_branch == trunk_branch
-```
-
-### SessionContextResult
-
-```python
-from erk_shared.extraction.session_context import SessionContextResult
-
-@dataclass
-class SessionContextResult:
-    combined_xml: str              # Preprocessed session content as XML
-    session_ids: list[str]         # Session IDs that were processed
-    branch_context: BranchContext  # Git branch context at time of collection
-```
-
-### RawExtractionResult
-
-```python
-from erk_shared.extraction.types import RawExtractionResult
-
-@dataclass(frozen=True)
-class RawExtractionResult:
-    success: bool
-    issue_url: str | None
-    issue_number: int | None
-    chunks: int                    # Number of comment chunks created
-    sessions_processed: list[str]  # Session IDs included
-    error: str | None = None
 ```
 
 ---
@@ -338,168 +305,6 @@ def distill_with_haiku(
     """
 ```
 
-**Note:** Stage 2 is controlled by `USE_LLM_DISTILLATION` flag in `raw_extraction.py` (default: False).
-
----
-
-## Session Context Orchestration
-
-### collect_session_context
-
-```python
-from erk_shared.extraction.session_context import collect_session_context
-
-def collect_session_context(
-    git: Git,
-    cwd: Path,
-    session_store: ClaudeCodeSessionStore,
-    current_session_id: str | None,
-    min_size: int = 1024,
-    limit: int = 20
-) -> SessionContextResult | None:
-    """Main orchestrator - combines discovery, selection, and preprocessing.
-
-    Workflow:
-    1. Check current_session_id is provided (returns None if not)
-    2. Find project directory via session_store
-    3. Get branch context
-    4. Discover available sessions
-    5. Auto-select based on branch context
-    6. Preprocess selected sessions to XML
-    7. Combine multiple sessions into single XML
-
-    Args:
-        git: Git interface (from ErkContext)
-        cwd: Current working directory
-        session_store: Session store for project lookup
-        current_session_id: Required session ID (passed explicitly via CLI)
-        min_size: Minimum session size for discovery
-        limit: Maximum sessions to discover
-
-    Returns:
-        SessionContextResult with combined_xml, session_ids, branch_context.
-        Returns None if:
-        - No current_session_id provided
-        - No project directory found
-        - No sessions discovered
-        - All sessions empty after preprocessing
-    """
-```
-
----
-
-## Raw Extraction Plan Creation
-
-### create_raw_extraction_plan
-
-```python
-from erk_shared.extraction.raw_extraction import create_raw_extraction_plan
-
-def create_raw_extraction_plan(
-    github_issues: GitHubIssues,
-    git: Git,
-    repo_root: Path,
-    cwd: Path,
-    current_session_id: str | None = None,
-    min_size: int = 1024
-) -> RawExtractionResult:
-    """Create extraction plan GitHub issue with session context.
-
-    Workflow:
-    1. Collect session context via collect_session_context()
-    2. Optionally apply Haiku distillation (Stage 2) if enabled
-    3. Render via render_session_content_blocks() (handles chunking)
-    4. Create GitHub issue with plan template
-    5. Post chunked session content as additional comments
-
-    Args:
-        github_issues: GitHub issues interface
-        git: Git interface
-        repo_root: Repository root path
-        cwd: Current working directory
-        current_session_id: Override auto-detection
-        min_size: Minimum session size
-
-    Returns:
-        RawExtractionResult with success status, issue URL, chunks count.
-    """
-```
-
----
-
-## GitHub Metadata (Session Content Rendering)
-
-### render_session_content_blocks
-
-```python
-from erk_shared.github.metadata import render_session_content_blocks
-
-def render_session_content_blocks(
-    content: str,
-    *,
-    session_label: str | None = None,
-    extraction_hints: list[str] | None = None,
-    max_chunk_size: int = 64536
-) -> list[str]:
-    """Render session content as GitHub comment blocks.
-
-    Features:
-    - Automatic chunking for GitHub's 65536 byte limit
-    - Line-aware splitting
-    - Chunk numbers for multi-chunk content
-    - Collapsible details blocks
-
-    Args:
-        content: Session XML content
-        session_label: Label (e.g., branch name)
-        extraction_hints: Hints for extractors
-        max_chunk_size: Maximum chunk size (default: 64536)
-
-    Returns:
-        List of formatted comment blocks (as markdown).
-    """
-```
-
-### chunk_session_content
-
-```python
-from erk_shared.github.metadata import chunk_session_content
-
-def chunk_session_content(
-    content: str,
-    max_chunk_size: int = 64536
-) -> list[str]:
-    """Split session content into chunks for GitHub comments.
-
-    Features:
-    - Line-aware splitting (doesn't break mid-line)
-    - Respects GitHub's 65536 byte limit
-    - Safety buffer of ~1000 bytes
-
-    Returns:
-        List of content chunks.
-    """
-```
-
-### extract_session_content_from_comments
-
-```python
-from erk_shared.github.metadata import extract_session_content_from_comments
-
-def extract_session_content_from_comments(
-    comments: list[str]
-) -> tuple[str | None, list[str]]:
-    """Extract and combine chunked session content from GitHub comments.
-
-    Args:
-        comments: List of comment bodies
-
-    Returns:
-        Tuple of (combined_session_xml, list_of_session_ids).
-        Returns (None, []) if no session content found.
-    """
-```
-
 ---
 
 ## Scratch Storage
@@ -610,37 +415,19 @@ for s in sessions:
     print(f"{s.session_id[:8]} - {s.size_bytes} bytes{marker}")
 ```
 
-### Full Extraction Workflow
+### Session Preprocessing
 
 ```python
 from pathlib import Path
-from erk_shared.extraction.session_context import collect_session_context
-from erk_shared.github.metadata import render_session_content_blocks
+from erk_shared.extraction.session_preprocessing import preprocess_session
 
-# Session ID is passed explicitly via CLI --session-id option
-session_id = "abc123-def456"  # From CLI argument
-
-# Assumes ctx is an ErkContext
-result = collect_session_context(
-    git=ctx.git,
-    cwd=ctx.cwd,
-    session_store=ctx.session_store,
-    current_session_id=session_id,
-    min_size=1024
+# Preprocess a session to compressed XML
+session_path = Path("~/.claude/projects/-home-user-myproject/abc123.jsonl")
+xml_content = preprocess_session(
+    session_path,
+    session_id="abc123",
+    include_agents=True
 )
 
-if result is None:
-    print("No sessions to extract")
-    exit(1)
-
-print(f"Collected {len(result.session_ids)} sessions")
-print(f"Branch: {result.branch_context.current_branch}")
-
-# Render for GitHub
-blocks = render_session_content_blocks(
-    result.combined_xml,
-    session_label=result.branch_context.current_branch
-)
-
-print(f"Generated {len(blocks)} comment blocks")
+print(f"Generated {len(xml_content)} bytes of compressed XML")
 ```

@@ -22,15 +22,3 @@ class BranchContext:
     current_branch: str
     trunk_branch: str
     is_on_trunk: bool
-
-
-@dataclass(frozen=True)
-class RawLearnResult:
-    """Result of creating a raw learn plan."""
-
-    success: bool
-    issue_url: str | None
-    issue_number: int | None
-    chunks: int
-    sessions_processed: list[str]
-    error: str | None = None
