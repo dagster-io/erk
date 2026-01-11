@@ -33,6 +33,7 @@ from erk.core.capabilities.skills import (
     FakeDrivenTestingCapability,
 )
 from erk.core.capabilities.statusline import StatuslineCapability
+from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability
 from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 
@@ -776,6 +777,58 @@ def test_dignified_review_capability_registered() -> None:
     cap = get_capability("dignified-review")
     assert cap is not None
     assert cap.name == "dignified-review"
+
+
+# =============================================================================
+# Tests for TripwiresReviewCapability
+# =============================================================================
+
+
+def test_tripwires_review_capability_properties() -> None:
+    """Test TripwiresReviewCapability has correct properties."""
+    cap = TripwiresReviewCapability()
+    assert cap.name == "tripwires-review"
+    assert cap.scope == "project"
+    assert "tripwire" in cap.description.lower() or "code review" in cap.description.lower()
+    assert "tripwires-review.yml" in cap.installation_check_description
+
+
+def test_tripwires_review_artifacts() -> None:
+    """Test TripwiresReviewCapability lists correct artifacts."""
+    cap = TripwiresReviewCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 2
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/tripwires-review.yml" in paths
+    assert ".github/prompts/tripwires-review.md" in paths
+
+
+def test_tripwires_review_is_installed_false_when_missing(tmp_path: Path) -> None:
+    """Test is_installed returns False when workflow file doesn't exist."""
+    cap = TripwiresReviewCapability()
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_tripwires_review_is_installed_true_when_exists(tmp_path: Path) -> None:
+    """Test is_installed returns True when workflow file exists."""
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "tripwires-review.yml").write_text("", encoding="utf-8")
+    cap = TripwiresReviewCapability()
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_tripwires_review_capability_registered() -> None:
+    """Test that tripwires-review capability is registered."""
+    cap = get_capability("tripwires-review")
+    assert cap is not None
+    assert cap.name == "tripwires-review"
+
+
+def test_tripwires_review_is_not_required() -> None:
+    """Test that TripwiresReviewCapability is not required."""
+    cap = TripwiresReviewCapability()
+    assert cap.required is False
 
 
 # =============================================================================
