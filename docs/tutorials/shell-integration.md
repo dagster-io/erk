@@ -159,7 +159,7 @@ command erk wt checkout my-feature
 
 This bypasses the shell function and spawns a subshell as usual.
 
-## See Also
+## Next Steps
 
+- [Graphite Integration](graphite-integration.md) - Stacked PR workflows
 - [Shell Integration Troubleshooting](../faq/shell-integration.md) - Detailed problem solving
-- [Installation](installation.md) - Initial erk setup

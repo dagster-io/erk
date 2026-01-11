@@ -173,8 +173,6 @@ This:
 4. Frees the worktree for reuse
 5. Returns you to the main worktree
 
-<!-- TODO: Link to worktree management guide explaining slots -->
-
 ## What You've Learned
 
 You've completed the full erk workflow:
