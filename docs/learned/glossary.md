@@ -851,12 +851,26 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 
 - Created from session analysis to capture valuable insights
 - Contains documentation items rather than code changes
-- Marked with `plan_type: learn` in the plan-header metadata
+- Identified by the `erk-learn` label on the GitHub issue
 - PRs from learn plans receive the `erk-skip-extraction` label
 
 **Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
 
-**Related**: [erk-skip-extraction](#erk-skip-extraction), [Plan Lifecycle](planning/lifecycle.md)
+**Related**: [erk-skip-extraction](#erk-skip-extraction), [Autolearn](#autolearn), [Plan Lifecycle](planning/lifecycle.md)
+
+### Autolearn
+
+An optional feature that automatically creates learn plans when landing PRs from plan branches. When enabled, `erk pr land` triggers insight extraction from the implementation session.
+
+**Configuration**:
+
+- Enable: `erk config set autolearn true`
+- Disable: `erk config set autolearn false`
+- Skip once: `erk pr land --no-autolearn`
+
+**Behavior**: After successfully landing a PR, if autolearn is enabled and the branch is a plan branch (P{number}-...), erk creates a learn plan from the implementation session.
+
+**Related**: [Learn Plan](#learn-plan)
 
 ### erk-skip-extraction
 
@@ -866,8 +880,8 @@ A GitHub label added to PRs that originate from learn plans. When `erk pr land` 
 
 **Applied by**:
 
-- `erk plan submit` when the source issue has `plan_type: learn`
-- `gt finalize` when the `.impl/plan.md` has `plan_type: learn`
+- `erk plan submit` when the source issue has the `erk-learn` label
+- `gt finalize` when `.impl/issue.json` labels include `erk-learn`
 
 **Checked by**:
 

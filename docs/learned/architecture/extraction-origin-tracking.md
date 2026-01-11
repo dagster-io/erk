@@ -49,8 +49,8 @@ if is_learn_plan(plan_metadata) or is_issue_learn_plan(issue_metadata):
 
 The label is applied by:
 
-- `erk plan submit` - Checks issue's `plan_type` field in plan-header metadata
-- `gt finalize` - Checks `.impl/plan.md` for `plan_type: learn`
+- `erk plan submit` - Checks if source issue has `erk-learn` label
+- `gt finalize` - Checks if `.impl/issue.json` labels include `erk-learn`
 
 ### 2. PR Landing (`land_cmd.py`)
 

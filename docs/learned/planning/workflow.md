@@ -313,3 +313,46 @@ gh run watch
 
 - `/erk:system:impl-execute` - Save plan to GitHub AND implement (full workflow: save → setup → implement → CI → PR)
 - `erk implement <issue>` - Create worktree and implement plan from existing GitHub issue
+
+## Autolearn Workflow
+
+Autolearn automatically captures learnings when PRs are landed, creating documentation improvements without manual intervention.
+
+### Enabling Autolearn
+
+```bash
+# Enable autolearn globally
+erk config set autolearn true
+
+# Disable autolearn
+erk config set autolearn false
+```
+
+### How It Works
+
+When `erk pr land` is called with autolearn enabled:
+
+1. PR is merged normally
+2. If the branch is a plan branch (P{number}-...):
+   - Erk analyzes the implementation session
+   - Creates a learn plan capturing documentation improvements
+   - The learn plan becomes a new GitHub issue with `erk-learn` label
+3. Worktree cleanup proceeds as normal
+
+### Skipping Autolearn
+
+To skip autolearn for a single PR:
+
+```bash
+erk pr land --no-autolearn
+```
+
+### Loop Prevention
+
+Learn plans are designed to prevent infinite loops:
+
+1. PRs from learn plans receive the `erk-skip-extraction` label
+2. When these PRs are landed, autolearn is automatically skipped
+3. This prevents: learn plan → PR → land → learn plan → ...
+
+**Related**: [Glossary: Autolearn](../glossary.md#autolearn), [Glossary: erk-skip-extraction](../glossary.md#erk-skip-extraction)
