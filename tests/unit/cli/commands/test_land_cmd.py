@@ -1107,3 +1107,112 @@ def test_ensure_branch_not_checked_out_returns_none_when_not_checked_out(
 
     # Should not have made any detached checkouts
     assert len(fake_git.detached_checkouts) == 0
+
+
+def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that warning is suppressed when force=True for slot without assignment.
+
+    When running `erk land -f` from a slot worktree without assignment, the warning
+    should NOT be displayed since --force was specified.
+    """
+    # Create a slot worktree without any pool assignment
+    slot_worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    slot_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    # Create empty pool state (no assignments)
+    empty_state = PoolState.test(assignments=())
+    save_pool_state(pool_json_path, empty_state)
+
+    # Create the placeholder branch that should exist
+    placeholder_branch = "__erk-slot-01-br-stub__"
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [WorktreeInfo(path=slot_worktree_path, branch="feature-branch")]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch", placeholder_branch]},
+        existing_paths={
+            slot_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+            pool_json_path,
+        },
+    )
+
+    # Configure FakeGraphite to track the branch
+    fake_graphite = FakeGraphite(
+        branches={
+            "feature-branch": BranchMetadata(
+                name="feature-branch",
+                parent="main",
+                children=[],
+                is_trunk=False,
+                commit_sha=None,
+            ),
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        cwd=slot_worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate with force=True
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=slot_worktree_path,
+            script=False,
+            pull_flag=False,
+            force=True,  # This should suppress the warning
+            is_current_branch=False,
+            target_child_branch=None,
+            objective_number=None,
+        )
+    except SystemExit:
+        pass  # Expected - function raises SystemExit(0) at end
+
+    # Capture stderr where user_output writes to
+    captured = capsys.readouterr()
+
+    # Verify warning was NOT printed (suppressed by force=True)
+    assert "Warning:" not in captured.err, (
+        "Warning should be suppressed when force=True, but got: " + captured.err
+    )
+    assert "has no assignment" not in captured.err, (
+        "Warning message should be suppressed when force=True"
+    )
+
+    # Verify the operation still completed successfully
+    # Placeholder branch should have been checked out
+    checkout_calls = [
+        (path, branch)
+        for path, branch in fake_git.checked_out_branches
+        if branch == placeholder_branch
+    ]
+    assert len(checkout_calls) == 1, "Should have checked out placeholder branch"
+
+    # Branch should have been deleted
+    deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
+    assert "feature-branch" in deleted_branches
