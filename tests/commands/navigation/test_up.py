@@ -683,12 +683,13 @@ def test_up_delete_current_pr_open() -> None:
             cli, ["up", "--delete-current"], obj=test_ctx, catch_exceptions=False
         )
 
-        # Assert: Command failed with error about PR being open
+        # Assert: Command failed with error about PR being open and includes force hint
         assert_cli_error(
             result,
             1,
             "Pull request for branch 'feature-1' is still open",
             "Only closed or merged branches can be deleted",
+            "Use -f/--force to delete anyway",
         )
 
         # Assert: No worktrees or branches were deleted
