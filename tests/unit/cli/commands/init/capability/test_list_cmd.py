@@ -110,9 +110,7 @@ def test_capability_list_sorts_alphabetically() -> None:
         assert project_section == sorted(project_section), (
             f"Project capabilities not sorted: {project_section}"
         )
-        assert user_section == sorted(user_section), (
-            f"User capabilities not sorted: {user_section}"
-        )
+        assert user_section == sorted(user_section), f"User capabilities not sorted: {user_section}"
 
         # Verify we found capabilities in both sections
         assert len(project_section) > 0, "No project capabilities found"
