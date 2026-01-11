@@ -17,6 +17,7 @@ from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
     extract_learn_sessions,
 )
+from erk_shared.non_ideal_state import SessionNotFound
 
 
 @dataclass(frozen=True)
@@ -133,8 +134,6 @@ def get_readable_sessions(
     for session_id in sessions_for_plan.all_session_ids():
         session = claude_installation.get_session(project_cwd, session_id)
         # get_session returns SessionNotFound sentinel if not found
-        from erk_shared.non_ideal_state import SessionNotFound
-
         if not isinstance(session, SessionNotFound):
             readable.append(session_id)
     return readable

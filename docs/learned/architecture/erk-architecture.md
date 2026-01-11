@@ -24,6 +24,8 @@ tripwires:
     warning: "Use git.get_repository_root(cwd) to get the worktree root, then match exactly against known paths. Path comparisons with .exists()/.resolve()/is_relative_to() are fragile."
   - action: "checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code"
     warning: "Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager."
+  - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code'
+    warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
 ---
 
 # Erk Architecture Patterns

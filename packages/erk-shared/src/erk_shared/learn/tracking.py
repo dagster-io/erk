@@ -4,7 +4,6 @@ This module provides functions to record when learn is invoked
 on a plan issue, creating a trail of extraction sessions.
 """
 
-import os
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -33,7 +32,7 @@ def track_learn_invocation(
         github: GitHub issues interface
         repo_root: Repository root path
         issue_number: Plan issue number
-        session_id: Session ID invoking learn (from CLAUDE_CODE_SESSION_ID)
+        session_id: Session ID invoking learn (passed via --session-id CLI flag)
         readable_count: Number of readable sessions found
         total_count: Total sessions discovered for the plan
     """
@@ -67,12 +66,3 @@ def track_learn_invocation(
     )
 
     github.add_comment(repo_root, issue_number, comment_body)
-
-
-def get_current_session_id() -> str | None:
-    """Get the current Claude Code session ID from environment.
-
-    Returns:
-        Session ID or None if not running in Claude Code
-    """
-    return os.environ.get("CLAUDE_CODE_SESSION_ID")

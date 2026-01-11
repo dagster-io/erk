@@ -11,7 +11,7 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.learn.tracking import get_current_session_id, track_learn_invocation
+from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.output.output import user_output
 from erk_shared.sessions.discovery import (
     find_sessions_for_plan,
@@ -62,8 +62,15 @@ def _extract_issue_number(identifier: str) -> int | None:
 @click.argument("issue", type=str)
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
 @click.option("--no-track", is_flag=True, help="Don't post tracking comment to issue")
+@click.option("--session-id", default=None, help="Session ID for tracking (passed by Claude hooks)")
 @click.pass_obj
-def learn_cmd(ctx: ErkContext, issue: str, output_json: bool, no_track: bool) -> None:
+def learn_cmd(
+    ctx: ErkContext,
+    issue: str,
+    output_json: bool,
+    no_track: bool,
+    session_id: str | None,
+) -> None:
     """Extract insights from sessions associated with a plan.
 
     ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
@@ -133,13 +140,15 @@ def learn_cmd(ctx: ErkContext, issue: str, output_json: bool, no_track: bool) ->
                 ctx.issues,
                 repo_root,
                 issue_number,
-                session_id=get_current_session_id(),
+                session_id=session_id,
                 readable_count=len(readable_session_ids),
                 total_count=len(sessions_for_plan.all_session_ids()),
             )
-        except RuntimeError:
+        except RuntimeError as e:
             # Non-fatal - tracking failed but we can still output results
-            pass
+            user_output(
+                click.style("Warning: ", fg="yellow") + f"Failed to track learn invocation: {e}"
+            )
 
     # Output
     if output_json:
