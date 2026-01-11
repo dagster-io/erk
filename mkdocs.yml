@@ -30,6 +30,13 @@ nav:
       - tutorials/prerequisites.md
       - tutorials/installation.md
       - tutorials/first-plan.md
+  - Topics:
+      - topics/index.md
+      - topics/worktrees.md
+      - topics/plan-mode.md
+      - topics/the-workflow.md
+      - topics/plan-oriented-engineering.md
+      - topics/why-github-issues.md
 
 exclude_docs: |
   learned/
