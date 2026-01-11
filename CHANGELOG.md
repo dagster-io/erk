@@ -7,76 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 1ab72af2f -->
+## [0.4.7] - 2026-01-11 02:19 PT
 
 ### Major Changes
 
-- **Shell integration is now optional**: `erk implement` works without shell integration configured. When ERK_SHELL is not set, erk spawns a subshell in the worktree and launches Claude automatically. (33dea5a2a)
-- **Simplified worktree preservation in `erk land`**: The command now always preserves slot worktrees when landing PRs, only deleting the branch. This prevents accidental worktree loss and makes the workflow more predictable for users with persistent worktree setups. (4895c7cf5)
-- **Reorganized init process into capabilities**: The init command now uses a capability-based architecture with `erk init capability` subcommands. Capabilities can be managed at project or user scope, and include skills, workflows, agents, and groups. (d25599999)
+- **Shell integration is now optional**: `erk implement` works without shell integration configured. When ERK_SHELL is not set, erk spawns a subshell in the worktree and launches Claude automatically.
+- **Simplified worktree preservation in `erk land`**: The command now always preserves slot worktrees when landing PRs, only deleting the branch. This prevents accidental worktree loss and makes the workflow more predictable for users with persistent worktree setups.
+- **Reorganized init process into capabilities**: The init command now uses a capability-based architecture with `erk init capability` subcommands. Capabilities can be managed at project or user scope, and include skills, workflows, agents, and groups.
 
 ### Added
 
-- Add PR review thread counts to statusline (1ab72af2f)
-- Add tripwires-review as an installable capability (a82c98660)
-- Add ShellIntegrationCapability for shell wrapper installation (e0cd55f13)
-- Add sync status display to branch and PR checkout commands showing ahead/behind/diverged state with bot commit detection (e56d16a38)
-- Add ruff auto-format capability for automatic Python formatting on Write/Edit (eb2816db3)
-- Add "Exists" column to `erk slot list` showing physical worktree directory status (21fa60af1)
-- Add error message when submitting stacked PR without parent PR, guiding users to `gt submit -s` (85e86a821)
-- Offer to close plan issues missing closing references during `erk land` (935c0ad49)
-- Add `erk admin test-erk-impl-gh-workflow` command for testing workflow changes before merge (f8fb27fb8)
-- Validate Claude credentials in erk-impl workflow before execution (47ec0bf79)
-- Add Anthropic API authentication secret health check to `erk doctor` (aa5f943c1)
-- Add conditional erk-shared installation for monorepo flexibility (213823ebb)
-- Add `--dry-run` flag to `erk slot repair` for previewing repairs; repair now automatically fixes all four issue types (c827a5249)
-- Add branch context header to plan mode exit prompt (7eae7fde4)
-- Render plan content as Markdown in TUI dashboard (7d4b6b855)
-- Add `v` key binding to view full plan text in modal in TUI (a6c9d16a1)
-- Add slot allocation support to `erk branch checkout` command (c64440015)
-- Add slot allocation support to `erk pr checkout` with `--no-slot` and `--force` options (98103ae56)
-- Add health check for legacy slot naming convention in `erk doctor` (835fcb7cb)
-- Make `erk pr sync` work without Graphite using git-only mode (2033582a6)
-- Add automatic PS1 prompt modification for worktree subshells (b7c0006ee)
-- Fail on unresolved comments in non-interactive mode for `erk land` (d85968674)
+- Add PR review thread counts to statusline
+- Add tripwires-review as an installable capability
+- Add ShellIntegrationCapability for shell wrapper installation
+- Add sync status display to branch and PR checkout commands showing ahead/behind/diverged state with bot commit detection
+- Add ruff auto-format capability for automatic Python formatting on Write/Edit
+- Add "Exists" column to `erk slot list` showing physical worktree directory status
+- Add error message when submitting stacked PR without parent PR, guiding users to `gt submit -s`
+- Offer to close plan issues missing closing references during `erk land`
+- Add `erk admin test-erk-impl-gh-workflow` command for testing workflow changes before merge
+- Validate Claude credentials in erk-impl workflow before execution
+- Add Anthropic API authentication secret health check to `erk doctor`
+- Add conditional erk-shared installation for monorepo flexibility
+- Add `--dry-run` flag to `erk slot repair` for previewing repairs; repair now automatically fixes all four issue types
+- Add branch context header to plan mode exit prompt
+- Render plan content as Markdown in TUI dashboard
+- Add `v` key binding to view full plan text in modal in TUI
+- Add slot allocation support to `erk branch checkout` command
+- Add slot allocation support to `erk pr checkout` with `--no-slot` and `--force` options
+- Add health check for legacy slot naming convention in `erk doctor`
+- Make `erk pr sync` work without Graphite using git-only mode
+- Add automatic PS1 prompt modification for worktree subshells
+- Fail on unresolved comments in non-interactive mode for `erk land`
 
 ### Changed
 
-- Improve capability list formatting with scope grouping (c62aade13)
-- Refactor capability check output formatting (092db0f0e)
-- Replace `--statusline` and `--with-dignified-review` flags with `erk init capability add` commands (e5773dd90)
-- Graphite branch delete now falls back to git when branch is untracked or diverged (d511d409e)
-- Improve capability display formatting in init command output (860848619)
-- Support `erk land` without Graphite enabled (1f78eab5d)
-- Migrate diff extraction from GitHub API to local git to handle large diffs exceeding GitHub's ~20k line limit (74819a14e)
-- Fix PR submit output to distinguish between created and existing PRs (46e5ad324)
-- Default to Yes for `erk init` settings confirmation (74a23192a)
-- Update TUI checkout command to use branch-based checkout (d3526bb02)
-- Standardize "slot" terminology for worktree pool throughout CLI (98ab3afcb)
+- Improve capability list formatting with scope grouping
+- Refactor capability check output formatting
+- Replace `--statusline` and `--with-dignified-review` flags with `erk init capability add` commands
+- Graphite branch delete now falls back to git when branch is untracked or diverged
+- Improve capability display formatting in init command output
+- Support `erk land` without Graphite enabled
+- Migrate diff extraction from GitHub API to local git to handle large diffs exceeding GitHub's ~20k line limit
+- Fix PR submit output to distinguish between created and existing PRs
+- Default to Yes for `erk init` settings confirmation
+- Update TUI checkout command to use branch-based checkout
+- Standardize "slot" terminology for worktree pool throughout CLI
 
 ### Fixed
 
-- Fix false branch-mismatch error for stacked branches in slot list (dcb4c4ffc)
-- Fix index.lock race condition in erk land (cf60e2444)
-- Fix CI autofix prompt variable substitution (b95cac421)
-- Fix statusline crash when creating RealGitHub instances without repo_info (25a7c2e51)
-- Fix GitHub integration by properly resolving Graphite implementation based on config (71c4bd811)
-- Improve plan issue closure detection with retry logic and closing reference validation (09dd785de)
-- Fix `erk land` failing from non-slot worktrees by checking out trunk before branch deletion (053576d46)
-- Fix `erk land` to preserve slot worktrees when branches are checked out via `gt get` (880d28d1a)
-- Fix slot detection in `erk land` to use branch name instead of path comparison (37aa399d6)
-- Fix actions bundling to be optional when workflows aren't installed (1af116816)
-- Fix PR column in `erk wt ls` by using GitHub API instead of Graphite cache (7569401bf)
-- Make `erk dash` resilient to GitHub API failures (175cc5686)
-- Allow landing PRs for locally existing branches in TUI (5c85f8878)
-- Fix `erk land -f` to execute objective update (902da342f)
-- Fix version warning to use LBYL pattern for git repo detection (462dd39c7)
+- Fix false branch-mismatch error for stacked branches in slot list
+- Fix index.lock race condition in erk land
+- Fix CI autofix prompt variable substitution
+- Fix statusline crash when creating RealGitHub instances without repo_info
+- Fix GitHub integration by properly resolving Graphite implementation based on config
+- Improve plan issue closure detection with retry logic and closing reference validation
+- Fix `erk land` failing from non-slot worktrees by checking out trunk before branch deletion
+- Fix `erk land` to preserve slot worktrees when branches are checked out via `gt get`
+- Fix slot detection in `erk land` to use branch name instead of path comparison
+- Fix actions bundling to be optional when workflows aren't installed
+- Fix PR column in `erk wt ls` by using GitHub API instead of Graphite cache
+- Make `erk dash` resilient to GitHub API failures
+- Allow landing PRs for locally existing branches in TUI
+- Fix `erk land -f` to execute objective update
+- Fix version warning to use LBYL pattern for git repo detection
 
 ### Removed
 
-- Remove `erk slot check` command; functionality merged into `erk slot repair` (c827a5249)
-- Remove `show_pr_info` configuration flag; PR info now always fetched efficiently (86d6ccef7)
-- Delete presets feature from init command (a511282d7)
+- Remove `erk slot check` command; functionality merged into `erk slot repair`
+- Remove `show_pr_info` configuration flag; PR info now always fetched efficiently
+- Delete presets feature from init command
 
 ## [0.4.6] - 2026-01-06 12:21 PT
 
