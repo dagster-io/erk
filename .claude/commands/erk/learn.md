@@ -134,16 +134,19 @@ The Task tool spawns subagents that do valuable work:
 Based on session analysis, identify documentation to create:
 
 **Category A (Learning Gaps)** - Would have made the session faster:
+
 - Patterns that required discovery
 - Gotchas that caused confusion
 - Non-obvious solutions
 
 **Category B (Teaching Gaps)** - Documentation for what was built:
+
 - New features or commands
 - Architectural decisions made
 - Conventions established
 
 For each item, capture:
+
 - What document to create/update
 - Where it belongs (docs/learned/, .claude/skills/, etc.)
 - Draft content with specific examples from the session
