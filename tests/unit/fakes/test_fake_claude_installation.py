@@ -6,7 +6,7 @@ providing reliable test doubles for tests that use session functionality.
 
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation import (
+from erk_shared.learn.extraction.claude_installation import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
