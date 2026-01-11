@@ -36,7 +36,7 @@ from erk.core.capabilities.skills import (
 )
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
-from erk.core.capabilities.workflows import ErkImplWorkflowCapability
+from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
 from erk_shared.extraction.claude_installation import FakeClaudeInstallation
 from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.gateway.shell.fake import FakeShell
@@ -384,6 +384,44 @@ def test_workflow_capability_registered() -> None:
     cap = get_capability("erk-impl-workflow")
     assert cap is not None
     assert cap.name == "erk-impl-workflow"
+
+
+def test_learn_workflow_capability_properties() -> None:
+    """Test LearnWorkflowCapability has correct properties."""
+    cap = LearnWorkflowCapability()
+    assert cap.name == "learn-workflow"
+    assert "documentation" in cap.description.lower() or "learn" in cap.description.lower()
+    assert "learn-dispatch.yml" in cap.installation_check_description
+
+
+def test_learn_workflow_artifacts() -> None:
+    """Test LearnWorkflowCapability lists correct artifacts."""
+    cap = LearnWorkflowCapability()
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    paths = [a.path for a in artifacts]
+    assert ".github/workflows/learn-dispatch.yml" in paths
+
+
+def test_learn_workflow_is_installed(tmp_path: Path) -> None:
+    """Test workflow is_installed checks for workflow file."""
+    cap = LearnWorkflowCapability()
+
+    # Not installed when workflow file missing
+    assert cap.is_installed(tmp_path) is False
+
+    # Installed when workflow file exists
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "learn-dispatch.yml").write_text("", encoding="utf-8")
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_learn_workflow_capability_registered() -> None:
+    """Test that learn workflow capability is registered."""
+    cap = get_capability("learn-workflow")
+    assert cap is not None
+    assert cap.name == "learn-workflow"
 
 
 # =============================================================================
@@ -1103,6 +1141,7 @@ def test_default_capabilities_not_required() -> None:
         DignifiedPythonCapability(),
         FakeDrivenTestingCapability(),
         ErkImplWorkflowCapability(),
+        LearnWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
         StatuslineCapability(claude_installation=None),

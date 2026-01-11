@@ -18,7 +18,7 @@ from erk.core.capabilities.shell_integration import ShellIntegrationCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
-from erk.core.capabilities.workflows import ErkImplWorkflowCapability
+from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
 
 
 @cache
@@ -31,6 +31,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         DignifiedReviewCapability(),
         TripwiresReviewCapability(),
         ErkImplWorkflowCapability(),
+        LearnWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
         StatuslineCapability(claude_installation=None),
