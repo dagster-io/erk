@@ -145,19 +145,13 @@ def learn_cmd(
         user_output(click.style(f"Error: Failed to find sessions: {e}", fg="red"))
         raise SystemExit(1) from e
 
-    # Get readable sessions (ones that exist on disk)
-    readable_session_ids = get_readable_sessions(
+    # Get readable sessions (ones that exist on disk) using global lookup
+    readable_sessions = get_readable_sessions(
         sessions_for_plan,
         ctx.claude_installation,
-        ctx.cwd,
     )
-
-    # Get paths for readable sessions
-    session_paths: list[str] = []
-    for sid in readable_session_ids:
-        path = ctx.claude_installation.get_session_path(ctx.cwd, sid)
-        if path is not None:
-            session_paths.append(str(path))
+    readable_session_ids = [sid for sid, _ in readable_sessions]
+    session_paths = [str(path) for _, path in readable_sessions]
 
     # Local session fallback: when GitHub has no tracked sessions, scan local sessions
     local_session_ids: list[str] = []

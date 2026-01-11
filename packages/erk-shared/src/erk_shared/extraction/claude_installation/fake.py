@@ -7,6 +7,7 @@ from pathlib import Path
 
 from erk_shared.extraction.claude_installation.abc import (
     ClaudeInstallation,
+    FoundSession,
     Session,
     SessionContent,
     SessionNotFound,
@@ -408,3 +409,21 @@ class FakeClaudeInstallation(ClaudeInstallation):
         if self._projects_dir_path is not None:
             return self._projects_dir_path
         return Path("/fake/.claude/projects")
+
+    def find_session_globally(self, session_id: str) -> FoundSession | SessionNotFound:
+        """Find a session by ID across all projects in memory."""
+        # Search all projects in memory
+        for project_path, project in self._projects.items():
+            if session_id in project.sessions:
+                session_data = project.sessions[session_id]
+                session = Session(
+                    session_id=session_id,
+                    size_bytes=session_data.size_bytes,
+                    modified_at=session_data.modified_at,
+                    is_current=False,
+                    parent_session_id=session_data.parent_session_id,
+                )
+                path = project_path / f"{session_id}.jsonl"
+                return FoundSession(session=session, path=path)
+
+        return SessionNotFound(session_id)

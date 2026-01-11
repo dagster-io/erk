@@ -7,7 +7,10 @@ associated with a plan issue.
 from dataclasses import dataclass
 from pathlib import Path
 
-from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
+from erk_shared.extraction.claude_installation.abc import (
+    ClaudeInstallation,
+    FoundSession,
+)
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
@@ -17,7 +20,6 @@ from erk_shared.learn.impl_events import (
     extract_implementation_sessions,
     extract_learn_sessions,
 )
-from erk_shared.non_ideal_state import SessionNotFound
 
 
 @dataclass(frozen=True)
@@ -118,24 +120,24 @@ def find_sessions_for_plan(
 def get_readable_sessions(
     sessions_for_plan: SessionsForPlan,
     claude_installation: ClaudeInstallation,
-    project_cwd: Path,
-) -> list[str]:
-    """Filter sessions to only those readable from the current project.
+) -> list[tuple[str, Path]]:
+    """Filter sessions to only those readable locally.
+
+    Uses global session lookup - no project_cwd needed since sessions
+    are identified by globally unique UUIDs.
 
     Args:
         sessions_for_plan: Sessions discovered from the plan
         claude_installation: Claude installation for session existence checks
-        project_cwd: Current working directory for project lookup
 
     Returns:
-        List of session IDs that are readable (exist on disk)
+        List of (session_id, path) tuples for sessions that exist on disk
     """
-    readable: list[str] = []
+    readable: list[tuple[str, Path]] = []
     for session_id in sessions_for_plan.all_session_ids():
-        session = claude_installation.get_session(project_cwd, session_id)
-        # get_session returns SessionNotFound sentinel if not found
-        if not isinstance(session, SessionNotFound):
-            readable.append(session_id)
+        result = claude_installation.find_session_globally(session_id)
+        if isinstance(result, FoundSession):
+            readable.append((session_id, result.path))
     return readable
 
 

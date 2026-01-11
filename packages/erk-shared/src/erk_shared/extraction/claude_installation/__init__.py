@@ -6,6 +6,7 @@ All filesystem details are hidden behind the ClaudeInstallation ABC.
 
 from erk_shared.extraction.claude_installation.abc import (
     ClaudeInstallation,
+    FoundSession,
     Session,
     SessionContent,
 )
@@ -20,6 +21,7 @@ from erk_shared.extraction.claude_installation.real import (
 
 __all__ = [
     "ClaudeInstallation",
+    "FoundSession",
     "Session",
     "SessionContent",
     "RealClaudeInstallation",
