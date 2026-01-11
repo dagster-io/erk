@@ -12,8 +12,10 @@ import click
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk_shared.learn.tracking import track_learn_invocation
-from erk_shared.output.output import user_output
+from erk_shared.naming import extract_leading_issue_number
+from erk_shared.output.output import user_confirm, user_output
 from erk_shared.sessions.discovery import (
+    find_local_sessions_for_project,
     find_sessions_for_plan,
     get_readable_sessions,
 )
@@ -29,6 +31,7 @@ class LearnResult:
     learn_session_ids: list[str]
     readable_session_ids: list[str]
     session_paths: list[str]
+    local_session_ids: list[str]  # Sessions found locally (fallback when GitHub has none)
 
 
 def _extract_issue_number(identifier: str) -> int | None:
@@ -59,39 +62,77 @@ def _extract_issue_number(identifier: str) -> int | None:
 
 
 @click.command("learn")
-@click.argument("issue", type=str)
+@click.argument("issue", type=str, required=False)
 @click.option("--json", "output_json", is_flag=True, help="Output as JSON")
 @click.option("--no-track", is_flag=True, help="Don't post tracking comment to issue")
 @click.option("--session-id", default=None, help="Session ID for tracking (passed by Claude hooks)")
+@click.option(
+    "-i",
+    "--interactive",
+    is_flag=True,
+    help="Launch Claude to extract insights after discovering sessions",
+)
+@click.option(
+    "--no-interactive",
+    is_flag=True,
+    help="Just display sessions without launching Claude",
+)
 @click.pass_obj
 def learn_cmd(
     ctx: ErkContext,
-    issue: str,
+    issue: str | None,
     output_json: bool,
     no_track: bool,
     session_id: str | None,
+    interactive: bool,
+    no_interactive: bool,
 ) -> None:
     """Extract insights from sessions associated with a plan.
 
     ISSUE can be a plan issue number (e.g., "123") or a full GitHub URL.
+    If not provided, infers from current branch name (P{issue}-...).
 
     Discovers all Claude Code sessions related to the plan:
     - Planning session (created the plan)
     - Implementation sessions (ran the implementation)
     - Previous learn sessions (already analyzed)
 
-    Outputs session paths for use in extraction workflows.
+    By default, displays sessions and prompts to launch Claude interactively
+    for insight extraction. Use -i to auto-launch Claude without prompting,
+    or --no-interactive to just display sessions.
 
     Examples:
 
+        erk learn                            # Infer from branch
+
         erk learn 123
 
-        erk learn https://github.com/org/repo/issues/123 --json
+        erk learn 123 -i                    # Auto-launch Claude
+
+        erk learn 123 --no-interactive      # Just show sessions
+
+        erk learn 123 --json                # JSON output, no interaction
     """
-    # Extract issue number
-    issue_number = _extract_issue_number(issue)
+    # Resolve issue number: explicit argument or infer from branch
+    issue_number: int | None = None
+    if issue is not None:
+        issue_number = _extract_issue_number(issue)
+        if issue_number is None:
+            user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
+            raise SystemExit(1)
+    else:
+        # Try to infer from current branch
+        branch = ctx.git.get_current_branch(ctx.cwd)
+        if branch is not None:
+            issue_number = extract_leading_issue_number(branch)
+
     if issue_number is None:
-        user_output(click.style(f"Error: Invalid issue identifier: {issue}", fg="red"))
+        user_output(
+            click.style("Error: ", fg="red")
+            + "No issue specified and could not infer from branch name"
+        )
+        user_output("Usage: erk learn <issue-number>")
+        user_output("Or run from a branch named P{issue}-...")
         raise SystemExit(1)
 
     # Discover repository context
@@ -118,10 +159,24 @@ def learn_cmd(
 
     # Get paths for readable sessions
     session_paths: list[str] = []
-    for session_id in readable_session_ids:
-        path = ctx.claude_installation.get_session_path(ctx.cwd, session_id)
+    for sid in readable_session_ids:
+        path = ctx.claude_installation.get_session_path(ctx.cwd, sid)
         if path is not None:
             session_paths.append(str(path))
+
+    # Local session fallback: when GitHub has no tracked sessions, scan local sessions
+    local_session_ids: list[str] = []
+    if not readable_session_ids:
+        local_session_ids = find_local_sessions_for_project(
+            ctx.claude_installation,
+            ctx.cwd,
+            limit=10,
+        )
+        # Get paths for local sessions
+        for sid in local_session_ids:
+            path = ctx.claude_installation.get_session_path(ctx.cwd, sid)
+            if path is not None:
+                session_paths.append(str(path))
 
     # Build result
     result = LearnResult(
@@ -131,6 +186,7 @@ def learn_cmd(
         learn_session_ids=sessions_for_plan.learn_session_ids,
         readable_session_ids=readable_session_ids,
         session_paths=session_paths,
+        local_session_ids=local_session_ids,
     )
 
     # Track invocation (unless disabled)
@@ -155,6 +211,35 @@ def learn_cmd(
         click.echo(json.dumps(asdict(result), indent=2))
     else:
         _display_human_readable(result)
+
+    # Interactive mode: launch Claude to extract insights
+    # Skip if --json (non-interactive output) or --no-interactive explicitly set
+    if output_json or no_interactive:
+        return
+
+    # Only offer interactive mode if there are any sessions (tracked or local)
+    has_sessions = bool(readable_session_ids) or bool(local_session_ids)
+    if not has_sessions:
+        return
+
+    # Determine if we should prompt or auto-launch
+    # -i/--interactive: auto-launch without prompting
+    # default (no flag): prompt user
+    should_launch = interactive
+    if not interactive:
+        user_output("")
+        should_launch = user_confirm(
+            "Launch Claude to extract insights from these sessions?",
+            default=True,
+        )
+
+    if should_launch:
+        ctx.claude_executor.execute_interactive(
+            worktree_path=repo_root,
+            dangerous=False,
+            command=f"/erk:learn {issue_number}",
+            target_subpath=None,
+        )
 
 
 def _display_human_readable(result: LearnResult) -> None:
@@ -184,11 +269,22 @@ def _display_human_readable(result: LearnResult) -> None:
 
     user_output("")
 
-    # Readable sessions summary
-    total = len(result.readable_session_ids)
-    if total == 0:
-        user_output(click.style("No readable sessions found on this machine.", fg="red"))
-    else:
-        user_output(f"Readable sessions: {click.style(str(total), fg='green', bold=True)}")
+    # Readable sessions summary (tracked sessions from GitHub metadata)
+    total_tracked = len(result.readable_session_ids)
+    total_local = len(result.local_session_ids)
+
+    if total_tracked > 0:
+        user_output(f"Readable sessions: {click.style(str(total_tracked), fg='green', bold=True)}")
         for path in result.session_paths:
             user_output(f"  {click.style(path, dim=True)}")
+    elif total_local > 0:
+        # Fallback: show local sessions when no tracked sessions exist
+        user_output(
+            click.style("No tracked sessions in GitHub metadata.", dim=True)
+            + " Found local sessions:"
+        )
+        user_output(f"Local sessions: {click.style(str(total_local), fg='cyan', bold=True)}")
+        for path in result.session_paths:
+            user_output(f"  {click.style(path, dim=True)}")
+    else:
+        user_output(click.style("No readable sessions found on this machine.", fg="red"))

@@ -137,3 +137,33 @@ def get_readable_sessions(
         if not isinstance(session, SessionNotFound):
             readable.append(session_id)
     return readable
+
+
+def find_local_sessions_for_project(
+    claude_installation: ClaudeInstallation,
+    project_cwd: Path,
+    *,
+    limit: int,
+) -> list[str]:
+    """Find local sessions for a project (fallback when GitHub metadata unavailable).
+
+    This is used when a plan issue doesn't have session tracking metadata.
+    Returns session IDs for sessions that exist locally for this project,
+    sorted by modification time (newest first).
+
+    Args:
+        claude_installation: Claude installation for session listing
+        project_cwd: Current working directory for project lookup
+        limit: Maximum number of sessions to return
+
+    Returns:
+        List of session IDs that exist locally for this project
+    """
+    sessions = claude_installation.find_sessions(
+        project_cwd,
+        current_session_id=None,
+        min_size=1024,  # Skip tiny sessions (likely empty/aborted)
+        limit=limit,
+        include_agents=False,
+    )
+    return [s.session_id for s in sessions]
