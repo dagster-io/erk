@@ -154,7 +154,6 @@ Commands that allocate slots via `allocate_slot_for_branch()`:
 | ------------------- | --------------------------------------- |
 | `erk branch create` | Creates branch and assigns to slot      |
 | `erk slot assign`   | Assigns existing branch to slot         |
-| `erk plan start`    | Assigns branch for plan implementation  |
 | `erk implement`     | Assigns branch for issue implementation |
 | `erk pr checkout`   | Assigns branch when checking out PR     |
 
