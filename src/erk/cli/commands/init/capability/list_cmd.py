@@ -19,7 +19,26 @@ def list_cmd() -> None:
         user_output("No capabilities registered.")
         return
 
-    user_output("Available capabilities:")
-    for cap in caps:
-        scope_label = f"[{cap.scope}]"
-        user_output(f"  {cap.name:25} {scope_label:10} {cap.description}")
+    # Group by scope
+    project_caps = [c for c in caps if c.scope == "project"]
+    user_caps = [c for c in caps if c.scope == "user"]
+
+    # Sort each group alphabetically by name
+    project_caps.sort(key=lambda c: c.name)
+    user_caps.sort(key=lambda c: c.name)
+
+    # Output project capabilities
+    if project_caps:
+        user_output(click.style("Project capabilities:", bold=True))
+        for cap in project_caps:
+            styled_name = click.style(f"{cap.name:25}", fg="cyan")
+            user_output(f"  {styled_name} {cap.description}")
+
+    # Output user capabilities with blank line separator
+    if user_caps:
+        if project_caps:
+            user_output("")  # Blank line between sections
+        user_output(click.style("User capabilities:", bold=True))
+        for cap in user_caps:
+            styled_name = click.style(f"{cap.name:25}", fg="cyan")
+            user_output(f"  {styled_name} {cap.description}")
