@@ -5,6 +5,8 @@
 
 - **[abc-convenience-methods.md](abc-convenience-methods.md)** — adding non-abstract methods to gateway ABCs, composing primitive gateway operations into higher-level methods, handling exception type differences between real and fake implementations
 - **[at-reference-resolution.md](at-reference-resolution.md)** — Modifying @ reference validation, Debugging broken @ references in symlinked files, Understanding why validation passes but Claude Code fails
+- **[bundled-artifacts.md](bundled-artifacts.md)** — understanding artifact syncing, working with BUNDLED\_\* registries, debugging erk sync
+- **[capability-system.md](capability-system.md)** — creating new erk init capabilities, understanding how erk init works, adding installable features
 - **[claude-cli-integration.md](claude-cli-integration.md)** — Invoking Claude from Python, Spawning Claude CLI from Python code, Understanding non-interactive vs interactive modes
 - **[claude-cli-progress.md](claude-cli-progress.md)** — adding progress output to Claude operations, wrapping Claude CLI with user feedback, using ProgressEvent or CompletionEvent, converting blocking operations to streaming progress
 - **[claude-executor-patterns.md](claude-executor-patterns.md)** — launching Claude from CLI commands, deciding which ClaudeExecutor method to use, testing code that executes Claude CLI
@@ -39,4 +41,5 @@
 - **[shell-integration-patterns.md](shell-integration-patterns.md)** — implementing commands with shell integration, fixing shell integration handler issues, understanding script-first output ordering, debugging partial success in destructive commands
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
 - **[symlink-validation-pattern.md](symlink-validation-pattern.md)** — Validating @ references in markdown files, Validating import paths in configuration, Any path validation where source files may be symlinks
+- **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows
 - **[worktree-metadata.md](worktree-metadata.md)** — storing per-worktree data, working with worktrees.toml, associating metadata with worktrees, implementing subdirectory navigation, preserving relative path on worktree switch
