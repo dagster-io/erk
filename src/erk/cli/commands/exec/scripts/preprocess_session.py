@@ -714,6 +714,9 @@ def preprocess_session(
     # Generate main session XML
     xml_sections = [generate_compressed_xml(entries, enable_pruning=enable_filtering)]
 
+    # Track original bytes for compression metrics (main session + included agent logs)
+    original_bytes = len(log_path.read_text(encoding="utf-8"))
+
     # Discover and process agent logs if requested
     if include_agents:
         agent_logs = discover_agent_logs(log_path)
@@ -733,6 +736,9 @@ def preprocess_session(
 
             agent_entries = deduplicate_assistant_messages(agent_entries)
 
+            # Add agent log size to original bytes (only for included logs)
+            original_bytes += len(agent_log.read_text(encoding="utf-8"))
+
             # Generate XML with source label
             source_label = f"agent-{agent_log.stem.replace('agent-', '')}"
             agent_xml = generate_compressed_xml(
@@ -745,7 +751,7 @@ def preprocess_session(
 
     # Calculate compression metrics (only when filtering is enabled)
     if enable_filtering:
-        original_size = sum(len(log_path.read_text(encoding="utf-8")) for _ in [log_path])
+        original_size = original_bytes
         compressed_size = len(xml_content)
         if original_size > 0:
             reduction_pct = ((original_size - compressed_size) / original_size) * 100
