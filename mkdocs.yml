@@ -1,4 +1,4 @@
-site_name: Erk Documentation
+site_name: erk Documentation
 site_url: https://dagster-io.github.io/erk/
 
 theme:
@@ -17,8 +17,8 @@ theme:
         icon: material/brightness-4
         name: Switch to light mode
   features:
+    - navigation.indexes
     - navigation.sections
-    - navigation.expand
     - search.highlight
     - content.code.copy
 
@@ -37,6 +37,9 @@ nav:
       - topics/the-workflow.md
       - topics/plan-oriented-engineering.md
       - topics/why-github-issues.md
+
+extra_css:
+  - stylesheets/extra.css
 
 exclude_docs: |
   learned/

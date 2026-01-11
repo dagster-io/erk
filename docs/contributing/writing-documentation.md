@@ -4,7 +4,7 @@ This guide explains how to write and organize documentation for erk using the Di
 
 ## The Divio Framework
 
-Erk's documentation follows the [Divio Documentation System](https://documentation.divio.com/), which organizes content into four categories based on user intent:
+`erk`'s documentation follows the [Divio Documentation System](https://documentation.divio.com/), which organizes content into four categories based on user intent:
 
 | Category  | Purpose              | User Intent    | Directory    |
 | --------- | -------------------- | -------------- | ------------ |

@@ -22,7 +22,7 @@ If not installed, see [graphite.dev/docs/getting-started](https://graphite.dev/d
 
 ### No Additional Configuration Needed
 
-Erk auto-detects Graphite. If `gt` is on your PATH, erk uses it automatically.
+`erk` auto-detects Graphite. If `gt` is on your PATH, erk uses it automatically.
 
 To verify Graphite is installed and detected:
 
@@ -32,7 +32,7 @@ erk doctor
 
 Look for "Graphite CLI installed" in the output.
 
-## How Erk Uses Graphite
+## How `erk` Uses Graphite
 
 When Graphite is enabled, erk's core workflow commands use `gt` under the hood.
 
@@ -89,7 +89,7 @@ This lands the current PR and moves you to the child worktree, allowing you to c
 
 ## Stacking Plans
 
-Erk's plan-driven workflow naturally supports stacking. When you implement a second plan while in a feature worktree, it stacks on top.
+`erk`'s plan-driven workflow naturally supports stacking. When you implement a second plan while in a feature worktree, it stacks on top.
 
 **Example workflow:**
 
@@ -123,7 +123,7 @@ Navigate between branches in your stack just like regular git branching—erk ha
 erk up
 ```
 
-Moves to the child branch (away from trunk). Erk switches you to the corresponding worktree.
+Moves to the child branch (away from trunk). `erk` switches you to the corresponding worktree.
 
 ### Move Down the Stack
 
@@ -131,7 +131,7 @@ Moves to the child branch (away from trunk). Erk switches you to the correspondi
 erk down
 ```
 
-Moves to the parent branch (toward trunk). Erk switches you to the corresponding worktree.
+Moves to the parent branch (toward trunk). `erk` switches you to the corresponding worktree.
 
 ### View the Stack
 

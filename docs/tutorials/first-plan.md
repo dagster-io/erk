@@ -27,7 +27,7 @@ You should see a `>` prompt. Type something and press Enter—it echoes back. Pr
 
 ## Step 2: Plan Your First Feature
 
-Erk is built around a **plan → implement** cycle. We believe explicit planning is critical for agentic engineering: you get better outcomes, more precise control, and can perform larger units of work more confidently and autonomously.
+`erk` is built around a **plan → implement** cycle. We believe explicit planning is critical for agentic engineering: you get better outcomes, more precise control, and can perform larger units of work more confidently and autonomously.
 
 We'll demonstrate this using Plan Mode in Claude Code to add a simple feature.
 
@@ -55,7 +55,7 @@ This is a simple feature, so the plan should be straightforward: modify the inpu
 
 When the plan is ready, Claude prompts you for next steps.
 
-### Erk Extends Plan Mode
+### `erk` Extends Plan Mode
 
 Standard Claude Code plan mode shows this menu when you approve:
 
@@ -64,7 +64,7 @@ Standard Claude Code plan mode shows this menu when you approve:
 ○ Edit the plan
 ```
 
-Erk extends this with additional options:
+`erk` extends this with additional options:
 
 ```
 ○ Save the plan          # Save as GitHub issue, stop here

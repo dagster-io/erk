@@ -4,7 +4,7 @@ An optional enhancement that provides seamless `cd` behavior when switching work
 
 ## Do You Need This?
 
-**No.** Erk works out-of-the-box without shell integration.
+**No.** `erk` works out-of-the-box without shell integration.
 
 When you run worktree-entering commands like `erk implement` or `erk wt checkout`, erk spawns a subshell in the target directory. Type `exit` when you're done to return to your previous directory.
 
@@ -48,7 +48,7 @@ This will:
 Add the following to your `~/.zshrc`:
 
 ```bash
-# Erk shell integration
+# erk shell integration
 eval "$(erk init --shell)"
 ```
 
@@ -63,7 +63,7 @@ source ~/.zshrc
 Add the following to your `~/.bashrc`:
 
 ```bash
-# Erk shell integration
+# erk shell integration
 eval "$(erk init --shell)"
 ```
 
@@ -78,7 +78,7 @@ source ~/.bashrc
 Add the following to your `~/.config/fish/config.fish`:
 
 ```fish
-# Erk shell integration
+# erk shell integration
 erk init --shell | source
 ```
 

@@ -8,7 +8,7 @@ Git worktrees enable parallel development without branch switching.
 
 <!-- TODO: Explain git worktrees concept -->
 
-## Why Erk Uses Worktrees
+## Why `erk` Uses Worktrees
 
 <!-- TODO: Benefits for plan-oriented workflow -->
 

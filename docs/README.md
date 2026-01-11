@@ -1,4 +1,4 @@
-# Erk Documentation
+# `erk` Documentation
 
 **erk** is a CLI tool for plan-oriented agentic engineering—a workflow where AI agents create implementation plans, execute them in isolated worktrees, and ship code via automated PR workflows.
 

@@ -16,7 +16,7 @@ Claude Code's planning workflow and how erk extends it.
 
 <!-- TODO: Best practices for plan development -->
 
-## Erk's Plan Mode Extension
+## `erk`'s Plan Mode Extension
 
 <!-- TODO: How erk modifies the default plan mode behavior -->
 
