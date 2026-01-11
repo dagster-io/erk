@@ -32,6 +32,7 @@ Core concepts that explain how erk works.
 - [Plan Mode](topics/plan-mode.md) - Claude Code's planning workflow
 - [The Workflow](topics/the-workflow.md) - From idea to merged PR
 - [Plan-Oriented Engineering](topics/plan-oriented-engineering.md) - The philosophy behind erk
+- [Why GitHub Issues for Plans](topics/why-github-issues.md) - Why plans are stored as issues
 
 ### [How-to Guides](howto/)
 
