@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of 6c46c8a90 -->
+
+### Major Changes
+
+- **Objective command system**: Added `erk objective next-plan` command to launch Claude for creating implementation plans from objective steps. Objective commands are now visible in CLI help, making the plan-oriented workflow discoverable. (4125184a1, 6c46c8a90)
+
+### Added
+
+- Add opt-in reminder system for coding standards enforcement via capability markers in `.erk/state.toml` (d2f445ea3)
+- Add configurable Claude CLI launcher with `[interactive-claude]` config section for model, permission mode, and other settings (6b44877b9)
+- Expand tutorial and topic documentation with installation guides and design explanations (d742c2ad3, 900ebe556, a9742438f)
+
+### Removed
+
+- Remove `erk plan start` command (36186df35)
+
 ## [0.4.7] - 2026-01-11 02:19 PT
 
 ### Major Changes
