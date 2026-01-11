@@ -232,7 +232,11 @@ def test_land_user_declines_objective_update_shows_command() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # User says "n" to close plan issue, "n" to objective update, "y" to worktree cleanup
+        # User says:
+        # "y" to learn check (continue without learning)
+        # "n" to close plan issue
+        # "n" to objective update
+        # "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
@@ -240,10 +244,11 @@ def test_land_user_declines_objective_update_shows_command() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[
-                False,
-                False,
-                True,
-            ],  # Decline close, decline update, confirm cleanup
+                True,  # Continue without learning
+                False,  # Decline close plan issue
+                False,  # Decline objective update
+                True,  # Confirm cleanup
+            ],
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
@@ -338,14 +343,23 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
+        # User says:
+        # "y" to learn check (continue without learning)
+        # "n" to close plan issue
+        # "y" to objective update
+        # "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[False, True, True],  # Decline close, confirm update, confirm cleanup
+            confirm_responses=[
+                True,  # Continue without learning
+                False,  # Decline close plan issue
+                True,  # Confirm objective update
+                True,  # Confirm cleanup
+            ],
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
@@ -447,14 +461,23 @@ def test_land_claude_failure_shows_retry_command() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # User says "n" to close plan issue, "y" to objective update, "y" to worktree cleanup
+        # User says:
+        # "y" to learn check (continue without learning)
+        # "n" to close plan issue
+        # "y" to objective update
+        # "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[False, True, True],  # Decline close, confirm update, confirm cleanup
+            confirm_responses=[
+                True,  # Continue without learning
+                False,  # Decline close plan issue
+                True,  # Confirm objective update
+                True,  # Confirm cleanup
+            ],
         )
         test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 

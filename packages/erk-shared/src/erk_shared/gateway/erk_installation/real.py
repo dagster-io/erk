@@ -77,7 +77,6 @@ class RealErkInstallation(ErkInstallation):
                 data.get("fix_conflicts_require_dangerous_flag", True)
             ),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
-            autolearn=bool(data.get("autolearn", False)),
             interactive_claude=interactive_claude,
         )
 
@@ -137,7 +136,6 @@ class RealErkInstallation(ErkInstallation):
         doc["github_planning"] = config.github_planning
         doc["fix_conflicts_require_dangerous_flag"] = config.fix_conflicts_require_dangerous_flag
         doc["show_hidden_commands"] = config.show_hidden_commands
-        doc["autolearn"] = config.autolearn
 
         # Add [interactive-claude] section if any non-default values are set
         ic = config.interactive_claude

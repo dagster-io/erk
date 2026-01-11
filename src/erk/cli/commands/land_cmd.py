@@ -18,7 +18,6 @@ from typing import Literal, NamedTuple
 
 import click
 
-from erk.cli.commands.autolearn import maybe_create_autolearn_issue
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -52,7 +51,52 @@ from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.types import PRDetails, PRNotFound
+from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
+from erk_shared.sessions.discovery import find_sessions_for_plan
+
+
+def _check_learn_status_and_prompt(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_issue_number: int,
+    force: bool,
+) -> None:
+    """Check if plan has been learned from and prompt user if not.
+
+    This provides a conservative check before landing - if the plan has associated
+    sessions but hasn't been learned from yet, warn the user and give them the
+    option to cancel and run learn manually first.
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path
+        plan_issue_number: Issue number of the plan
+        force: If True, skip the check entirely
+
+    Raises:
+        SystemExit(0) if user declines to continue
+    """
+    if force:
+        return
+
+    sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
+
+    if sessions.learn_session_ids:
+        return  # Already learned from
+
+    user_output(
+        click.style("Warning: ", fg="yellow")
+        + f"Plan #{plan_issue_number} has not been learned from."
+    )
+    user_output(
+        f"\nTo extract insights from this plan's sessions, run:\n  erk learn {plan_issue_number}\n"
+    )
+
+    if not ctx.console.confirm("Continue landing without learning?", default=None):
+        user_output("Cancelled. Run 'erk learn' first, then retry landing.")
+        raise SystemExit(0)
 
 
 def _ensure_branch_not_checked_out(
@@ -273,8 +317,6 @@ def _cleanup_and_navigate(
     target_child_branch: str | None,
     objective_number: int | None,
     no_delete: bool,
-    autolearn: bool,
-    pr_number: int,
 ) -> None:
     """Handle worktree/branch cleanup and navigation after PR merge.
 
@@ -292,8 +334,6 @@ def _cleanup_and_navigate(
         target_child_branch: Target child branch for --up navigation (None for trunk)
         objective_number: Issue number of the objective linked to this branch (if any)
         no_delete: Whether to preserve the branch and slot assignment
-        autolearn: Whether to create autolearn issue after confirmation
-        pr_number: PR number that was merged (for autolearn)
     """
     # Handle --no-delete: skip cleanup, optionally navigate
     if no_delete:
@@ -421,13 +461,6 @@ def _cleanup_and_navigate(
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
 
-    # Create autolearn issue if enabled (after confirmation, before navigation)
-    if autolearn:
-        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-        maybe_create_autolearn_issue(
-            ctx, repo_root=main_repo_root, branch=branch, pr_number=pr_number
-        )
-
     # Navigate (only if we were in the deleted worktree)
     if is_current_branch:
         _navigate_after_land(
@@ -537,12 +570,6 @@ def _navigate_after_land(
     help="Print what would be done without executing destructive operations.",
 )
 @click.option(
-    "--autolearn/--no-autolearn",
-    "autolearn_flag",
-    default=None,
-    help="Override config to enable/disable automatic learn plan creation",
-)
-@click.option(
     "--no-delete",
     "no_delete",
     is_flag=True,
@@ -558,7 +585,6 @@ def land(
     force: bool,
     pull_flag: bool,
     dry_run: bool,
-    autolearn_flag: bool | None,
     no_delete: bool,
 ) -> None:
     """Merge PR and delete worktree.
@@ -590,14 +616,6 @@ def land(
         ctx = create_context(dry_run=True)
         script = False  # Force human-readable output in dry-run mode
 
-    # Compute effective autolearn: CLI flag overrides config
-    if autolearn_flag is not None:
-        autolearn = autolearn_flag
-    elif ctx.global_config is not None:
-        autolearn = ctx.global_config.autolearn
-    else:
-        autolearn = False
-
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
 
@@ -625,7 +643,6 @@ def land(
             up_flag=up_flag,
             force=force,
             pull_flag=pull_flag,
-            autolearn=autolearn,
             no_delete=no_delete,
         )
     else:
@@ -641,7 +658,6 @@ def land(
                 force=force,
                 pull_flag=pull_flag,
                 branch_name=target,
-                autolearn=autolearn,
                 no_delete=no_delete,
             )
         else:
@@ -660,7 +676,6 @@ def land(
                 force=force,
                 pull_flag=pull_flag,
                 pr_number=parsed.pr_number,
-                autolearn=autolearn,
                 no_delete=no_delete,
             )
 
@@ -673,7 +688,6 @@ def _land_current_branch(
     up_flag: bool,
     force: bool,
     pull_flag: bool,
-    autolearn: bool,
     no_delete: bool,
 ) -> None:
     """Land the current branch's PR (original behavior)."""
@@ -727,6 +741,14 @@ def _land_current_branch(
     if not isinstance(pr_details, PRNotFound):
         check_unresolved_comments(ctx, repo.root, pr_details.number, force=force)
 
+    # Check learn status before any mutations (for plan branches)
+    plan_issue_number = extract_leading_issue_number(current_branch)
+    if plan_issue_number is not None:
+        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+        _check_learn_status_and_prompt(
+            ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
+        )
+
     # Step 1: Execute land (merges the PR)
     if isinstance(ctx.graphite, GraphiteDisabled):
         # Simple GitHub-only merge path (no stack validation)
@@ -773,7 +795,7 @@ def _land_current_branch(
             force=force,
         )
 
-    # Step 2: Cleanup and navigate (autolearn happens inside after confirmation)
+    # Step 2: Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -786,8 +808,6 @@ def _land_current_branch(
         target_child_branch=target_child_branch,
         objective_number=objective_number,
         no_delete=no_delete,
-        autolearn=autolearn,
-        pr_number=merged_pr_number,
     )
 
 
@@ -800,7 +820,6 @@ def _land_specific_pr(
     force: bool,
     pull_flag: bool,
     pr_number: int,
-    autolearn: bool,
     no_delete: bool,
 ) -> None:
     """Land a specific PR by number."""
@@ -858,6 +877,13 @@ def _land_specific_pr(
     # Check for unresolved comments BEFORE merge
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
+    # Check learn status before any mutations (for plan branches)
+    plan_issue_number = extract_leading_issue_number(branch)
+    if plan_issue_number is not None:
+        _check_learn_status_and_prompt(
+            ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
+        )
+
     # Merge the PR via GitHub API
     user_output(f"Merging PR #{pr_number}...")
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
@@ -888,7 +914,7 @@ def _land_specific_pr(
             force=force,
         )
 
-    # Cleanup and navigate (autolearn happens inside after confirmation)
+    # Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -901,8 +927,6 @@ def _land_specific_pr(
         target_child_branch=None,
         objective_number=objective_number,
         no_delete=no_delete,
-        autolearn=autolearn,
-        pr_number=pr_number,
     )
 
 
@@ -914,7 +938,6 @@ def _land_by_branch(
     force: bool,
     pull_flag: bool,
     branch_name: str,
-    autolearn: bool,
     no_delete: bool,
 ) -> None:
     """Land a PR for a specific branch."""
@@ -966,6 +989,13 @@ def _land_by_branch(
     # Check for unresolved comments BEFORE merge
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
+    # Check learn status before any mutations (for plan branches)
+    plan_issue_number = extract_leading_issue_number(branch_name)
+    if plan_issue_number is not None:
+        _check_learn_status_and_prompt(
+            ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
+        )
+
     # Merge the PR via GitHub API
     user_output(f"Merging PR #{pr_number} for branch '{branch_name}'...")
     subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
@@ -998,7 +1028,7 @@ def _land_by_branch(
             force=force,
         )
 
-    # Cleanup and navigate (autolearn happens inside after confirmation)
+    # Cleanup and navigate
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -1011,6 +1041,4 @@ def _land_by_branch(
         target_child_branch=None,
         objective_number=objective_number,
         no_delete=no_delete,
-        autolearn=autolearn,
-        pr_number=pr_number,
     )
