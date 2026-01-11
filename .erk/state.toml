@@ -92,3 +92,10 @@ hash = "fffa0612d9511160"
 [artifacts.files."hooks/exit-plan-mode-hook"]
 version = "0.4.6"
 hash = "416f5ec584633d32"
+
+[reminders]
+installed = [
+    "devrun",
+    "dignified-python",
+    "tripwires",
+]

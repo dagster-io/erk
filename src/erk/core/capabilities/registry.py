@@ -8,6 +8,11 @@ from erk.core.capabilities.dignified_review import DignifiedReviewCapability
 from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
+from erk.core.capabilities.reminders import (
+    DevrunReminderCapability,
+    DignifiedPythonReminderCapability,
+    TripwiresReminderCapability,
+)
 from erk.core.capabilities.ruff_format import RuffFormatCapability
 from erk.core.capabilities.shell_integration import ShellIntegrationCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
@@ -32,6 +37,10 @@ def _all_capabilities() -> tuple[Capability, ...]:
         HooksCapability(),
         RuffFormatCapability(),
         ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None),
+        # Reminder capabilities - opt-in context injection (required=False)
+        DevrunReminderCapability(),
+        DignifiedPythonReminderCapability(),
+        TripwiresReminderCapability(),
     )
 
 
