@@ -8,7 +8,7 @@ from erk.cli.commands.objective.next_plan_cmd import next_plan
 from erk.cli.help_formatter import ErkCommandGroup
 
 
-@click.group("objective", cls=ErkCommandGroup, hidden=True)
+@click.group("objective", cls=ErkCommandGroup)
 def objective_group() -> None:
     """Manage objectives (multi-PR coordination issues)."""
     pass
