@@ -327,13 +327,13 @@ def _cleanup_and_navigate(
             # Slot worktree without assignment (e.g., branch checked out via gt get)
             # Don't delete the worktree - just delete branch and checkout placeholder
             slot_name = worktree_path.name
-            user_output(
-                click.style("Warning:", fg="yellow")
-                + f" Slot '{slot_name}' has no assignment (branch checked out outside erk)."
-            )
-            user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
 
             if not force and not ctx.dry_run:
+                user_output(
+                    click.style("Warning:", fg="yellow")
+                    + f" Slot '{slot_name}' has no assignment (branch checked out outside erk)."
+                )
+                user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
                 if not ctx.console.confirm(
                     f"Release slot '{slot_name}' and delete branch '{branch}'?",
                     default=True,
