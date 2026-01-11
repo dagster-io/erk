@@ -27,6 +27,14 @@ class Session:
 
 
 @dataclass(frozen=True)
+class FoundSession:
+    """Result of global session lookup - includes path where found."""
+
+    session: Session
+    path: Path
+
+
+@dataclass(frozen=True)
 class SessionContent:
     """Raw content from a session and its agent logs.
 
@@ -262,4 +270,20 @@ class ClaudeInstallation(ABC):
     @abstractmethod
     def get_projects_dir_path(self) -> Path:
         """Return path to ~/.claude/projects/ directory."""
+        ...
+
+    @abstractmethod
+    def find_session_globally(self, session_id: str) -> FoundSession | SessionNotFound:
+        """Find a session by ID across all project directories.
+
+        Searches all projects under ~/.claude/projects/ for the session.
+        Use this when you have a session ID but don't know which project
+        it belongs to (e.g., sessions tracked in GitHub issue metadata).
+
+        Args:
+            session_id: Session UUID to find
+
+        Returns:
+            FoundSession with session metadata and file path, or SessionNotFound
+        """
         ...
