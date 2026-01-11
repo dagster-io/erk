@@ -14,7 +14,7 @@ from erk_shared.core.fakes import (
     FakePlannerRegistry,
     FakeScriptWriter,
 )
-from erk_shared.extraction.claude_installation import ClaudeInstallation
+from erk_shared.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -63,7 +63,7 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
-    from erk_shared.extraction.claude_installation import FakeClaudeInstallation
+    from erk_shared.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.gateway.completion import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation

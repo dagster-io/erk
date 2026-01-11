@@ -10,7 +10,7 @@ from erk.cli.commands.exec.scripts.plan_save_to_issue import (
     plan_save_to_issue,
 )
 from erk_shared.context import ErkContext
-from erk_shared.extraction.claude_installation import (
+from erk_shared.extraction.claude_installation.fake import (
     FakeClaudeInstallation,
     FakeProject,
     FakeSessionData,
