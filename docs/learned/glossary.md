@@ -577,6 +577,35 @@ for event in executor.execute_command_streaming(...):
 
 ---
 
+## Capability System Terms
+
+### Capability
+
+An optional feature that can be installed via `erk init capability add <name>`.
+
+**Purpose**: Modular extensibility - users can install features they need without requiring all features for every project.
+
+**Not to be confused with**: [Capability Marker](#capability-marker), which is a runtime parameter for enabling/disabling features in UI contexts.
+
+**Scope types**:
+
+- **project**: Installed relative to `repo_root` (e.g., skills, workflows)
+- **user**: Installed relative to home directory (e.g., statusline, shell integration)
+
+**Architecture**: See [Capability System Architecture](architecture/capability-system.md) for API reference, [Capability Implementation Patterns](architecture/capability-patterns.md) for implementation examples.
+
+### SkillCapability
+
+A capability that installs a Claude skill from erk's bundled artifacts.
+
+**Base class**: `SkillCapability` in `src/erk/core/capabilities/skill_capability.py`
+
+**Implementation**: Minimal - only requires `skill_name` and `description` properties.
+
+**Example**: `DignifiedPythonCapability` installs `.claude/skills/dignified-python/`.
+
+---
+
 ## Gateway Terms
 
 ### Gateway
@@ -934,6 +963,8 @@ An execution pattern where subprocess output is streamed to the UI in real-time 
 ### Capability Marker
 
 A parameter (like `repo_root`) whose presence/absence determines which execution path or feature set is available. Used to gracefully degrade functionality.
+
+**Not to be confused with**: [Capability](#capability), which is the `erk init capability` system for installing optional features.
 
 **Example**: `PlanDetailScreen` uses `repo_root` to decide whether streaming execution is available or commands are disabled.
 

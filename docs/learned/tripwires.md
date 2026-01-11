@@ -11,6 +11,8 @@ read_when:
 
 Action-triggered rules that fire when you're about to perform specific actions.
 
+**CRITICAL: Before creating a new capability without reading this doc** → Read [Capability Implementation Patterns](architecture/capability-patterns.md) first. Load this doc first for implementation patterns and testability guidance.
+
 **CRITICAL: Before passing dry_run boolean flags through business logic function parameters** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands.
 
 **CRITICAL: Before calling os.chdir() in erk code** → Read [Erk Architecture Patterns](architecture/erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError.
