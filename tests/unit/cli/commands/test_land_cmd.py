@@ -1542,7 +1542,9 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that _check_learn_status_and_prompt shows positive feedback when plan has been learned from."""
+    """Test that _check_learn_status_and_prompt shows positive feedback when plan has been
+    learned from.
+    """
     from erk.cli.commands import land_cmd
     from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
     from erk_shared.sessions.discovery import SessionsForPlan
