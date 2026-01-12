@@ -1,6 +1,6 @@
 [project]
 name = "erk-shared"
-version = "0.5.1"
+version = "0.5.2"
 description = "Shared utilities and interfaces for erk and erk-kits"
 readme = "README.md"
 requires-python = ">=3.11"

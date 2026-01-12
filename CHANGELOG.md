@@ -7,16 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-As of `5f0066774`
+## [0.5.2] - 2026-01-12 07:54 PT
 
 ### Added
 
-- Add `erk init capability remove` command for uninstalling capabilities (5ce60e022)
-- Add `prompt_learn_on_land` config setting to disable learn prompts during PR landing (2d01675d9)
+- Add `erk init capability remove` command for uninstalling capabilities
+- Add `prompt_learn_on_land` config setting to disable learn prompts during PR landing
 
 ### Changed
 
-- Make artifact health checks capability-aware to avoid false warnings for uninstalled capabilities (903dfeb7f)
+- Make artifact health checks capability-aware to avoid false warnings for uninstalled capabilities
 
 ## [0.5.1] - 2026-01-12 01:42 PT
 

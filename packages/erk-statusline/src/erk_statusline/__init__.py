@@ -1,3 +1,3 @@
 """erk-statusline: Custom status line for Claude Code with robbyrussell theme style."""
 
-__version__ = "0.5.1"
+__version__ = "0.5.2"

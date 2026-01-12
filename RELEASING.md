@@ -95,6 +95,8 @@ This pushes the release branch and creates a PR for GitHub CI. Review the GitHub
 
 Only proceed to publish after confirming all checks pass. Publishing to PyPI is irreversible.
 
+> **Note for Claude:** Do NOT use `gh pr checks --watch` or similar commands to monitor CI. Instead, tell the user to check GitHub Actions manually and wait for their confirmation before proceeding.
+
 ### 8. Publish to PyPI
 
 ```bash
