@@ -12,6 +12,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 
 
@@ -50,6 +51,14 @@ class TripwiresReviewCapability(Capability):
                 path=".github/prompts/tripwires-review.md",
                 artifact_type="file",
             ),
+        ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare workflow and prompt as managed artifacts."""
+        return [
+            ManagedArtifact(name="tripwires-review", artifact_type="workflow"),
+            ManagedArtifact(name="tripwires-review", artifact_type="prompt"),
         ]
 
     def is_installed(self, repo_root: Path | None) -> bool:

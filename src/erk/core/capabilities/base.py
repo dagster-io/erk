@@ -12,6 +12,21 @@ from typing import Literal
 # Type alias for capability scope
 CapabilityScope = Literal["project", "user"]
 
+# Artifact types that capabilities can declare they manage
+ManagedArtifactType = Literal["skill", "command", "agent", "workflow", "action", "hook", "prompt"]
+
+
+@dataclass(frozen=True)
+class ManagedArtifact:
+    """Describes an artifact managed by a capability for artifact detection.
+
+    This bridges capability declarations with artifact detection/health checks.
+    Used by the registry to determine which artifacts are erk-managed.
+    """
+
+    name: str  # e.g., "dignified-python", "ruff-format-hook"
+    artifact_type: ManagedArtifactType
+
 
 @dataclass(frozen=True)
 class CapabilityResult:
@@ -103,6 +118,17 @@ class Capability(ABC):
         always be installed (e.g., hooks).
         """
         return False
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """List of artifacts this capability manages for artifact detection.
+
+        Used by the registry to determine which artifacts are erk-managed
+        (vs project-specific). Override in subclasses to declare managed artifacts.
+
+        Default is empty list for backwards compatibility.
+        """
+        return []
 
     def preflight(self, repo_root: Path | None) -> CapabilityResult:
         """Check preconditions before installation.

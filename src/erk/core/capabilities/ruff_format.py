@@ -12,6 +12,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 from erk.core.claude_settings import (
     add_ruff_format_hook,
@@ -48,6 +49,11 @@ class RuffFormatCapability(Capability):
     def artifacts(self) -> list[CapabilityArtifact]:
         # settings.json is shared by multiple capabilities, so not listed here
         return []
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare ruff-format hook as managed artifact."""
+        return [ManagedArtifact(name="ruff-format-hook", artifact_type="hook")]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the ruff format hook is configured in settings.json."""

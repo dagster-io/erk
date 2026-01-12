@@ -11,6 +11,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 
 
@@ -45,6 +46,11 @@ class DevrunAgentCapability(Capability):
                 artifact_type="file",
             ),
         ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare devrun agent as managed artifact."""
+        return [ManagedArtifact(name="devrun", artifact_type="agent")]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the agent file exists."""

@@ -10,6 +10,7 @@ from erk.artifacts.discovery import (
 )
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_RUFF_FORMAT_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
 )
 
@@ -512,5 +513,205 @@ def test_is_erk_managed_local_hook_badge_logic(tmp_path: Path) -> None:
     artifacts = discover_artifacts(tmp_path)
     hook_artifact = next(a for a in artifacts if a.artifact_type == "hook")
 
-    # my-local-hook is NOT in BUNDLED_HOOKS
+    # my-local-hook is NOT erk-managed
     assert is_erk_managed(hook_artifact) is False
+
+
+# =============================================================================
+# Tests for Ruff Format Hook Discovery
+# =============================================================================
+
+
+def test_discover_ruff_format_hook(tmp_path: Path) -> None:
+    """Discovers ruff-format hook from settings.json."""
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    hook_artifacts = [a for a in result if a.artifact_type == "hook"]
+    assert len(hook_artifacts) == 1
+    assert hook_artifacts[0].name == "ruff-format-hook"
+
+
+def test_is_erk_managed_ruff_format_hook(tmp_path: Path) -> None:
+    """Verifies ruff-format hook is recognized as erk-managed."""
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir(parents=True)
+
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                }
+            ],
+        }
+    }
+    (claude_dir / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    hook_artifact = next(a for a in artifacts if a.artifact_type == "hook")
+
+    assert is_erk_managed(hook_artifact) is True
+
+
+# =============================================================================
+# Tests for Prompt Discovery
+# =============================================================================
+
+
+def test_discover_prompts(tmp_path: Path) -> None:
+    """Discovers prompts from .github/prompts/ directory."""
+    prompts_dir = tmp_path / ".github" / "prompts"
+    prompts_dir.mkdir(parents=True)
+
+    (prompts_dir / "dignified-python-review.md").write_text("# Review", encoding="utf-8")
+    (prompts_dir / "tripwires-review.md").write_text("# Tripwires", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    prompt_artifacts = [a for a in result if a.artifact_type == "prompt"]
+    assert len(prompt_artifacts) == 2
+
+    prompt_names = {p.name for p in prompt_artifacts}
+    assert prompt_names == {"dignified-python-review", "tripwires-review"}
+
+
+def test_discover_prompts_empty_directory(tmp_path: Path) -> None:
+    """Returns empty list when .github/prompts/ is empty."""
+    prompts_dir = tmp_path / ".github" / "prompts"
+    prompts_dir.mkdir(parents=True)
+
+    result = discover_artifacts(tmp_path)
+
+    prompt_artifacts = [a for a in result if a.artifact_type == "prompt"]
+    assert prompt_artifacts == []
+
+
+def test_discover_prompts_ignores_non_markdown(tmp_path: Path) -> None:
+    """Ignores non-.md files in .github/prompts/."""
+    prompts_dir = tmp_path / ".github" / "prompts"
+    prompts_dir.mkdir(parents=True)
+
+    (prompts_dir / "valid-prompt.md").write_text("# Prompt", encoding="utf-8")
+    (prompts_dir / "config.txt").write_text("config", encoding="utf-8")
+    (prompts_dir / "script.sh").write_text("#!/bin/bash", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    prompt_artifacts = [a for a in result if a.artifact_type == "prompt"]
+    assert len(prompt_artifacts) == 1
+    assert prompt_artifacts[0].name == "valid-prompt"
+
+
+def test_is_erk_managed_prompt(tmp_path: Path) -> None:
+    """Verifies erk-managed prompts are correctly identified."""
+    prompts_dir = tmp_path / ".github" / "prompts"
+    prompts_dir.mkdir(parents=True)
+
+    # Create erk-managed prompt
+    (prompts_dir / "dignified-python-review.md").write_text("# Review", encoding="utf-8")
+
+    # Create user prompt
+    (prompts_dir / "my-custom-prompt.md").write_text("# Custom", encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    prompt_artifacts = [a for a in artifacts if a.artifact_type == "prompt"]
+
+    erk_prompt = next(p for p in prompt_artifacts if p.name == "dignified-python-review")
+    user_prompt = next(p for p in prompt_artifacts if p.name == "my-custom-prompt")
+
+    assert is_erk_managed(erk_prompt) is True
+    assert is_erk_managed(user_prompt) is False
+
+
+def test_discover_prompts_without_claude_dir(tmp_path: Path) -> None:
+    """Discovers prompts even when .claude/ doesn't exist."""
+    prompts_dir = tmp_path / ".github" / "prompts"
+    prompts_dir.mkdir(parents=True)
+
+    (prompts_dir / "some-prompt.md").write_text("# Prompt", encoding="utf-8")
+
+    result = discover_artifacts(tmp_path)
+
+    prompt_artifacts = [a for a in result if a.artifact_type == "prompt"]
+    assert len(prompt_artifacts) == 1
+
+
+# =============================================================================
+# Tests for is_erk_managed Uses Capabilities
+# =============================================================================
+
+
+def test_is_erk_managed_skill(tmp_path: Path) -> None:
+    """Verifies is_erk_managed uses capability registry for skills."""
+    skill_dir = tmp_path / ".claude" / "skills" / "dignified-python"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# Skill", encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    skill_artifact = next(a for a in artifacts if a.artifact_type == "skill")
+
+    # dignified-python is declared in DignifiedPythonCapability.managed_artifacts
+    assert is_erk_managed(skill_artifact) is True
+
+
+def test_is_erk_managed_user_skill(tmp_path: Path) -> None:
+    """Verifies user skills are NOT erk-managed."""
+    skill_dir = tmp_path / ".claude" / "skills" / "my-custom-skill"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# Custom Skill", encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    skill_artifact = next(a for a in artifacts if a.artifact_type == "skill")
+
+    # my-custom-skill is not declared in any capability
+    assert is_erk_managed(skill_artifact) is False
+
+
+def test_is_erk_managed_agent(tmp_path: Path) -> None:
+    """Verifies is_erk_managed uses capability registry for agents."""
+    agents_dir = tmp_path / ".claude" / "agents"
+    agents_dir.mkdir(parents=True)
+    (agents_dir / "devrun.md").write_text("# Devrun", encoding="utf-8")
+
+    artifacts = discover_artifacts(tmp_path)
+    agent_artifact = next(a for a in artifacts if a.artifact_type == "agent")
+
+    # devrun is declared in DevrunAgentCapability.managed_artifacts
+    assert is_erk_managed(agent_artifact) is True
+
+
+def test_is_erk_managed_command_prefix() -> None:
+    """Verifies commands use erk: prefix matching (not capability registry)."""
+    from erk.artifacts.models import InstalledArtifact
+
+    erk_cmd = InstalledArtifact(
+        name="erk:plan-save",
+        artifact_type="command",
+        path=None,
+        content_hash="abc",
+    )
+    local_cmd = InstalledArtifact(
+        name="local:my-cmd",
+        artifact_type="command",
+        path=None,
+        content_hash="abc",
+    )
+
+    assert is_erk_managed(erk_cmd) is True
+    assert is_erk_managed(local_cmd) is False

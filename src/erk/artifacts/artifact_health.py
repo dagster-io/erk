@@ -18,6 +18,7 @@ from erk.artifacts.models import (
     OrphanCheckResult,
 )
 from erk.artifacts.sync import get_bundled_claude_dir, get_bundled_github_dir
+from erk.core.capabilities.registry import get_managed_artifacts, is_capability_managed
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -26,20 +27,18 @@ from erk.core.claude_settings import (
 )
 from erk.core.release_notes import get_current_version
 
-# Bundled artifacts that erk syncs to projects
-BUNDLED_SKILLS = frozenset(
-    {
-        "dignified-python",
-        "learned-docs",
-        "erk-diff-analysis",
-    }
-)
-BUNDLED_AGENTS = frozenset({"devrun"})
-BUNDLED_WORKFLOWS = frozenset({"erk-impl.yml", "learn-dispatch.yml"})
-# Actions (composite GitHub actions) that erk syncs
-BUNDLED_ACTIONS = frozenset({"setup-claude-code", "setup-claude-erk"})
-# Hook configurations that erk adds to settings.json
-BUNDLED_HOOKS = frozenset({"user-prompt-hook", "exit-plan-mode-hook"})
+
+def _get_bundled_by_type(artifact_type: str) -> frozenset[str]:
+    """Get all artifact names of a given type that are managed by capabilities.
+
+    Args:
+        artifact_type: The artifact type (e.g., "skill", "hook", "workflow")
+
+    Returns:
+        Frozenset of artifact names managed by capabilities
+    """
+    managed = get_managed_artifacts()
+    return frozenset(name for (name, atype), _ in managed.items() if atype == artifact_type)
 
 
 def is_erk_managed(artifact: InstalledArtifact) -> bool:
@@ -51,19 +50,12 @@ def is_erk_managed(artifact: InstalledArtifact) -> bool:
     Returns:
         True if the artifact is bundled with erk, False if it's project-specific
     """
+    # Commands use prefix matching (not capability-declared)
     if artifact.artifact_type == "command":
         return artifact.name.startswith("erk:")
-    if artifact.artifact_type == "skill":
-        return artifact.name in BUNDLED_SKILLS
-    if artifact.artifact_type == "agent":
-        return artifact.name in BUNDLED_AGENTS
-    if artifact.artifact_type == "workflow":
-        return f"{artifact.name}.yml" in BUNDLED_WORKFLOWS
-    if artifact.artifact_type == "action":
-        return artifact.name in BUNDLED_ACTIONS
-    if artifact.artifact_type == "hook":
-        return artifact.name in BUNDLED_HOOKS
-    return False
+
+    # All other artifacts: query capabilities as the single source of truth
+    return is_capability_managed(artifact.name, artifact.artifact_type)
 
 
 # Status types for per-artifact version tracking
@@ -190,7 +182,7 @@ def get_artifact_health(
     artifacts: list[ArtifactStatus] = []
 
     # Check skills (always directory-based)
-    for name in BUNDLED_SKILLS:
+    for name in _get_bundled_by_type("skill"):
         key = f"skills/{name}"
         path = project_claude_dir / "skills" / name
         installed_hash = _compute_path_hash(path, is_directory=True)
@@ -200,7 +192,7 @@ def get_artifact_health(
     # Key format depends on structure:
     #   - Directory: agents/{name} (like skills)
     #   - Single-file: agents/{name}.md (like commands)
-    for name in BUNDLED_AGENTS:
+    for name in _get_bundled_by_type("agent"):
         dir_path = project_claude_dir / "agents" / name
         file_path = project_claude_dir / "agents" / f"{name}.md"
 
@@ -243,14 +235,15 @@ def get_artifact_health(
             )
 
     # Check workflows
-    for workflow_name in BUNDLED_WORKFLOWS:
+    for name in _get_bundled_by_type("workflow"):
+        workflow_name = f"{name}.yml"
         key = f"workflows/{workflow_name}"
         path = project_workflows_dir / workflow_name
         installed_hash = _compute_path_hash(path, is_directory=False)
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check actions (always directory-based)
-    for name in BUNDLED_ACTIONS:
+    for name in _get_bundled_by_type("action"):
         key = f"actions/{name}"
         path = project_actions_dir / name
         installed_hash = _compute_path_hash(path, is_directory=True)
@@ -322,8 +315,8 @@ def _find_orphaned_claude_artifacts(
         orphans["commands/erk"] = cmd_orphans
 
     # Check directory-based artifacts (skills, agents)
-    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
-        for name in names:
+    for prefix, artifact_type in [("skills", "skill"), ("agents", "agent")]:
+        for name in _get_bundled_by_type(artifact_type):
             folder_key = f"{prefix}/{name}"
             dir_orphans = _find_orphaned_in_directory(
                 project_claude_dir / prefix / name,
@@ -342,7 +335,7 @@ def _find_orphaned_workflows(
 ) -> dict[str, list[str]]:
     """Find erk-managed workflow files that exist locally but not in package.
 
-    Only checks files that are in BUNDLED_WORKFLOWS - we don't want to flag
+    Only checks files that are capability-managed workflows - we don't want to flag
     user workflows that erk doesn't manage.
 
     Args:
@@ -360,7 +353,8 @@ def _find_orphaned_workflows(
     orphans: dict[str, list[str]] = {}
 
     # Only check erk-managed workflow files
-    for workflow_name in BUNDLED_WORKFLOWS:
+    for name in _get_bundled_by_type("workflow"):
+        workflow_name = f"{name}.yml"
         local_workflow = project_workflows_dir / workflow_name
         bundled_workflow = bundled_workflows_dir / workflow_name
 
@@ -460,8 +454,8 @@ def _find_missing_claude_artifacts(
         missing["commands/erk"] = cmd_missing
 
     # Check directory-based artifacts (skills, agents)
-    for prefix, names in [("skills", BUNDLED_SKILLS), ("agents", BUNDLED_AGENTS)]:
-        for name in names:
+    for prefix, artifact_type in [("skills", "skill"), ("agents", "agent")]:
+        for name in _get_bundled_by_type(artifact_type):
             folder_key = f"{prefix}/{name}"
             dir_missing = _find_missing_in_directory(
                 bundled_claude_dir / prefix / name,
@@ -492,7 +486,8 @@ def _find_missing_workflows(
     project_workflows_dir.mkdir(parents=True, exist_ok=True)
     missing: dict[str, list[str]] = {}
 
-    for workflow_name in BUNDLED_WORKFLOWS:
+    for name in _get_bundled_by_type("workflow"):
+        workflow_name = f"{name}.yml"
         bundled_workflow = bundled_workflows_dir / workflow_name
         local_workflow = project_workflows_dir / workflow_name
 
@@ -524,7 +519,7 @@ def _find_missing_actions(
 
     missing: dict[str, list[str]] = {}
 
-    for action_name in BUNDLED_ACTIONS:
+    for action_name in _get_bundled_by_type("action"):
         bundled_action = bundled_actions_dir / action_name
         local_action = project_actions_dir / action_name
 
@@ -549,10 +544,11 @@ def _find_missing_hooks(project_claude_dir: Path) -> dict[str, list[str]]:
     """
     settings_path = project_claude_dir / "settings.json"
     missing: dict[str, list[str]] = {}
+    bundled_hooks = _get_bundled_by_type("hook")
 
     # If no settings.json, all hooks are missing
     if not settings_path.exists():
-        return {"settings.json": sorted(BUNDLED_HOOKS)}
+        return {"settings.json": sorted(bundled_hooks)}
 
     content = settings_path.read_text(encoding="utf-8")
     settings = json.loads(content)

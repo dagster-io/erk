@@ -11,6 +11,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 from erk.core.claude_settings import (
     add_erk_hooks,
@@ -51,6 +52,14 @@ class HooksCapability(Capability):
     def artifacts(self) -> list[CapabilityArtifact]:
         # settings.json is shared by multiple capabilities, so not listed here
         return []
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare erk hooks as managed artifacts."""
+        return [
+            ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
+            ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
+        ]
 
     @property
     def required(self) -> bool:

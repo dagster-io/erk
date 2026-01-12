@@ -25,6 +25,8 @@ from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
 from erk.core.capabilities.registry import (
     get_capability,
+    get_managed_artifacts,
+    is_capability_managed,
     list_capabilities,
     list_required_capabilities,
 )
@@ -1841,3 +1843,156 @@ def test_reminder_capabilities_not_in_required_list() -> None:
     assert "devrun-reminder" not in required_names
     assert "dignified-python-reminder" not in required_names
     assert "tripwires-reminder" not in required_names
+
+
+# =============================================================================
+# Tests for ManagedArtifact and managed_artifacts Property
+# =============================================================================
+
+
+def test_skill_capability_managed_artifacts() -> None:
+    """Test that SkillCapability declares its managed artifacts."""
+    cap = DignifiedPythonCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    assert managed[0].name == "dignified-python"
+    assert managed[0].artifact_type == "skill"
+
+
+def test_devrun_agent_managed_artifacts() -> None:
+    """Test that DevrunAgentCapability declares its managed artifacts."""
+    cap = DevrunAgentCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    assert managed[0].name == "devrun"
+    assert managed[0].artifact_type == "agent"
+
+
+def test_workflow_capability_managed_artifacts() -> None:
+    """Test that ErkImplWorkflowCapability declares its managed artifacts."""
+    cap = ErkImplWorkflowCapability()
+    managed = cap.managed_artifacts
+
+    # Workflow + 2 actions
+    assert len(managed) == 3
+    names = {(a.name, a.artifact_type) for a in managed}
+    assert ("erk-impl", "workflow") in names
+    assert ("setup-claude-code", "action") in names
+    assert ("setup-claude-erk", "action") in names
+
+
+def test_hooks_capability_managed_artifacts() -> None:
+    """Test that HooksCapability declares its managed artifacts."""
+    cap = HooksCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 2
+    names = {(a.name, a.artifact_type) for a in managed}
+    assert ("user-prompt-hook", "hook") in names
+    assert ("exit-plan-mode-hook", "hook") in names
+
+
+def test_ruff_format_capability_managed_artifacts() -> None:
+    """Test that RuffFormatCapability declares its managed artifacts."""
+    cap = RuffFormatCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    assert managed[0].name == "ruff-format-hook"
+    assert managed[0].artifact_type == "hook"
+
+
+def test_dignified_review_capability_managed_artifacts() -> None:
+    """Test that DignifiedReviewCapability declares its managed artifacts."""
+    cap = DignifiedReviewCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 2
+    names = {(a.name, a.artifact_type) for a in managed}
+    assert ("dignified-python-review", "workflow") in names
+    assert ("dignified-python-review", "prompt") in names
+
+
+def test_tripwires_review_capability_managed_artifacts() -> None:
+    """Test that TripwiresReviewCapability declares its managed artifacts."""
+    cap = TripwiresReviewCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 2
+    names = {(a.name, a.artifact_type) for a in managed}
+    assert ("tripwires-review", "workflow") in names
+    assert ("tripwires-review", "prompt") in names
+
+
+def test_default_managed_artifacts_is_empty() -> None:
+    """Test that default managed_artifacts returns empty list."""
+    # LearnedDocsCapability doesn't override managed_artifacts
+    cap = LearnedDocsCapability()
+    managed = cap.managed_artifacts
+
+    assert managed == []
+
+
+# =============================================================================
+# Tests for Registry Functions: get_managed_artifacts and is_capability_managed
+# =============================================================================
+
+
+def test_get_managed_artifacts_returns_dict() -> None:
+    """Test that get_managed_artifacts returns a dict of all managed artifacts."""
+    managed = get_managed_artifacts()
+
+    assert isinstance(managed, dict)
+    # Should contain at least the skills we know about
+    assert ("dignified-python", "skill") in managed
+    assert ("fake-driven-testing", "skill") in managed
+
+
+def test_get_managed_artifacts_contains_all_artifact_types() -> None:
+    """Test that get_managed_artifacts includes various artifact types."""
+    managed = get_managed_artifacts()
+
+    # Check for different types
+    artifact_types = {atype for _, atype in managed.keys()}
+    assert "skill" in artifact_types
+    assert "agent" in artifact_types
+    assert "workflow" in artifact_types
+    assert "action" in artifact_types
+    assert "hook" in artifact_types
+    assert "prompt" in artifact_types
+
+
+def test_get_managed_artifacts_maps_to_capability_name() -> None:
+    """Test that get_managed_artifacts values are capability names."""
+    managed = get_managed_artifacts()
+
+    # Check a few known mappings
+    assert managed[("dignified-python", "skill")] == "dignified-python"
+    assert managed[("devrun", "agent")] == "devrun-agent"
+    assert managed[("erk-impl", "workflow")] == "erk-impl-workflow"
+
+
+def test_is_capability_managed_returns_true_for_known_artifacts() -> None:
+    """Test is_capability_managed returns True for artifacts declared by capabilities."""
+    assert is_capability_managed("dignified-python", "skill") is True
+    assert is_capability_managed("devrun", "agent") is True
+    assert is_capability_managed("erk-impl", "workflow") is True
+    assert is_capability_managed("user-prompt-hook", "hook") is True
+    assert is_capability_managed("ruff-format-hook", "hook") is True
+    assert is_capability_managed("dignified-python-review", "prompt") is True
+
+
+def test_is_capability_managed_returns_false_for_unknown_artifacts() -> None:
+    """Test is_capability_managed returns False for unknown artifacts."""
+    assert is_capability_managed("unknown-skill", "skill") is False
+    assert is_capability_managed("custom-agent", "agent") is False
+    assert is_capability_managed("user-workflow", "workflow") is False
+
+
+def test_is_capability_managed_type_matters() -> None:
+    """Test that is_capability_managed checks both name AND type."""
+    # dignified-python is a skill, not an agent
+    assert is_capability_managed("dignified-python", "skill") is True
+    assert is_capability_managed("dignified-python", "agent") is False

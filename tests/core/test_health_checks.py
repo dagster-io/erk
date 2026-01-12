@@ -704,13 +704,12 @@ def test_check_managed_artifacts_actions_optional_without_workflows(
     """Actions not-installed is OK (info) when workflows aren't installed."""
     from erk.core.claude_settings import add_erk_hooks
 
-    # Monkeypatch registries to simplify test (only test actions/workflows interaction)
-    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_SKILLS", frozenset())
-    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_AGENTS", frozenset())
-    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_WORKFLOWS", frozenset())
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.BUNDLED_ACTIONS", frozenset({"setup-claude-erk"})
-    )
+    # Mock get_managed_artifacts to return only actions (no skills, agents, workflows)
+    # This simplifies the test to only check actions/workflows interaction
+    mock_managed: dict[tuple[str, str], str] = {
+        ("setup-claude-erk", "action"): "erk-impl-workflow",
+    }
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_managed_artifacts", lambda: mock_managed)
 
     # Create bundled dir with command AND action (but no workflow)
     bundled_claude = tmp_path / "bundled" / ".claude"
@@ -759,15 +758,13 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     """Actions not-installed is an error when workflows ARE installed."""
     from erk.core.claude_settings import add_erk_hooks
 
-    # Monkeypatch registries to simplify test (only test actions/workflows interaction)
-    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_SKILLS", frozenset())
-    monkeypatch.setattr("erk.artifacts.artifact_health.BUNDLED_AGENTS", frozenset())
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.BUNDLED_WORKFLOWS", frozenset({"erk-impl.yml"})
-    )
-    monkeypatch.setattr(
-        "erk.artifacts.artifact_health.BUNDLED_ACTIONS", frozenset({"setup-claude-erk"})
-    )
+    # Mock get_managed_artifacts to return workflow and action only
+    # This simplifies the test to only check actions/workflows interaction
+    mock_managed: dict[tuple[str, str], str] = {
+        ("erk-impl", "workflow"): "erk-impl-workflow",
+        ("setup-claude-erk", "action"): "erk-impl-workflow",
+    }
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_managed_artifacts", lambda: mock_managed)
 
     # Create bundled dir with command, workflow, and action
     bundled_claude = tmp_path / "bundled" / ".claude"
