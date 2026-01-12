@@ -155,6 +155,16 @@ def execute_land_pr(
     yield ProgressEvent("Getting child branches...")
     children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
 
+    # Update upstack PR base branches BEFORE merging
+    # This prevents GitHub from auto-closing PRs when "Automatically delete head branches"
+    # is enabled and GitHub deletes the base branch immediately after merge
+    if children:
+        yield ProgressEvent("Updating upstack PR base branches...")
+        for child_branch in children:
+            child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
+            if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
+                ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
+
     # Step 6: Get PR title and body for merge commit message (use same PRDetails object)
     yield ProgressEvent("Getting PR metadata...")
 
@@ -179,15 +189,6 @@ def execute_land_pr(
         return
 
     yield ProgressEvent(f"PR #{pr_number} merged successfully", style="success")
-
-    # Update upstack PR base branches before deleting the landed branch
-    # This prevents GitHub from auto-closing PRs when their base branch is deleted
-    if children:
-        yield ProgressEvent("Updating upstack PR base branches...")
-        for child_branch in children:
-            child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
-            if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
-                ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
 
     # Delete remote branch after successful merge
     # Note: We do this separately instead of using `gh pr merge --delete-branch`
