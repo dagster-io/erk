@@ -4,8 +4,13 @@ from pathlib import Path
 
 import pytest
 
+from erk.cli.commands import land_cmd
+from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
 from erk.core.context import context_for_test
+from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.console.fake import FakeConsole
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.sessions.discovery import SessionsForPlan
 from tests.test_utils.github_helpers import create_test_issue
 
 
@@ -17,10 +22,6 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
     """Test that _check_learn_status_and_prompt shows positive feedback when plan has been
     learned from.
     """
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-    from erk_shared.sessions.discovery import SessionsForPlan
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -50,9 +51,6 @@ def test_check_learn_status_and_prompt_skips_when_force(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt does nothing when force=True."""
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -83,10 +81,6 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
 
     When user confirms to continue, the function should return normally.
     """
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-    from erk_shared.sessions.discovery import SessionsForPlan
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -102,8 +96,6 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Create context with FakeConsole that confirms (True)
-    from erk_shared.gateway.console.fake import FakeConsole
-
     fake_console = FakeConsole(
         is_interactive=True,
         is_stdout_tty=True,
@@ -127,10 +119,6 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt exits when user declines to continue."""
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-    from erk_shared.sessions.discovery import SessionsForPlan
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -146,8 +134,6 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Create context with FakeConsole that declines (False)
-    from erk_shared.gateway.console.fake import FakeConsole
-
     fake_console = FakeConsole(
         is_interactive=True,
         is_stdout_tty=True,
@@ -172,9 +158,6 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
     Learn plans (issues with erk-learn label) should not warn about needing
     to be learned from, since they are themselves for extracting insights.
     """
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -214,10 +197,6 @@ def test_check_learn_status_and_prompt_skips_when_config_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt skips when prompt_learn_on_land=False."""
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-    from erk_shared.context.types import GlobalConfig
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -250,11 +229,6 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Test that _check_learn_status_and_prompt runs normally when prompt_learn_on_land=True."""
-    from erk.cli.commands import land_cmd
-    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
-    from erk_shared.context.types import GlobalConfig
-    from erk_shared.sessions.discovery import SessionsForPlan
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
