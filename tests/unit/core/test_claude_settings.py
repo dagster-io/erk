@@ -681,6 +681,295 @@ def test_add_erk_hooks_preserves_other_settings() -> None:
     assert result["alwaysThinkingEnabled"] is True
 
 
+# --- Tests for marker-based hook detection ---
+
+
+def test_is_erk_managed_hook_returns_true_for_erk_hooks() -> None:
+    """Test _is_erk_managed_hook returns True for commands with ERK_HOOK_ID marker."""
+    from erk.core.claude_settings import _is_erk_managed_hook
+
+    assert _is_erk_managed_hook(ERK_USER_PROMPT_HOOK_COMMAND) is True
+    assert _is_erk_managed_hook(ERK_EXIT_PLAN_HOOK_COMMAND) is True
+    assert _is_erk_managed_hook("ERK_HOOK_ID=custom-hook erk exec custom") is True
+
+
+def test_is_erk_managed_hook_returns_false_for_non_erk_hooks() -> None:
+    """Test _is_erk_managed_hook returns False for commands without ERK_HOOK_ID marker."""
+    from erk.core.claude_settings import _is_erk_managed_hook
+
+    assert _is_erk_managed_hook("echo hello") is False
+    assert _is_erk_managed_hook("erk exec something") is False
+    assert _is_erk_managed_hook("") is False
+
+
+def test_is_erk_managed_hook_entry_returns_true_for_erk_hooks() -> None:
+    """Test _is_erk_managed_hook_entry returns True for entries with erk hooks."""
+    from erk.core.claude_settings import _is_erk_managed_hook_entry
+
+    entry = {
+        "matcher": "*",
+        "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+    }
+    assert _is_erk_managed_hook_entry(entry) is True
+
+
+def test_is_erk_managed_hook_entry_returns_false_for_non_erk_hooks() -> None:
+    """Test _is_erk_managed_hook_entry returns False for entries without erk hooks."""
+    from erk.core.claude_settings import _is_erk_managed_hook_entry
+
+    entry = {
+        "matcher": "*",
+        "hooks": [{"type": "command", "command": "echo hello"}],
+    }
+    assert _is_erk_managed_hook_entry(entry) is False
+
+
+def test_is_erk_managed_hook_entry_handles_empty_hooks() -> None:
+    """Test _is_erk_managed_hook_entry handles entries with no hooks."""
+    from erk.core.claude_settings import _is_erk_managed_hook_entry
+
+    assert _is_erk_managed_hook_entry({"matcher": "*", "hooks": []}) is False
+    assert _is_erk_managed_hook_entry({"matcher": "*"}) is False
+
+
+def test_has_erk_hook_by_marker_finds_user_prompt_hook() -> None:
+    """Test has_erk_hook_by_marker finds UserPromptSubmit hook by marker."""
+    from erk.core.claude_settings import has_erk_hook_by_marker
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*",
+                    "hooks": [{"type": "command", "command": ERK_USER_PROMPT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert (
+        has_erk_hook_by_marker(
+            settings,
+            hook_type="UserPromptSubmit",
+            marker="ERK_HOOK_ID=user-prompt-hook",
+            matcher=None,
+        )
+        is True
+    )
+
+
+def test_has_erk_hook_by_marker_finds_exit_plan_hook() -> None:
+    """Test has_erk_hook_by_marker finds ExitPlanMode hook by marker."""
+    from erk.core.claude_settings import has_erk_hook_by_marker
+
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert (
+        has_erk_hook_by_marker(
+            settings,
+            hook_type="PreToolUse",
+            marker="ERK_HOOK_ID=exit-plan-mode-hook",
+            matcher="ExitPlanMode",
+        )
+        is True
+    )
+
+
+def test_has_erk_hook_by_marker_returns_false_for_wrong_matcher() -> None:
+    """Test has_erk_hook_by_marker returns False when matcher doesn't match."""
+    from erk.core.claude_settings import has_erk_hook_by_marker
+
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                {
+                    "matcher": "Bash",  # Wrong matcher
+                    "hooks": [{"type": "command", "command": ERK_EXIT_PLAN_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    assert (
+        has_erk_hook_by_marker(
+            settings,
+            hook_type="PreToolUse",
+            marker="ERK_HOOK_ID=exit-plan-mode-hook",
+            matcher="ExitPlanMode",
+        )
+        is False
+    )
+
+
+def test_has_erk_hook_by_marker_returns_false_for_missing_hooks() -> None:
+    """Test has_erk_hook_by_marker returns False for empty settings."""
+    from erk.core.claude_settings import has_erk_hook_by_marker
+
+    assert (
+        has_erk_hook_by_marker(
+            {},
+            hook_type="UserPromptSubmit",
+            marker="ERK_HOOK_ID=user-prompt-hook",
+            matcher=None,
+        )
+        is False
+    )
+
+
+def test_has_erk_hook_by_marker_finds_old_hook_commands() -> None:
+    """Test has_erk_hook_by_marker finds old hook commands by marker.
+
+    This tests that marker-based detection can find hooks even if the
+    command has changed, as long as the ERK_HOOK_ID marker is present.
+    """
+    from erk.core.claude_settings import has_erk_hook_by_marker
+
+    # Simulate an old hook command with the marker but different full command
+    old_command = "ERK_HOOK_ID=user-prompt-hook erk exec old-user-prompt-hook"
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*",
+                    "hooks": [{"type": "command", "command": old_command}],
+                }
+            ]
+        }
+    }
+    assert (
+        has_erk_hook_by_marker(
+            settings,
+            hook_type="UserPromptSubmit",
+            marker="ERK_HOOK_ID=user-prompt-hook",
+            matcher=None,
+        )
+        is True
+    )
+
+
+# --- Tests for hook replacement behavior ---
+
+
+def test_add_erk_hooks_replaces_old_hooks() -> None:
+    """Test that add_erk_hooks replaces old erk hooks with current versions.
+
+    This is the key behavior change: old hooks with ERK_HOOK_ID marker
+    should be replaced, not duplicated.
+    """
+    # Simulate old hook command with marker but different command text
+    old_user_prompt_command = "ERK_HOOK_ID=user-prompt-hook erk exec old-command"
+    old_exit_plan_command = "ERK_HOOK_ID=exit-plan-mode-hook erk exec old-exit"
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*",
+                    "hooks": [{"type": "command", "command": old_user_prompt_command}],
+                }
+            ],
+            "PreToolUse": [
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": old_exit_plan_command}],
+                }
+            ],
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # Should have exactly one UserPromptSubmit hook (replaced, not appended)
+    assert len(result["hooks"]["UserPromptSubmit"]) == 1
+    assert (
+        result["hooks"]["UserPromptSubmit"][0]["hooks"][0]["command"]
+        == ERK_USER_PROMPT_HOOK_COMMAND
+    )
+
+    # Should have exactly one ExitPlanMode PreToolUse hook (replaced, not appended)
+    assert len(result["hooks"]["PreToolUse"]) == 1
+    assert result["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+
+
+def test_add_erk_hooks_preserves_user_hooks_when_replacing() -> None:
+    """Test that add_erk_hooks preserves non-erk hooks when replacing erk hooks."""
+    old_erk_command = "ERK_HOOK_ID=user-prompt-hook erk exec old-command"
+    user_hook_command = "my-custom-lint-command"
+
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                # User's custom hook (should be preserved)
+                {
+                    "matcher": "*.py",
+                    "hooks": [{"type": "command", "command": user_hook_command}],
+                },
+                # Old erk hook (should be replaced)
+                {
+                    "matcher": "*",
+                    "hooks": [{"type": "command", "command": old_erk_command}],
+                },
+            ],
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # Should have two hooks: user's custom + erk's current
+    assert len(result["hooks"]["UserPromptSubmit"]) == 2
+
+    # Find the user hook and erk hook
+    user_hooks = [h for h in result["hooks"]["UserPromptSubmit"] if h["matcher"] == "*.py"]
+    erk_hooks = [h for h in result["hooks"]["UserPromptSubmit"] if h["matcher"] == "*"]
+
+    assert len(user_hooks) == 1
+    assert user_hooks[0]["hooks"][0]["command"] == user_hook_command
+
+    assert len(erk_hooks) == 1
+    assert erk_hooks[0]["hooks"][0]["command"] == ERK_USER_PROMPT_HOOK_COMMAND
+
+
+def test_add_erk_hooks_preserves_non_exitplanmode_pretooluse_hooks() -> None:
+    """Test that add_erk_hooks preserves non-ExitPlanMode PreToolUse hooks."""
+    old_exit_plan_command = "ERK_HOOK_ID=exit-plan-mode-hook erk exec old-exit"
+    user_bash_hook = "my-bash-validation"
+
+    settings = {
+        "hooks": {
+            "PreToolUse": [
+                # User's Bash validation hook (should be preserved)
+                {
+                    "matcher": "Bash",
+                    "hooks": [{"type": "command", "command": user_bash_hook}],
+                },
+                # Old erk ExitPlanMode hook (should be replaced)
+                {
+                    "matcher": "ExitPlanMode",
+                    "hooks": [{"type": "command", "command": old_exit_plan_command}],
+                },
+            ],
+        }
+    }
+    result = add_erk_hooks(settings)
+
+    # Should have two hooks: user's Bash + erk's ExitPlanMode
+    assert len(result["hooks"]["PreToolUse"]) == 2
+
+    # Find the user hook and erk hook
+    bash_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "Bash"]
+    exit_hooks = [h for h in result["hooks"]["PreToolUse"] if h["matcher"] == "ExitPlanMode"]
+
+    assert len(bash_hooks) == 1
+    assert bash_hooks[0]["hooks"][0]["command"] == user_bash_hook
+
+    assert len(exit_hooks) == 1
+    assert exit_hooks[0]["hooks"][0]["command"] == ERK_EXIT_PLAN_HOOK_COMMAND
+
+
 # --- Tests for backup file creation ---
 
 

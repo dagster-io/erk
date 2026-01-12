@@ -16,6 +16,7 @@ from erk.core.capabilities.base import (
 from erk.core.claude_settings import (
     add_erk_hooks,
     get_repo_claude_settings_path,
+    has_erk_hook_by_marker,
     has_exit_plan_hook,
     has_user_prompt_hook,
     write_claude_settings,
@@ -67,7 +68,12 @@ class HooksCapability(Capability):
         return True
 
     def is_installed(self, repo_root: Path | None) -> bool:
-        """Check if both erk hooks are configured in settings.json."""
+        """Check if both erk hooks are configured in settings.json with CURRENT commands.
+
+        This checks for exact command match, not just marker presence.
+        Old hooks with outdated commands will cause this to return False,
+        triggering a re-install that updates to current commands.
+        """
         if repo_root is None:
             return False
 
@@ -80,10 +86,49 @@ class HooksCapability(Capability):
         except json.JSONDecodeError:
             return False
 
+        # Check for CURRENT command versions (exact match)
         return has_user_prompt_hook(settings) and has_exit_plan_hook(settings)
 
+    def has_any_erk_hooks(self, repo_root: Path | None) -> bool:
+        """Check if ANY erk hooks are present (current or old versions).
+
+        Uses marker-based detection to find hooks regardless of command version.
+        Useful for determining if hooks need updating vs fresh install.
+        """
+        if repo_root is None:
+            return False
+
+        settings_path = get_repo_claude_settings_path(repo_root)
+        if not settings_path.exists():
+            return False
+
+        try:
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return False
+
+        has_user_prompt = has_erk_hook_by_marker(
+            settings,
+            hook_type="UserPromptSubmit",
+            marker="ERK_HOOK_ID=user-prompt-hook",
+            matcher=None,
+        )
+        has_exit_plan = has_erk_hook_by_marker(
+            settings,
+            hook_type="PreToolUse",
+            marker="ERK_HOOK_ID=exit-plan-mode-hook",
+            matcher="ExitPlanMode",
+        )
+
+        return has_user_prompt or has_exit_plan
+
     def install(self, repo_root: Path | None) -> CapabilityResult:
-        """Add erk hooks to .claude/settings.json."""
+        """Add or update erk hooks in .claude/settings.json.
+
+        This method is idempotent - it will replace any existing erk hooks
+        (identified by ERK_HOOK_ID marker) with current versions, or add
+        them if not present.
+        """
         if repo_root is None:
             return CapabilityResult(
                 success=False,
@@ -108,22 +153,30 @@ class HooksCapability(Capability):
             settings = {}
             created_files.append(".claude/settings.json")
 
-        # Check if already installed
+        # Check if already installed with CURRENT commands
         if has_user_prompt_hook(settings) and has_exit_plan_hook(settings):
             return CapabilityResult(
                 success=True,
                 message="Hooks already configured",
             )
 
-        # Add hooks using the pure function
+        # Determine if this is an update or fresh install
+        has_any_hooks = self.has_any_erk_hooks(repo_root)
+
+        # Add/replace hooks using the pure function
         new_settings = add_erk_hooks(settings)
 
         # Write back
         write_claude_settings(settings_path, new_settings)
 
+        if has_any_hooks:
+            message = "Updated erk hooks in .claude/settings.json"
+        else:
+            message = "Added erk hooks to .claude/settings.json"
+
         return CapabilityResult(
             success=True,
-            message="Added erk hooks to .claude/settings.json",
+            message=message,
             created_files=tuple(created_files),
         )
 
