@@ -137,17 +137,30 @@ Based on session analysis, identify documentation to create.
 
 **CRITICAL: Filter out execution discipline issues.**
 
-Before proposing any documentation item, ask: "Was this information already discoverable in the codebase?"
+Before proposing any documentation item, ask: "Was this information in the code the agent was directly working with?"
 
 **NOT documentation candidates** (execution discipline issues):
 
 - Agent didn't read class/function signature before calling it
 - Agent assumed API shape instead of checking type hints
-- Agent didn't look at similar existing code for patterns
-- Agent made wrong assumptions that reading the code would have prevented
+- Agent didn't read the file they were modifying
+- Agent made wrong assumptions that reading the immediate code would have prevented
 - General language/framework knowledge (pytest patterns, Python stdlib, etc.)
 
-These errors indicate the implementing agent should have explored more carefully, not that documentation is missing.
+These errors indicate the implementing agent should have explored the code they were touching more carefully.
+
+**IS documentation candidate** (learning gap):
+
+- Pattern exists in a DIFFERENT function/file that agent wouldn't naturally encounter
+- Agent would need to know "before doing X, look at Y" to find the pattern
+- The connection between X and Y isn't obvious from context
+
+**Tripwires vs conventional docs:**
+
+- **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere", "before adding methods to any ABC"). These fire based on action patterns across the codebase.
+- **Conventional doc**: Module-specific or localized patterns (e.g., "when implementing session file discovery, check existing patterns in preprocess_session.py"). Add a section to an existing doc or create a focused doc with appropriate `read_when` triggers.
+
+If the pattern is isolated to one module/file, use conventional documentation. Tripwires are for patterns that could occur anywhere.
 
 **Category A (Learning Gaps)** - Would have made the session faster:
 

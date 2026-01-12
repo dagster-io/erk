@@ -5,6 +5,7 @@ read_when:
   - "working with parent and agent sessions"
   - "finding session files on disk"
   - "correlating agent logs to parent sessions"
+  - "implementing session-scoped file discovery"
 ---
 
 # Session Hierarchy
@@ -160,8 +161,48 @@ Option 2: Parse parent session for `toolUseResult.agentId` values (more efficien
 }
 ```
 
+## Implementing Session-Scoped File Discovery
+
+When writing functions that discover files belonging to a specific session (agent logs, planning logs, etc.), you MUST filter by session ID.
+
+### The Pattern
+
+```python
+def discover_files_for_session(directory: Path, session_id: str) -> list[Path]:
+    """Find files belonging to a specific session."""
+    matching = []
+    for path in directory.glob("agent-*.jsonl"):
+        # Read first entry to check session ownership
+        content = path.read_text()
+        first_line = content.split("\n", 1)[0]
+        if not first_line.strip():
+            continue
+        entry = json.loads(first_line)
+        if entry.get("sessionId") == session_id:
+            matching.append(path)
+    return matching
+```
+
+### Why This Matters
+
+A project directory may contain thousands of agent logs from many sessions. Without session ID filtering:
+
+- A 67KB session file could load 190MB of unrelated agent logs
+- Processing time increases dramatically
+- Memory usage explodes
+
+### Reference Implementation
+
+See `preprocess_session.py`:
+
+- `discover_agent_logs()` - Discovers agent logs for a session
+- `discover_planning_agent_logs()` - Discovers planning agent logs for a session
+
+Both follow this pattern: glob for candidate files, read first entry, check `sessionId`.
+
 ## Implementation References
 
 - **Session store:** `erk_shared/extraction/claude_code_session_store/`
 - **Parent ID extraction:** `real.py:_extract_parent_session_id()`
 - **Agent type extraction:** `show_cmd.py:extract_agent_types()`
+- **Session-scoped discovery:** `preprocess_session.py:discover_agent_logs()`
