@@ -22,12 +22,19 @@ Exit Codes:
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC
 from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_git, require_issues, require_repo_root
+from erk_shared.context.helpers import (
+    require_cwd,
+    require_git,
+    require_issues,
+    require_repo_root,
+    require_time,
+)
+from erk_shared.gateway.time.abc import Time
 from erk_shared.github.metadata.plan_header import update_plan_header_learn_event
 from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
@@ -78,6 +85,7 @@ def _do_track(
     repo_root: Path,
     issue_number: int,
     session_id: str | None,
+    time: Time,
 ) -> None:
     """Post tracking comment and update plan-header on the plan issue.
 
@@ -86,6 +94,7 @@ def _do_track(
         repo_root: Repository root path
         issue_number: Plan issue number
         session_id: Session ID invoking learn (optional)
+        time: Time gateway for testable timestamps
     """
     # Note: We pass 0 for readable_count and total_count since this script
     # is called after session discovery - the tracking comment is just a marker
@@ -100,7 +109,7 @@ def _do_track(
     )
 
     # Update plan-header with learn event (in addition to comment)
-    timestamp = datetime.now(UTC).isoformat()
+    timestamp = time.now().replace(tzinfo=UTC).isoformat()
     issue = github_issues.get_issue(repo_root, issue_number)
     updated_body = update_plan_header_learn_event(
         issue_body=issue.body,
@@ -131,6 +140,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     git = require_git(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
+    time = require_time(ctx)
 
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
@@ -163,6 +173,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         repo_root=repo_root,
         issue_number=issue_number,
         session_id=session_id,
+        time=time,
     )
 
     result = TrackLearnResult(
