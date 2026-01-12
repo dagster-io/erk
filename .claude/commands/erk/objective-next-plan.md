@@ -67,7 +67,7 @@ gh issue view <issue-number> --json number,title,body,labels
 
 Create a marker to persist the objective issue number for the exit-plan-mode hook.
 
-**Get the session ID** from the `session:` system reminder in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`).
+**Get the session ID** by reading the `session:` line from the system reminders in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`). This value is already visible in your context - just copy it directly, no tools needed.
 
 ```bash
 erk exec marker create --session-id <session-id-from-reminder> \
