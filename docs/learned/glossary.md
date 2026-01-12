@@ -849,10 +849,24 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 
 **Characteristics**:
 
+- Labeled with `erk-plan` (like all plans)
+- **Issue identification**: Issues have the `erk-learn` label (in addition to `erk-plan`)
 - Created from session analysis to capture valuable insights
 - Contains documentation items rather than code changes
 - Marked with `plan_type: learn` in the plan-header metadata
 - PRs from learn plans receive the `erk-skip-learn` label
+
+**Identifying Learn Plans in Code**:
+
+- Issue label: Check for `erk-learn` in `issue.labels`
+- Helper function: `is_issue_learn_plan(labels)` in `src/erk/cli/commands/submit.py`
+- Plan metadata: Check `plan_type: learn` in plan-header
+- PR label: PRs from learn plans have `erk-skip-extraction`
+
+**Special Behaviors**:
+
+- `erk land` skips the "not learned from" warning for learn plans (they don't need learning)
+- `erk plan learn complete` validates the issue has the `erk-learn` label
 
 **Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
 

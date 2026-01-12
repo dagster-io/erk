@@ -24,8 +24,6 @@
     ]
   },
   "permissions": {
-    "allow": [
-      "Bash(erk:*)"
-    ]
+    "allow": ["Bash(erk:*)"]
   }
 }
