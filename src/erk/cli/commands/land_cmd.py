@@ -69,6 +69,9 @@ def _check_learn_status_and_prompt(
     sessions but hasn't been learned from yet, warn the user and give them the
     option to cancel and run learn manually first.
 
+    Learn plans (issues with erk-learn label) are skipped since they are for
+    extracting insights, not for being "learned from" themselves.
+
     Args:
         ctx: ErkContext
         repo_root: Repository root path
@@ -80,6 +83,16 @@ def _check_learn_status_and_prompt(
     """
     if force:
         return
+
+    # Skip learn check for learn plans (they don't need to be learned from)
+    try:
+        issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+        if "erk-learn" in issue.labels:
+            return
+    except RuntimeError:
+        # If we can't fetch the issue, continue with normal flow
+        # (the sessions check will handle it)
+        pass
 
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
 
