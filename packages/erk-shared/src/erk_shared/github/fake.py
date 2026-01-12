@@ -861,3 +861,55 @@ class FakeGitHub(GitHub):
         Use this to verify operations happen in correct order.
         """
         return self._operation_log
+
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -> list[PullRequestInfo]:
+        """Get all open PRs with the given base branch from pre-configured data.
+
+        Filters the _prs mapping to find PRs where:
+        1. The PR's base branch matches (from _pr_bases or _pr_details)
+        2. The PR state is OPEN
+
+        Args:
+            repo_root: Repository root directory (ignored in fake)
+            base_branch: The base branch name to filter by
+
+        Returns:
+            List of PullRequestInfo for matching PRs
+        """
+        result: list[PullRequestInfo] = []
+        for branch_name, pr in self._prs.items():
+            # Check if state is OPEN
+            if pr.state != "OPEN":
+                continue
+
+            # Check if base branch matches (look up in pr_details first)
+            if pr.number in self._pr_details:
+                pr_base = self._pr_details[pr.number].base_ref_name
+            elif pr.number in self._pr_bases:
+                pr_base = self._pr_bases[pr.number]
+            else:
+                # No base info available, skip
+                continue
+
+            if pr_base == base_branch:
+                # Create new PullRequestInfo with head_branch populated
+                result.append(
+                    PullRequestInfo(
+                        number=pr.number,
+                        state=pr.state,
+                        url=pr.url,
+                        is_draft=pr.is_draft,
+                        title=pr.title,
+                        checks_passing=pr.checks_passing,
+                        owner=pr.owner,
+                        repo=pr.repo,
+                        has_conflicts=pr.has_conflicts,
+                        checks_counts=pr.checks_counts,
+                        will_close_target=pr.will_close_target,
+                        head_branch=branch_name,
+                    )
+                )
+
+        return result

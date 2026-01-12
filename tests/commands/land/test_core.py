@@ -655,6 +655,138 @@ def test_land_updates_upstack_pr_base_branches() -> None:
         )
 
 
+def test_land_updates_github_only_child_pr_base() -> None:
+    """Test land updates child PRs even when not tracked by Graphite.
+
+    When a child branch/PR is created without using `gt branch create`, or its
+    base was set differently in GitHub, Graphite's cache won't know about it.
+    The land command should query GitHub directly to find all PRs that target
+    the branch being landed, and update their base branches.
+
+    Regression test for issue #4848.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Setup: main -> feature-1 (landing)
+        # feature-2 exists with PR targeting feature-1 but NOT in Graphite's cache
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # Graphite only knows about feature-1 - feature-2 was created outside Graphite
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1",
+                    "main",
+                    children=[],
+                    commit_sha="def456",  # No children!
+                ),
+            }
+        )
+
+        # GitHub has the child PR targeting feature-1
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+                "feature-2": PullRequestInfo(
+                    number=456,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/456",
+                    is_draft=False,
+                    title="Feature 2",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+                456: PRDetails(
+                    number=456,
+                    url="https://github.com/owner/repo/pull/456",
+                    title="Feature 2",
+                    body="PR body 2",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="feature-1",  # Child PR targets feature-1 (parent)
+                    head_ref_name="feature-2",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+            pr_bases={123: "main", 456: "feature-1"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+        test_ctx = replace(test_ctx, issues=issues_ops)
+
+        result = runner.invoke(
+            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was merged
+        assert 123 in github_ops.merged_prs
+
+        # CRITICAL: Verify upstack PR #456 was found via GitHub query (not Graphite)
+        # and its base was updated to trunk before merge
+        assert (456, "main") in github_ops.updated_pr_bases, (
+            "Child PR #456 (found via GitHub, not Graphite) should have its base updated "
+            "to 'main' to prevent auto-close when feature-1 branch is deleted"
+        )
+
+
 def test_land_updates_upstack_pr_base_before_merge() -> None:
     """Regression test: upstack PR base updates must happen BEFORE merge.
 

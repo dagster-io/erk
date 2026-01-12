@@ -139,6 +139,8 @@ class PullRequestInfo:
     checks_counts: tuple[int, int] | None = None  # (passing, total) or None if no checks
     # True if PR will close the linked issue when merged (via "Closes #N" keywords)
     will_close_target: bool = False
+    # Head branch name (the source branch) - optional, populated by some API calls
+    head_branch: str | None = None
 
 
 class _NotAvailable:
