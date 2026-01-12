@@ -187,7 +187,7 @@ def test_submit_closes_orphaned_draft_prs(tmp_path: Path) -> None:
         is_draft=True,
     )
 
-    ctx, fake_git, fake_github, fake_github_issues, _ = setup_submit_context(
+    ctx, fake_git, fake_github, fake_github_issues, _, _ = setup_submit_context(
         tmp_path, {"123": plan}
     )
     # Add pr_references to the fake issues

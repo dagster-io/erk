@@ -15,7 +15,7 @@ def test_submit_from_placeholder_branch_uses_trunk(tmp_path: Path) -> None:
     # setup_submit_context creates repo_root, get path for git_kwargs
     repo_root = tmp_path / "repo"
 
-    ctx, fake_git, fake_github, _, _ = setup_submit_context(
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
         tmp_path,
         plans={"123": plan},
         git_kwargs={
@@ -48,7 +48,7 @@ def test_submit_from_placeholder_branch_with_explicit_base(tmp_path: Path) -> No
     # setup_submit_context creates repo_root, get path for git_kwargs
     repo_root = tmp_path / "repo"
 
-    ctx, fake_git, fake_github, _, _ = setup_submit_context(
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
         tmp_path,
         plans={"123": plan},
         git_kwargs={
@@ -76,7 +76,7 @@ def test_submit_from_non_placeholder_branch_uses_current(tmp_path: Path) -> None
     # setup_submit_context creates repo_root, get path for git_kwargs
     repo_root = tmp_path / "repo"
 
-    ctx, fake_git, fake_github, _, _ = setup_submit_context(
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
         tmp_path,
         plans={"123": plan},
         git_kwargs={
@@ -103,7 +103,7 @@ def test_submit_from_unpushed_branch_uses_trunk(tmp_path: Path) -> None:
 
     repo_root = tmp_path / "repo"
 
-    ctx, fake_git, fake_github, _, _ = setup_submit_context(
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(
         tmp_path,
         plans={"123": plan},
         git_kwargs={

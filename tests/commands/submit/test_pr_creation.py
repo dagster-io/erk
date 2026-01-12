@@ -28,7 +28,7 @@ def test_submit_strips_plan_markers_from_pr_title(tmp_path: Path) -> None:
     """Test submit strips plan markers from issue title when creating PR."""
     # Plan with "[erk-plan]" suffix (standard format for erk-plan issues)
     plan = create_plan("123", "Implement feature X [erk-plan]")
-    ctx, _, fake_github, _, _ = setup_submit_context(tmp_path, {"123": plan})
+    ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
@@ -55,7 +55,7 @@ def test_submit_includes_closes_issue_in_pr_body(tmp_path: Path) -> None:
     included in the body passed to create_pr(), not just added via update_pr_body().
     """
     plan = create_plan("123", "Implement feature X")
-    ctx, _, fake_github, _, _ = setup_submit_context(tmp_path, {"123": plan})
+    ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)

@@ -45,7 +45,7 @@ def test_submit_learn_plan_adds_skip_learn_label(tmp_path: Path) -> None:
         body=learn_body,
         labels=["erk-plan", "erk-learn"],
     )
-    ctx, _, fake_github, _, _ = setup_submit_context(tmp_path, {"123": plan})
+    ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
@@ -69,7 +69,7 @@ def test_submit_standard_plan_does_not_add_skip_learn_label(tmp_path: Path) -> N
     # Standard plan (no erk-learn label)
     standard_body = make_plan_body()
     plan = create_plan("456", "Implement feature Y", body=standard_body, labels=["erk-plan"])
-    ctx, _, fake_github, _, _ = setup_submit_context(tmp_path, {"456": plan})
+    ctx, _, fake_github, _, _, _ = setup_submit_context(tmp_path, {"456": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["456"], obj=ctx)

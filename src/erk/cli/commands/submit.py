@@ -523,6 +523,10 @@ def _submit_single_issue(
 
         # Create and checkout new branch from base
         ctx.git.create_branch(repo.root, branch_name, f"origin/{base_branch}")
+        # Track branch with Graphite so erk land can find child PRs
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        if use_graphite:
+            ctx.graphite.track_branch(repo.root, branch_name, base_branch)
         user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
 
         # Use context manager to restore original branch on failure

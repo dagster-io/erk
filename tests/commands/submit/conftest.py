@@ -69,11 +69,20 @@ def setup_submit_context(
     git_kwargs: dict | None = None,
     github_kwargs: dict | None = None,
     issues_kwargs: dict | None = None,
+    graphite_kwargs: dict | None = None,
+    *,
+    use_graphite: bool = False,
 ):
     """Setup common context for submit tests.
 
-    Returns (ctx, fake_git, fake_github, fake_github_issues, repo_root)
+    Args:
+        use_graphite: If True, enable Graphite integration (allows track_branch calls).
+                     Default False for backwards compatibility with existing tests.
+
+    Returns (ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root)
     """
+    from erk_shared.context.types import GlobalConfig
+    from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
 
@@ -90,6 +99,7 @@ def setup_submit_context(
 
     fake_git = FakeGit(**git_kwargs)
     fake_github = FakeGitHub(**(github_kwargs or {}))
+    fake_graphite = FakeGraphite(**(graphite_kwargs or {}))
 
     # Update issues kwargs if provided
     if issues_kwargs:
@@ -104,13 +114,19 @@ def setup_submit_context(
         worktrees_dir=repo_dir / "worktrees",
         pool_json_path=repo_dir / "pool.json",
     )
+
+    # Create GlobalConfig with use_graphite setting
+    global_config = GlobalConfig.test(erk_root=repo_dir, use_graphite=use_graphite)
+
     ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
         github=fake_github,
         issues=fake_github_issues,
         plan_store=fake_plan_store,
+        graphite=fake_graphite,
         repo=repo,
+        global_config=global_config,
     )
 
-    return ctx, fake_git, fake_github, fake_github_issues, repo_root
+    return ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root

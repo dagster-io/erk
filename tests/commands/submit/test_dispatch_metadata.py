@@ -12,7 +12,7 @@ from tests.commands.submit.conftest import create_plan, setup_submit_context
 def test_submit_updates_dispatch_info_in_issue(tmp_path: Path) -> None:
     """Test submit updates issue body with dispatch info after triggering workflow."""
     plan = create_plan("123", "Implement feature X")
-    ctx, _, _, fake_github_issues, repo_root = setup_submit_context(tmp_path, {"123": plan})
+    ctx, _, _, fake_github_issues, _, repo_root = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)

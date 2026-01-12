@@ -12,7 +12,7 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     """Test submit creates linked branch, pushes, creates draft PR, triggers workflow."""
     plan = create_plan("123", "Implement feature X")
     repo_root = tmp_path / "repo"
-    ctx, fake_git, fake_github, _, repo_root = setup_submit_context(
+    ctx, fake_git, fake_github, _, _, repo_root = setup_submit_context(
         tmp_path,
         {"123": plan},
         git_kwargs={
@@ -68,10 +68,47 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert expected_branch in fake_git._deleted_branches
 
 
+def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
+    """Test submit tracks the created branch with Graphite for proper PR stacking.
+
+    When branches are created via submit, they must be tracked with Graphite
+    so that `erk land` can find child PRs and update their base branches before
+    merging. Without tracking, child PRs get auto-closed by GitHub when their
+    base branch is deleted.
+    """
+    plan = create_plan("123", "Implement feature X")
+    repo_root = tmp_path / "repo"
+    ctx, fake_git, fake_github, _, fake_graphite, repo_root = setup_submit_context(
+        tmp_path,
+        {"123": plan},
+        git_kwargs={
+            "current_branches": {repo_root: "main"},
+            "trunk_branches": {repo_root: "master"},
+            "remote_branches": {repo_root: ["origin/main"]},
+        },
+        use_graphite=True,
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(submit_cmd, ["123"], obj=ctx)
+
+    assert result.exit_code == 0, result.output
+
+    # Branch name is sanitize_worktree_name(...) + timestamp suffix "-01-15-1430"
+    expected_branch = "P123-implement-feature-x-01-15-1430"
+
+    # Verify branch was tracked with Graphite (critical for child PR detection)
+    assert len(fake_graphite.track_branch_calls) == 1
+    tracked_repo, tracked_branch, parent_branch = fake_graphite.track_branch_calls[0]
+    assert tracked_repo == repo_root
+    assert tracked_branch == expected_branch
+    assert parent_branch == "main"  # Base branch without origin/ prefix
+
+
 def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
     """Test submit displays workflow run URL from trigger_workflow response."""
     plan = create_plan("123", "Add workflow run URL to erk submit output")
-    ctx, fake_git, fake_github, _, _ = setup_submit_context(tmp_path, {"123": plan})
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     result = runner.invoke(submit_cmd, ["123"], obj=ctx)
@@ -86,7 +123,7 @@ def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
 def test_submit_single_issue_still_works(tmp_path: Path) -> None:
     """Test backwards compatibility: single issue argument still works."""
     plan = create_plan("123", "Implement feature X")
-    ctx, fake_git, fake_github, _, _ = setup_submit_context(tmp_path, {"123": plan})
+    ctx, fake_git, fake_github, _, _, _ = setup_submit_context(tmp_path, {"123": plan})
 
     runner = CliRunner()
     # Single argument - backwards compatibility
