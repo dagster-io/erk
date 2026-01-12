@@ -1,3 +1,5 @@
+# EXTERNAL-COMPATIBLE: This workflow is designed to work in repos outside erk.
+# Changes must be tested by the external-compat CI job.
 name: erk-impl
 run-name: "${{ inputs.issue_number }}:${{ inputs.distinct_id }}"
 

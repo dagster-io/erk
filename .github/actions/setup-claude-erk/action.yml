@@ -1,3 +1,5 @@
+# EXTERNAL-COMPATIBLE: This action is designed to work in repos outside erk.
+# Changes must be tested by the external-compat CI job.
 name: "Setup Erk"
 description: "Install erk tools (assumes container has uv and claude preinstalled)"
 

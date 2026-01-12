@@ -1,4 +1,5 @@
-# Claude Code CI workflow
+# EXTERNAL-COMPATIBLE: This workflow is designed to work in repos outside erk.
+# Changes must be tested by the external-compat CI job.
 # See docs/learned/ci/containerless-ci.md for native tool installation details
 name: dignified-python-review
 

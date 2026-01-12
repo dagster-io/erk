@@ -118,6 +118,28 @@ jobs:
       - name: Run integration tests
         run: make test-integration
 
+  # === External Repo Compatibility ===
+  external-compat:
+    needs: check-submission
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    name: External Repo Compatibility
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Simulate external repo (remove erk-specific dirs)
+        run: rm -rf packages/
+
+      - name: Test setup-claude-erk action
+        uses: ./.github/actions/setup-claude-erk
+
+      - name: Verify erk installed correctly
+        run: erk --version
+
   # === Autofix (runs after ALL checks) ===
   autofix:
     needs: [format, lint, prettier, docs-check, ty, unit-tests, integration-tests]
