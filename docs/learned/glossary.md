@@ -324,6 +324,74 @@ When `[plans] repo` is configured, plan issues are created in the specified repo
 
 ---
 
+## Capability System
+
+### Capability
+
+A feature or functionality that can be installed into a repository managed by erk. Capabilities control which artifacts (skills, workflows, agents, actions) are installed and tracked.
+
+**Types**:
+
+- **Required capabilities** (`required=True`): Always checked by `erk doctor` (e.g., hooks)
+- **Optional capabilities**: Only checked if explicitly installed (e.g., skills, workflows)
+
+**Management**:
+
+```bash
+erk capability add <name>    # Install a capability
+erk capability remove <name> # Uninstall a capability
+erk capability list          # Show installed capabilities
+```
+
+**Tracking**: Installed capabilities are recorded in `.erk/state.toml` under `[capabilities]`.
+
+**Related**: [Capability System Architecture](architecture/capability-system.md)
+
+### Installed Capabilities
+
+The set of capabilities explicitly installed in a repository, tracked in `.erk/state.toml`.
+
+**Location**: `.erk/state.toml` under `[capabilities]` section
+
+**Format**:
+
+```toml
+[capabilities]
+installed = ["dignified-python", "erk-impl"]
+```
+
+**API** (in `erk.artifacts.state`):
+
+- `add_installed_capability(project_dir, name)` - Record installation
+- `remove_installed_capability(project_dir, name)` - Record removal
+- `load_installed_capabilities(project_dir)` - Load installed set
+
+**Usage**: `erk doctor` uses this to only check artifacts for installed capabilities.
+
+### installed_capabilities Parameter
+
+A parameter pattern used in artifact health checking to filter which artifacts are checked.
+
+**Values**:
+
+| Value              | Behavior                                         | Use Case                              |
+| ------------------ | ------------------------------------------------ | ------------------------------------- |
+| `None`             | Check ALL artifacts regardless of installation   | Sync, orphan detection, missing files |
+| `frozenset({...})` | Check only artifacts from installed capabilities | `erk doctor` health checks            |
+
+**Example**:
+
+```python
+# Check ALL artifacts (for sync, orphan detection)
+_get_bundled_by_type("skill", installed_capabilities=None)
+
+# Check only installed artifacts (for erk doctor)
+installed = load_installed_capabilities(project_dir)
+_get_bundled_by_type("skill", installed_capabilities=installed)
+```
+
+---
+
 ## Architecture Terms
 
 ### Repo Context
