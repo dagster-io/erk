@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of `817f29f3a` -->
+
+### Added
+
+- Add learn event tracking to plan-header metadata for better session-plan correlation (817f29f3a)
+- Add `-f` flag to TUI land PR commands for non-interactive mode (23f86a845)
+
+### Fixed
+
+- Fix preprocess-session to filter agent logs by session ID, reducing output bloat (334ad17cc)
+- Fix closing reference preservation when `.impl/issue.json` is missing (28154d0d8)
+- Fix GitHub Actions code injection vulnerability in learn-dispatch workflow (a3fae7261)
+
 ## [0.5.0] - 2026-01-11 23:58 PT
 
 ### Release Overview
