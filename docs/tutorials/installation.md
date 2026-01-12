@@ -88,65 +88,82 @@ Add `--verbose` to see individual checks within each category—useful for debug
 
 ## Initialize a Repository
 
+Erk initialization has two phases:
+
+1. **Project setup** (one-time per repository) — Creates configuration files and Claude Code artifacts that are committed to the repo. Once done, other team members get erk support automatically.
+
+2. **User setup** (one-time per developer) — Creates local configuration on each developer's machine. This includes the global config file and optional shell integration.
+
 Run init from your project's root directory:
 
 ```bash
 erk init
 ```
 
-Init follows a three-step process:
+### What happens during project setup
 
-### Step 1: Repository Verification
+When you run `erk init` in a repository for the first time, it creates:
 
-Verifies you're in a git repository with a valid configuration.
+- **`.erk/config.toml`** — Repository configuration (commit this)
+- **`.erk/required-erk-uv-tool-version`** — Minimum erk version for the project
+- **`.claude/commands/erk/`** — Claude Code slash commands like `/erk:plan-save`
+- **`.claude/skills/`** — Coding standards and documentation patterns
+- **`.claude/agents/`** — Agent definitions (e.g., devrun for test execution)
 
-### Step 2: Project Configuration
+Once committed, any developer who clones the repo gets these artifacts automatically.
 
-Creates two configuration files:
+### What happens during user setup
 
-**Global config** (`~/.erk/config.json`) — user-specific settings:
+Each developer needs local state that isn't committed:
 
-- `erk_root`: Where worktrees are created (default: `~/.erk/repos/<repo>/worktrees/`)
-- `use_graphite`: Auto-detected if `gt` is installed
+- **`~/.erk/config.json`** — Global config with:
+  - `erk_root`: Where worktrees are created (default: `~/.erk/repos/<repo>/worktrees/`)
+  - `use_graphite`: Auto-detected based on whether `gt` is installed
+- **Shell integration** (optional) — Enables seamless `cd` behavior when switching worktrees
 
-**Repo config** (`.erk/config.toml`) — repository settings that should be committed:
+The first time you run `erk init` (in any repo), it creates your global config. Subsequent runs in other repos skip this step.
 
-- Required capabilities (e.g., hooks)
-- Post-create hooks for worktree setup
-- Environment variables for Claude sessions
+### Capabilities
 
-**Interactive prompts:**
+Capabilities are optional features you can enable. View all available capabilities:
 
-- **Gitignore**: Add `.env`, `.erk/scratch/`, `.impl/` to `.gitignore`?
-- **Claude permissions**: Add `erk` commands to `.claude/settings.json`?
-- **Shell integration**: Show setup instructions for directory switching?
-- **Plans repo labels**: Create `erk-plan` label in GitHub?
-
-Use `--no-interactive` to skip prompts and accept defaults.
-
-**Artifact syncing:**
-
-Init syncs Claude Code artifacts to your `.claude/` directory:
-
-- Commands (`/erk:plan-save`, `/erk:pr-submit`, etc.)
-- Skills (coding standards, documentation patterns)
-- Agents (devrun for test/lint execution)
-
-These artifacts enable erk's AI-assisted workflows in Claude Code.
-
-### Step 3: Optional Enhancements
-
-Shows capability status and offers optional features:
-
-```
-Capabilities:
-  ✅ hooks (installed)
-
-Optional capabilities available:
-  Run 'erk init capability list' to see all options
+```bash
+erk init capability list
 ```
 
-**Important flags:**
+**Project capabilities** (committed to repo, shared by team):
+
+| Capability | Description |
+| ---------- | ----------- |
+| `devrun-agent` | Safe execution agent for pytest/ty/ruff/make/gt |
+| `devrun-reminder` | Remind agent to use devrun for CI tool commands |
+| `dignified-python` | Python coding standards (LBYL, modern types, ABCs) |
+| `dignified-python-reminder` | Remind agent to follow dignified-python standards |
+| `dignified-review` | GitHub Action for Python code review |
+| `erk-bash-permissions` | Allow `Bash(erk:*)` commands in Claude Code |
+| `erk-hooks` | Configure Claude Code hooks for session management |
+| `erk-impl-workflow` | GitHub Action for automated implementation |
+| `fake-driven-testing` | 5-layer test architecture with fakes |
+| `learn-workflow` | GitHub Action for automated documentation learning |
+| `learned-docs` | Autolearning documentation system |
+| `ruff-format` | Auto-format Python files with ruff after Write/Edit |
+| `tripwires-reminder` | Remind agent to check tripwires.md |
+| `tripwires-review` | GitHub Action for tripwire code review |
+
+**User capabilities** (local to each developer):
+
+| Capability | Description |
+| ---------- | ----------- |
+| `shell-integration` | Shell wrapper for seamless worktree switching |
+| `statusline` | Claude Code status line configuration |
+
+Install a capability with:
+
+```bash
+erk init capability add <capability-name>
+```
+
+### Init flags
 
 | Flag               | Purpose                                      |
 | ------------------ | -------------------------------------------- |
@@ -155,18 +172,7 @@ Optional capabilities available:
 | `--shell`          | Show shell integration setup only            |
 | `--statusline`     | Configure erk-statusline in Claude Code only |
 
-**Files created:**
-
-| File                    | Committed? | Purpose                       |
-| ----------------------- | ---------- | ----------------------------- |
-| `~/.erk/config.json`    | No         | Global user settings          |
-| `.erk/config.toml`      | Yes        | Repository configuration      |
-| `.claude/commands/erk/` | Yes        | Claude Code commands          |
-| `.claude/skills/`       | Yes        | Coding standards and patterns |
-| `.claude/agents/`       | Yes        | Agent definitions             |
-| `.erk/prompt-hooks/`    | Yes        | Custom hook configurations    |
-
-**Troubleshooting:**
+### Troubleshooting
 
 - Permission errors on `.claude/settings.json` — Check file permissions, or edit manually
 - Artifact sync failures — Non-fatal; run `erk artifact sync` to retry
