@@ -2,7 +2,7 @@
 title: Bundled Artifacts System
 read_when:
   - understanding artifact syncing
-  - working with BUNDLED_* registries
+  - working with managed artifacts
   - debugging erk sync
 ---
 
@@ -10,26 +10,67 @@ read_when:
 
 Erk bundles artifacts that are synced to projects during `erk init` or `erk sync`.
 
-## Registry Location
+## Artifact Management Architecture
 
-`src/erk/artifacts/artifact_health.py` defines the bundled artifact registries:
+Artifact management is now unified through the capability system. Each capability declares what artifacts it manages via the `managed_artifacts` property, making the registry the single source of truth.
 
-| Registry            | Contents                                                |
-| ------------------- | ------------------------------------------------------- |
-| `BUNDLED_SKILLS`    | `dignified-python`, `learned-docs`, `erk-diff-analysis` |
-| `BUNDLED_AGENTS`    | `devrun`                                                |
-| `BUNDLED_WORKFLOWS` | `erk-impl.yml`                                          |
-| `BUNDLED_ACTIONS`   | `setup-claude-code`, `setup-claude-erk`                 |
-| `BUNDLED_HOOKS`     | `user-prompt-hook`, `exit-plan-mode-hook`               |
+### How It Works
 
-## Bundled vs Capability
+1. **Capabilities declare artifacts**: Each capability class has a `managed_artifacts` property returning `list[ManagedArtifact]`
+2. **Registry aggregates**: `get_managed_artifacts()` collects all declarations into a single mapping
+3. **Detection queries registry**: `is_capability_managed(name, type)` checks if an artifact is erk-managed
 
-| Aspect           | Bundled Artifacts       | Capabilities              |
-| ---------------- | ----------------------- | ------------------------- |
-| Installed via    | `erk init` / `erk sync` | `erk init capability add` |
-| Always installed | Yes (if in registry)    | Only if `required=True`   |
-| User opt-in      | No                      | Yes                       |
-| Use case         | Core functionality      | Optional features         |
+### Registry Functions
+
+`src/erk/core/capabilities/registry.py` provides:
+
+| Function                            | Purpose                                         |
+| ----------------------------------- | ----------------------------------------------- |
+| `get_managed_artifacts()`           | Returns `dict[(name, type), capability_name]`   |
+| `is_capability_managed(name, type)` | Check if artifact is declared by any capability |
+
+### Artifact Types
+
+The `ManagedArtifactType` literal defines valid artifact types:
+
+| Type       | Example Artifact                          |
+| ---------- | ----------------------------------------- |
+| `skill`    | `dignified-python`, `fake-driven-testing` |
+| `command`  | Claude commands                           |
+| `agent`    | `devrun`                                  |
+| `workflow` | `erk-impl`, `learn-dispatch`              |
+| `action`   | `setup-claude-code`, `setup-claude-erk`   |
+| `hook`     | `user-prompt-hook`, `exit-plan-mode-hook` |
+| `prompt`   | `.github/prompts/` files                  |
+
+### Example: SkillCapability
+
+```python
+class SkillCapability(Capability):
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        return [ManagedArtifact(name=self.skill_name, artifact_type="skill")]
+```
+
+### Example: HooksCapability
+
+```python
+@property
+def managed_artifacts(self) -> list[ManagedArtifact]:
+    return [
+        ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
+        ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
+    ]
+```
+
+## Capability Installation
+
+| Aspect          | Required Capabilities  | Optional Capabilities     |
+| --------------- | ---------------------- | ------------------------- |
+| Installed via   | `erk init` (automatic) | `erk init capability add` |
+| `required` prop | `True`                 | `False`                   |
+| User opt-in     | No                     | Yes                       |
+| Example         | `erk-hooks`            | `dignified-python`        |
 
 ## How Bundling Works
 

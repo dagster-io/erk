@@ -25,6 +25,7 @@ All capabilities inherit from the `Capability` ABC in `src/erk/core/capabilities
 | `scope`                          | `CapabilityScope`          | "project" or "user"                       |
 | `installation_check_description` | `str`                      | What `is_installed()` checks              |
 | `artifacts`                      | `list[CapabilityArtifact]` | Files/dirs created                        |
+| `managed_artifacts`              | `list[ManagedArtifact]`    | Artifacts this capability manages         |
 
 **Required methods:**
 
@@ -46,11 +47,13 @@ The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple
 
 **Query functions:**
 
-| Function                       | Purpose                           |
-| ------------------------------ | --------------------------------- |
-| `get_capability(name)`         | Get capability by name            |
-| `list_capabilities()`          | All capabilities                  |
-| `list_required_capabilities()` | Only `required=True` capabilities |
+| Function                            | Purpose                                      |
+| ----------------------------------- | -------------------------------------------- |
+| `get_capability(name)`              | Get capability by name                       |
+| `list_capabilities()`               | All capabilities                             |
+| `list_required_capabilities()`      | Only `required=True` capabilities            |
+| `get_managed_artifacts()`           | All managed artifact mappings                |
+| `is_capability_managed(name, type)` | Check if artifact is managed by a capability |
 
 ### Scopes
 
@@ -58,6 +61,45 @@ The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple
 | --------- | ---------------------------------------------------------- | ----------------------------------------------- |
 | `project` | Requires git repository, installed relative to `repo_root` | learned-docs, dignified-python, erk-hooks       |
 | `user`    | Installed anywhere, relative to home directory             | statusline (modifies `~/.claude/settings.json`) |
+
+### Managed Artifacts
+
+Capabilities declare which artifacts they manage using the `managed_artifacts` property. This enables the registry to serve as the single source of truth for artifact detection and health checks.
+
+**ManagedArtifact dataclass:**
+
+```python
+@dataclass(frozen=True)
+class ManagedArtifact:
+    name: str                      # e.g., "dignified-python", "ruff-format-hook"
+    artifact_type: ManagedArtifactType
+```
+
+**ManagedArtifactType values:**
+
+| Type       | Description                        |
+| ---------- | ---------------------------------- |
+| `skill`    | Claude skills in `.claude/skills/` |
+| `command`  | Claude commands                    |
+| `agent`    | Claude agents                      |
+| `workflow` | GitHub Actions workflows           |
+| `action`   | GitHub Actions custom actions      |
+| `hook`     | Claude Code hooks                  |
+| `prompt`   | `.github/prompts/` files           |
+
+**Example implementation:**
+
+```python
+class HooksCapability(Capability):
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        return [
+            ManagedArtifact(name="user-prompt-hook", artifact_type="hook"),
+            ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
+        ]
+```
+
+**Usage:** The registry uses these declarations to answer "is this artifact erk-managed?" via `is_capability_managed(name, type)`. This replaces the previous `BUNDLED_*` frozensets in `artifact_health.py`.
 
 ## Capability Types
 
