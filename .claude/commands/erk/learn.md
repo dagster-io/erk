@@ -18,10 +18,10 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 
 ### Step 1: Get Session Information
 
-Run the learn command to get session details:
+Run the exec script to get session details:
 
 ```bash
-erk learn <issue-number> --json --no-track
+erk exec get-learn-sessions <issue-number>
 ```
 
 Parse the JSON output to get:
@@ -247,10 +247,10 @@ Raw materials: <gist-url>
 This ensures `erk land` won't warn about unlearned plans:
 
 ```bash
-erk learn <issue-number> --no-interactive --session-id="<session-id-from-SESSION_CONTEXT>"
+erk exec track-learn-evaluation <issue-number> --session-id="<session-id-from-SESSION_CONTEXT>"
 ```
 
-This runs through the learn flow without prompting, which automatically tracks that evaluation completed.
+This posts a tracking comment to the issue to record that learn evaluation was performed.
 
 ### Tips
 
