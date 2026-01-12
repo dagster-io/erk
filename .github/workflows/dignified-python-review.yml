@@ -30,7 +30,7 @@ jobs:
         uses: ./.github/actions/setup-claude-code
 
       - name: Install erk
-        run: uv tool install --from . --with ./packages/erk-shared erk
+        uses: ./.github/actions/setup-claude-erk
 
       - name: Prepare prompt
         shell: bash
