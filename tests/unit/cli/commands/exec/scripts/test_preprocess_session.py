@@ -269,12 +269,12 @@ def test_process_log_file_handles_malformed_json(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 5. Agent Log Discovery Tests (4 tests)
+# 5. Agent Log Discovery Tests (8 tests)
 # ============================================================================
 
 
-def test_discover_agent_logs_finds_all(tmp_path: Path) -> None:
-    """Test that all agent logs are discovered."""
+def test_discover_agent_logs_finds_all_when_no_session_id(tmp_path: Path) -> None:
+    """Test that all agent logs are discovered when session_id is None."""
     session_log = tmp_path / "session-123.jsonl"
     session_log.write_text("{}", encoding="utf-8")
 
@@ -283,7 +283,7 @@ def test_discover_agent_logs_finds_all(tmp_path: Path) -> None:
     agent1.write_text("{}", encoding="utf-8")
     agent2.write_text("{}", encoding="utf-8")
 
-    agents = discover_agent_logs(session_log)
+    agents = discover_agent_logs(session_log, None)
     assert len(agents) == 2
     assert agent1 in agents
     assert agent2 in agents
@@ -299,7 +299,7 @@ def test_discover_agent_logs_returns_sorted(tmp_path: Path) -> None:
     agent_z.write_text("{}", encoding="utf-8")
     agent_a.write_text("{}", encoding="utf-8")
 
-    agents = discover_agent_logs(session_log)
+    agents = discover_agent_logs(session_log, None)
     assert agents[0].name == "agent-aaa.jsonl"
     assert agents[1].name == "agent-zzz.jsonl"
 
@@ -314,7 +314,7 @@ def test_discover_agent_logs_ignores_other_files(tmp_path: Path) -> None:
     agent.write_text("{}", encoding="utf-8")
     other.write_text("{}", encoding="utf-8")
 
-    agents = discover_agent_logs(session_log)
+    agents = discover_agent_logs(session_log, None)
     assert len(agents) == 1
     assert agents[0] == agent
 
@@ -324,7 +324,100 @@ def test_discover_agent_logs_empty_directory(tmp_path: Path) -> None:
     session_log = tmp_path / "session-123.jsonl"
     session_log.write_text("{}", encoding="utf-8")
 
-    agents = discover_agent_logs(session_log)
+    agents = discover_agent_logs(session_log, None)
+    assert agents == []
+
+
+def test_discover_agent_logs_filters_by_session_id(tmp_path: Path) -> None:
+    """Test that agent logs are filtered by session ID."""
+    session_log = tmp_path / "session-123.jsonl"
+    session_log.write_text("{}", encoding="utf-8")
+
+    # Agent belonging to session-123
+    agent_match = tmp_path / "agent-abc.jsonl"
+    agent_match.write_text(
+        json.dumps({"sessionId": "session-123", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+
+    # Agent belonging to different session
+    agent_no_match = tmp_path / "agent-def.jsonl"
+    agent_no_match.write_text(
+        json.dumps({"sessionId": "session-456", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+
+    agents = discover_agent_logs(session_log, "session-123")
+    assert len(agents) == 1
+    assert agent_match in agents
+    assert agent_no_match not in agents
+
+
+def test_discover_agent_logs_filters_multiple_agents(tmp_path: Path) -> None:
+    """Test filtering when multiple agent logs match session ID."""
+    session_log = tmp_path / "session-xyz.jsonl"
+    session_log.write_text("{}", encoding="utf-8")
+
+    # Two agents belonging to session-xyz
+    agent1 = tmp_path / "agent-aaa.jsonl"
+    agent1.write_text(
+        json.dumps({"sessionId": "session-xyz", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+    agent2 = tmp_path / "agent-bbb.jsonl"
+    agent2.write_text(
+        json.dumps({"sessionId": "session-xyz", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+
+    # Agent belonging to different session
+    agent_other = tmp_path / "agent-ccc.jsonl"
+    agent_other.write_text(
+        json.dumps({"sessionId": "other-session", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+
+    agents = discover_agent_logs(session_log, "session-xyz")
+    assert len(agents) == 2
+    assert agent1 in agents
+    assert agent2 in agents
+    assert agent_other not in agents
+
+
+def test_discover_agent_logs_skips_empty_first_line(tmp_path: Path) -> None:
+    """Test that agent logs with empty first line are skipped."""
+    session_log = tmp_path / "session-123.jsonl"
+    session_log.write_text("{}", encoding="utf-8")
+
+    # Agent with empty first line should be skipped
+    agent_empty = tmp_path / "agent-empty.jsonl"
+    agent_empty.write_text("\n", encoding="utf-8")
+
+    # Agent with valid content should be returned
+    agent_valid = tmp_path / "agent-valid.jsonl"
+    agent_valid.write_text(
+        json.dumps({"sessionId": "session-123", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+
+    agents = discover_agent_logs(session_log, "session-123")
+    assert len(agents) == 1
+    assert agent_valid in agents
+
+
+def test_discover_agent_logs_returns_empty_when_no_match(tmp_path: Path) -> None:
+    """Test that empty list is returned when no agents match session ID."""
+    session_log = tmp_path / "session-target.jsonl"
+    session_log.write_text("{}", encoding="utf-8")
+
+    # Agent belonging to different session
+    agent = tmp_path / "agent-abc.jsonl"
+    agent.write_text(
+        json.dumps({"sessionId": "other-session", "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
+
+    agents = discover_agent_logs(session_log, "session-target")
     assert agents == []
 
 
@@ -590,12 +683,17 @@ def test_preprocess_session_includes_agents_by_default(tmp_path: Path) -> None:
     """Test that agent logs are included by default."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
-        user_json = json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING))
-        log_file.write_text(user_json, encoding="utf-8")
+        # Create entries with matching session ID
+        session_id = "session-123"
+        entry = json.dumps(
+            {"sessionId": session_id, "type": "user", "message": {"content": "test"}}
+        )
+
+        log_file = Path(f"{session_id}.jsonl")
+        log_file.write_text(entry, encoding="utf-8")
 
         agent_file = Path("agent-abc.jsonl")
-        agent_file.write_text(user_json, encoding="utf-8")
+        agent_file.write_text(entry, encoding="utf-8")
 
         result = runner.invoke(preprocess_session, [str(log_file), "--no-filtering"])
         assert result.exit_code == 0
@@ -610,12 +708,17 @@ def test_preprocess_session_no_include_agents_flag(tmp_path: Path) -> None:
     """Test --no-include-agents flag excludes agent logs."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
-        user_json = json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING))
-        log_file.write_text(user_json, encoding="utf-8")
+        # Create entries with matching session ID
+        session_id = "session-123"
+        entry = json.dumps(
+            {"sessionId": session_id, "type": "user", "message": {"content": "test"}}
+        )
+
+        log_file = Path(f"{session_id}.jsonl")
+        log_file.write_text(entry, encoding="utf-8")
 
         agent_file = Path("agent-abc.jsonl")
-        agent_file.write_text(user_json, encoding="utf-8")
+        agent_file.write_text(entry, encoding="utf-8")
 
         result = runner.invoke(
             preprocess_session, [str(log_file), "--no-include-agents", "--no-filtering"]
@@ -639,12 +742,17 @@ def test_preprocess_session_agent_logs_with_source_labels(tmp_path: Path) -> Non
     """Test that agent logs include source labels."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
-        user_json = json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING))
-        log_file.write_text(user_json, encoding="utf-8")
+        # Create entries with matching session ID
+        session_id = "session-123"
+        entry = json.dumps(
+            {"sessionId": session_id, "type": "user", "message": {"content": "test"}}
+        )
+
+        log_file = Path(f"{session_id}.jsonl")
+        log_file.write_text(entry, encoding="utf-8")
 
         agent_file = Path("agent-xyz.jsonl")
-        agent_file.write_text(user_json, encoding="utf-8")
+        agent_file.write_text(entry, encoding="utf-8")
 
         result = runner.invoke(preprocess_session, [str(log_file), "--no-filtering"])
         assert result.exit_code == 0
@@ -830,24 +938,31 @@ def test_is_log_discovery_operation_ignores_normal_commands() -> None:
 def test_full_workflow_compression_ratio(tmp_path: Path) -> None:
     """Test that full workflow achieves expected compression ratio."""
     # Create log file with realistic content (multiple entries with metadata)
+    session_id = "session-123"
+
+    # Adapt fixtures to use matching session ID
+    def with_session_id(fixture_json: str) -> dict:
+        data = json.loads(fixture_json)
+        data["sessionId"] = session_id
+        return data
 
     # Adapt tool_result fixture
-    tool_result_data = json.loads(fixtures.JSONL_TOOL_RESULT)
+    tool_result_data = with_session_id(fixtures.JSONL_TOOL_RESULT)
     content_block = tool_result_data["message"]["content"][0]
     content_text = content_block["content"]
     tool_result_data["message"]["content"] = [{"type": "text", "text": content_text}]
 
     log_entries = [
-        json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING)),
-        json.dumps(json.loads(fixtures.JSONL_ASSISTANT_TEXT)),
-        json.dumps(json.loads(fixtures.JSONL_ASSISTANT_TOOL_USE)),
+        json.dumps(with_session_id(fixtures.JSONL_USER_MESSAGE_STRING)),
+        json.dumps(with_session_id(fixtures.JSONL_ASSISTANT_TEXT)),
+        json.dumps(with_session_id(fixtures.JSONL_ASSISTANT_TOOL_USE)),
         json.dumps(tool_result_data),
-        json.dumps(json.loads(fixtures.JSONL_FILE_HISTORY_SNAPSHOT)),  # Should be filtered
+        json.dumps(with_session_id(fixtures.JSONL_FILE_HISTORY_SNAPSHOT)),  # Should be filtered
     ]
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
+        log_file = Path(f"{session_id}.jsonl")
         log_file.write_text("\n".join(log_entries), encoding="utf-8")
 
         original_size = log_file.stat().st_size
@@ -866,10 +981,12 @@ def test_full_workflow_preserves_tool_results(tmp_path: Path) -> None:
     """Test that tool results are preserved verbatim in full workflow."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
+        session_id = "session-123"
+        log_file = Path(f"{session_id}.jsonl")
 
         # Adapt fixture to match what the code expects
         entry_data = json.loads(fixtures.JSONL_TOOL_RESULT)
+        entry_data["sessionId"] = session_id
         content_block = entry_data["message"]["content"][0]
         content_text = content_block["content"]
         entry_data["message"]["content"] = [{"type": "text", "text": content_text}]
@@ -892,11 +1009,18 @@ def test_full_workflow_deduplicates_correctly(tmp_path: Path) -> None:
     """Test that deduplication works correctly in full workflow."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
-        dup_text = json.dumps(json.loads(fixtures.JSONL_DUPLICATE_ASSISTANT_TEXT))
-        dup_tool = json.dumps(json.loads(fixtures.JSONL_DUPLICATE_ASSISTANT_WITH_TOOL))
+        session_id = "session-123"
+        log_file = Path(f"{session_id}.jsonl")
+
+        # Update session IDs to match filename
+        dup_text_data = json.loads(fixtures.JSONL_DUPLICATE_ASSISTANT_TEXT)
+        dup_text_data["sessionId"] = session_id
+
+        dup_tool_data = json.loads(fixtures.JSONL_DUPLICATE_ASSISTANT_WITH_TOOL)
+        dup_tool_data["sessionId"] = session_id
+
         log_file.write_text(
-            f"{dup_text}\n{dup_tool}",
+            f"{json.dumps(dup_text_data)}\n{json.dumps(dup_tool_data)}",
             encoding="utf-8",
         )
 
@@ -924,17 +1048,25 @@ def test_compression_metric_includes_agent_logs(tmp_path: Path) -> None:
     """
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
+        session_id = "session-123"
+
+        # Helper to update session ID in fixtures
+        def with_session_id(fixture_json: str) -> dict:
+            data = json.loads(fixture_json)
+            data["sessionId"] = session_id
+            return data
+
         # Create main session log with 3+ entries (required to pass empty session check)
         main_entries = [
-            json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING)),
-            json.dumps(json.loads(fixtures.JSONL_ASSISTANT_TEXT)),
-            json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING)),
+            json.dumps(with_session_id(fixtures.JSONL_USER_MESSAGE_STRING)),
+            json.dumps(with_session_id(fixtures.JSONL_ASSISTANT_TEXT)),
+            json.dumps(with_session_id(fixtures.JSONL_USER_MESSAGE_STRING)),
         ]
-        main_log = Path("session-123.jsonl")
+        main_log = Path(f"{session_id}.jsonl")
         main_log.write_text("\n".join(main_entries), encoding="utf-8")
         main_size = main_log.stat().st_size
 
-        # Create agent log with same content
+        # Create agent log with same content (and matching session ID)
         agent_log = Path("agent-abc.jsonl")
         agent_log.write_text("\n".join(main_entries), encoding="utf-8")
         agent_size = agent_log.stat().st_size
@@ -968,9 +1100,13 @@ def test_preprocess_session_stdout_outputs_xml(tmp_path: Path) -> None:
     """Test that --stdout flag outputs XML to stdout."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
-        user_json = json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING))
-        log_file.write_text(user_json, encoding="utf-8")
+        session_id = "session-123"
+        log_file = Path(f"{session_id}.jsonl")
+
+        # Create entry with matching session ID
+        entry_data = json.loads(fixtures.JSONL_USER_MESSAGE_STRING)
+        entry_data["sessionId"] = session_id
+        log_file.write_text(json.dumps(entry_data), encoding="utf-8")
 
         result = runner.invoke(preprocess_session, [str(log_file), "--stdout", "--no-filtering"])
         assert result.exit_code == 0
@@ -985,9 +1121,13 @@ def test_preprocess_session_stdout_no_temp_file(tmp_path: Path) -> None:
     """Test that --stdout flag does not create temp file."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
-        user_json = json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING))
-        log_file.write_text(user_json, encoding="utf-8")
+        session_id = "session-123"
+        log_file = Path(f"{session_id}.jsonl")
+
+        # Create entry with matching session ID
+        entry_data = json.loads(fixtures.JSONL_USER_MESSAGE_STRING)
+        entry_data["sessionId"] = session_id
+        log_file.write_text(json.dumps(entry_data), encoding="utf-8")
 
         result = runner.invoke(preprocess_session, [str(log_file), "--stdout", "--no-filtering"])
         assert result.exit_code == 0
@@ -1000,15 +1140,20 @@ def test_preprocess_session_stdout_stats_to_stderr(tmp_path: Path) -> None:
     """Test that stats go to stderr when --stdout enabled."""
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
-        log_file = Path("session-123.jsonl")
+        session_id = "session-123"
+        log_file = Path(f"{session_id}.jsonl")
+
         # Create multi-line content for stats to be generated (valid JSONL format)
         # Need both user and assistant messages to pass empty session check
-        user_json = json.dumps(json.loads(fixtures.JSONL_USER_MESSAGE_STRING))
-        assistant_json = json.dumps(json.loads(fixtures.JSONL_ASSISTANT_TEXT))
+        user_data = json.loads(fixtures.JSONL_USER_MESSAGE_STRING)
+        user_data["sessionId"] = session_id
+        assistant_data = json.loads(fixtures.JSONL_ASSISTANT_TEXT)
+        assistant_data["sessionId"] = session_id
+
         entries = []
         for _ in range(5):
-            entries.append(user_json)
-            entries.append(assistant_json)
+            entries.append(json.dumps(user_data))
+            entries.append(json.dumps(assistant_data))
         log_file.write_text("\n".join(entries), encoding="utf-8")
 
         result = runner.invoke(preprocess_session, [str(log_file), "--stdout"])
@@ -1039,3 +1184,138 @@ def test_preprocess_session_backward_compatibility(tmp_path: Path) -> None:
 
         # Should NOT output XML to stdout
         assert "<session>" not in result.output
+
+
+# ============================================================================
+# 10. Session ID Auto-Extraction and Filtering Tests
+# ============================================================================
+
+
+def test_preprocess_session_auto_extracts_session_id_from_filename(tmp_path: Path) -> None:
+    """Test that session ID is auto-extracted from filename when not provided.
+
+    This is a regression test for the bug where preprocess-session loaded ALL
+    agent logs instead of filtering by session ID.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Main session log with session ID = "abc-123-xyz"
+        main_log = Path("abc-123-xyz.jsonl")
+        main_entries = [
+            json.dumps(
+                {
+                    "sessionId": "abc-123-xyz",
+                    "type": "user",
+                    "message": {"content": "Hello"},
+                }
+            ),
+            json.dumps(
+                {
+                    "sessionId": "abc-123-xyz",
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "Hi"}]},
+                }
+            ),
+            json.dumps(
+                {
+                    "sessionId": "abc-123-xyz",
+                    "type": "user",
+                    "message": {"content": "Thanks"},
+                }
+            ),
+        ]
+        main_log.write_text("\n".join(main_entries), encoding="utf-8")
+
+        # Agent log belonging to same session
+        agent_match = Path("agent-match.jsonl")
+        agent_match.write_text(
+            json.dumps(
+                {
+                    "sessionId": "abc-123-xyz",
+                    "type": "user",
+                    "message": {"content": "Agent content"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        # Agent log belonging to DIFFERENT session (should be excluded)
+        agent_other = Path("agent-other.jsonl")
+        agent_other.write_text(
+            json.dumps(
+                {
+                    "sessionId": "different-session",
+                    "type": "user",
+                    "message": {"content": "Other agent content"},
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        result = runner.invoke(preprocess_session, [str(main_log), "--stdout", "--no-filtering"])
+        assert result.exit_code == 0
+
+        # Main session should be included
+        assert "<session>" in result.output
+        assert "Hello" in result.output
+
+        # Agent from same session should be included
+        assert "Agent content" in result.output
+
+        # Agent from different session should NOT be included
+        assert "Other agent content" not in result.output
+
+
+def test_preprocess_session_filters_agent_logs_by_session_id(tmp_path: Path) -> None:
+    """Test that only agent logs matching session ID are included.
+
+    Regression test for the bug where all agent logs were loaded regardless
+    of session ID, causing a 67KB session to produce 10MB output.
+    """
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Main session log
+        main_log = Path("target-session.jsonl")
+        sid = "target-session"
+        main_entries = [
+            json.dumps({"sessionId": sid, "type": "user", "message": {"content": "A"}}),
+            json.dumps(
+                {
+                    "sessionId": sid,
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "B"}]},
+                }
+            ),
+            json.dumps({"sessionId": sid, "type": "user", "message": {"content": "C"}}),
+        ]
+        main_log.write_text("\n".join(main_entries), encoding="utf-8")
+
+        # Create multiple agent logs from different sessions
+        for i in range(5):
+            # Some agents from target session
+            if i < 2:
+                session_id = "target-session"
+                content = f"target-agent-{i}"
+            else:
+                # Other agents from different sessions
+                session_id = f"other-session-{i}"
+                content = f"other-agent-{i}"
+
+            agent = Path(f"agent-{i:03d}.jsonl")
+            entry = {"sessionId": session_id, "type": "user", "message": {"content": content}}
+            agent.write_text(json.dumps(entry), encoding="utf-8")
+
+        result = runner.invoke(preprocess_session, [str(main_log), "--stdout", "--no-filtering"])
+        assert result.exit_code == 0
+
+        # Target session agents should be included
+        assert "target-agent-0" in result.output
+        assert "target-agent-1" in result.output
+
+        # Other session agents should NOT be included
+        assert "other-agent-2" not in result.output
+        assert "other-agent-3" not in result.output
+        assert "other-agent-4" not in result.output
+
+        # Count sessions - should be 3 (main + 2 matching agents)
+        assert result.output.count("<session>") == 3

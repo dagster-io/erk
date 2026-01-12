@@ -532,11 +532,34 @@ def process_log_file(
     return entries, total_entries, skipped_entries
 
 
-def discover_agent_logs(session_log_path: Path) -> list[Path]:
-    """Discover agent logs in the same directory as the session log."""
+def discover_agent_logs(session_log_path: Path, session_id: str | None) -> list[Path]:
+    """Discover agent logs in the same directory belonging to the session.
+
+    Args:
+        session_log_path: Path to the main session log file
+        session_id: Session ID to filter by. If None, returns all agent logs.
+
+    Returns:
+        List of agent log paths matching the session ID
+    """
     log_dir = session_log_path.parent
-    agent_logs = sorted(log_dir.glob("agent-*.jsonl"))
-    return agent_logs
+    all_agent_logs = sorted(log_dir.glob("agent-*.jsonl"))
+
+    # If no session ID, return all (backward compat, but inefficient)
+    if session_id is None:
+        return all_agent_logs
+
+    # Filter by session ID - check first entry of each file
+    matching_logs = []
+    for agent_log in all_agent_logs:
+        first_line = agent_log.read_text(encoding="utf-8").split("\n", 1)[0]
+        if not first_line.strip():
+            continue
+        first_entry = json.loads(first_line)
+        if first_entry.get("sessionId") == session_id:
+            matching_logs.append(agent_log)
+
+    return matching_logs
 
 
 def discover_planning_agent_logs(session_log_path: Path, parent_session_id: str) -> list[Path]:
@@ -675,6 +698,13 @@ def preprocess_session(
         include_agents: Whether to include agent logs
         no_filtering: Disable all filtering optimizations
     """
+    # Track whether user explicitly provided session ID (for diagnostic output)
+    user_provided_session_id = session_id is not None
+
+    # Auto-extract session ID from filename if not provided
+    if session_id is None:
+        session_id = log_path.stem  # filename without extension is the session ID
+
     enable_filtering = not no_filtering
 
     # Process main session log
@@ -702,8 +732,8 @@ def preprocess_session(
     # Apply standard deduplication (always enabled)
     entries = deduplicate_assistant_messages(entries)
 
-    # Show diagnostic output if filtering by session ID
-    if session_id is not None:
+    # Show diagnostic output only if user explicitly provided session ID
+    if user_provided_session_id:
         click.echo(f"✅ Filtered JSONL by session ID: {session_id[:8]}...", err=True)
         click.echo(
             f"📊 Included {total_entries - skipped_entries} entries, "
@@ -719,7 +749,7 @@ def preprocess_session(
 
     # Discover and process agent logs if requested
     if include_agents:
-        agent_logs = discover_agent_logs(log_path)
+        agent_logs = discover_agent_logs(log_path, session_id)
         for agent_log in agent_logs:
             agent_entries, agent_total, agent_skipped = process_log_file(
                 agent_log, session_id=session_id, enable_filtering=enable_filtering
