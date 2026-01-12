@@ -1,42 +1,3 @@
-# Documentation Plan: Skill Scope Boundaries
-
-## Context
-
-During plan #4747 implementation, the `dignified-python` skill was found to contain erk-specific code:
-
-- `from erk_shared.output import user_output, user_confirm`
-- `ErkContext` references in error handling examples
-
-The user explicitly corrected: "there should be NOTHING in @.claude/skills/dignified-python/ that is erk-specific."
-
-This revealed a missing guideline: skills should be portable and project-agnostic, while project-specific patterns belong in `docs/learned/`.
-
-### Key Files
-
-- `.claude/skills/` - Contains reusable, project-agnostic skills
-- `docs/learned/` - Contains project-specific documentation and patterns
-- `.claude/skills/command-creator/` - Skill for creating slash commands (related but different)
-
-### Existing Documentation
-
-- `docs/learned/documentation/` directory exists but is sparse
-- No existing doc covers skill vs learned-docs boundaries
-
-## Raw Materials
-
-https://gist.github.com/schrockn/bd5eb6934e6f0ec22a2844bf0dccca20
-
-## Documentation Items
-
-### Item 1: Create skill-scope.md
-
-**Location**: `docs/learned/documentation/skill-scope.md`
-**Action**: Create
-**Source**: Plan #4747 session analysis
-
-**Draft Content**:
-
-````markdown
 ---
 title: Skill Scope Boundaries
 description: Guidelines for what belongs in skills vs learned docs
@@ -94,7 +55,6 @@ sys.stderr.flush()  # Prevent buffering issues
 if click.confirm("Proceed?"):
     do_thing()
 ```
-````
 
 **In docs/learned (project-specific)**:
 
@@ -112,7 +72,3 @@ if user_confirm("Proceed?"):
 ## Source
 
 Learned from Plan #4747 - dignified-python skill contained erk-specific imports that caused false positives in automated review.
-
-```
-
-```
