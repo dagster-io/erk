@@ -209,3 +209,4 @@ Required capabilities don't need tracking—they're always installed and always 
 
 - [Bundled Artifacts System](bundled-artifacts.md) - How erk bundles and syncs artifacts
 - [Workflow Capability Pattern](workflow-capability-pattern.md) - Pattern for GitHub workflow capabilities
+- [Hook Marker Detection](hook-marker-detection.md) - Version-aware detection for hooks
