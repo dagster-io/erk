@@ -40,7 +40,7 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
     # Verify positive feedback is shown
     captured = capsys.readouterr()
-    assert "Learn evaluation completed for plan #123" in captured.err
+    assert "Learn completed for plan #123" in captured.err
 
 
 def test_check_learn_status_and_prompt_skips_when_force(
