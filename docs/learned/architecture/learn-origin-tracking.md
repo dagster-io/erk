@@ -21,6 +21,19 @@ However, PRs that _originate from_ learn plans should not trigger another extrac
 3. Extraction runs → finds documentation changes → creates new learn plan
 4. Repeat forever
 
+## Disabling Learn Prompts Globally
+
+For users who prefer to skip the learn prompt entirely (not just for specific PRs), the `prompt_learn_on_land` config setting can be set to `false`:
+
+```bash
+erk config set prompt_learn_on_land false
+```
+
+This differs from the `erk-skip-learn` label:
+
+- **Label**: Per-PR skip (automatic for learn-originated PRs)
+- **Config**: Global disable of the prompt for all PRs
+
 ## Design Decision: Labels over Body Markers
 
 **Previous approach** (deprecated): A marker string (`**Extraction Origin:** true`) was embedded in PR bodies.

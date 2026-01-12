@@ -290,6 +290,7 @@ Configuration stored in `~/.erk/config.toml`.
 erks_root = "/Users/you/worktrees"
 use_graphite = true
 shell_setup_complete = true
+prompt_learn_on_land = true  # Set false to disable learn prompts on erk land
 ```
 
 **Access**: Via `ConfigStore` interface.

@@ -131,9 +131,9 @@ The Task tool spawns subagents that do valuable work:
 - What challenges were encountered?
 - What solutions worked?
 
-### Step 6: Extract Documentation Items
+### Step 6: Identify Learning Gaps
 
-Based on session analysis, identify documentation to create.
+Based on session analysis, identify documentation gaps that would have made the session faster.
 
 **CRITICAL: Filter out execution discipline issues.**
 
@@ -162,41 +162,56 @@ These errors indicate the implementing agent should have explored the code they 
 
 If the pattern is isolated to one module/file, use conventional documentation. Tripwires are for patterns that could occur anywhere.
 
-**Category A (Learning Gaps)** - Would have made the session faster:
+**Learning Gaps** - Would have made the session faster:
 
 - Information that genuinely wasn't in the code (external API quirks, non-obvious interactions)
 - Patterns where the "why" isn't clear from reading the code alone
 - Gotchas where the code works but has surprising behavior
 - Cross-cutting concerns not visible from any single file
 
-**Category B (Teaching Gaps)** - Documentation for what was built:
+Record any learning gaps found. **Proceed to Step 7 regardless of whether learning gaps were found.**
 
-- New features or commands
-- Architectural decisions made
-- Conventions established
+### Step 7: Identify Teaching Gaps (MANDATORY)
 
-**IMPORTANT: Teaching gaps require action even when implementation was smooth.**
+**This step MUST be executed even if no learning gaps were found.**
 
-Unlike learning gaps (which arise from difficulties), teaching gaps exist whenever you BUILD something new. A smooth implementation does NOT mean "no documentation needed."
+Teaching gaps exist whenever you BUILD something new. A smooth implementation does NOT mean "no documentation needed." Unlike learning gaps (which arise from difficulties), teaching gaps arise from creating new capabilities.
 
-**Checklist for new features:**
+**Answer each question - do not skip any:**
 
-- [ ] New CLI command added? → Update relevant docs (e.g., `docs/learned/cli/`, capability docs)
-- [ ] New API/method added to public interface? → Document it
-- [ ] New capability added? → Update capability system docs
-- [ ] New pattern established? → Document the pattern
+1. **New CLI command added?**
+   - If yes: What docs need updating? (`docs/learned/cli/`, capability docs, command reference)
+   - If no: Continue to next question
+
+2. **New config setting added?**
+   - If yes: Update glossary (`docs/learned/glossary.md`)
+   - If no: Continue to next question
+
+3. **New API/method added to public interface?**
+   - If yes: Document it (inline docs, architecture docs, or learned docs)
+   - If no: Continue to next question
+
+4. **New capability added?**
+   - If yes: Update capability system docs
+   - If no: Continue to next question
+
+5. **New pattern established?**
+   - If yes: Document the pattern (tripwire, convention, or architecture doc)
+   - If no: Continue to next question
 
 **Ask yourself:** "If another agent needs to use or extend what I built, what would they need to know?"
 
-For each item, capture:
+For each teaching gap item, capture:
 
 - What document to create/update
 - Where it belongs (docs/learned/, .claude/skills/, etc.)
 - Draft content with specific examples from the session
 
-**If no items pass the filter**, report "No documentation needed - errors were execution discipline issues" and end the session without creating an issue.
+**Only after answering ALL five questions** can you conclude "no teaching gaps found."
 
-### Step 7: Present Findings for Validation
+**If no learning gaps AND no teaching gaps**, report "No documentation needed" and proceed to Step 10 (track evaluation) without creating an issue.
+
+### Step 8: Present Findings for Validation
 
 Present your findings to the user with:
 
@@ -208,9 +223,9 @@ Present your findings to the user with:
 
 3. **Ask for validation** - Are there insights to add, remove, or refine?
 
-If the user decides to **skip** creating documentation (no valuable insights, or insights already documented), proceed directly to Step 9 to track the evaluation.
+If the user decides to **skip** creating documentation (no valuable insights, or insights already documented), proceed directly to Step 10 to track the evaluation.
 
-### Step 8: Create Documentation Plan Issue
+### Step 9: Create Documentation Plan Issue
 
 **CRITICAL: Front-load context into the issue.**
 
@@ -266,7 +281,7 @@ Documentation plan created: <issue-url>
 Raw materials: <gist-url>
 ```
 
-### Step 9: Track Learn Evaluation
+### Step 10: Track Learn Evaluation
 
 **CRITICAL: Always run this step**, regardless of whether you created a documentation plan or skipped.
 
