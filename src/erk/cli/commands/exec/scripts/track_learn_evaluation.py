@@ -1,8 +1,8 @@
 """Track learn evaluation completion on a plan issue.
 
-This exec script posts a tracking comment to the plan issue to record
-that learn evaluation was performed. It replaces the tracking side-effect
-in `erk learn --no-interactive`.
+This exec script posts a tracking comment to the plan issue and updates
+the plan-header metadata block to record that learn evaluation was performed.
+It replaces the tracking side-effect in `erk learn --no-interactive`.
 
 Usage:
     erk exec track-learn-evaluation <issue-number> --session-id="..."
@@ -22,11 +22,20 @@ Exit Codes:
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import UTC
 from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_git, require_issues, require_repo_root
+from erk_shared.context.helpers import (
+    require_cwd,
+    require_git,
+    require_issues,
+    require_repo_root,
+    require_time,
+)
+from erk_shared.gateway.time.abc import Time
+from erk_shared.github.metadata.plan_header import update_plan_header_learn_event
 from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
 
@@ -76,14 +85,16 @@ def _do_track(
     repo_root: Path,
     issue_number: int,
     session_id: str | None,
+    time: Time,
 ) -> None:
-    """Post tracking comment to the plan issue.
+    """Post tracking comment and update plan-header on the plan issue.
 
     Args:
         github_issues: GitHub issues interface
         repo_root: Repository root path
         issue_number: Plan issue number
         session_id: Session ID invoking learn (optional)
+        time: Time gateway for testable timestamps
     """
     # Note: We pass 0 for readable_count and total_count since this script
     # is called after session discovery - the tracking comment is just a marker
@@ -96,6 +107,16 @@ def _do_track(
         readable_count=0,
         total_count=0,
     )
+
+    # Update plan-header with learn event (in addition to comment)
+    timestamp = time.now().replace(tzinfo=UTC).isoformat()
+    issue = github_issues.get_issue(repo_root, issue_number)
+    updated_body = update_plan_header_learn_event(
+        issue_body=issue.body,
+        learn_at=timestamp,
+        session_id=session_id,
+    )
+    github_issues.update_issue_body(repo_root, issue_number, updated_body)
 
 
 @click.command(name="track-learn-evaluation")
@@ -119,6 +140,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
     git = require_git(ctx)
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
+    time = require_time(ctx)
 
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
@@ -151,6 +173,7 @@ def track_learn_evaluation(ctx: click.Context, issue: str | None, session_id: st
         repo_root=repo_root,
         issue_number=issue_number,
         session_id=session_id,
+        time=time,
     )
 
     result = TrackLearnResult(

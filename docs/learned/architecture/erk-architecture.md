@@ -12,8 +12,8 @@ tripwires:
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
   - action: "calling os.chdir() in erk code"
     warning: "After os.chdir(), regenerate context using regenerate_context(ctx, repo_root=repo.root). Stale ctx.cwd causes FileNotFoundError."
-  - action: "importing time module or calling time.sleep()"
-    warning: "Use context.time.sleep() for testability. Direct time.sleep() makes tests slow."
+  - action: "importing time module or calling time.sleep() or datetime.now()"
+    warning: "Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic."
   - action: "implementing CLI flags that affect post-mutation behavior"
     warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
   - action: "comparing worktree path to repo_root to detect root worktree"
@@ -141,13 +141,14 @@ Erk uses a two-layer pattern for subprocess execution to provide consistent erro
 
 ## Time Abstraction for Testing
 
-**NEVER import `time` module directly. ALWAYS use `context.time` abstraction.**
+**NEVER import `time` module or `datetime.now()` directly. ALWAYS use `context.time` abstraction.**
 
 **MUST**: Use `context.time.sleep()` instead of `time.sleep()`
+**MUST**: Use `context.time.now()` instead of `datetime.now()`
 **MUST**: Inject Time dependency through ErkContext
-**SHOULD**: Use FakeTime in tests to avoid actual sleeping
+**SHOULD**: Use FakeTime in tests to avoid actual sleeping and for deterministic timestamps
 
-### Wrong Pattern
+### Wrong Patterns
 
 ```python
 # WRONG: Direct time.sleep() import
@@ -158,7 +159,16 @@ def retry_operation(attempt: int) -> None:
     time.sleep(delay)  # Tests will actually sleep!
 ```
 
-### Correct Pattern
+```python
+# WRONG: Direct datetime.now() import
+from datetime import UTC, datetime
+
+def track_event(issue_number: int) -> None:
+    timestamp = datetime.now(UTC).isoformat()  # Non-deterministic in tests!
+    # ... use timestamp
+```
+
+### Correct Patterns
 
 ```python
 # CORRECT: Use context.time.sleep()
@@ -168,6 +178,15 @@ def retry_operation(context: ErkContext, attempt: int) -> None:
 
 # At CLI entry point, RealTime is injected
 # In tests, FakeTime is injected
+```
+
+```python
+# CORRECT: Use context.time.now()
+from datetime import UTC
+
+def track_event(context: ErkContext, issue_number: int) -> None:
+    timestamp = context.time.now().replace(tzinfo=UTC).isoformat()  # Deterministic in tests!
+    # ... use timestamp
 ```
 
 ### Implementations
@@ -248,6 +267,12 @@ Use `context.time.sleep()` for:
 - Waiting for external system stabilization (GitHub API, CI systems)
 - Polling intervals
 
+Use `context.time.now()` for:
+
+- Timestamps in metadata (plan-header fields, tracking comments)
+- Event logging and audit trails
+- Any code that records "when" something happened
+
 ### Migration Path
 
 If you find code using `time.sleep()`:
@@ -256,11 +281,17 @@ If you find code using `time.sleep()`:
 2. **Replace call**: Change `time.sleep(n)` to `context.time.sleep(n)`
 3. **Update tests**: Use `FakeTime` and verify `sleep_calls`
 
+If you find code using `datetime.now()`:
+
+1. **Add Time parameter**: Add `context: ErkContext` parameter (or just `time: Time`)
+2. **Replace call**: Change `datetime.now(UTC)` to `context.time.now().replace(tzinfo=UTC)`
+3. **Update tests**: Use `FakeTime` for deterministic timestamps
+
 ### Rationale
 
 - **Fast tests**: Tests complete instantly instead of waiting for actual sleep
-- **Deterministic**: Test behavior is predictable and reproducible
-- **Observable**: Track exact sleep durations called in tests
+- **Deterministic timestamps**: Tests can assert exact timestamp values instead of "roughly now"
+- **Observable**: Track exact sleep durations and timestamps in tests
 - **Dependency injection**: Follows erk's DI pattern for all integrations
 - **Consistent**: Same pattern as Git, GitHub, Graphite abstractions
 

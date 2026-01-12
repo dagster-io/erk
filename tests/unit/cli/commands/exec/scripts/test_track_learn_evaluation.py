@@ -13,17 +13,29 @@ from erk.cli.commands.exec.scripts.track_learn_evaluation import track_learn_eva
 from erk_shared.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.metadata.core import find_metadata_block
+from erk_shared.github.metadata.plan_header import format_plan_header_body
 from tests.test_utils.github_helpers import create_test_issue
+
+
+def _create_plan_issue_body() -> str:
+    """Create a valid plan-header issue body for testing."""
+    return format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="test-user",
+    )
+
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
 # ============================================================================
 
 
-def test_track_learn_evaluation_posts_comment(tmp_path: Path) -> None:
-    """Test tracking posts comment to issue."""
+def test_track_learn_evaluation_posts_comment_and_updates_header(tmp_path: Path) -> None:
+    """Test tracking posts comment and updates plan-header on issue."""
     fake_git = FakeGit()
-    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", "Plan body")})
+    plan_body = _create_plan_issue_body()
+    fake_issues = FakeGitHubIssues(issues={42: create_test_issue(42, "Test Plan #42", plan_body)})
 
     runner = CliRunner()
     with runner.isolated_filesystem(temp_dir=tmp_path):
@@ -52,11 +64,19 @@ def test_track_learn_evaluation_posts_comment(tmp_path: Path) -> None:
     assert "learn-invoked" in comment_body
     assert "test-session-123" in comment_body
 
+    # Verify plan-header was updated with learn fields
+    updated_issue = fake_issues.get_issue(cwd, 42)
+    block = find_metadata_block(updated_issue.body, "plan-header")
+    assert block is not None
+    assert block.data.get("last_learn_session") == "test-session-123"
+    assert block.data.get("last_learn_at") is not None
+
 
 def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
     """Test tracking works without session ID."""
     fake_git = FakeGit()
-    test_issue = create_test_issue(100, "Test Plan #100", "Plan body")
+    plan_body = _create_plan_issue_body()
+    test_issue = create_test_issue(100, "Test Plan #100", plan_body)
     fake_issues = FakeGitHubIssues(issues={100: test_issue})
 
     runner = CliRunner()
@@ -81,10 +101,18 @@ def test_track_learn_evaluation_without_session_id(tmp_path: Path) -> None:
     # Verify comment was posted
     assert len(fake_issues.added_comments) == 1
 
+    # Verify plan-header was updated (session is None)
+    updated_issue = fake_issues.get_issue(cwd, 100)
+    block = find_metadata_block(updated_issue.body, "plan-header")
+    assert block is not None
+    assert block.data.get("last_learn_session") is None
+    assert block.data.get("last_learn_at") is not None
+
 
 def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
     """Test tracking infers issue from branch name."""
     runner = CliRunner()
+    plan_body = _create_plan_issue_body()
     with runner.isolated_filesystem(temp_dir=tmp_path):
         cwd = Path.cwd()
 
@@ -92,7 +120,7 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
             current_branches={cwd: "P456-implement-feature"},
         )
         fake_issues = FakeGitHubIssues(
-            issues={456: create_test_issue(456, "Test Plan #456", "Plan body")}
+            issues={456: create_test_issue(456, "Test Plan #456", plan_body)}
         )
 
         result = runner.invoke(
@@ -115,7 +143,8 @@ def test_track_learn_evaluation_infers_from_branch(tmp_path: Path) -> None:
 def test_track_learn_evaluation_with_url_format(tmp_path: Path) -> None:
     """Test tracking accepts GitHub URL format."""
     fake_git = FakeGit()
-    test_issue = create_test_issue(789, "Test Plan #789", "Plan body")
+    plan_body = _create_plan_issue_body()
+    test_issue = create_test_issue(789, "Test Plan #789", plan_body)
     fake_issues = FakeGitHubIssues(issues={789: test_issue})
 
     runner = CliRunner()
@@ -204,7 +233,8 @@ def test_track_learn_evaluation_fails_with_invalid_issue(tmp_path: Path) -> None
 def test_json_output_structure_success(tmp_path: Path) -> None:
     """Test JSON output structure on success."""
     fake_git = FakeGit()
-    test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
+    plan_body = _create_plan_issue_body()
+    test_issue = create_test_issue(200, "Test Plan #200", plan_body)
     fake_issues = FakeGitHubIssues(issues={200: test_issue})
 
     runner = CliRunner()
