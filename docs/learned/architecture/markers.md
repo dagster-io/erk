@@ -16,8 +16,8 @@ Markers provide friction before destructive operations. They persist across sess
 
 ## Current Markers
 
-| Marker           | Created By    | Cleared By                                                  | Purpose                                          |
-| -------------------- | ------------- | ----------------------------------------------------------- | ------------------------------------------------ |
+| Marker          | Created By    | Cleared By                                    | Purpose                                          |
+| --------------- | ------------- | --------------------------------------------- | ------------------------------------------------ |
 | `pending-learn` | `erk pr land` | `erk plan learn`, `create-learn-plan` kit CLI | Block worktree deletion until insights extracted |
 
 ## API

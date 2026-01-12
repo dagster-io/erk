@@ -133,29 +133,29 @@ erk init capability list
 
 **Project capabilities** (committed to repo, shared by team):
 
-| Capability | Description |
-| ---------- | ----------- |
-| `devrun-agent` | Safe execution agent for pytest/ty/ruff/make/gt |
-| `devrun-reminder` | Remind agent to use devrun for CI tool commands |
-| `dignified-python` | Python coding standards (LBYL, modern types, ABCs) |
-| `dignified-python-reminder` | Remind agent to follow dignified-python standards |
-| `dignified-review` | GitHub Action for Python code review |
-| `erk-bash-permissions` | Allow `Bash(erk:*)` commands in Claude Code |
-| `erk-hooks` | Configure Claude Code hooks for session management |
-| `erk-impl-workflow` | GitHub Action for automated implementation |
-| `fake-driven-testing` | 5-layer test architecture with fakes |
-| `learn-workflow` | GitHub Action for automated documentation learning |
-| `learned-docs` | Autolearning documentation system |
-| `ruff-format` | Auto-format Python files with ruff after Write/Edit |
-| `tripwires-reminder` | Remind agent to check tripwires.md |
-| `tripwires-review` | GitHub Action for tripwire code review |
+| Capability                  | Description                                         |
+| --------------------------- | --------------------------------------------------- |
+| `devrun-agent`              | Safe execution agent for pytest/ty/ruff/make/gt     |
+| `devrun-reminder`           | Remind agent to use devrun for CI tool commands     |
+| `dignified-python`          | Python coding standards (LBYL, modern types, ABCs)  |
+| `dignified-python-reminder` | Remind agent to follow dignified-python standards   |
+| `dignified-review`          | GitHub Action for Python code review                |
+| `erk-bash-permissions`      | Allow `Bash(erk:*)` commands in Claude Code         |
+| `erk-hooks`                 | Configure Claude Code hooks for session management  |
+| `erk-impl-workflow`         | GitHub Action for automated implementation          |
+| `fake-driven-testing`       | 5-layer test architecture with fakes                |
+| `learn-workflow`            | GitHub Action for automated documentation learning  |
+| `learned-docs`              | Autolearning documentation system                   |
+| `ruff-format`               | Auto-format Python files with ruff after Write/Edit |
+| `tripwires-reminder`        | Remind agent to check tripwires.md                  |
+| `tripwires-review`          | GitHub Action for tripwire code review              |
 
 **User capabilities** (local to each developer):
 
-| Capability | Description |
-| ---------- | ----------- |
+| Capability          | Description                                   |
+| ------------------- | --------------------------------------------- |
 | `shell-integration` | Shell wrapper for seamless worktree switching |
-| `statusline` | Claude Code status line configuration |
+| `statusline`        | Claude Code status line configuration         |
 
 Install a capability with:
 
