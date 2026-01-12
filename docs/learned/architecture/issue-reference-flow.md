@@ -4,6 +4,7 @@ read_when:
   - "issue references not appearing in PRs"
   - "debugging 'Closes #N' in PR body"
   - "working with issue.json"
+  - "closing reference lost after erk pr submit"
 ---
 
 # Issue Reference Flow
@@ -34,6 +35,33 @@ Commands that should auto-read from `.impl/issue.json`:
 | -------------------- | ----------- | --------------------------- |
 | `finalize.py`        | ✅ Yes      | Adds 'Closes #N' to PR body |
 | `get-pr-body-footer` | ✅ Yes      | Generates PR footer text    |
+
+## Fallback: Extracting from Existing PR Body
+
+When `.impl/issue.json` is missing during finalize, the system uses a fallback mechanism to preserve closing references:
+
+1. **Fetch current PR body** from GitHub
+2. **Extract footer** (content after `---` delimiter)
+3. **Parse closing reference** patterns: `Closes #N` or `Closes owner/repo#N`
+4. **Use extracted reference** when rebuilding the PR body
+
+**Precedence:**
+
+| Source | Priority | When Used |
+| --- | --- | --- |
+| `.impl/issue.json` | 1 (highest) | Authoritative source when present |
+| Extracted from PR body | 2 | Fallback when issue.json missing |
+| None | 3 | No closing reference added |
+
+**Why This Matters:**
+
+Running `erk pr submit` multiple times can trigger finalize, which completely rebuilds the PR body. Without this fallback, closing references would be lost if:
+
+- `.impl/issue.json` was deleted between submit runs
+- `.impl/` directory doesn't exist (auto-repair only runs if directory exists)
+- Issue was manually added to PR body (not stored in issue.json)
+
+**Implementation:** See `extract_closing_reference()` in `erk_shared/github/pr_footer.py`.
 
 ## Anti-Pattern
 
