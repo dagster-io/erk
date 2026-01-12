@@ -54,12 +54,14 @@ If no default found or not in a pool slot, prompt user using AskUserQuestion wit
 ### Step 2: Fetch and Validate Issue
 
 ```bash
-gh issue view <issue-number> --json number,title,body,labels
+erk exec get-issue-body <issue-number>
 ```
+
+This returns JSON with `{success, issue_number, title, body, labels, url}`.
 
 **Validate this is an objective:**
 
-1. Check for `erk-objective` label
+1. Check for `erk-objective` label in the `labels` array
 2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:system:impl-execute` instead."
 3. If neither label: warn but proceed
 
@@ -214,8 +216,10 @@ When you run this command, it will:
 **Note:** If using `erk exec plan-save-to-issue` directly (not recommended), you must verify manually:
 
 ```bash
-gh issue view <new-issue-number> --json body | grep -q "objective_issue"
+erk exec get-issue-body <new-issue-number>
 ```
+
+Check the `body` field in the JSON response contains `objective_issue`.
 
 ---
 

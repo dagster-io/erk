@@ -30,10 +30,10 @@ If no argument provided, ask the user for the issue number.
 ### Step 2: Fetch Original Issue
 
 ```bash
-gh issue view <number> --json title,body,state,labels
+erk exec get-issue-body <number>
 ```
 
-Store the issue title and check that:
+This returns JSON with `{success, issue_number, title, body, state, labels, url}`. Store the issue title and check that:
 
 1. Issue exists
 2. Issue has `erk-plan` label

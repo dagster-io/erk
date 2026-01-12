@@ -45,7 +45,7 @@ Example: `P3679-phase-1b-implement-fakes` -> Plan Issue #3679
 
 **Important:** The branch pattern `P<number>-...` points to an **erk-plan** issue, not the objective. After getting the plan issue number:
 
-1. Read the plan issue: `gh issue view <plan-number>`
+1. Read the plan issue: `erk exec get-issue-body <plan-number>` (returns JSON with body)
 2. Find the parent objective reference (look for "Objective: #XXXX" or "[#XXXX]" link in the body)
 3. Use the objective issue number for all subsequent steps
 
@@ -63,10 +63,10 @@ Load the `objective` skill for format templates and guidelines.
 ### Step 3: Read Current Objective State
 
 ```bash
-gh issue view <issue-number>
+erk exec get-issue-body <issue-number>
 ```
 
-Analyze the objective to identify:
+This returns JSON with `{success, issue_number, title, body, labels, url}`. Analyze the objective body to identify:
 
 - Current roadmap structure (phases and steps)
 - Which phase/steps this PR likely completed
@@ -142,9 +142,9 @@ After posting the action comment, update the issue body to reflect the new state
 
 **How to update:**
 
-1. Fetch current body: `gh issue view <issue-number> --json body -q '.body'`
+1. Fetch current body: `erk exec get-issue-body <issue-number>` (parse JSON to get `body` field)
 2. Make the edits (status changes, PR links, Current Focus)
-3. Update: `gh issue edit <issue-number> --body "$(cat <<'EOF' ... EOF)"`
+3. Update: `erk exec update-issue-body <issue-number> --body "<new-body>"`
 
 ### Step 7: Check Closing Triggers
 

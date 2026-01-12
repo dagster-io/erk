@@ -108,9 +108,10 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 2. **Fetch the objective issue body:**
 
 ```bash
-gh issue view <objective-issue> --json body -q .body
+erk exec get-issue-body <objective-issue>
 ```
 
+Parse the JSON response to extract the `body` field.
 3. **Parse and update the roadmap table:**
 
 Find the row in the roadmap table where the Step column matches `step_id`. Update the PR column to show `plan #<issue_number>`.
@@ -134,7 +135,7 @@ Example transformation:
 4. **Update the objective issue:**
 
 ```bash
-gh issue edit <objective-issue> --body "<updated_body>"
+erk exec update-issue-body <objective-issue> --body "<updated_body>"
 ```
 
 **Note:** If the PR column already has content, preserve it or append (e.g., if there's already a plan, append the new plan number).
