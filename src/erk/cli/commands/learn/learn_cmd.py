@@ -180,8 +180,10 @@ def learn_cmd(
         last_remote_impl_at=sessions_for_plan.last_remote_impl_at,
     )
 
-    # Track invocation (unless disabled)
-    if not no_track:
+    # Helper to track learn evaluation
+    def do_track() -> None:
+        if no_track:
+            return
         try:
             track_learn_invocation(
                 ctx.issues,
@@ -206,6 +208,8 @@ def learn_cmd(
     # Interactive mode: launch Claude to extract insights
     # Skip if --json (non-interactive output) or --no-interactive explicitly set
     if output_json or no_interactive:
+        # Track that evaluation completed (user chose non-interactive mode)
+        do_track()
         return
 
     # Only offer interactive mode if there are any sessions (tracked or local)
@@ -225,12 +229,16 @@ def learn_cmd(
         )
 
     if should_launch:
+        # Don't track here - Claude will track when its evaluation completes
         ctx.claude_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=False,
             command=f"/erk:learn {issue_number}",
             target_subpath=None,
         )
+    else:
+        # User declined - track that evaluation completed
+        do_track()
 
 
 def _display_human_readable(result: LearnResult) -> None:
