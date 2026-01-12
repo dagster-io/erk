@@ -327,6 +327,8 @@ class PlanHeaderSchema(MetadataBlockSchema):
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
+        last_learn_session: Session ID that last invoked learn (nullable)
+        last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -350,6 +352,8 @@ class PlanHeaderSchema(MetadataBlockSchema):
             "source_repo",
             "objective_issue",
             "created_from_session",
+            "last_learn_session",
+            "last_learn_at",
         }
 
         # Check required fields exist
@@ -455,6 +459,20 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("created_from_session must be a string or null")
             if len(data["created_from_session"]) == 0:
                 raise ValueError("created_from_session must not be empty when provided")
+
+        # Validate optional last_learn_session field
+        if "last_learn_session" in data and data["last_learn_session"] is not None:
+            if not isinstance(data["last_learn_session"], str):
+                raise ValueError("last_learn_session must be a string or null")
+            if len(data["last_learn_session"]) == 0:
+                raise ValueError("last_learn_session must not be empty when provided")
+
+        # Validate optional last_learn_at field
+        if "last_learn_at" in data and data["last_learn_at"] is not None:
+            if not isinstance(data["last_learn_at"], str):
+                raise ValueError("last_learn_at must be a string or null")
+            if len(data["last_learn_at"]) == 0:
+                raise ValueError("last_learn_at must not be empty when provided")
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

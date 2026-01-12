@@ -43,6 +43,8 @@ def create_plan_header_block(
     source_repo: str | None = None,
     objective_issue: int | None = None,
     created_from_session: str | None = None,
+    last_learn_session: str | None = None,
+    last_learn_at: str | None = None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -62,6 +64,8 @@ def create_plan_header_block(
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
+        last_learn_session: Optional session ID that last invoked learn
+        last_learn_at: Optional ISO 8601 timestamp of last learn invocation
 
     Returns:
         MetadataBlock with plan-header schema
@@ -98,6 +102,14 @@ def create_plan_header_block(
     if created_from_session is not None:
         data["created_from_session"] = created_from_session
 
+    # Include last_learn_session if provided
+    if last_learn_session is not None:
+        data["last_learn_session"] = last_learn_session
+
+    # Include last_learn_at if provided
+    if last_learn_at is not None:
+        data["last_learn_at"] = last_learn_at
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -122,6 +134,8 @@ def format_plan_header_body(
     source_repo: str | None = None,
     objective_issue: int | None = None,
     created_from_session: str | None = None,
+    last_learn_session: str | None = None,
+    last_learn_at: str | None = None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -144,6 +158,8 @@ def format_plan_header_body(
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
+        last_learn_session: Optional session ID that last invoked learn
+        last_learn_at: Optional ISO 8601 timestamp of last learn invocation
 
     Returns:
         Issue body string with metadata block only
@@ -164,6 +180,8 @@ def format_plan_header_body(
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
+        last_learn_session=last_learn_session,
+        last_learn_at=last_learn_at,
     )
 
     return render_metadata_block(block)
@@ -645,3 +663,80 @@ def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
         return None
 
     return block.data.get("last_local_impl_session")
+
+
+def update_plan_header_learn_event(
+    *,
+    issue_body: str,
+    learn_at: str,
+    session_id: str | None,
+) -> str:
+    """Update learn event fields in plan-header metadata block.
+
+    Updates both learn fields atomically:
+    - last_learn_at (timestamp)
+    - last_learn_session (Claude Code session ID)
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        learn_at: ISO 8601 timestamp of learn invocation
+        session_id: Claude Code session ID (optional)
+
+    Returns:
+        Updated issue body with new learn event fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update learn fields atomically
+    updated_data = dict(block.data)
+    updated_data["last_learn_at"] = learn_at
+    updated_data["last_learn_session"] = session_id
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def extract_plan_header_last_learn_session(issue_body: str) -> str | None:
+    """Extract last_learn_session from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Session ID of last learn invocation if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_learn_session")
+
+
+def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
+    """Extract last_learn_at from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        ISO 8601 timestamp of last learn invocation if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get("last_learn_at")

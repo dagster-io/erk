@@ -1,8 +1,8 @@
 """Track learn evaluation completion on a plan issue.
 
-This exec script posts a tracking comment to the plan issue to record
-that learn evaluation was performed. It replaces the tracking side-effect
-in `erk learn --no-interactive`.
+This exec script posts a tracking comment to the plan issue and updates
+the plan-header metadata block to record that learn evaluation was performed.
+It replaces the tracking side-effect in `erk learn --no-interactive`.
 
 Usage:
     erk exec track-learn-evaluation <issue-number> --session-id="..."
@@ -22,11 +22,13 @@ Exit Codes:
 
 import json
 from dataclasses import asdict, dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
 
 from erk_shared.context.helpers import require_cwd, require_git, require_issues, require_repo_root
+from erk_shared.github.metadata.plan_header import update_plan_header_learn_event
 from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
 
@@ -77,7 +79,7 @@ def _do_track(
     issue_number: int,
     session_id: str | None,
 ) -> None:
-    """Post tracking comment to the plan issue.
+    """Post tracking comment and update plan-header on the plan issue.
 
     Args:
         github_issues: GitHub issues interface
@@ -96,6 +98,16 @@ def _do_track(
         readable_count=0,
         total_count=0,
     )
+
+    # Update plan-header with learn event (in addition to comment)
+    timestamp = datetime.now(UTC).isoformat()
+    issue = github_issues.get_issue(repo_root, issue_number)
+    updated_body = update_plan_header_learn_event(
+        issue_body=issue.body,
+        learn_at=timestamp,
+        session_id=session_id,
+    )
+    github_issues.update_issue_body(repo_root, issue_number, updated_body)
 
 
 @click.command(name="track-learn-evaluation")
