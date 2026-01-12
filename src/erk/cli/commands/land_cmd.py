@@ -84,7 +84,9 @@ def _check_learn_status_and_prompt(
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
 
     if sessions.learn_session_ids:
-        user_output(f"Learn evaluation completed for plan #{plan_issue_number}")
+        user_output(
+            click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
+        )
         return
 
     user_output(
