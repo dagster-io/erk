@@ -13,6 +13,7 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.pr_footer import (
+    ClosingReference,
     build_pr_body_footer,
     extract_closing_reference,
     extract_footer_from_body,
@@ -42,6 +43,25 @@ def is_learn_plan(impl_dir: Path) -> bool:
         return False
 
     return "erk-learn" in issue_ref.labels
+
+
+def _extract_closing_ref_from_pr(
+    ops: GtKit,
+    cwd: Path,
+    pr_number: int,
+) -> ClosingReference | None:
+    """Extract closing reference from an existing PR's footer.
+
+    Used to preserve closing references when .impl/issue.json is missing.
+    """
+    repo_root = ops.git.get_repository_root(cwd)
+    current_pr = ops.github.get_pr(repo_root, pr_number)
+    if isinstance(current_pr, PRNotFound) or not current_pr.body:
+        return None
+    existing_footer = extract_footer_from_body(current_pr.body)
+    if existing_footer is None:
+        return None
+    return extract_closing_reference(existing_footer)
 
 
 def execute_finalize(
@@ -100,16 +120,12 @@ def execute_finalize(
     # existing closing reference from the current PR body.
     # This prevents losing closing references when .impl/issue.json is missing
     # and finalize is run (which rebuilds the entire PR body).
+    closing_ref: ClosingReference | None = None
     if issue_number is None:
-        repo_root_for_body = ops.git.get_repository_root(cwd)
-        current_pr = ops.github.get_pr(repo_root_for_body, pr_number)
-        if not isinstance(current_pr, PRNotFound) and current_pr.body:
-            existing_footer = extract_footer_from_body(current_pr.body)
-            if existing_footer is not None:
-                closing_ref = extract_closing_reference(existing_footer)
-                if closing_ref is not None:
-                    issue_number = closing_ref.issue_number
-                    effective_plans_repo = closing_ref.plans_repo
+        closing_ref = _extract_closing_ref_from_pr(ops, cwd, pr_number)
+    if closing_ref is not None:
+        issue_number = closing_ref.issue_number
+        effective_plans_repo = closing_ref.plans_repo
 
     # Check if this is a learn plan
     is_learn_origin = is_learn_plan(impl_dir)
