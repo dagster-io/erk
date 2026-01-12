@@ -532,22 +532,18 @@ def process_log_file(
     return entries, total_entries, skipped_entries
 
 
-def discover_agent_logs(session_log_path: Path, session_id: str | None) -> list[Path]:
+def discover_agent_logs(session_log_path: Path, session_id: str) -> list[Path]:
     """Discover agent logs in the same directory belonging to the session.
 
     Args:
         session_log_path: Path to the main session log file
-        session_id: Session ID to filter by. If None, returns all agent logs.
+        session_id: Session ID to filter by
 
     Returns:
         List of agent log paths matching the session ID
     """
     log_dir = session_log_path.parent
     all_agent_logs = sorted(log_dir.glob("agent-*.jsonl"))
-
-    # If no session ID, return all (backward compat, but inefficient)
-    if session_id is None:
-        return all_agent_logs
 
     # Filter by session ID - check first entry of each file
     matching_logs = []

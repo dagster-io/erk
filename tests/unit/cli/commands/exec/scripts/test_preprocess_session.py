@@ -269,37 +269,28 @@ def test_process_log_file_handles_malformed_json(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 5. Agent Log Discovery Tests (8 tests)
+# 5. Agent Log Discovery Tests (7 tests)
 # ============================================================================
-
-
-def test_discover_agent_logs_finds_all_when_no_session_id(tmp_path: Path) -> None:
-    """Test that all agent logs are discovered when session_id is None."""
-    session_log = tmp_path / "session-123.jsonl"
-    session_log.write_text("{}", encoding="utf-8")
-
-    agent1 = tmp_path / "agent-abc.jsonl"
-    agent2 = tmp_path / "agent-def.jsonl"
-    agent1.write_text("{}", encoding="utf-8")
-    agent2.write_text("{}", encoding="utf-8")
-
-    agents = discover_agent_logs(session_log, None)
-    assert len(agents) == 2
-    assert agent1 in agents
-    assert agent2 in agents
 
 
 def test_discover_agent_logs_returns_sorted(tmp_path: Path) -> None:
     """Test that agent logs are returned in sorted order."""
     session_log = tmp_path / "session-123.jsonl"
     session_log.write_text("{}", encoding="utf-8")
+    session_id = "session-123"
 
     agent_z = tmp_path / "agent-zzz.jsonl"
     agent_a = tmp_path / "agent-aaa.jsonl"
-    agent_z.write_text("{}", encoding="utf-8")
-    agent_a.write_text("{}", encoding="utf-8")
+    agent_z.write_text(
+        json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "z"}}),
+        encoding="utf-8",
+    )
+    agent_a.write_text(
+        json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "a"}}),
+        encoding="utf-8",
+    )
 
-    agents = discover_agent_logs(session_log, None)
+    agents = discover_agent_logs(session_log, session_id)
     assert agents[0].name == "agent-aaa.jsonl"
     assert agents[1].name == "agent-zzz.jsonl"
 
@@ -308,13 +299,17 @@ def test_discover_agent_logs_ignores_other_files(tmp_path: Path) -> None:
     """Test that non-agent files are ignored."""
     session_log = tmp_path / "session-123.jsonl"
     session_log.write_text("{}", encoding="utf-8")
+    session_id = "session-123"
 
     agent = tmp_path / "agent-abc.jsonl"
     other = tmp_path / "other-file.jsonl"
-    agent.write_text("{}", encoding="utf-8")
+    agent.write_text(
+        json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "test"}}),
+        encoding="utf-8",
+    )
     other.write_text("{}", encoding="utf-8")
 
-    agents = discover_agent_logs(session_log, None)
+    agents = discover_agent_logs(session_log, session_id)
     assert len(agents) == 1
     assert agents[0] == agent
 
@@ -324,7 +319,7 @@ def test_discover_agent_logs_empty_directory(tmp_path: Path) -> None:
     session_log = tmp_path / "session-123.jsonl"
     session_log.write_text("{}", encoding="utf-8")
 
-    agents = discover_agent_logs(session_log, None)
+    agents = discover_agent_logs(session_log, "session-123")
     assert agents == []
 
 
