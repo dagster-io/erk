@@ -145,7 +145,6 @@ class GlobalConfig:
     github_planning: bool
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
-    autolearn: bool = False
     interactive_claude: InteractiveClaudeConfig = InteractiveClaudeConfig.default()
 
     @staticmethod
@@ -157,7 +156,6 @@ class GlobalConfig:
         github_planning: bool = True,
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
-        autolearn: bool = False,
         interactive_claude: InteractiveClaudeConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
@@ -168,7 +166,6 @@ class GlobalConfig:
             github_planning=github_planning,
             fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,
-            autolearn=autolearn,
             interactive_claude=(
                 interactive_claude
                 if interactive_claude is not None
