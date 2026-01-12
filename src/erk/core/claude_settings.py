@@ -69,13 +69,13 @@ def has_erk_permission(settings: dict) -> bool:
 
 
 def has_user_prompt_hook(settings: Mapping[str, Any]) -> bool:
-    """Check if erk UserPromptSubmit hook is configured.
+    """Check if erk UserPromptSubmit hook is configured with current command.
 
     Args:
         settings: Parsed Claude settings dictionary
 
     Returns:
-        True if the erk UserPromptSubmit hook is configured
+        True if the erk UserPromptSubmit hook is configured with the CURRENT command
     """
     hooks = settings.get("hooks", {})
     user_prompt_hooks = hooks.get("UserPromptSubmit", [])
@@ -87,13 +87,13 @@ def has_user_prompt_hook(settings: Mapping[str, Any]) -> bool:
 
 
 def has_exit_plan_hook(settings: Mapping[str, Any]) -> bool:
-    """Check if erk ExitPlanMode hook is configured.
+    """Check if erk ExitPlanMode hook is configured with current command.
 
     Args:
         settings: Parsed Claude settings dictionary
 
     Returns:
-        True if the erk ExitPlanMode PreToolUse hook is configured
+        True if the erk ExitPlanMode PreToolUse hook is configured with the CURRENT command
     """
     hooks = settings.get("hooks", {})
     pre_tool_hooks = hooks.get("PreToolUse", [])
@@ -105,17 +105,79 @@ def has_exit_plan_hook(settings: Mapping[str, Any]) -> bool:
     return False
 
 
+def has_erk_hook_by_marker(
+    settings: Mapping[str, Any],
+    *,
+    hook_type: str,
+    marker: str,
+    matcher: str | None,
+) -> bool:
+    """Check if an erk hook is configured using the ERK_HOOK_ID marker.
+
+    This detects any erk-managed hook, regardless of the exact command version.
+    Used for capability detection to recognize old hooks that need updating.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+        hook_type: The hook type (e.g., "UserPromptSubmit", "PreToolUse")
+        marker: The marker to search for in the command (e.g., "ERK_HOOK_ID=user-prompt-hook")
+        matcher: Optional matcher value to match (e.g., "ExitPlanMode")
+
+    Returns:
+        True if a hook with the marker is found
+    """
+    hooks = settings.get("hooks", {})
+    hook_entries = hooks.get(hook_type, [])
+    for entry in hook_entries:
+        # If matcher is specified, check it
+        if matcher is not None and entry.get("matcher") != matcher:
+            continue
+        for hook in entry.get("hooks", []):
+            command = hook.get("command", "")
+            if marker in command:
+                return True
+    return False
+
+
+def _is_erk_managed_hook(command: str) -> bool:
+    """Check if a hook command is erk-managed (contains ERK_HOOK_ID=).
+
+    Args:
+        command: The hook command string
+
+    Returns:
+        True if the command contains the ERK_HOOK_ID marker
+    """
+    return "ERK_HOOK_ID=" in command
+
+
+def _is_erk_managed_hook_entry(entry: Mapping[str, Any]) -> bool:
+    """Check if a hook entry contains any erk-managed hooks.
+
+    Args:
+        entry: A hook entry with "matcher" and "hooks" keys
+
+    Returns:
+        True if any hook in the entry is erk-managed
+    """
+    for hook in entry.get("hooks", []):
+        if _is_erk_managed_hook(hook.get("command", "")):
+            return True
+    return False
+
+
 def add_erk_hooks(settings: Mapping[str, Any]) -> dict[str, Any]:
-    """Return a new settings dict with erk hooks added.
+    """Return a new settings dict with erk hooks added/replaced.
 
     This is a pure function that doesn't modify the input.
-    Adds missing hooks while preserving existing settings.
+    Replaces existing erk hooks (identified by ERK_HOOK_ID marker) and adds
+    current versions, while preserving non-erk hooks.
 
     Args:
         settings: Parsed Claude settings dictionary
 
     Returns:
-        New settings dict with erk hooks added
+        New settings dict with current erk hooks
     """
     # Deep copy to avoid mutating input
     new_settings = json.loads(json.dumps(settings))
@@ -123,33 +185,41 @@ def add_erk_hooks(settings: Mapping[str, Any]) -> dict[str, Any]:
     # Use defaultdict for cleaner hook list initialization
     hooks: defaultdict[str, list] = defaultdict(list, new_settings.get("hooks", {}))
 
-    # Add UserPromptSubmit hook if missing
-    if not has_user_prompt_hook(settings):
-        hooks["UserPromptSubmit"].append(
-            {
-                "matcher": "*",
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": ERK_USER_PROMPT_HOOK_COMMAND,
-                    }
-                ],
-            }
-        )
+    # Filter out existing erk hooks from UserPromptSubmit, then add current
+    user_prompt_hooks = hooks.get("UserPromptSubmit", [])
+    hooks["UserPromptSubmit"] = [
+        entry for entry in user_prompt_hooks if not _is_erk_managed_hook_entry(entry)
+    ]
+    hooks["UserPromptSubmit"].append(
+        {
+            "matcher": "*",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": ERK_USER_PROMPT_HOOK_COMMAND,
+                }
+            ],
+        }
+    )
 
-    # Add PreToolUse hook for ExitPlanMode if missing
-    if not has_exit_plan_hook(settings):
-        hooks["PreToolUse"].append(
-            {
-                "matcher": "ExitPlanMode",
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": ERK_EXIT_PLAN_HOOK_COMMAND,
-                    }
-                ],
-            }
-        )
+    # Filter out existing erk ExitPlanMode hooks from PreToolUse, then add current
+    pre_tool_hooks = hooks.get("PreToolUse", [])
+    hooks["PreToolUse"] = [
+        entry
+        for entry in pre_tool_hooks
+        if not (entry.get("matcher") == "ExitPlanMode" and _is_erk_managed_hook_entry(entry))
+    ]
+    hooks["PreToolUse"].append(
+        {
+            "matcher": "ExitPlanMode",
+            "hooks": [
+                {
+                    "type": "command",
+                    "command": ERK_EXIT_PLAN_HOOK_COMMAND,
+                }
+            ],
+        }
+    )
 
     new_settings["hooks"] = dict(hooks)
     return new_settings
