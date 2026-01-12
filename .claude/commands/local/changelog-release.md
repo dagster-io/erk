@@ -50,9 +50,83 @@ This returns:
 
 ### Phase 3: Determine Next Version
 
-Always increment the **patch** version (X.Y.Z+1). Do not prompt the user - just use the next patch version automatically.
+**Default behavior:** Increment the **patch** version (X.Y.Z → X.Y.Z+1).
 
-For example: if current version is 0.2.6, the next version is 0.2.7.
+For example: if current version is 0.4.7, the next version is 0.4.8.
+
+**Ask about minor releases:** Before proceeding, ask the user:
+
+> "This will create version X.Y.Z+1. Should this be a **minor release** (X.Y+1.0) instead?
+>
+> A minor release is appropriate when:
+>
+> - Multiple significant features have accumulated across patch releases
+> - You want to consolidate the previous minor version series (e.g., all of 0.4.x)
+> - The release warrants a Release Overview summarizing major themes"
+
+If the user confirms a minor release, use X.Y+1.0 (e.g., 0.4.7 → 0.5.0).
+
+**Semver reference (pre-1.0):**
+
+- **MINOR** (0.X.0): New functionality, milestone releases
+- **PATCH** (0.0.X): Bug fixes, incremental improvements
+
+### Phase 3b: Minor Release Workflow (if applicable)
+
+If creating a minor release, add a **Release Overview** section that consolidates the major themes from the previous minor version series.
+
+**Step 1: Identify themes**
+
+Review the previous minor version series in CHANGELOG.md (e.g., 0.4.0 through 0.4.7) and identify 3-5 major feature themes that span multiple patches.
+
+**Step 2: Write Release Overview**
+
+Add a `### Release Overview` section immediately after the version header. Structure it as:
+
+```markdown
+## [0.5.0] - 2025-12-20 14:30 PT
+
+### Release Overview
+
+Brief 1-2 sentence summary of what this release represents.
+
+#### Theme Name 1
+
+**What it solves:** The problem this feature addresses.
+
+**How it works:** Brief technical explanation.
+
+**Key features:** User-facing entry points (commands, flags, etc.).
+
+#### Theme Name 2
+
+[Same structure...]
+
+---
+
+_The sections below document changes in this specific version (since 0.4.7):_
+
+### Added
+
+...
+```
+
+**Step 3: Theme documentation guidance**
+
+For each theme:
+
+- **What it solves** - The user problem or workflow gap addressed
+- **How it works** - High-level technical explanation (not implementation details)
+- **Key features** - Commands, flags, or entry points users interact with
+
+Distinguish between:
+
+- **Completeable objectives** - Features that solve a finite problem
+- **Ongoing objectives** - Infrastructure improvements that continue to evolve
+
+**Step 4: Consolidate under themes**
+
+The detailed Added/Changed/Fixed/Removed sections follow the Release Overview. These document only the incremental changes since the last patch version, prefixed with a note clarifying they're not the full minor release content.
 
 ### Phase 4: Move Unreleased to Versioned Section
 
