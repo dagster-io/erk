@@ -411,7 +411,49 @@ def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
         assert "Created worktree for PR #777" in result.output
         # Verify base branch was fetched
         assert ("origin", "feature-a") in git.fetched_branches
+        # Verify tracking branch was created for base branch
+        assert ("feature-a", "origin/feature-a") in git.created_tracking_branches
         # Verify rebase was called
+        assert len(git.rebase_onto_calls) == 1
+        _cwd, target_ref = git.rebase_onto_calls[0]
+        assert target_ref == "origin/feature-a"
+
+
+def test_pr_checkout_stacked_pr_base_already_local() -> None:
+    """Test that stacked PR checkout skips fetch/tracking when base exists locally."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        # PR-B is based on PR-A (not trunk), but feature-a already exists locally
+        pr_details = _make_pr_details(
+            number=778,
+            head_ref_name="feature-b",
+            is_cross_repository=False,
+            state="OPEN",
+            base_ref_name="feature-a",  # Stacked PR
+        )
+        github = FakeGitHub(pr_details={778: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            # feature-a already exists locally
+            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+            remote_branches={env.cwd: ["origin/main", "origin/feature-a", "origin/feature-b"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "778"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Created worktree for PR #778" in result.output
+        # Should NOT fetch base branch since it exists locally
+        assert ("origin", "feature-a") not in git.fetched_branches
+        # Should NOT create tracking branch since base exists locally
+        assert len(git.created_tracking_branches) == 0
+        # Rebase should still be called
         assert len(git.rebase_onto_calls) == 1
         _cwd, target_ref = git.rebase_onto_calls[0]
         assert target_ref == "origin/feature-a"
