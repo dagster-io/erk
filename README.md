@@ -11,8 +11,8 @@ For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md
 ```bash
 # Install prerequisites: python 3.10+, claude, uv, gt, gh
 
-# Install erk
-uv tool install erk
+# Install erk in your project
+uv add erk && uv sync
 
 # Initialize in your repo
 erk init
