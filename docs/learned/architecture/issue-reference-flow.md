@@ -47,11 +47,11 @@ When `.impl/issue.json` is missing during finalize, the system uses a fallback m
 
 **Precedence:**
 
-| Source | Priority | When Used |
-| --- | --- | --- |
-| `.impl/issue.json` | 1 (highest) | Authoritative source when present |
-| Extracted from PR body | 2 | Fallback when issue.json missing |
-| None | 3 | No closing reference added |
+| Source                 | Priority    | When Used                         |
+| ---------------------- | ----------- | --------------------------------- |
+| `.impl/issue.json`     | 1 (highest) | Authoritative source when present |
+| Extracted from PR body | 2           | Fallback when issue.json missing  |
+| None                   | 3           | No closing reference added        |
 
 **Why This Matters:**
 
