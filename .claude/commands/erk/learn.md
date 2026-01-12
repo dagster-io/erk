@@ -131,13 +131,28 @@ The Task tool spawns subagents that do valuable work:
 
 ### Step 6: Extract Documentation Items
 
-Based on session analysis, identify documentation to create:
+Based on session analysis, identify documentation to create.
+
+**CRITICAL: Filter out execution discipline issues.**
+
+Before proposing any documentation item, ask: "Was this information already discoverable in the codebase?"
+
+**NOT documentation candidates** (execution discipline issues):
+
+- Agent didn't read class/function signature before calling it
+- Agent assumed API shape instead of checking type hints
+- Agent didn't look at similar existing code for patterns
+- Agent made wrong assumptions that reading the code would have prevented
+- General language/framework knowledge (pytest patterns, Python stdlib, etc.)
+
+These errors indicate the implementing agent should have explored more carefully, not that documentation is missing.
 
 **Category A (Learning Gaps)** - Would have made the session faster:
 
-- Patterns that required discovery
-- Gotchas that caused confusion
-- Non-obvious solutions
+- Information that genuinely wasn't in the code (external API quirks, non-obvious interactions)
+- Patterns where the "why" isn't clear from reading the code alone
+- Gotchas where the code works but has surprising behavior
+- Cross-cutting concerns not visible from any single file
 
 **Category B (Teaching Gaps)** - Documentation for what was built:
 
@@ -150,6 +165,8 @@ For each item, capture:
 - What document to create/update
 - Where it belongs (docs/learned/, .claude/skills/, etc.)
 - Draft content with specific examples from the session
+
+**If no items pass the filter**, report "No documentation needed - errors were execution discipline issues" and end the session without creating an issue.
 
 ### Step 7: Present Findings for Validation
 
