@@ -3,14 +3,14 @@
 
 erk() {
   # Don't intercept if we're doing shell completion
-  [ -n "$_ERK_COMPLETE" ] && { command erk "$@"; return; }
+  [ -n "$_ERK_COMPLETE" ] && { uvx erk-bootstrap "$@"; return; }
 
   local script_path exit_status
-  script_path=$(ERK_SHELL=zsh command erk __shell "$@")
+  script_path=$(ERK_SHELL=zsh uvx erk-bootstrap __shell "$@")
   exit_status=$?
 
   # Passthrough mode: run the original command directly
-  [ "$script_path" = "__ERK_PASSTHROUGH__" ] && { command erk "$@"; return; }
+  [ "$script_path" = "__ERK_PASSTHROUGH__" ] && { uvx erk-bootstrap "$@"; return; }
 
   # Source the script file if it exists, regardless of exit code.
   # This matches Python handler logic: use script even if command had errors.

@@ -4,16 +4,16 @@
 function erk
     # Don't intercept if we're doing shell completion
     if set -q _ERK_COMPLETE
-        command erk $argv
+        uvx erk-bootstrap $argv
         return
     end
 
-    set -l script_path (env ERK_SHELL=fish command erk __shell $argv)
+    set -l script_path (env ERK_SHELL=fish uvx erk-bootstrap __shell $argv)
     set -l exit_status $status
 
     # Passthrough mode
     if test "$script_path" = "__ERK_PASSTHROUGH__"
-        command erk $argv
+        uvx erk-bootstrap $argv
         return
     end
 
