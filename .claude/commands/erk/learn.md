@@ -65,14 +65,14 @@ Create a mental inventory of what's already documented. For each potential insig
 For each session path from Step 1, preprocess it to compressed XML format:
 
 ```bash
-mkdir -p .erk/scratch/sessions
-erk exec preprocess-session <session-path> --stdout > .erk/scratch/sessions/<session-id>.xml
+mkdir -p .erk/scratch/plans/<issue-number>/processed_session_xmls
+erk exec preprocess-session <session-path> --stdout > .erk/scratch/plans/<issue-number>/processed_session_xmls/<session-id>.xml
 ```
 
 Also save the plan issue session content (from Step 2) if it was retrieved:
 
 ```bash
-erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/sessions/plan-issue-<issue-number>.xml
+erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/plans/<issue-number>/processed_session_xmls/plan-issue.xml
 ```
 
 #### Upload Raw Materials to Gist
@@ -80,7 +80,7 @@ erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/sessi
 Upload all preprocessed session files to a secret gist:
 
 ```bash
-gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/*.xml
+gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/plans/<issue-number>/processed_session_xmls/*.xml
 ```
 
 Capture the gist URL and display to user:
@@ -190,7 +190,7 @@ Write the plan content to a temporary file and get the session ID from the `SESS
 
 ```bash
 # Write plan content to a file (example - use actual content)
-cat > .erk/scratch/sessions/<session-id>/learn-plan.md << 'EOF'
+cat > .erk/scratch/plans/<issue-number>/learn-plan.md << 'EOF'
 # Documentation Plan: <title>
 
 ## Context
@@ -209,7 +209,7 @@ EOF
 # Create the learn plan issue
 erk exec plan-save-to-issue \
     --plan-type learn \
-    --plan-file .erk/scratch/sessions/<session-id>/learn-plan.md \
+    --plan-file .erk/scratch/plans/<issue-number>/learn-plan.md \
     --session-id="<session-id-from-SESSION_CONTEXT>" \
     --format display
 ```
