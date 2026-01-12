@@ -65,14 +65,16 @@ Create a mental inventory of what's already documented. For each potential insig
 For each session path from Step 1, preprocess it to compressed XML format:
 
 ```bash
-mkdir -p .erk/scratch/sessions
-erk exec preprocess-session <session-path> --stdout > .erk/scratch/sessions/<session-id>.xml
+mkdir -p .erk/scratch/sessions/<current-session-id>/learn
+erk exec preprocess-session <session-path> --stdout > .erk/scratch/sessions/<current-session-id>/learn/<session-id>.xml
 ```
+
+Note: `<current-session-id>` is the session running `/erk:learn`, `<session-id>` is the session being preprocessed.
 
 Also save the plan issue session content (from Step 2) if it was retrieved:
 
 ```bash
-erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/sessions/plan-issue-<issue-number>.xml
+erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/sessions/<current-session-id>/learn/plan-issue.xml
 ```
 
 #### Upload Raw Materials to Gist
@@ -80,7 +82,7 @@ erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/sessi
 Upload all preprocessed session files to a secret gist:
 
 ```bash
-gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/*.xml
+gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/<current-session-id>/learn/*.xml
 ```
 
 Capture the gist URL and display to user:
