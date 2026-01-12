@@ -879,6 +879,60 @@ class TestExecutePaletteCommandLandPR:
             # Should not have pushed a new screen
             assert len(app.screen_stack) == initial_stack_len
 
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_land_pr_includes_force_flag(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Execute palette command land_pr includes -f (force) flag in command."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        # Capture the command passed to run_streaming_command
+        captured_command = None
+
+        def mock_run_streaming_command(
+            self: PlanDetailScreen,
+            command: list[str],
+            cwd: Path,
+            title: str,
+            *,
+            timeout: float = 30.0,
+        ) -> None:
+            nonlocal captured_command
+            captured_command = command
+
+        # Patch run_streaming_command to capture the command
+        monkeypatch.setattr(
+            PlanDetailScreen,
+            "run_streaming_command",
+            mock_run_streaming_command,
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen
+            await pilot.press("space")
+            await pilot.pause()
+            await pilot.pause()
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+
+            # Execute land_pr command
+            app.execute_palette_command("land_pr")
+            await pilot.pause()
+
+            # Verify command includes -f flag
+            assert captured_command is not None
+            assert captured_command == ["erk", "land", "456", "-f", "--script"]
+            assert "-f" in captured_command
+
 
 class TestStreamingCommandTimeout:
     """Tests for streaming command timeout behavior.
