@@ -18,7 +18,7 @@ from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.prompt_executor import PromptExecutor
 
 
@@ -73,7 +73,7 @@ def context_for_test(
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+    from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 

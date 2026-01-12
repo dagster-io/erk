@@ -9,7 +9,7 @@ from rich.console import Console
 from rich.table import Table
 
 from erk.core.context import ErkContext
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.learn.extraction.session_schema import extract_first_user_message_text
 
 

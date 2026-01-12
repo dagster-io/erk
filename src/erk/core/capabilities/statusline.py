@@ -9,10 +9,8 @@ from erk.core.capabilities.base import (
     CapabilityScope,
 )
 from erk.core.claude_settings import add_erk_statusline, has_erk_statusline
-from erk_shared.learn.extraction.claude_installation import (
-    ClaudeInstallation,
-    RealClaudeInstallation,
-)
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
 
 
 class StatuslineCapability(Capability):

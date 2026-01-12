@@ -44,7 +44,7 @@ from erk_shared.git.real import RealGit
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
-from erk_shared.learn.extraction.claude_installation import RealClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
 from erk_shared.output.output import user_output
 
 # Console for init command prompts (always interactive)

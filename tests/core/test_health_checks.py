@@ -23,7 +23,7 @@ from erk.core.health_checks_dogfooder.legacy_config_locations import (
 from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
 from erk_shared.context.types import RepoContext
 from erk_shared.git.fake import FakeGit
-from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 from tests.fakes.context import create_test_context
 from tests.fakes.shell import FakeShell
 

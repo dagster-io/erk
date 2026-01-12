@@ -8,7 +8,7 @@ import pytest
 
 from erk.core.claude_settings import get_erk_statusline_command
 from erk.core.health_checks import check_statusline_configured
-from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
 
 def test_returns_info_when_no_settings_file() -> None:

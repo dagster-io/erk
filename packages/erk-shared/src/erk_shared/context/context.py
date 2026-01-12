@@ -38,7 +38,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues import GitHubIssues
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.prompt_executor import PromptExecutor

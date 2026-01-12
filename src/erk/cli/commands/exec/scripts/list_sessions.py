@@ -39,7 +39,7 @@ import click
 
 from erk_shared.context.helpers import require_claude_installation, require_cwd, require_git
 from erk_shared.git.abc import Git
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation, Session
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation, Session
 from erk_shared.learn.extraction.session_schema import (
     extract_first_user_message_text,
     extract_git_branch,

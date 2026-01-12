@@ -9,7 +9,7 @@ from erk.cli.commands.exec.scripts.plan_update_issue import plan_update_issue
 from erk_shared.context import ErkContext
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueComment, IssueInfo
-from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
 
 def _make_issue(

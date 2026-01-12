@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.find_project_dir import (
     find_project_info,
 )
 from erk_shared.context import ErkContext
-from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
 # ============================================================================
 # 1. Path Encoding Tests (5 tests)

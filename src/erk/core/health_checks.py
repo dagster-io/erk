@@ -35,7 +35,7 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.plan_issues import LabelDefinition, get_required_erk_labels
 from erk_shared.github_admin.abc import GitHubAdmin
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 
 
 @dataclass(frozen=True)

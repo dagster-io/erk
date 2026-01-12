@@ -68,7 +68,7 @@ from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
@@ -107,7 +107,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+    from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     fake_github = FakeGitHub()
@@ -224,7 +224,7 @@ def context_for_test(
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
-    from erk_shared.learn.extraction.claude_installation import FakeClaudeInstallation
+    from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
     if git is None:
@@ -521,7 +521,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         issues = DryRunGitHubIssues(issues)
 
     # 10. Create claude installation and prompt executor
-    from erk_shared.learn.extraction.claude_installation import RealClaudeInstallation
+    from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)

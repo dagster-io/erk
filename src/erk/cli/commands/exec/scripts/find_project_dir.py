@@ -62,7 +62,7 @@ from pathlib import Path
 import click
 
 from erk_shared.context.helpers import require_claude_installation
-from erk_shared.learn.extraction.claude_installation import ClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 
 
 @dataclass(frozen=True)
