@@ -207,3 +207,78 @@ def test_check_learn_status_and_prompt_skips_for_learn_plans(
 
     # Verify find_sessions was not called (function returned early)
     assert len(find_sessions_called) == 0
+
+
+def test_check_learn_status_and_prompt_skips_when_config_disabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Test that _check_learn_status_and_prompt skips when prompt_learn_on_land=False."""
+    from erk.cli.commands import land_cmd
+    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
+    from erk_shared.context.types import GlobalConfig
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Mock should not be called when config setting is disabled
+    find_sessions_called = []
+
+    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
+        find_sessions_called.append(True)
+        raise AssertionError("Should not be called when prompt_learn_on_land=False")
+
+    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
+
+    # Create context with prompt_learn_on_land=False
+    global_config = GlobalConfig.test(
+        erk_root=tmp_path / ".erk",
+        prompt_learn_on_land=False,
+    )
+    ctx = context_for_test(cwd=repo_root, global_config=global_config)
+
+    # With prompt_learn_on_land=False, should return immediately
+    _check_learn_status_and_prompt(ctx, repo_root=repo_root, plan_issue_number=123, force=False)
+
+    # Verify find_sessions was not called
+    assert len(find_sessions_called) == 0
+
+
+def test_check_learn_status_and_prompt_runs_when_config_enabled(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that _check_learn_status_and_prompt runs normally when prompt_learn_on_land=True."""
+    from erk.cli.commands import land_cmd
+    from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
+    from erk_shared.context.types import GlobalConfig
+    from erk_shared.sessions.discovery import SessionsForPlan
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+
+    # Mock find_sessions_for_plan to return sessions with learn_session_ids
+    def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
+        return SessionsForPlan(
+            planning_session_id="plan-session-1",
+            implementation_session_ids=["impl-session-1"],
+            learn_session_ids=["learn-session-1"],  # Already learned
+            last_remote_impl_at=None,
+        )
+
+    monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
+
+    # Create context with prompt_learn_on_land=True (default)
+    global_config = GlobalConfig.test(
+        erk_root=tmp_path / ".erk",
+        prompt_learn_on_land=True,
+    )
+    ctx = context_for_test(cwd=repo_root, global_config=global_config)
+
+    # Should run the check and show positive feedback
+    _check_learn_status_and_prompt(ctx, repo_root=repo_root, plan_issue_number=123, force=False)
+
+    # Verify positive feedback is shown (check actually ran)
+    captured = capsys.readouterr()
+    assert "Learn completed for plan #123" in captured.err

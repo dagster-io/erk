@@ -84,6 +84,10 @@ def _check_learn_status_and_prompt(
     if force:
         return
 
+    # Check global config setting to skip learn prompt
+    if ctx.global_config is not None and not ctx.global_config.prompt_learn_on_land:
+        return
+
     # Skip learn check for learn plans (they don't need to be learned from)
     try:
         issue = ctx.issues.get_issue(repo_root, plan_issue_number)

@@ -99,6 +99,7 @@ def create_and_save_global_config(
         use_graphite=use_graphite,
         shell_setup_complete=shell_setup_complete,
         github_planning=True,
+        prompt_learn_on_land=True,
     )
     ctx.erk_installation.save_config(config)
     return config
@@ -493,6 +494,7 @@ def run_init(
                 use_graphite=ctx.global_config.use_graphite,
                 shell_setup_complete=True,
                 github_planning=ctx.global_config.github_planning,
+                prompt_learn_on_land=ctx.global_config.prompt_learn_on_land,
             )
             try:
                 ctx.erk_installation.save_config(new_config)
@@ -663,6 +665,7 @@ def run_init(
                             use_graphite=fresh_config.use_graphite,
                             shell_setup_complete=True,
                             github_planning=fresh_config.github_planning,
+                            prompt_learn_on_land=fresh_config.prompt_learn_on_land,
                         )
                         ctx.erk_installation.save_config(new_config)
 
@@ -686,6 +689,7 @@ def run_init(
                                 use_graphite=fresh_config.use_graphite,
                                 shell_setup_complete=True,
                                 github_planning=fresh_config.github_planning,
+                                prompt_learn_on_land=fresh_config.prompt_learn_on_land,
                             )
                             try:
                                 ctx.erk_installation.save_config(new_config)
