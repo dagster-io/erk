@@ -29,10 +29,11 @@ All capabilities inherit from the `Capability` ABC in `src/erk/core/capabilities
 
 **Required methods:**
 
-| Method                                                 | Purpose                    |
-| ------------------------------------------------------ | -------------------------- |
-| `is_installed(repo_root: Path \| None) -> bool`        | Check if already installed |
-| `install(repo_root: Path \| None) -> CapabilityResult` | Install the capability     |
+| Method                                                   | Purpose                    |
+| -------------------------------------------------------- | -------------------------- |
+| `is_installed(repo_root: Path \| None) -> bool`          | Check if already installed |
+| `install(repo_root: Path \| None) -> CapabilityResult`   | Install the capability     |
+| `uninstall(repo_root: Path \| None) -> CapabilityResult` | Uninstall the capability   |
 
 **Optional:**
 
@@ -123,11 +124,12 @@ For workflow capabilities that install GitHub Actions, see [Workflow Capability 
 
 ## CLI Commands
 
-| Command                            | Purpose                   |
-| ---------------------------------- | ------------------------- |
-| `erk init capability list`         | Show all capabilities     |
-| `erk init capability check <name>` | Check installation status |
-| `erk init capability add <name>`   | Install capability        |
+| Command                             | Purpose                   |
+| ----------------------------------- | ------------------------- |
+| `erk init capability list`          | Show all capabilities     |
+| `erk init capability check <name>`  | Check installation status |
+| `erk init capability add <name>`    | Install capability        |
+| `erk init capability remove <name>` | Uninstall capability      |
 
 ## Related Topics
 

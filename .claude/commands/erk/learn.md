@@ -175,6 +175,19 @@ If the pattern is isolated to one module/file, use conventional documentation. T
 - Architectural decisions made
 - Conventions established
 
+**IMPORTANT: Teaching gaps require action even when implementation was smooth.**
+
+Unlike learning gaps (which arise from difficulties), teaching gaps exist whenever you BUILD something new. A smooth implementation does NOT mean "no documentation needed."
+
+**Checklist for new features:**
+
+- [ ] New CLI command added? → Update relevant docs (e.g., `docs/learned/cli/`, capability docs)
+- [ ] New API/method added to public interface? → Document it
+- [ ] New capability added? → Update capability system docs
+- [ ] New pattern established? → Document the pattern
+
+**Ask yourself:** "If another agent needs to use or extend what I built, what would they need to know?"
+
 For each item, capture:
 
 - What document to create/update
