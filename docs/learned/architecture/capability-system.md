@@ -4,6 +4,8 @@ read_when:
   - creating new erk init capabilities
   - understanding how erk init works
   - adding installable features
+  - working with capability tracking in state.toml
+  - understanding how erk doctor filters artifacts by installed capabilities
 ---
 
 # Capability System Architecture
@@ -121,6 +123,78 @@ class HooksCapability(Capability):
 For skill-based capabilities, extend `SkillCapability` and implement only `skill_name` and `description`. See [Bundled Artifacts](bundled-artifacts.md) for how artifacts are sourced.
 
 For workflow capabilities that install GitHub Actions, see [Workflow Capability Pattern](workflow-capability-pattern.md).
+
+## Capability Tracking
+
+When capabilities are installed or uninstalled, their state is tracked in `.erk/state.toml`. This enables `erk doctor` to only check artifacts for capabilities that have been explicitly installed.
+
+### State File Location
+
+`.erk/state.toml` in the repository root (or worktree root for worktree-specific state).
+
+### State File Format
+
+```toml
+[artifacts]
+version = "0.5.1"
+files = { ... }
+
+[capabilities]
+installed = ["dignified-python", "fake-driven-testing", "erk-impl"]
+```
+
+### Tracking API
+
+From `erk.artifacts.state`:
+
+| Function                                                     | Purpose                         |
+| ------------------------------------------------------------ | ------------------------------- |
+| `add_installed_capability(project_dir, name)`                | Record capability installation  |
+| `remove_installed_capability(project_dir, name)`             | Record capability removal       |
+| `load_installed_capabilities(project_dir) -> frozenset[str]` | Load installed capability names |
+
+### Implementation Pattern
+
+**Capability classes** should call tracking functions during `install()` and `uninstall()`:
+
+```python
+class DignifiedPythonCapability(SkillCapability):
+    def install(self, repo_root: Path | None) -> CapabilityResult:
+        result = super().install(repo_root)
+        if result.success and repo_root:
+            add_installed_capability(repo_root, self.name)
+        return result
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        result = super().uninstall(repo_root)
+        if result.success and repo_root:
+            remove_installed_capability(repo_root, self.name)
+        return result
+```
+
+### Health Check Filtering
+
+`erk doctor` uses the installed capabilities to filter which artifacts are checked:
+
+```python
+# In health_checks.py
+installed = load_installed_capabilities(project_dir)
+
+# _get_bundled_by_type() now accepts installed_capabilities parameter
+skills = _get_bundled_by_type("skill", installed_capabilities=installed)
+```
+
+**Key insight**: When `installed_capabilities=None`, all artifacts are returned (used for sync operations). When a `frozenset` is passed, only artifacts from installed capabilities are returned (used for doctor checks).
+
+### Required vs Optional Capabilities
+
+| Property     | Required (`required=True`) | Optional                    |
+| ------------ | -------------------------- | --------------------------- |
+| Auto-install | Yes, during `erk init`     | Manual via `capability add` |
+| Doctor check | Always checked             | Only if installed           |
+| Example      | hooks                      | dignified-python, workflows |
+
+Required capabilities don't need tracking—they're always installed and always checked. Optional capabilities use the `[capabilities]` tracking to determine doctor check scope.
 
 ## CLI Commands
 
