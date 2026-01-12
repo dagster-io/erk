@@ -231,11 +231,11 @@ def _sync_workflows(
 ) -> tuple[int, list[SyncedArtifact]]:
     """Sync erk-managed workflows to project's .github/workflows/ directory.
 
-    Only syncs files listed in BUNDLED_WORKFLOWS registry.
+    Only syncs files listed in managed artifacts registry.
     Returns tuple of (file_count, synced_artifacts).
     """
     # Inline import: artifact_health.py imports get_bundled_*_dir from this module
-    from erk.artifacts.artifact_health import BUNDLED_WORKFLOWS
+    from erk.artifacts.artifact_health import _get_bundled_by_type
 
     source_workflows_dir = bundled_github_dir / "workflows"
     if not source_workflows_dir.exists():
@@ -243,7 +243,8 @@ def _sync_workflows(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for workflow_name in sorted(BUNDLED_WORKFLOWS):
+    for name in sorted(_get_bundled_by_type("workflow")):
+        workflow_name = f"{name}.yml"
         source_path = source_workflows_dir / workflow_name
         if source_path.exists():
             target_workflows_dir.mkdir(parents=True, exist_ok=True)
@@ -265,11 +266,11 @@ def _sync_actions(
 ) -> tuple[int, list[SyncedArtifact]]:
     """Sync erk-managed actions to project's .github/actions/ directory.
 
-    Only syncs directories listed in BUNDLED_ACTIONS registry.
+    Only syncs directories listed in managed artifacts registry.
     Returns tuple of (file_count, synced_artifacts).
     """
     # Inline import: artifact_health.py imports get_bundled_*_dir from this module
-    from erk.artifacts.artifact_health import BUNDLED_ACTIONS
+    from erk.artifacts.artifact_health import _get_bundled_by_type
 
     source_actions_dir = bundled_github_dir / "actions"
     if not source_actions_dir.exists():
@@ -277,7 +278,7 @@ def _sync_actions(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for action_name in sorted(BUNDLED_ACTIONS):
+    for action_name in sorted(_get_bundled_by_type("action")):
         source_path = source_actions_dir / action_name
         if source_path.exists() and source_path.is_dir():
             target_path = target_actions_dir / action_name
@@ -354,12 +355,7 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
 
     Instead of copying files, just compute hashes from the source artifacts.
     """
-    from erk.artifacts.artifact_health import (
-        BUNDLED_ACTIONS,
-        BUNDLED_AGENTS,
-        BUNDLED_SKILLS,
-        BUNDLED_WORKFLOWS,
-    )
+    from erk.artifacts.artifact_health import _get_bundled_by_type
 
     bundled_claude_dir = get_bundled_claude_dir()
     bundled_github_dir = get_bundled_github_dir()
@@ -367,10 +363,12 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
 
     # Hash directory-based skills
     skills_dir = bundled_claude_dir / "skills"
-    artifacts.extend(_hash_directory_artifacts(skills_dir, BUNDLED_SKILLS, "skills"))
+    artifacts.extend(_hash_directory_artifacts(skills_dir, _get_bundled_by_type("skill"), "skills"))
 
     # Hash agents (supports both directory-based and single-file)
-    artifacts.extend(_hash_agent_artifacts(bundled_claude_dir / "agents", BUNDLED_AGENTS))
+    artifacts.extend(
+        _hash_agent_artifacts(bundled_claude_dir / "agents", _get_bundled_by_type("agent"))
+    )
 
     # Hash commands from source (including nested directories)
     commands_dir = bundled_claude_dir / "commands" / "erk"
@@ -389,7 +387,8 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     # Hash workflows from source
     workflows_dir = bundled_github_dir / "workflows"
     if workflows_dir.exists():
-        for workflow_name in sorted(BUNDLED_WORKFLOWS):
+        for name in sorted(_get_bundled_by_type("workflow")):
+            workflow_name = f"{name}.yml"
             workflow_file = workflows_dir / workflow_name
             if workflow_file.exists():
                 artifacts.append(
@@ -402,7 +401,9 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
 
     # Hash actions from source
     actions_dir = bundled_github_dir / "actions"
-    artifacts.extend(_hash_directory_artifacts(actions_dir, BUNDLED_ACTIONS, "actions"))
+    artifacts.extend(
+        _hash_directory_artifacts(actions_dir, _get_bundled_by_type("action"), "actions")
+    )
 
     # Hash hooks (check if installed in settings.json)
     settings_path = project_dir / ".claude" / "settings.json"
@@ -481,7 +482,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     and saves state for dogfooding.
     """
     # Inline import: artifact_health.py imports get_bundled_*_dir from this module
-    from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS
+    from erk.artifacts.artifact_health import _get_bundled_by_type
 
     # In erk repo: skip copying but still save state for dogfooding
     if is_in_erk_repo(project_dir):
@@ -516,14 +517,17 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
 
     # Sync directory-based skills
     count, synced = _sync_directory_artifacts(
-        bundled_claude_dir / "skills", target_claude_dir / "skills", BUNDLED_SKILLS, "skills"
+        bundled_claude_dir / "skills",
+        target_claude_dir / "skills",
+        _get_bundled_by_type("skill"),
+        "skills",
     )
     total_copied += count
     all_synced.extend(synced)
 
     # Sync agents (supports both directory-based and single-file)
     count, synced = _sync_agent_artifacts(
-        bundled_claude_dir / "agents", target_claude_dir / "agents", BUNDLED_AGENTS
+        bundled_claude_dir / "agents", target_claude_dir / "agents", _get_bundled_by_type("agent")
     )
     total_copied += count
     all_synced.extend(synced)

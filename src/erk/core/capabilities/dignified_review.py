@@ -15,6 +15,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 
 
@@ -55,6 +56,14 @@ class DignifiedReviewCapability(Capability):
                 path=".github/prompts/dignified-python-review.md",
                 artifact_type="file",
             ),
+        ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare workflow and prompt as managed artifacts."""
+        return [
+            ManagedArtifact(name="dignified-python-review", artifact_type="workflow"),
+            ManagedArtifact(name="dignified-python-review", artifact_type="prompt"),
         ]
 
     def is_installed(self, repo_root: Path | None) -> bool:

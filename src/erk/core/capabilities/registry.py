@@ -76,3 +76,32 @@ def list_required_capabilities() -> list[Capability]:
         List of capabilities where required=True
     """
     return [cap for cap in _all_capabilities() if cap.required]
+
+
+@cache
+def get_managed_artifacts() -> dict[tuple[str, str], str]:
+    """Get all artifacts managed by capabilities.
+
+    Returns dict mapping (artifact_name, artifact_type) -> capability_name.
+    This is the single source of truth for artifact management detection.
+    """
+    result: dict[tuple[str, str], str] = {}
+    for cap in _all_capabilities():
+        for artifact in cap.managed_artifacts:
+            key = (artifact.name, artifact.artifact_type)
+            if key not in result:
+                result[key] = cap.name
+    return result
+
+
+def is_capability_managed(name: str, artifact_type: str) -> bool:
+    """Check if an artifact is managed by a capability.
+
+    Args:
+        name: The artifact name (e.g., "dignified-python", "ruff-format-hook")
+        artifact_type: The artifact type (e.g., "skill", "hook")
+
+    Returns:
+        True if the artifact is declared as managed by some capability
+    """
+    return (name, artifact_type) in get_managed_artifacts()

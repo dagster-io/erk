@@ -11,6 +11,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 
 
@@ -54,6 +55,15 @@ class ErkImplWorkflowCapability(Capability):
                 path=".github/actions/setup-claude-erk/",
                 artifact_type="directory",
             ),
+        ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare workflow and actions as managed artifacts."""
+        return [
+            ManagedArtifact(name="erk-impl", artifact_type="workflow"),
+            ManagedArtifact(name="setup-claude-code", artifact_type="action"),
+            ManagedArtifact(name="setup-claude-erk", artifact_type="action"),
         ]
 
     def is_installed(self, repo_root: Path | None) -> bool:
@@ -146,6 +156,11 @@ class LearnWorkflowCapability(Capability):
                 artifact_type="file",
             ),
         ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare learn-dispatch workflow as managed artifact."""
+        return [ManagedArtifact(name="learn-dispatch", artifact_type="workflow")]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"

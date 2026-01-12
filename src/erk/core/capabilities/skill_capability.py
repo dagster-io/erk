@@ -13,6 +13,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 
 if TYPE_CHECKING:
@@ -56,6 +57,11 @@ class SkillCapability(Capability):
                 artifact_type="directory",
             )
         ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare the skill as a managed artifact."""
+        return [ManagedArtifact(name=self.skill_name, artifact_type="skill")]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if the skill directory exists."""

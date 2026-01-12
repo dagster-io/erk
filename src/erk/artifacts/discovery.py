@@ -7,6 +7,7 @@ from pathlib import Path
 from erk.artifacts.models import ArtifactType, InstalledArtifact
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_RUFF_FORMAT_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
 )
 
@@ -238,6 +239,8 @@ def _extract_hook_name(command: str) -> str:
         return "user-prompt-hook"
     if command == ERK_EXIT_PLAN_HOOK_COMMAND:
         return "exit-plan-mode-hook"
+    if command == ERK_RUFF_FORMAT_HOOK_COMMAND:
+        return "ruff-format-hook"
 
     # For local hooks, use the full command text as the identifier
     return command
@@ -297,6 +300,32 @@ def _discover_hooks(claude_dir: Path) -> list[InstalledArtifact]:
     return artifacts
 
 
+def _discover_prompts(prompts_dir: Path) -> list[InstalledArtifact]:
+    """Discover prompts in .github/prompts/ directory.
+
+    Prompts are markdown files that provide context to AI tools.
+    Pattern: .github/prompts/<name>.md
+    """
+    if not prompts_dir.exists():
+        return []
+
+    artifacts: list[InstalledArtifact] = []
+    for prompt_file in prompts_dir.iterdir():
+        if not prompt_file.is_file():
+            continue
+        if prompt_file.suffix != ".md":
+            continue
+        artifacts.append(
+            InstalledArtifact(
+                name=prompt_file.stem,
+                artifact_type="prompt",
+                path=prompt_file,
+                content_hash=_compute_file_hash(prompt_file),
+            )
+        )
+    return artifacts
+
+
 def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
     """Scan project directory and return all installed artifacts.
 
@@ -307,10 +336,12 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
     - workflows: .github/workflows/<name>.yml (all workflows)
     - actions: .github/actions/<name>/action.yml (all actions)
     - hooks: configured in .claude/settings.json
+    - prompts: .github/prompts/<name>.md
     """
     claude_dir = project_dir / ".claude"
     workflows_dir = project_dir / ".github" / "workflows"
     actions_dir = project_dir / ".github" / "actions"
+    prompts_dir = project_dir / ".github" / "prompts"
 
     artifacts: list[InstalledArtifact] = []
 
@@ -322,6 +353,7 @@ def discover_artifacts(project_dir: Path) -> list[InstalledArtifact]:
 
     artifacts.extend(_discover_workflows(workflows_dir))
     artifacts.extend(_discover_actions(actions_dir))
+    artifacts.extend(_discover_prompts(prompts_dir))
 
     # Sort by type then name for consistent output
     return sorted(artifacts, key=lambda a: (a.artifact_type, a.name))
