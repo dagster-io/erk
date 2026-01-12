@@ -1,17 +1,19 @@
 """Learn command for extracting insights from plan implementations.
 
 This command discovers all Claude Code sessions associated with a plan issue
-and outputs their paths for use in extraction workflows.
+and optionally launches Claude with the /erk:learn skill.
+
+Note: Session data retrieval and tracking are handled by separate exec scripts:
+- `erk exec get-learn-sessions` - Returns JSON with session data
+- `erk exec track-learn-evaluation` - Posts tracking comment to issue
 """
 
-import json
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 
 import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 from erk_shared.sessions.discovery import (
@@ -31,8 +33,8 @@ class LearnResult:
     learn_session_ids: list[str]
     readable_session_ids: list[str]
     session_paths: list[str]
-    local_session_ids: list[str]  # Sessions found locally (fallback when GitHub has none)
-    last_remote_impl_at: str | None  # Timestamp if implemented remotely via GitHub Actions
+    local_session_ids: list[str]
+    last_remote_impl_at: str | None
 
 
 def _extract_issue_number(identifier: str) -> int | None:
@@ -59,29 +61,17 @@ def _extract_issue_number(identifier: str) -> int | None:
 
 @click.command("learn")
 @click.argument("issue", type=str, required=False)
-@click.option("--json", "output_json", is_flag=True, help="Output as JSON")
-@click.option("--no-track", is_flag=True, help="Don't post tracking comment to issue")
-@click.option("--session-id", default=None, help="Session ID for tracking (passed by Claude hooks)")
 @click.option(
     "-i",
     "--interactive",
     is_flag=True,
-    help="Launch Claude to extract insights after discovering sessions",
-)
-@click.option(
-    "--no-interactive",
-    is_flag=True,
-    help="Just display sessions without launching Claude",
+    help="Launch Claude to extract insights without prompting",
 )
 @click.pass_obj
 def learn_cmd(
     ctx: ErkContext,
     issue: str | None,
-    output_json: bool,
-    no_track: bool,
-    session_id: str | None,
     interactive: bool,
-    no_interactive: bool,
 ) -> None:
     """Extract insights from sessions associated with a plan.
 
@@ -94,20 +84,15 @@ def learn_cmd(
     - Previous learn sessions (already analyzed)
 
     By default, displays sessions and prompts to launch Claude interactively
-    for insight extraction. Use -i to auto-launch Claude without prompting,
-    or --no-interactive to just display sessions.
+    for insight extraction. Use -i to auto-launch Claude without prompting.
 
     Examples:
 
-        erk learn                            # Infer from branch
+        erk learn                  # Infer from branch
 
         erk learn 123
 
-        erk learn 123 -i                    # Auto-launch Claude
-
-        erk learn 123 --no-interactive      # Just show sessions
-
-        erk learn 123 --json                # JSON output, no interaction
+        erk learn 123 -i           # Auto-launch Claude
     """
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
@@ -136,15 +121,11 @@ def learn_cmd(
     repo_root = repo.root
 
     # Find sessions for the plan
-    try:
-        sessions_for_plan = find_sessions_for_plan(
-            ctx.issues,
-            repo_root,
-            issue_number,
-        )
-    except RuntimeError as e:
-        user_output(click.style(f"Error: Failed to find sessions: {e}", fg="red"))
-        raise SystemExit(1) from e
+    sessions_for_plan = find_sessions_for_plan(
+        ctx.issues,
+        repo_root,
+        issue_number,
+    )
 
     # Get readable sessions (ones that exist on disk) using global lookup
     readable_sessions = get_readable_sessions(
@@ -180,37 +161,8 @@ def learn_cmd(
         last_remote_impl_at=sessions_for_plan.last_remote_impl_at,
     )
 
-    # Helper to track learn evaluation
-    def do_track() -> None:
-        if no_track:
-            return
-        try:
-            track_learn_invocation(
-                ctx.issues,
-                repo_root,
-                issue_number,
-                session_id=session_id,
-                readable_count=len(readable_session_ids),
-                total_count=len(sessions_for_plan.all_session_ids()),
-            )
-        except RuntimeError as e:
-            # Non-fatal - tracking failed but we can still output results
-            user_output(
-                click.style("Warning: ", fg="yellow") + f"Failed to track learn invocation: {e}"
-            )
-
-    # Output
-    if output_json:
-        click.echo(json.dumps(asdict(result), indent=2))
-    else:
-        _display_human_readable(result)
-
-    # Interactive mode: launch Claude to extract insights
-    # Skip if --json (non-interactive output) or --no-interactive explicitly set
-    if output_json or no_interactive:
-        # Track that evaluation completed (user chose non-interactive mode)
-        do_track()
-        return
+    # Display sessions
+    _display_human_readable(result)
 
     # Only offer interactive mode if there are any sessions (tracked or local)
     has_sessions = bool(readable_session_ids) or bool(local_session_ids)
@@ -229,16 +181,12 @@ def learn_cmd(
         )
 
     if should_launch:
-        # Don't track here - Claude will track when its evaluation completes
         ctx.claude_executor.execute_interactive(
             worktree_path=repo_root,
             dangerous=False,
             command=f"/erk:learn {issue_number}",
             target_subpath=None,
         )
-    else:
-        # User declined - track that evaluation completed
-        do_track()
 
 
 def _display_human_readable(result: LearnResult) -> None:

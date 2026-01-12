@@ -34,6 +34,7 @@ from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
 from erk.cli.commands.exec.scripts.generate_pr_summary import generate_pr_summary
 from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
 from erk.cli.commands.exec.scripts.get_embedded_prompt import get_embedded_prompt
+from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk.cli.commands.exec.scripts.get_plan_metadata import get_plan_metadata
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
@@ -84,6 +85,9 @@ from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
 from erk.cli.commands.exec.scripts.slot_objective import slot_objective
+from erk.cli.commands.exec.scripts.track_learn_evaluation import (
+    track_learn_evaluation,
+)
 from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
     tripwires_reminder_hook,
 )
@@ -122,6 +126,7 @@ exec_group.add_command(generate_pr_summary, name="generate-pr-summary")
 exec_group.add_command(get_closing_text, name="get-closing-text")
 exec_group.add_command(get_plan_metadata, name="get-plan-metadata")
 exec_group.add_command(get_embedded_prompt, name="get-embedded-prompt")
+exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
@@ -147,6 +152,7 @@ exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-co
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")
 exec_group.add_command(slot_objective, name="slot-objective")
+exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(ci_update_pr_body)
