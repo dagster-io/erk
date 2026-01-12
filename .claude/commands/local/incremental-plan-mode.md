@@ -20,7 +20,7 @@ Streamlines the "plan small change -> implement -> submit" loop for PR iteration
 
 Before entering plan mode, create the incremental-plan marker to skip the "save as GitHub issue?" prompt later.
 
-**Get the session ID** from the `session:` system reminder in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`).
+**Get the session ID** by reading the `session:` line from the system reminders in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`). This value is already visible in your context - just copy it directly, no tools needed.
 
 ```bash
 erk exec marker create --session-id <session-id-from-reminder> incremental-plan
