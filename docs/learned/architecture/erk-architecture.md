@@ -16,8 +16,6 @@ tripwires:
     warning: "Use context.time.sleep() for testability. Direct time.sleep() makes tests slow."
   - action: "implementing CLI flags that affect post-mutation behavior"
     warning: "Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk pr land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target)."
-  - action: "editing docs/agent/index.md or docs/agent/tripwires.md directly"
-    warning: "These are generated files. Edit the source frontmatter instead, then run 'erk docs sync'."
   - action: "comparing worktree path to repo_root to detect root worktree"
     warning: "Use WorktreeInfo.is_root instead of path comparison. Path comparison fails when running from within a non-root worktree because ctx.cwd resolves differently."
   - action: "detecting current worktree using path comparisons on cwd"
