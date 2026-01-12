@@ -2,7 +2,7 @@
 title: Bundled Artifacts System
 read_when:
   - understanding artifact syncing
-  - working with BUNDLED_* registries
+  - working with managed artifacts
   - debugging erk sync
 ---
 
@@ -10,26 +10,64 @@ read_when:
 
 Erk bundles artifacts that are synced to projects during `erk init` or `erk sync`.
 
-## Registry Location
+## Registry Architecture
 
-`src/erk/artifacts/artifact_health.py` defines the bundled artifact registries:
+The capability system is the single source of truth for artifact management. Each capability declares which artifacts it manages via the `managed_artifacts` property.
 
-| Registry            | Contents                                                |
-| ------------------- | ------------------------------------------------------- |
-| `BUNDLED_SKILLS`    | `dignified-python`, `learned-docs`, `erk-diff-analysis` |
-| `BUNDLED_AGENTS`    | `devrun`                                                |
-| `BUNDLED_WORKFLOWS` | `erk-impl.yml`                                          |
-| `BUNDLED_ACTIONS`   | `setup-claude-code`, `setup-claude-erk`                 |
-| `BUNDLED_HOOKS`     | `user-prompt-hook`, `exit-plan-mode-hook`               |
+### How It Works
 
-## Bundled vs Capability
+1. Each capability class declares `managed_artifacts` property returning `list[ManagedArtifact]`
+2. Registry provides `get_managed_artifacts()` - returns all managed artifact mappings
+3. Registry provides `is_capability_managed(name, type)` - checks if artifact is managed
+4. `_get_bundled_by_type()` helper in `artifact_health.py` derives sets from capabilities
 
-| Aspect           | Bundled Artifacts       | Capabilities              |
-| ---------------- | ----------------------- | ------------------------- |
-| Installed via    | `erk init` / `erk sync` | `erk init capability add` |
-| Always installed | Yes (if in registry)    | Only if `required=True`   |
-| User opt-in      | No                      | Yes                       |
-| Use case         | Core functionality      | Optional features         |
+### Key Types
+
+From `src/erk/core/capabilities/base.py`:
+
+```python
+ManagedArtifactType = Literal["skill", "command", "agent", "workflow", "action", "hook", "prompt"]
+
+@dataclass(frozen=True)
+class ManagedArtifact:
+    name: str  # e.g., "dignified-python", "ruff-format-hook"
+    artifact_type: ManagedArtifactType
+```
+
+### Registry Functions
+
+From `src/erk/core/capabilities/registry.py`:
+
+| Function                            | Purpose                                         |
+| ----------------------------------- | ----------------------------------------------- |
+| `get_managed_artifacts()`           | Returns dict mapping (name, type) -> capability |
+| `is_capability_managed(name, type)` | Check if artifact is declared as managed        |
+
+### Detection Logic
+
+From `src/erk/artifacts/artifact_health.py`:
+
+```python
+def is_erk_managed(artifact: InstalledArtifact) -> bool:
+    # Commands use prefix matching (not capability-declared)
+    if artifact.artifact_type == "command":
+        return artifact.name.startswith("erk:")
+    # All other artifacts: query capabilities as single source of truth
+    return is_capability_managed(artifact.name, artifact.artifact_type)
+```
+
+## Capability-Managed Artifacts
+
+Capabilities declare their managed artifacts. Examples:
+
+| Capability                  | Managed Artifacts                                        |
+| --------------------------- | -------------------------------------------------------- |
+| `DignifiedPythonCapability` | `dignified-python` (skill)                               |
+| `HooksCapability`           | `user-prompt-submit-hook`, `exit-plan-mode-hook` (hooks) |
+| `DevrunAgentCapability`     | `devrun` (agent)                                         |
+| `ErkImplWorkflowCapability` | `erk-impl.yml` (workflow), setup actions                 |
+
+See [Capability System Architecture](capability-system.md) for the full capability registry.
 
 ## How Bundling Works
 

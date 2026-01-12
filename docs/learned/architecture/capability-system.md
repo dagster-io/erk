@@ -35,10 +35,11 @@ All capabilities inherit from the `Capability` ABC in `src/erk/core/capabilities
 
 **Optional:**
 
-| Property/Method        | Default | Purpose                               |
-| ---------------------- | ------- | ------------------------------------- |
-| `required`             | `False` | Auto-install during erk init          |
-| `preflight(repo_root)` | Success | Pre-flight checks before installation |
+| Property/Method        | Default | Purpose                                |
+| ---------------------- | ------- | -------------------------------------- |
+| `required`             | `False` | Auto-install during erk init           |
+| `managed_artifacts`    | `[]`    | Artifacts managed for detection/health |
+| `preflight(repo_root)` | Success | Pre-flight checks before installation  |
 
 ### Registry
 
@@ -46,11 +47,13 @@ The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple
 
 **Query functions:**
 
-| Function                       | Purpose                           |
-| ------------------------------ | --------------------------------- |
-| `get_capability(name)`         | Get capability by name            |
-| `list_capabilities()`          | All capabilities                  |
-| `list_required_capabilities()` | Only `required=True` capabilities |
+| Function                            | Purpose                           |
+| ----------------------------------- | --------------------------------- |
+| `get_capability(name)`              | Get capability by name            |
+| `list_capabilities()`               | All capabilities                  |
+| `list_required_capabilities()`      | Only `required=True` capabilities |
+| `get_managed_artifacts()`           | All managed artifact mappings     |
+| `is_capability_managed(name, type)` | Check if artifact is managed      |
 
 ### Scopes
 
@@ -67,6 +70,43 @@ The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple
 | Workflow | `Capability`      | `DignifiedReviewCapability` | `.github/workflows/` + prompts |
 | Settings | `Capability`      | `HooksCapability`           | Modifies `settings.json`       |
 | Docs     | `Capability`      | `LearnedDocsCapability`     | `docs/learned/`                |
+
+## Managed Artifacts
+
+Capabilities declare which artifacts they manage via the `managed_artifacts` property. This is the single source of truth for artifact detection and health checks.
+
+### ManagedArtifact Type
+
+```python
+ManagedArtifactType = Literal["skill", "command", "agent", "workflow", "action", "hook", "prompt"]
+
+@dataclass(frozen=True)
+class ManagedArtifact:
+    name: str  # e.g., "dignified-python", "ruff-format-hook"
+    artifact_type: ManagedArtifactType
+```
+
+### Example Implementation
+
+```python
+class HooksCapability(Capability):
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        return [
+            ManagedArtifact(name="user-prompt-submit-hook", artifact_type="hook"),
+            ManagedArtifact(name="exit-plan-mode-hook", artifact_type="hook"),
+        ]
+```
+
+### How Detection Works
+
+The artifact health system (`src/erk/artifacts/artifact_health.py`) uses these declarations:
+
+1. `is_erk_managed()` queries `is_capability_managed()` for the artifact
+2. Commands use prefix matching (`erk:*`) instead of capability declarations
+3. `_get_bundled_by_type()` derives frozensets from capability declarations
+
+This unifies artifact management - no more separate `BUNDLED_*` registries.
 
 ## Creating a New Capability
 
