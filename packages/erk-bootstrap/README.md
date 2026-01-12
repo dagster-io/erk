@@ -2,7 +2,17 @@
 
 Thin bootstrap CLI that delegates to project-local erk installations.
 
-## Installation
+## How it's used
+
+Shell integration (set up by `erk init --shell`) automatically uses this package via `uvx`:
+
+- Users don't need to install erk-bootstrap manually
+- `uvx erk-bootstrap` is called by the shell wrapper function
+- It finds your project's `.venv/bin/erk` and delegates commands
+
+## Manual installation (optional)
+
+For users who prefer a persistent global command:
 
 ```bash
 uv tool install erk-bootstrap

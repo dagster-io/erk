@@ -6,23 +6,32 @@ Install erk and verify your setup.
 
 ## Install erk
 
-Install erk as a global CLI tool using uv:
+Install erk as a project dependency:
 
 ```bash
-uv tool install erk
+cd your-project
+uv add erk
+uv sync
 ```
 
-**Why `uv tool install`?**
+**How shell integration works:**
 
-This installs erk as a system-wide CLI command, isolated from your project environments:
+When you run `erk init --shell`, it adds a shell function that uses `uvx erk-bootstrap` to:
 
-- **Global availability**: Run `erk` from any directory
-- **Isolated environment**: Won't conflict with your project dependencies
-- **Easy updates**: Use `uv tool upgrade erk` to update
+1. Find your project's `.venv/bin/erk`
+2. Delegate commands to your project-local erk
+3. Handle shell-specific features like directory switching
+
+This means:
+
+- **Per-project isolation**: Each project can have its own erk version
+- **No global installation needed**: Shell integration handles discovery
+- **Easy updates**: Update erk per-project with `uv upgrade erk`
 
 **Verify the installation:**
 
 ```bash
+# In your project directory (with venv activated)
 erk --version
 ```
 
@@ -32,7 +41,7 @@ You should see output like `erk 0.4.x`.
 
 - `uv: command not found` — Install uv first. See [Prerequisites](prerequisites.md#uv-python-package-manager).
 - Python version error — erk requires Python 3.11 or higher. Check with `python --version`.
-- Permission errors — Try `uv tool install erk --force` to reinstall.
+- `erk: command not found` — Make sure your venv is activated, or set up shell integration with `erk init --shell`.
 
 ## Verify Installation
 
@@ -180,15 +189,15 @@ erk init capability add <capability-name>
 
 ## Quick Reference
 
-| Task                    | Command                |
-| ----------------------- | ---------------------- |
-| Install erk             | `uv tool install erk`  |
-| Check version           | `erk --version`        |
-| Verify setup            | `erk doctor`           |
-| Verbose diagnostics     | `erk doctor --verbose` |
-| Initialize repo         | `erk init`             |
-| Update erk              | `uv tool upgrade erk`  |
-| Shell integration setup | `erk init --shell`     |
+| Task                    | Command                 |
+| ----------------------- | ----------------------- |
+| Install erk             | `uv add erk && uv sync` |
+| Check version           | `erk --version`         |
+| Verify setup            | `erk doctor`            |
+| Verbose diagnostics     | `erk doctor --verbose`  |
+| Initialize repo         | `erk init`              |
+| Update erk              | `uv upgrade erk`        |
+| Shell integration setup | `erk init --shell`      |
 
 ## Next Steps
 
