@@ -216,16 +216,16 @@ Teaching gaps exist whenever you BUILD something new. A smooth implementation do
 
 **Concrete examples - if you built it, document it:**
 
-| What was built | Documentation needed |
-|----------------|---------------------|
-| New CLI command | Document in `docs/learned/cli/` - usage, flags, examples |
-| New gateway method | Add tripwire about ABC implementation (5 places to update) |
-| New capability | Update capability system docs, add to glossary |
-| New config option | Add to `docs/learned/glossary.md` |
-| New exec script | Document purpose, inputs, outputs |
-| New architectural pattern | Create architecture doc or add tripwire |
-| External API integration | Document quirks, rate limits, auth patterns discovered |
-| New test pattern | Document in testing docs if others will need it |
+| What was built            | Documentation needed                                       |
+| ------------------------- | ---------------------------------------------------------- |
+| New CLI command           | Document in `docs/learned/cli/` - usage, flags, examples   |
+| New gateway method        | Add tripwire about ABC implementation (5 places to update) |
+| New capability            | Update capability system docs, add to glossary             |
+| New config option         | Add to `docs/learned/glossary.md`                          |
+| New exec script           | Document purpose, inputs, outputs                          |
+| New architectural pattern | Create architecture doc or add tripwire                    |
+| External API integration  | Document quirks, rate limits, auth patterns discovered     |
+| New test pattern          | Document in testing docs if others will need it            |
 
 **For each item, ask:** "If another agent needs to use or extend this, what would they need to know?"
 
