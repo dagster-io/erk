@@ -61,6 +61,7 @@ class DevrunAgentCapability(Capability):
         """Install the devrun agent definition."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.state import add_installed_capability
         from erk.artifacts.sync import get_bundled_claude_dir
 
         bundled_claude_dir = get_bundled_claude_dir()
@@ -73,6 +74,8 @@ class DevrunAgentCapability(Capability):
             agent_dst = repo_root / ".claude" / "agents" / "devrun.md"
             agent_dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(agent_file_src, agent_dst)
+            # Record capability installation
+            add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
                 message="Installed .claude/agents/devrun.md",
@@ -81,6 +84,8 @@ class DevrunAgentCapability(Capability):
             agent_dst = repo_root / ".claude" / "agents" / "devrun"
             agent_dst.mkdir(parents=True, exist_ok=True)
             self._copy_directory(agent_dir_src, agent_dst)
+            # Record capability installation
+            add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
                 message="Installed .claude/agents/devrun/",
@@ -94,9 +99,13 @@ class DevrunAgentCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the devrun agent."""
         assert repo_root is not None, "DevrunAgentCapability requires repo_root"
+        from erk.artifacts.state import remove_installed_capability
 
         agent_file = repo_root / ".claude" / "agents" / "devrun.md"
         agent_dir = repo_root / ".claude" / "agents" / "devrun"
+
+        # Remove from installed capabilities
+        remove_installed_capability(repo_root, self.name)
 
         if agent_file.exists():
             agent_file.unlink()

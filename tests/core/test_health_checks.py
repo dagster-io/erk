@@ -687,6 +687,11 @@ def test_check_managed_artifacts_shows_type_summary(
         lambda: tmp_path / "bundled" / ".github",
     )
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+    # Mock installed capabilities to include the skill capability
+    monkeypatch.setattr(
+        "erk.core.health_checks.load_installed_capabilities",
+        lambda _: frozenset({"dignified-python"}),
+    )
 
     result = check_managed_artifacts(project_dir)
 
@@ -739,6 +744,11 @@ def test_check_managed_artifacts_actions_optional_without_workflows(
         "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
     )
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+    # Mock installed capabilities to include the workflow capability (which includes actions)
+    monkeypatch.setattr(
+        "erk.core.health_checks.load_installed_capabilities",
+        lambda _: frozenset({"erk-impl-workflow"}),
+    )
 
     result = check_managed_artifacts(project_dir)
 
@@ -801,6 +811,11 @@ def test_check_managed_artifacts_actions_required_with_workflows(
         "erk.artifacts.artifact_health.get_bundled_github_dir", lambda: bundled_github
     )
     monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+    # Mock installed capabilities to include the workflow capability
+    monkeypatch.setattr(
+        "erk.core.health_checks.load_installed_capabilities",
+        lambda _: frozenset({"erk-impl-workflow"}),
+    )
 
     result = check_managed_artifacts(project_dir)
 

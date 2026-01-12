@@ -98,3 +98,95 @@ def save_artifact_state(project_dir: Path, state: ArtifactState) -> None:
 
     with path.open("wb") as f:
         tomli_w.dump(existing_data, f)
+
+
+def load_installed_capabilities(project_dir: Path) -> frozenset[str]:
+    """Load installed capability names from .erk/state.toml.
+
+    Returns:
+        Frozenset of capability names that have been installed.
+        Returns empty frozenset if file doesn't exist or has no capabilities section.
+
+    Format in state.toml:
+        [capabilities]
+        installed = ["dignified-python", "fake-driven-testing"]
+    """
+    path = _state_file_path(project_dir)
+    if not path.exists():
+        return frozenset()
+
+    with path.open("rb") as f:
+        data = tomli.load(f)
+
+    if "capabilities" not in data:
+        return frozenset()
+
+    capabilities_data = data["capabilities"]
+    installed = capabilities_data.get("installed", [])
+    return frozenset(installed)
+
+
+def add_installed_capability(project_dir: Path, capability_name: str) -> None:
+    """Add a capability name to the installed list in .erk/state.toml.
+
+    Creates the .erk/ directory and state.toml file if they don't exist.
+    Preserves other sections in the file if it already exists.
+
+    Args:
+        project_dir: Path to project root
+        capability_name: Name of capability to add (e.g., "dignified-python")
+    """
+    path = _state_file_path(project_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load existing data to preserve other sections
+    existing_data: dict[str, Any] = {}
+    if path.exists():
+        with path.open("rb") as f:
+            existing_data = tomli.load(f)
+
+    # Get existing installed list or create new one
+    capabilities_data = existing_data.get("capabilities", {})
+    installed = list(capabilities_data.get("installed", []))
+
+    # Add capability if not already present
+    if capability_name not in installed:
+        installed.append(capability_name)
+        installed.sort()  # Keep alphabetically sorted for consistency
+
+    # Update capabilities section
+    existing_data["capabilities"] = {"installed": installed}
+
+    with path.open("wb") as f:
+        tomli_w.dump(existing_data, f)
+
+
+def remove_installed_capability(project_dir: Path, capability_name: str) -> None:
+    """Remove a capability name from the installed list in .erk/state.toml.
+
+    No-op if the capability isn't installed or the file doesn't exist.
+
+    Args:
+        project_dir: Path to project root
+        capability_name: Name of capability to remove (e.g., "dignified-python")
+    """
+    path = _state_file_path(project_dir)
+    if not path.exists():
+        return
+
+    with path.open("rb") as f:
+        existing_data = tomli.load(f)
+
+    # Get existing installed list
+    capabilities_data = existing_data.get("capabilities", {})
+    installed = list(capabilities_data.get("installed", []))
+
+    # Remove capability if present
+    if capability_name in installed:
+        installed.remove(capability_name)
+
+        # Update capabilities section
+        existing_data["capabilities"] = {"installed": installed}
+
+        with path.open("wb") as f:
+            tomli_w.dump(existing_data, f)
