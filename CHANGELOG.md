@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+As of `dd1921ae5`
+
+### Added
+
+- Add `erk init capability remove` command for uninstalling capabilities (5ce60e022)
+- Add `prompt_learn_on_land` config setting to disable learn prompts during PR landing (2d01675d9)
+
 ## [0.5.1] - 2026-01-12 01:42 PT
 
 ### Added
