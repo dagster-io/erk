@@ -33,6 +33,9 @@ from erk.core.claude_settings import (
     has_ruff_format_hook,
     has_user_prompt_hook,
     read_claude_settings,
+    remove_erk_permission,
+    remove_erk_statusline,
+    remove_ruff_format_hook,
     write_claude_settings,
 )
 
@@ -1110,3 +1113,163 @@ def test_add_ruff_format_hook_preserves_other_settings() -> None:
     assert result["alwaysThinkingEnabled"] is True
     # Hook should be added
     assert "PostToolUse" in result["hooks"]
+
+
+# --- Tests for removal functions ---
+
+
+def test_remove_erk_statusline_removes_statusline() -> None:
+    """Test remove_erk_statusline removes statusLine from settings."""
+    settings = {
+        "statusLine": {"type": "command", "command": "uvx erk-statusline"},
+        "permissions": {"allow": ["Bash(git:*)"]},
+    }
+    result = remove_erk_statusline(settings)
+
+    assert "statusLine" not in result
+    assert result["permissions"]["allow"] == ["Bash(git:*)"]
+    # Original should not be modified
+    assert "statusLine" in settings
+
+
+def test_remove_erk_statusline_handles_missing_statusline() -> None:
+    """Test remove_erk_statusline handles missing statusLine gracefully."""
+    settings = {"permissions": {"allow": ["Bash(git:*)"]}}
+    result = remove_erk_statusline(settings)
+
+    assert "statusLine" not in result
+    assert result["permissions"]["allow"] == ["Bash(git:*)"]
+
+
+def test_remove_erk_statusline_is_pure_function() -> None:
+    """Test remove_erk_statusline doesn't modify the input."""
+    original = {"statusLine": {"type": "command", "command": "uvx erk-statusline"}}
+    original_copy = json.loads(json.dumps(original))
+
+    remove_erk_statusline(original)
+
+    assert original == original_copy
+
+
+def test_remove_ruff_format_hook_removes_hook() -> None:
+    """Test remove_ruff_format_hook removes the ruff format hook."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    result = remove_ruff_format_hook(settings)
+
+    assert "hooks" not in result or "PostToolUse" not in result.get("hooks", {})
+    # Original should not be modified
+    assert "PostToolUse" in settings["hooks"]
+
+
+def test_remove_ruff_format_hook_preserves_other_hooks() -> None:
+    """Test remove_ruff_format_hook preserves other hooks."""
+    settings = {
+        "hooks": {
+            "PostToolUse": [
+                {"matcher": "Bash", "hooks": [{"type": "command", "command": "lint"}]},
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                },
+            ],
+            "UserPromptSubmit": [{"matcher": "*", "hooks": []}],
+        }
+    }
+    result = remove_ruff_format_hook(settings)
+
+    # Bash hook should be preserved
+    assert len(result["hooks"]["PostToolUse"]) == 1
+    assert result["hooks"]["PostToolUse"][0]["matcher"] == "Bash"
+    # UserPromptSubmit should be preserved
+    assert "UserPromptSubmit" in result["hooks"]
+
+
+def test_remove_ruff_format_hook_handles_missing_hooks() -> None:
+    """Test remove_ruff_format_hook handles missing hooks gracefully."""
+    settings = {"permissions": {"allow": []}}
+    result = remove_ruff_format_hook(settings)
+
+    assert "hooks" not in result or result.get("hooks") == {}
+
+
+def test_remove_ruff_format_hook_is_pure_function() -> None:
+    """Test remove_ruff_format_hook doesn't modify the input."""
+    original = {
+        "hooks": {
+            "PostToolUse": [
+                {
+                    "matcher": "Write|Edit",
+                    "hooks": [{"type": "command", "command": ERK_RUFF_FORMAT_HOOK_COMMAND}],
+                }
+            ]
+        }
+    }
+    original_copy = json.loads(json.dumps(original))
+
+    remove_ruff_format_hook(original)
+
+    assert original == original_copy
+
+
+def test_remove_erk_permission_removes_permission() -> None:
+    """Test remove_erk_permission removes Bash(erk:*) from settings."""
+    settings = {
+        "permissions": {
+            "allow": ["Bash(git:*)", "Bash(erk:*)", "Write(/tmp/*)"],
+        }
+    }
+    result = remove_erk_permission(settings)
+
+    assert ERK_PERMISSION not in result["permissions"]["allow"]
+    assert "Bash(git:*)" in result["permissions"]["allow"]
+    assert "Write(/tmp/*)" in result["permissions"]["allow"]
+    # Original should not be modified
+    assert ERK_PERMISSION in settings["permissions"]["allow"]
+
+
+def test_remove_erk_permission_handles_empty_allow_after_removal() -> None:
+    """Test remove_erk_permission cleans up empty structures."""
+    settings = {
+        "permissions": {
+            "allow": ["Bash(erk:*)"],
+        }
+    }
+    result = remove_erk_permission(settings)
+
+    # Empty permissions should be cleaned up
+    assert "permissions" not in result or "allow" not in result.get("permissions", {})
+
+
+def test_remove_erk_permission_handles_missing_permission() -> None:
+    """Test remove_erk_permission handles missing permission gracefully."""
+    settings = {
+        "permissions": {
+            "allow": ["Bash(git:*)"],
+        }
+    }
+    result = remove_erk_permission(settings)
+
+    assert result["permissions"]["allow"] == ["Bash(git:*)"]
+
+
+def test_remove_erk_permission_is_pure_function() -> None:
+    """Test remove_erk_permission doesn't modify the input."""
+    original = {
+        "permissions": {
+            "allow": ["Bash(erk:*)"],
+        }
+    }
+    original_copy = json.loads(json.dumps(original))
+
+    remove_erk_permission(original)
+
+    assert original == original_copy

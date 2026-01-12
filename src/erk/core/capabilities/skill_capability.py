@@ -99,6 +99,24 @@ class SkillCapability(Capability):
             message=f"Installed .claude/skills/{self.skill_name}/",
         )
 
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Uninstall the skill by deleting its directory."""
+        assert repo_root is not None, "SkillCapability requires repo_root"
+        import shutil
+
+        skill_dir = repo_root / ".claude" / "skills" / self.skill_name
+        if not skill_dir.exists():
+            return CapabilityResult(
+                success=True,
+                message=f".claude/skills/{self.skill_name}/ does not exist",
+            )
+
+        shutil.rmtree(skill_dir)
+        return CapabilityResult(
+            success=True,
+            message=f"Removed .claude/skills/{self.skill_name}/",
+        )
+
     def _copy_directory(self, source: Path, target: Path) -> None:
         """Copy directory contents recursively."""
         import shutil

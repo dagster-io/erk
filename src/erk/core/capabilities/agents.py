@@ -91,6 +91,31 @@ class DevrunAgentCapability(Capability):
             message="Agent 'devrun' not found in erk package",
         )
 
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove the devrun agent."""
+        assert repo_root is not None, "DevrunAgentCapability requires repo_root"
+
+        agent_file = repo_root / ".claude" / "agents" / "devrun.md"
+        agent_dir = repo_root / ".claude" / "agents" / "devrun"
+
+        if agent_file.exists():
+            agent_file.unlink()
+            return CapabilityResult(
+                success=True,
+                message="Removed .claude/agents/devrun.md",
+            )
+        elif agent_dir.exists():
+            shutil.rmtree(agent_dir)
+            return CapabilityResult(
+                success=True,
+                message="Removed .claude/agents/devrun/",
+            )
+
+        return CapabilityResult(
+            success=True,
+            message="devrun-agent not installed",
+        )
+
     def _copy_directory(self, source: Path, target: Path) -> None:
         """Copy directory contents recursively."""
         for source_path in source.rglob("*"):

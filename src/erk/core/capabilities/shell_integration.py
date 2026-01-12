@@ -13,6 +13,7 @@ from erk.core.init_utils import (
     ERK_SHELL_INTEGRATION_MARKER,
     get_shell_wrapper_content,
     has_shell_integration_in_rc,
+    remove_shell_integration_from_content,
 )
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole
@@ -175,4 +176,48 @@ Then restart your shell or run: source {rc_path}
         return CapabilityResult(
             success=True,
             message=f"Manual installation instructions shown for {shell_name}",
+        )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove shell integration from the user's RC file."""
+        # User-level capability ignores repo_root
+        _ = repo_root
+
+        # Detect shell
+        shell_info = self._shell.detect_shell()
+        if shell_info is None:
+            return CapabilityResult(
+                success=True,
+                message="shell-integration not installed (could not detect shell)",
+            )
+
+        _, rc_path = shell_info
+
+        if not has_shell_integration_in_rc(rc_path):
+            return CapabilityResult(
+                success=True,
+                message="shell-integration not installed",
+            )
+
+        # Read current content
+        content = rc_path.read_text(encoding="utf-8")
+
+        # Remove shell integration
+        new_content = remove_shell_integration_from_content(content)
+        if new_content is None:
+            return CapabilityResult(
+                success=True,
+                message="shell-integration not installed",
+            )
+
+        # Create backup
+        backup_path = rc_path.with_suffix(rc_path.suffix + ".erk-uninstall-backup")
+        backup_path.write_text(content, encoding="utf-8")
+
+        # Write new content
+        rc_path.write_text(new_content, encoding="utf-8")
+
+        return CapabilityResult(
+            success=True,
+            message=f"Removed shell integration from {rc_path} (backup at {backup_path})",
         )

@@ -115,6 +115,37 @@ class ErkImplWorkflowCapability(Capability):
             message=f"Installed erk-impl workflow ({installed_count} artifacts)",
         )
 
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove the erk-impl workflow and related actions."""
+        assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
+
+        removed: list[str] = []
+
+        # Remove workflow
+        workflow_file = repo_root / ".github" / "workflows" / "erk-impl.yml"
+        if workflow_file.exists():
+            workflow_file.unlink()
+            removed.append(".github/workflows/erk-impl.yml")
+
+        # Remove actions
+        actions = ["setup-claude-code", "setup-claude-erk"]
+        for action_name in actions:
+            action_dir = repo_root / ".github" / "actions" / action_name
+            if action_dir.exists():
+                shutil.rmtree(action_dir)
+                removed.append(f".github/actions/{action_name}/")
+
+        if not removed:
+            return CapabilityResult(
+                success=True,
+                message="erk-impl-workflow not installed",
+            )
+
+        return CapabilityResult(
+            success=True,
+            message=f"Removed {', '.join(removed)}",
+        )
+
     def _copy_directory(self, source: Path, target: Path) -> None:
         """Copy directory contents recursively."""
         for source_path in source.rglob("*"):
@@ -191,4 +222,21 @@ class LearnWorkflowCapability(Capability):
         return CapabilityResult(
             success=True,
             message="Installed learn-dispatch workflow",
+        )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove the learn-dispatch workflow."""
+        assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
+
+        workflow_file = repo_root / ".github" / "workflows" / "learn-dispatch.yml"
+        if not workflow_file.exists():
+            return CapabilityResult(
+                success=True,
+                message="learn-workflow not installed",
+            )
+
+        workflow_file.unlink()
+        return CapabilityResult(
+            success=True,
+            message="Removed .github/workflows/learn-dispatch.yml",
         )

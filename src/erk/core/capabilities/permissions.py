@@ -92,3 +92,37 @@ class ErkBashPermissionsCapability(Capability):
             message="Added Bash(erk:*) to permissions.allow",
             created_files=tuple(created_files),
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove Bash(erk:*) from permissions.allow in settings.json."""
+        from erk.core.claude_settings import remove_erk_permission, write_claude_settings
+
+        assert repo_root is not None, "ErkBashPermissionsCapability requires repo_root"
+        settings_path = repo_root / ".claude" / "settings.json"
+
+        if not settings_path.exists():
+            return CapabilityResult(
+                success=True,
+                message="erk-bash-permissions not installed (no settings.json)",
+            )
+
+        settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        permissions = settings.get("permissions", {})
+        allow_list = permissions.get("allow", [])
+
+        if "Bash(erk:*)" not in allow_list:
+            return CapabilityResult(
+                success=True,
+                message="erk-bash-permissions not installed",
+            )
+
+        # Remove permission using the pure function
+        new_settings = remove_erk_permission(settings)
+
+        # Write back
+        write_claude_settings(settings_path, new_settings)
+
+        return CapabilityResult(
+            success=True,
+            message="Removed Bash(erk:*) from permissions.allow",
+        )

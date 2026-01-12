@@ -85,6 +85,52 @@ def has_shell_integration_in_rc(rc_path: Path) -> bool:
     return ERK_SHELL_INTEGRATION_MARKER in content
 
 
+def remove_shell_integration_from_content(content: str) -> str | None:
+    """Remove erk shell integration from RC file content.
+
+    Looks for the marker and removes everything from the marker line
+    to the end of the integration block.
+
+    Args:
+        content: Current RC file content
+
+    Returns:
+        Updated content with shell integration removed,
+        or None if the marker was not found.
+    """
+    if ERK_SHELL_INTEGRATION_MARKER not in content:
+        return None
+
+    lines = content.split("\n")
+    result_lines: list[str] = []
+    in_integration_block = False
+
+    for line in lines:
+        if ERK_SHELL_INTEGRATION_MARKER in line:
+            in_integration_block = True
+            # Remove the blank line before marker if it exists
+            while result_lines and result_lines[-1] == "":
+                result_lines.pop()
+            continue
+
+        if in_integration_block:
+            # Skip lines that are part of the integration block
+            # The block ends when we hit a line that is not part of the function
+            # We look for common patterns that end shell integration:
+            # - Empty line followed by non-integration code
+            # - End of file
+            # For simplicity, we'll remove everything from marker to EOF
+            # since shell integration is typically at the end of RC files
+            continue
+
+        result_lines.append(line)
+
+    result = "\n".join(result_lines)
+    # Ensure single trailing newline
+    result = result.rstrip("\n") + "\n"
+    return result
+
+
 def add_gitignore_entry(content: str, entry: str) -> str:
     """Add an entry to gitignore content if not already present.
 

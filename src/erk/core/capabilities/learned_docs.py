@@ -267,3 +267,33 @@ class LearnedDocsCapability(Capability):
             message="Created docs/learned/",
             created_files=tuple(created_files),
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove docs/learned/ directory and learned-docs skill."""
+        assert repo_root is not None, "LearnedDocsCapability requires repo_root"
+        import shutil
+
+        removed: list[str] = []
+
+        # Remove skill directory
+        skill_dir = repo_root / ".claude" / "skills" / "learned-docs"
+        if skill_dir.exists():
+            shutil.rmtree(skill_dir)
+            removed.append(".claude/skills/learned-docs/")
+
+        # Remove docs/learned directory
+        docs_dir = repo_root / "docs" / "learned"
+        if docs_dir.exists():
+            shutil.rmtree(docs_dir)
+            removed.append("docs/learned/")
+
+        if not removed:
+            return CapabilityResult(
+                success=True,
+                message="learned-docs not installed",
+            )
+
+        return CapabilityResult(
+            success=True,
+            message=f"Removed {', '.join(removed)}",
+        )

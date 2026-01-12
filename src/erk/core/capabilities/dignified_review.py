@@ -127,3 +127,33 @@ class DignifiedReviewCapability(Capability):
             success=True,
             message=f"Installed dignified-review ({installed_count} artifacts)",
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove the dignified-review workflow and prompt."""
+        if repo_root is None:
+            raise ValueError("DignifiedReviewCapability requires repo_root")
+
+        removed: list[str] = []
+
+        # Remove workflow
+        workflow_file = repo_root / ".github" / "workflows" / "dignified-python-review.yml"
+        if workflow_file.exists():
+            workflow_file.unlink()
+            removed.append(".github/workflows/dignified-python-review.yml")
+
+        # Remove prompt
+        prompt_file = repo_root / ".github" / "prompts" / "dignified-python-review.md"
+        if prompt_file.exists():
+            prompt_file.unlink()
+            removed.append(".github/prompts/dignified-python-review.md")
+
+        if not removed:
+            return CapabilityResult(
+                success=True,
+                message="dignified-review not installed",
+            )
+
+        return CapabilityResult(
+            success=True,
+            message=f"Removed {', '.join(removed)}",
+        )

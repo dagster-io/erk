@@ -126,3 +126,14 @@ class HooksCapability(Capability):
             message="Added erk hooks to .claude/settings.json",
             created_files=tuple(created_files),
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Uninstall is blocked for required capabilities.
+
+        Note: The CLI should block uninstall of required capabilities.
+        This method exists to satisfy the ABC interface.
+        """
+        return CapabilityResult(
+            success=False,
+            message="Cannot uninstall required capability 'erk-hooks'",
+        )

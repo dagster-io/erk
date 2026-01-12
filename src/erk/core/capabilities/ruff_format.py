@@ -115,3 +115,46 @@ class RuffFormatCapability(Capability):
             message="Added ruff format hook to .claude/settings.json",
             created_files=tuple(created_files),
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove ruff format hook from .claude/settings.json."""
+        from erk.core.claude_settings import remove_ruff_format_hook
+
+        if repo_root is None:
+            return CapabilityResult(
+                success=False,
+                message="RuffFormatCapability requires repo_root",
+            )
+
+        settings_path = get_repo_claude_settings_path(repo_root)
+
+        if not settings_path.exists():
+            return CapabilityResult(
+                success=True,
+                message="ruff-format not installed (no settings.json)",
+            )
+
+        try:
+            settings = json.loads(settings_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            return CapabilityResult(
+                success=False,
+                message=f"Invalid JSON in .claude/settings.json: {e}",
+            )
+
+        if not has_ruff_format_hook(settings):
+            return CapabilityResult(
+                success=True,
+                message="ruff-format not installed",
+            )
+
+        # Remove hook using the pure function
+        new_settings = remove_ruff_format_hook(settings)
+
+        # Write back
+        write_claude_settings(settings_path, new_settings)
+
+        return CapabilityResult(
+            success=True,
+            message="Removed ruff format hook from .claude/settings.json",
+        )

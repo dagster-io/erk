@@ -264,6 +264,14 @@ class _TestCapability(Capability):
         marker.write_text("installed", encoding="utf-8")
         return CapabilityResult(success=True, message="Installed")
 
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        assert repo_root is not None, "_TestCapability requires repo_root"
+        marker = repo_root / ".test-cap"
+        if not marker.exists():
+            return CapabilityResult(success=True, message="Not installed")
+        marker.unlink()
+        return CapabilityResult(success=True, message="Uninstalled")
+
 
 def test_custom_capability_install_and_is_installed(tmp_path: Path) -> None:
     """Test that a custom capability can be installed and detected."""
@@ -1184,6 +1192,9 @@ def test_capability_base_required_default_is_false() -> None:
             return False
 
         def install(self, repo_root: Path | None) -> CapabilityResult:
+            return CapabilityResult(success=True, message="test")
+
+        def uninstall(self, repo_root: Path | None) -> CapabilityResult:
             return CapabilityResult(success=True, message="test")
 
     cap = TestCap()

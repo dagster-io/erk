@@ -132,3 +132,28 @@ class ReminderCapability(Capability):
             success=True,
             message=f"Installed {self.name} capability",
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove this reminder from the installed list in state.toml."""
+        if repo_root is None:
+            return CapabilityResult(
+                success=False,
+                message="ReminderCapability requires repo_root",
+            )
+
+        installed = _load_installed_reminders(repo_root)
+
+        if self.reminder_name not in installed:
+            return CapabilityResult(
+                success=True,
+                message=f"{self.name} not installed",
+            )
+
+        # Remove from installed list and save
+        installed.remove(self.reminder_name)
+        _save_installed_reminders(repo_root, installed)
+
+        return CapabilityResult(
+            success=True,
+            message=f"Removed {self.name} capability",
+        )

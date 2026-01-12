@@ -110,3 +110,33 @@ class TripwiresReviewCapability(Capability):
             success=True,
             message=f"Installed tripwires-review ({installed_count} artifacts)",
         )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove the tripwires-review workflow and prompt."""
+        if repo_root is None:
+            raise ValueError("TripwiresReviewCapability requires repo_root")
+
+        removed: list[str] = []
+
+        # Remove workflow
+        workflow_file = repo_root / ".github" / "workflows" / "tripwires-review.yml"
+        if workflow_file.exists():
+            workflow_file.unlink()
+            removed.append(".github/workflows/tripwires-review.yml")
+
+        # Remove prompt
+        prompt_file = repo_root / ".github" / "prompts" / "tripwires-review.md"
+        if prompt_file.exists():
+            prompt_file.unlink()
+            removed.append(".github/prompts/tripwires-review.md")
+
+        if not removed:
+            return CapabilityResult(
+                success=True,
+                message="tripwires-review not installed",
+            )
+
+        return CapabilityResult(
+            success=True,
+            message=f"Removed {', '.join(removed)}",
+        )

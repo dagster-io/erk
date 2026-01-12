@@ -8,7 +8,11 @@ from erk.core.capabilities.base import (
     CapabilityResult,
     CapabilityScope,
 )
-from erk.core.claude_settings import add_erk_statusline, has_erk_statusline
+from erk.core.claude_settings import (
+    add_erk_statusline,
+    has_erk_statusline,
+    remove_erk_statusline,
+)
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
 
@@ -86,4 +90,30 @@ class StatuslineCapability(Capability):
             success=True,
             message="Configured erk-statusline in ~/.claude/settings.json",
             created_files=("~/.claude/settings.json",),
+        )
+
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Remove erk-statusline from ~/.claude/settings.json."""
+        # User-level capability ignores repo_root
+        _ = repo_root
+
+        # Read current settings
+        settings = self._claude_installation.read_settings()
+
+        # Check if installed
+        if not has_erk_statusline(settings):
+            return CapabilityResult(
+                success=True,
+                message="statusline not installed",
+            )
+
+        # Remove statusline configuration
+        new_settings = remove_erk_statusline(settings)
+
+        # Write updated settings
+        self._claude_installation.write_settings(new_settings)
+
+        return CapabilityResult(
+            success=True,
+            message="Removed erk-statusline from ~/.claude/settings.json",
         )

@@ -376,3 +376,101 @@ def add_ruff_format_hook(settings: Mapping[str, Any]) -> dict[str, Any]:
 
     new_settings["hooks"] = dict(hooks)
     return new_settings
+
+
+def remove_erk_statusline(settings: dict) -> dict:
+    """Return a new settings dict with statusLine removed.
+
+    This is a pure function that doesn't modify the input.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with statusLine key removed
+    """
+    # Deep copy to avoid mutating input
+    new_settings = json.loads(json.dumps(settings))
+
+    # Remove statusLine if present
+    if "statusLine" in new_settings:
+        del new_settings["statusLine"]
+
+    return new_settings
+
+
+def remove_ruff_format_hook(settings: Mapping[str, Any]) -> dict[str, Any]:
+    """Return a new settings dict with ruff format hook removed.
+
+    This is a pure function that doesn't modify the input.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with ruff format hook removed from PostToolUse
+    """
+    # Deep copy to avoid mutating input
+    new_settings: dict[str, Any] = json.loads(json.dumps(settings))
+
+    hooks = new_settings.get("hooks", {})
+    post_tool_hooks = hooks.get("PostToolUse", [])
+
+    # Filter out the ruff format hook
+    new_post_tool_hooks = []
+    for entry in post_tool_hooks:
+        if entry.get("matcher") == "Write|Edit":
+            # Check if this entry contains ruff format command
+            has_ruff = False
+            for hook in entry.get("hooks", []):
+                if "ruff format" in hook.get("command", ""):
+                    has_ruff = True
+                    break
+            if has_ruff:
+                continue
+        new_post_tool_hooks.append(entry)
+
+    if new_post_tool_hooks:
+        hooks["PostToolUse"] = new_post_tool_hooks
+    elif "PostToolUse" in hooks:
+        del hooks["PostToolUse"]
+
+    if hooks:
+        new_settings["hooks"] = hooks
+    elif "hooks" in new_settings:
+        del new_settings["hooks"]
+
+    return new_settings
+
+
+def remove_erk_permission(settings: dict) -> dict:
+    """Return a new settings dict with Bash(erk:*) permission removed.
+
+    This is a pure function that doesn't modify the input.
+
+    Args:
+        settings: Parsed Claude settings dictionary
+
+    Returns:
+        New settings dict with Bash(erk:*) removed from permissions.allow
+    """
+    # Deep copy to avoid mutating input
+    new_settings = json.loads(json.dumps(settings))
+
+    permissions = new_settings.get("permissions", {})
+    allow_list = permissions.get("allow", [])
+
+    if ERK_PERMISSION in allow_list:
+        allow_list = [p for p in allow_list if p != ERK_PERMISSION]
+
+    if allow_list:
+        permissions["allow"] = allow_list
+    elif "allow" in permissions:
+        del permissions["allow"]
+
+    if permissions:
+        new_settings["permissions"] = permissions
+    elif "permissions" in new_settings:
+        del new_settings["permissions"]
+
+    return new_settings

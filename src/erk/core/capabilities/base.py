@@ -155,3 +155,15 @@ class Capability(ABC):
             CapabilityResult with success status and message
         """
         ...
+
+    @abstractmethod
+    def uninstall(self, repo_root: Path | None) -> CapabilityResult:
+        """Uninstall this capability.
+
+        Args:
+            repo_root: Path to the repository root (None for user-level capabilities)
+
+        Returns:
+            CapabilityResult with success status and message
+        """
+        ...
