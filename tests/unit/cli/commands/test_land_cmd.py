@@ -1540,8 +1540,9 @@ def test_cleanup_and_navigate_no_delete_with_up_flag(tmp_path: Path) -> None:
 def test_check_learn_status_and_prompt_skips_when_already_learned(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that _check_learn_status_and_prompt does nothing when plan has been learned from."""
+    """Test that _check_learn_status_and_prompt shows positive feedback when plan has been learned from."""
     from erk.cli.commands import land_cmd
     from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
     from erk_shared.sessions.discovery import SessionsForPlan
@@ -1564,7 +1565,10 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
     # Should return without any interaction (plan already learned from)
     _check_learn_status_and_prompt(ctx, repo_root=repo_root, plan_issue_number=123, force=False)
-    # If we got here without error, the test passes
+
+    # Verify positive feedback is shown
+    captured = capsys.readouterr()
+    assert "Learn evaluation completed for plan #123" in captured.err
 
 
 def test_check_learn_status_and_prompt_skips_when_force(
