@@ -14,6 +14,16 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 /erk:learn 4655      # Explicit issue number
 ```
 
+## Purpose: Token Caches for Agents
+
+**Audience**: All documentation produced by this command is for AI agents, not human users.
+
+**Primary purpose**: These docs are "token caches" - preserved reasoning and research so future agents don't have to recompute it. When you research something, discover a pattern, or figure out how something works, that knowledge should be captured so the next agent doesn't burn tokens rediscovering it.
+
+**Document reality**: Capture the world as it is, not as we wish it to be. "This is non-ideal but here's the current state" is valuable documentation. Tech debt, workarounds, quirks - document them. Future agents need to know how things actually work, not how they should work in an ideal world.
+
+**Bias toward capturing**: When uncertain whether something is worth documenting, include it. Over-documentation is better than losing insights. The cost of re-researching something is higher than the cost of reading an extra paragraph.
+
 ## Agent Instructions
 
 ### Step 1: Get Session Information
@@ -33,7 +43,42 @@ Parse the JSON output to get:
 
 If no sessions are found (both `session_paths` empty and `local_session_ids` empty), inform the user and stop.
 
-### Step 2: Extract Plan Issue Session Content
+### Step 2: Analyze What Was Built (MANDATORY)
+
+Before analyzing sessions, understand what code actually changed. This is critical because a smooth implementation with no errors can still add major new capabilities that need documentation.
+
+Get the PR information for this plan:
+
+```bash
+# Get PR number from issue (plan issues link to their PR)
+gh issue view <issue-number> --json body | jq -r '.body' | grep -o 'PR #[0-9]*' | head -1
+
+# Or find PR by branch pattern
+gh pr list --search "head:P<issue-number>-" --json number,title,files
+```
+
+Analyze the changes:
+
+```bash
+# Get list of changed files with stats
+gh pr view <pr-number> --json files,additions,deletions
+
+# Get the actual diff for review
+gh pr diff <pr-number>
+```
+
+**Create an inventory of what was built:**
+
+- **New files**: What files were created?
+- **New functions/classes**: What new APIs were added?
+- **New CLI commands**: Any new `@click.command` decorators?
+- **New patterns**: Any new architectural patterns established?
+- **Config changes**: New settings, capabilities, or options?
+- **External integrations**: New API calls, dependencies, or tools?
+
+**Save this inventory** - you will reference it in Step 8 (Teaching Gaps) to ensure everything new gets documented.
+
+### Step 3: Extract Plan Issue Session Content
 
 Attempt to extract session content embedded in the plan issue itself:
 
@@ -49,7 +94,7 @@ This returns the planning session XML that was attached to the issue when it was
 
 **Note:** This may overlap with `planning_session_id` from Step 1, but the issue-embedded content is authoritative. If extraction fails (no embedded content), continue with session logs only.
 
-### Step 3: Check Existing Documentation
+### Step 4: Check Existing Documentation
 
 Before extracting insights, scan for existing documentation to avoid suggesting duplicates:
 
@@ -60,7 +105,7 @@ ls -la .claude/skills/ 2>/dev/null || echo "No .claude/skills/ directory"
 
 Create a mental inventory of what's already documented. For each potential insight later, verify it doesn't substantially overlap with existing docs.
 
-### Step 4: Preprocess and Upload Session Content
+### Step 5: Preprocess and Upload Session Content
 
 For each session path from Step 1, preprocess it to compressed XML format:
 
@@ -71,7 +116,7 @@ erk exec preprocess-session <session-path> --stdout > .erk/scratch/sessions/<cur
 
 Note: `<current-session-id>` is the session running `/erk:learn`, `<session-id>` is the session being preprocessed.
 
-Also save the plan issue session content (from Step 2) if it was retrieved:
+Also save the plan issue session content (from Step 3) if it was retrieved:
 
 ```bash
 erk exec extract-session-from-issue <issue-number> --stdout > .erk/scratch/sessions/<current-session-id>/learn/plan-issue.xml
@@ -93,7 +138,7 @@ Raw materials uploaded: <gist-url>
 
 **Save the gist URL** for inclusion in the plan issue.
 
-### Step 5: Deep Session Analysis
+### Step 6: Deep Session Analysis
 
 Read the preprocessed XML files and mine them thoroughly.
 
@@ -131,87 +176,77 @@ The Task tool spawns subagents that do valuable work:
 - What challenges were encountered?
 - What solutions worked?
 
-### Step 6: Identify Learning Gaps
+### Step 7: Identify Learning Gaps
 
 Based on session analysis, identify documentation gaps that would have made the session faster.
 
-**CRITICAL: Filter out execution discipline issues.**
-
-Before proposing any documentation item, ask: "Was this information in the code the agent was directly working with?"
-
-**NOT documentation candidates** (execution discipline issues):
-
-- Agent didn't read class/function signature before calling it
-- Agent assumed API shape instead of checking type hints
-- Agent didn't read the file they were modifying
-- Agent made wrong assumptions that reading the immediate code would have prevented
-- General language/framework knowledge (pytest patterns, Python stdlib, etc.)
-
-These errors indicate the implementing agent should have explored the code they were touching more carefully.
-
-**IS documentation candidate** (learning gap):
-
-- Pattern exists in a DIFFERENT function/file that agent wouldn't naturally encounter
-- Agent would need to know "before doing X, look at Y" to find the pattern
-- The connection between X and Y isn't obvious from context
-
-**Tripwires vs conventional docs:**
-
-- **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere", "before adding methods to any ABC"). These fire based on action patterns across the codebase.
-- **Conventional doc**: Module-specific or localized patterns (e.g., "when implementing session file discovery, check existing patterns in preprocess_session.py"). Add a section to an existing doc or create a focused doc with appropriate `read_when` triggers.
-
-If the pattern is isolated to one module/file, use conventional documentation. Tripwires are for patterns that could occur anywhere.
-
-**Learning Gaps** - Would have made the session faster:
+**What makes a learning gap:**
 
 - Information that genuinely wasn't in the code (external API quirks, non-obvious interactions)
 - Patterns where the "why" isn't clear from reading the code alone
 - Gotchas where the code works but has surprising behavior
 - Cross-cutting concerns not visible from any single file
+- Pattern exists in a DIFFERENT function/file that agent wouldn't naturally encounter
+- Agent would need to know "before doing X, look at Y" to find the pattern
 
-Record any learning gaps found. **Proceed to Step 7 regardless of whether learning gaps were found.**
+**Execution discipline filter (advisory, not strict):**
 
-### Step 7: Identify Teaching Gaps (MANDATORY)
+Some errors are execution discipline issues - the agent should have read the code more carefully. These are LESS likely to be documentation candidates:
+
+- Agent didn't read class/function signature before calling it
+- Agent assumed API shape instead of checking type hints
+- General language/framework knowledge (pytest patterns, Python stdlib)
+
+However, **when uncertain, include it**. If you're debating whether something is "obvious from the code" vs worth documenting, err toward documenting. The cost of re-researching is higher than the cost of reading an extra paragraph.
+
+**Tripwires vs conventional docs:**
+
+- **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere", "before adding methods to any ABC"). These fire based on action patterns across the codebase.
+- **Conventional doc**: Module-specific or localized patterns. Add a section to an existing doc or create a focused doc with appropriate `read_when` triggers.
+
+Record any learning gaps found. **Proceed to Step 8 regardless of whether learning gaps were found.**
+
+### Step 8: Identify Teaching Gaps (MANDATORY)
 
 **This step MUST be executed even if no learning gaps were found.**
 
 Teaching gaps exist whenever you BUILD something new. A smooth implementation does NOT mean "no documentation needed." Unlike learning gaps (which arise from difficulties), teaching gaps arise from creating new capabilities.
 
-**Answer each question - do not skip any:**
+**Review your inventory from Step 2.** For EACH item in your inventory, determine what documentation it needs.
 
-1. **New CLI command added?**
-   - If yes: What docs need updating? (`docs/learned/cli/`, capability docs, command reference)
-   - If no: Continue to next question
+**Concrete examples - if you built it, document it:**
 
-2. **New config setting added?**
-   - If yes: Update glossary (`docs/learned/glossary.md`)
-   - If no: Continue to next question
+| What was built | Documentation needed |
+|----------------|---------------------|
+| New CLI command | Document in `docs/learned/cli/` - usage, flags, examples |
+| New gateway method | Add tripwire about ABC implementation (5 places to update) |
+| New capability | Update capability system docs, add to glossary |
+| New config option | Add to `docs/learned/glossary.md` |
+| New exec script | Document purpose, inputs, outputs |
+| New architectural pattern | Create architecture doc or add tripwire |
+| External API integration | Document quirks, rate limits, auth patterns discovered |
+| New test pattern | Document in testing docs if others will need it |
 
-3. **New API/method added to public interface?**
-   - If yes: Document it (inline docs, architecture docs, or learned docs)
-   - If no: Continue to next question
+**For each item, ask:** "If another agent needs to use or extend this, what would they need to know?"
 
-4. **New capability added?**
-   - If yes: Update capability system docs
-   - If no: Continue to next question
+**Don't filter based on "obviousness."** Something that seems obvious after you built it required research to figure out. That research is worth caching.
 
-5. **New pattern established?**
-   - If yes: Document the pattern (tripwire, convention, or architecture doc)
-   - If no: Continue to next question
+**State of the world documentation is valuable:**
 
-**Ask yourself:** "If another agent needs to use or extend what I built, what would they need to know?"
+- "This API has a quirk where X happens" - worth documenting
+- "We use pattern Y here because of constraint Z" - worth documenting
+- "This is non-ideal but works because..." - worth documenting
+- Tech debt, workarounds, known limitations - all worth documenting
 
 For each teaching gap item, capture:
 
 - What document to create/update
-- Where it belongs (docs/learned/, .claude/skills/, etc.)
-- Draft content with specific examples from the session
+- Where it belongs (docs/learned/, .claude/skills/, tripwires, etc.)
+- Draft content with specific examples from the implementation
 
-**Only after answering ALL five questions** can you conclude "no teaching gaps found."
+**If no learning gaps AND no teaching gaps**, report "No documentation needed" and proceed to Step 11 (track evaluation) without creating an issue. But this should be rare - most implementations that add code also add knowledge worth caching.
 
-**If no learning gaps AND no teaching gaps**, report "No documentation needed" and proceed to Step 10 (track evaluation) without creating an issue.
-
-### Step 8: Present Findings for Validation
+### Step 9: Present Findings for Validation
 
 Present your findings to the user with:
 
@@ -223,9 +258,9 @@ Present your findings to the user with:
 
 3. **Ask for validation** - Are there insights to add, remove, or refine?
 
-If the user decides to **skip** creating documentation (no valuable insights, or insights already documented), proceed directly to Step 10 to track the evaluation.
+If the user decides to **skip** creating documentation (no valuable insights, or insights already documented), proceed directly to Step 11 to track the evaluation.
 
-### Step 9: Create Documentation Plan Issue
+### Step 10: Create Documentation Plan Issue
 
 **CRITICAL: Front-load context into the issue.**
 
@@ -238,7 +273,7 @@ Include context you've gathered so the implementing agent doesn't have to redisc
    - Any external resources consulted
    - Specific code examples from sessions
 
-2. **Raw materials link** - The gist URL from Step 4
+2. **Raw materials link** - The gist URL from Step 5
 
 3. **Documentation items** - Each with:
    - Location (file path)
@@ -259,7 +294,7 @@ cat > .erk/scratch/sessions/<session-id>/learn-plan.md << 'EOF'
 
 ## Raw Materials
 
-<gist-url-from-step-4>
+<gist-url-from-step-5>
 
 ## Documentation Items
 
@@ -281,7 +316,7 @@ Documentation plan created: <issue-url>
 Raw materials: <gist-url>
 ```
 
-### Step 10: Track Learn Evaluation
+### Step 11: Track Learn Evaluation
 
 **CRITICAL: Always run this step**, regardless of whether you created a documentation plan or skipped.
 
