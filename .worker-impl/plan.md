@@ -15,11 +15,13 @@ Add explicit clarification that the session ID should be read directly from the 
 ## Change
 
 **Before (line 70):**
+
 ```markdown
 **Get the session ID** from the `session:` system reminder in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`).
 ```
 
 **After:**
+
 ```markdown
 **Get the session ID** by reading the `session:` line from the system reminders in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`). This value is already visible in your context - just copy it directly, no tools needed.
 ```
