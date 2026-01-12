@@ -243,7 +243,7 @@ def _sync_workflows(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for name in sorted(_get_bundled_by_type("workflow")):
+    for name in sorted(_get_bundled_by_type("workflow", installed_capabilities=None)):
         workflow_name = f"{name}.yml"
         source_path = source_workflows_dir / workflow_name
         if source_path.exists():
@@ -278,7 +278,7 @@ def _sync_actions(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for action_name in sorted(_get_bundled_by_type("action")):
+    for action_name in sorted(_get_bundled_by_type("action", installed_capabilities=None)):
         source_path = source_actions_dir / action_name
         if source_path.exists() and source_path.is_dir():
             target_path = target_actions_dir / action_name
@@ -363,12 +363,13 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
 
     # Hash directory-based skills
     skills_dir = bundled_claude_dir / "skills"
-    artifacts.extend(_hash_directory_artifacts(skills_dir, _get_bundled_by_type("skill"), "skills"))
+    skill_names = _get_bundled_by_type("skill", installed_capabilities=None)
+    artifacts.extend(_hash_directory_artifacts(skills_dir, skill_names, "skills"))
 
     # Hash agents (supports both directory-based and single-file)
-    artifacts.extend(
-        _hash_agent_artifacts(bundled_claude_dir / "agents", _get_bundled_by_type("agent"))
-    )
+    agents_dir = bundled_claude_dir / "agents"
+    agent_names = _get_bundled_by_type("agent", installed_capabilities=None)
+    artifacts.extend(_hash_agent_artifacts(agents_dir, agent_names))
 
     # Hash commands from source (including nested directories)
     commands_dir = bundled_claude_dir / "commands" / "erk"
@@ -387,7 +388,7 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     # Hash workflows from source
     workflows_dir = bundled_github_dir / "workflows"
     if workflows_dir.exists():
-        for name in sorted(_get_bundled_by_type("workflow")):
+        for name in sorted(_get_bundled_by_type("workflow", installed_capabilities=None)):
             workflow_name = f"{name}.yml"
             workflow_file = workflows_dir / workflow_name
             if workflow_file.exists():
@@ -401,9 +402,8 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
 
     # Hash actions from source
     actions_dir = bundled_github_dir / "actions"
-    artifacts.extend(
-        _hash_directory_artifacts(actions_dir, _get_bundled_by_type("action"), "actions")
-    )
+    action_names = _get_bundled_by_type("action", installed_capabilities=None)
+    artifacts.extend(_hash_directory_artifacts(actions_dir, action_names, "actions"))
 
     # Hash hooks (check if installed in settings.json)
     settings_path = project_dir / ".claude" / "settings.json"
@@ -519,15 +519,16 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     count, synced = _sync_directory_artifacts(
         bundled_claude_dir / "skills",
         target_claude_dir / "skills",
-        _get_bundled_by_type("skill"),
+        _get_bundled_by_type("skill", installed_capabilities=None),
         "skills",
     )
     total_copied += count
     all_synced.extend(synced)
 
     # Sync agents (supports both directory-based and single-file)
+    agent_names = _get_bundled_by_type("agent", installed_capabilities=None)
     count, synced = _sync_agent_artifacts(
-        bundled_claude_dir / "agents", target_claude_dir / "agents", _get_bundled_by_type("agent")
+        bundled_claude_dir / "agents", target_claude_dir / "agents", agent_names
     )
     total_copied += count
     all_synced.extend(synced)

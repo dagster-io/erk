@@ -72,10 +72,13 @@ class SkillCapability(Capability):
         """Install the skill using artifact sync."""
         assert repo_root is not None, "SkillCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.state import add_installed_capability
         from erk.artifacts.sync import get_bundled_claude_dir
 
         skill_dir = repo_root / ".claude" / "skills" / self.skill_name
         if skill_dir.exists():
+            # Still record installation even if directory exists
+            add_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
                 message=f".claude/skills/{self.skill_name}/ already exists",
@@ -94,6 +97,9 @@ class SkillCapability(Capability):
         skill_dir.mkdir(parents=True, exist_ok=True)
         self._copy_directory(source_skill, skill_dir)
 
+        # Record capability installation
+        add_installed_capability(repo_root, self.name)
+
         return CapabilityResult(
             success=True,
             message=f"Installed .claude/skills/{self.skill_name}/",
@@ -104,14 +110,20 @@ class SkillCapability(Capability):
         assert repo_root is not None, "SkillCapability requires repo_root"
         import shutil
 
+        from erk.artifacts.state import remove_installed_capability
+
         skill_dir = repo_root / ".claude" / "skills" / self.skill_name
         if not skill_dir.exists():
+            # Still remove from installed capabilities
+            remove_installed_capability(repo_root, self.name)
             return CapabilityResult(
                 success=True,
                 message=f".claude/skills/{self.skill_name}/ does not exist",
             )
 
         shutil.rmtree(skill_dir)
+        # Remove from installed capabilities
+        remove_installed_capability(repo_root, self.name)
         return CapabilityResult(
             success=True,
             message=f"Removed .claude/skills/{self.skill_name}/",

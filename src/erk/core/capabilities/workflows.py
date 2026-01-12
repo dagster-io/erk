@@ -75,6 +75,7 @@ class ErkImplWorkflowCapability(Capability):
         """Install the workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
         # Inline import: avoids circular dependency with artifacts module
+        from erk.artifacts.state import add_installed_capability
         from erk.artifacts.sync import get_bundled_github_dir
 
         bundled_github_dir = get_bundled_github_dir()
@@ -110,6 +111,9 @@ class ErkImplWorkflowCapability(Capability):
                 message="No workflow artifacts found in erk package",
             )
 
+        # Record capability installation
+        add_installed_capability(repo_root, self.name)
+
         return CapabilityResult(
             success=True,
             message=f"Installed erk-impl workflow ({installed_count} artifacts)",
@@ -118,6 +122,7 @@ class ErkImplWorkflowCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the erk-impl workflow and related actions."""
         assert repo_root is not None, "ErkImplWorkflowCapability requires repo_root"
+        from erk.artifacts.state import remove_installed_capability
 
         removed: list[str] = []
 
@@ -134,6 +139,9 @@ class ErkImplWorkflowCapability(Capability):
             if action_dir.exists():
                 shutil.rmtree(action_dir)
                 removed.append(f".github/actions/{action_name}/")
+
+        # Remove from installed capabilities
+        remove_installed_capability(repo_root, self.name)
 
         if not removed:
             return CapabilityResult(
@@ -199,6 +207,7 @@ class LearnWorkflowCapability(Capability):
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
+        from erk.artifacts.state import add_installed_capability
         from erk.artifacts.sync import get_bundled_github_dir
 
         bundled_github_dir = get_bundled_github_dir()
@@ -219,6 +228,9 @@ class LearnWorkflowCapability(Capability):
         workflow_dst.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(workflow_src, workflow_dst)
 
+        # Record capability installation
+        add_installed_capability(repo_root, self.name)
+
         return CapabilityResult(
             success=True,
             message="Installed learn-dispatch workflow",
@@ -227,8 +239,13 @@ class LearnWorkflowCapability(Capability):
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
         """Remove the learn-dispatch workflow."""
         assert repo_root is not None, "LearnWorkflowCapability requires repo_root"
+        from erk.artifacts.state import remove_installed_capability
 
         workflow_file = repo_root / ".github" / "workflows" / "learn-dispatch.yml"
+
+        # Remove from installed capabilities
+        remove_installed_capability(repo_root, self.name)
+
         if not workflow_file.exists():
             return CapabilityResult(
                 success=True,

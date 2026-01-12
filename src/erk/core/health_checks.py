@@ -15,7 +15,7 @@ from erk.artifacts.artifact_health import (
 )
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.models import ArtifactFileState
-from erk.artifacts.state import load_artifact_state
+from erk.artifacts.state import load_artifact_state, load_installed_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     StatuslineNotConfigured,
@@ -1427,8 +1427,17 @@ def check_managed_artifacts(repo_root: Path) -> CheckResult:
     state = load_artifact_state(repo_root)
     saved_files: dict[str, ArtifactFileState] = dict(state.files) if state else {}
 
+    # Load installed capabilities for filtering
+    # In erk repo, use None to check all artifacts (they're all from source)
+    # In external repos, only check artifacts for installed capabilities
+    installed_capabilities: frozenset[str] | None = None
+    if not in_erk_repo:
+        installed_capabilities = load_installed_capabilities(repo_root)
+
     # Get artifact health
-    result = get_artifact_health(repo_root, saved_files)
+    result = get_artifact_health(
+        repo_root, saved_files, installed_capabilities=installed_capabilities
+    )
 
     # Handle skipped cases from get_artifact_health
     if result.skipped_reason == "no-claude-dir":

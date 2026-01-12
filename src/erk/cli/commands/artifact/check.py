@@ -144,7 +144,8 @@ def _display_verbose_status(project_dir: Path, show_hashes: bool) -> bool:
     state = load_artifact_state(project_dir)
     saved_files = dict(state.files) if state else {}
 
-    health_result = get_artifact_health(project_dir, saved_files)
+    # For artifact check command, show all artifacts (no filtering)
+    health_result = get_artifact_health(project_dir, saved_files, installed_capabilities=None)
 
     if health_result.skipped_reason is not None:
         return False

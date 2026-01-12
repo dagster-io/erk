@@ -18,7 +18,11 @@ from erk.artifacts.models import (
     OrphanCheckResult,
 )
 from erk.artifacts.sync import get_bundled_claude_dir, get_bundled_github_dir
-from erk.core.capabilities.registry import get_managed_artifacts, is_capability_managed
+from erk.core.capabilities.registry import (
+    get_capability,
+    get_managed_artifacts,
+    is_capability_managed,
+)
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -28,17 +32,51 @@ from erk.core.claude_settings import (
 from erk.core.release_notes import get_current_version
 
 
-def _get_bundled_by_type(artifact_type: str) -> frozenset[str]:
-    """Get all artifact names of a given type that are managed by capabilities.
+def _get_bundled_by_type(
+    artifact_type: str,
+    *,
+    installed_capabilities: frozenset[str] | None,
+) -> frozenset[str]:
+    """Get all artifact names of a given type that should be checked.
+
+    Filtering logic:
+    - If installed_capabilities is None: return all managed artifacts (erk repo case)
+    - Otherwise: return only artifacts from required capabilities OR from
+      explicitly installed capabilities
 
     Args:
         artifact_type: The artifact type (e.g., "skill", "hook", "workflow")
+        installed_capabilities: Set of capability names installed in the repo,
+            or None to skip filtering (check all)
 
     Returns:
-        Frozenset of artifact names managed by capabilities
+        Frozenset of artifact names to check
     """
     managed = get_managed_artifacts()
-    return frozenset(name for (name, atype), _ in managed.items() if atype == artifact_type)
+    result: set[str] = set()
+
+    for (name, atype), capability_name in managed.items():
+        if atype != artifact_type:
+            continue
+
+        # No filtering - include all (erk repo case)
+        if installed_capabilities is None:
+            result.add(name)
+            continue
+
+        # Check if capability is required or installed
+        capability = get_capability(capability_name)
+        if capability is None:
+            continue
+
+        if capability.required:
+            # Required capabilities are always checked
+            result.add(name)
+        elif capability_name in installed_capabilities:
+            # Explicitly installed capabilities are checked
+            result.add(name)
+
+    return frozenset(result)
 
 
 def is_erk_managed(artifact: InstalledArtifact) -> bool:
@@ -155,13 +193,18 @@ def _build_artifact_status(
 
 
 def get_artifact_health(
-    project_dir: Path, saved_files: dict[str, ArtifactFileState]
+    project_dir: Path,
+    saved_files: dict[str, ArtifactFileState],
+    *,
+    installed_capabilities: frozenset[str] | None,
 ) -> ArtifactHealthResult:
     """Get per-artifact health status comparing installed vs bundled state.
 
     Args:
         project_dir: Path to the project root
         saved_files: Per-artifact state from .erk/state.toml (artifact key -> ArtifactFileState)
+        installed_capabilities: Set of capability names installed in the repo,
+            or None to skip filtering and check all artifacts (erk repo case)
 
     Returns:
         ArtifactHealthResult with status for each bundled artifact
@@ -182,7 +225,7 @@ def get_artifact_health(
     artifacts: list[ArtifactStatus] = []
 
     # Check skills (always directory-based)
-    for name in _get_bundled_by_type("skill"):
+    for name in _get_bundled_by_type("skill", installed_capabilities=installed_capabilities):
         key = f"skills/{name}"
         path = project_claude_dir / "skills" / name
         installed_hash = _compute_path_hash(path, is_directory=True)
@@ -192,7 +235,7 @@ def get_artifact_health(
     # Key format depends on structure:
     #   - Directory: agents/{name} (like skills)
     #   - Single-file: agents/{name}.md (like commands)
-    for name in _get_bundled_by_type("agent"):
+    for name in _get_bundled_by_type("agent", installed_capabilities=installed_capabilities):
         dir_path = project_claude_dir / "agents" / name
         file_path = project_claude_dir / "agents" / f"{name}.md"
 
@@ -235,7 +278,7 @@ def get_artifact_health(
             )
 
     # Check workflows
-    for name in _get_bundled_by_type("workflow"):
+    for name in _get_bundled_by_type("workflow", installed_capabilities=installed_capabilities):
         workflow_name = f"{name}.yml"
         key = f"workflows/{workflow_name}"
         path = project_workflows_dir / workflow_name
@@ -243,7 +286,7 @@ def get_artifact_health(
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
     # Check actions (always directory-based)
-    for name in _get_bundled_by_type("action"):
+    for name in _get_bundled_by_type("action", installed_capabilities=installed_capabilities):
         key = f"actions/{name}"
         path = project_actions_dir / name
         installed_hash = _compute_path_hash(path, is_directory=True)
@@ -315,8 +358,10 @@ def _find_orphaned_claude_artifacts(
         orphans["commands/erk"] = cmd_orphans
 
     # Check directory-based artifacts (skills, agents)
+    # Note: use installed_capabilities=None to check ALL managed artifacts
+    # because we want to detect orphans even for capabilities that were removed
     for prefix, artifact_type in [("skills", "skill"), ("agents", "agent")]:
-        for name in _get_bundled_by_type(artifact_type):
+        for name in _get_bundled_by_type(artifact_type, installed_capabilities=None):
             folder_key = f"{prefix}/{name}"
             dir_orphans = _find_orphaned_in_directory(
                 project_claude_dir / prefix / name,
@@ -353,7 +398,8 @@ def _find_orphaned_workflows(
     orphans: dict[str, list[str]] = {}
 
     # Only check erk-managed workflow files
-    for name in _get_bundled_by_type("workflow"):
+    # Note: use installed_capabilities=None to check ALL managed workflows
+    for name in _get_bundled_by_type("workflow", installed_capabilities=None):
         workflow_name = f"{name}.yml"
         local_workflow = project_workflows_dir / workflow_name
         bundled_workflow = bundled_workflows_dir / workflow_name
@@ -454,8 +500,9 @@ def _find_missing_claude_artifacts(
         missing["commands/erk"] = cmd_missing
 
     # Check directory-based artifacts (skills, agents)
+    # Note: use installed_capabilities=None to check ALL managed artifacts
     for prefix, artifact_type in [("skills", "skill"), ("agents", "agent")]:
-        for name in _get_bundled_by_type(artifact_type):
+        for name in _get_bundled_by_type(artifact_type, installed_capabilities=None):
             folder_key = f"{prefix}/{name}"
             dir_missing = _find_missing_in_directory(
                 bundled_claude_dir / prefix / name,
@@ -486,7 +533,8 @@ def _find_missing_workflows(
     project_workflows_dir.mkdir(parents=True, exist_ok=True)
     missing: dict[str, list[str]] = {}
 
-    for name in _get_bundled_by_type("workflow"):
+    # Note: use installed_capabilities=None to check ALL managed workflows
+    for name in _get_bundled_by_type("workflow", installed_capabilities=None):
         workflow_name = f"{name}.yml"
         bundled_workflow = bundled_workflows_dir / workflow_name
         local_workflow = project_workflows_dir / workflow_name
@@ -519,7 +567,8 @@ def _find_missing_actions(
 
     missing: dict[str, list[str]] = {}
 
-    for action_name in _get_bundled_by_type("action"):
+    # Note: use installed_capabilities=None to check ALL managed actions
+    for action_name in _get_bundled_by_type("action", installed_capabilities=None):
         bundled_action = bundled_actions_dir / action_name
         local_action = project_actions_dir / action_name
 
@@ -544,7 +593,8 @@ def _find_missing_hooks(project_claude_dir: Path) -> dict[str, list[str]]:
     """
     settings_path = project_claude_dir / "settings.json"
     missing: dict[str, list[str]] = {}
-    bundled_hooks = _get_bundled_by_type("hook")
+    # Note: hooks are always required, so installed_capabilities=None is fine
+    bundled_hooks = _get_bundled_by_type("hook", installed_capabilities=None)
 
     # If no settings.json, all hooks are missing
     if not settings_path.exists():
