@@ -5,6 +5,7 @@ in its constructor. Construct instances directly with keyword arguments.
 """
 
 from pathlib import Path
+from typing import Any
 
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.types import IssueInfo
@@ -125,6 +126,8 @@ class FakeGitHub(GitHub):
         self._pr_comment_updates: list[tuple[int, str]] = []
         self._next_comment_id = 1000000
         self._deleted_remote_branches: list[str] = []
+        # Ordered log of all mutation operations for testing operation ordering
+        self._operation_log: list[tuple[Any, ...]] = []
 
     @property
     def merged_prs(self) -> list[int]:
@@ -146,6 +149,7 @@ class FakeGitHub(GitHub):
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
         """Record PR base branch update in mutation tracking list."""
         self._updated_pr_bases.append((pr_number, new_base))
+        self._operation_log.append(("update_pr_base_branch", pr_number, new_base))
 
     def update_pr_body(self, repo_root: Path, pr_number: int, body: str) -> None:
         """Record PR body update in mutation tracking list.
@@ -172,6 +176,7 @@ class FakeGitHub(GitHub):
         """
         if self._merge_should_succeed:
             self._merged_prs.append(pr_number)
+            self._operation_log.append(("merge_pr", pr_number))
             return True
         return "Merge failed (configured to fail in test)"
 
@@ -844,3 +849,15 @@ class FakeGitHub(GitHub):
         Returns list of branch names that were deleted.
         """
         return self._deleted_remote_branches
+
+    @property
+    def operation_log(self) -> list[tuple[Any, ...]]:
+        """Read-only access to ordered operation log for testing operation ordering.
+
+        Returns list of tuples where first element is operation name:
+        - ("update_pr_base_branch", pr_number, new_base)
+        - ("merge_pr", pr_number)
+
+        Use this to verify operations happen in correct order.
+        """
+        return self._operation_log
