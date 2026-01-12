@@ -6,7 +6,7 @@ read_when:
   - "formatting terminal output"
 tripwires:
   - action: "using click.confirm() after user_output()"
-    warning: "Use user_confirm() from erk_shared.output instead. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
+    warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
 ---
 
 # CLI Output Styling Guide
@@ -147,6 +147,46 @@ user_output(click.style("Error: ", fg="red") + "Branch not found")
 # Script/machine data
 machine_output(json.dumps(result))
 machine_output(str(activation_path))
+```
+
+## Confirmation Prompts
+
+When prompting users for confirmation, use the right abstraction based on context availability.
+
+### Pattern Hierarchy
+
+**For testable code (preferred)**: Use `ctx.console.confirm()` when you have ErkContext
+
+```python
+# Uses FakeConsole in tests, InteractiveConsole in production
+user_output("Warning: This operation is destructive!")
+if ctx.console.confirm("Are you sure?"):
+    perform_dangerous_operation()
+```
+
+- Enables FakeConsole to intercept confirmations in tests
+- InteractiveConsole handles stderr flushing automatically
+
+**Fallback**: Use `user_confirm()` when ErkContext is not available
+
+```python
+from erk_shared.output import user_output, user_confirm
+
+user_output("Warning: This operation is destructive!")
+if user_confirm("Are you sure?"):
+    perform_dangerous_operation()
+```
+
+- Standalone function that flushes stderr before click.confirm()
+- Use when writing utility code without context access
+
+**Never**: Use raw `click.confirm()` after `user_output()`
+
+```python
+# ❌ WRONG: Causes buffering hangs
+user_output("Warning: This operation is destructive!")
+if click.confirm("Are you sure?"):  # stderr not flushed!
+    perform_dangerous_operation()
 ```
 
 ## Reference Implementations
