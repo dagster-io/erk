@@ -39,7 +39,6 @@ erk = "erk.cli.cli:main"
 
 [dependency-groups]
 dev = [
-    "erk-bootstrap",
     "erk-dev",
     "ruff>=0.5.0",
     "pytest>=8.0.0",
