@@ -10,6 +10,10 @@ tripwires:
     warning: "Use REST API via `gh api repos/{owner}/{repo}/issues -X POST` instead. `gh issue create` uses GraphQL which has separate (often exhausted) rate limits."
   - action: "using gh pr create in production code"
     warning: "Use REST API via `gh api repos/{owner}/{repo}/pulls -X POST` instead. `gh pr create` uses GraphQL which has separate (often exhausted) rate limits."
+  - action: "using gh issue view in command documentation"
+    warning: "Use `erk exec get-issue-body` instead. `gh issue view` uses GraphQL which has separate (often exhausted) rate limits."
+  - action: "using gh issue edit in command documentation"
+    warning: "Use `erk exec update-issue-body` instead. `gh issue edit` uses GraphQL which has separate (often exhausted) rate limits."
 ---
 
 # GitHub API Rate Limits
@@ -29,13 +33,14 @@ GitHub has **separate rate limits** for REST API and GraphQL API. This document 
 
 Many `gh` CLI "porcelain" commands (the user-friendly ones) use **GraphQL internally**:
 
-| Command           | Uses GraphQL? | REST Alternative                              |
-| ----------------- | ------------- | --------------------------------------------- |
-| `gh issue create` | Yes           | `gh api repos/{owner}/{repo}/issues -X POST`  |
-| `gh pr create`    | Yes           | `gh api repos/{owner}/{repo}/pulls -X POST`   |
-| `gh issue view`   | Yes           | `gh api repos/{owner}/{repo}/issues/{number}` |
-| `gh pr view`      | Yes           | `gh api repos/{owner}/{repo}/pulls/{number}`  |
-| `gh api <path>`   | **No**        | Direct REST API access                        |
+| Command           | Uses GraphQL? | REST Alternative                                   |
+| ----------------- | ------------- | -------------------------------------------------- |
+| `gh issue create` | Yes           | `gh api repos/{owner}/{repo}/issues -X POST`       |
+| `gh pr create`    | Yes           | `gh api repos/{owner}/{repo}/pulls -X POST`        |
+| `gh issue view`   | Yes           | `erk exec get-issue-body <number>`                 |
+| `gh issue edit`   | Yes           | `erk exec update-issue-body <number> --body "..."` |
+| `gh pr view`      | Yes           | `gh api repos/{owner}/{repo}/pulls/{number}`       |
+| `gh api <path>`   | **No**        | Direct REST API access                             |
 
 When you hit the error:
 
