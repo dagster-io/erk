@@ -1,12 +1,14 @@
 # Worktrees
 
-Git worktrees enable parallel development without branch switching.
+Git worktrees enable parallel agent execution without filesystem conflicts.
 
-## The Problem: Context Switching
+## The Problem: Parallel Agents Need Separate Filesystems
 
-Traditional git workflows force you to switch branches constantly. Working on a feature, need to fix a bug? Stash your work, switch branches, fix the bug, switch back, unstash. Each switch costs time and mental energy—you lose your place, your terminal history, your editor state.
+As you become proficient with agentic engineering and model capabilities increase, you can work on tasks of increasing complexity and size. Larger tasks mean higher latency—agents take longer to complete their work. At that point, you want multiple agents working in parallel.
 
-Worse, you can only be "in" one branch at a time. Need to wait for CI while working on something else? You're juggling again.
+But here's the problem: if two agents work in parallel on the same branch, they're writing to the same location in the filesystem. That doesn't work. They'll overwrite each other's changes, create conflicts mid-execution, and generally make a mess.
+
+Worktrees are the solution. Git can manage multiple working copies of the same repository, each checked out to a different branch in a different directory. This lets you run many agents in parallel, each in its own worktree, without interference.
 
 ## What Are Worktrees?
 
@@ -26,31 +28,32 @@ Each worktree is a full working directory with its own checked-out files, but th
 
 Worktrees are essential to the plan-oriented workflow for several reasons:
 
-**Plan isolation**: Each plan gets its own worktree. You're implementing authentication in one worktree while an agent works on logging in another. No interference, no conflicts until you're ready.
+**Parallel agent execution**: The primary use case. Launch multiple agents implementing different plans simultaneously. Each agent has its own worktree, its own branch, its own filesystem. No conflicts, no coordination overhead.
 
-**Context preservation**: Switch between worktrees and everything is as you left it—open files, terminal history, test results. No stashing, no mental reconstruction.
+**Plan isolation**: Each plan gets its own worktree. One agent implements authentication while another works on logging. They can't interfere with each other until you're ready to merge.
 
-**Parallel development**: Multiple features progress simultaneously. Wait for CI in one worktree while coding in another. An agent can implement a plan in one worktree while you review code in another.
+**Organized structure**: Worktrees live in a predictable hierarchy (`~/.erk/repos/<repo>/worktrees/<worktree>/`), making them easy to find and manage. Each is tied to a specific plan via naming convention.
 
-**Clean PR workflow**: When a PR merges, delete its worktree. Your other work continues undisturbed. No branch cleanup gymnastics.
+**Context preservation**: For human work, switching between worktrees preserves your state—open files, terminal history, test results. No stashing required.
 
 ## Worktree Structure
 
 Erk organizes worktrees in a consistent hierarchy:
 
 ```
-~/erks/                          # Erks root (configurable via ERKS_DIR)
-└── my-project/                  # Erks dir for repository "my-project"
-    ├── P123-auth-feature-0115/  # Worktree for plan #123
-    ├── P124-fix-tests-0115/     # Worktree for plan #124
-    └── P125-add-logging-0116/   # Worktree for plan #125
+~/.erk/repos/                              # Erk repos root
+└── my-project/                            # Repo directory
+    └── worktrees/                         # Worktrees container
+        ├── P123-auth-feature-0115/        # Worktree for plan #123
+        ├── P124-fix-tests-0115/           # Worktree for plan #124
+        └── P125-add-logging-0116/         # Worktree for plan #125
 ```
 
-**Erks Root** (`~/erks/`): The top-level directory containing all worktrees. Configure with `ERKS_DIR` environment variable.
+**Erk Root** (`~/.erk/`): Erk's configuration and data directory.
 
-**Erks Dir** (`~/erks/<repo>/`): Per-repository directory. Groups all worktrees for one repository together.
+**Repos Dir** (`~/.erk/repos/<repo>/`): Per-repository directory containing worktrees and other repo-specific data.
 
-**Worktree Path** (`~/erks/<repo>/<name>/`): Individual worktree directories. Each is a complete working directory.
+**Worktrees Dir** (`~/.erk/repos/<repo>/worktrees/`): Container for all worktrees for this repository.
 
 **Naming Convention**: `P{issue}-{slug}-{timestamp}` links each worktree to its GitHub issue. The timestamp ensures uniqueness if you create multiple worktrees for the same plan.
 
@@ -62,29 +65,60 @@ Most daily work happens in non-root worktrees. The root worktree often serves as
 
 ## Erk Worktrees vs Git Worktrees
 
-A git worktree is just a directory with checked-out files. An erk worktree adds structure:
+Git's built-in `git worktree` command is barebones—it creates a directory and checks out a branch. Everything else is manual. Erk provides substantially more:
 
-| Aspect      | Git Worktree | Erk Worktree                       |
-| ----------- | ------------ | ---------------------------------- |
-| Directory   | Any path     | Organized under `~/erks/`          |
-| Branch      | Any branch   | Named to match plan issue          |
-| Environment | None         | Python virtualenv (optional)       |
-| Plan        | None         | Associated `.impl/` folder         |
-| Cleanup     | Manual       | `erk wt delete` handles everything |
+| Aspect           | Git Worktree          | Erk Worktree                           |
+| ---------------- | --------------------- | -------------------------------------- |
+| Directory        | Any path (you choose) | Organized under `~/.erk/repos/`        |
+| Navigation       | Manual `cd`           | Shell integration switches directories |
+| Environment      | None                  | Runs scripts on switch (e.g., uv sync) |
+| Plan association | None                  | Linked to GitHub issue via `.impl/`    |
 
-Erk provides "batteries included" worktree management—consistent naming, automatic cleanup, plan association, and integration with the broader workflow.
+**Shell integration is key.** With vanilla git worktrees, you manually `cd` between directories and devise your own storage scheme. With erk's [shell integration](../tutorials/shell-integration.md), `erk wt checkout` changes your shell's working directory automatically. You can also configure scripts to run on each switch—for example, syncing a Python virtual environment with `uv sync` whenever you navigate to a worktree.
+
+Note that `erk implement` automatically navigates to a new worktree when starting implementation. The shell integration makes this seamless.
 
 ## Common Operations
 
 Erk provides commands for worktree lifecycle management:
 
-- **Create**: `erk wt create` - Creates a new worktree, sets up branch, creates virtual environment
+- **Create**: `erk wt create` - Creates a new worktree with branch and optional virtual environment
 - **List**: `erk wt list` - Shows all worktrees with status (branch, plan, etc.)
-- **Switch**: `erk wt checkout` - Change to a different worktree (use with [shell integration](../tutorials/shell-integration.md))
-- **Delete**: `erk wt delete` - Removes worktree, cleans up branch and virtual environment
+- **Switch**: `erk wt checkout` or `erk br co` - Navigate to a worktree (requires [shell integration](../tutorials/shell-integration.md)). Since erk manages the mapping between branches and worktrees, checking out a branch automatically switches to its associated worktree.
+- **Delete**: `erk wt delete` - Removes worktree and cleans up branch
 - **Status**: `erk wt status` - Shows current worktree details
 
-Detailed command usage is covered in reference documentation. The key insight is that worktrees aren't manual git operations—erk manages the full lifecycle.
+To get the full benefit of worktrees, [set up shell integration](../tutorials/shell-integration.md). Without it, navigation commands can't change your shell's working directory.
+
+## Slots: Reusing Worktrees in Large Codebases
+
+In large codebases or monorepos, creating a new worktree can take substantial time—git must copy the entire working directory. For repositories with many files, this overhead becomes painful.
+
+Erk solves this with the **slots system**. Instead of creating and destroying worktrees, you allocate a fixed number of worktree "slots" upfront. Erk then manages bookkeeping to assign and unassign branches from these slots.
+
+Conceptually, each plan still gets its own worktree. Physically, the worktrees are reused. When you start implementing a new plan, erk finds an available slot, checks out your branch there, and you're ready to go—without waiting for a fresh copy of the entire repository.
+
+Slots are enabled by default and used automatically by `erk implement`. You can still create standalone worktrees with `erk wt create` for advanced use cases, but most users never need to.
+
+Slot commands:
+
+- `erk slot init-pool` - Initialize pool with a fixed number of worktree slots
+- `erk slot list` - List all slots with their current assignment status
+- `erk slot assign` - Assign an existing branch to an available slot
+- `erk slot unassign` - Remove a branch assignment, freeing the slot
+- `erk slot repair` - Clean up stale assignments from pool state
+
+## Why Worktrees Instead of Multiple Clones?
+
+You might wonder: why not just clone the repository multiple times? Worktrees are fundamentally better for several reasons.
+
+**Unified git state.** All worktrees share the same `.git` directory—branches, tags, reflog, remote configuration, everything. Create a branch in one worktree and it's immediately visible in all others. Make a commit and it's in the shared database, accessible everywhere. Run `git fetch` once and all worktrees see the updated refs. With separate clones, each has its own isolated git state. You'd need to fetch in each one, set them up as remotes of each other, or constantly push/pull between them.
+
+**Shared object store.** The `.git/objects` directory contains your entire repository history—all commits, all file contents. Worktrees share this; clones duplicate it. For a repository with substantial history, this difference is massive. One user reported their repo takes 1GB as a clone but only 150MB as a worktree, because only the working directory files are duplicated, not the history.
+
+**Local creation.** Creating a worktree doesn't require network transfer. The objects already exist locally; git just checks out the working directory files. Creating another clone means downloading everything again.
+
+The bottom line: worktrees give you isolated working directories with shared git infrastructure. Clones give you completely isolated repositories. For parallel development in the same codebase, worktrees are the right abstraction.
 
 ## See Also
 
