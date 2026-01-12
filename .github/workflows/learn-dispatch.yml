@@ -91,11 +91,12 @@ jobs:
         id: pr
         env:
           GH_TOKEN: ${{ github.token }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
         run: |
           PR_URL=$(gh pr create \
             --base "${{ steps.trunk.outputs.branch }}" \
             --head "${{ steps.branch.outputs.name }}" \
-            --title "${{ steps.issue.outputs.title }}" \
+            --title "$ISSUE_TITLE" \
             --body "Implementing #${{ steps.issue.outputs.number }}" \
             --draft)
           PR_NUMBER=$(echo "$PR_URL" | grep -oE '[0-9]+$')
@@ -108,12 +109,13 @@ jobs:
       - name: Dispatch to erk-impl
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          ISSUE_TITLE: ${{ steps.issue.outputs.title }}
         run: |
           gh workflow run erk-impl.yml \
             -f issue_number="${{ steps.issue.outputs.number }}" \
             -f submitted_by="erk-bot" \
             -f distinct_id="${{ steps.distinct.outputs.id }}" \
-            -f issue_title="${{ steps.issue.outputs.title }}" \
+            -f issue_title="$ISSUE_TITLE" \
             -f branch_name="${{ steps.branch.outputs.name }}" \
             -f pr_number="${{ steps.pr.outputs.number }}" \
             -f model_name="${{ steps.issue.outputs.model }}" \
