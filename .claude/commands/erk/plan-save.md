@@ -111,8 +111,7 @@ If the marker doesn't exist (command fails), skip this step - the plan wasn't cr
 erk exec get-issue-body <objective-issue>
 ```
 
-Parse the JSON response to extract the `body` field.
-3. **Parse and update the roadmap table:**
+Parse the JSON response to extract the `body` field. 3. **Parse and update the roadmap table:**
 
 Find the row in the roadmap table where the Step column matches `step_id`. Update the PR column to show `plan #<issue_number>`.
 
