@@ -3,7 +3,7 @@ title: Learn Origin Tracking
 read_when:
   - "understanding how learn PRs are identified"
   - "modifying erk pr land behavior"
-  - "working with erk-skip-extraction label"
+  - "working with erk-skip-learn label"
 ---
 
 # Learn Origin Tracking
@@ -12,12 +12,12 @@ PRs that originate from learn plans need to be identified during `erk pr land` t
 
 ## The Problem
 
-When a PR is landed via `erk pr land`, the command normally queues the worktree for "pending extraction" - a state that enables later session analysis to extract documentation improvements.
+When a PR is landed via `erk pr land`, the command normally queues the worktree for "pending learn" - a state that enables later session analysis to extract documentation improvements.
 
 However, PRs that _originate from_ learn plans should not trigger another extraction cycle. Otherwise:
 
 1. Learn plan creates documentation PR
-2. PR lands → queued for extraction
+2. PR lands → queued for learn
 3. Extraction runs → finds documentation changes → creates new learn plan
 4. Repeat forever
 
@@ -25,7 +25,7 @@ However, PRs that _originate from_ learn plans should not trigger another extrac
 
 **Previous approach** (deprecated): A marker string (`**Extraction Origin:** true`) was embedded in PR bodies.
 
-**Current approach**: The `erk-skip-extraction` GitHub label is added to PRs.
+**Current approach**: The `erk-skip-learn` GitHub label is added to PRs.
 
 ### Rationale
 
@@ -44,7 +44,7 @@ When creating a PR from a learn plan:
 # Check if source is learn plan
 if is_learn_plan(plan_metadata) or is_issue_learn_plan(issue_metadata):
     # Add label to mark as learn-originated
-    github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL)
+    github.add_label_to_pr(repo_root, pr_number, ERK_SKIP_LEARN_LABEL)
 ```
 
 The label is applied by:
@@ -58,13 +58,13 @@ When landing a PR:
 
 ```python
 # Check if PR should skip extraction
-if github.has_pr_label(repo_root, pr_number, ERK_SKIP_EXTRACTION_LABEL):
-    # Skip pending-extraction marker
+if github.has_pr_label(repo_root, pr_number, ERK_SKIP_LEARN_LABEL):
+    # Skip pending-learn marker
     # Delete worktree immediately
-    click.echo("Skipping extraction (extraction-originated PR)")
+    click.echo("Skipping extraction (learn-originated PR)")
 else:
-    # Normal flow: mark for pending extraction
-    mark_pending_extraction(worktree)
+    # Normal flow: mark for pending learn
+    mark_pending_learn(worktree)
 ```
 
 ## Adding the GitHub Methods
@@ -162,10 +162,10 @@ def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
 Test the extraction skip behavior with FakeGitHub:
 
 ```python
-def test_land_skips_extraction_for_labeled_pr() -> None:
-    """PRs with erk-skip-extraction label skip pending-extraction."""
+def test_land_skips_learn_for_labeled_pr() -> None:
+    """PRs with erk-skip-learn label skip pending-learn."""
     fake_github = FakeGitHub(
-        pr_labels={123: {"erk-skip-extraction"}},
+        pr_labels={123: {"erk-skip-learn"}},
     )
     ctx = create_test_context(github=fake_github)
 
@@ -176,8 +176,8 @@ def test_land_skips_extraction_for_labeled_pr() -> None:
     assert result.worktree_deleted is True
 
 
-def test_land_marks_extraction_for_normal_pr() -> None:
-    """Normal PRs are marked for pending extraction."""
+def test_land_marks_learn_for_normal_pr() -> None:
+    """Normal PRs are marked for pending learn."""
     fake_github = FakeGitHub(
         pr_labels={123: set()},  # No skip label
     )
@@ -187,12 +187,12 @@ def test_land_marks_extraction_for_normal_pr() -> None:
 
     # Verify normal extraction flow
     assert result.extraction_skipped is False
-    assert result.pending_extraction is True
+    assert result.pending_learn is True
 ```
 
 ## Related Documentation
 
-- [Glossary: erk-skip-extraction](../glossary.md#erk-skip-extraction)
+- [Glossary: erk-skip-learn](../glossary.md#erk-skip-learn)
 - [Glossary: Learn Plan](../glossary.md#learn-plan)
 - [Erk Architecture Patterns](erk-architecture.md) - Four-layer integration pattern
 - [Plan Lifecycle](../planning/lifecycle.md) - Full plan workflow

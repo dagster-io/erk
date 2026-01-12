@@ -852,15 +852,15 @@ A special type of implementation plan created by `/erk:learn`. Learn plans captu
 - Created from session analysis to capture valuable insights
 - Contains documentation items rather than code changes
 - Marked with `plan_type: learn` in the plan-header metadata
-- PRs from learn plans receive the `erk-skip-extraction` label
+- PRs from learn plans receive the `erk-skip-learn` label
 
 **Purpose**: Prevent valuable learnings from being lost after implementation sessions by systematically documenting patterns, decisions, and discoveries.
 
-**Related**: [erk-skip-extraction](#erk-skip-extraction), [Plan Lifecycle](planning/lifecycle.md)
+**Related**: [erk-skip-learn](#erk-skip-learn), [Plan Lifecycle](planning/lifecycle.md)
 
-### erk-skip-extraction
+### erk-skip-learn
 
-A GitHub label added to PRs that originate from learn plans. When `erk pr land` detects this label, it automatically skips creating the pending-extraction marker and deletes the worktree immediately.
+A GitHub label added to PRs that originate from learn plans. When `erk pr land` detects this label, it automatically skips creating the pending-learn marker and deletes the worktree immediately.
 
 **Purpose**: Prevents infinite extraction loops where extracting insights from a learn-originated PR would lead to another learn plan.
 
@@ -880,24 +880,24 @@ A GitHub label added to PRs that originate from learn plans. When `erk pr land` 
 3. **Separation** - PR body remains focused on the actual PR description
 4. **Flexibility** - Labels can be manually added/removed for edge cases
 
-**Related**: [Learn Plan](#learn-plan), [pending-extraction](#pending-extraction), [Learn Origin Tracking](architecture/extraction-origin-tracking.md)
+**Related**: [Learn Plan](#learn-plan), [pending-learn](#pending-learn), [Learn Origin Tracking](architecture/learn-origin-tracking.md)
 
-### pending-extraction
+### pending-learn
 
-A marker state indicating a merged PR is queued for insight extraction. When `erk pr land` completes successfully (and the PR is not from a learn plan), it leaves the worktree in a "pending extraction" state for later session analysis.
+A marker state indicating a merged PR is queued for insight extraction. When `erk pr land` completes successfully (and the PR is not from a learn plan), it leaves the worktree in a "pending learn" state for later session analysis.
 
 **Purpose**: Queue merged PRs for documentation extraction to capture learnings.
 
 **Lifecycle**:
 
 1. PR merges via `erk pr land`
-2. If not learn-originated → worktree marked as pending-extraction
+2. If not learn-originated → worktree marked as pending-learn
 3. User runs learn workflow later to capture insights
 4. Worktree deleted after learning complete
 
-**Skip condition**: PRs with `erk-skip-extraction` label bypass this marking.
+**Skip condition**: PRs with `erk-skip-learn` label bypass this marking.
 
-**Related**: [erk-skip-extraction](#erk-skip-extraction), [Learn Plan](#learn-plan)
+**Related**: [erk-skip-learn](#erk-skip-learn), [Learn Plan](#learn-plan)
 
 ---
 

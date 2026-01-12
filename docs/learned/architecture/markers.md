@@ -3,7 +3,7 @@ title: Marker System
 read_when:
   - "creating worktree state tracking"
   - "adding friction before destructive operations"
-  - "implementing pending extraction workflow"
+  - "implementing pending learn workflow"
 ---
 
 # Marker System
@@ -16,9 +16,9 @@ Markers provide friction before destructive operations. They persist across sess
 
 ## Current Markers
 
-| Marker               | Created By    | Cleared By                                                  | Purpose                                          |
+| Marker           | Created By    | Cleared By                                                  | Purpose                                          |
 | -------------------- | ------------- | ----------------------------------------------------------- | ------------------------------------------------ |
-| `pending-extraction` | `erk pr land` | `erk plan extraction raw`, `create-extraction-plan` kit CLI | Block worktree deletion until insights extracted |
+| `pending-learn` | `erk pr land` | `erk plan learn`, `create-learn-plan` kit CLI | Block worktree deletion until insights extracted |
 
 ## API
 
@@ -35,9 +35,9 @@ Located in `erk_shared/scratch/markers.py`:
 2. **Check marker** before destructive operations (e.g., worktree deletion)
 3. **Delete marker** when follow-up is complete
 
-## Example: Pending Extraction Flow
+## Example: Pending Learn Flow
 
-1. `erk pr land` merges PR → creates `pending-extraction` marker
-2. User tries `erk wt delete` → blocked with "run extraction first"
-3. User runs extraction → marker deleted
+1. `erk pr land` merges PR → creates `pending-learn` marker
+2. User tries `erk wt delete` → blocked with "run learn first"
+3. User runs learn → marker deleted
 4. User can now delete worktree
