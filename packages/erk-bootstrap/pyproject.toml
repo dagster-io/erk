@@ -7,7 +7,7 @@ requires-python = ">=3.10"
 dependencies = []  # Zero dependencies!
 
 [project.scripts]
-erk = "erk_bootstrap.cli:main"
+erk-bootstrap = "erk_bootstrap.cli:main"
 
 [build-system]
 requires = ["hatchling"]
