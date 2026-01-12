@@ -91,6 +91,60 @@ Fix: Close issue #<issue_number> and re-run:
 
 Exit without creating the plan-saved marker. The session continues so the user can retry.
 
+### Step 4.5: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `--objective-issue` was provided and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this step:
+
+1. **Read the roadmap step marker** to get the step ID:
+
+```bash
+step_id=$(erk exec marker read --session-id <session-id> roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-next-plan`.
+
+2. **Fetch the objective issue body:**
+
+```bash
+gh issue view <objective-issue> --json body -q .body
+```
+
+3. **Parse and update the roadmap table:**
+
+Find the row in the roadmap table where the Step column matches `step_id`. Update the PR column to show `plan #<issue_number>`.
+
+Example transformation:
+
+```markdown
+# Before
+
+| Step | Description   | Status  | PR  |
+| ---- | ------------- | ------- | --- |
+| 2A.1 | Add feature X | pending |     |
+
+# After
+
+| Step | Description   | Status  | PR         |
+| ---- | ------------- | ------- | ---------- |
+| 2A.1 | Add feature X | pending | plan #4567 |
+```
+
+4. **Update the objective issue:**
+
+```bash
+gh issue edit <objective-issue> --body "<updated_body>"
+```
+
+**Note:** If the PR column already has content, preserve it or append (e.g., if there's already a plan, append the new plan number).
+
+5. **Report the update:**
+
+Display: `Updated objective #<objective-issue> roadmap: step <step_id> → plan #<issue_number>`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
 ### Step 5: Display Results
 
 On success, display:

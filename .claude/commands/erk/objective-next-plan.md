@@ -88,24 +88,30 @@ Parse the objective body to extract roadmap steps. Look for markdown tables with
 
 | Step | Description | Status | PR |
 
-Extract all steps and display them to the user:
+Extract all steps **in roadmap order** (Phase 1A before 1B before 2A, etc. - alphanumeric sort by step ID). Present steps in this natural order with the first pending step as the recommended option.
+
+**Detect step status from PR column:**
+
+- Empty PR column → `(pending)` - available to plan
+- `#<number>` (just a number) → `(done, PR #XXX)` - already completed with a merged PR
+- `plan #<number>` → `(plan in progress, #XXX)` - has a pending plan issue, skip recommending
+- `blocked` in Status column → `(blocked)` - cannot be worked yet
+- `skipped` in Status column → `(skipped)` - explicitly skipped
+
+Display steps to the user:
 
 ```
 Objective #<number>: <title>
 
 Roadmap Steps:
-  [1] Step 1A.1: <description> (pending)
+  [1] Step 1A.1: <description> (pending) ← recommended
   [2] Step 1A.2: <description> (pending)
   [3] Step 1B.1: <description> (done, PR #123)
+  [4] Step 2A.1: <description> (plan in progress, #456)
   ...
 ```
 
-Show status indicators:
-
-- `(pending)` - available to plan
-- `(done, PR #XXX)` - already completed
-- `(blocked)` - cannot be worked yet
-- `(skipped)` - explicitly skipped
+**Ordering rule:** Present steps in natural roadmap order (by step ID). The first pending step that does NOT have a plan in progress is the recommended option.
 
 ### Step 5: Prompt User to Select Step
 
@@ -113,15 +119,35 @@ Use AskUserQuestion to ask which step to plan:
 
 ```
 Which step should I create a plan for?
-- Step 1A.1: <description>
+- Step 1A.1: <description> (Recommended) ← first pending step without plan in progress
 - Step 1A.2: <description>
-- Step 1B.1: <description>
+- Step 2B.1: <description> (plan in progress, #456) ← shown but not recommended
 - (Other - specify step number or description)
 ```
 
-Only show steps that are `pending` or `blocked` (not already `done` or `skipped`).
+**Filtering rules:**
 
-If all steps are complete, report: "All roadmap steps are complete! Consider closing the objective."
+- **Show as options:** Steps that are `pending` (available to plan)
+- **Show but deprioritize:** Steps with `plan in progress` - still selectable via "Other" but not recommended
+- **Hide from options:** Steps that are `done`, `blocked`, or `skipped`
+
+**Recommendation rule:** The first pending step (in roadmap order) that does NOT have a plan in progress is marked "(Recommended)".
+
+If all steps are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap steps are complete! Consider closing the objective."
+- All have plans: "All pending steps have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5.5: Create Roadmap Step Marker
+
+After the user selects a step, create a marker to store the selected step ID for later use by `plan-save`:
+
+```bash
+erk exec marker create --session-id <session-id-from-reminder> \
+  --content "<step-id>" roadmap-step
+```
+
+Replace `<step-id>` with the step ID selected by the user (e.g., "2A.1"). This marker enables `plan-save` to automatically update the objective's roadmap table with the plan issue number.
 
 ### Step 6: Gather Context for Planning
 
