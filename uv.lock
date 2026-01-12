@@ -10,6 +10,7 @@ resolution-markers = [
 [manifest]
 members = [
     "erk",
+    "erk-bootstrap",
     "erk-dev",
     "erk-shared",
     "erk-statusline",
@@ -425,6 +426,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "erk-bootstrap" },
     { name = "erk-dev" },
     { name = "libcst" },
     { name = "mkdocs" },
@@ -458,6 +460,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "erk-bootstrap", editable = "packages/erk-bootstrap" },
     { name = "erk-dev", editable = "packages/erk-dev" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "mkdocs", specifier = ">=1.6.0" },
@@ -469,6 +472,11 @@ dev = [
     { name = "ruff", specifier = ">=0.5.0" },
     { name = "ty", specifier = ">=0.0.1a7" },
 ]
+
+[[package]]
+name = "erk-bootstrap"
+version = "1.0.0"
+source = { editable = "packages/erk-bootstrap" }
 
 [[package]]
 name = "erk-dev"
