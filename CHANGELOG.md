@@ -7,35 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of e20aec05b -->
+## [0.5.0] - 2026-01-11 23:58 PT
 
-### Major Changes
+### Release Overview
 
-- **Objective command system**: Added `erk objective next-plan` command to launch Claude for creating implementation plans from objective steps. Objective commands are now visible in CLI help, making the plan-oriented workflow discoverable. (4125184a1, 6c46c8a90)
+The 0.5.0 release consolidates four major systems that transform erk from a plan execution tool into a comprehensive platform for AI-assisted software engineering.
+
+#### Objective System
+
+Erk plans solve the single-PR problem well, but real engineering work often spans multiple related PRs toward a coherent goal. The Objective System provides coordination infrastructure for multi-PR initiatives.
+
+**What it solves:** Context loss between related implementations. When work spans multiple sessions and PRs, design decisions, lessons learned, and progress tracking were previously scattered or lost entirely.
+
+**How it works:** An objective is a GitHub issue (labeled `erk-objective`) that acts as a coordination document and changelog. It contains a phased roadmap breaking work into shippable PRs, design decisions that guide all related work, and action comments that capture lessons learned as each piece lands. Objectives can be completeable –– a defined set of substeps or phases –– or a permanent objective, that can be continuously evaluated against a system for all of time (e.g. ensure all files are less than 20k tokens).
+
+**Key workflow:**
+
+- `erk objective create` - Interactive creation with structure recommendations (steelthread-first development)
+- `erk objective next-plan` - Pick a roadmap step and generate an implementation plan
+- `erk land` integration - Automatically prompts to update objectives when landing related PRs
+
+Objectives are human-first markdown documents optimized for session handoff—any future session can pick up implementation without re-exploring context.
+
+#### Learning System
+
+AI agents discover valuable insights during implementation: API quirks, architectural patterns, edge cases, and design rationale. This knowledge typically evaporates once the PR lands. The Learning System systematically captures and codifies these discoveries.
+
+**What it solves:** Knowledge loss from implementation sessions. Claude reads files, discovers patterns, encounters gotchas, and makes decisions—but none of this persists beyond the session.
+
+**How it works:** `erk learn` discovers all Claude Code sessions associated with a plan (planning session, implementation sessions) and launches Claude to analyze them. The `/erk:learn` skill performs deep session analysis, extracting documentation items that fill genuine knowledge gaps rather than duplicating existing documentation.
+
+**Key features:**
+
+- Session discovery from GitHub metadata and local logs
+- Compressed XML preprocessing for efficient context
+- Categorization: Learning gaps (external knowledge) vs Teaching gaps (documenting new features)
+- Automated workflow via `learn-workflow` capability for hands-off documentation generation
+
+The system creates a virtuous cycle: each implementation makes future implementations faster through accumulated documentation.
+
+#### Capability-Based Architecture
+
+As erk's feature set grew, initialization became unwieldy—a monolithic process that installed everything or nothing. The Capability System introduces modular, pluggable optional features.
+
+**What it solves:** All-or-nothing feature installation. Different repositories need different features: some want code review workflows, others want the statusline, some want reminder systems. Previously this required manual file management.
+
+**How it works:** Each capability is a self-contained unit with declarative installation, dependency checking, and status tracking. Capabilities span multiple types: skills, workflows, agents, reminders, and infrastructure settings. They can be project-scoped (per-repository) or user-scoped (global).
+
+**Key commands:**
+
+- `erk init capability list` - Show all available capabilities
+- `erk init capability check` - Verify installation status
+- `erk init capability add <name>` - Install one or more capabilities
+
+Available capabilities include `dignified-python`, `fake-driven-testing`, `dignified-review`, `learn-workflow`, `statusline`, `shell-integration`, and reminder systems for coding standards enforcement.
+
+#### Worktree Pool System
+
+Git worktrees enable parallel development, but naive worktree management caused significant problems: slow creation, `index.lock` race conditions, shell state contamination, and unbounded resource consumption.
+
+**What it solves:** The pool system addresses performance (worktree creation is slow), resource management (worktrees accumulating on disk), `index.lock` contention (concurrent git operations conflicting), and shell state isolation (clean separation of session artifacts).
+
+**How it works:** Instead of creating and destroying worktrees on-demand, erk maintains a configurable pool of pre-allocated slots (`erk-slot-01` through `erk-slot-04` by default). Branches are assigned to slots dynamically, with LRU eviction when the pool is full. Placeholder branches hold unassigned slots ready for instant reuse.
+
+**Key commands:**
+
+- `erk slot init-pool` - Pre-allocate all slots
+- `erk slot list` - Unified pool health view (assignments, status, issues)
+- `erk slot repair` - Auto-fix stale assignments and orphaned state
+
+The system includes comprehensive diagnostics detecting orphaned state, missing branches, and branch mismatches, with automatic repair capabilities.
+
+---
+
+In this specific version:
 
 ### Added
 
-- Add `--no-delete` flag to `erk land` to preserve branch and worktree slot after merging PR (4402f189d)
-- Add `-f/--force` hint to error message when deleting branch with open PR (49de2dcad)
-- Add `learn-workflow` as installable capability via `erk init capability add learn-workflow` (4ee2a9339)
-- Add opt-in reminder system for coding standards enforcement via capability markers in `.erk/state.toml` (d2f445ea3)
-- Add configurable Claude CLI launcher with `[interactive-claude]` config section for model, permission mode, and other settings (6b44877b9)
-- Expand tutorial and topic documentation with installation guides and design explanations (d742c2ad3, 900ebe556, a9742438f)
+- Add `--no-delete` flag to `erk land` to preserve branch and worktree slot after merging PR
+- Add `-f/--force` hint to error message when deleting branch with open PR
+- Add `learn-workflow` as installable capability via `erk init capability add learn-workflow`
+- Add opt-in reminder system for coding standards enforcement via capability markers in `.erk/state.toml`
+- Add configurable Claude CLI launcher with `[interactive-claude]` config section for model, permission mode, and other settings
+- Expand tutorial and topic documentation with installation guides and design explanations
 
 ### Changed
 
-- Suppress slot warning when `--force` flag is specified in land command (c5751858e)
+- Suppress slot warning when `--force` flag is specified in land command
 
 ### Fixed
 
-- Fix `erk dash -l` hanging by setting subprocess stdin to DEVNULL (e20aec05b)
-- Fix token reduction metric in session preprocessing to include agent logs in calculation (80567ad5d)
-- Fix `erk land` failing when branch is checked out in stale pool state (38983246a)
-- Skip dirty slots in `find_inactive_slot()` instead of failing, enabling concurrent slot allocation (e3c4ca050)
+- Fix `erk dash -l` hanging by setting subprocess stdin to DEVNULL
+- Fix token reduction metric in session preprocessing to include agent logs in calculation
+- Fix `erk land` failing when branch is checked out in stale pool state
+- Skip dirty slots in `find_inactive_slot()` instead of failing, enabling concurrent slot allocation
 
 ### Removed
 
-- Remove `erk plan start` command (36186df35)
+- Remove `erk plan start` command
 
 ## [0.4.7] - 2026-01-11 02:19 PT
 
