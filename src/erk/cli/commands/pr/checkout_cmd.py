@@ -155,8 +155,14 @@ def pr_checkout(
     # which `gt track` requires for proper stacking
     trunk_branch = ctx.git.detect_trunk_branch(repo.root)
     if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
-        ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
-        ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)
+        # Check if base branch exists locally before fetching
+        local_branches = ctx.git.list_local_branches(repo.root)
+        if pr.base_ref_name not in local_branches:
+            ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
+            ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)
+            ctx.git.create_tracking_branch(
+                repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
+            )
 
         ctx.console.info("Rebasing onto base branch...")
         rebase_result = ctx.git.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
