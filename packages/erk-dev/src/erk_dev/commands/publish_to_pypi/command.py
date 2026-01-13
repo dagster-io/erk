@@ -61,9 +61,9 @@ def get_workspace_packages(repo_root: Path) -> list[PackageInfo]:
             pyproject_path=repo_root / "packages" / "erk-statusline" / "pyproject.toml",
         ),
         PackageInfo(
-            name="erk-bootstrap",
-            path=repo_root / "packages" / "erk-bootstrap",
-            pyproject_path=repo_root / "packages" / "erk-bootstrap" / "pyproject.toml",
+            name="erk-sh-bootstrap",
+            path=repo_root / "packages" / "erk-sh-bootstrap",
+            pyproject_path=repo_root / "packages" / "erk-sh-bootstrap" / "pyproject.toml",
         ),
         PackageInfo(
             name="erk",
