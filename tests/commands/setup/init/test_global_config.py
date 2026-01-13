@@ -136,3 +136,45 @@ def test_init_detects_graphite_not_installed() -> None:
         # Verify config was saved with graphite disabled
         loaded_config = erk_installation.load_config()
         assert not loaded_config.use_graphite
+
+
+def test_init_creates_global_config_even_when_repo_already_erkified() -> None:
+    """Regression test: global config created even if repo has .erk/config.toml.
+
+    Before the fix (issue #4898), when running `erk init` in a repo that already
+    had a local `.erk/config.toml` but no global `~/.erk/config.toml`, the global
+    config was never created. This was because global config creation was inside
+    the else block that only ran when `not already_erkified`.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        erk_root = env.cwd / "erks"
+
+        # Create a repo that's already erkified (has .erk/config.toml)
+        erk_dir = env.cwd / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "config.toml").write_text("# existing local config", encoding="utf-8")
+
+        git_ops = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            existing_paths={env.cwd, env.git_dir, erk_dir},
+        )
+        # No global config exists yet
+        erk_installation = FakeErkInstallation(config=None)
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            erk_installation=erk_installation,
+            global_config=None,
+        )
+
+        with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+
+        assert result.exit_code == 0, result.output
+        # Key assertion: global config should be created even though repo was already erkified
+        assert "Global config not found" in result.output
+        assert "Created global config" in result.output
+        assert erk_installation.config_exists()
+        loaded = erk_installation.load_config()
+        assert loaded.erk_root == erk_root.resolve()
