@@ -41,6 +41,7 @@
 - **[protocol-vs-abc.md](protocol-vs-abc.md)** — choosing between Protocol and ABC for interface design, designing interfaces with structural vs nominal typing, working with frozen dataclasses and Protocol @property patterns
 - **[sentinel-path-compatibility.md](sentinel-path-compatibility.md)** — writing functions that check path existence, seeing 'Called .exists() on sentinel path' errors, making functions testable with FakeGit
 - **[session-discovery.md](session-discovery.md)** — finding Claude Code sessions for a plan, implementing session lookup from GitHub issues, understanding dual-source discovery patterns
+- **[shell-integration-architecture.md](shell-integration-architecture.md)** — working on shell integration, modifying erk-sh-bootstrap package, adding commands that need directory switching, understanding uvx delegation pattern, debugging shell wrapper behavior
 - **[shell-integration-constraint.md](shell-integration-constraint.md)** — implementing commands that delete the current worktree, debugging directory change issues after worktree operations, understanding why safe_chdir doesn't work for some commands
 - **[shell-integration-patterns.md](shell-integration-patterns.md)** — implementing commands with shell integration, fixing shell integration handler issues, understanding script-first output ordering, debugging partial success in destructive commands
 - **[subprocess-wrappers.md](subprocess-wrappers.md)** — using subprocess wrappers, executing shell commands, understanding subprocess patterns
