@@ -1,11 +1,11 @@
-"""Tests for erk-bootstrap CLI."""
+"""Tests for erk-sh-bootstrap CLI."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
 import pytest
-from erk_bootstrap.cli import find_local_erk
+from erk_sh_bootstrap.cli import find_local_erk
 
 
 class TestFindLocalErk:
