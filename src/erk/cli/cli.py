@@ -165,6 +165,7 @@ def _show_version_warning() -> None:
 @click.pass_context
 def cli(ctx: click.Context, debug: bool) -> None:
     """Manage git worktrees in a global worktrees directory."""
+    print("hello")
     if debug:
         logging.basicConfig(level=logging.DEBUG, format="%(name)s - %(levelname)s - %(message)s")
 
