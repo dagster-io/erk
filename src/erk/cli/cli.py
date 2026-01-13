@@ -175,6 +175,7 @@ def cli(ctx: click.Context, debug: bool) -> None:
 
     # Only create context if not already provided (e.g., by tests)
     if ctx.obj is None:
+        print("hello", file=sys.stderr)
         ctx.obj = create_context(dry_run=False)
 
 
