@@ -7,23 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of `0c083226a` -->
+## [0.5.3] - 2026-01-13 06:04 PT
 
 ### Major Changes
 
-- **Shell integration bootstrap system**: Introduce `erk-sh-bootstrap`, a lightweight package that enables running erk via `uvx erk-sh-bootstrap` without requiring a global installation. Shell wrappers now delegate to project-local erk binaries, improving per-project version isolation. (69b335bf6)
+- **Shell integration bootstrap system**: Introduce `erk-sh-bootstrap`, a lightweight package that enables running erk via `uvx erk-sh-bootstrap` without requiring a global installation. Shell wrappers now delegate to project-local erk binaries, improving per-project version isolation.
 
 ### Added
 
-- Add `--max-tokens` option to `preprocess-session` for automatic chunking of large session logs into multiple files (10137e951)
-- Add `--dangerous` flag to `erk learn` command for skipping permission prompts (091d7dce1)
+- Add `--max-tokens` option to `preprocess-session` for automatic chunking of large session logs into multiple files
+- Add `--dangerous` flag to `erk learn` command for skipping permission prompts
 
 ### Fixed
 
-- Fix child PRs being auto-closed when landing parent branch by querying GitHub directly for dependent PRs (a0ca1e608)
-- Fix `erk submit` to track branches with Graphite, enabling proper PR stacking and preventing auto-closure of dependent PRs (3e9577439)
-- Fix hook updates not applying when hooks are re-installed (old hooks with stale commands now get replaced) (a2c39baa8)
-- Fix dignified-python-review capability workflow to use centralized Claude Code setup action (4f70d2ae4)
+- Fix child PRs being auto-closed when landing parent branch by querying GitHub directly for dependent PRs
+- Fix `erk submit` to track branches with Graphite, enabling proper PR stacking and preventing auto-closure of dependent PRs
+- Fix hook updates not applying when hooks are re-installed (old hooks with stale commands now get replaced)
+- Fix dignified-python-review capability workflow to use centralized Claude Code setup action
 
 ## [0.5.2] - 2026-01-12 07:54 PT
 

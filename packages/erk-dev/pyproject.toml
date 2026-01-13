@@ -1,6 +1,6 @@
 [project]
 name = "erk-dev"
-version = "0.5.2"
+version = "0.5.3"
 description = "Development tools for erk"
 requires-python = ">=3.11"
 dependencies = [
