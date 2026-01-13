@@ -65,10 +65,15 @@ jobs:
           token: ${{ secrets.ERK_QUEUE_GH_PAT }}
           fetch-depth: 0
 
+      - name: Repo-specific CI setup
+        id: ci_setup
+        if: hashFiles('.github/actions/erk-impl-setup/action.yml') != ''
+        uses: ./.github/actions/erk-impl-setup
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.14"
+          python-version: ${{ steps.ci_setup.outputs.python-version || '3.13' }}
 
       - name: Install Claude Code
         uses: ./.github/actions/setup-claude-code
@@ -78,9 +83,12 @@ jobs:
           npm install -g prettier
           cd $GITHUB_WORKSPACE
           if [ -d "./packages/erk-shared" ]; then
+            # In erk repo: install local erk with local erk-shared
             uv tool install -e . --with-editable ./packages/erk-shared
           else
-            uv tool install -e . --with erk-shared
+            # In other repos: install via dev dependencies in lockfile
+            uv sync --group dev
+            echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
           fi
 
       - name: Validate Claude credentials
