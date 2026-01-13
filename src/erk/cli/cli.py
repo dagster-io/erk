@@ -35,7 +35,6 @@ from erk.cli.commands.shell_integration import hidden_shell_cmd
 from erk.cli.commands.slot import slot_group
 from erk.cli.commands.stack import stack_group
 from erk.cli.commands.up import up_cmd
-from erk.cli.commands.upgrade import upgrade_cmd
 from erk.cli.commands.wt import wt_group
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.command_log import get_cli_args, log_command_start, register_exit_handler
@@ -204,7 +203,6 @@ cli.add_command(slot_group)
 cli.add_command(run_group)
 cli.add_command(stack_group)
 cli.add_command(up_cmd)
-cli.add_command(upgrade_cmd)
 cli.add_command(wt_group)
 cli.add_command(hidden_shell_cmd)
 cli.add_command(prepare_cwd_recovery_cmd)
