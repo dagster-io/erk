@@ -67,11 +67,18 @@ def _extract_issue_number(identifier: str) -> int | None:
     is_flag=True,
     help="Launch Claude to extract insights without prompting",
 )
+@click.option(
+    "--dangerous",
+    is_flag=True,
+    help="Launch Claude with --dangerously-skip-permissions (skip all permission prompts)",
+)
 @click.pass_obj
 def learn_cmd(
     ctx: ErkContext,
     issue: str | None,
     interactive: bool,
+    *,
+    dangerous: bool,
 ) -> None:
     """Extract insights from sessions associated with a plan.
 
@@ -183,7 +190,7 @@ def learn_cmd(
     if should_launch:
         ctx.claude_executor.execute_interactive(
             worktree_path=repo_root,
-            dangerous=False,
+            dangerous=dangerous,
             command=f"/erk:learn {issue_number}",
             target_subpath=None,
         )
