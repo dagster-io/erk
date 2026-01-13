@@ -16,23 +16,13 @@ claude
 
 This starts an interactive Claude Code session with access to erk's slash commands and skills.
 
-## Step 2: Enter Plan Mode
+## Step 2: Enter Plan Mode and Develop Your Plan
 
 Press **Shift+Tab** or describe a task that requires planning. Claude enters plan mode and shows "plan" in the status line.
 
-In plan mode, Claude researches your codebase and designs an implementation approach without making changes.
+In plan mode, Claude researches your codebase and designs an implementation approach without making changes. The plan should cover what changes to make, why, and in what order.
 
-## Step 3: Develop Your Plan
-
-Describe your goal and let Claude explore. Provide feedback to refine the approach:
-
-- Point out constraints or preferences
-- Ask about alternative approaches
-- Request clarification on specific steps
-
-The plan should cover what changes to make, why, and in what order.
-
-## Step 4: Save the Plan
+## Step 3: Save the Plan
 
 When the plan is ready, Claude presents options:
 
@@ -41,11 +31,15 @@ When the plan is ready, Claude presents options:
 | **Save to GitHub** | Creates a GitHub issue with the plan (for later)    |
 | **Implement now**  | Saves to GitHub and immediately starts implementing |
 
-Choose "Implement now" to continue in the same session. Choose "Save to GitHub" to defer implementation—useful when you want to review the plan, assign to a remote worker, or implement later.
+_If you are familiar with Claude Code, you'll note that these options are different when you use `erk`. This is deliberate._
 
-## Step 5: Implement the Plan
+The standard workflow in `erk` is to save the plan to GitHub. There are cases where it makes sense to implement the plan immediately, but we will not be doing that in this guide.
 
-If you chose "Implement now", implementation starts automatically. If you saved for later, start implementation with:
+Saving the plan in GitHub makes it easy to access from either a different worktree or a remote worker.
+
+## Step 4: Implement the Plan
+
+Copy and paste the implement command you see, and exit Claude. Then run it:
 
 ```bash
 erk implement <issue-number>
@@ -53,32 +47,19 @@ erk implement <issue-number>
 
 This command:
 
-1. Fetches the plan from the GitHub issue
-2. Creates a worktree with a feature branch
-3. Sets up the `.impl/` folder
-4. Starts a Claude Code session to execute the plan
+1. Assigns or creates a worktree with a feature branch.
+2. Switches working directory to that worktree.
+3. Launches Claude Code, fetches the plan, begins implementation.
 
-The agent follows the plan phases, writes code and tests, and runs CI checks.
+## Step 5: Submit the PR
 
-## Step 6: Submit the PR
+Upon successful implementation, `/erk:pr-submit` will automatically run in the Claude session. This generates a commit message from the diff, pushes the branch, and creates or updates the PR with a summary linking to the plan issue.
 
-After implementation completes and CI passes, submit the PR:
+If you need to run this manually later you can run it from the CLI (`erk pr submit`) or use `/erk:pr-submit` within a Claude session.
 
-```bash
-erk pr submit
-```
+## Step 6: Address Review Feedback
 
-Or from within Claude Code:
-
-```
-/erk:pr-submit
-```
-
-This generates a commit message from the diff, pushes the branch, and creates or updates the PR with a summary linking to the plan issue.
-
-## Step 7: Address Review Feedback
-
-When reviewers leave comments, address them with:
+`erk` is designed to incorporate PR review into the workflow, even if you are working alone. Think of the PR as a continuation of the Claude Code session. You (or agents or your collaborators) leave comments in the context of the relevant code. Then within a claude session in the relevant branch you can run:
 
 ```
 /erk:pr-address
@@ -86,7 +67,7 @@ When reviewers leave comments, address them with:
 
 This fetches PR comments and unresolved review threads, then makes the requested changes. Run CI and submit again after addressing feedback.
 
-## Step 8: Land the PR
+## Step 7: Land the PR
 
 Once approved and CI passes, merge the PR:
 
@@ -94,17 +75,7 @@ Once approved and CI passes, merge the PR:
 erk pr land
 ```
 
-This merges via GitHub, closes the plan issue, and cleans up the worktree. Add `--up` to navigate to a stacked branch after landing.
-
-## Quick Iteration
-
-For small changes that don't need full planning:
-
-```
-/local:quick-submit
-```
-
-This commits all changes with an auto-generated message and submits immediately. Use for typo fixes, documentation updates, or iterative tweaks during review.
+This merges via GitHub, closes the plan issue, deletes the branch, and cleans up the worktree. Add `--up` to navigate to a stacked branch after landing. It also plugs into other workflows, such as objectives and learning, which are covered in other guides.
 
 ## See Also
 
