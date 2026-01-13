@@ -322,3 +322,9 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Delete remote branch with printed output."""
         self._emit(self._format_command(f"gh api DELETE .../git/refs/heads/{branch}"))
         return self._wrapped.delete_remote_branch(repo_root, branch)
+
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -> list[PullRequestInfo]:
+        """Get open PRs with base branch (read-only, no printing)."""
+        return self._wrapped.get_open_prs_with_base_branch(repo_root, base_branch)

@@ -1972,3 +1972,49 @@ query {{
             # Log other errors but don't fail - best effort deletion
             debug_log(f"delete_remote_branch failed: {e}")
             return False
+
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -> list[PullRequestInfo]:
+        """Get all open PRs that have the given branch as their base.
+
+        Uses REST API to fetch PRs filtered by base branch and state=open.
+        """
+        assert self._repo_info is not None, "repo_info required for get_open_prs_with_base_branch"
+
+        # GH-API-AUDIT: REST - GET pulls (filtered by base and state)
+        endpoint = (
+            f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls"
+            f"?base={base_branch}&state=open&per_page=100"
+        )
+        cmd = ["gh", "api", endpoint]
+
+        try:
+            stdout = execute_gh_command(cmd, repo_root)
+        except RuntimeError:
+            # API call failed - return empty list for graceful degradation
+            return []
+
+        data = json.loads(stdout)
+        result: list[PullRequestInfo] = []
+
+        for pr_data in data:
+            branch = pr_data["head"]["ref"]
+            result.append(
+                PullRequestInfo(
+                    number=pr_data["number"],
+                    state="OPEN",  # We filtered by state=open
+                    url=pr_data["html_url"],
+                    is_draft=pr_data.get("draft", False),
+                    title=pr_data.get("title"),
+                    checks_passing=None,  # Not fetched in this API call
+                    owner=self._repo_info.owner,
+                    repo=self._repo_info.name,
+                    has_conflicts=None,  # Not fetched in this API call
+                    checks_counts=None,
+                    will_close_target=False,
+                    head_branch=branch,
+                )
+            )
+
+        return result

@@ -1110,3 +1110,103 @@ def test_list_prs_api_failure_returns_empty(monkeypatch: MonkeyPatch) -> None:
 
         # Should return empty dict, not raise
         assert result == {}
+
+
+# ============================================================================
+# get_open_prs_with_base_branch() Tests
+# ============================================================================
+
+
+def test_get_open_prs_with_base_branch_success(monkeypatch: MonkeyPatch) -> None:
+    """Test get_open_prs_with_base_branch uses correct REST API endpoint."""
+    called_with: list[list[str]] = []
+
+    sample_response = json.dumps(
+        [
+            {
+                "number": 123,
+                "state": "open",
+                "html_url": "https://github.com/owner/repo/pull/123",
+                "draft": False,
+                "title": "Feature A",
+                "head": {"ref": "feature-a"},
+            },
+            {
+                "number": 456,
+                "state": "open",
+                "html_url": "https://github.com/owner/repo/pull/456",
+                "draft": True,
+                "title": "Feature B",
+                "head": {"ref": "feature-b"},
+            },
+        ]
+    )
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout=sample_response,
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.get_open_prs_with_base_branch(Path("/repo"), "main")
+
+        # Verify REST API command format
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        assert cmd[0:2] == ["gh", "api"]
+        assert "/repos/owner/repo/pulls?base=main&state=open&per_page=100" in cmd[2]
+
+        # Verify result
+        assert len(result) == 2
+        assert result[0].number == 123
+        assert result[0].state == "OPEN"
+        assert result[0].head_branch == "feature-a"
+        assert result[0].is_draft is False
+        assert result[1].number == 456
+        assert result[1].head_branch == "feature-b"
+        assert result[1].is_draft is True
+
+
+def test_get_open_prs_with_base_branch_empty_result(monkeypatch: MonkeyPatch) -> None:
+    """Test get_open_prs_with_base_branch returns empty list when no matching PRs."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="[]",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.get_open_prs_with_base_branch(Path("/repo"), "feature-1")
+
+        assert result == []
+
+
+def test_get_open_prs_with_base_branch_api_failure_returns_empty(
+    monkeypatch: MonkeyPatch,
+) -> None:
+    """Test get_open_prs_with_base_branch returns empty list on API failure."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise RuntimeError("API failure")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        from erk_shared.github.types import RepoInfo
+
+        ops = RealGitHub(FakeTime(), repo_info=RepoInfo(owner="owner", name="repo"))
+        result = ops.get_open_prs_with_base_branch(Path("/repo"), "main")
+
+        # Should return empty list, not raise
+        assert result == []

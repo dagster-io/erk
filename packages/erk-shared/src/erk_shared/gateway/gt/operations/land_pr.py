@@ -151,16 +151,27 @@ def execute_land_pr(
         )
         return
 
-    # Step 5: Get children branches
+    # Step 5: Get children branches from both Graphite cache AND GitHub PRs
+    # Graphite's cache may not include branches created without `gt branch create`,
+    # or where the PR's base was set differently in GitHub.
     yield ProgressEvent("Getting child branches...")
-    children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
+    graphite_children = ops.graphite.get_child_branches(ops.git, repo_root, branch_name)
+
+    # Also get any PRs that have this branch as their base (may not be in Graphite)
+    github_child_prs = ops.github.get_open_prs_with_base_branch(repo_root, branch_name)
+    github_child_branches = [
+        pr.head_branch for pr in github_child_prs if pr.head_branch is not None
+    ]
+
+    # Union both sources (deduplicate)
+    all_children = list(set(graphite_children) | set(github_child_branches))
 
     # Update upstack PR base branches BEFORE merging
     # This prevents GitHub from auto-closing PRs when "Automatically delete head branches"
     # is enabled and GitHub deletes the base branch immediately after merge
-    if children:
+    if all_children:
         yield ProgressEvent("Updating upstack PR base branches...")
-        for child_branch in children:
+        for child_branch in all_children:
             child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
             if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
                 ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
@@ -197,15 +208,15 @@ def execute_land_pr(
     ops.github.delete_remote_branch(repo_root, branch_name)
 
     # Build success message with child info (navigation handled by CLI layer)
-    if len(children) == 0:
+    if len(all_children) == 0:
         message = f"Successfully merged PR #{pr_number} for branch {branch_name}"
-    elif len(children) == 1:
+    elif len(all_children) == 1:
         message = (
             f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
-            f"Child branch: {children[0]}"
+            f"Child branch: {all_children[0]}"
         )
     else:
-        children_list = ", ".join(children)
+        children_list = ", ".join(all_children)
         message = (
             f"Successfully merged PR #{pr_number} for branch {branch_name}\n"
             f"Multiple children: {children_list}"

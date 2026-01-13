@@ -672,3 +672,22 @@ class GitHub(ABC):
             False if deletion failed (e.g., protected branch)
         """
         ...
+
+    @abstractmethod
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -> list[PullRequestInfo]:
+        """Get all open PRs that have the given branch as their base.
+
+        Used to find child PRs that need their base updated before
+        landing a parent PR (prevents GitHub auto-close on base deletion).
+
+        Args:
+            repo_root: Repository root directory
+            base_branch: The base branch name to filter by
+
+        Returns:
+            List of PullRequestInfo for open PRs targeting the given base branch.
+            Empty list if no PRs match or on API failure.
+        """
+        ...

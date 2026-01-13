@@ -301,3 +301,9 @@ class DryRunGitHub(GitHub):
         Returns True to indicate success without actually deleting.
         """
         return True
+
+    def get_open_prs_with_base_branch(
+        self, repo_root: Path, base_branch: str
+    ) -> list[PullRequestInfo]:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_open_prs_with_base_branch(repo_root, base_branch)
