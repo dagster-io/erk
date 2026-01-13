@@ -150,7 +150,7 @@ Display: `Updated objective #<objective-issue> roadmap: step <step_id> → plan 
 On success, display:
 
 ```
-Plan saved as issue #<issue_number>
+Plan "<title>" saved as issue #<issue_number>
 URL: <issue_url>
 
 Next steps:
