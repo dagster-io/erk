@@ -265,3 +265,9 @@ jobs:
           git commit --allow-empty -m "Trigger CI workflows"
           git push origin "$BRANCH_NAME"
           echo "CI workflows triggered via push event"
+
+      - name: Fail workflow if implementation failed
+        if: steps.implement.outputs.implementation_success != 'true'
+        run: |
+          echo "Implementation failed with exit code: ${{ steps.implement.outputs.exit_code }}"
+          exit 1
