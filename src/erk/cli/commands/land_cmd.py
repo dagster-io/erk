@@ -897,9 +897,10 @@ def _land_specific_pr(
     # Check for unresolved comments BEFORE merge
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
-    # Check learn status before any mutations (for plan branches)
+    # Check learn status before any mutations (for plan branches with local worktrees)
+    # Skip for remote-only PRs since there are no local Claude sessions to learn from
     plan_issue_number = extract_leading_issue_number(branch)
-    if plan_issue_number is not None:
+    if plan_issue_number is not None and worktree_path is not None:
         _check_learn_status_and_prompt(
             ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
         )
@@ -1009,9 +1010,10 @@ def _land_by_branch(
     # Check for unresolved comments BEFORE merge
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
 
-    # Check learn status before any mutations (for plan branches)
+    # Check learn status before any mutations (for plan branches with local worktrees)
+    # Skip for remote-only PRs since there are no local Claude sessions to learn from
     plan_issue_number = extract_leading_issue_number(branch_name)
-    if plan_issue_number is not None:
+    if plan_issue_number is not None and worktree_path is not None:
         _check_learn_status_and_prompt(
             ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
         )
