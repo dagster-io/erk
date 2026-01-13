@@ -107,23 +107,22 @@ Create a mental inventory of what's already documented. For each potential insig
 
 ### Step 5: Preprocess and Upload Session Content
 
-For each session path from Step 1, preprocess it to compressed XML format with token splitting:
+For each session path from Step 1, preprocess it to compressed XML format and write directly to the destination:
 
 ```bash
 mkdir -p .erk/scratch/sessions/<current-session-id>/learn
-erk exec preprocess-session <session-path> --max-tokens 15000
+
+# Preprocess each session directly to destination file using --stdout
+# For the planning session:
+erk exec preprocess-session <planning-session-path> --max-tokens 15000 --stdout \
+    > .erk/scratch/sessions/<current-session-id>/learn/planning-session.xml
+
+# For each implementation session:
+erk exec preprocess-session <impl-session-path> --max-tokens 15000 --stdout \
+    > .erk/scratch/sessions/<current-session-id>/learn/impl-session-<N>.xml
 ```
 
-This outputs one or more file paths to stdout (one per line). Copy the output files to the learn directory:
-
-```bash
-# Capture output paths and copy to learn directory
-for path in $(erk exec preprocess-session <session-path> --max-tokens 15000); do
-    cp "$path" .erk/scratch/sessions/<current-session-id>/learn/
-done
-```
-
-Note: `<current-session-id>` is the session running `/erk:learn`. Large sessions will be split into multiple ~15k token files (e.g., `session-{id}-part1.xml`, `session-{id}-part2.xml`).
+Note: `<current-session-id>` is the session running `/erk:learn`. When `--max-tokens` results in multiple chunks, `--stdout` outputs all chunks with `---CHUNK---` delimiter, which is fine for analysis.
 
 Also save the plan issue session content (from Step 3) if it was retrieved:
 
