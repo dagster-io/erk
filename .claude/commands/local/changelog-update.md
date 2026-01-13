@@ -144,12 +144,17 @@ Example format:
 - Vague commit messages like "update", "WIP", "wip"
 - Internal abstraction consolidation (merging/refactoring internal types like Terminal+UserFeedback→Console)
 - Changes to erk-dev commands and internal development tooling
+- **`erk exec` commands** - All changes to `src/erk/cli/commands/exec/scripts/` are internal tooling and should always be filtered
 
 **Likely internal (verify before including):**
 
 - "Refactor", "Relocate", "Consolidate" - check if user-visible
 - Skill/agent documentation updates - usually internal
 - "Harden", "Strengthen" - usually internal enforcement
+
+**Exception - capability workflows ARE external-facing:**
+
+- Changes to `.github/workflows/` that affect capabilities (e.g., `dignified-python-review.yml`) ARE user-facing and should be included, since capabilities are user-installable features
 
 #### Internal-Only Patterns (always filter)
 
