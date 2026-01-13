@@ -16,7 +16,7 @@ uv sync
 
 **How shell integration works:**
 
-When you run `erk init --shell`, it adds a shell function that uses `uvx erk-bootstrap` to:
+When you run `erk init --shell`, it adds a shell function that uses `uvx erk-sh-bootstrap` to:
 
 1. Find your project's `.venv/bin/erk`
 2. Delegate commands to your project-local erk

@@ -2,7 +2,7 @@
 members = ["packages/*"]
 
 [tool.uv.sources]
-erk-bootstrap = { workspace = true }
+erk-sh-bootstrap = { workspace = true }
 erk-dev = { workspace = true }
 erk-shared = { workspace = true }
 erk-statusline = { workspace = true }
@@ -108,7 +108,7 @@ python = ".venv"
 
 [tool.pytest.ini_options]
 addopts = "-q"
-testpaths = ["tests", "packages/erk-bootstrap/tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
+testpaths = ["tests", "packages/erk-sh-bootstrap/tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
