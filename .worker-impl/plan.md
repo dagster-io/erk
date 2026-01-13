@@ -3,6 +3,7 @@
 ## Problem
 
 When `ERK_QUEUE_GH_PAT` secret is missing or expired, the workflow fails with the cryptic error:
+
 ```
 Error: Input required and not supplied: token
 ```
@@ -20,14 +21,14 @@ Add a validation step before `actions/checkout@v4` that checks if the secret exi
 Insert new step at line 54 (before the existing checkout step):
 
 ```yaml
-      - name: Validate required secrets
-        env:
-          ERK_PAT: ${{ secrets.ERK_QUEUE_GH_PAT }}
-        run: |
-          if [ -z "$ERK_PAT" ]; then
-            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings → Secrets and variables → Actions"
-            exit 1
-          fi
+- name: Validate required secrets
+  env:
+    ERK_PAT: ${{ secrets.ERK_QUEUE_GH_PAT }}
+  run: |
+    if [ -z "$ERK_PAT" ]; then
+      echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings → Secrets and variables → Actions"
+      exit 1
+    fi
 ```
 
 ## Verification
