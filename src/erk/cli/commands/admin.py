@@ -168,9 +168,11 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
     \b
     1. Ensuring the current branch exists on remote
     2. Finding or creating a test issue
-    3. Creating a test branch and draft PR
-    4. Triggering the workflow with --ref set to your branch
-    5. Outputting the run URL
+    3. Creating a test branch from master
+    4. Adding an empty commit (required for PR creation)
+    5. Creating a draft PR
+    6. Triggering the workflow with --ref set to your branch
+    7. Outputting the run URL
 
     Use this when modifying .github/workflows/erk-impl.yml to test changes.
     """
@@ -211,11 +213,21 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
     ctx.git.push_to_remote(repo.root, "origin", f"master:{test_branch}")
     user_output(click.style("✓", fg="green") + f" Test branch '{test_branch}' created")
 
-    # Step 4: Create draft PR
+    # Step 4: Add an empty commit to the test branch
+    # GitHub rejects PRs with no commits between base and head
+    user_output(f"Adding initial commit to '{test_branch}'...")
+    ctx.git.fetch_branch(repo.root, "origin", test_branch)
+    ctx.git.checkout_branch(repo.root, test_branch)
+    ctx.git.commit(repo.root, "Test workflow run")
+    ctx.git.push_to_remote(repo.root, "origin", test_branch)
+    ctx.git.checkout_branch(repo.root, current_branch)
+    user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
+
+    # Step 5: Create draft PR
     pr_number = _create_draft_pr(repo_slug, test_branch)
     user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
-    # Step 5: Trigger workflow
+    # Step 6: Trigger workflow
     username = ctx.issues.get_current_username()
     if username is None:
         user_output(click.style("Error: ", fg="red") + "Not authenticated with GitHub")
@@ -234,7 +246,7 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
         base_branch="master",
     )
 
-    # Step 6: Get run URL
+    # Step 7: Get run URL
     ctx.time.sleep(2)  # Give GitHub a moment to create the run
     run_url = _get_latest_run_url(repo_slug)
 
