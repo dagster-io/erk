@@ -536,32 +536,32 @@ def run_init(
     # =========================================================================
     user_output("\nStep 2: Project configuration...")
 
+    # Ensure global config exists (independent of repo state)
+    if not ctx.erk_installation.config_exists():
+        config_path = ctx.erk_installation.config_path()
+        user_output(f"  Global config not found at {config_path}")
+        user_output("  Please provide the path for your .erk folder.")
+        user_output("  (This directory will contain worktrees for each repository)")
+        default_erk_root = Path.home() / ".erk"
+        erk_root = click.prompt("  .erk folder", type=Path, default=str(default_erk_root))
+        erk_root = erk_root.expanduser().resolve()
+        config = create_and_save_global_config(ctx, erk_root, shell_setup_complete=False)
+        # Update context with newly created config
+        ctx = dataclasses.replace(ctx, global_config=config)
+        user_output(f"  Created global config at {config_path}")
+        # Show graphite status on first init
+        has_graphite = detect_graphite(ctx.shell)
+        if has_graphite:
+            user_output("  Graphite (gt) detected - will use 'gt create' for new branches")
+        else:
+            user_output("  Graphite (gt) not detected - will use 'git' for branch creation")
+
     # Check if repo is already erk-ified
     already_erkified = is_repo_erk_ified(repo_root)
 
     if already_erkified and not force:
         user_output(click.style("✓", fg="green") + " Repository already configured for erk")
     else:
-        # Check for global config first
-        if not ctx.erk_installation.config_exists():
-            config_path = ctx.erk_installation.config_path()
-            user_output(f"  Global config not found at {config_path}")
-            user_output("  Please provide the path for your .erk folder.")
-            user_output("  (This directory will contain worktrees for each repository)")
-            default_erk_root = Path.home() / ".erk"
-            erk_root = click.prompt("  .erk folder", type=Path, default=str(default_erk_root))
-            erk_root = erk_root.expanduser().resolve()
-            config = create_and_save_global_config(ctx, erk_root, shell_setup_complete=False)
-            # Update context with newly created config
-            ctx = dataclasses.replace(ctx, global_config=config)
-            user_output(f"  Created global config at {config_path}")
-            # Show graphite status on first init
-            has_graphite = detect_graphite(ctx.shell)
-            if has_graphite:
-                user_output("  Graphite (gt) detected - will use 'gt create' for new branches")
-            else:
-                user_output("  Graphite (gt) not detected - will use 'git' for branch creation")
-
         # Now re-discover repo with correct erk_root
         if ctx.global_config is not None:
             repo_context = discover_repo_context(ctx, ctx.cwd)
