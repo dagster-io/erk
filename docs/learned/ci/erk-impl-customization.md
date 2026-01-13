@@ -14,7 +14,7 @@ The `erk-impl.yml` workflow supports per-repository customization via local comp
 
 ## Extension Point
 
-The workflow checks for a local composite action at `.github/actions/erk-ci-setup/action.yml` after checkout. If present, it runs before uv installation.
+The workflow checks for a local composite action at `.github/actions/erk-impl-setup/action.yml` after checkout. If present, it runs before uv installation.
 
 ### Outputs
 
@@ -26,7 +26,7 @@ The composite action can provide outputs that the workflow consumes:
 
 ## Example: Repository with System Dependencies
 
-Create `.github/actions/erk-ci-setup/action.yml`:
+Create `.github/actions/erk-impl-setup/action.yml`:
 
 ```yaml
 name: "Erk CI Setup"

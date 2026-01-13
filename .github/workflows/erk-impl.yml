@@ -66,14 +66,14 @@ jobs:
           fetch-depth: 0
 
       - name: Repo-specific CI setup
-        id: ci_setup_2
-        if: hashFiles('.github/actions/erk-ci-setup/action.yml') != ''
-        uses: ./.github/actions/erk-ci-setup
+        id: ci_setup
+        if: hashFiles('.github/actions/erk-impl-setup/action.yml') != ''
+        uses: ./.github/actions/erk-impl-setup
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
         with:
-          python-version: ${{ steps.ci_setup_2.outputs.python-version || '3.13' }}
+          python-version: ${{ steps.ci_setup.outputs.python-version || '3.13' }}
 
       - name: Install Claude Code
         uses: ./.github/actions/setup-claude-code
