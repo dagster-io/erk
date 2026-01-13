@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-01-13 12:29 PT
+
+### Added
+
+- Add composite action extension point for customizing erk-impl workflow (Python version, system dependencies, environment variables)
+
+### Changed
+
+- Add secret validation to erk-impl workflow with clear error messages when ERK_QUEUE_GH_PAT is missing
+
+### Fixed
+
+- Fix `erk init` skipping global config creation when repo already erkified
+- Fix erk-impl workflow silent failure on implementation errors
+- Fix spurious learn warning when landing remote PRs without local worktrees
+
+### Removed
+
+- Remove `erk upgrade` command (version management now handled via `uv tool`)
+
 ## [0.5.3] - 2026-01-13 06:04 PT
 
 ### Major Changes
