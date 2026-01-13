@@ -642,6 +642,88 @@ def discover_planning_agent_logs(session_log_path: Path, parent_session_id: str)
     return planning_agent_logs
 
 
+def estimate_tokens(content: str) -> int:
+    """Estimate token count from string content.
+
+    Uses the rough heuristic of 4 characters per token.
+
+    Args:
+        content: String content to estimate tokens for
+
+    Returns:
+        Estimated token count
+    """
+    return len(content) // 4
+
+
+def split_entries_to_chunks(
+    entries: list[dict],
+    *,
+    max_tokens: int,
+    source_label: str | None,
+    enable_pruning: bool,
+) -> list[str]:
+    """Split entries into XML chunks that fit within token budget.
+
+    Each chunk is a valid XML document with <session>...</session> wrapper.
+    Splitting happens at entry boundaries, never mid-entry.
+
+    Args:
+        entries: List of session entries to split
+        max_tokens: Maximum tokens per chunk
+        source_label: Optional label for agent logs (included in each chunk)
+        enable_pruning: Whether to prune tool results
+
+    Returns:
+        List of XML strings, each under the token budget
+    """
+    if not entries:
+        empty_xml = generate_compressed_xml(
+            [], source_label=source_label, enable_pruning=enable_pruning
+        )
+        return [empty_xml]
+
+    chunks: list[str] = []
+    current_entries: list[dict] = []
+    current_tokens = 0
+
+    # Estimate overhead for XML wrapper
+    wrapper_overhead = estimate_tokens("<session>\n</session>")
+    if source_label:
+        wrapper_overhead += estimate_tokens(f'  <meta source="{source_label}" />\n')
+
+    for entry in entries:
+        # Generate XML for this single entry to estimate size
+        single_xml = generate_compressed_xml(
+            [entry], source_label=None, enable_pruning=enable_pruning
+        )
+        # Extract just the entry content (without session wrapper)
+        entry_xml = single_xml.replace("<session>\n", "").replace("\n</session>", "")
+        entry_tokens = estimate_tokens(entry_xml)
+
+        # Check if adding this entry would exceed budget
+        if current_tokens + entry_tokens + wrapper_overhead > max_tokens and current_entries:
+            # Finalize current chunk
+            chunk_xml = generate_compressed_xml(
+                current_entries, source_label=source_label, enable_pruning=enable_pruning
+            )
+            chunks.append(chunk_xml)
+            current_entries = []
+            current_tokens = 0
+
+        current_entries.append(entry)
+        current_tokens += entry_tokens
+
+    # Finalize last chunk
+    if current_entries:
+        chunk_xml = generate_compressed_xml(
+            current_entries, source_label=source_label, enable_pruning=enable_pruning
+        )
+        chunks.append(chunk_xml)
+
+    return chunks
+
+
 @click.command(name="preprocess-session")
 @click.argument("log_path", type=click.Path(exists=True, path_type=Path))
 @click.option(
@@ -665,6 +747,12 @@ def discover_planning_agent_logs(session_log_path: Path, parent_session_id: str)
     is_flag=True,
     help="Output XML to stdout instead of temp file",
 )
+@click.option(
+    "--max-tokens",
+    type=int,
+    default=None,
+    help="Split output into multiple files of ~max-tokens each",
+)
 def preprocess_session(
     *,
     log_path: Path,
@@ -672,6 +760,7 @@ def preprocess_session(
     include_agents: bool,
     no_filtering: bool,
     stdout: bool,
+    max_tokens: int | None,
 ) -> None:
     """Preprocess session log JSONL to compressed XML format.
 
@@ -687,12 +776,14 @@ def preprocess_session(
     - Log discovery operation filtering
 
     Use --no-filtering to disable all optimizations and get raw output.
+    Use --max-tokens to split output into multiple files.
 
     Args:
         log_path: Path to the main session JSONL file
         session_id: Optional session ID to filter entries by
         include_agents: Whether to include agent logs
         no_filtering: Disable all filtering optimizations
+        max_tokens: Optional maximum tokens per output file (splits if exceeded)
     """
     # Track whether user explicitly provided session ID (for diagnostic output)
     user_provided_session_id = session_id is not None
@@ -737,17 +828,17 @@ def preprocess_session(
             err=True,
         )
 
-    # Generate main session XML
-    xml_sections = [generate_compressed_xml(entries, enable_pruning=enable_filtering)]
-
     # Track original bytes for compression metrics (main session + included agent logs)
     original_bytes = len(log_path.read_text(encoding="utf-8"))
+
+    # Collect all entries with their source labels for splitting
+    all_entries_with_labels: list[tuple[list[dict], str | None]] = [(entries, None)]
 
     # Discover and process agent logs if requested
     if include_agents:
         agent_logs = discover_agent_logs(log_path, session_id)
         for agent_log in agent_logs:
-            agent_entries, agent_total, agent_skipped = process_log_file(
+            agent_entries, _agent_total, _agent_skipped = process_log_file(
                 agent_log, session_id=session_id, enable_filtering=enable_filtering
             )
 
@@ -765,20 +856,35 @@ def preprocess_session(
             # Add agent log size to original bytes (only for included logs)
             original_bytes += len(agent_log.read_text(encoding="utf-8"))
 
-            # Generate XML with source label
+            # Collect with source label
             source_label = f"agent-{agent_log.stem.replace('agent-', '')}"
-            agent_xml = generate_compressed_xml(
-                agent_entries, source_label=source_label, enable_pruning=enable_filtering
-            )
-            xml_sections.append(agent_xml)
+            all_entries_with_labels.append((agent_entries, source_label))
 
-    # Combine all XML sections
-    xml_content = "\n\n".join(xml_sections)
+    # Generate XML sections (with or without splitting)
+    if max_tokens is not None:
+        # Split each session's entries into chunks
+        xml_sections: list[str] = []
+        for session_entries, source_label in all_entries_with_labels:
+            chunks = split_entries_to_chunks(
+                session_entries,
+                max_tokens=max_tokens,
+                source_label=source_label,
+                enable_pruning=enable_filtering,
+            )
+            xml_sections.extend(chunks)
+    else:
+        # Generate single XML for each session (no splitting)
+        xml_sections = []
+        for session_entries, source_label in all_entries_with_labels:
+            xml = generate_compressed_xml(
+                session_entries, source_label=source_label, enable_pruning=enable_filtering
+            )
+            xml_sections.append(xml)
 
     # Calculate compression metrics (only when filtering is enabled)
     if enable_filtering:
         original_size = original_bytes
-        compressed_size = len(xml_content)
+        compressed_size = sum(len(section) for section in xml_sections)
         if original_size > 0:
             reduction_pct = ((original_size - compressed_size) / original_size) * 100
             stats_msg = (
@@ -788,26 +894,51 @@ def preprocess_session(
             # Route stats to stderr when stdout contains XML
             click.echo(stats_msg, err=True)
 
+    filename_session_id = log_path.stem  # Extract session ID from filename
+
     if stdout:
         # Output XML directly to stdout
-        click.echo(xml_content)
+        if max_tokens is not None and len(xml_sections) > 1:
+            # Output multiple chunks with delimiter
+            click.echo("\n---CHUNK---\n".join(xml_sections))
+        else:
+            click.echo("\n\n".join(xml_sections))
     else:
-        # Write to temp file and print path (backward compatible)
-        # Use NamedTemporaryFile to avoid conflicts when multiple tests use same filename
-        filename_session_id = log_path.stem  # Extract session ID from filename
-        with tempfile.NamedTemporaryFile(
-            mode="w",
-            encoding="utf-8",
-            prefix=f"session-{filename_session_id}-",
-            suffix="-compressed.xml",
-            delete=False,
-            dir=tempfile.gettempdir(),
-        ) as f:
-            f.write(xml_content)
-            temp_file = Path(f.name)
+        # Write to file(s) and print path(s)
+        if max_tokens is not None and len(xml_sections) > 1:
+            # Write multiple numbered files
+            output_paths: list[Path] = []
+            for i, section in enumerate(xml_sections, start=1):
+                with tempfile.NamedTemporaryFile(
+                    mode="w",
+                    encoding="utf-8",
+                    prefix=f"session-{filename_session_id}-part{i}-",
+                    suffix=".xml",
+                    delete=False,
+                    dir=tempfile.gettempdir(),
+                ) as f:
+                    f.write(section)
+                    output_paths.append(Path(f.name))
 
-        # Print path to stdout for command capture
-        click.echo(str(temp_file))
+            # Print all paths to stdout
+            for path in output_paths:
+                click.echo(str(path))
+        else:
+            # Write single file (backward compatible)
+            xml_content = "\n\n".join(xml_sections)
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                prefix=f"session-{filename_session_id}-",
+                suffix="-compressed.xml",
+                delete=False,
+                dir=tempfile.gettempdir(),
+            ) as f:
+                f.write(xml_content)
+                temp_file = Path(f.name)
+
+            # Print path to stdout for command capture
+            click.echo(str(temp_file))
 
 
 if __name__ == "__main__":
