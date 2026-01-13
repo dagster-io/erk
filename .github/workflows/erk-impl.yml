@@ -183,17 +183,6 @@ jobs:
             echo "implementation_success=true" >> $GITHUB_OUTPUT
           else
             echo "implementation_success=false" >> $GITHUB_OUTPUT
-            # Extract error from last 100 lines - look for error patterns in JSON output
-            ERROR_MSG=$(tail -100 /tmp/claude-output.log | grep -oE '"text":"[^"]*[Ee]rror[^"]*"' | tail -1 | sed 's/"text":"//;s/"$//' || echo "")
-            if [ -z "$ERROR_MSG" ]; then
-              # Try to find any error-like message
-              ERROR_MSG=$(tail -50 /tmp/claude-output.log | grep -iE '(error|failed|exception)' | tail -1 || echo "Unknown error - check workflow logs")
-            fi
-            {
-              echo "error_message<<EOF"
-              echo "$ERROR_MSG"
-              echo "EOF"
-            } >> $GITHUB_OUTPUT
           fi
           if [ -d .worker-impl/ ]; then
             git rm -rf .worker-impl/
@@ -276,28 +265,3 @@ jobs:
           git commit --allow-empty -m "Trigger CI workflows"
           git push origin "$BRANCH_NAME"
           echo "CI workflows triggered via push event"
-
-      - name: Handle implementation failure
-        if: steps.implement.outputs.implementation_success == 'false'
-        env:
-          PR_NUMBER: ${{ inputs.pr_number }}
-          GH_TOKEN: ${{ github.token }}
-          ERROR_MSG: ${{ steps.implement.outputs.error_message }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: |
-          COMMENT_BODY="## ❌ Implementation Failed
-
-          The remote implementation encountered an error and could not complete.
-
-          **Error:** \`${ERROR_MSG}\`
-
-          **Run:** ${RUN_URL}
-
-          This PR remains in draft state. You can:
-          - Re-trigger the workflow to retry
-          - Implement locally using \`erk pr checkout ${PR_NUMBER} && erk pr sync --dangerous\`"
-          # Remove leading whitespace from each line (YAML indentation)
-          COMMENT_BODY=$(echo "$COMMENT_BODY" | sed 's/^[[:space:]]*//')
-          gh pr comment "$PR_NUMBER" --body "$COMMENT_BODY"
-          echo "Posted failure comment to PR #$PR_NUMBER"
-          exit 1
