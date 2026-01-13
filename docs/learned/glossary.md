@@ -648,6 +648,24 @@ for event in executor.execute_command_streaming(...):
 
 ## Gateway Terms
 
+### Dual-Source Pattern
+
+A pattern where both Graphite's local cache AND GitHub's API are queried to ensure completeness. Used when Graphite's cache may be incomplete (e.g., branches created outside `gt` commands).
+
+**Why needed**: Graphite only tracks branches created via `gt branch create`. Branches created through `git branch`, `gh pr create`, or where the PR base was changed in GitHub are invisible to Graphite's cache.
+
+**Example**: `land_pr.py` queries both `graphite.get_child_branches()` and `github.get_open_prs_with_base_branch()` to find ALL child branches before landing, preventing child PRs from being auto-closed.
+
+**Pattern**:
+
+```python
+graphite_children = ops.graphite.get_child_branches(...)
+github_children = [pr.head_branch for pr in ops.github.get_open_prs_with_base_branch(...)]
+all_children = list(set(graphite_children) | set(github_children))
+```
+
+**See**: [Gateway Hierarchy](architecture/gateway-hierarchy.md#dual-source-patterns-graphite--github)
+
 ### Gateway
 
 An ABC (Abstract Base Class) defining gateways for external systems.

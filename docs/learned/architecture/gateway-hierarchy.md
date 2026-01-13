@@ -5,6 +5,8 @@ read_when:
   - "deciding which gateway to use for an operation"
   - "understanding BranchManager abstraction"
   - "understanding GraphiteDisabled sentinel pattern"
+  - "querying both Graphite and GitHub for completeness"
+  - "understanding dual-source patterns"
 ---
 
 # Gateway Hierarchy
@@ -167,6 +169,36 @@ This pattern:
 - Encapsulates the "which mode" decision
 - Allows transparent switching based on Graphite availability
 - Enables easy testing with fakes
+
+## Dual-Source Patterns (Graphite + GitHub)
+
+Graphite's local cache (`.graphite_pr_info`, branch metadata) is fast but **not authoritative** for all data:
+
+| What Graphite Knows                         | What Graphite Doesn't Know                   |
+| ------------------------------------------- | -------------------------------------------- |
+| Branches created via `gt branch create`     | Branches created via `git branch`            |
+| PR info for tracked branches                | PRs created via `gh pr create` without `gt`  |
+| Stack relationships for gt-managed branches | Branches where PR base was changed in GitHub |
+
+**When completeness matters**, query both sources and union results:
+
+```python
+# Example: Finding all child branches before landing a PR
+graphite_children = ops.graphite.get_child_branches(...)
+github_children = [pr.head_branch for pr in ops.github.get_open_prs_with_base_branch(...)]
+all_children = list(set(graphite_children) | set(github_children))
+```
+
+**Current dual-source usages**:
+
+- `get_pr_for_branch()`: Graphite cache first, GitHub API fallback
+- `land_pr.py`: Union of Graphite children + GitHub PRs with matching base branch
+
+**When to use dual-source**:
+
+- When missing data causes destructive side effects (e.g., child PRs being closed)
+- When the operation must work with branches not created through `gt`
+- When accuracy is more important than speed
 
 ## Related Topics
 
