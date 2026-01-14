@@ -698,9 +698,7 @@ last_remote_impl_at: null
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    result = update_plan_header_metadata(
-        issue_body, {"last_local_impl_at": "2025-01-16T08:00:00Z"}
-    )
+    result = update_plan_header_metadata(issue_body, {"last_local_impl_at": "2025-01-16T08:00:00Z"})
 
     # Should preserve existing fields
     block = find_metadata_block(result, "plan-header")

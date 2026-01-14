@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from erk_shared.github.issues import FakeGitHubIssues
-from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanQuery, PlanState
