@@ -261,12 +261,9 @@ def add_worktree(
 
         ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
 
-        # Track existing branch with Graphite if enabled
+        # Pre-flight check: error if existing branch is not Graphite-tracked
         if use_graphite and ref:
-            # Only track if not already tracked (idempotent)
-            all_branches = ctx.graphite.get_all_branches(ctx.git, repo_root)
-            if branch not in all_branches:
-                ctx.graphite.track_branch(repo_root, branch, ref)
+            Ensure.branch_graphite_tracked_or_new(ctx, repo_root, branch, ref)
     elif branch:
         # Check if branch name exists on remote origin (only when creating new branches)
         if not skip_remote_check:

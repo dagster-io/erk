@@ -47,6 +47,7 @@ from erk.cli.commands.slot.common import (
 from erk.cli.commands.wt.create_cmd import run_post_worktree_setup
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
+from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
@@ -191,9 +192,16 @@ def _create_worktree_with_plan_content(
             impl_dir=wt_path / ".impl",
         )
 
+    # Respect global use_graphite config
+    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+
     # Check if branch already exists locally
     local_branches = ctx.git.list_local_branches(repo_root)
     use_existing_branch = branch in local_branches
+
+    # Pre-flight check: error if existing branch is not Graphite-tracked
+    if use_existing_branch and use_graphite:
+        Ensure.branch_graphite_tracked_or_new(ctx, repo_root, branch, base_branch)
 
     # Find available slot
     inactive_slot = find_inactive_slot(state, ctx.git, repo_root)
@@ -250,9 +258,6 @@ def _create_worktree_with_plan_content(
 
     # Load local config
     config = ctx.local_config if ctx.local_config is not None else LoadedConfig.test()
-
-    # Respect global use_graphite config
-    use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
 
     if inactive_slot is not None:
         # Fast path: checkout branch in existing worktree

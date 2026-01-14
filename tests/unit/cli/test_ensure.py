@@ -1,5 +1,6 @@
 """Tests for CLI Ensure utility class."""
 
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -158,3 +159,94 @@ class TestEnsureGraphiteAvailable:
         assert "Error:" in captured.err
         assert "requires Graphite to be installed" in captured.err
         assert "npm install -g @withgraphite/graphite-cli" in captured.err
+
+
+class TestEnsureBranchGraphiteTrackedOrNew:
+    """Tests for Ensure.branch_graphite_tracked_or_new method."""
+
+    def test_succeeds_when_graphite_disabled(self) -> None:
+        """No-op when Graphite is disabled."""
+        disabled = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
+        ctx = context_for_test(graphite=disabled)
+        repo_root = Path("/fake/repo")
+
+        # Should not raise - Graphite disabled means we skip the check
+        Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
+
+    def test_succeeds_when_branch_does_not_exist(self) -> None:
+        """No-op when branch doesn't exist locally (will be created+tracked)."""
+        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from erk_shared.git.fake import FakeGit
+
+        repo_root = Path("/fake/repo")
+        # Branch "feature" does not exist in local_branches
+        git = FakeGit(local_branches={repo_root: ["main"]})
+        graphite = FakeGraphite()
+        ctx = context_for_test(git=git, graphite=graphite)
+
+        # Should not raise - branch will be created and tracked
+        Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
+
+    def test_succeeds_when_branch_exists_and_tracked(self) -> None:
+        """No-op when branch exists and is already tracked by Graphite."""
+        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from erk_shared.gateway.graphite.types import BranchMetadata
+        from erk_shared.git.fake import FakeGit
+
+        repo_root = Path("/fake/repo")
+        # Branch "feature" exists locally AND is tracked by Graphite
+        git = FakeGit(local_branches={repo_root: ["main", "feature"]})
+        graphite = FakeGraphite(
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                )
+            }
+        )
+        ctx = context_for_test(git=git, graphite=graphite)
+
+        # Should not raise - branch is tracked
+        Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
+
+    def test_exits_when_branch_exists_but_not_tracked(self) -> None:
+        """SystemExit when branch exists locally but is not tracked by Graphite."""
+        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from erk_shared.git.fake import FakeGit
+
+        repo_root = Path("/fake/repo")
+        # Branch "feature" exists locally but NOT tracked by Graphite
+        git = FakeGit(local_branches={repo_root: ["main", "feature"]})
+        graphite = FakeGraphite(branches={})  # Empty - no tracked branches
+        ctx = context_for_test(git=git, graphite=graphite)
+
+        with pytest.raises(SystemExit) as exc_info:
+            Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
+
+        assert exc_info.value.code == 1
+
+    def test_error_message_includes_remediation_steps(
+        self, capsys: pytest.CaptureFixture[str]
+    ) -> None:
+        """Error message includes all three remediation options."""
+        from erk_shared.gateway.graphite.fake import FakeGraphite
+        from erk_shared.git.fake import FakeGit
+
+        repo_root = Path("/fake/repo")
+        git = FakeGit(local_branches={repo_root: ["main", "feature"]})
+        graphite = FakeGraphite(branches={})
+        ctx = context_for_test(git=git, graphite=graphite)
+
+        with pytest.raises(SystemExit):
+            Ensure.branch_graphite_tracked_or_new(ctx, repo_root, "feature", "main")
+
+        captured = capsys.readouterr()
+        assert "Error:" in captured.err
+        assert "Branch 'feature' exists but is not tracked by Graphite" in captured.err
+        # Check all three remediation options
+        assert "gt track --parent main" in captured.err
+        assert "git branch -D feature" in captured.err
+        assert "erk config set use_graphite false" in captured.err

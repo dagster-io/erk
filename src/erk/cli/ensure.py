@@ -626,3 +626,60 @@ class Ensure:
             user_output(click.style("Error: ", fg="red") + result.message)
             raise SystemExit(1)
         return result
+
+    @staticmethod
+    def branch_graphite_tracked_or_new(
+        ctx: ErkContext,
+        repo_root: Path,
+        branch: str,
+        base_branch: str,
+    ) -> None:
+        """Ensure existing branch is Graphite-tracked when Graphite is enabled.
+
+        Pre-flight check that prevents using an untracked branch with Graphite.
+        This catches the common mistake of manually creating a git branch and then
+        trying to use it with erk commands that expect Graphite tracking.
+
+        If Graphite is disabled, this is a no-op.
+        If branch doesn't exist locally, this is a no-op (will be created+tracked).
+        If branch exists and IS tracked, this is a no-op.
+        If branch exists and is NOT tracked, errors with remediation steps.
+
+        Args:
+            ctx: Application context with git and graphite integration
+            repo_root: Repository root path
+            branch: Branch name to check
+            base_branch: The expected parent/base branch (for remediation message)
+
+        Raises:
+            SystemExit: If branch exists but is not Graphite-tracked
+        """
+        # Skip check if Graphite is disabled
+        if isinstance(ctx.graphite, GraphiteDisabled):
+            return
+
+        # Check if branch exists locally
+        local_branches = ctx.git.list_local_branches(repo_root)
+        if branch not in local_branches:
+            # Branch doesn't exist - will be created and tracked, so no issue
+            return
+
+        # Branch exists - check if it's tracked by Graphite
+        all_branches = ctx.graphite.get_all_branches(ctx.git, repo_root)
+        if branch in all_branches:
+            # Branch is tracked - no issue
+            return
+
+        # Branch exists but is not tracked - error with remediation
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Branch '{branch}' exists but is not tracked by Graphite.\n\n"
+            + "This branch was created outside of erk/Graphite workflow. To proceed, either:\n\n"
+            + "  1. Track it manually:\n"
+            + f"     gt track --parent {base_branch}\n\n"
+            + "  2. Delete it and let erk create it:\n"
+            + f"     git branch -D {branch}\n\n"
+            + "  3. Disable Graphite for this repository:\n"
+            + "     erk config set use_graphite false"
+        )
+        raise SystemExit(1)
