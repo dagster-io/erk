@@ -3,10 +3,6 @@
 from pathlib import Path
 from unittest.mock import patch
 
-# Test-only constants matching the capabilities registry
-# These mirror what's registered in src/erk/core/capabilities/registry.py
-BUNDLED_SKILLS: frozenset[str] = frozenset({"learned-docs", "dignified-python"})
-BUNDLED_AGENTS: frozenset[str] = frozenset({"devrun"})
 from erk.artifacts.sync import (
     _get_erk_package_dir,
     _is_editable_install,
@@ -19,6 +15,11 @@ from erk.artifacts.sync import (
     sync_artifacts,
     sync_dignified_review,
 )
+
+# Test-only constants matching the capabilities registry
+# These mirror what's registered in src/erk/core/capabilities/registry.py
+BUNDLED_SKILLS: frozenset[str] = frozenset({"learned-docs", "dignified-python"})
+BUNDLED_AGENTS: frozenset[str] = frozenset({"devrun"})
 
 
 def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
