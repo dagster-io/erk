@@ -1,5 +1,6 @@
 """Tests for erk doctor command - production command integration tests."""
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.commands.doctor import doctor_cmd
@@ -372,3 +373,64 @@ def test_doctor_clear_hook_logs_with_no_logs() -> None:
         assert result.exit_code == 0
         # Should show zero count
         assert "Cleared 0 hook log(s)" in result.output
+
+
+def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that doctor shows remediation for warning checks (not just failures).
+
+    This test verifies that when a CheckResult has warning=True with a remediation,
+    the doctor command displays the remediation message. This was a bug where
+    remediations were only shown for failed checks (passed=False), not warnings.
+    """
+    from erk.core.health_checks import CheckResult
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        # Create minimal settings.json so Claude settings check passes
+        settings_path = env.cwd / ".claude" / "settings.json"
+        settings_path.parent.mkdir(parents=True)
+        settings_path.write_text('{"permissions": {"allow": ["Bash(erk:*)"]}}', encoding="utf-8")
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        # Mock run_all_checks to return a warning with remediation
+        def mock_run_all_checks(_ctx):  # type: ignore[no-untyped-def]
+            return [
+                # A passing check (no warning)
+                CheckResult(
+                    name="test-pass",
+                    passed=True,
+                    message="Test passed",
+                ),
+                # A warning check with remediation - this is what we're testing
+                CheckResult(
+                    name="test-warning",
+                    passed=True,  # Still passes but has warning
+                    warning=True,
+                    message="Test has warning",
+                    remediation="Run 'test-command' to fix the warning",
+                ),
+            ]
+
+        from erk.cli.commands import doctor as doctor_module
+
+        monkeypatch.setattr(
+            doctor_module,
+            "run_all_checks",
+            mock_run_all_checks,
+        )
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        # Command should succeed (no failures)
+        assert result.exit_code == 0
+
+        # CRITICAL: Should show remediation section for the warning
+        assert "Remediation" in result.output
+        assert "test-command" in result.output

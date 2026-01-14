@@ -13,6 +13,8 @@ from erk.artifacts.state import save_artifact_state
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
+    add_erk_hooks,
+    get_repo_claude_settings_path,
     has_exit_plan_hook,
     has_user_prompt_hook,
 )
@@ -475,6 +477,43 @@ def sync_dignified_review(project_dir: Path) -> SyncResult:
     )
 
 
+def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
+    """Update hooks in settings.json to current erk hook commands.
+
+    Returns list of SyncedArtifact entries for state tracking.
+    """
+    settings_path = get_repo_claude_settings_path(project_dir)
+    if not settings_path.exists():
+        return []
+
+    settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    updated_settings = add_erk_hooks(settings)
+
+    # Only write if hooks actually changed
+    if updated_settings != settings:
+        settings_path.write_text(json.dumps(updated_settings, indent=2) + "\n", encoding="utf-8")
+
+    # Return artifact entries for both hooks (always tracked regardless of changes)
+    synced: list[SyncedArtifact] = []
+    if has_user_prompt_hook(updated_settings):
+        synced.append(
+            SyncedArtifact(
+                key="hooks/user-prompt-hook",
+                hash=_compute_hook_hash(ERK_USER_PROMPT_HOOK_COMMAND),
+                file_count=1,
+            )
+        )
+    if has_exit_plan_hook(updated_settings):
+        synced.append(
+            SyncedArtifact(
+                key="hooks/exit-plan-mode-hook",
+                hash=_compute_hook_hash(ERK_EXIT_PLAN_HOOK_COMMAND),
+                file_count=1,
+            )
+        )
+    return synced
+
+
 def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
@@ -549,6 +588,10 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
         count, synced = _sync_actions(bundled_github_dir, target_actions_dir)
         total_copied += count
         all_synced.extend(synced)
+
+    # Sync hooks in settings.json - update to current erk hook commands
+    synced_hooks = _sync_hooks(project_dir)
+    all_synced.extend(synced_hooks)
 
     # Sync installed capabilities - for each project-scoped capability that is
     # already installed, call install() to ensure it's up-to-date. Since install()
