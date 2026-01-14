@@ -4,6 +4,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -115,7 +116,19 @@ def test_implement_from_issue_skips_tracking_existing_branch_with_graphite() -> 
             current_branches={env.cwd: "main"},
         )
         store, _ = create_plan_store_with_plans({"500": plan_issue})
-        fake_graphite = FakeGraphite()
+        # Configure FakeGraphite with existing branch as tracked
+        # This simulates the scenario where the branch was tracked in a previous impl
+        fake_graphite = FakeGraphite(
+            branches={
+                existing_branch: BranchMetadata(
+                    name=existing_branch,
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                )
+            }
+        )
 
         ctx = build_workspace_test_context(
             env,
