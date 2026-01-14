@@ -170,6 +170,35 @@ def load_config(repo_root: Path) -> LoadedConfig:
     )
 
 
+def load_local_config(repo_root: Path) -> LoadedConfig:
+    """Load local.toml for per-user configuration.
+
+    Location: <repo-root>/.erk/local.toml
+
+    This file is gitignored and contains per-user settings that
+    override repo-level config values.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        LoadedConfig with parsed values or defaults if no config found
+    """
+    config_path = repo_root / ".erk" / "local.toml"
+    if config_path.exists():
+        return _parse_config_file(config_path)
+
+    return LoadedConfig(
+        env={},
+        post_create_commands=[],
+        post_create_shell=None,
+        plans_repo=None,
+        pool_size=None,
+        pool_checkout_commands=[],
+        pool_checkout_shell=None,
+    )
+
+
 def load_project_config(project_root: Path) -> ProjectConfig:
     """Load project.toml from the project's .erk directory.
 
@@ -239,4 +268,54 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         pool_size=repo_config.pool_size,  # Pool is repo-level only, no project override
         pool_checkout_commands=repo_config.pool_checkout_commands,
         pool_checkout_shell=repo_config.pool_checkout_shell,
+    )
+
+
+def merge_configs_with_local(
+    *,
+    base_config: LoadedConfig,
+    local_config: LoadedConfig,
+) -> LoadedConfig:
+    """Merge base config with per-user local config.
+
+    Merge rules:
+    - env: Local values override base values (dict merge)
+    - post_create_commands: Base commands run first, then local (list concat)
+    - post_create_shell: Local shell overrides base if set
+    - plans_repo: Local overrides base if set
+    - pool_size: Local overrides base if set
+    - pool_checkout_commands: Base first, then local (list concat)
+    - pool_checkout_shell: Local overrides base if set
+
+    Args:
+        base_config: Repository-level configuration
+        local_config: Per-user local configuration
+
+    Returns:
+        Merged LoadedConfig
+    """
+    return LoadedConfig(
+        env={**base_config.env, **local_config.env},
+        post_create_commands=base_config.post_create_commands + local_config.post_create_commands,
+        post_create_shell=(
+            local_config.post_create_shell
+            if local_config.post_create_shell is not None
+            else base_config.post_create_shell
+        ),
+        plans_repo=(
+            local_config.plans_repo
+            if local_config.plans_repo is not None
+            else base_config.plans_repo
+        ),
+        pool_size=(
+            local_config.pool_size if local_config.pool_size is not None else base_config.pool_size
+        ),
+        pool_checkout_commands=(
+            base_config.pool_checkout_commands + local_config.pool_checkout_commands
+        ),
+        pool_checkout_shell=(
+            local_config.pool_checkout_shell
+            if local_config.pool_checkout_shell is not None
+            else base_config.pool_checkout_shell
+        ),
     )
