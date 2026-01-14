@@ -338,73 +338,23 @@ def config_set(ctx: ErkContext, local: bool, key: str, value: str) -> None:
         user_output(f"Set trunk-branch={value}")
         return
 
-    # Handle pool.max_slots
-    if parts[0] == "pool" and len(parts) == 2 and parts[1] == "max_slots":
-        repo = discover_repo_context(ctx, Path.cwd())
-
-        # Validate value is a positive integer
-        if not value.isdigit() or int(value) < 1:
-            user_output(f"Invalid value: {value}. pool.max_slots must be a positive integer.")
+    # Handle repo config keys with match
+    transformed: object
+    match parts:
+        case ["env", _] | ["post_create", "shell"] | ["pool", "checkout", "shell"] | ["plans", "repo"]:
+            transformed = value
+        case ["post_create", "commands"] | ["pool", "checkout", "commands"]:
+            transformed = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
+        case ["pool", "max_slots"]:
+            if not value.isdigit() or int(value) < 1:
+                user_output(f"Invalid value: {value}. pool.max_slots must be a positive integer.")
+                raise SystemExit(1)
+            transformed = int(value)
+        case _:
+            user_output(f"Invalid key: {key}")
             raise SystemExit(1)
 
-        pool_size = int(value)
-        _write_to_repo_config(repo_root=repo.root, key=key, value=pool_size, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set pool.max_slots={pool_size}{local_suffix}")
-        return
-
-    # Handle env.<name> keys
-    if parts[0] == "env" and len(parts) == 2:
-        repo = discover_repo_context(ctx, Path.cwd())
-        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set {key}={value}{local_suffix}")
-        return
-
-    # Handle post_create.shell
-    if parts[0] == "post_create" and len(parts) == 2 and parts[1] == "shell":
-        repo = discover_repo_context(ctx, Path.cwd())
-        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set {key}={value}{local_suffix}")
-        return
-
-    # Handle post_create.commands (comma-separated list)
-    if parts[0] == "post_create" and len(parts) == 2 and parts[1] == "commands":
-        repo = discover_repo_context(ctx, Path.cwd())
-        # Parse comma-separated commands into list
-        commands = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
-        _write_to_repo_config(repo_root=repo.root, key=key, value=commands, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set {key}={commands}{local_suffix}")
-        return
-
-    # Handle pool.checkout.shell
-    if parts[0] == "pool" and len(parts) == 3 and parts[1] == "checkout" and parts[2] == "shell":
-        repo = discover_repo_context(ctx, Path.cwd())
-        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set {key}={value}{local_suffix}")
-        return
-
-    # Handle pool.checkout.commands (comma-separated list)
-    if parts[0] == "pool" and len(parts) == 3 and parts[1] == "checkout" and parts[2] == "commands":
-        repo = discover_repo_context(ctx, Path.cwd())
-        # Parse comma-separated commands into list
-        commands = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
-        _write_to_repo_config(repo_root=repo.root, key=key, value=commands, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set {key}={commands}{local_suffix}")
-        return
-
-    # Handle plans.repo
-    if parts[0] == "plans" and len(parts) == 2 and parts[1] == "repo":
-        repo = discover_repo_context(ctx, Path.cwd())
-        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
-        local_suffix = " (local)" if local else ""
-        user_output(f"Set {key}={value}{local_suffix}")
-        return
-
-    # Other repo config keys not implemented yet
-    user_output(f"Invalid key: {key}")
-    raise SystemExit(1)
+    repo = discover_repo_context(ctx, Path.cwd())
+    _write_to_repo_config(repo_root=repo.root, key=key, value=transformed, local=local)
+    local_suffix = " (local)" if local else ""
+    user_output(f"Set {key}={transformed}{local_suffix}")
