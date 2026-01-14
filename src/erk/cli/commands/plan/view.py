@@ -78,16 +78,6 @@ def _format_header_section(header_info: dict[str, object]) -> list[str]:
     if "source_repo" in header_info:
         lines.append(f"Source repo: {header_info['source_repo']}")
 
-    # Dispatch info
-    has_dispatch = "last_dispatched_at" in header_info or "last_dispatched_run_id" in header_info
-    if has_dispatch:
-        lines.append("")
-        lines.append(click.style("--- Dispatch ---", bold=True))
-        if "last_dispatched_at" in header_info:
-            lines.append(f"Last dispatched: {_format_value(header_info['last_dispatched_at'])}")
-        if "last_dispatched_run_id" in header_info:
-            lines.append(f"Run ID: {header_info['last_dispatched_run_id']}")
-
     # Local implementation info
     has_local_impl = any(
         k in header_info
@@ -112,19 +102,29 @@ def _format_header_section(header_info: dict[str, object]) -> list[str]:
         lines.append(click.style("--- Remote Implementation ---", bold=True))
         lines.append(f"Last impl: {_format_value(header_info['last_remote_impl_at'])}")
 
-    # Learn info
-    has_learn = any(
-        k in header_info for k in ["created_from_session", "last_learn_at", "last_learn_session"]
-    )
-    if has_learn:
+    # Remote dispatch info (GitHub Actions workflow triggers)
+    has_dispatch = "last_dispatched_at" in header_info or "last_dispatched_run_id" in header_info
+    if has_dispatch:
         lines.append("")
-        lines.append(click.style("--- Learn ---", bold=True))
-        if "created_from_session" in header_info:
-            lines.append(f"Created from session: {header_info['created_from_session']}")
+        lines.append(click.style("--- Remote Dispatch ---", bold=True))
+        if "last_dispatched_at" in header_info:
+            lines.append(f"Last dispatched: {_format_value(header_info['last_dispatched_at'])}")
+        if "last_dispatched_run_id" in header_info:
+            lines.append(f"Run ID: {header_info['last_dispatched_run_id']}")
+
+    # Learn info - always show this section
+    lines.append("")
+    lines.append(click.style("--- Learn ---", bold=True))
+    if "created_from_session" in header_info:
+        lines.append(f"Plan created from session: {header_info['created_from_session']}")
+    has_learn_evaluation = "last_learn_at" in header_info or "last_learn_session" in header_info
+    if has_learn_evaluation:
         if "last_learn_at" in header_info:
             lines.append(f"Last learn: {_format_value(header_info['last_learn_at'])}")
         if "last_learn_session" in header_info:
             lines.append(f"Learn session: {header_info['last_learn_session']}")
+    else:
+        lines.append("No learn evaluation")
 
     return lines
 

@@ -347,3 +347,102 @@ def test_view_plan_without_header_info() -> None:
         assert "Plan without Header" in result.output
         # Should NOT show header info section when no metadata
         assert "--- Header Info ---" not in result.output
+
+
+def test_view_plan_learn_section_no_evaluation() -> None:
+    """Test that Learn section shows 'No learn evaluation' when learn hasn't been run."""
+    # Arrange - plan with header but no learn data
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+created_by: schrockn
+schema_version: 2
+created_from_session: abc123-session-id
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with no learn",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        # Act
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "--- Learn ---" in result.output
+        assert "Plan created from session: abc123-session-id" in result.output
+        assert "No learn evaluation" in result.output
+
+
+def test_view_plan_learn_section_with_evaluation() -> None:
+    """Test that Learn section shows learn data when available."""
+    # Arrange - plan with header and learn data
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+created_by: schrockn
+schema_version: 2
+created_from_session: abc123-session-id
+last_learn_at: 2024-01-20T15:00:00Z
+last_learn_session: def456-learn-session
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with learn data",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        # Act
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "--- Learn ---" in result.output
+        assert "Plan created from session: abc123-session-id" in result.output
+        assert "Last learn: 2024-01-20T15:00:00Z" in result.output
+        assert "Learn session: def456-learn-session" in result.output
+        # Should NOT show "No learn evaluation" when learn data is present
+        assert "No learn evaluation" not in result.output
