@@ -11,6 +11,7 @@ How-to guides are **goal-oriented**. They provide practical steps to solve real-
 - [Use the Local Workflow](local-workflow.md) - Plan, implement, and ship code locally
 - [Run Remote Execution](remote-execution.md) - Run implementations in GitHub Actions
 - [Work Without Plans](planless-workflow.md) - Quick changes without formal plans
+- [Navigate Branches and Worktrees](navigate-branches-worktrees.md) - Switch between branches and stacks
 
 ### PR Operations
 
