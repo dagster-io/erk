@@ -485,6 +485,7 @@ def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
 
     Returns list of SyncedArtifact entries for state tracking.
     """
+    # Inline import: breaks circular dependency with capabilities module
     from erk.core.capabilities.hooks import HooksCapability
 
     settings_path = get_repo_claude_settings_path(project_dir)
