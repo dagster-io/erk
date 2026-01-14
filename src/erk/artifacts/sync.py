@@ -478,12 +478,22 @@ def sync_dignified_review(project_dir: Path) -> SyncResult:
 
 
 def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
-    """Update hooks in settings.json to current erk hook commands.
+    """Update EXISTING hooks in settings.json to current erk hook commands.
+
+    Only updates hooks that are already installed (identified by ERK_HOOK_ID marker).
+    Fresh hook installation is handled by HooksCapability during erk init.
 
     Returns list of SyncedArtifact entries for state tracking.
     """
+    from erk.core.capabilities.hooks import HooksCapability
+
     settings_path = get_repo_claude_settings_path(project_dir)
     if not settings_path.exists():
+        return []
+
+    # Only update if hooks already exist (by marker, not by current command version)
+    hooks_cap = HooksCapability()
+    if not hooks_cap.has_any_erk_hooks(project_dir):
         return []
 
     settings = json.loads(settings_path.read_text(encoding="utf-8"))

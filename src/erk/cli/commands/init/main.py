@@ -40,7 +40,6 @@ from erk.core.repo_discovery import (
 from erk.core.shell import Shell
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.real import InteractiveConsole
-from erk_shared.git.real import RealGit
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
@@ -550,7 +549,7 @@ def run_init(
     # Check if we're in a git repo (before any other setup)
     # Use a temporary erk_root for discovery - will be replaced after global config setup
     temp_erk_root = Path.home() / ".erk"
-    repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, temp_erk_root, RealGit())
+    repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, temp_erk_root, ctx.git)
 
     if isinstance(repo_or_sentinel, NoRepoSentinel):
         user_output(click.style("Error: ", fg="red") + "Not in a git repository.")
