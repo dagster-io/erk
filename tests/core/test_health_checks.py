@@ -833,6 +833,190 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     assert "erk artifact sync" in result.remediation
 
 
+def test_check_managed_artifacts_changed_upstream_remediation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test changed-upstream status produces correct remediation and verbose explanation."""
+    from erk.artifacts.models import ArtifactFileState
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Create bundled dir with command
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Updated Command", encoding="utf-8")
+
+    # Create project dir with command (same content but will appear changed-upstream
+    # because saved state has older version)
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Updated Command", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    # Create .erk/state.toml with old version
+    erk_dir = project_dir / ".erk"
+    erk_dir.mkdir()
+    # Simulate state file with older version (will make artifact appear as changed-upstream)
+    state_content = """
+[artifacts]
+version = "0.0.1"
+
+[artifacts.files."commands/erk/plan-save.md"]
+version = "0.0.1"
+hash = "abc123"
+"""
+    (erk_dir / "state.toml").write_text(state_content, encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    # Should pass with warning since changed-upstream is a warning (not failure like not-installed)
+    assert result.passed is True
+    assert result.warning is True
+    # Check remediation message for changed-upstream
+    assert result.remediation is not None
+    assert "erk artifact sync" in result.remediation
+    assert "update to latest" in result.remediation
+    # Check verbose_details contains status explanation
+    assert result.verbose_details is not None
+    assert "(changed-upstream): erk has newer versions" in result.verbose_details
+
+
+def test_check_managed_artifacts_locally_modified_remediation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test locally-modified status produces correct remediation and verbose explanation."""
+    from erk.artifacts.discovery import _compute_file_hash, _compute_hook_hash
+    from erk.core.claude_settings import (
+        ERK_EXIT_PLAN_HOOK_COMMAND,
+        ERK_USER_PROMPT_HOOK_COMMAND,
+        add_erk_hooks,
+    )
+    from erk.core.release_notes import get_current_version
+
+    # Create bundled dir with command
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Original Command", encoding="utf-8")
+    original_hash = _compute_file_hash(bundled_commands / "plan-save.md")
+    current_version = get_current_version()
+
+    # Create project dir with MODIFIED command (different content)
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# User modified command", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    # Calculate hook hashes for state.toml
+    user_prompt_hash = _compute_hook_hash(ERK_USER_PROMPT_HOOK_COMMAND)
+    exit_plan_hash = _compute_hook_hash(ERK_EXIT_PLAN_HOOK_COMMAND)
+
+    # Create .erk/state.toml with CURRENT version but ORIGINAL hash for command
+    # Also include hooks with current hashes so they're up-to-date
+    erk_dir = project_dir / ".erk"
+    erk_dir.mkdir()
+    state_content = f"""
+[artifacts]
+version = "{current_version}"
+
+[artifacts.files."commands/erk/plan-save.md"]
+version = "{current_version}"
+hash = "{original_hash}"
+
+[artifacts.files."hooks/user-prompt-hook"]
+version = "{current_version}"
+hash = "{user_prompt_hash}"
+
+[artifacts.files."hooks/exit-plan-mode-hook"]
+version = "{current_version}"
+hash = "{exit_plan_hash}"
+"""
+    (erk_dir / "state.toml").write_text(state_content, encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    # Should pass with warning since locally-modified is a warning
+    assert result.passed is True
+    assert result.warning is True
+    # Check remediation message for locally-modified
+    assert result.remediation is not None
+    assert "erk artifact sync --force" in result.remediation
+    # Check verbose_details contains status explanation
+    assert result.verbose_details is not None
+    assert "(locally-modified): these artifacts were edited locally" in result.verbose_details
+
+
+def test_check_managed_artifacts_status_explanations_in_verbose_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test status explanations appear in verbose_details but not details."""
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Create bundled dir with command
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    (bundled_commands / "plan-implement.md").write_text("# Command 2", encoding="utf-8")
+
+    # Create project dir with one command missing (not-installed)
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    # plan-implement.md is NOT installed
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    assert result.passed is False  # not-installed causes failure
+    # Status explanation should appear in verbose_details
+    assert result.verbose_details is not None
+    assert "(not-installed): these artifacts are missing" in result.verbose_details
+    # Status explanation should NOT appear in regular details
+    assert result.details is not None
+    assert "(not-installed): these artifacts are missing" not in result.details
+    # Blank line separator should be in verbose_details (before explanations)
+    # The code appends "" to list then joins with \n, producing \n\n between
+    # artifact list and explanations. Check for empty line in the output.
+    lines = result.verbose_details.split("\n")
+    # Find the blank line before the explanation section
+    blank_line_indices = [i for i, line in enumerate(lines) if line == ""]
+    assert len(blank_line_indices) > 0, "Expected blank line separator before status explanations"
+
+
 # --- Post-Plan-Implement CI Hook Tests ---
 
 
