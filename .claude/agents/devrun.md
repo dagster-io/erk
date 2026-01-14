@@ -1,6 +1,6 @@
 ---
 name: devrun
-description: Execute development CLI tools (pytest, ty, ruff, prettier, make, gt) and parse results. READ-ONLY - never modifies files.
+description: Execute development CLI tools (pytest, ty, ruff, prettier, make) and parse results. READ-ONLY - never modifies files.
 model: haiku
 color: green
 tools: Read, Bash, Grep, Glob, Task
@@ -42,7 +42,6 @@ Then run the command and report results WITHOUT modifications.
 
 - `uv run ...` (already normalized)
 - `make ...` (Makefile handles venv activation)
-- `gt ...` (not a Python tool)
 - `prettier ...` (Node.js tool)
 
 This ensures the correct worktree's `.venv` is used regardless of stale `$VIRTUAL_ENV` environment variable.
@@ -181,15 +180,6 @@ make: *** [target] Error N
 ```
 
 ---
-
-### gt (Graphite)
-
-**Detect:** `gt <command>`
-
-- `gt parent` -> single line with parent branch name
-- `gt children` -> space-separated list of children
-- `gt submit` -> extract PR URL from output
-- `gt log short` -> return raw output for display (don't parse relationships)
 
 ## Exit Codes
 
