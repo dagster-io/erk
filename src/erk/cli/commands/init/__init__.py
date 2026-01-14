@@ -4,6 +4,7 @@ import click
 
 from erk.cli.commands.init.capability import capability_group
 from erk.cli.commands.init.main import run_init
+from erk.cli.commands.init.shell import shell_cmd
 from erk.cli.help_formatter import ErkCommandGroup
 from erk.core.context import ErkContext
 
@@ -13,7 +14,7 @@ from erk.core.context import ErkContext
 @click.option(
     "--shell",
     is_flag=True,
-    help="Show shell integration setup instructions (completion + auto-activation wrapper).",
+    help="[Deprecated] Use 'erk init shell --install' instead.",
 )
 @click.option(
     "--statusline",
@@ -55,3 +56,4 @@ def init_group(
 
 # Register subcommands
 init_group.add_command(capability_group)
+init_group.add_command(shell_cmd)

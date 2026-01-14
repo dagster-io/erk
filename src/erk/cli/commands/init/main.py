@@ -505,6 +505,13 @@ def run_init(
     """
     # Handle --shell flag: only do shell setup (doesn't require repo)
     if shell:
+        # Show deprecation warning
+        user_output(
+            click.style("Note: ", fg="yellow")
+            + "'erk init --shell' is deprecated. Use 'erk init shell --install' instead."
+        )
+        user_output("")
+
         if ctx.global_config is None:
             config_path = ctx.erk_installation.config_path()
             user_output(f"Global config not found at {config_path}")
