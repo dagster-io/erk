@@ -483,6 +483,9 @@ def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
     Only updates hooks that are already installed (identified by ERK_HOOK_ID marker).
     Fresh hook installation is handled by HooksCapability during erk init.
 
+    Only updates hooks if they already exist - initial installation is the
+    responsibility of HooksCapability via the required capabilities system.
+
     Returns list of SyncedArtifact entries for state tracking.
     """
     # Inline import: breaks circular dependency with capabilities module
@@ -498,6 +501,11 @@ def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
         return []
 
     settings = json.loads(settings_path.read_text(encoding="utf-8"))
+
+    # Only update if hooks already exist - initial install is via HooksCapability
+    if not has_user_prompt_hook(settings) and not has_exit_plan_hook(settings):
+        return []
+
     updated_settings = add_erk_hooks(settings)
 
     # Only write if hooks actually changed
