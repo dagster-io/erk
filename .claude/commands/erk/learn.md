@@ -75,6 +75,7 @@ gh pr diff <pr-number>
 - **New patterns**: Any new architectural patterns established?
 - **Config changes**: New settings, capabilities, or options?
 - **External integrations**: New API calls, dependencies, or tools?
+- **Renamed items**: Any renamed commands, functions, classes, or files?
 
 **Save this inventory** - you will reference it in Step 8 (Teaching Gaps) to ensure everything new gets documented.
 
@@ -234,6 +235,28 @@ Teaching gaps exist whenever you BUILD something new. A smooth implementation do
 | New architectural pattern | Create architecture doc or add tripwire                    |
 | External API integration  | Document quirks, rate limits, auth patterns discovered     |
 | New test pattern          | Document in testing docs if others will need it            |
+
+**For renamed items (commands, functions, classes, files):**
+
+Renames are a common source of documentation drift. For EACH renamed item:
+
+1. **Search for old name references:**
+
+   ```bash
+   grep -r "<old-name>" docs/ .claude/ src/
+   ```
+
+2. **Check common locations:**
+   - `docs/learned/` - May reference old name in examples
+   - `.claude/commands/` and `.claude/skills/` - May have old usage examples
+   - Source code strings - Output messages, help text, error messages
+
+3. **Add each stale reference as a documentation item** - These are bugs, not optional updates
+
+**Example:** Renaming `plan get` → `plan view` requires:
+
+- Updating `docs/learned/cli/command-organization.md` (has examples using old name)
+- Updating any CLI output that references the old command name
 
 **For each item, ask:** "If another agent needs to use or extend this, what would they need to know?"
 

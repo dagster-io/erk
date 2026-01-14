@@ -29,7 +29,7 @@ def test_create_from_file(tmp_path) -> None:
         assert result.exit_code == 0, f"Command failed: {result.output}"
         assert "Created plan #1" in result.output
         assert "https://github.com/test-owner/test-repo/issues/1" in result.output
-        assert "View:       erk get 1" in result.output
+        assert "View:       erk plan view 1" in result.output
         assert "Implement:  erk implement 1" in result.output
         assert "Submit:     erk plan submit 1" in result.output
 

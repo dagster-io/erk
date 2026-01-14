@@ -113,6 +113,6 @@ def create_plan(
     user_output(f"Issue: {result.issue_url}")
     user_output("")
     user_output("Next steps:")
-    user_output(f"  View:       erk get {result.issue_number}")
+    user_output(f"  View:       erk plan view {result.issue_number}")
     user_output(f"  Implement:  erk implement {result.issue_number}")
     user_output(f"  Submit:     erk plan submit {result.issue_number}")

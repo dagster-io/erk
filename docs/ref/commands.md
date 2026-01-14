@@ -10,7 +10,7 @@ All erk CLI commands and their options.
 
 ## Plan Commands
 
-<!-- TODO: erk create, erk get, erk implement -->
+<!-- TODO: erk create, erk view, erk implement -->
 
 ## Worktree Commands
 

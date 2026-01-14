@@ -20,7 +20,7 @@ Plans represent implementation work to be done. Since users interact with plans 
 
 ```bash
 erk create        # Create a new plan issue
-erk get           # View a plan
+erk view          # View a plan
 erk dash          # Display plan dashboard
 erk close         # Close a plan
 erk implement     # Implement a plan
@@ -32,7 +32,7 @@ erk log           # View plan execution logs
 
 - High-frequency operations: Users create, view, and implement plans constantly
 - Natural mental model: "I want to work on a plan" → `erk implement 42`
-- Minimal friction: 2 words instead of 3 (`erk plan get` → `erk get`)
+- Minimal friction: 2 words instead of 3 (`erk plan view` → `erk view`)
 
 ## Command Categories
 
@@ -43,7 +43,7 @@ Plan commands appear at the top level without a noun prefix:
 | Command     | Description                     | Frequency |
 | ----------- | ------------------------------- | --------- |
 | `dash`      | Display plan dashboard          | Very High |
-| `get`       | View plan details               | High      |
+| `view`      | View plan details               | High      |
 | `create`    | Create new plan issue           | High      |
 | `close`     | Close a plan                    | Medium    |
 | `implement` | Start implementing a plan       | Very High |
@@ -192,12 +192,12 @@ When adding a new command, use this flowchart to determine placement:
 # GOOD: Direct, minimal keystrokes
 erk create --file plan.md
 erk implement 42
-erk get 42
+erk view 42
 
 # BAD: Unnecessary grouping adds friction
 erk plan create --file plan.md
 erk plan implement 42
-erk plan get 42
+erk plan view 42
 ```
 
 **Why?** Plans are the primary workflow object. Extra nesting adds cognitive load.
@@ -242,12 +242,12 @@ erk nav down
 # BAD: Adds friction to common operations
 erk plan create
 erk plan implement
-erk plan get
+erk plan view
 
 # GOOD: Direct access for frequent tasks
 erk create
 erk implement
-erk get
+erk view
 ```
 
 ### ❌ Top-Level Infrastructure Commands
@@ -287,7 +287,7 @@ erk create --file implementation-plan.md
 
 # View plans
 erk dash                  # Display plan dashboard
-erk get 42                # View specific plan
+erk view 42               # View specific plan
 
 # Work on a plan
 erk implement 42          # Create worktree and start work
