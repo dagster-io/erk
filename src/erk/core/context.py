@@ -514,7 +514,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         # Load config from primary location (.erk/config.toml)
         # Legacy locations are detected by 'erk doctor' only
         repo_config = load_config(repo.root)
-        # Load per-user local config (.erk/local.toml) and merge
+        # Load per-user local config (.erk/config.local.toml) and merge
         user_local_config = load_local_config(repo.root)
         local_config = merge_configs_with_local(
             base_config=repo_config,

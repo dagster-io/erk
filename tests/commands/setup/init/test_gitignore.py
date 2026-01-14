@@ -110,7 +110,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Decline .env, accept .erk/scratch/ and .impl/, decline .erk/local.toml, decline hooks
+        # Decline .env, accept .erk/scratch/ and .impl/, decline config.local.toml, decline hooks
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\nn\n")
 
@@ -166,7 +166,7 @@ def test_init_preserves_gitignore_formatting() -> None:
             global_config=global_config,
         )
 
-        # Accept .env, decline .erk/scratch/, .impl/, .erk/local.toml, and hooks
+        # Accept .env, decline .erk/scratch/, .impl/, .erk/config.local.toml, and hooks
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
 

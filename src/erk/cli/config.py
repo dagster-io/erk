@@ -171,9 +171,9 @@ def load_config(repo_root: Path) -> LoadedConfig:
 
 
 def load_local_config(repo_root: Path) -> LoadedConfig:
-    """Load local.toml for per-user configuration.
+    """Load config.local.toml for per-user configuration.
 
-    Location: <repo-root>/.erk/local.toml
+    Location: <repo-root>/.erk/config.local.toml
 
     This file is gitignored and contains per-user settings that
     override repo-level config values.
@@ -184,7 +184,7 @@ def load_local_config(repo_root: Path) -> LoadedConfig:
     Returns:
         LoadedConfig with parsed values or defaults if no config found
     """
-    config_path = repo_root / ".erk" / "local.toml"
+    config_path = repo_root / ".erk" / "config.local.toml"
     if config_path.exists():
         return _parse_config_file(config_path)
 

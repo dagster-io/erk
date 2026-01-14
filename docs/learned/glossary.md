@@ -362,7 +362,7 @@ Per-user configuration that overrides repo config.
 
 **Scope**: Personal settings for this user in this repository.
 
-**Location**: `<repo-root>/.erk/local.toml` (gitignored)
+**Location**: `<repo-root>/.erk/config.local.toml` (gitignored)
 
 **Purpose**: Allows individual users to customize their erk experience without affecting other team members. Common uses:
 
@@ -394,7 +394,7 @@ commands = ["source ~/.zshrc"]
 
 **Access**: Via `load_local_config(repo_root)` + `merge_configs_with_local()`.
 
-**Creation**: `erk init` creates a template `.erk/local.toml` with commented examples.
+**Creation**: `erk init` creates a template `.erk/config.local.toml` with commented examples.
 
 ---
 

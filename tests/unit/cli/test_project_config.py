@@ -453,11 +453,11 @@ class TestLoadLocalConfig:
         assert result.pool_checkout_shell is None
 
     def test_loads_from_local_toml(self, tmp_path: Path) -> None:
-        """Loads config from .erk/local.toml."""
+        """Loads config from .erk/config.local.toml."""
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
-        (erk_dir / "local.toml").write_text(
+        (erk_dir / "config.local.toml").write_text(
             '[env]\nMY_VAR = "my_value"\n',
             encoding="utf-8",
         )
@@ -471,7 +471,7 @@ class TestLoadLocalConfig:
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
-        (erk_dir / "local.toml").write_text(
+        (erk_dir / "config.local.toml").write_text(
             "[pool]\nmax_slots = 10\n",
             encoding="utf-8",
         )
@@ -485,7 +485,7 @@ class TestLoadLocalConfig:
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
-        (erk_dir / "local.toml").write_text(
+        (erk_dir / "config.local.toml").write_text(
             '[plans]\nrepo = "my-org/my-plans"\n',
             encoding="utf-8",
         )
@@ -499,7 +499,7 @@ class TestLoadLocalConfig:
         repo_root = tmp_path / "repo"
         erk_dir = repo_root / ".erk"
         erk_dir.mkdir(parents=True)
-        (erk_dir / "local.toml").write_text(
+        (erk_dir / "config.local.toml").write_text(
             '[post_create]\nshell = "zsh"\ncommands = ["source ~/.zshrc"]\n',
             encoding="utf-8",
         )

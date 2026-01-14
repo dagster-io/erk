@@ -17,7 +17,7 @@ Erk uses a layered configuration system where settings are merged from multiple 
 | ------ | -------------------- | ----------- | --------- | ----------- |
 | Global | `~/.erk/config.toml` | All repos   | No        | N/A         |
 | Repo   | `.erk/config.toml`   | All users   | Yes       | 1st         |
-| Local  | `.erk/local.toml`    | Single user | No        | 2nd         |
+| Local  | `.erk/config.local.toml`    | Single user | No        | 2nd         |
 
 ## Layer Details
 
@@ -47,7 +47,7 @@ Team-shared settings for the repository. Checked into git.
 - `[pool.checkout]` - Commands to run on pool checkout
 - `[plans]` - Plan issue repository settings
 
-### Local Config (`.erk/local.toml`)
+### Local Config (`.erk/config.local.toml`)
 
 Per-user overrides. Gitignored to prevent committing personal settings.
 
@@ -59,7 +59,7 @@ Per-user overrides. Gitignored to prevent committing personal settings.
 
 ## Merge Semantics
 
-When a repo has both `.erk/config.toml` and `.erk/local.toml`, they are merged:
+When a repo has both `.erk/config.toml` and `.erk/config.local.toml`, they are merged:
 
 | Field                    | Merge Behavior                         |
 | ------------------------ | -------------------------------------- |
@@ -87,7 +87,7 @@ commands = ["uv sync"]
 max_slots = 4
 ```
 
-**Local config (`.erk/local.toml`):**
+**Local config (`.erk/config.local.toml`):**
 
 ```toml
 [env]
@@ -129,5 +129,5 @@ max_slots = 8         # local override
 | If the setting is...              | Put it in...         |
 | --------------------------------- | -------------------- |
 | Shared by all team members        | `.erk/config.toml`   |
-| Personal preference for this repo | `.erk/local.toml`    |
+| Personal preference for this repo | `.erk/config.local.toml`    |
 | Applies to all your repos         | `~/.erk/config.toml` |
