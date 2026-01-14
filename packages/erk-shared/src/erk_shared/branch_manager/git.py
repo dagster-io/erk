@@ -97,6 +97,17 @@ class GitBranchManager(BranchManager):
         """
         return None
 
+    def track_branch(self, repo_root: Path, branch_name: str, parent_branch: str) -> None:
+        """No-op for plain Git - parent relationships not tracked.
+
+        Args:
+            repo_root: Repository root directory (unused)
+            branch_name: Name of the branch (unused)
+            parent_branch: Name of the parent branch (unused)
+        """
+        # Plain Git doesn't track parent relationships
+        pass
+
     def is_graphite_managed(self) -> bool:
         """Returns False - this implementation uses plain Git."""
         return False

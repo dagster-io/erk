@@ -495,7 +495,12 @@ def test_create_from_plan_tracks_branch_with_graphite() -> None:
 
 
 def test_create_from_plan_no_graphite_tracking_when_disabled() -> None:
-    """Test erk create --from-plan does NOT call track_branch when use_graphite=False."""
+    """Test erk create --from-plan works when use_graphite=False.
+
+    When Graphite is disabled, the branch_manager uses GitBranchManager which
+    has a no-op track_branch method. This test verifies the command succeeds
+    and uses the correct branch manager (GitBranchManager via GraphiteDisabled).
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Set up git state
@@ -529,17 +534,12 @@ def test_create_from_plan_no_graphite_tracking_when_disabled() -> None:
             }
         )
 
-        # Create FakeGraphite to track calls
-        from erk_shared.gateway.graphite.fake import FakeGraphite
-
-        fake_graphite = FakeGraphite()
-
         # Build context with use_graphite=False (default)
+        # Don't pass graphite - let it use GraphiteDisabled automatically
         test_ctx = env.build_context(
             git=git_ops,
             issues=fake_issues,
-            graphite=fake_graphite,
-            use_graphite=False,  # Explicitly disabled
+            use_graphite=False,  # Explicitly disabled - uses GraphiteDisabled
         )
 
         # Act: Run create --from-plan 501
@@ -550,13 +550,15 @@ def test_create_from_plan_no_graphite_tracking_when_disabled() -> None:
             catch_exceptions=False,
         )
 
-        # Assert: Command succeeded
+        # Assert: Command succeeded (branch_manager.track_branch is no-op for GitBranchManager)
         assert result.exit_code == 0
 
-        # Assert: track_branch was NOT called (Graphite disabled)
-        assert len(fake_graphite.track_branch_calls) == 0, (
-            f"Expected no track_branch calls when Graphite disabled, "
-            f"got: {fake_graphite.track_branch_calls}"
+        # Assert: branch_manager is GitBranchManager (not GraphiteBranchManager)
+        from erk_shared.branch_manager.git import GitBranchManager
+
+        assert isinstance(test_ctx.branch_manager, GitBranchManager), (
+            f"Expected GitBranchManager when use_graphite=False, "
+            f"got: {type(test_ctx.branch_manager).__name__}"
         )
 
 

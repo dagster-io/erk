@@ -96,6 +96,23 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def track_branch(self, repo_root: Path, branch_name: str, parent_branch: str) -> None:
+        """Track an existing branch with parent relationship.
+
+        For Graphite: Registers the branch with Graphite for stack tracking.
+        For Git: No-op (plain Git doesn't track parent relationships).
+
+        This is useful when a branch was created via git directly and needs
+        to be registered with Graphite separately.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Name of the branch to track
+            parent_branch: Name of the parent branch
+        """
+        ...
+
+    @abstractmethod
     def is_graphite_managed(self) -> bool:
         """Returns True if using Graphite for branch operations.
 

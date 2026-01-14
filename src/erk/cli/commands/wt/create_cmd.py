@@ -678,10 +678,8 @@ def create_wt(
 
         # Create branch directly via git
         ctx.git.create_branch(repo.root, setup.branch_name, trunk_branch)
-        # Track branch with Graphite if enabled
-        use_graphite_for_plan = ctx.global_config.use_graphite if ctx.global_config else False
-        if use_graphite_for_plan:
-            ctx.graphite.track_branch(repo.root, setup.branch_name, trunk_branch)
+        # Track branch with Graphite if enabled (no-op for plain Git)
+        ctx.branch_manager.track_branch(repo.root, setup.branch_name, trunk_branch)
         user_output(f"Created branch: {setup.branch_name}")
 
         # Track linked branch name for add_worktree call

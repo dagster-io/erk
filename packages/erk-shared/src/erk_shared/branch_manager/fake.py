@@ -29,6 +29,8 @@ class FakeBranchManager(BranchManager):
     _deleted_branches: list[str] = field(default_factory=list)
     # Track submitted branches for assertions
     _submitted_branches: list[str] = field(default_factory=list)
+    # Track tracked branches for assertions: list of (branch_name, parent_branch) tuples
+    _tracked_branches: list[tuple[str, str]] = field(default_factory=list)
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
         """Get PR info from in-memory storage.
@@ -94,6 +96,20 @@ class FakeBranchManager(BranchManager):
         """
         return self.stacks.get(branch)
 
+    def track_branch(self, repo_root: Path, branch_name: str, parent_branch: str) -> None:
+        """Record branch tracking in tracked list.
+
+        Note: This mutates internal state despite the frozen dataclass.
+        The list reference is frozen, but the list contents can change.
+        This is intentional for test observability.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch_name: Name of the branch to track
+            parent_branch: Name of the parent branch
+        """
+        self._tracked_branches.append((branch_name, parent_branch))
+
     def is_graphite_managed(self) -> bool:
         """Returns the configured graphite_mode value."""
         return self.graphite_mode
@@ -124,3 +140,12 @@ class FakeBranchManager(BranchManager):
             List of branch names that were submitted.
         """
         return list(self._submitted_branches)
+
+    @property
+    def tracked_branches(self) -> list[tuple[str, str]]:
+        """Get list of tracked branches for test assertions.
+
+        Returns:
+            List of (branch_name, parent_branch) tuples.
+        """
+        return list(self._tracked_branches)

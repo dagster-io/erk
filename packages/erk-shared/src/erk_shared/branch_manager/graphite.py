@@ -134,6 +134,18 @@ class GraphiteBranchManager(BranchManager):
         """
         return self.graphite.get_branch_stack(self.git, repo_root, branch)
 
+    def track_branch(self, repo_root: Path, branch_name: str, parent_branch: str) -> None:
+        """Track an existing branch with Graphite.
+
+        Registers the branch with Graphite for stack tracking.
+
+        Args:
+            repo_root: Repository root directory
+            branch_name: Name of the branch to track
+            parent_branch: Name of the parent branch
+        """
+        self.graphite.track_branch(repo_root, branch_name, parent_branch)
+
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""
         return True
