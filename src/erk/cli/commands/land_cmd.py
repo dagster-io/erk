@@ -114,7 +114,7 @@ def _check_learn_status_and_prompt(
         f"\nTo extract insights from this plan's sessions, run:\n  erk learn {plan_issue_number}\n"
     )
 
-    if not ctx.console.confirm("Continue landing without learning?", default=None):
+    if not ctx.console.confirm("Continue landing without learning?", default=True):
         user_output("Cancelled. Run 'erk learn' first, then retry landing.")
         raise SystemExit(0)
 
