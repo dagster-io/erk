@@ -837,7 +837,6 @@ def test_check_managed_artifacts_changed_upstream_remediation(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test changed-upstream status produces correct remediation and verbose explanation."""
-    from erk.artifacts.models import ArtifactFileState
     from erk.core.claude_settings import add_erk_hooks
 
     # Create bundled dir with command
