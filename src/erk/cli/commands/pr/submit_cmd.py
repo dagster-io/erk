@@ -149,7 +149,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     commit_messages = ctx.git.get_commit_messages_since(cwd, parent_branch)
 
     # Phase 3: Generate commit message
-    click.echo(click.style("Phase 3: Generating PR description", bold=True))
+    click.echo(click.style("Phase 3: Creating or Updating PR", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
     msg_result = _run_commit_message_generation(
         generator=msg_gen,
