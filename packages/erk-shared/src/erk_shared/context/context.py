@@ -51,17 +51,16 @@ class ErkContext:
     Created at CLI entry point and threaded through the application via Click's
     context system. Frozen to prevent accidental modification at runtime.
 
-    This unified context replaces both the old ErkContext (from erk.core.context)
-    and DotAgentContext (from erk_kits.context).
+    This unified context combines functionality that was previously split across
+    multiple context types (erk.core.context.ErkContext and erk_kits.context).
 
     Note:
     - global_config may be None only during init command before config is created.
       All other commands should have a valid GlobalConfig.
 
-    DotAgentContext Compatibility:
-    - github_issues -> issues (renamed for consistency)
+    Field naming conventions:
+    - github_issues property -> issues (renamed for consistency)
     - repo_root property -> repo.root (access via repo property or require_repo_root helper)
-    - debug field -> debug (preserved)
     """
 
     # Gateway integrations (from erk_shared)
@@ -74,7 +73,7 @@ class ErkContext:
     erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
     claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
     plan_store: PlanStore
-    prompt_executor: PromptExecutor  # From DotAgentContext
+    prompt_executor: PromptExecutor
 
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell
@@ -100,11 +99,11 @@ class ErkContext:
 
     # Mode flags
     dry_run: bool
-    debug: bool  # From DotAgentContext
+    debug: bool
 
     @property
     def repo_root(self) -> Path:
-        """DotAgentContext compatibility - get repo root from repo.
+        """Convenience property - get repo root from repo.
 
         Raises:
             RuntimeError: If not in a git repository

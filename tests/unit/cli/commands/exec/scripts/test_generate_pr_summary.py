@@ -2,7 +2,7 @@
 
 Tests the PR summary generation from PR diff using Claude.
 
-Uses fake-driven testing with injected dependencies via DotAgentContext.
+Uses fake-driven testing with injected dependencies via ErkContext.
 """
 
 from pathlib import Path

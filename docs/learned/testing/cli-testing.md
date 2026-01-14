@@ -65,7 +65,7 @@ def for_test(
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
-) -> "DotAgentContext":
+) -> "ErkContext":
     """Create test context with optional pre-configured implementations.
 
     All parameters are optional. Unspecified values default to fakes:
@@ -77,7 +77,7 @@ def for_test(
     - cwd: Defaults to Path("/fake/worktree")
 
     Returns:
-        DotAgentContext configured with provided values and test defaults
+        ErkContext configured with provided values and test defaults
     """
 ```
 
@@ -95,7 +95,7 @@ def test_command_with_defaults() -> None:
     result = runner.invoke(
         my_command,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(),  # Uses all defaults
+        obj=ErkContext.for_test(),  # Uses all defaults
     )
 
     assert result.exit_code == 0
@@ -116,7 +116,7 @@ def test_command_creates_issue() -> None:
     result = runner.invoke(
         create_issue_command,
         ["--title", "Test Issue"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     # Assert: Inspect fake state
@@ -144,7 +144,7 @@ def test_command_with_filesystem(tmp_path: Path) -> None:
     # Act: Run command with custom paths
     result = runner.invoke(
         my_command,
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             git=fake_git,
             repo_root=tmp_path,
             cwd=tmp_path,
@@ -171,7 +171,7 @@ def test_command_handles_missing_issue() -> None:
     result = runner.invoke(
         my_command,
         ["999"],
-        obj=DotAgentContext.for_test(github_issues=fake_gh),
+        obj=ErkContext.for_test(github_issues=fake_gh),
     )
 
     # Assert: Command exits with error
@@ -199,7 +199,7 @@ def test_command_with_multiple_dependencies() -> None:
     # Act
     result = runner.invoke(
         my_command,
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             git=fake_git,
             github=fake_gh,
             github_issues=fake_gh_issues,
@@ -236,7 +236,7 @@ def test_plan_save_to_issue_success(plans_dir: Path, tmp_path: Path) -> None:
     result = runner.invoke(
         plan_save_to_issue,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(
+        obj=ErkContext.for_test(
             github_issues=fake_gh,
             git=fake_git,
             session_store=fake_store,
@@ -253,7 +253,7 @@ def test_plan_save_to_issue_success(plans_dir: Path, tmp_path: Path) -> None:
 
 **Key points:**
 
-- Uses `DotAgentContext.for_test()` with multiple fakes
+- Uses `ErkContext.for_test()` with multiple fakes
 - No mocks needed - all dependencies injected via fakes
 - Inspects fake state after command execution
 - Validates JSON output format
@@ -284,7 +284,7 @@ def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
     result = runner.invoke(
         my_command,
         ["--format", "json"],
-        obj=DotAgentContext.for_test(session_store=fake_store, cwd=tmp_path),
+        obj=ErkContext.for_test(session_store=fake_store, cwd=tmp_path),
     )
 
     assert result.exit_code == 0
@@ -320,13 +320,13 @@ def test_command_with_fake_context() -> None:
     runner = CliRunner()
     result = runner.invoke(
         my_command,
-        obj=DotAgentContext.for_test(),  # Uses fakes
+        obj=ErkContext.for_test(),  # Uses fakes
     )
 ```
 
 ### vs monkeypatch
 
-**Use `DotAgentContext.for_test()` when:**
+**Use `ErkContext.for_test()` when:**
 
 - Command accepts `@click.pass_context` and uses `require_*()` helpers
 - You want to inspect fake state after execution
@@ -336,7 +336,7 @@ def test_command_with_fake_context() -> None:
 
 - Command creates dependencies internally (not via context)
 - Mocking factory functions or module-level imports
-- Testing code that doesn't use DotAgentContext
+- Testing code that doesn't use ErkContext
 
 **Example using monkeypatch:**
 
@@ -361,7 +361,7 @@ def test_command_with_monkeypatch(monkeypatch: pytest.MonkeyPatch) -> None:
 
 When writing tests for erk CLI commands:
 
-- [ ] Use `DotAgentContext.for_test()` to create test context
+- [ ] Use `ErkContext.for_test()` to create test context
 - [ ] Pass context via `obj=` parameter to `runner.invoke()`
 - [ ] Create separate fakes when you need to inspect state
 - [ ] Use `tmp_path` for filesystem interactions (never hardcode paths)
@@ -383,7 +383,7 @@ result = runner.invoke(my_command, ["--arg", "value"])
 result = runner.invoke(
     my_command,
     ["--arg", "value"],
-    obj=DotAgentContext.for_test(),
+    obj=ErkContext.for_test(),
 )
 ```
 
@@ -393,7 +393,7 @@ result = runner.invoke(
 # ❌ WRONG: Can't inspect fake state after test
 result = runner.invoke(
     my_command,
-    obj=DotAgentContext.for_test(github_issues=FakeGitHubIssues()),
+    obj=ErkContext.for_test(github_issues=FakeGitHubIssues()),
 )
 # No reference to the fake!
 ```
@@ -403,7 +403,7 @@ result = runner.invoke(
 fake_gh = FakeGitHubIssues()
 result = runner.invoke(
     my_command,
-    obj=DotAgentContext.for_test(github_issues=fake_gh),
+    obj=ErkContext.for_test(github_issues=fake_gh),
 )
 # Can now assert on fake_gh.created_issues
 ```
@@ -414,7 +414,7 @@ result = runner.invoke(
 # ❌ WRONG: Hardcoded path might not exist
 result = runner.invoke(
     my_command,
-    obj=DotAgentContext.for_test(cwd=Path("/fake/worktree")),
+    obj=ErkContext.for_test(cwd=Path("/fake/worktree")),
 )
 # Command tries to read /fake/worktree/.impl/plan.md - fails!
 ```
@@ -428,7 +428,7 @@ def test_command(tmp_path: Path) -> None:
 
     result = runner.invoke(
         my_command,
-        obj=DotAgentContext.for_test(cwd=tmp_path),
+        obj=ErkContext.for_test(cwd=tmp_path),
     )
 ```
 
@@ -465,7 +465,7 @@ def test_command_with_cwd(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
 3. **Use `tmp_path` fixture** - Never hardcode paths like `/tmp/test` or `/fake/path`
 4. **Order matters** - `monkeypatch.chdir()` must happen before `runner.invoke()`
 
-### When to Use monkeypatch.chdir() vs DotAgentContext
+### When to Use monkeypatch.chdir() vs ErkContext
 
 | Scenario                                | Use                                 |
 | --------------------------------------- | ----------------------------------- |

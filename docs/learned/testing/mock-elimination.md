@@ -77,7 +77,7 @@ with patch("module._get_session_id_from_file", return_value="session-id"):
 fake_store = FakeClaudeCodeSessionStore(current_session_id="session-id")
 result = runner.invoke(
     command,
-    obj=DotAgentContext.for_test(session_store=fake_store),
+    obj=ErkContext.for_test(session_store=fake_store),
 )
 ```
 
@@ -110,7 +110,7 @@ def test_uses_session_id_from_file(tmp_path: Path) -> None:
         "erk_kits.data.kits.erk.kit_cli_commands.erk.plan_save_to_issue._get_session_id_from_file",
         return_value="file-session-id",
     ):
-        result = runner.invoke(command, obj=DotAgentContext.for_test())
+        result = runner.invoke(command, obj=ErkContext.for_test())
 ```
 
 ### After (with fakes)
@@ -125,7 +125,7 @@ def test_uses_session_store_for_current_session_id(tmp_path: Path) -> None:
     fake_store = FakeClaudeCodeSessionStore(current_session_id="store-session-id")
     result = runner.invoke(
         command,
-        obj=DotAgentContext.for_test(session_store=fake_store, cwd=tmp_path),
+        obj=ErkContext.for_test(session_store=fake_store, cwd=tmp_path),
     )
 ```
 
