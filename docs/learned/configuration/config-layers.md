@@ -13,11 +13,11 @@ Erk uses a layered configuration system where settings are merged from multiple 
 
 ## Overview
 
-| Layer        | Location                   | Scope            | Versioned | Merge Order |
-| ------------ | -------------------------- | ---------------- | --------- | ----------- |
-| Global       | `~/.erk/config.toml`       | All repos        | No        | N/A         |
-| Repo         | `.erk/config.toml`         | All users        | Yes       | 1st         |
-| Local        | `.erk/local.toml`          | Single user      | No        | 2nd         |
+| Layer  | Location             | Scope       | Versioned | Merge Order |
+| ------ | -------------------- | ----------- | --------- | ----------- |
+| Global | `~/.erk/config.toml` | All repos   | No        | N/A         |
+| Repo   | `.erk/config.toml`   | All users   | Yes       | 1st         |
+| Local  | `.erk/local.toml`    | Single user | No        | 2nd         |
 
 ## Layer Details
 
@@ -61,15 +61,15 @@ Per-user overrides. Gitignored to prevent committing personal settings.
 
 When a repo has both `.erk/config.toml` and `.erk/local.toml`, they are merged:
 
-| Field                    | Merge Behavior                       |
-| ------------------------ | ------------------------------------ |
-| `env`                    | Dict merge (local overrides repo)    |
+| Field                    | Merge Behavior                         |
+| ------------------------ | -------------------------------------- |
+| `env`                    | Dict merge (local overrides repo)      |
 | `post_create.commands`   | Concatenation (repo first, then local) |
-| `post_create.shell`      | Override (local wins if set)         |
-| `pool.max_slots`         | Override (local wins if set)         |
+| `post_create.shell`      | Override (local wins if set)           |
+| `pool.max_slots`         | Override (local wins if set)           |
 | `pool.checkout.commands` | Concatenation (repo first, then local) |
-| `pool.checkout.shell`    | Override (local wins if set)         |
-| `plans.repo`             | Override (local wins if set)         |
+| `pool.checkout.shell`    | Override (local wins if set)           |
+| `plans.repo`             | Override (local wins if set)           |
 
 ### Example
 
@@ -126,8 +126,8 @@ max_slots = 8         # local override
 
 **Where should I put this setting?**
 
-| If the setting is...                | Put it in...         |
-| ----------------------------------- | -------------------- |
-| Shared by all team members          | `.erk/config.toml`   |
-| Personal preference for this repo   | `.erk/local.toml`    |
-| Applies to all your repos           | `~/.erk/config.toml` |
+| If the setting is...              | Put it in...         |
+| --------------------------------- | -------------------- |
+| Shared by all team members        | `.erk/config.toml`   |
+| Personal preference for this repo | `.erk/local.toml`    |
+| Applies to all your repos         | `~/.erk/config.toml` |
