@@ -3,13 +3,17 @@
 from pathlib import Path
 from unittest.mock import patch
 
-from erk.artifacts.artifact_health import BUNDLED_AGENTS, BUNDLED_SKILLS
+# Test-only constants matching the capabilities registry
+# These mirror what's registered in src/erk/core/capabilities/registry.py
+BUNDLED_SKILLS: frozenset[str] = frozenset({"learned-docs", "dignified-python"})
+BUNDLED_AGENTS: frozenset[str] = frozenset({"devrun"})
 from erk.artifacts.sync import (
     _get_erk_package_dir,
     _is_editable_install,
     _sync_actions,
     _sync_commands,
     _sync_directory_artifacts,
+    _sync_hooks,
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
@@ -620,3 +624,37 @@ def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> No
     # Both flat and nested commands should be tracked
     assert "commands/erk/plan-save.md" in content
     assert "commands/erk/system/impl-execute.md" in content
+
+
+def test_sync_hooks_returns_empty_when_no_erk_hooks_installed(tmp_path: Path) -> None:
+    """_sync_hooks returns empty list when no erk hooks are present.
+
+    This is a regression test for the bug where artifact sync would auto-install
+    hooks even when they weren't already installed. The fix adds an early return
+    when HooksCapability.has_any_erk_hooks() returns False.
+    """
+    import json
+
+    # Create settings.json without any erk hooks (only non-erk hooks)
+    settings_path = tmp_path / ".claude" / "settings.json"
+    settings_path.parent.mkdir(parents=True)
+    settings = {
+        "hooks": {
+            "UserPromptSubmit": [
+                {
+                    "matcher": "*",
+                    "hooks": [{"type": "command", "command": "some-other-hook"}],
+                }
+            ],
+        }
+    }
+    settings_path.write_text(json.dumps(settings), encoding="utf-8")
+
+    # _sync_hooks should return empty list because no erk hooks are installed
+    result = _sync_hooks(tmp_path)
+
+    assert result == []
+
+    # Settings should be unchanged (no hooks added)
+    updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
+    assert updated_settings == settings
