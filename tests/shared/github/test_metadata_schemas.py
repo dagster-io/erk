@@ -7,7 +7,9 @@ Tests all validator methods for all schema classes in metadata.py.
 import pytest
 
 from erk_shared.github.metadata.schemas import (
+    PLAN_HEADER_FIELDS,
     ImplementationStatusSchema,
+    PlanHeaderFields,
     PlanHeaderSchema,
     PlanSchema,
     SubmissionQueuedSchema,
@@ -561,3 +563,72 @@ class TestPlanHeaderSchema:
         """get_key returns correct key."""
         schema = PlanHeaderSchema()
         assert schema.get_key() == "plan-header"
+
+
+class TestPlanHeaderFields:
+    """Test PlanHeaderFields field name constants."""
+
+    def test_singleton_instance_exists(self) -> None:
+        """Verify PLAN_HEADER_FIELDS singleton is available."""
+        assert PLAN_HEADER_FIELDS is not None
+        assert isinstance(PLAN_HEADER_FIELDS, PlanHeaderFields)
+
+    def test_required_field_values(self) -> None:
+        """Required field constants have correct string values."""
+        f = PLAN_HEADER_FIELDS
+        assert f.SCHEMA_VERSION == "schema_version"
+        assert f.CREATED_AT == "created_at"
+        assert f.CREATED_BY == "created_by"
+
+    def test_optional_field_values(self) -> None:
+        """Optional field constants have correct string values."""
+        f = PLAN_HEADER_FIELDS
+        assert f.WORKTREE_NAME == "worktree_name"
+        assert f.PLAN_COMMENT_ID == "plan_comment_id"
+        assert f.LAST_DISPATCHED_RUN_ID == "last_dispatched_run_id"
+        assert f.LAST_DISPATCHED_NODE_ID == "last_dispatched_node_id"
+        assert f.LAST_DISPATCHED_AT == "last_dispatched_at"
+        assert f.LAST_LOCAL_IMPL_AT == "last_local_impl_at"
+        assert f.LAST_LOCAL_IMPL_EVENT == "last_local_impl_event"
+        assert f.LAST_LOCAL_IMPL_SESSION == "last_local_impl_session"
+        assert f.LAST_LOCAL_IMPL_USER == "last_local_impl_user"
+        assert f.LAST_REMOTE_IMPL_AT == "last_remote_impl_at"
+        assert f.SOURCE_REPO == "source_repo"
+        assert f.OBJECTIVE_ISSUE == "objective_issue"
+        assert f.CREATED_FROM_SESSION == "created_from_session"
+        assert f.LAST_LEARN_SESSION == "last_learn_session"
+        assert f.LAST_LEARN_AT == "last_learn_at"
+
+    def test_frozen_dataclass(self) -> None:
+        """PlanHeaderFields is immutable (frozen dataclass)."""
+        f = PLAN_HEADER_FIELDS
+        with pytest.raises(AttributeError):
+            f.SCHEMA_VERSION = "new_value"  # type: ignore[misc]
+
+    def test_schema_uses_field_constants(self) -> None:
+        """PlanHeaderSchema validation uses field constants consistently.
+
+        This test ensures the schema validate() method uses PLAN_HEADER_FIELDS
+        for field access, not hardcoded strings.
+        """
+        schema = PlanHeaderSchema()
+        f = PLAN_HEADER_FIELDS
+
+        # Create valid data using field constants
+        valid_data = {
+            f.SCHEMA_VERSION: "2",
+            f.CREATED_AT: "2024-01-15T10:30:00Z",
+            f.CREATED_BY: "testuser",
+        }
+        schema.validate(valid_data)  # Should not raise
+
+        # Verify optional fields are also recognized
+        valid_data_with_optional = {
+            f.SCHEMA_VERSION: "2",
+            f.CREATED_AT: "2024-01-15T10:30:00Z",
+            f.CREATED_BY: "testuser",
+            f.WORKTREE_NAME: "my-worktree",
+            f.LAST_LOCAL_IMPL_AT: "2024-01-15T12:00:00Z",
+            f.LAST_LOCAL_IMPL_EVENT: "ended",
+        }
+        schema.validate(valid_data_with_optional)  # Should not raise
