@@ -135,8 +135,8 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
             assert call_args.kwargs["state"] == "open"
 
 
-def test_top_level_get_command_works() -> None:
-    """Test that 'erk plan get' command works."""
+def test_top_level_view_command_works() -> None:
+    """Test that 'erk plan view' command works."""
     # Arrange
     issue1 = Plan(
         plan_identifier="123",
@@ -156,8 +156,8 @@ def test_top_level_get_command_works() -> None:
         store, _ = create_plan_store_with_plans({"123": issue1})
         ctx = build_workspace_test_context(env, plan_store=store)
 
-        # Act - Use plan get command
-        result = runner.invoke(cli, ["plan", "get", "123"], obj=ctx)
+        # Act - Use plan view command
+        result = runner.invoke(cli, ["plan", "view", "123"], obj=ctx)
 
         # Assert
         assert result.exit_code == 0

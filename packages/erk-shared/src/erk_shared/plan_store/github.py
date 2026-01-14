@@ -456,8 +456,11 @@ class GitHubPlanStore(PlanBackend):
         # Normalize state
         state = PlanState.OPEN if issue_info.state == "OPEN" else PlanState.CLOSED
 
-        # Store GitHub-specific number in metadata for future operations
-        metadata: dict[str, object] = {"number": issue_info.number}
+        # Store GitHub-specific data in metadata for future operations
+        metadata: dict[str, object] = {
+            "number": issue_info.number,
+            "issue_body": issue_info.body,  # For plan-header parsing
+        }
 
         # Use provided plan_body or fall back to issue body
         body = plan_body if plan_body is not None else issue_info.body
