@@ -116,6 +116,7 @@ class TestExecuteCoreSubmit:
         assert result.was_created is True
         assert result.pr_number == 999  # FakeGitHub returns 999
         assert result.branch_name == "feature-branch"
+        assert result.base_branch == "main"
 
         # Verify GitHub was called to create PR
         assert len(github.created_prs) == 1
@@ -190,6 +191,7 @@ class TestExecuteCoreSubmit:
         assert result.was_created is False  # Updated existing
         assert result.pr_number == 42
         assert result.branch_name == "feature-branch"
+        assert result.base_branch == "main"
 
         # Should NOT have created a new PR
         assert len(github.created_prs) == 0

@@ -15,6 +15,7 @@ class CoreSubmitResult:
     pr_number: int
     pr_url: str
     branch_name: str
+    base_branch: str
     issue_number: int | None
     was_created: bool  # True if PR was created, False if updated existing PR
     message: str

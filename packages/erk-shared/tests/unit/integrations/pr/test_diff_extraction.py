@@ -190,7 +190,11 @@ def test_execute_diff_extraction_success(tmp_path: Path) -> None:
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
 
     # Collect events
-    events = list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
+    events = list(
+        execute_diff_extraction(
+            ctx, tmp_path, pr_number=123, session_id="test-session", base_branch="main"
+        )
+    )
 
     # Should have progress events and completion
     progress_events = [e for e in events if isinstance(e, ProgressEvent)]
@@ -233,7 +237,11 @@ def test_execute_diff_extraction_truncates_large_diff(tmp_path: Path) -> None:
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
 
-    events = list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
+    events = list(
+        execute_diff_extraction(
+            ctx, tmp_path, pr_number=123, session_id="test-session", base_branch="main"
+        )
+    )
 
     # Should have a warning about truncation
     progress_events = [e for e in events if isinstance(e, ProgressEvent)]
@@ -270,7 +278,11 @@ def test_execute_diff_extraction_progress_messages(tmp_path: Path) -> None:
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
 
-    events = list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
+    events = list(
+        execute_diff_extraction(
+            ctx, tmp_path, pr_number=123, session_id="test-session", base_branch="main"
+        )
+    )
 
     progress_events = [e for e in events if isinstance(e, ProgressEvent)]
     messages = [e.message for e in progress_events]
@@ -283,8 +295,8 @@ def test_execute_diff_extraction_progress_messages(tmp_path: Path) -> None:
     assert any("Diff written" in m for m in messages)
 
 
-def test_execute_diff_extraction_uses_pr_base_branch(tmp_path: Path) -> None:
-    """Test that diff uses PR's base branch, not trunk."""
+def test_execute_diff_extraction_uses_passed_base_branch(tmp_path: Path) -> None:
+    """Test that diff uses the passed base_branch parameter."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     scratch_dir = repo_root / ".tmp" / "test-session"
@@ -303,52 +315,21 @@ def test_execute_diff_extraction_uses_pr_base_branch(tmp_path: Path) -> None:
         },
     )
 
-    github = FakeGitHub(
-        pr_bases={123: "feature-base"},
-    )
+    github = FakeGitHub()
 
     ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
 
-    events = list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
+    events = list(
+        execute_diff_extraction(
+            ctx, tmp_path, pr_number=123, session_id="test-session", base_branch="feature-base"
+        )
+    )
 
     completion_events = [e for e in events if isinstance(e, CompletionEvent)]
     result = completion_events[0].result
     assert isinstance(result, Path)
 
     content = result.read_text(encoding="utf-8")
-    # Should use the PR's base branch (feature-base), not trunk
+    # Should use the passed base_branch (feature-base), not trunk
     assert "feature branch diff" in content
     assert "trunk diff" not in content
-
-
-def test_execute_diff_extraction_uses_trunk_when_no_pr_base(tmp_path: Path) -> None:
-    """Test that diff uses trunk branch when PR base is not available."""
-    repo_root = tmp_path / "repo"
-    repo_root.mkdir()
-    scratch_dir = repo_root / ".tmp" / "test-session"
-    scratch_dir.mkdir(parents=True)
-
-    trunk_diff = "diff --git a/f.py b/f.py\n+trunk diff content"
-
-    git = FakeGit(
-        git_common_dirs={tmp_path: repo_root},
-        repository_roots={tmp_path: str(repo_root)},
-        trunk_branches={repo_root: "main"},
-        diff_to_branch={(tmp_path, "main"): trunk_diff},
-    )
-
-    github = FakeGitHub(
-        # No pr_bases configured - get_pr_base_branch returns None
-    )
-
-    ctx = context_for_test(git=git, github=github, graphite=FakeGraphite(), cwd=tmp_path)
-
-    events = list(execute_diff_extraction(ctx, tmp_path, pr_number=123, session_id="test-session"))
-
-    completion_events = [e for e in events if isinstance(e, CompletionEvent)]
-    result = completion_events[0].result
-    assert isinstance(result, Path)
-
-    content = result.read_text(encoding="utf-8")
-    # Should fall back to trunk branch
-    assert "trunk diff content" in content

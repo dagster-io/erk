@@ -85,6 +85,8 @@ def execute_diff_extraction(
     cwd: Path,
     pr_number: int,
     session_id: str,
+    *,
+    base_branch: str,
 ) -> Generator[ProgressEvent | CompletionEvent[Path | None]]:
     """Extract PR diff using local git and write to scratch file.
 
@@ -99,6 +101,7 @@ def execute_diff_extraction(
         cwd: Working directory (must be in a git repository)
         pr_number: PR number to get diff for
         session_id: Session ID for scratch file isolation
+        base_branch: Base branch for the PR (passed from core submit)
 
     Yields:
         ProgressEvent for status updates
@@ -106,11 +109,7 @@ def execute_diff_extraction(
     """
     repo_root = ctx.git.get_repository_root(cwd)
 
-    # Get base branch for the PR, fall back to trunk if not available
     yield ProgressEvent(f"Getting diff for PR #{pr_number}...")
-    base_branch = ctx.github.get_pr_base_branch(repo_root, pr_number)
-    if base_branch is None:
-        base_branch = ctx.git.detect_trunk_branch(repo_root)
 
     # Use local git diff - no size limits unlike GitHub API
     pr_diff = ctx.git.get_diff_to_branch(cwd, base_branch)
