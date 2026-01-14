@@ -1,5 +1,7 @@
 """Tests for erk exec setup-impl-from-issue command."""
 
+import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import click
@@ -12,7 +14,11 @@ from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     setup_impl_from_issue,
 )
 from erk_shared.context import ErkContext
+from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 
 
 class TestGetCurrentBranch:
@@ -110,3 +116,84 @@ class TestSetupImplFromIssueNoImplFlag:
         # The command should fail due to GitHub access, not CLI parsing
         # (exit code 1 is expected when GitHub fails)
         assert result.exit_code == 1
+
+
+class TestSetupImplFromIssueBranchManager:
+    """Tests verifying BranchManager is used for branch creation."""
+
+    def test_uses_branch_manager_with_graphite_tracking(self, tmp_path: Path) -> None:
+        """Verify command uses BranchManager which enables Graphite tracking.
+
+        When Graphite is enabled (FakeGraphite, not GraphiteDisabled), branch
+        creation should go through GraphiteBranchManager which calls
+        graphite.track_branch() after creating the git branch.
+
+        This test verifies the behavior change from the PR that switched from
+        direct git.create_branch() to branch_manager.create_branch().
+        """
+        # Arrange: Create plan issue with erk-plan label
+        now = datetime.now(UTC)
+        plan_issue = IssueInfo(
+            number=42,
+            title="Test Plan",
+            body="# Plan Content\n\nSome plan details here.",
+            state="OPEN",
+            url="https://github.com/test-owner/test-repo/issues/42",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="test-author",
+        )
+        fake_issues = FakeGitHubIssues(issues={42: plan_issue})
+
+        # Configure FakeGit with:
+        # - current branch on main
+        # - empty list of local branches (so branch doesn't exist)
+        fake_git = FakeGit(
+            current_branches={tmp_path: "main"},
+            local_branches=[],
+        )
+
+        # Configure FakeGraphite to track calls
+        fake_graphite = FakeGraphite()
+
+        # Create test context with all fakes
+        # Use context_for_test directly to pass graphite parameter
+        ctx = context_for_test(
+            github_issues=fake_issues,
+            git=fake_git,
+            graphite=fake_graphite,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        )
+
+        # Act: Invoke command with --no-impl to skip folder creation
+        runner = CliRunner()
+        result = runner.invoke(
+            setup_impl_from_issue,
+            ["42", "--no-impl"],
+            obj=ctx,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # Assert: Verify output contains valid JSON
+        # The output may have status messages before the JSON line
+        # Extract the JSON line (last non-empty line that starts with '{')
+        output_lines = result.output.strip().split("\n")
+        json_line = next(line for line in reversed(output_lines) if line.startswith("{"))
+        output = json.loads(json_line)
+        assert output["success"] is True
+        assert output["issue_number"] == 42
+
+        # Assert: Graphite track_branch was called (key assertion)
+        # This verifies the branch was created through BranchManager,
+        # not direct git calls
+        assert len(fake_graphite.track_branch_calls) == 1
+        tracked_call = fake_graphite.track_branch_calls[0]
+        # track_branch_calls are (cwd, branch_name, parent_branch) tuples
+        assert tracked_call[0] == tmp_path  # repo_root
+        assert tracked_call[1].startswith("P42-")  # branch_name starts with issue prefix
+        assert tracked_call[2] == "main"  # parent_branch is main

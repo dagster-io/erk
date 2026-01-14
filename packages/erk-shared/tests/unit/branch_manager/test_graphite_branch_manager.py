@@ -1,7 +1,8 @@
 """Unit tests for GraphiteBranchManager.
 
-Tests the delete_branch() method with LBYL fallback to git when
-Graphite can't handle the branch (untracked or diverged).
+Tests branch operations including:
+- delete_branch() with LBYL fallback to git when Graphite can't handle the branch
+- create_branch() with Graphite tracking
 """
 
 from pathlib import Path
@@ -151,3 +152,32 @@ def test_delete_branch_uses_graphite_when_git_branch_head_is_none() -> None:
     assert fake_graphite.delete_branch_calls == [(repo_root, "feature-branch")]
     # Git delete was NOT called
     assert fake_git.deleted_branches == []
+
+
+def test_create_branch_tracks_with_graphite() -> None:
+    """create_branch() creates git branch and tracks with Graphite.
+
+    This ensures branches created via BranchManager are tracked in Graphite
+    for proper stack visualization and PR enhancement.
+    """
+    repo_root = Path("/repo")
+
+    fake_git = FakeGit(
+        current_branches={repo_root: "main"},
+    )
+    fake_graphite = FakeGraphite()
+
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager.create_branch(repo_root, "feature-branch", "main")
+
+    # Git operations were called
+    # created_branches is list of (cwd, branch_name, start_point) tuples
+    assert fake_git.created_branches == [(repo_root, "feature-branch", "main")]
+    # checked_out_branches is list of (cwd, branch_name) tuples
+    assert fake_git.checked_out_branches == [
+        (repo_root, "main"),
+        (repo_root, "feature-branch"),
+    ]
+
+    # Graphite tracking was called
+    assert fake_graphite.track_branch_calls == [(repo_root, "feature-branch", "main")]
