@@ -22,6 +22,7 @@ from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.real import RealGitHub
 
 
@@ -54,5 +55,7 @@ class RealGtKit:
         repo_root = self.git.get_repository_root(cwd)
         repo_info = get_repo_info(self.git, repo_root)
 
-        self.github = RealGitHub(time=self.time, repo_info=repo_info)
+        # Create issues first, then compose into github
+        issues = RealGitHubIssues(target_repo=None)
+        self.github = RealGitHub(time=self.time, repo_info=repo_info, issues=issues)
         self.graphite = RealGraphite()

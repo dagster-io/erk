@@ -6,8 +6,6 @@ The land command can accept:
 - Branch name (e.g., erk land feature-1)
 """
 
-from dataclasses import replace
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -90,9 +88,13 @@ def test_land_by_number() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Pass "123" as the PR number argument with --force to skip confirmation
         result = runner.invoke(
@@ -180,9 +182,13 @@ def test_land_by_url() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Pass URL as the argument
         result = runner.invoke(
@@ -270,9 +276,13 @@ def test_land_by_branch_name() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli,
@@ -348,9 +358,13 @@ def test_land_fork_pr() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli, ["land", "789", "--script", "--force"], obj=test_ctx, catch_exceptions=False

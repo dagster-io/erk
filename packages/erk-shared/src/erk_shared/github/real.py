@@ -28,6 +28,7 @@ from erk_shared.github.graphql_queries import (
     ISSUE_PR_LINKAGE_FRAGMENT,
     RESOLVE_REVIEW_THREAD_MUTATION,
 )
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.parsing import (
     execute_gh_command,
@@ -77,15 +78,55 @@ class RealGitHub(GitHub):
     All GitHub operations execute actual gh commands via subprocess.
     """
 
-    def __init__(self, time: Time, repo_info: RepoInfo | None = None):
+    def __init__(
+        self,
+        time: Time,
+        repo_info: RepoInfo | None,
+        *,
+        issues: GitHubIssues,
+    ):
         """Initialize RealGitHub.
 
         Args:
             time: Time abstraction for sleep operations
             repo_info: Repository owner/name info (None if not in a GitHub repo)
+            issues: GitHubIssues gateway for issue operations
         """
         self._time = time
         self._repo_info = repo_info
+        self._issues = issues
+
+    @classmethod
+    def for_test(
+        cls,
+        time: Time | None = None,
+        repo_info: RepoInfo | None = None,
+    ) -> "RealGitHub":
+        """Create RealGitHub with test defaults.
+
+        Convenience factory for tests that need RealGitHub but don't care
+        about the issues gateway configuration.
+
+        Args:
+            time: Time implementation (defaults to FakeTime)
+            repo_info: Repository info (defaults to None)
+
+        Returns:
+            RealGitHub configured with FakeGitHubIssues
+        """
+        from erk_shared.gateway.time.fake import FakeTime
+        from erk_shared.github.issues.fake import FakeGitHubIssues
+
+        return cls(
+            time=time if time is not None else FakeTime(),
+            repo_info=repo_info,
+            issues=FakeGitHubIssues(),
+        )
+
+    @property
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations."""
+        return self._issues
 
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Get current base branch of a PR from GitHub.

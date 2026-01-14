@@ -63,7 +63,7 @@ from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.dry_run import DryRunGitHub
-from erk_shared.github.issues import DryRunGitHubIssues, GitHubIssues, RealGitHubIssues
+from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
@@ -110,8 +110,8 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
-    fake_github = FakeGitHub()
     fake_issues = FakeGitHubIssues()
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
     fake_graphite = FakeGraphite()
     fake_console = FakeConsole(
         is_interactive=True,
@@ -124,7 +124,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         git=git,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
-        issues=fake_issues,
         plan_store=GitHubPlanStore(fake_issues, fake_time),
         graphite=fake_graphite,
         console=fake_console,
@@ -230,14 +229,25 @@ def context_for_test(
     if git is None:
         git = FakeGit()
 
+    # Track whether issues was explicitly passed (for composition logic below)
+    issues_explicitly_passed = issues is not None
+
+    # Create issues first since it's composed into github
+    if issues is None:
+        issues = FakeGitHubIssues()
+
+    # Compose github with issues
+    # If github is provided without issues_gateway, use github as-is (it has its own issues)
+    # Only inject issues if caller explicitly passed BOTH github and issues
     if github is None:
-        github = FakeGitHub()
+        github = FakeGitHub(issues_gateway=issues)
+    elif isinstance(github, FakeGitHub) and issues_explicitly_passed:
+        # Caller passed both github and issues separately - inject issues
+        # into the existing FakeGitHub instance to preserve test references
+        github._issues_gateway = issues
 
     if github_admin is None:
         github_admin = FakeGitHubAdmin()
-
-    if issues is None:
-        issues = FakeGitHubIssues()
 
     if plan_store is None:
         # Always compose from issues layer - no separate FakePlanStore
@@ -313,17 +323,16 @@ def context_for_test(
         repo = NoRepoSentinel()
 
     # Apply dry-run wrappers if needed (matching production behavior)
+    # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
         github = DryRunGitHub(github)
-        issues = DryRunGitHubIssues(issues)
 
     return ErkContext(
         git=git,
         github=github,
         github_admin=github_admin,
-        issues=issues,
         plan_store=plan_store,
         graphite=graphite,
         console=console,
@@ -513,18 +522,21 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         )
 
     # 8. Create GitHub-related classes (need repo_info, local_config)
-    github: GitHub = RealGitHub(time, repo_info)
+    # Create issues first, then compose into github
     # Use plans_repo for cross-repo plan issue management if configured
     issues: GitHubIssues = RealGitHubIssues(target_repo=local_config.plans_repo)
+    github: GitHub = RealGitHub(time, repo_info, issues=issues)
     plan_store: PlanStore = GitHubPlanStore(issues)
     plan_list_service: PlanListService = RealPlanListService(github, issues)
 
     # 9. Apply dry-run wrappers if needed
+    # Note: DryRunGitHub composes DryRunGitHubIssues internally,
+    # but we still wrap issues separately for ctx.issues backward compatibility
+    # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
         graphite = DryRunGraphite(graphite)
         github = DryRunGitHub(github)
-        issues = DryRunGitHubIssues(issues)
 
     # 10. Create claude installation and prompt executor
     from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
@@ -537,7 +549,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         git=git,
         github=github,
         github_admin=RealGitHubAdmin(),
-        issues=issues,
         plan_store=plan_store,
         graphite=graphite,
         console=console,

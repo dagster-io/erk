@@ -70,7 +70,7 @@ Implementation details here."""
     issues = FakeGitHubIssues(
         issues={867: plan_to_issue(plan1), 868: plan_to_issue(plan2)},
     )
-    github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+    github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -127,7 +127,7 @@ Issue updated with current worktree name."""
     issues = FakeGitHubIssues(
         issues={900: plan_to_issue(plan1)},
     )
-    github = FakeGitHub(issues=[plan_to_issue(plan1)])
+    github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -188,7 +188,7 @@ def test_plan_list_shows_worktree_from_local_impl() -> None:
 
         # Configure FakeGitHubIssues with issues (no comments)
         issues = FakeGitHubIssues(issues={950: plan_to_issue(plan1)}, comments={})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         # Act - Use erk plan list for static output
@@ -266,7 +266,7 @@ issue_number: 960
         issues = FakeGitHubIssues(
             issues={960: plan_to_issue(plan1)}, comments={960: [github_comment]}
         )
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         # Act - Use erk plan list for static output
@@ -315,7 +315,7 @@ Plan content."""
     with erk_inmem_env(runner) as env:
         # No local worktrees with .impl folders
         issues = FakeGitHubIssues(issues={970: plan_to_issue(plan1)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use erk plan list for static output
@@ -386,7 +386,7 @@ def test_plan_list_handles_multiple_local_worktrees() -> None:
 
         # Configure FakeGitHubIssues with issue (no comments)
         issues = FakeGitHubIssues(issues={980: plan_to_issue(plan1)}, comments={})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         # Act - Use erk plan list for static output

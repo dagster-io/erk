@@ -58,7 +58,7 @@ def test_plan_list_no_filters() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list"], obj=ctx)
@@ -103,7 +103,7 @@ def test_plan_list_filter_by_state() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
-        github = FakeGitHub(issues=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        github = FakeGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--state", "open"], obj=ctx)
@@ -147,7 +147,9 @@ def test_plan_list_filter_by_labels() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(plan_with_both), 2: plan_to_issue(plan_with_one)}
         )
-        github = FakeGitHub(issues=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)])
+        github = FakeGitHub(
+            issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         result = runner.invoke(
@@ -187,7 +189,7 @@ def test_plan_list_with_limit() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
-        github = FakeGitHub(issues=issues_list)
+        github = FakeGitHub(issues_data=issues_list)
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--limit", "2"], obj=ctx)
@@ -214,7 +216,7 @@ def test_plan_list_empty_results() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues=[plan_to_issue(plan)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--state", "closed"], obj=ctx)
@@ -264,7 +266,7 @@ last_dispatched_node_id: 'WFR_all_flag'
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -317,7 +319,7 @@ last_dispatched_node_id: 'WFR_short_flag'
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -359,7 +361,7 @@ def test_plan_list_sort_issue_default() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--sort", "issue"], obj=ctx)
@@ -440,7 +442,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         )
 
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--sort", "activity"], obj=ctx)
@@ -537,7 +539,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         )
 
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, git=git, issues=issues, github=github)
 
         result = runner.invoke(cli, ["plan", "list", "--sort", "activity"], obj=ctx)

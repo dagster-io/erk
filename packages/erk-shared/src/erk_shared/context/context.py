@@ -66,9 +66,8 @@ class ErkContext:
 
     # Gateway integrations (from erk_shared)
     git: Git
-    github: GitHub
+    github: GitHub  # Note: issues accessed via github.issues property
     github_admin: GitHubAdmin  # GitHub Actions admin operations
-    issues: GitHubIssues  # Note: ErkContext naming (was github_issues in DotAgentContext)
     graphite: Graphite
     console: Console  # TTY detection, user feedback, and confirmation prompts
     time: Time
@@ -125,13 +124,22 @@ class ErkContext:
         return self.git.detect_trunk_branch(self.repo.root)
 
     @property
-    def github_issues(self) -> GitHubIssues:
-        """DotAgentContext compatibility - alias for issues field.
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations via the composed GitHub gateway.
 
-        Deprecated: Use ctx.issues instead. This property is provided for
+        All issue operations should be accessed via ctx.github.issues directly,
+        but this property is provided for backward compatibility.
+        """
+        return self.github.issues
+
+    @property
+    def github_issues(self) -> GitHubIssues:
+        """DotAgentContext compatibility - alias for issues property.
+
+        Deprecated: Use ctx.github.issues instead. This property is provided for
         backward compatibility with code written for the old DotAgentContext.
         """
-        return self.issues
+        return self.github.issues
 
     @property
     def plan_backend(self) -> PlanBackend:

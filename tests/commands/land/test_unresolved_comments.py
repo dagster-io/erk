@@ -7,8 +7,6 @@ Tests for behavior when PRs have unresolved review comments:
 - Non-interactive mode fails with error when unresolved comments exist
 """
 
-from dataclasses import replace
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -119,8 +117,8 @@ def test_land_warns_on_unresolved_comments() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[False],  # Decline unresolved comments prompt
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli,
@@ -221,9 +219,13 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Use --force to skip all confirmations
         result = runner.invoke(
@@ -334,8 +336,8 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[True, True],  # Confirm unresolved comments, confirm cleanup
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli,
@@ -437,8 +439,8 @@ def test_land_handles_rate_limit_gracefully() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[True],  # Confirm branch deletion
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli,
@@ -557,8 +559,8 @@ def test_land_fails_non_interactive_with_unresolved_comments() -> None:
             repo=repo,
             use_graphite=True,
             console=console,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Run in non-interactive mode
         result = runner.invoke(

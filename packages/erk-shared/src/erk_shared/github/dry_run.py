@@ -3,6 +3,8 @@
 from pathlib import Path
 
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
@@ -28,10 +30,18 @@ class DryRunGitHub(GitHub):
     def __init__(self, wrapped: GitHub) -> None:
         """Initialize dry-run wrapper with a real implementation.
 
+        Composes DryRunGitHubIssues wrapping the wrapped.issues internally.
+
         Args:
             wrapped: The real GitHub operations implementation to wrap
         """
         self._wrapped = wrapped
+        self._dry_run_issues = DryRunGitHubIssues(wrapped.issues)
+
+    @property
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations (wrapped with dry-run behavior)."""
+        return self._dry_run_issues
 
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
         """Delegate read operation to wrapped implementation."""

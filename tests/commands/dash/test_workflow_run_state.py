@@ -92,7 +92,7 @@ last_dispatched_node_id: 'WFR_running'
             issues={1010: plan_to_issue(queued_plan), 1011: plan_to_issue(running_plan)},
         )
         github = FakeGitHub(
-            issues=[plan_to_issue(queued_plan), plan_to_issue(running_plan)],
+            issues_data=[plan_to_issue(queued_plan), plan_to_issue(running_plan)],
             workflow_runs_by_node_id={"WFR_queued": queued_run, "WFR_running": running_run},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -182,7 +182,7 @@ last_dispatched_node_id: 'WFR_failed'
             issues={1020: plan_to_issue(success_plan), 1021: plan_to_issue(failed_plan)},
         )
         github = FakeGitHub(
-            issues=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
+            issues_data=[plan_to_issue(success_plan), plan_to_issue(failed_plan)],
             workflow_runs_by_node_id={"WFR_success": success_run, "WFR_failed": failed_run},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)

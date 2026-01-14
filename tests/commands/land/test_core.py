@@ -11,7 +11,6 @@ It accepts:
 - Branch name
 """
 
-from dataclasses import replace
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -98,9 +97,13 @@ def test_land_merges_and_deletes_worktree() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Use --force to skip cleanup confirmation
         result = runner.invoke(
@@ -507,9 +510,13 @@ def test_land_does_not_call_safe_chdir() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Use --force to skip cleanup confirmation
         result = runner.invoke(
@@ -628,9 +635,13 @@ def test_land_updates_upstack_pr_base_branches() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Use --force to skip cleanup confirmation
         result = runner.invoke(
@@ -766,9 +777,13 @@ def test_land_updates_github_only_child_pr_base() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
@@ -894,9 +909,13 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False

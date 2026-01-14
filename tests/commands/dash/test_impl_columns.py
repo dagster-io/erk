@@ -69,7 +69,7 @@ last_dispatched_node_id: 'WFR_all_flag'
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={200: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={200: [pr]},
             workflow_runs_by_node_id={"WFR_all_flag": workflow_run},
         )
@@ -141,7 +141,7 @@ last_dispatched_node_id: 'WFR_short_flag'
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={201: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={201: [pr]},
             workflow_runs_by_node_id={"WFR_short_flag": workflow_run},
         )
@@ -191,7 +191,7 @@ last_remote_impl_at: '2024-11-21T12:00:00Z'
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues=[plan_to_issue(plan)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use --runs to show both local-impl and remote-impl columns

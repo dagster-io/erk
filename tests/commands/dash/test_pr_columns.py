@@ -49,7 +49,7 @@ def test_plan_list_pr_column_open_pr() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={100: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={100: [pr]},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -97,7 +97,7 @@ def test_plan_list_pr_column_draft_pr() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={101: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={101: [pr]},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -145,7 +145,7 @@ def test_plan_list_pr_column_merged_pr() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={102: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={102: [pr]},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -193,7 +193,7 @@ def test_plan_list_pr_column_closed_pr() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={103: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={103: [pr]},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -241,7 +241,7 @@ def test_plan_list_pr_column_with_conflicts() -> None:
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={104: plan_to_issue(plan)})
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={104: [pr]},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -304,7 +304,7 @@ def test_plan_list_pr_column_multiple_prs_prefers_open() -> None:
         issues = FakeGitHubIssues(issues={105: plan_to_issue(plan)})
         # PRs already sorted by created_at descending
         github = FakeGitHub(
-            issues=[plan_to_issue(plan)],
+            issues_data=[plan_to_issue(plan)],
             pr_issue_linkages={105: [open_pr, closed_pr]},
         )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
@@ -338,7 +338,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={106: plan_to_issue(plan)})
-        github = FakeGitHub(issues=[plan_to_issue(plan)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
         # No PR linkages configured
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 

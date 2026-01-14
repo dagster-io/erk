@@ -7,7 +7,6 @@ Tests the behavior when landing a PR linked to an objective:
 - Claude execution failure shows warning with retry command
 """
 
-from dataclasses import replace
 from datetime import UTC, datetime
 
 from click.testing import CliRunner
@@ -131,8 +130,9 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[False],  # Decline closing plan issue prompt
+            issues=issues_ops,
+            claude_executor=executor,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
         result = runner.invoke(
             cli,
@@ -249,8 +249,9 @@ def test_land_user_declines_objective_update_shows_command() -> None:
                 False,  # Decline objective update
                 True,  # Confirm cleanup
             ],
+            issues=issues_ops,
+            claude_executor=executor,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
         result = runner.invoke(
             cli,
@@ -360,8 +361,9 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
                 True,  # Confirm objective update
                 True,  # Confirm cleanup
             ],
+            issues=issues_ops,
+            claude_executor=executor,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
         result = runner.invoke(
             cli,
@@ -478,8 +480,9 @@ def test_land_claude_failure_shows_retry_command() -> None:
                 True,  # Confirm objective update
                 True,  # Confirm cleanup
             ],
+            issues=issues_ops,
+            claude_executor=executor,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops, claude_executor=executor)
 
         result = runner.invoke(
             cli,

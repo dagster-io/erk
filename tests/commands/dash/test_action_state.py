@@ -35,7 +35,7 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1001: plan_to_issue(plan1)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
@@ -65,7 +65,7 @@ def test_plan_list_shows_pending_action_state() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1002: plan_to_issue(plan1)}, comments={1002: []})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
@@ -112,7 +112,7 @@ issue_number: 1003
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1003: plan_to_issue(plan1)}, comments={1003: [comment]})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
@@ -158,7 +158,7 @@ timestamp: "2024-11-23T12:00:00Z"
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1004: plan_to_issue(plan1)}, comments={1004: [comment]})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
@@ -204,7 +204,7 @@ timestamp: "2024-11-23T12:00:00Z"
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1005: plan_to_issue(plan1)}, comments={1005: [comment]})
-        github = FakeGitHub(issues=[plan_to_issue(plan1)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act

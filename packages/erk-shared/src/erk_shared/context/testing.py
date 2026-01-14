@@ -77,12 +77,26 @@ def context_for_test(
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
 
-    # Resolve defaults
+    # Resolve defaults - create issues first since it's composed into github
+    # Track whether issues was explicitly passed (for composition logic below)
+    issues_explicitly_passed = github_issues is not None
+
     resolved_issues: GitHubIssues = (
         github_issues if github_issues is not None else FakeGitHubIssues()
     )
     resolved_git: Git = git if git is not None else FakeGit()
-    resolved_github: GitHub = github if github is not None else FakeGitHub()
+    # Compose github with issues
+    # If github is provided without issues_gateway, use github as-is (it has its own issues)
+    # Only inject issues if caller explicitly passed BOTH github and github_issues
+    if github is None:
+        resolved_github: GitHub = FakeGitHub(issues_gateway=resolved_issues)
+    elif isinstance(github, FakeGitHub) and issues_explicitly_passed:
+        # Caller passed both github and github_issues separately - inject issues
+        # into the existing FakeGitHub instance to preserve test references
+        github._issues_gateway = resolved_issues
+        resolved_github = github
+    else:
+        resolved_github = github
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
     resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
     resolved_claude_installation: ClaudeInstallation = (
@@ -116,7 +130,6 @@ def context_for_test(
         git=resolved_git,
         github=resolved_github,
         github_admin=FakeGitHubAdmin(),
-        issues=resolved_issues,
         claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
