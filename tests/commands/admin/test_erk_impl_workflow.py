@@ -112,7 +112,9 @@ def test_creates_empty_commit_before_pr(monkeypatch) -> None:
         # Verify the git.commits list has our commit
         assert len(git.commits) == 1, f"Expected 1 commit, got {len(git.commits)}"
         cwd, message, staged_files = git.commits[0]
-        assert message == "Test workflow run", f"Expected commit message 'Test workflow run', got '{message}'"
+        assert message == "Test workflow run", (
+            f"Expected commit message 'Test workflow run', got '{message}'"
+        )
 
         # Verify output shows success
         assert "Workflow triggered successfully!" in result.output
