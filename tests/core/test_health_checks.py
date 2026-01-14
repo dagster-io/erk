@@ -833,6 +833,188 @@ def test_check_managed_artifacts_actions_required_with_workflows(
     assert "erk artifact sync" in result.remediation
 
 
+def test_check_managed_artifacts_changed_upstream_remediation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test remediation message for changed-upstream artifacts.
+
+    Scenario: A newer version of erk has updated the bundled artifact content.
+    The user hasn't modified the file locally, but it's out of date with bundled.
+    This is detected when the artifact state version is older than current erk version.
+    """
+    import hashlib
+
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Create bundled dir with command content
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+
+    # Create project dir with SAME content (not locally modified)
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    # Create artifact state with OLD version (triggers changed-upstream)
+    # The hash matches the file content, but the version is old
+    state_dir = project_dir / ".erk"
+    state_dir.mkdir(parents=True)
+    content_hash = hashlib.sha256(b"# Command - bundled content").hexdigest()[:16]
+    state_toml = f'''[artifacts]
+version = "0.0.1"
+
+[artifacts.files."commands/erk/plan-save.md"]
+version = "0.0.1"
+hash = "{content_hash}"
+'''
+    (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    assert result.passed is True  # changed-upstream is a warning, not failure
+    assert result.warning is True
+    assert "have issues" in result.message
+    assert result.remediation is not None
+    assert "erk artifact sync" in result.remediation
+    assert "update to latest erk version" in result.remediation
+
+
+def test_check_managed_artifacts_locally_modified_remediation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test remediation message for locally-modified artifacts.
+
+    Scenario: User has manually edited an installed artifact. The artifact state
+    shows it was synced with the current erk version, but the file hash differs
+    from what was originally synced.
+    """
+    import hashlib
+
+    from erk.core.claude_settings import (
+        ERK_EXIT_PLAN_HOOK_COMMAND,
+        ERK_USER_PROMPT_HOOK_COMMAND,
+        add_erk_hooks,
+    )
+    from erk.core.release_notes import get_current_version
+
+    erk_version = get_current_version()
+
+    # Create bundled dir with original command content
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    original_content = "# Command - original"
+    (bundled_commands / "plan-save.md").write_text(original_content, encoding="utf-8")
+
+    # Create project dir with modified command content (user edited it)
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command - user modified", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    # Create artifact state with:
+    # 1. Command has hash of ORIGINAL content (not the modified file) + current version
+    #    → This means file was synced but then modified locally = locally-modified
+    # 2. Hooks have correct hashes + current version
+    #    → This means hooks are up-to-date (won't affect overall_worst)
+    state_dir = project_dir / ".erk"
+    state_dir.mkdir(parents=True)
+    bundled_file = bundled_commands / "plan-save.md"
+    original_hash = hashlib.sha256(bundled_file.read_bytes()).hexdigest()[:16]
+
+    # Compute hook hashes the same way artifact_health does
+    user_prompt_hash = hashlib.sha256(ERK_USER_PROMPT_HOOK_COMMAND.encode()).hexdigest()[:16]
+    exit_plan_hash = hashlib.sha256(ERK_EXIT_PLAN_HOOK_COMMAND.encode()).hexdigest()[:16]
+
+    state_toml = f'''[artifacts]
+version = "{erk_version}"
+
+[artifacts.files."commands/erk/plan-save.md"]
+version = "{erk_version}"
+hash = "{original_hash}"
+
+[artifacts.files."hooks/user-prompt-hook"]
+version = "{erk_version}"
+hash = "{user_prompt_hash}"
+
+[artifacts.files."hooks/exit-plan-mode-hook"]
+version = "{erk_version}"
+hash = "{exit_plan_hash}"
+'''
+    (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    assert result.passed is True  # locally-modified is a warning, not failure
+    assert result.warning is True
+    assert "have issues" in result.message
+    assert result.remediation is not None
+    assert "erk artifact sync --force" in result.remediation
+    assert "restore erk defaults" in result.remediation
+
+
+def test_check_managed_artifacts_verbose_status_explanations(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test verbose output includes status explanations."""
+    from erk.core.claude_settings import add_erk_hooks
+
+    # Create bundled dir with command
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_commands = bundled_dir / "commands" / "erk"
+    bundled_commands.mkdir(parents=True)
+    (bundled_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    (bundled_commands / "plan-implement.md").write_text("# Command 2", encoding="utf-8")
+
+    # Create project dir with only ONE command (missing the other = not-installed)
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_commands = project_claude / "commands" / "erk"
+    project_commands.mkdir(parents=True)
+    (project_commands / "plan-save.md").write_text("# Command", encoding="utf-8")
+    settings = add_erk_hooks({})
+    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+
+    monkeypatch.setattr("erk.artifacts.artifact_health.get_bundled_claude_dir", lambda: bundled_dir)
+    monkeypatch.setattr(
+        "erk.artifacts.artifact_health.get_bundled_github_dir",
+        lambda: tmp_path / "bundled" / ".github",
+    )
+    monkeypatch.setattr("erk.core.health_checks.is_in_erk_repo", lambda _: False)
+
+    result = check_managed_artifacts(project_dir)
+
+    assert result.name == "managed-artifacts"
+    assert result.verbose_details is not None
+    # Check for status explanation in verbose details
+    assert "(not-installed): these artifacts are missing from the project" in result.verbose_details
+
+
 # --- Post-Plan-Implement CI Hook Tests ---
 
 

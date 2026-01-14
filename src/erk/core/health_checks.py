@@ -1363,12 +1363,35 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
             verbose_summaries.append(f"      {artifact_info.name}{status_indicator}")
 
     details = "\n".join(type_summaries)
+
+    # Add status explanations when issues exist
+    statuses_present = {a.status for artifacts_list in by_type.values() for a in artifacts_list}
+    status_explanations: list[str] = []
+    if "changed-upstream" in statuses_present:
+        status_explanations.append(
+            "   (changed-upstream): erk has newer versions of these artifacts"
+        )
+    if "locally-modified" in statuses_present:
+        status_explanations.append("   (locally-modified): these artifacts were edited locally")
+    if "not-installed" in statuses_present:
+        status_explanations.append(
+            "   (not-installed): these artifacts are missing from the project"
+        )
+
+    if status_explanations:
+        verbose_summaries.append("")  # blank line
+        verbose_summaries.extend(status_explanations)
+
     verbose_details = "\n".join(verbose_summaries)
 
     # Determine remediation
     remediation: str | None = None
     if overall_worst == "not-installed":
         remediation = "Run 'erk artifact sync' to restore missing artifacts"
+    elif overall_worst == "changed-upstream":
+        remediation = "Run 'erk artifact sync' to update to latest erk version"
+    elif overall_worst == "locally-modified":
+        remediation = "Run 'erk artifact sync --force' to restore erk defaults"
 
     # Determine overall result
     if overall_worst == "not-installed":
