@@ -13,8 +13,8 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from erk.cli.commands.plan.view import view_plan
 from erk.cli.commands.plan.list_cmd import dash
+from erk.cli.commands.plan.view import view_plan
 from erk.core.services.plan_list_service import RealPlanListService
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
