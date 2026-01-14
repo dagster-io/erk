@@ -601,6 +601,247 @@ def _implement_from_file(
         )
 
 
+def _show_dry_run_output_here(
+    *,
+    cwd: Path,
+    plan_source: PlanSource,
+    submit: bool,
+    dangerous: bool,
+    no_interactive: bool,
+    model: str | None,
+) -> None:
+    """Show dry-run output for --here mode."""
+    dry_run_header = click.style("Dry-run mode:", fg="cyan", bold=True)
+    user_output(dry_run_header + " No changes will be made\n")
+
+    # Show execution mode
+    mode = "non-interactive" if no_interactive else "interactive"
+    user_output(f"Execution mode: {mode}\n")
+
+    user_output(f"Would run in current directory: {cwd}")
+    user_output(f"  {plan_source.dry_run_description}")
+
+    # Show command sequence
+    commands = build_command_sequence(submit)
+    user_output("\nCommand sequence:")
+    for i, cmd in enumerate(commands, 1):
+        cmd_args = build_claude_args(cmd, dangerous, model)
+        user_output(f"  {i}. {' '.join(cmd_args)}")
+
+
+def _implement_here_from_issue(
+    ctx: ErkContext,
+    *,
+    issue_number: str,
+    dry_run: bool,
+    submit: bool,
+    dangerous: bool,
+    script: bool,
+    no_interactive: bool,
+    verbose: bool,
+    model: str | None,
+    executor: ClaudeExecutor,
+) -> None:
+    """Implement feature from GitHub issue in current directory.
+
+    Skips worktree/branch switching and runs implementation in ctx.cwd.
+
+    Args:
+        ctx: Erk context
+        issue_number: GitHub issue number
+        dry_run: Whether to perform dry run
+        submit: Whether to auto-submit PR after implementation
+        dangerous: Whether to skip permission prompts
+        script: Whether to output activation script
+        no_interactive: Whether to execute non-interactively
+        verbose: Whether to show raw output or filtered output
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+        executor: Claude CLI executor for command execution
+    """
+    # Discover repo context for issue fetch
+    repo = discover_repo_context(ctx, ctx.cwd)
+    ensure_erk_metadata_dir(repo)
+
+    # Fetch plan from GitHub
+    ctx.console.info("Fetching issue from GitHub...")
+    plan = ctx.plan_store.get_plan(repo.root, issue_number)
+    ctx.console.info(f"Issue: {plan.title}")
+
+    # Create dry-run description
+    dry_run_desc = f"Would create .impl/ from issue #{issue_number}\n  Title: {plan.title}"
+    plan_source = PlanSource(
+        plan_content=plan.body,
+        base_name=plan.title,
+        dry_run_description=dry_run_desc,
+    )
+
+    # Handle dry-run mode
+    if dry_run:
+        _show_dry_run_output_here(
+            cwd=ctx.cwd,
+            plan_source=plan_source,
+            submit=submit,
+            dangerous=dangerous,
+            no_interactive=no_interactive,
+            model=model,
+        )
+        return
+
+    # Create .impl/ folder in current directory
+    ctx.console.info("Creating .impl/ folder with plan...")
+    create_impl_folder(
+        worktree_path=ctx.cwd,
+        plan_content=plan.body,
+        overwrite=True,
+    )
+    ctx.console.success("✓ Created .impl/ folder")
+
+    # Save issue reference for PR linking
+    ctx.console.info("Saving issue reference for PR linking...")
+    impl_dir = ctx.cwd / ".impl"
+    save_issue_reference(impl_dir, int(issue_number), plan.url, plan.title)
+    ctx.console.success(f"✓ Saved issue reference: {plan.url}")
+
+    # Execute based on mode
+    if script:
+        # Script mode - output activation script (stays in current directory)
+        branch = ctx.git.get_current_branch(ctx.cwd)
+        if branch is None:
+            branch = "current"
+        target_description = f"#{issue_number}"
+        output_activation_instructions(
+            ctx,
+            wt_path=ctx.cwd,
+            branch=branch,
+            script=script,
+            submit=submit,
+            dangerous=dangerous,
+            model=model,
+            target_description=target_description,
+        )
+    elif no_interactive:
+        # Non-interactive mode - execute via subprocess
+        commands = build_command_sequence(submit)
+        execute_non_interactive_mode(
+            worktree_path=ctx.cwd,
+            commands=commands,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
+            executor=executor,
+        )
+    else:
+        # Interactive mode - hand off to Claude (never returns)
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=ctx.cwd,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
+
+
+def _implement_here_from_file(
+    ctx: ErkContext,
+    *,
+    plan_file: Path,
+    dry_run: bool,
+    submit: bool,
+    dangerous: bool,
+    script: bool,
+    no_interactive: bool,
+    verbose: bool,
+    model: str | None,
+    executor: ClaudeExecutor,
+) -> None:
+    """Implement feature from plan file in current directory.
+
+    Skips worktree/branch switching and runs implementation in ctx.cwd.
+    Does NOT delete the original plan file (unlike normal mode).
+
+    Args:
+        ctx: Erk context
+        plan_file: Path to plan file
+        dry_run: Whether to perform dry run
+        submit: Whether to auto-submit PR after implementation
+        dangerous: Whether to skip permission prompts
+        script: Whether to output activation script
+        no_interactive: Whether to execute non-interactively
+        verbose: Whether to show raw output or filtered output
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+        executor: Claude CLI executor for command execution
+    """
+    # Discover repo context
+    repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Prepare plan source from file
+    plan_source = prepare_plan_source_from_file(ctx, plan_file)
+
+    # Handle dry-run mode
+    if dry_run:
+        _show_dry_run_output_here(
+            cwd=ctx.cwd,
+            plan_source=plan_source,
+            submit=submit,
+            dangerous=dangerous,
+            no_interactive=no_interactive,
+            model=model,
+        )
+        return
+
+    # Create .impl/ folder in current directory
+    ctx.console.info("Creating .impl/ folder with plan...")
+    create_impl_folder(
+        worktree_path=ctx.cwd,
+        plan_content=plan_source.plan_content,
+        overwrite=True,
+    )
+    ctx.console.success("✓ Created .impl/ folder")
+
+    # NOTE: Unlike normal mode, we do NOT delete the original plan file
+    # when using --here. The user may want to reference it or use it again.
+
+    # Execute based on mode
+    if script:
+        # Script mode - output activation script (stays in current directory)
+        branch = ctx.git.get_current_branch(ctx.cwd)
+        if branch is None:
+            branch = "current"
+        target_description = str(plan_file)
+        output_activation_instructions(
+            ctx,
+            wt_path=ctx.cwd,
+            branch=branch,
+            script=script,
+            submit=submit,
+            dangerous=dangerous,
+            model=model,
+            target_description=target_description,
+        )
+    elif no_interactive:
+        # Non-interactive mode - execute via subprocess
+        commands = build_command_sequence(submit)
+        execute_non_interactive_mode(
+            worktree_path=ctx.cwd,
+            commands=commands,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
+            executor=executor,
+        )
+    else:
+        # Interactive mode - hand off to Claude (never returns)
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=ctx.cwd,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
+
+
 @alias("impl")
 @click.command("implement", cls=CommandWithHiddenOptions)
 @click.argument("target", shell_complete=complete_plan_files)
@@ -611,6 +852,12 @@ def _implement_from_file(
     is_flag=True,
     default=False,
     help="Auto-unassign oldest slot if pool is full (no interactive prompt).",
+)
+@click.option(
+    "--here",
+    is_flag=True,
+    default=False,
+    help="Run in current directory without switching worktrees or branches.",
 )
 @click.pass_obj
 def implement(
@@ -625,6 +872,7 @@ def implement(
     yolo: bool,
     verbose: bool,
     force: bool,
+    here: bool,
     model: str | None,
 ) -> None:
     """Create worktree from GitHub issue or plan file and execute implementation.
@@ -682,7 +930,7 @@ def implement(
     model = normalize_model_name(model)
 
     # Validate flag combinations
-    validate_flags(submit, no_interactive, script)
+    validate_flags(submit, no_interactive, script, here=here, force=force)
 
     # Detect target type
     target_info = detect_target_type(target)
@@ -693,8 +941,44 @@ def implement(
     elif target_info.target_type == "file_path":
         ctx.console.info(f"Detected plan file: {target}")
 
-    if target_info.target_type in ("issue_number", "issue_url"):
-        # GitHub issue mode
+    # Dispatch based on --here flag and target type
+    if here:
+        # --here mode: run in current directory without worktree switching
+        if target_info.target_type in ("issue_number", "issue_url"):
+            if target_info.issue_number is None:
+                user_output(
+                    click.style("Error: ", fg="red") + "Failed to extract issue number from target"
+                )
+                raise SystemExit(1) from None
+
+            _implement_here_from_issue(
+                ctx,
+                issue_number=target_info.issue_number,
+                dry_run=dry_run,
+                submit=submit,
+                dangerous=dangerous,
+                script=script,
+                no_interactive=no_interactive,
+                verbose=verbose,
+                model=model,
+                executor=ctx.claude_executor,
+            )
+        else:
+            plan_file = Path(target)
+            _implement_here_from_file(
+                ctx,
+                plan_file=plan_file,
+                dry_run=dry_run,
+                submit=submit,
+                dangerous=dangerous,
+                script=script,
+                no_interactive=no_interactive,
+                verbose=verbose,
+                model=model,
+                executor=ctx.claude_executor,
+            )
+    elif target_info.target_type in ("issue_number", "issue_url"):
+        # GitHub issue mode (normal worktree switching)
         if target_info.issue_number is None:
             user_output(
                 click.style("Error: ", fg="red") + "Failed to extract issue number from target"
@@ -715,7 +999,7 @@ def implement(
             executor=ctx.claude_executor,
         )
     else:
-        # Plan file mode
+        # Plan file mode (normal worktree switching)
         plan_file = Path(target)
         _implement_from_file(
             ctx,

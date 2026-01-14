@@ -164,17 +164,34 @@ def determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
     return trunk_branch
 
 
-def validate_flags(submit: bool, no_interactive: bool, script: bool) -> None:
+def validate_flags(
+    submit: bool,
+    no_interactive: bool,
+    script: bool,
+    *,
+    here: bool,
+    force: bool,
+) -> None:
     """Validate flag combinations and raise ClickException if invalid.
 
     Args:
         submit: Whether to auto-submit PR after implementation
         no_interactive: Whether to execute non-interactively
         script: Whether to output shell integration script
+        here: Whether to run in current directory without switching worktrees
+        force: Whether to auto-unassign oldest slot if pool is full
 
     Raises:
         click.ClickException: If flag combination is invalid
     """
+    # --here and --force are mutually exclusive
+    if here and force:
+        raise click.ClickException(
+            "--here and --force are mutually exclusive\n"
+            "--here runs in current directory (no pool management)\n"
+            "--force manages pool slots when switching worktrees"
+        )
+
     # --submit requires --no-interactive UNLESS using --script mode
     # Script mode generates shell code, so --submit is allowed
     if submit and not no_interactive and not script:
