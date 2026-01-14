@@ -1,13 +1,11 @@
 """Admin commands for repository configuration."""
 
-import json
 import subprocess
 from typing import Literal
 
 import click
 
 from erk.cli.core import discover_repo_context
-from erk.cli.subprocess_utils import run_with_error_reporting
 from erk.core.context import ErkContext
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
 from erk_shared.github.types import GitHubRepoLocation
@@ -200,7 +198,13 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
         issue_number = issue
         user_output(f"Using existing issue #{issue_number}")
     else:
-        issue_number = _create_test_issue(repo_slug)
+        result = ctx.issues.create_issue(
+            repo_root=repo.root,
+            title="Test workflow run",
+            body="This issue was created to test the erk-impl workflow. Safe to close.",
+            labels=["test"],
+        )
+        issue_number = result.number
         user_output(click.style("✓", fg="green") + f" Created test issue #{issue_number}")
 
     # Step 3: Create test branch for implementation
@@ -224,7 +228,14 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
 
     # Step 5: Create draft PR
-    pr_number = _create_draft_pr(repo_slug, test_branch)
+    pr_number = ctx.github.create_pr(
+        repo.root,
+        branch=test_branch,
+        title="Test workflow run",
+        body="This PR was created to test the erk-impl workflow. Safe to close.",
+        base="master",
+        draft=True,
+    )
     user_output(click.style("✓", fg="green") + f" Draft PR #{pr_number} created")
 
     # Step 6: Trigger workflow
@@ -234,21 +245,28 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
         raise SystemExit(1)
 
     user_output(f"Triggering erk-impl workflow from '{current_branch}'...")
-    _trigger_workflow(
-        repo_slug=repo_slug,
+    ctx.github.trigger_workflow(
+        repo_root=repo.root,
+        workflow="erk-impl.yml",
         ref=current_branch,
-        issue_number=issue_number,
-        submitted_by=username,
-        distinct_id=distinct_id,
-        issue_title="Test workflow run",
-        branch_name=test_branch,
-        pr_number=pr_number,
-        base_branch="master",
+        inputs={
+            "issue_number": str(issue_number),
+            "submitted_by": username,
+            "distinct_id": distinct_id,
+            "issue_title": "Test workflow run",
+            "branch_name": test_branch,
+            "pr_number": str(pr_number),
+            "base_branch": "master",
+        },
     )
 
     # Step 7: Get run URL
     ctx.time.sleep(2)  # Give GitHub a moment to create the run
-    run_url = _get_latest_run_url(repo_slug)
+    runs = ctx.github.list_workflow_runs(repo.root, "erk-impl.yml", limit=1)
+    if runs:
+        run_url = f"https://github.com/{repo_slug}/actions/runs/{runs[0].run_id}"
+    else:
+        run_url = f"https://github.com/{repo_slug}/actions/workflows/erk-impl.yml"
 
     user_output("")
     user_output(click.style("Workflow triggered successfully!", fg="green", bold=True))
@@ -273,123 +291,3 @@ def _base36_encode(num: int) -> str:
         result.append(chars[num % 36])
         num //= 36
     return "".join(reversed(result))
-
-
-def _create_test_issue(repo_slug: str) -> int:
-    """Create a minimal test issue for workflow testing."""
-    # GH-API-AUDIT: REST - POST repos/{owner}/{repo}/issues
-    result = run_with_error_reporting(
-        [
-            "gh",
-            "api",
-            f"repos/{repo_slug}/issues",
-            "-X",
-            "POST",
-            "-f",
-            "title=Test workflow run",
-            "-f",
-            "body=This issue was created to test the erk-impl workflow. Safe to close.",
-            "-f",
-            "labels[]=test",
-            "--jq",
-            ".number",
-        ],
-        error_prefix="Failed to create test issue",
-    )
-    return int(result.stdout.strip())
-
-
-def _create_draft_pr(repo_slug: str, branch: str) -> int:
-    """Create a draft PR for the test branch."""
-    # GH-API-AUDIT: REST - POST repos/{owner}/{repo}/pulls
-    result = run_with_error_reporting(
-        [
-            "gh",
-            "api",
-            f"repos/{repo_slug}/pulls",
-            "-X",
-            "POST",
-            "-f",
-            "title=Test workflow run",
-            "-f",
-            "body=This PR was created to test the erk-impl workflow. Safe to close.",
-            "-f",
-            f"head={branch}",
-            "-f",
-            "base=master",
-            "-F",
-            "draft=true",
-            "--jq",
-            ".number",
-        ],
-        error_prefix="Failed to create draft PR",
-    )
-    return int(result.stdout.strip())
-
-
-def _trigger_workflow(
-    *,
-    repo_slug: str,
-    ref: str,
-    issue_number: int,
-    submitted_by: str,
-    distinct_id: str,
-    issue_title: str,
-    branch_name: str,
-    pr_number: int,
-    base_branch: str,
-) -> None:
-    """Trigger the erk-impl workflow with the given parameters."""
-    # GH-API-AUDIT: REST - POST actions/workflows/{workflow_id}/dispatches
-    run_with_error_reporting(
-        [
-            "gh",
-            "workflow",
-            "run",
-            "erk-impl.yml",
-            "--repo",
-            repo_slug,
-            "--ref",
-            ref,
-            "-f",
-            f"issue_number={issue_number}",
-            "-f",
-            f"submitted_by={submitted_by}",
-            "-f",
-            f"distinct_id={distinct_id}",
-            "-f",
-            f"issue_title={issue_title}",
-            "-f",
-            f"branch_name={branch_name}",
-            "-f",
-            f"pr_number={pr_number}",
-            "-f",
-            f"base_branch={base_branch}",
-        ],
-        error_prefix="Failed to trigger erk-impl workflow",
-    )
-
-
-def _get_latest_run_url(repo_slug: str) -> str:
-    """Get the URL of the latest erk-impl workflow run."""
-    # GH-API-AUDIT: REST - GET actions/runs
-    result = run_with_error_reporting(
-        [
-            "gh",
-            "run",
-            "list",
-            "--repo",
-            repo_slug,
-            "--workflow",
-            "erk-impl.yml",
-            "--limit",
-            "1",
-            "--json",
-            "url",
-        ],
-        error_prefix="Failed to get workflow run URL",
-    )
-    runs = json.loads(result.stdout)
-    if runs:
-        return runs[0]["url"]
-    return f"https://github.com/{repo_slug}/actions/workflows/erk-impl.yml"

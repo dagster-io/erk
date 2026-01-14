@@ -1,14 +1,48 @@
 """Tests for test-erk-impl-gh-workflow command."""
 
 from pathlib import Path
-from unittest import mock
+from typing import Any
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues
 from tests.test_utils.env_helpers import erk_inmem_env
+
+
+class TrackingFakeGitHub(FakeGitHub):
+    """FakeGitHub that tracks operation order for testing."""
+
+    def __init__(self, call_order: list[str], **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._call_order = call_order
+
+    def create_pr(
+        self,
+        repo_root: Path,
+        branch: str,
+        title: str,
+        body: str,
+        base: str | None = None,
+        *,
+        draft: bool = False,
+    ) -> int:
+        self._call_order.append("create_pr")
+        return super().create_pr(repo_root, branch, title, body, base, draft=draft)
+
+
+class TrackingFakeGit(FakeGit):
+    """FakeGit that tracks operation order for testing."""
+
+    def __init__(self, call_order: list[str], **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self._call_order = call_order
+
+    def commit(self, cwd: Path, message: str) -> None:
+        self._call_order.append("commit")
+        super().commit(cwd, message)
 
 
 def test_empty_commit_created_before_pr_creation() -> None:
@@ -26,21 +60,15 @@ def test_empty_commit_created_before_pr_creation() -> None:
         # Track call order between commit and PR creation
         call_order: list[str] = []
 
-        git = FakeGit(
+        git = TrackingFakeGit(
+            call_order=call_order,
             current_branches={env.cwd: "my-feature"},
             default_branches={env.cwd: "master"},
             git_common_dirs={env.cwd: env.git_dir},
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
         )
 
-        # Wrap commit to track when it's called
-        original_commit = git.commit
-
-        def tracking_commit(cwd: Path, message: str) -> None:
-            call_order.append("commit")
-            original_commit(cwd, message)
-
-        git.commit = tracking_commit  # type: ignore[method-assign]
+        github = TrackingFakeGitHub(call_order=call_order)
 
         # FakeGitHubIssues defaults to username="testuser"
         issues = FakeGitHubIssues()
@@ -48,30 +76,15 @@ def test_empty_commit_created_before_pr_creation() -> None:
         # env.repo already has GitHubRepoId configured
         test_ctx = env.build_context(
             git=git,
+            github=github,
             issues=issues,
         )
 
-        with (
-            mock.patch("erk.cli.commands.admin._create_test_issue", return_value=123),
-            mock.patch("erk.cli.commands.admin._create_draft_pr") as mock_pr,
-            mock.patch("erk.cli.commands.admin._trigger_workflow"),
-            mock.patch(
-                "erk.cli.commands.admin._get_latest_run_url",
-                return_value="https://github.com/owner/repo/actions/runs/123",
-            ),
-        ):
-            # Track when PR creation is called
-            def track_pr_creation(*args, **kwargs):
-                call_order.append("create_pr")
-                return 456
-
-            mock_pr.side_effect = track_pr_creation
-
-            result = runner.invoke(
-                cli,
-                ["admin", "test-erk-impl-gh-workflow", "--issue", "123"],
-                obj=test_ctx,
-            )
+        result = runner.invoke(
+            cli,
+            ["admin", "test-erk-impl-gh-workflow", "--issue", "123"],
+            obj=test_ctx,
+        )
 
         # Verify command succeeded
         assert result.exit_code == 0, f"Command failed: {result.output}"
