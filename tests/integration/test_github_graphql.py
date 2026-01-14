@@ -10,7 +10,6 @@ from pathlib import Path
 
 from pytest import MonkeyPatch
 
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
 from tests.integration.test_helpers import mock_subprocess_run
@@ -48,7 +47,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_labels(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub(FakeTime())
+        github = RealGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -104,7 +103,7 @@ def test_get_issues_with_pr_linkages_uses_gh_array_syntax_for_states(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub(FakeTime())
+        github = RealGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -164,7 +163,7 @@ def test_get_issues_with_pr_linkages_uses_gh_object_syntax_for_filterby(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub(FakeTime())
+        github = RealGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -219,7 +218,7 @@ def test_get_issues_with_pr_linkages_uses_string_flags_for_strings(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub(FakeTime())
+        github = RealGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -277,7 +276,7 @@ def test_get_issues_with_pr_linkages_uses_typed_flag_for_first(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub(FakeTime())
+        github = RealGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),
@@ -330,7 +329,7 @@ def test_get_issues_with_pr_linkages_handles_multiple_labels(
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        github = RealGitHub(FakeTime())
+        github = RealGitHub.for_test()
         location = GitHubRepoLocation(
             root=Path("/repo"),
             repo_id=GitHubRepoId(owner="dagster-io", repo="erk"),

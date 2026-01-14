@@ -118,14 +118,14 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
 
     # Use fake implementations for erk-specific services that erk-kits doesn't need
     fake_graphite = FakeGraphite()
+    # Create issues first, then compose into github
     github_issues = RealGitHubIssues(target_repo=None)
     time = RealTime()
     fake_time = FakeTime()
     return ErkContext(
         git=git,
-        github=RealGitHub(time=time, repo_info=repo_info),
+        github=RealGitHub(time=time, repo_info=repo_info, issues=github_issues),
         github_admin=FakeGitHubAdmin(),
-        issues=github_issues,
         claude_installation=RealClaudeInstallation(),
         prompt_executor=RealPromptExecutor(time),
         graphite=fake_graphite,

@@ -1,6 +1,5 @@
 """Tests for GitHub operations."""
 
-from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.github.parsing import _parse_github_pr_url, extract_owner_repo_from_github_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import GitHubRepoId
@@ -121,7 +120,7 @@ def test_extract_owner_repo_from_github_url_invalid_urls() -> None:
 
 def test_build_issue_pr_linkage_query_structure() -> None:
     """Test that issue PR linkage query uses timelineItems with CrossReferencedEvent."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     query = ops._build_issue_pr_linkage_query([100, 200], GitHubRepoId("test-owner", "test-repo"))
 
@@ -217,7 +216,7 @@ def test_issues_with_pr_linkages_query_structure() -> None:
 
 def test_parse_issue_pr_linkages_with_single_pr() -> None:
     """Test parsing timeline response with single PR closing issue."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response with PR closing issue 100 (uses aggregated check counts)
     response = {
@@ -272,7 +271,7 @@ def test_parse_issue_pr_linkages_with_single_pr() -> None:
 
 def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
     """Test parsing timeline response with multiple PRs closing same issue."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response with two PRs closing issue 100 (aggregated format)
     response = {
@@ -328,7 +327,7 @@ def test_parse_issue_pr_linkages_with_multiple_prs() -> None:
 
 def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
     """Test parsing response where same PR closes multiple issues."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response with same PR closing both issues 100 and 101 (aggregated format)
     response = {
@@ -385,7 +384,7 @@ def test_parse_issue_pr_linkages_with_pr_linking_multiple_issues() -> None:
 
 def test_parse_issue_pr_linkages_handles_empty_timeline() -> None:
     """Test parsing handles issues with no linked PRs."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     response = {"data": {"repository": {"issue_100": {"timelineItems": {"nodes": []}}}}}
 
@@ -398,7 +397,7 @@ def test_parse_issue_pr_linkages_handles_empty_timeline() -> None:
 
 def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
     """Test parsing handles null values gracefully."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response with null nodes and null source (aggregated format)
     response = {
@@ -441,7 +440,7 @@ def test_parse_issue_pr_linkages_handles_null_nodes() -> None:
 
 def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
     """Test parsing handles missing optional fields (checks, conflicts)."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response with minimal fields in PR source (aggregated format)
     response = {
@@ -483,7 +482,7 @@ def test_parse_issue_pr_linkages_handles_missing_optional_fields() -> None:
 
 def test_parse_issue_pr_linkages_includes_all_referencing_prs() -> None:
     """Test parsing includes all PRs regardless of willCloseTarget."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response with PRs that reference the issue (aggregated format)
     response = {
@@ -535,7 +534,7 @@ def test_parse_issue_pr_linkages_includes_all_referencing_prs() -> None:
 
 def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:
     """Test parsing handles non-existent issue (null result)."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # Timeline response where one issue doesn't exist (aggregated format)
     response = {
@@ -578,7 +577,7 @@ def test_parse_issue_pr_linkages_handles_issue_not_found() -> None:
 
 def test_parse_issues_with_pr_linkages_single_pr_closing_issue() -> None:
     """Test parsing response with a PR that closes a single issue."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     response = {
         "data": {
@@ -654,7 +653,7 @@ def test_parse_issues_with_pr_linkages_pr_closing_multiple_issues() -> None:
 
     With timeline events approach, each issue has its own timeline showing the PR.
     """
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     # PR 200 references both issues (shows up in each issue's timeline)
     pr_event = {
@@ -720,7 +719,7 @@ def test_parse_issues_with_pr_linkages_pr_closing_multiple_issues() -> None:
 
 def test_parse_issues_with_pr_linkages_multiple_prs_for_same_issue() -> None:
     """Test parsing response with multiple PRs referencing the same issue."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     response = {
         "data": {
@@ -789,7 +788,7 @@ def test_parse_issues_with_pr_linkages_multiple_prs_for_same_issue() -> None:
 
 def test_parse_issues_with_pr_linkages_issue_with_no_referencing_prs() -> None:
     """Test parsing response with issue that has no referencing PRs."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     response = {
         "data": {
@@ -827,7 +826,7 @@ def test_parse_issues_with_pr_linkages_issue_with_no_referencing_prs() -> None:
 
 def test_parse_issues_with_pr_linkages_handles_null_nodes() -> None:
     """Test parsing handles null values in nodes arrays."""
-    ops = RealGitHub(FakeTime())
+    ops = RealGitHub.for_test()
 
     response = {
         "data": {

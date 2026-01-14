@@ -3,7 +3,6 @@
 The --up flag navigates to the child branch after landing.
 """
 
-from dataclasses import replace
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -93,9 +92,13 @@ def test_land_with_up_navigates_to_child_branch() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
@@ -393,8 +396,8 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
             repo=repo,
             use_graphite=True,
             cwd=feature_1_path,  # Running from worktree
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Without the fix: find_worktree_for_branch(feature_1_path, "feature-2")
         # would fail because feature_1_path is no longer in any worktree list

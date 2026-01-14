@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
@@ -43,7 +44,8 @@ class FakeGitHub(GitHub):
         authenticated: bool = True,
         auth_username: str | None = "test-user",
         auth_hostname: str | None = "github.com",
-        issues: list[IssueInfo] | None = None,
+        issues_gateway: GitHubIssues | None = None,
+        issues_data: list[IssueInfo] | None = None,
         pr_titles: dict[int, str] | None = None,
         pr_bodies_by_number: dict[int, str] | None = None,
         pr_diffs: dict[int, str] | None = None,
@@ -70,7 +72,9 @@ class FakeGitHub(GitHub):
             authenticated: Whether gh CLI is authenticated (default True for test convenience)
             auth_username: Username returned by check_auth_status() (default "test-user")
             auth_hostname: Hostname returned by check_auth_status() (default "github.com")
-            issues: List of IssueInfo objects for get_issues_with_pr_linkages()
+            issues_gateway: Optional GitHubIssues implementation. If None, creates
+                           FakeGitHubIssues with default empty state.
+            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
             pr_titles: Mapping of pr_number -> title for explicit title storage
             pr_bodies_by_number: Mapping of pr_number -> body for explicit body storage
             pr_diffs: Mapping of pr_number -> diff content
@@ -97,7 +101,14 @@ class FakeGitHub(GitHub):
         self._authenticated = authenticated
         self._auth_username = auth_username
         self._auth_hostname = auth_hostname
-        self._issues = issues or []
+        # Issues gateway composition - create FakeGitHubIssues if not provided
+        if issues_gateway is not None:
+            self._issues_gateway = issues_gateway
+        else:
+            from erk_shared.github.issues.fake import FakeGitHubIssues
+
+            self._issues_gateway = FakeGitHubIssues()
+        self._issues_data = issues_data or []
         self._pr_titles = pr_titles or {}
         self._pr_bodies_by_number = pr_bodies_by_number or {}
         self._pr_diffs = pr_diffs or {}
@@ -128,6 +139,11 @@ class FakeGitHub(GitHub):
         self._deleted_remote_branches: list[str] = []
         # Ordered log of all mutation operations for testing operation ordering
         self._operation_log: list[tuple[Any, ...]] = []
+
+    @property
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations."""
+        return self._issues_gateway
 
     @property
     def merged_prs(self) -> list[int]:
@@ -510,7 +526,7 @@ class FakeGitHub(GitHub):
 
         # Filter issues by labels, state, and creator
         filtered_issues = []
-        for issue in self._issues:
+        for issue in self._issues_data:
             # Check if issue has all required labels
             if not all(label in issue.labels for label in labels):
                 continue

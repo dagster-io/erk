@@ -7,8 +7,6 @@ Tests for:
 - Landing from different worktree
 """
 
-from dataclasses import replace
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -106,8 +104,8 @@ def test_land_cleanup_confirmation_decline() -> None:
             repo=repo,
             use_graphite=True,
             console=console,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
 
@@ -198,9 +196,13 @@ def test_land_force_skips_cleanup_confirmation() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Use --force to skip confirmation (no input needed)
         result = runner.invoke(
@@ -372,9 +374,13 @@ def test_land_from_different_worktree() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         result = runner.invoke(
             cli, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False

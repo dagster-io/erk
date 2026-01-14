@@ -47,7 +47,7 @@ def test_plan_list_no_filters() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan1), 2: plan_to_issue(plan2)})
-        github = FakeGitHub(issues=[plan_to_issue(plan1), plan_to_issue(plan2)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan1), plan_to_issue(plan2)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Use erk plan list for static output
@@ -95,7 +95,7 @@ def test_plan_list_filter_by_state() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(open_plan), 2: plan_to_issue(closed_plan)}
         )
-        github = FakeGitHub(issues=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
+        github = FakeGitHub(issues_data=[plan_to_issue(open_plan), plan_to_issue(closed_plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for open issues
@@ -142,7 +142,9 @@ def test_plan_list_filter_by_labels() -> None:
         issues = FakeGitHubIssues(
             issues={1: plan_to_issue(plan_with_both), 2: plan_to_issue(plan_with_one)}
         )
-        github = FakeGitHub(issues=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)])
+        github = FakeGitHub(
+            issues_data=[plan_to_issue(plan_with_both), plan_to_issue(plan_with_one)]
+        )
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act - Filter for both labels (AND logic)
@@ -185,7 +187,7 @@ def test_plan_list_with_limit() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues=plans_dict)
-        github = FakeGitHub(issues=issues_list)
+        github = FakeGitHub(issues_data=issues_list)
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act
@@ -246,7 +248,7 @@ def test_plan_list_combined_filters() -> None:
             }
         )
         github = FakeGitHub(
-            issues=[
+            issues_data=[
                 plan_to_issue(matching_plan),
                 plan_to_issue(wrong_state_plan),
                 plan_to_issue(wrong_labels_plan),
@@ -296,7 +298,7 @@ def test_plan_list_empty_results() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         issues = FakeGitHubIssues(issues={1: plan_to_issue(plan)})
-        github = FakeGitHub(issues=[plan_to_issue(plan)])
+        github = FakeGitHub(issues_data=[plan_to_issue(plan)])
         ctx = build_workspace_test_context(env, issues=issues, github=github)
 
         # Act

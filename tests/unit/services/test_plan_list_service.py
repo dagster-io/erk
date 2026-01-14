@@ -32,7 +32,7 @@ class TestPlanListService:
             author="test-user",
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(issues=[issue])
+        fake_github = FakeGitHub(issues_data=[issue])
 
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -72,7 +72,7 @@ class TestPlanListService:
         )
         # Configure issues and pr_issue_linkages for unified query
         fake_github = FakeGitHub(
-            issues=[issue],
+            issues_data=[issue],
             pr_issue_linkages={42: [pr]},
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
@@ -133,7 +133,7 @@ class TestPlanListService:
             author="test-user",
         )
         # Configure both issues for the unified query
-        fake_github = FakeGitHub(issues=[open_issue, closed_issue])
+        fake_github = FakeGitHub(issues_data=[open_issue, closed_issue])
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
 
         service = RealPlanListService(fake_github, fake_issues)
@@ -174,7 +174,7 @@ class TestPlanListService:
             author="test-user",
         )
         fake_issues = FakeGitHubIssues(issues={1: open_issue, 2: closed_issue})
-        fake_github = FakeGitHub(issues=[open_issue, closed_issue])
+        fake_github = FakeGitHub(issues_data=[open_issue, closed_issue])
 
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -239,7 +239,7 @@ last_dispatched_at: '2024-01-15T11:00:00Z'
         fake_issues = FakeGitHubIssues(issues={42: issue})
         # Configure both issues (for unified query) and workflow_runs_by_node_id
         fake_github = FakeGitHub(
-            issues=[issue],
+            issues_data=[issue],
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
@@ -290,7 +290,7 @@ last_dispatched_node_id: 'WFR_abc123'
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(
-            issues=[issue],
+            issues_data=[issue],
             workflow_runs_by_node_id={"WFR_abc123": run},
         )
 
@@ -320,7 +320,7 @@ last_dispatched_node_id: 'WFR_abc123'
             author="test-user",
         )
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(issues=[issue])
+        fake_github = FakeGitHub(issues_data=[issue])
 
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -360,7 +360,7 @@ last_dispatched_node_id: 'WFR_nonexistent'
         )
         # No workflow runs configured - node_id won't be found
         fake_issues = FakeGitHubIssues(issues={42: issue})
-        fake_github = FakeGitHub(issues=[issue])
+        fake_github = FakeGitHub(issues_data=[issue])
 
         service = RealPlanListService(fake_github, fake_issues)
         result = service.get_plan_list_data(
@@ -402,7 +402,7 @@ last_dispatched_node_id: 'WFR_abc123'
         # Configure GitHub to raise an error when fetching workflow runs
         fake_issues = FakeGitHubIssues(issues={42: issue})
         fake_github = FakeGitHub(
-            issues=[issue],
+            issues_data=[issue],
             workflow_runs_error="Network unreachable",
         )
 

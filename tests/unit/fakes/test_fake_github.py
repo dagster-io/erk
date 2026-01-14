@@ -469,7 +469,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_labels() -> None:
         updated_at=now,
         author="test-user",
     )
-    ops = FakeGitHub(issues=[issue1, issue2])
+    ops = FakeGitHub(issues_data=[issue1, issue2])
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -507,7 +507,7 @@ def test_fake_github_get_issues_with_pr_linkages_filters_by_state() -> None:
         updated_at=now,
         author="test-user",
     )
-    ops = FakeGitHub(issues=[open_issue, closed_issue])
+    ops = FakeGitHub(issues_data=[open_issue, closed_issue])
 
     issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -545,7 +545,7 @@ def test_fake_github_get_issues_with_pr_linkages_returns_pr_linkages() -> None:
         repo="repo",
     )
     ops = FakeGitHub(
-        issues=[issue],
+        issues_data=[issue],
         pr_issue_linkages={42: [pr]},
     )
 
@@ -577,7 +577,7 @@ def test_fake_github_get_issues_with_pr_linkages_respects_limit() -> None:
         )
         for i in range(10)
     ]
-    ops = FakeGitHub(issues=issues)
+    ops = FakeGitHub(issues_data=issues)
 
     result_issues, _ = ops.get_issues_with_pr_linkages(
         location=TEST_LOCATION,
@@ -627,7 +627,7 @@ def test_fake_github_get_issues_with_pr_linkages_no_linkages_for_filtered_issues
     )
     # Issue 2 has PR linkage but doesn't match label filter
     ops = FakeGitHub(
-        issues=[issue1, issue2],
+        issues_data=[issue1, issue2],
         pr_issue_linkages={2: [pr]},
     )
 

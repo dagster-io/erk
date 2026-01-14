@@ -7,7 +7,6 @@ The git pull is executed in Python (not in the activation script) to avoid
 race conditions with stale index.lock files from earlier git operations.
 """
 
-from dataclasses import replace
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -91,9 +90,13 @@ def test_land_default_calls_git_pull_in_python() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Default (no --no-pull flag), use --force to skip confirmation
         result = runner.invoke(
@@ -181,9 +184,13 @@ def test_land_no_pull_flag_skips_git_pull() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # --no-pull flag
         result = runner.invoke(
@@ -279,9 +286,13 @@ def test_land_with_up_does_not_call_git_pull() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # --up flag navigates to child, not trunk - should NOT call git pull
         result = runner.invoke(
@@ -376,9 +387,13 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
         )
 
         test_ctx = env.build_context(
-            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Default (no --no-pull flag), use --force to skip confirmation
         result = runner.invoke(

@@ -7,8 +7,6 @@ there are no local Claude sessions to learn from.
 Regression test for issue #4871.
 """
 
-from dataclasses import replace
-
 import pytest
 from click.testing import CliRunner
 
@@ -125,8 +123,8 @@ def test_land_skips_learn_prompt_for_remote_pr(
             repo=repo,
             use_graphite=True,
             console=fake_console,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Track if find_sessions_for_plan was called (it should NOT be called)
         find_sessions_called: list[int] = []
@@ -260,8 +258,8 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
             repo=repo,
             use_graphite=True,
             console=fake_console,
+            issues=issues_ops,
         )
-        test_ctx = replace(test_ctx, issues=issues_ops)
 
         # Track if find_sessions_for_plan was called (it SHOULD be called)
         find_sessions_called: list[int] = []

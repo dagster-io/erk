@@ -3,6 +3,7 @@ title: Gateway ABC Implementation Checklist
 read_when:
   - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
   - "implementing new gateway operations"
+  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
 tripwires:
   - action: "adding a new method to Git ABC"
     warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
@@ -119,6 +120,90 @@ class FakeGitHub(GitHub):
     @property
     def thread_replies(self) -> list[tuple[str, str]]:
         return self._thread_replies
+```
+
+## Gateway Composition
+
+When one gateway composes another (e.g., GitHub composes GitHubIssues), follow these patterns:
+
+### ABC: Abstract Property
+
+```python
+class GitHub(ABC):
+    @property
+    @abstractmethod
+    def issues(self) -> GitHubIssues:
+        """Return the composed GitHubIssues gateway."""
+        ...
+```
+
+### Real: Compose Real + Factory Method
+
+```python
+class RealGitHub(GitHub):
+    def __init__(self, time: Time, repo_info: RepoInfo | None, *, issues: GitHubIssues) -> None:
+        self._issues = issues
+        # ...
+
+    @property
+    def issues(self) -> GitHubIssues:
+        return self._issues
+
+    @classmethod
+    def for_test(cls, *, time: Time | None = None, repo_info: RepoInfo | None = None) -> "RealGitHub":
+        """Factory for tests that need Real implementation with sensible defaults."""
+        from erk_shared.gateway.time.fake import FakeTime
+        from erk_shared.github.issues import RealGitHubIssues
+        return cls(
+            time=time if time is not None else FakeTime(),
+            repo_info=repo_info,
+            issues=RealGitHubIssues(),
+        )
+```
+
+### Fake: Separate Data vs Gateway Parameters
+
+**Critical**: Use distinct parameter names to avoid collision:
+
+- `foo_data` for test data (e.g., `issues_data: list[IssueInfo]`)
+- `foo_gateway` for composed gateway (e.g., `issues_gateway: GitHubIssues`)
+
+```python
+class FakeGitHub(GitHub):
+    def __init__(
+        self,
+        *,
+        issues_data: list[IssueInfo] | None = None,  # Test data for internal use
+        issues_gateway: GitHubIssues | None = None,  # Composed gateway
+    ) -> None:
+        self._issues_data = issues_data or []
+        self._issues_gateway = issues_gateway or FakeGitHubIssues()
+
+    @property
+    def issues(self) -> GitHubIssues:
+        return self._issues_gateway
+```
+
+### DryRun: Compose DryRun Variant Internally
+
+```python
+class DryRunGitHub(GitHub):
+    def __init__(self, wrapped: GitHub) -> None:
+        self._wrapped = wrapped
+        self._issues = DryRunGitHubIssues(wrapped.issues)
+
+    @property
+    def issues(self) -> GitHubIssues:
+        return self._issues
+```
+
+### Printing: Delegate to Wrapped
+
+```python
+class PrintingGitHub(GitHub):
+    @property
+    def issues(self) -> GitHubIssues:
+        return self._wrapped.issues
 ```
 
 ## Common Pitfall

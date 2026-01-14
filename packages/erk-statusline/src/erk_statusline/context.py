@@ -18,6 +18,7 @@ from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
@@ -97,7 +98,9 @@ def create_context(cwd: str) -> StatuslineContext:
         # Not in a git repo, no origin remote, or URL unparseable - repo_info stays None
         pass
 
-    github = RealGitHub(RealTime(), repo_info)
+    # Create issues first, then compose into github
+    issues = RealGitHubIssues(target_repo=None)
+    github = RealGitHub(RealTime(), repo_info, issues=issues)
     graphite = resolve_graphite(RealErkInstallation())
 
     branch_manager = create_branch_manager(git=git, github=github, graphite=graphite)

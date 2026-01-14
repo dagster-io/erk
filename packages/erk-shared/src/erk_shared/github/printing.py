@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 
 from erk_shared.github.abc import GitHub
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
     GitHubRepoLocation,
@@ -34,6 +35,11 @@ class PrintingGitHub(PrintingBase, GitHub):
     """
 
     # Inherits __init__, _emit, and _format_command from PrintingBase
+
+    @property
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations (delegates to wrapped)."""
+        return self._wrapped.issues
 
     # Read-only operations: delegate without printing
 

@@ -1,7 +1,10 @@
 """Abstract base class for GitHub operations."""
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
@@ -14,12 +17,25 @@ from erk_shared.github.types import (
     WorkflowRun,
 )
 
+if TYPE_CHECKING:
+    from erk_shared.github.issues.abc import GitHubIssues
+
 
 class GitHub(ABC):
     """Abstract interface for GitHub operations.
 
     All implementations (real and fake) must implement this interface.
     """
+
+    @property
+    @abstractmethod
+    def issues(self) -> GitHubIssues:
+        """Access to issue operations.
+
+        Returns the composed GitHubIssues gateway for issue-related operations.
+        All issue operations should be accessed via ctx.github.issues.
+        """
+        ...
 
     @abstractmethod
     def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
