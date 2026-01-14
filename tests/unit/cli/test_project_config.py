@@ -6,8 +6,10 @@ from erk.cli.config import (
     LoadedConfig,
     ProjectConfig,
     load_config,
+    load_local_config,
     load_project_config,
     merge_configs,
+    merge_configs_with_local,
 )
 
 
@@ -430,3 +432,204 @@ commands = ["git fetch origin", "uv sync"]
         assert result.pool_size == 4
         assert result.pool_checkout_shell == "bash"
         assert result.pool_checkout_commands == ["git fetch origin", "uv sync"]
+
+
+class TestLoadLocalConfig:
+    """Tests for load_local_config function."""
+
+    def test_returns_defaults_when_file_missing(self, tmp_path: Path) -> None:
+        """Returns empty defaults when local.toml doesn't exist."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+
+        result = load_local_config(repo_root)
+
+        assert result.env == {}
+        assert result.post_create_commands == []
+        assert result.post_create_shell is None
+        assert result.plans_repo is None
+        assert result.pool_size is None
+        assert result.pool_checkout_commands == []
+        assert result.pool_checkout_shell is None
+
+    def test_loads_from_local_toml(self, tmp_path: Path) -> None:
+        """Loads config from .erk/local.toml."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "local.toml").write_text(
+            '[env]\nMY_VAR = "my_value"\n',
+            encoding="utf-8",
+        )
+
+        result = load_local_config(repo_root)
+
+        assert result.env == {"MY_VAR": "my_value"}
+
+    def test_loads_pool_size(self, tmp_path: Path) -> None:
+        """Loads pool.max_slots from local config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "local.toml").write_text(
+            "[pool]\nmax_slots = 10\n",
+            encoding="utf-8",
+        )
+
+        result = load_local_config(repo_root)
+
+        assert result.pool_size == 10
+
+    def test_loads_plans_repo(self, tmp_path: Path) -> None:
+        """Loads plans.repo from local config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "local.toml").write_text(
+            '[plans]\nrepo = "my-org/my-plans"\n',
+            encoding="utf-8",
+        )
+
+        result = load_local_config(repo_root)
+
+        assert result.plans_repo == "my-org/my-plans"
+
+    def test_loads_post_create_commands(self, tmp_path: Path) -> None:
+        """Loads post_create commands from local config."""
+        repo_root = tmp_path / "repo"
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir(parents=True)
+        (erk_dir / "local.toml").write_text(
+            '[post_create]\nshell = "zsh"\ncommands = ["source ~/.zshrc"]\n',
+            encoding="utf-8",
+        )
+
+        result = load_local_config(repo_root)
+
+        assert result.post_create_shell == "zsh"
+        assert result.post_create_commands == ["source ~/.zshrc"]
+
+
+class TestMergeConfigsWithLocal:
+    """Tests for merge_configs_with_local function."""
+
+    def test_local_env_overrides_base_env(self) -> None:
+        """Local env values override base env values."""
+        base_config = LoadedConfig.test(env={"VAR1": "base1", "VAR2": "base2"})
+        local_config = LoadedConfig.test(env={"VAR2": "local2", "VAR3": "local3"})
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.env == {
+            "VAR1": "base1",  # From base
+            "VAR2": "local2",  # Local overrides
+            "VAR3": "local3",  # From local
+        }
+
+    def test_local_pool_size_overrides_base(self) -> None:
+        """Local pool_size overrides base pool_size."""
+        base_config = LoadedConfig.test(pool_size=4)
+        local_config = LoadedConfig.test(pool_size=10)
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.pool_size == 10
+
+    def test_local_plans_repo_overrides_base(self) -> None:
+        """Local plans_repo overrides base plans_repo."""
+        base_config = LoadedConfig.test(plans_repo="base-org/base-plans")
+        local_config = LoadedConfig.test(plans_repo="local-org/local-plans")
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.plans_repo == "local-org/local-plans"
+
+    def test_commands_concatenate_base_then_local(self) -> None:
+        """Post-create commands concatenate: base first, then local."""
+        base_config = LoadedConfig.test(post_create_commands=["base_cmd1", "base_cmd2"])
+        local_config = LoadedConfig.test(post_create_commands=["local_cmd1"])
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.post_create_commands == ["base_cmd1", "base_cmd2", "local_cmd1"]
+
+    def test_pool_checkout_commands_concatenate(self) -> None:
+        """Pool checkout commands concatenate: base first, then local."""
+        base_config = LoadedConfig.test(pool_checkout_commands=["git fetch"])
+        local_config = LoadedConfig.test(pool_checkout_commands=["yarn install"])
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.pool_checkout_commands == ["git fetch", "yarn install"]
+
+    def test_uses_base_when_local_none(self) -> None:
+        """Uses base values when local values are None."""
+        base_config = LoadedConfig.test(
+            post_create_shell="bash",
+            plans_repo="base/repo",
+            pool_size=4,
+            pool_checkout_shell="bash",
+        )
+        local_config = LoadedConfig.test()  # All None
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.post_create_shell == "bash"
+        assert result.plans_repo == "base/repo"
+        assert result.pool_size == 4
+        assert result.pool_checkout_shell == "bash"
+
+    def test_local_shell_overrides_base(self) -> None:
+        """Local shell settings override base shell settings."""
+        base_config = LoadedConfig.test(
+            post_create_shell="bash",
+            pool_checkout_shell="bash",
+        )
+        local_config = LoadedConfig.test(
+            post_create_shell="zsh",
+            pool_checkout_shell="zsh",
+        )
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.post_create_shell == "zsh"
+        assert result.pool_checkout_shell == "zsh"
+
+    def test_merges_empty_configs(self) -> None:
+        """Handles merging empty configs."""
+        base_config = LoadedConfig.test()
+        local_config = LoadedConfig.test()
+
+        result = merge_configs_with_local(
+            base_config=base_config,
+            local_config=local_config,
+        )
+
+        assert result.env == {}
+        assert result.post_create_commands == []
+        assert result.post_create_shell is None
+        assert result.plans_repo is None
+        assert result.pool_size is None
+        assert result.pool_checkout_commands == []
+        assert result.pool_checkout_shell is None

@@ -326,22 +326,27 @@ prompt_learn_on_land = true  # Set false to disable learn prompts on erk land
 
 ### Repo Config
 
-Configuration stored in `{erks_dir}/config.toml`.
+Team-shared configuration stored in the repository.
 
-**Scope**: Applies to all erks for a specific repository.
+**Scope**: Applies to all users of the repository.
 
-**Location**: `{erks_root}/{repo_name}/config.toml`
+**Location**: `<repo-root>/.erk/config.toml` (checked into git)
 
 **Contents**:
 
 ```toml
 [env]
 DATABASE_URL = "postgresql://localhost/dev_db"
-API_KEY = "${SECRET_API_KEY}"
 
-[[post_create]]
-command = ["uv", "sync"]
-working_dir = "."
+[post_create]
+shell = "bash"
+commands = ["uv sync"]
+
+[pool]
+max_slots = 6
+
+[pool.checkout]
+commands = ["git fetch origin"]
 
 [plans]
 repo = "owner/plans-repo"  # Store plan issues in separate repo
@@ -349,7 +354,47 @@ repo = "owner/plans-repo"  # Store plan issues in separate repo
 
 When `[plans] repo` is configured, plan issues are created in the specified repository instead of the current repo. PRs use `Closes owner/plans-repo#N` format to close issues across repositories.
 
-**Access**: Via `load_config(erks_dir)` function.
+**Access**: Via `load_config(repo_root)` function.
+
+### Local Config
+
+Per-user configuration that overrides repo config.
+
+**Scope**: Personal settings for this user in this repository.
+
+**Location**: `<repo-root>/.erk/local.toml` (gitignored)
+
+**Purpose**: Allows individual users to customize their erk experience without affecting other team members. Common uses:
+
+- Different pool sizes (more/fewer worktree slots)
+- Custom shell or post-create commands
+- Environment variable overrides
+
+**Contents**:
+
+```toml
+[pool]
+max_slots = 10  # User wants more slots than team default
+
+[env]
+MY_CUSTOM_VAR = "value"
+
+[post_create]
+shell = "zsh"
+commands = ["source ~/.zshrc"]
+```
+
+**Merge Semantics** (local overrides repo):
+
+- `env`: Dict merge (local values override repo values)
+- `post_create.commands`: Concatenation (repo commands run first, then local)
+- `post_create.shell`: Override (local wins if set)
+- `pool.max_slots`: Override (local wins if set)
+- `plans.repo`: Override (local wins if set)
+
+**Access**: Via `load_local_config(repo_root)` + `merge_configs_with_local()`.
+
+**Creation**: `erk init` creates a template `.erk/local.toml` with commented examples.
 
 ---
 
@@ -469,7 +514,7 @@ A frozen dataclass containing all injected dependencies.
 **Configuration Fields**:
 
 - `global_config: GlobalConfig | None` - Global configuration (may be None during init)
-- `local_config: LoadedConfig | None` - Repository-specific configuration
+- `local_config: LoadedConfig | None` - Merged configuration (repo config + local overrides)
 - `dry_run: bool` - Whether to print operations instead of executing
 
 **Path Fields**:

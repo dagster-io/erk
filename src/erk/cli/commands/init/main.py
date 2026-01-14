@@ -81,6 +81,34 @@ def _build_repo_config_toml() -> str:
     return tomlkit.dumps(doc)
 
 
+def _build_local_config_toml() -> str:
+    """Build local.toml template content with explanatory comments.
+
+    Returns:
+        TOML content as a string
+    """
+    doc = tomlkit.document()
+    doc.add(tomlkit.comment(" .erk/local.toml"))
+    doc.add(tomlkit.comment(" Per-user local configuration (gitignored)"))
+    doc.add(tomlkit.comment(""))
+    doc.add(tomlkit.comment(" This file is for your personal settings that shouldn't be shared"))
+    doc.add(tomlkit.comment(" with other users of this repository. Common uses:"))
+    doc.add(tomlkit.comment(""))
+    doc.add(tomlkit.comment(" [pool]"))
+    doc.add(tomlkit.comment(" max_slots = 8                    # Number of worktree slots"))
+    doc.add(tomlkit.comment(""))
+    doc.add(tomlkit.comment(" [env]"))
+    doc.add(tomlkit.comment(' MY_CUSTOM_VAR = "value"          # Environment variables'))
+    doc.add(tomlkit.comment(""))
+    doc.add(tomlkit.comment(" [post_create]"))
+    doc.add(tomlkit.comment(' shell = "zsh"                    # Shell for post-create commands'))
+    doc.add(tomlkit.comment(' commands = ["source ~/.zshrc"]   # Post-worktree-create commands'))
+    doc.add(tomlkit.comment(""))
+    doc.add(tomlkit.comment(" [pool.checkout]"))
+    doc.add(tomlkit.comment(' commands = ["yarn install"]      # Commands to run on pool checkout'))
+    return tomlkit.dumps(doc)
+
+
 def detect_graphite(shell_ops: Shell) -> bool:
     """Detect if Graphite (gt) is installed and available in PATH."""
     return shell_ops.get_installed_tool_path("gt") is not None
@@ -162,7 +190,7 @@ def _create_prompt_hooks_directory(repo_root: Path) -> None:
 def _run_gitignore_prompts(repo_root: Path) -> None:
     """Run interactive prompts for .gitignore entries.
 
-    Offers to add .env, .erk/scratch/, and .impl/ to .gitignore.
+    Offers to add .env, .erk/scratch/, .impl/, and .erk/local.toml to .gitignore.
 
     Args:
         repo_root: Path to the repository root
@@ -194,8 +222,15 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         "Add .impl/ to .gitignore (temporary implementation plans)?",
     )
 
+    # Add .erk/local.toml
+    gitignore_content, local_added = _add_gitignore_entry_with_prompt(
+        gitignore_content,
+        ".erk/local.toml",
+        "Add .erk/local.toml to .gitignore (per-user local config)?",
+    )
+
     # Write if any entry was modified
-    if env_added or scratch_added or impl_added:
+    if env_added or scratch_added or impl_added or local_added:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
         user_output(f"Updated {gitignore_path}")
 
@@ -581,6 +616,12 @@ def run_init(
 
         cfg_path.write_text(_build_repo_config_toml(), encoding="utf-8")
         user_output(f"  Wrote {cfg_path}")
+
+        # Create local.toml template (gitignored, per-user config)
+        local_cfg_path = erk_dir / "local.toml"
+        if not local_cfg_path.exists():
+            local_cfg_path.write_text(_build_local_config_toml(), encoding="utf-8")
+            user_output(f"  Wrote {local_cfg_path}")
 
         # Create required version file
         version_file = erk_dir / "required-erk-uv-tool-version"
