@@ -2,13 +2,25 @@
 
 import os
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 VENV_NAMES = [".venv", "venv"]
 
 
-def find_local_erk() -> str | None:
-    """Walk up from cwd to find venv/bin/erk."""
+@dataclass(frozen=True)
+class ErkNotFound:
+    """Result when erk binary not found."""
+
+    venv_found: bool  # True if a venv dir was found (but no erk inside)
+
+
+def find_local_erk() -> str | ErkNotFound:
+    """Walk up from cwd to find venv/bin/erk.
+
+    Returns:
+        Path to erk binary if found, or ErkNotFound with context.
+    """
     # Explicit override via environment variable
     override = os.environ.get("ERK_VENV")
     if override:
@@ -18,31 +30,41 @@ def find_local_erk() -> str | None:
 
     # Walk up looking for conventional venv names
     cwd = Path.cwd()
+    venv_found = False
     for parent in [cwd, *cwd.parents]:
         for venv_name in VENV_NAMES:
-            local_erk = parent / venv_name / "bin" / "erk"
-            if local_erk.exists():
-                return str(local_erk)
-    return None
+            venv_dir = parent / venv_name
+            if venv_dir.is_dir():
+                venv_found = True
+                local_erk = venv_dir / "bin" / "erk"
+                if local_erk.exists():
+                    return str(local_erk)
+
+    return ErkNotFound(venv_found=venv_found)
 
 
 def main() -> None:
     """Entry point for erk-bootstrap."""
-    local_erk = find_local_erk()
+    result = find_local_erk()
 
-    # For completion: delegate or return empty
-    if "_ERK_COMPLETE" in os.environ:
-        if local_erk:
-            os.execv(local_erk, [local_erk, *sys.argv[1:]])
-        sys.exit(0)  # No completions outside projects
-
-    # For commands: delegate or error
-    if local_erk:
+    # Found erk - delegate to it
+    if isinstance(result, str):
+        local_erk = result
         os.execv(local_erk, [local_erk, *sys.argv[1:]])
 
-    print("erk: No .venv/bin/erk found in current directory or parents", file=sys.stderr)
-    print("hint: Run 'uv add erk && uv sync' in your project", file=sys.stderr)
-    print("hint: Set ERK_VENV=/path/to/venv for non-standard locations", file=sys.stderr)
+    # Not found - show appropriate error
+    if "_ERK_COMPLETE" in os.environ:
+        sys.exit(0)  # No completions outside projects
+
+    if result.venv_found:
+        # Case 2: In a project but erk not installed
+        print("erk: not installed in this project", file=sys.stderr)
+        print("hint: Run 'uv add erk && uv sync' to install", file=sys.stderr)
+        print("hint: Set ERK_VENV=/path/to/venv for non-standard locations", file=sys.stderr)
+    else:
+        # Case 1: Not in any project
+        print("erk: no project found", file=sys.stderr)
+
     sys.exit(1)
 
 

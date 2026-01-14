@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from erk_sh_bootstrap.cli import find_local_erk
+from erk_sh_bootstrap.cli import ErkNotFound, find_local_erk
 
 
 class TestFindLocalErk:
@@ -97,20 +97,20 @@ class TestFindLocalErk:
 
         assert result == str(dot_venv_erk)
 
-    def test_returns_none_when_no_venv_found(
+    def test_returns_not_found_when_no_venv_found(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when no venv with erk is found."""
+        """Should return ErkNotFound(venv_found=False) when no venv exists."""
         monkeypatch.chdir(tmp_path)
 
         result = find_local_erk()
 
-        assert result is None
+        assert result == ErkNotFound(venv_found=False)
 
-    def test_returns_none_when_venv_exists_but_no_erk(
+    def test_returns_not_found_when_venv_exists_but_no_erk(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
-        """Should return None when .venv exists but has no erk binary."""
+        """Should return ErkNotFound(venv_found=True) when venv exists but has no erk binary."""
         venv_bin = tmp_path / ".venv" / "bin"
         venv_bin.mkdir(parents=True)
 
@@ -118,7 +118,7 @@ class TestFindLocalErk:
 
         result = find_local_erk()
 
-        assert result is None
+        assert result == ErkNotFound(venv_found=True)
 
     def test_erk_venv_env_override(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
         """Should use ERK_VENV environment variable when set."""
