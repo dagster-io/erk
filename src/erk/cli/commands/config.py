@@ -67,18 +67,27 @@ def _get_post_create_value(cfg: LoadedConfig, parts: list[str], key: str) -> Non
     Ensure.invariant(False, f"Key not found: {key}")
 
 
-def _write_pool_max_slots(repo_root: Path, max_slots: int) -> None:
-    """Write pool.max_slots to .erk/config.toml.
+def _write_to_repo_config(
+    *,
+    repo_root: Path,
+    key: str,
+    value: object,
+    local: bool,
+) -> None:
+    """Write a value to repo config (config.toml or config.local.toml).
 
-    Creates or updates the [pool] section with max_slots setting.
-    Preserves existing formatting and comments using tomlkit.
+    Handles nested keys like "pool.max_slots", "env.MY_VAR", "post_create.shell".
+    Creates file if doesn't exist. Preserves existing formatting with tomlkit.
 
     Args:
         repo_root: Path to the repository root directory
-        max_slots: Maximum number of pool slots to configure
+        key: Dot-separated key path (e.g., "pool.max_slots", "env.FOO")
+        value: Value to write (int, str, list, etc.)
+        local: If True, write to config.local.toml; otherwise config.toml
     """
     config_dir = repo_root / ".erk"
-    config_path = config_dir / "config.toml"
+    config_filename = "config.local.toml" if local else "config.toml"
+    config_path = config_dir / config_filename
 
     # Ensure .erk directory exists
     if not config_dir.exists():
@@ -91,15 +100,22 @@ def _write_pool_max_slots(repo_root: Path, max_slots: int) -> None:
     else:
         doc = tomlkit.document()
 
-    # Ensure [pool] section exists
-    if "pool" not in doc:
-        assert isinstance(doc, MutableMapping), f"Expected MutableMapping, got {type(doc)}"
-        cast(dict[str, Any], doc)["pool"] = tomlkit.table()
+    # Parse key into parts (e.g., "pool.max_slots" -> ["pool", "max_slots"])
+    parts = key.split(".")
 
-    # Set max_slots value
-    pool_section = doc["pool"]
-    assert isinstance(pool_section, MutableMapping), type(pool_section)
-    cast(dict[str, Any], pool_section)["max_slots"] = max_slots
+    # Navigate/create sections for nested keys
+    current: MutableMapping[str, Any] = cast(MutableMapping[str, Any], doc)
+    for section_key in parts[:-1]:
+        if section_key not in current:
+            assert isinstance(current, MutableMapping), type(current)
+            current[section_key] = tomlkit.table()
+        section = current[section_key]
+        assert isinstance(section, MutableMapping), type(section)
+        current = section
+
+    # Set the final value
+    final_key = parts[-1]
+    current[final_key] = value
 
     # Write back to file
     with config_path.open("w", encoding="utf-8") as f:
@@ -130,9 +146,12 @@ def config_keys() -> None:
     repo_keys = [
         ("trunk-branch", "The main/master branch name for the repository"),
         ("pool.max_slots", "Maximum number of pool slots for worktree pool"),
+        ("pool.checkout.shell", "Shell to use for pool checkout commands"),
+        ("pool.checkout.commands", "Commands to run after checking out a worktree from pool"),
         ("env.<name>", "Environment variables to set in worktrees"),
         ("post_create.shell", "Shell to use for post-create commands"),
         ("post_create.commands", "Commands to run after creating a worktree"),
+        ("plans.repo", "Repository for storing plan issues (owner/repo format)"),
     ]
     formatter.write_dl(repo_keys)
     user_output(formatter.getvalue().rstrip())
@@ -257,16 +276,22 @@ def _parse_config_value(key: str, value: str, current_type: type) -> object:
 
 
 @config_group.command("set")
+@click.option("-l", "--local", is_flag=True, help="Write to .erk/config.local.toml instead")
 @click.argument("key", metavar="KEY")
 @click.argument("value", metavar="VALUE")
 @click.pass_obj
-def config_set(ctx: ErkContext, key: str, value: str) -> None:
+def config_set(ctx: ErkContext, local: bool, key: str, value: str) -> None:
     """Update configuration with a value for the given key."""
     # Parse key into parts
     parts = key.split(".")
 
     # Handle global config keys
     if parts[0] in get_global_config_keys():
+        # Global keys cannot be written to local config
+        if local:
+            user_output(f"Global key '{key}' cannot be written to local config")
+            raise SystemExit(1)
+
         config_path = ctx.erk_installation.config_path()
         global_config = Ensure.not_none(
             ctx.global_config,
@@ -286,6 +311,11 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
 
     # Handle repo config keys
     if parts[0] == "trunk-branch":
+        # trunk-branch lives in pyproject.toml, not erk config
+        if local:
+            user_output("trunk-branch lives in pyproject.toml. Cannot use --local flag.")
+            raise SystemExit(1)
+
         # discover_repo_context checks for git repository and raises FileNotFoundError
         repo = discover_repo_context(ctx, Path.cwd())
 
@@ -318,8 +348,61 @@ def config_set(ctx: ErkContext, key: str, value: str) -> None:
             raise SystemExit(1)
 
         pool_size = int(value)
-        _write_pool_max_slots(repo.root, pool_size)
-        user_output(f"Set pool.max_slots={pool_size}")
+        _write_to_repo_config(repo_root=repo.root, key=key, value=pool_size, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set pool.max_slots={pool_size}{local_suffix}")
+        return
+
+    # Handle env.<name> keys
+    if parts[0] == "env" and len(parts) == 2:
+        repo = discover_repo_context(ctx, Path.cwd())
+        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set {key}={value}{local_suffix}")
+        return
+
+    # Handle post_create.shell
+    if parts[0] == "post_create" and len(parts) == 2 and parts[1] == "shell":
+        repo = discover_repo_context(ctx, Path.cwd())
+        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set {key}={value}{local_suffix}")
+        return
+
+    # Handle post_create.commands (comma-separated list)
+    if parts[0] == "post_create" and len(parts) == 2 and parts[1] == "commands":
+        repo = discover_repo_context(ctx, Path.cwd())
+        # Parse comma-separated commands into list
+        commands = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
+        _write_to_repo_config(repo_root=repo.root, key=key, value=commands, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set {key}={commands}{local_suffix}")
+        return
+
+    # Handle pool.checkout.shell
+    if parts[0] == "pool" and len(parts) == 3 and parts[1] == "checkout" and parts[2] == "shell":
+        repo = discover_repo_context(ctx, Path.cwd())
+        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set {key}={value}{local_suffix}")
+        return
+
+    # Handle pool.checkout.commands (comma-separated list)
+    if parts[0] == "pool" and len(parts) == 3 and parts[1] == "checkout" and parts[2] == "commands":
+        repo = discover_repo_context(ctx, Path.cwd())
+        # Parse comma-separated commands into list
+        commands = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
+        _write_to_repo_config(repo_root=repo.root, key=key, value=commands, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set {key}={commands}{local_suffix}")
+        return
+
+    # Handle plans.repo
+    if parts[0] == "plans" and len(parts) == 2 and parts[1] == "repo":
+        repo = discover_repo_context(ctx, Path.cwd())
+        _write_to_repo_config(repo_root=repo.root, key=key, value=value, local=local)
+        local_suffix = " (local)" if local else ""
+        user_output(f"Set {key}={value}{local_suffix}")
         return
 
     # Other repo config keys not implemented yet

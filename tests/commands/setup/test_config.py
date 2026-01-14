@@ -789,3 +789,390 @@ def test_config_list_shows_pool_max_slots_default() -> None:
 
         assert result.exit_code == 0, result.output
         assert "pool.max_slots=4 (default)" in result.output
+
+
+# --local flag tests
+
+
+def test_config_set_local_writes_to_local_config() -> None:
+    """Test that --local writes to config.local.toml, not config.toml."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "pool.max_slots", "8"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set pool.max_slots=8 (local)" in result.output
+
+        # Verify config.local.toml was created
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        assert local_config_path.exists()
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "[pool]" in content
+        assert "max_slots = 8" in content
+
+        # Verify config.toml was NOT created
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert not config_path.exists()
+
+
+def test_config_set_local_short_flag() -> None:
+    """Test that -l short flag works the same as --local."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "set", "-l", "pool.max_slots", "5"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Set pool.max_slots=5 (local)" in result.output
+
+        # Verify config.local.toml was created
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        assert local_config_path.exists()
+
+
+def test_config_set_local_global_key_fails() -> None:
+    """Test that --local with global key fails with error."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "use_graphite", "false"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "Global key 'use_graphite' cannot be written to local config" in result.output
+
+
+def test_config_set_local_trunk_branch_fails() -> None:
+    """Test that --local with trunk-branch fails with error."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "trunk-branch", "main"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "trunk-branch lives in pyproject.toml" in result.output
+
+
+def test_config_set_local_env_var() -> None:
+    """Test setting env.<name> with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "env.MY_SECRET", "secret_value"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set env.MY_SECRET=secret_value (local)" in result.output
+
+        # Verify config.local.toml contains the env var
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "[env]" in content
+        assert 'MY_SECRET = "secret_value"' in content
+
+
+def test_config_set_local_post_create_shell() -> None:
+    """Test setting post_create.shell with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "post_create.shell", "/bin/zsh"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set post_create.shell=/bin/zsh (local)" in result.output
+
+        # Verify config.local.toml contains the setting
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "[post_create]" in content
+        assert 'shell = "/bin/zsh"' in content
+
+
+def test_config_set_local_post_create_commands() -> None:
+    """Test setting post_create.commands with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli,
+            ["config", "set", "--local", "post_create.commands", "echo hello, echo world"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "(local)" in result.output
+
+        # Verify config.local.toml contains the commands
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "[post_create]" in content
+        assert "commands" in content
+
+
+def test_config_set_local_plans_repo() -> None:
+    """Test setting plans.repo with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "plans.repo", "myorg/plans"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set plans.repo=myorg/plans (local)" in result.output
+
+        # Verify config.local.toml contains the setting
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "[plans]" in content
+        assert 'repo = "myorg/plans"' in content
+
+
+def test_config_set_without_local_writes_to_config_toml() -> None:
+    """Test that without --local flag, writes go to config.toml."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "env.PUBLIC_VAR", "public_value"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        # Should NOT have "(local)" suffix
+        assert "(local)" not in result.output
+        assert "Set env.PUBLIC_VAR=public_value" in result.output
+
+        # Verify config.toml was created (not config.local.toml)
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert config_path.exists()
+        content = config_path.read_text(encoding="utf-8")
+        assert "[env]" in content
+        assert 'PUBLIC_VAR = "public_value"' in content
+
+        # Verify config.local.toml was NOT created
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        assert not local_config_path.exists()
+
+
+def test_config_set_local_pool_checkout_shell() -> None:
+    """Test setting pool.checkout.shell with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli,
+            ["config", "set", "--local", "pool.checkout.shell", "/bin/bash"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set pool.checkout.shell=/bin/bash (local)" in result.output
+
+        # Verify config.local.toml contains the setting
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "[pool.checkout]" in content or "[pool]\n" in content
+        assert 'shell = "/bin/bash"' in content
+
+
+def test_config_set_local_pool_checkout_commands() -> None:
+    """Test setting pool.checkout.commands with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli,
+            ["config", "set", "--local", "pool.checkout.commands", "source .venv/bin/activate"],
+            obj=test_ctx,
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "(local)" in result.output
+
+        # Verify config.local.toml contains the commands
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "commands" in content
