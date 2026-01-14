@@ -73,7 +73,7 @@ gh pr diff <pr-number>
 - **Config changes**: New settings, capabilities, or options?
 - **External integrations**: New API calls, dependencies, or tools?
 
-**Save this inventory** - you will reference it in Step 8 (Teaching Gaps) to ensure everything new gets documented. **You MUST address every item in this inventory in Step 8.** No exceptions. If you built it, you must determine its documentation needs.
+**Save this inventory** - you will reference it in Step 4 to ensure everything new gets documented. **You MUST address every item in this inventory in Step 4.** No exceptions. If you built it, you must determine its documentation needs.
 
 ### Step 3: Gather and Analyze Sessions
 
@@ -154,17 +154,15 @@ What documentation would have made the session faster?
 - **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere")
 - **Conventional doc**: Module-specific or localized patterns
 
-### Step 8: Identify Teaching Gaps (MANDATORY)
+#### Teaching Gaps (MANDATORY)
 
 > **KEY PRINCIPLE**: If you built it, document it. The only question is "what did you build?" - not "was it difficult?" or "did it go smoothly?"
 
-**This step MUST be executed even if no learning gaps were found.**
+**This section MUST be executed even if no learning gaps were found.**
 
 Teaching gaps exist whenever you BUILD something new. Unlike learning gaps (which arise from difficulties), teaching gaps arise from creating new capabilities. The criterion is "did you build something?" not "was it hard?"
 
-**Review your inventory from Step 2.** For EACH item in your inventory, determine what documentation it needs.
-
-**Concrete examples - if you built it, document it:**
+**Review your inventory from Step 2.** For EACH item in your inventory, determine what documentation it needs:
 
 | What was built            | Documentation needed                                       |
 | ------------------------- | ---------------------------------------------------------- |
@@ -188,23 +186,7 @@ If no learning gaps AND no teaching gaps, report "No documentation needed" and p
 
 ### Step 5: Present Findings
 
-- What document to create/update
-- Where it belongs (docs/learned/, .claude/skills/, tripwires, etc.)
-- Draft content with specific examples from the implementation
-
-**If no learning gaps AND no teaching gaps**, report "No documentation needed" and proceed to Step 11 (track evaluation) without creating an issue. But this should be rare - most implementations that add code also add knowledge worth caching.
-
-**Checkpoint before proceeding:**
-
-- [ ] Did you review EVERY item from your Step 2 inventory?
-- [ ] Did you determine documentation needs for each item?
-- [ ] If an item needs no documentation, did you explicitly state why?
-
-Do not proceed to Step 9 until you can answer "yes" to all three.
-
-### Step 9: Present Findings for Validation
-
-Present your findings to the user with:
+Present findings to the user with:
 
 1. **Summary of insights** with source attribution:
    - **[Plan]** - From planning/research phase
