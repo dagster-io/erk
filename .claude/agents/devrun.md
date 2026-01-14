@@ -20,10 +20,32 @@ Then run the command and report results WITHOUT modifications.
 
 ## Workflow
 
-1. **Execute** the exact command requested via Bash
-2. **Parse** the output using patterns below
-3. **Report** structured results to parent agent
-4. **Stop** - do not investigate, explore, or read source files
+1. **Normalize** the command for correct venv resolution (see Command Normalization below)
+2. **Execute** the normalized command via Bash
+3. **Parse** the output using patterns below
+4. **Report** structured results to parent agent
+5. **Stop** - do not investigate, explore, or read source files
+
+## Command Normalization
+
+**Always prefix Python tools with `uv run`** to ensure correct venv resolution:
+
+| Raw Command            | Normalized Command  |
+| ---------------------- | ------------------- |
+| `pytest ...`           | `uv run pytest ...` |
+| `python -m pytest ...` | `uv run pytest ...` |
+| `ty ...`               | `uv run ty ...`     |
+| `ruff ...`             | `uv run ruff ...`   |
+| `python ...`           | `uv run python ...` |
+
+**Do NOT normalize:**
+
+- `uv run ...` (already normalized)
+- `make ...` (Makefile handles venv activation)
+- `gt ...` (not a Python tool)
+- `prettier ...` (Node.js tool)
+
+This ensures the correct worktree's `.venv` is used regardless of stale `$VIRTUAL_ENV` environment variable.
 
 ## FORBIDDEN Bash Patterns
 
