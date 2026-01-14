@@ -13,11 +13,11 @@ Erk uses a layered configuration system where settings are merged from multiple 
 
 ## Overview
 
-| Layer  | Location             | Scope       | Versioned | Merge Order |
-| ------ | -------------------- | ----------- | --------- | ----------- |
-| Global | `~/.erk/config.toml` | All repos   | No        | N/A         |
-| Repo   | `.erk/config.toml`   | All users   | Yes       | 1st         |
-| Local  | `.erk/config.local.toml`    | Single user | No        | 2nd         |
+| Layer  | Location                 | Scope       | Versioned | Merge Order |
+| ------ | ------------------------ | ----------- | --------- | ----------- |
+| Global | `~/.erk/config.toml`     | All repos   | No        | N/A         |
+| Repo   | `.erk/config.toml`       | All users   | Yes       | 1st         |
+| Local  | `.erk/config.local.toml` | Single user | No        | 2nd         |
 
 ## Layer Details
 
@@ -126,8 +126,8 @@ max_slots = 8         # local override
 
 **Where should I put this setting?**
 
-| If the setting is...              | Put it in...         |
-| --------------------------------- | -------------------- |
-| Shared by all team members        | `.erk/config.toml`   |
-| Personal preference for this repo | `.erk/config.local.toml`    |
-| Applies to all your repos         | `~/.erk/config.toml` |
+| If the setting is...              | Put it in...             |
+| --------------------------------- | ------------------------ |
+| Shared by all team members        | `.erk/config.toml`       |
+| Personal preference for this repo | `.erk/config.local.toml` |
+| Applies to all your repos         | `~/.erk/config.toml`     |
