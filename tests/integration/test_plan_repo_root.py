@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from click.testing import CliRunner
 
-from erk.cli.commands.plan.get import get_plan
+from erk.cli.commands.plan.view import view_plan
 from erk.cli.commands.plan.list_cmd import dash
 from erk.core.services.plan_list_service import RealPlanListService
 from erk_shared.github.fake import FakeGitHub
@@ -138,7 +138,7 @@ def test_plan_issue_get_uses_repo_root_not_metadata_dir() -> None:
         ctx = env.build_context(plan_store=store, issues=tracking_issues)
 
         # Act: Run the get command
-        result = runner.invoke(get_plan, ["42"], obj=ctx)
+        result = runner.invoke(view_plan, ["42"], obj=ctx)
 
         # Assert: Command should succeed
         assert result.exit_code == 0, f"Command failed: {result.output}"

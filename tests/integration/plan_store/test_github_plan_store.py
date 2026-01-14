@@ -38,7 +38,8 @@ def test_get_plan_success() -> None:
     assert result.assignees == ["alice", "bob"]
     assert result.created_at == datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
     assert result.updated_at == datetime(2024, 1, 16, 14, 45, 0, tzinfo=UTC)
-    assert result.metadata == {"number": 42}
+    assert result.metadata["number"] == 42
+    assert "issue_body" in result.metadata
 
 
 def test_get_plan_closed_state() -> None:
@@ -296,7 +297,8 @@ def test_metadata_preserves_github_number() -> None:
     result = store.get_plan(Path("/fake/repo"), "42")
 
     # Verify metadata contains GitHub number
-    assert result.metadata == {"number": 42}
+    assert result.metadata["number"] == 42
+    assert "issue_body" in result.metadata
     # Verify identifier is string
     assert result.plan_identifier == "42"
     assert isinstance(result.plan_identifier, str)
