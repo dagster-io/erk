@@ -225,9 +225,7 @@ def doctor_cmd(ctx: ErkContext, verbose: bool, dogfooder: bool, clear_hook_logs_
         click.echo("")
 
     # Collect and display consolidated remediations for failing checks and warnings
-    remediations = {
-        r.remediation for r in results if r.remediation and (not r.passed or r.warning)
-    }
+    remediations = {r.remediation for r in results if r.remediation and (not r.passed or r.warning)}
     if remediations:
         click.echo(click.style("Remediation", bold=True))
         for remediation in sorted(remediations):
