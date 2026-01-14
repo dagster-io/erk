@@ -341,7 +341,12 @@ def config_set(ctx: ErkContext, local: bool, key: str, value: str) -> None:
     # Handle repo config keys with match
     transformed: object
     match parts:
-        case ["env", _] | ["post_create", "shell"] | ["pool", "checkout", "shell"] | ["plans", "repo"]:
+        case (
+            ["env", _]
+            | ["post_create", "shell"]
+            | ["pool", "checkout", "shell"]
+            | ["plans", "repo"]
+        ):
             transformed = value
         case ["post_create", "commands"] | ["pool", "checkout", "commands"]:
             transformed = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
