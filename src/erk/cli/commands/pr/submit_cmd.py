@@ -122,7 +122,12 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     # Phase 2: Get diff for AI
     click.echo(click.style("Phase 2: Getting diff", bold=True))
     diff_file = _run_diff_extraction(
-        ctx, cwd=cwd, pr_number=core_result.pr_number, session_id=session_id, debug=debug
+        ctx,
+        cwd=cwd,
+        pr_number=core_result.pr_number,
+        session_id=session_id,
+        base_branch=core_result.base_branch,
+        debug=debug,
     )
 
     if diff_file is None:
@@ -242,12 +247,18 @@ def _run_core_submit(
 
 
 def _run_diff_extraction(
-    ctx: ErkContext, *, cwd: Path, pr_number: int, session_id: str, debug: bool
+    ctx: ErkContext,
+    *,
+    cwd: Path,
+    pr_number: int,
+    session_id: str,
+    base_branch: str,
+    debug: bool,
 ) -> Path | None:
     """Run diff extraction phase."""
     result: Path | None = None
 
-    for event in execute_diff_extraction(ctx, cwd, pr_number, session_id):
+    for event in execute_diff_extraction(ctx, cwd, pr_number, session_id, base_branch=base_branch):
         if isinstance(event, ProgressEvent):
             if debug:
                 _render_progress(event)
