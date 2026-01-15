@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of: ee674fafb -->
+
+### Major Changes
+
+- **Per-user local configuration**: Add `.erk/config.local.toml` for personal settings that override shared repo config without affecting version control. Users can set local-only values via `erk config set --local key value` for preferences like pool slots or environment variables that shouldn't be committed.
+
+### Added
+
+- Add pre-flight validation for Graphite-tracked branches with clear remediation guidance
+- Rename `plan get` to `plan view` with structured header metadata display and `--full` flag
+
+### Fixed
+
+- Fix automatic Graphite branch tracking during worktree creation when Graphite is enabled
+- Fix `erk doctor` to show remediation steps for artifact warnings, not just failures
+- Fix `erk artifact sync` to update hook commands in settings.json, ensuring hooks stay current across erk versions
+- Fix `erk pr land` learn prompt to default to continuing (press Enter to proceed)
+
 ## [0.5.4] - 2026-01-13 12:29 PT
 
 ### Added
