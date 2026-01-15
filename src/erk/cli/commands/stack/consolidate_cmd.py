@@ -215,7 +215,7 @@ def consolidate_stack(
     ensure_erk_metadata_dir(repo)
 
     # Get current branch's stack
-    stack_branches = ctx.graphite.get_branch_stack(ctx.git, repo.root, current_branch)
+    stack_branches = ctx.branch_manager.get_branch_stack(repo.root, current_branch)
     if stack_branches is None:
         user_output(f"Error: Branch '{current_branch}' is not tracked by Graphite")
         user_output(
@@ -309,8 +309,8 @@ def consolidate_stack(
             # Checkout temporary branch in source worktree to free up the original branch
             ctx.git.checkout_branch(current_worktree, temp_branch_name)
 
-            # Track temporary branch with Graphite
-            ctx.graphite.track_branch(current_worktree, temp_branch_name, current_branch)
+            # Track temporary branch
+            ctx.branch_manager.track_branch(current_worktree, temp_branch_name, current_branch)
 
             # Create new worktree with original branch
             # (now available since source is on temp branch)

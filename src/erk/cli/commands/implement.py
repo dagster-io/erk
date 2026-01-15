@@ -270,8 +270,7 @@ def _create_worktree_with_plan_content(
             # Create branch and checkout
             ctx.console.info(f"Creating branch '{branch}' from {base_branch}...")
             ctx.git.create_branch(repo_root, branch, base_branch)
-            if use_graphite:
-                ctx.graphite.track_branch(repo_root, branch, base_branch)
+            ctx.branch_manager.track_branch(repo_root, branch, base_branch)
             ctx.git.checkout_branch(wt_path, branch)
     else:
         # On-demand slot creation
@@ -279,8 +278,7 @@ def _create_worktree_with_plan_content(
             # Create branch first
             ctx.console.info(f"Creating branch '{branch}' from {base_branch}...")
             ctx.git.create_branch(repo_root, branch, base_branch)
-            if use_graphite:
-                ctx.graphite.track_branch(repo_root, branch, base_branch)
+            ctx.branch_manager.track_branch(repo_root, branch, base_branch)
 
         # Check if worktree directory already exists (from pool initialization)
         if wt_path.exists():

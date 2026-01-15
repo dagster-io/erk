@@ -61,7 +61,7 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
     worktrees = ctx.git.list_worktrees(repo.root)
 
     # Get child branches for ambiguity checks
-    children = ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch)
+    children = ctx.branch_manager.get_child_branches(repo.root, current_branch)
 
     # Check for navigation ambiguity when --delete-current is set
     Ensure.invariant(

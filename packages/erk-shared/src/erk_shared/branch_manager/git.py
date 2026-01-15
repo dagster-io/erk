@@ -108,6 +108,30 @@ class GitBranchManager(BranchManager):
         # Plain Git doesn't track parent relationships
         pass
 
+    def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
+        """Git-only mode doesn't track parent relationships.
+
+        Args:
+            repo_root: Repository root directory (unused)
+            branch: Name of the branch (unused)
+
+        Returns:
+            None - parent tracking is a Graphite-only feature.
+        """
+        return None
+
+    def get_child_branches(self, repo_root: Path, branch: str) -> list[str]:
+        """Git-only mode doesn't track child relationships.
+
+        Args:
+            repo_root: Repository root directory (unused)
+            branch: Name of the branch (unused)
+
+        Returns:
+            Empty list - child tracking is a Graphite-only feature.
+        """
+        return []
+
     def is_graphite_managed(self) -> bool:
         """Returns False - this implementation uses plain Git."""
         return False

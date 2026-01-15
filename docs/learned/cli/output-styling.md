@@ -250,7 +250,7 @@ Ensure.invariant(
 
 # Truthy check (returns value if truthy)
 children = Ensure.truthy(
-    ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch),
+    ctx.branch_manager.get_child_branches(repo.root, current_branch),
     "Already at the top of the stack (no child branches)"
 )
 

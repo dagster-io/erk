@@ -105,7 +105,7 @@ def _ensure_graphite_tracking(
         return
 
     # Track the branch with trunk as parent
-    ctx.graphite.track_branch(target_path, branch, trunk_branch)
+    ctx.branch_manager.track_branch(target_path, branch, trunk_branch)
     user_output(f"Tracked '{branch}' with Graphite (parent: {trunk_branch})")
 
 
@@ -170,7 +170,7 @@ def _perform_checkout(
 
     if need_checkout and not script:
         # Show stack context in non-script mode
-        stack = ctx.graphite.get_branch_stack(ctx.git, repo_root, branch)
+        stack = ctx.branch_manager.get_branch_stack(repo_root, branch)
         if stack:
             user_output(f"Stack: {' -> '.join(stack)}")
         user_output(f"Checked out '{branch}' in worktree")

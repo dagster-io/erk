@@ -741,7 +741,7 @@ def _land_current_branch(
             )
             raise SystemExit(1)
 
-        children = ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch)
+        children = ctx.branch_manager.get_child_branches(repo.root, current_branch)
         if len(children) == 0:
             user_output(
                 click.style("Error: ", fg="red")

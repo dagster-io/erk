@@ -44,7 +44,7 @@ def branch_create(ctx: ErkContext, branch_name: str, no_slot: bool, force: bool)
     # Create the new branch from trunk
     trunk = ctx.git.detect_trunk_branch(repo.root)
     ctx.git.create_branch(repo.root, branch_name, trunk)
-    ctx.graphite.track_branch(repo.root, branch_name, trunk)
+    ctx.branch_manager.track_branch(repo.root, branch_name, trunk)
     user_output(f"Created branch: {branch_name}")
 
     # If --no-slot is specified, we're done

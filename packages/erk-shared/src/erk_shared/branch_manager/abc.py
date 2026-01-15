@@ -113,6 +113,44 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
+        """Get parent branch name for a given branch.
+
+        For Graphite: Returns the parent branch from Graphite's cache.
+        For Git: Returns None (plain Git doesn't track parent relationships).
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to get the parent for
+
+        Returns:
+            Parent branch name, or None if:
+            - Branch is not tracked (Graphite mode)
+            - Branch has no parent (is trunk)
+            - Parent relationships not tracked (Git mode)
+        """
+        ...
+
+    @abstractmethod
+    def get_child_branches(self, repo_root: Path, branch: str) -> list[str]:
+        """Get child branch names for a given branch.
+
+        For Graphite: Returns children from Graphite's cache.
+        For Git: Returns empty list (plain Git doesn't track children).
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to get children for
+
+        Returns:
+            List of child branch names, or empty list if:
+            - Branch is not tracked (Graphite mode)
+            - Branch has no children
+            - Child relationships not tracked (Git mode)
+        """
+        ...
+
+    @abstractmethod
     def is_graphite_managed(self) -> bool:
         """Returns True if using Graphite for branch operations.
 

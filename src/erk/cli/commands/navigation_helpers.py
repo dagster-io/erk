@@ -349,7 +349,7 @@ def resolve_up_navigation(
     """
     # Navigate up to child branch
     children = Ensure.truthy(
-        ctx.graphite.get_child_branches(ctx.git, repo.root, current_branch),
+        ctx.branch_manager.get_child_branches(repo.root, current_branch),
         "Already at the top of the stack (no child branches)",
     )
 
@@ -401,7 +401,7 @@ def resolve_down_navigation(
         SystemExit: If navigation fails (at bottom of stack)
     """
     # Navigate down to parent branch
-    parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
+    parent_branch = ctx.branch_manager.get_parent_branch(repo.root, current_branch)
     if parent_branch is None:
         # Check if we're already on trunk
         detected_trunk = ctx.git.detect_trunk_branch(repo.root)

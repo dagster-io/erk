@@ -388,7 +388,7 @@ class Ensure:
         Example:
             >>> Ensure.gt_installed()
             >>> # Now safe to call gt commands
-            >>> ctx.graphite.submit_stack(repo.root)
+            >>> ctx.branch_manager.submit_branch(repo.root, branch)
         """
         if shutil.which("gt") is None:
             user_output(
@@ -418,7 +418,7 @@ class Ensure:
         Example:
             >>> Ensure.graphite_available(ctx)
             >>> # Now safe to use Graphite operations
-            >>> ctx.graphite.get_parent_branch(ctx.git, repo.root, branch)
+            >>> ctx.branch_manager.get_parent_branch(repo.root, branch)
         """
         if isinstance(ctx.graphite, GraphiteDisabled):
             error = GraphiteDisabledError(ctx.graphite.reason)

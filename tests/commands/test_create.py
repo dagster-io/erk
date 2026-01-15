@@ -403,12 +403,13 @@ def test_create_from_plan_readonly_operation() -> None:
 
 
 def test_create_from_plan_tracks_branch_with_graphite() -> None:
-    """Test erk create --from-plan calls ctx.graphite.track_branch() when use_graphite=True.
+    """Test erk create --from-plan tracks the branch via BranchManager when use_graphite=True.
 
     Verifies that when:
     1. use_graphite=True in global config
     2. erk wt create --from-plan <issue> is called
-    3. Then ctx.graphite.track_branch() is called with the linked branch name and trunk as parent
+    3. Then ctx.branch_manager.track_branch() is called with the linked branch name
+       and trunk as parent (delegates to graphite.track_branch() in GraphiteBranchManager)
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
