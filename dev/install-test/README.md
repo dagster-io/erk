@@ -7,7 +7,7 @@ Docker-based environment for manually testing erk installation and upgrade scena
 Test scenarios that are hard to catch with automated tests:
 
 1. **Fresh install**: User installs erk on a repo that already has `.erk/` config
-2. **Upgrade**: User upgrades erk (via `uv tool upgrade`) with older config formats
+2. **Upgrade**: User upgrades erk (via `uv sync --upgrade-package erk`) with older config formats
 3. **Repo-specific**: Test with configs that mimic real repositories (e.g., dagster-compass)
 
 ## Quick Start

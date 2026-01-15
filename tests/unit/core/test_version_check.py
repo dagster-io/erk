@@ -68,7 +68,7 @@ def test_format_version_warning_includes_upgrade_command() -> None:
     """Test that format_version_warning includes upgrade command."""
     result = format_version_warning("0.2.7", "0.2.8")
 
-    assert "uv tool upgrade erk" in result
+    assert "uv sync --upgrade-package erk" in result
 
 
 def test_format_version_warning_includes_must_update_message() -> None:

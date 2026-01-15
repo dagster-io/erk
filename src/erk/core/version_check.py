@@ -51,5 +51,5 @@ def format_version_warning(installed: str, required: str) -> str:
     return (
         f"⚠️  Your erk ({installed}) doesn't match required ({required})\n"
         f"   You must update or erk may not work properly.\n"
-        f"   Update: uv tool upgrade erk"
+        f"   Update: uv sync --upgrade-package erk"
     )

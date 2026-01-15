@@ -126,7 +126,7 @@ def check_required_tool_version(repo_root: Path) -> CheckResult:
             name="required-version",
             passed=False,
             message=f"Version mismatch: installed {installed_version}, required {required_version}",
-            remediation="Run 'uv tool upgrade erk' to update",
+            remediation="Run 'uv sync --upgrade-package erk' to update",
         )
 
     return CheckResult(
