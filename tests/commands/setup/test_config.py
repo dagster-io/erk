@@ -868,7 +868,7 @@ def test_config_set_local_short_flag() -> None:
 
 
 def test_config_set_local_global_key_fails() -> None:
-    """Test that --local with global key fails with error."""
+    """Test that --local with global-only key fails with error."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
@@ -877,7 +877,7 @@ def test_config_set_local_global_key_fails() -> None:
         )
 
         result = runner.invoke(
-            cli, ["config", "set", "--local", "use_graphite", "false"], obj=test_ctx
+            cli, ["config", "set", "--local", "erk_root", "/some/path"], obj=test_ctx
         )
 
         assert result.exit_code == 1
@@ -1349,6 +1349,76 @@ def test_config_set_overridable_global_key_with_repo_flag() -> None:
         assert "prompt_learn_on_land = true" in content
 
 
+def test_config_set_use_graphite_with_local_flag() -> None:
+    """Test setting use_graphite with --local flag (now overridable)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "use_graphite", "false"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set use_graphite=false (local)" in result.output
+
+        # Verify config.local.toml contains the setting
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "use_graphite = false" in content
+
+
+def test_config_set_github_planning_with_repo_flag() -> None:
+    """Test setting github_planning with --repo flag (now overridable)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--repo", "github_planning", "true"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set github_planning=true (repo)" in result.output
+
+        # Verify config.toml contains the setting
+        config_path = env.cwd / ".erk" / "config.toml"
+        content = config_path.read_text(encoding="utf-8")
+        assert "github_planning = true" in content
+
+
 def test_config_set_non_overridable_global_key_with_local_flag_fails() -> None:
     """Test that non-overridable global keys cannot be set with --local flag."""
     runner = CliRunner()
@@ -1376,7 +1446,7 @@ def test_config_set_non_overridable_global_key_with_repo_flag_fails() -> None:
         )
 
         result = runner.invoke(
-            cli, ["config", "set", "--repo", "use_graphite", "false"], obj=test_ctx
+            cli, ["config", "set", "--repo", "erk_root", "/some/path"], obj=test_ctx
         )
 
         assert result.exit_code == 1

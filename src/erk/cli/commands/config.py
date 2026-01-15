@@ -49,6 +49,8 @@ def get_overridable_global_keys() -> set[str]:
         "prompt_learn_on_land",
         "fix_conflicts_require_dangerous_flag",
         "show_hidden_commands",
+        "use_graphite",
+        "github_planning",
     }
 
 
@@ -60,8 +62,6 @@ def get_global_only_keys() -> set[str]:
     """
     return {
         "erk_root",
-        "use_graphite",
-        "github_planning",
     }
 
 
