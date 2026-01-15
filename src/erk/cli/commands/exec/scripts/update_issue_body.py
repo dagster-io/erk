@@ -2,6 +2,7 @@
 
 Usage:
     erk exec update-issue-body <ISSUE_NUMBER> --body "new body content"
+    erk exec update-issue-body <ISSUE_NUMBER> --body-file path/to/body.md
 
 Output:
     JSON with {success, issue_number, url}
@@ -12,6 +13,7 @@ Exit Codes:
 """
 
 import json
+from pathlib import Path
 
 import click
 
@@ -25,15 +27,39 @@ from erk_shared.context.helpers import (
 
 @click.command(name="update-issue-body")
 @click.argument("issue_number", type=int)
-@click.option("--body", required=True, help="New body content")
+@click.option("--body", help="New body content")
+@click.option(
+    "--body-file",
+    type=click.Path(exists=True, path_type=Path),
+    help="Read body from file",
+)
 @click.pass_context
 def update_issue_body(
     ctx: click.Context,
     issue_number: int,
     *,
-    body: str,
+    body: str | None,
+    body_file: Path | None,
 ) -> None:
     """Update an issue's body using REST API (avoids GraphQL rate limits)."""
+    # Validate mutual exclusivity
+    if body is not None and body_file is not None:
+        click.echo(
+            json.dumps({"success": False, "error": "Cannot specify both --body and --body-file"})
+        )
+        raise SystemExit(1) from None
+
+    if body is None and body_file is None:
+        click.echo(json.dumps({"success": False, "error": "Must specify --body or --body-file"}))
+        raise SystemExit(1) from None
+
+    # Read from file if specified
+    if body_file is not None:
+        body = body_file.read_text(encoding="utf-8")
+
+    # At this point body is guaranteed to be a string (validation ensures one was provided)
+    assert body is not None
+
     github = require_github_issues(ctx)
     repo_root = require_repo_root(ctx)
 
