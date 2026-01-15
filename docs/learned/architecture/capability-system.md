@@ -184,7 +184,7 @@ installed = load_installed_capabilities(project_dir)
 skills = _get_bundled_by_type("skill", installed_capabilities=installed)
 ```
 
-**Key insight**: When `installed_capabilities=None`, all artifacts are returned (used for sync operations). When a `frozenset` is passed, only artifacts from installed capabilities are returned (used for doctor checks).
+**Key insight**: When `installed_capabilities=None`, all artifacts are returned (used only when syncing within the erk repo itself). When a `frozenset` is passed, only artifacts from installed capabilities are returned (used for both sync and doctor operations in consumer repos).
 
 ### Required vs Optional Capabilities
 
