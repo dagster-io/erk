@@ -8,16 +8,6 @@ How to publish a new erk release.
 - CI passing on master
 - On the master branch (or ready to create a release branch from it)
 
-## Ongoing: Keep Changelog Current
-
-Run this regularly during development (after merging PRs, completing features):
-
-```bash
-/local:changelog-update
-```
-
-This syncs the Unreleased section with commits since the last update, adding entries with commit hashes for traceability.
-
 ## Release Steps
 
 ### 1. Create a Release Branch
@@ -28,7 +18,15 @@ git checkout -b release-X.Y.Z
 
 Release work happens on a dedicated branch, not directly on master.
 
-### 2. Finalize Changelog and Version
+### 2. Sync Changelog
+
+```bash
+/local:changelog-update
+```
+
+This syncs the Unreleased section with commits since the last update, adding entries with commit hashes for traceability.
+
+### 3. Finalize Changelog and Version
 
 ```bash
 /local:changelog-release
@@ -36,13 +34,12 @@ Release work happens on a dedicated branch, not directly on master.
 
 This command:
 
-- Ensures changelog is current (runs changelog-update if needed)
 - Prompts for version number
 - Moves Unreleased content to a versioned section
 - Strips commit hashes from entries
 - Bumps version in pyproject.toml
 
-### 3. Update Required Version File
+### 4. Update Required Version File
 
 Update the required erk version to match the new release:
 
@@ -52,7 +49,7 @@ echo "X.Y.Z" > .erk/required-erk-uv-tool-version
 
 This file is used by version checking to warn users when their installed erk doesn't match the repository's required version. Failing to update this will cause CI failures due to version mismatch warnings in shell integration tests.
 
-### 4. Squash, Commit, and Tag
+### 5. Squash, Commit, and Tag
 
 Squash all release prep commits into a single release commit:
 
@@ -67,7 +64,7 @@ erk-dev release-tag
 
 This ensures a clean single commit for the release with the tag pointing to it.
 
-### 5. Run CI Locally
+### 6. Run CI Locally
 
 ```bash
 make all-ci
@@ -75,7 +72,7 @@ make all-ci
 
 Verify all checks pass locally before pushing. This catches obvious issues early.
 
-### 6. Push Branch and Create PR for GitHub CI
+### 7. Push Branch and Create PR for GitHub CI
 
 ```bash
 erk pr submit
@@ -83,7 +80,7 @@ erk pr submit
 
 This pushes the release branch and creates a PR for GitHub CI. Review the GitHub Actions results to catch any environment-specific issues.
 
-### 7. Confirmation Checkpoint
+### 8. Confirmation Checkpoint
 
 **STOP and verify before publishing:**
 
@@ -97,7 +94,7 @@ Only proceed to publish after confirming all checks pass. Publishing to PyPI is 
 
 > **Note for Claude:** Do NOT use `gh pr checks --watch` or similar commands to monitor CI. Instead, tell the user to check GitHub Actions manually and wait for their confirmation before proceeding.
 
-### 8. Publish to PyPI
+### 9. Publish to PyPI
 
 ```bash
 make publish
@@ -105,7 +102,7 @@ make publish
 
 This builds and publishes all packages to PyPI in dependency order.
 
-### 9. Merge to Master
+### 10. Merge to Master
 
 After confirming the publish succeeded:
 

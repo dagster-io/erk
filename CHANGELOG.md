@@ -7,19 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: ee674fafb -->
+## [0.5.5] - 2026-01-15 06:53 PT
 
 ### Major Changes
 
-- **Per-user local configuration**: Add `.erk/config.local.toml` for personal settings that override shared repo config without affecting version control. Users can set local-only values via `erk config set --local key value` for preferences like pool slots or environment variables that shouldn't be committed.
+- **Per-user local configuration**: Add `.erk/config.local.toml` for personal settings that override shared repo config. Configuration now supports three-level hierarchy (Global < Repo < Local) with `--repo` and `--local` flags for `erk config set`. The `config list` command shows source annotations like "(repo)" and "(local)" to clarify override origins.
 
 ### Added
 
+- Add `--here` flag to `erk implement` for in-place implementation without worktree switching
 - Add pre-flight validation for Graphite-tracked branches with clear remediation guidance
 - Rename `plan get` to `plan view` with structured header metadata display and `--full` flag
 
+### Changed
+
+- Update PR submit Phase 1 message to say "Creating or Updating PR" for clarity
+- Add `.erk/config.local.toml` to gitignore and health checks
+
 ### Fixed
 
+- Fix FileNotFoundError when invoking erk from shell integration in venv environments
+- Fix `erk pr sync` failure for stacked PRs with locally restacked parents
 - Fix automatic Graphite branch tracking during worktree creation when Graphite is enabled
 - Fix `erk doctor` to show remediation steps for artifact warnings, not just failures
 - Fix `erk artifact sync` to update hook commands in settings.json, ensuring hooks stay current across erk versions
