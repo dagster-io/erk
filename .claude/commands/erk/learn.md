@@ -102,7 +102,15 @@ erk exec preprocess-session <impl-session-path> --max-tokens 15000 --stdout \
     > .erk/scratch/sessions/<current-session-id>/learn/impl-session-<N>.xml
 ```
 
-#### Upload to Gist
+#### Upload Learn Materials
+
+Check the storage mode from global config:
+
+```bash
+erk config get learn_materials_storage
+```
+
+**If storage mode is "gist" (default):**
 
 Upload preprocessed session files to a secret gist:
 
@@ -111,6 +119,16 @@ gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/se
 ```
 
 Display the gist URL to the user and save it for the plan issue.
+
+**If storage mode is "artifact":**
+
+Upload preprocessed session files to the learn-materials branch:
+
+```bash
+erk exec upload-learn-materials --issue <issue-number> .erk/scratch/sessions/<current-session-id>/learn/*.xml
+```
+
+Parse the JSON output to get file URLs. Display the URLs to the user and save them for the plan issue.
 
 #### Deep Analysis
 
