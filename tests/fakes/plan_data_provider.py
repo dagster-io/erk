@@ -171,6 +171,7 @@ def make_plan_row(
     run_id: str | None = None,
     run_status: str | None = None,
     run_conclusion: str | None = None,
+    unresolved_comments: int | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -191,6 +192,7 @@ def make_plan_row(
         run_id: Workflow run ID
         run_status: Workflow run status
         run_conclusion: Workflow run conclusion
+        unresolved_comments: Count of unresolved PR review comments (None shows "-")
 
     Returns:
         PlanRowData populated with test data
@@ -204,6 +206,17 @@ def make_plan_row(
 
     # Allow override of pr_display for testing indicators like 🔗
     final_pr_display = pr_display if pr_display is not None else computed_pr_display
+
+    # Compute unresolved comments display based on pr_number presence
+    if pr_number is None:
+        unresolved_count = 0
+        unresolved_display = "-"
+    elif unresolved_comments is None:
+        unresolved_count = 0
+        unresolved_display = "0"
+    else:
+        unresolved_count = unresolved_comments
+        unresolved_display = str(unresolved_comments)
 
     return PlanRowData(
         issue_number=issue_number,
@@ -231,4 +244,6 @@ def make_plan_row(
         run_status=run_status,
         run_conclusion=run_conclusion,
         log_entries=(),
+        unresolved_comment_count=unresolved_count,
+        unresolved_comments_display=unresolved_display,
     )

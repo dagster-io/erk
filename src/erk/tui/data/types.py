@@ -39,6 +39,8 @@ class PlanRowData:
         run_status: Workflow run status (e.g., "completed", "in_progress")
         run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
         log_entries: List of (event_name, timestamp, comment_url) for plan log
+        unresolved_comment_count: Count of unresolved PR review comments
+        unresolved_comments_display: Formatted display of unresolved comments (e.g., "3" or "-")
     """
 
     issue_number: int
@@ -66,6 +68,8 @@ class PlanRowData:
     run_status: str | None
     run_conclusion: str | None
     log_entries: tuple[tuple[str, str, str], ...]
+    unresolved_comment_count: int
+    unresolved_comments_display: str
 
 
 @dataclass(frozen=True)

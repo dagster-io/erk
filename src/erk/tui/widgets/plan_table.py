@@ -70,7 +70,7 @@ class PlanDataTable(DataTable):
             Column index (0-based), or None if columns not yet set up.
             The index varies based on show_prs flag:
             - Without PRs: index 2 (plan, title, local-wt)
-            - With PRs: index 4 (plan, title, pr, chks, local-wt)
+            - With PRs: index 5 (plan, title, pr, chks, comments, local-wt)
         """
         return self._local_wt_column_index
 
@@ -101,6 +101,8 @@ class PlanDataTable(DataTable):
             self._pr_column_index = col_index
             col_index += 1
             self.add_column("chks", key="chks")
+            col_index += 1
+            self.add_column("comments", key="comments")
             col_index += 1
         self._local_wt_column_index = col_index
         self.add_column("local-wt", key="local_wt")
@@ -181,7 +183,8 @@ class PlanDataTable(DataTable):
             if row.pr_url:
                 pr_display = Text(pr_display, style="cyan underline")
             checks_display = _strip_rich_markup(row.checks_display)
-            values.extend([pr_display, checks_display])
+            comments_display = _strip_rich_markup(row.unresolved_comments_display)
+            values.extend([pr_display, checks_display, comments_display])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)

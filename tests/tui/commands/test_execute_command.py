@@ -169,6 +169,8 @@ class TestExecuteCommandClosePlan:
             run_status=None,
             run_conclusion=None,
             log_entries=(),
+            unresolved_comment_count=0,
+            unresolved_comments_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -222,6 +224,8 @@ class TestExecuteCommandSubmitToQueue:
             run_status=None,
             run_conclusion=None,
             log_entries=(),
+            unresolved_comment_count=0,
+            unresolved_comments_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

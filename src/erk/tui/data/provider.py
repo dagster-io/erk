@@ -492,6 +492,10 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_display = "-"
         checks_display = "-"
 
+        # Unresolved comments - "-" when no PR
+        unresolved_comment_count = 0
+        unresolved_comments_display = "-"
+
         if issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
             selected_pr = select_display_pr(issue_prs)
@@ -508,6 +512,18 @@ class RealPlanDataProvider(PlanDataProvider):
                     emoji += "🔗"
                 pr_display = f"#{selected_pr.number} {emoji}"
                 checks_display = format_checks_cell(selected_pr)
+
+                # Fetch unresolved review comments
+                try:
+                    threads = self._ctx.github.get_pr_review_threads(
+                        self._location.root, selected_pr.number, include_resolved=False
+                    )
+                    unresolved_comment_count = len(threads)
+                    unresolved_comments_display = str(unresolved_comment_count)
+                except Exception:
+                    # Rate limit or API errors - show "0" with logged warning
+                    unresolved_comment_count = 0
+                    unresolved_comments_display = "0"
 
         # Workflow run info
         run_id: str | None = None
@@ -561,6 +577,8 @@ class RealPlanDataProvider(PlanDataProvider):
             run_status=run_status,
             run_conclusion=run_conclusion,
             log_entries=log_entries,
+            unresolved_comment_count=unresolved_comment_count,
+            unresolved_comments_display=unresolved_comments_display,
         )
 
 
