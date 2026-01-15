@@ -20,6 +20,7 @@ from erk_shared.github.metadata.core import (
     create_worktree_creation_block,
     render_erk_issue_event,
 )
+from erk_shared.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
 from erk_shared.naming import extract_leading_issue_number
 
 
@@ -310,7 +311,7 @@ def read_plan_author(impl_dir: Path) -> str | None:
     if block is None:
         return None
 
-    created_by = block.data.get("created_by")
+    created_by = block.data.get(CREATED_BY)
     if created_by is None or not isinstance(created_by, str):
         return None
 
@@ -343,7 +344,7 @@ def read_last_dispatched_run_id(impl_dir: Path) -> str | None:
     if block is None:
         return None
 
-    run_id = block.data.get("last_dispatched_run_id")
+    run_id = block.data.get(LAST_DISPATCHED_RUN_ID)
     if run_id is None or not isinstance(run_id, str):
         return None
 

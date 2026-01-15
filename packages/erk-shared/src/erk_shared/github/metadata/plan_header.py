@@ -22,7 +22,27 @@ from erk_shared.github.metadata.core import (
     render_plan_body_block,
     replace_metadata_block_in_body,
 )
-from erk_shared.github.metadata.schemas import PlanHeaderSchema
+from erk_shared.github.metadata.schemas import (
+    CREATED_AT,
+    CREATED_BY,
+    CREATED_FROM_SESSION,
+    LAST_DISPATCHED_AT,
+    LAST_DISPATCHED_NODE_ID,
+    LAST_DISPATCHED_RUN_ID,
+    LAST_LEARN_AT,
+    LAST_LEARN_SESSION,
+    LAST_LOCAL_IMPL_AT,
+    LAST_LOCAL_IMPL_EVENT,
+    LAST_LOCAL_IMPL_SESSION,
+    LAST_LOCAL_IMPL_USER,
+    LAST_REMOTE_IMPL_AT,
+    OBJECTIVE_ISSUE,
+    PLAN_COMMENT_ID,
+    SCHEMA_VERSION,
+    SOURCE_REPO,
+    WORKTREE_NAME,
+    PlanHeaderSchema,
+)
 from erk_shared.github.metadata.types import MetadataBlock
 
 
@@ -73,42 +93,42 @@ def create_plan_header_block(
     schema = PlanHeaderSchema()
 
     data: dict[str, Any] = {
-        "schema_version": "2",
-        "created_at": created_at,
-        "created_by": created_by,
-        "plan_comment_id": plan_comment_id,
-        "last_dispatched_run_id": last_dispatched_run_id,
-        "last_dispatched_node_id": last_dispatched_node_id,
-        "last_dispatched_at": last_dispatched_at,
-        "last_local_impl_at": last_local_impl_at,
-        "last_local_impl_event": last_local_impl_event,
-        "last_local_impl_session": last_local_impl_session,
-        "last_local_impl_user": last_local_impl_user,
-        "last_remote_impl_at": last_remote_impl_at,
+        SCHEMA_VERSION: "2",
+        CREATED_AT: created_at,
+        CREATED_BY: created_by,
+        PLAN_COMMENT_ID: plan_comment_id,
+        LAST_DISPATCHED_RUN_ID: last_dispatched_run_id,
+        LAST_DISPATCHED_NODE_ID: last_dispatched_node_id,
+        LAST_DISPATCHED_AT: last_dispatched_at,
+        LAST_LOCAL_IMPL_AT: last_local_impl_at,
+        LAST_LOCAL_IMPL_EVENT: last_local_impl_event,
+        LAST_LOCAL_IMPL_SESSION: last_local_impl_session,
+        LAST_LOCAL_IMPL_USER: last_local_impl_user,
+        LAST_REMOTE_IMPL_AT: last_remote_impl_at,
     }
     # Only include worktree_name if provided
     if worktree_name is not None:
-        data["worktree_name"] = worktree_name
+        data[WORKTREE_NAME] = worktree_name
 
     # Include source_repo for cross-repo plans
     if source_repo is not None:
-        data["source_repo"] = source_repo
+        data[SOURCE_REPO] = source_repo
 
     # Include objective_issue if provided
     if objective_issue is not None:
-        data["objective_issue"] = objective_issue
+        data[OBJECTIVE_ISSUE] = objective_issue
 
     # Include created_from_session if provided
     if created_from_session is not None:
-        data["created_from_session"] = created_from_session
+        data[CREATED_FROM_SESSION] = created_from_session
 
     # Include last_learn_session if provided
     if last_learn_session is not None:
-        data["last_learn_session"] = last_learn_session
+        data[LAST_LEARN_SESSION] = last_learn_session
 
     # Include last_learn_at if provided
     if last_learn_at is not None:
-        data["last_learn_at"] = last_learn_at
+        data[LAST_LEARN_AT] = last_learn_at
 
     return create_metadata_block(
         key=schema.get_key(),
@@ -270,9 +290,9 @@ def update_plan_header_dispatch(
 
     # Update dispatch fields
     updated_data = dict(block.data)
-    updated_data["last_dispatched_run_id"] = run_id
-    updated_data["last_dispatched_node_id"] = node_id
-    updated_data["last_dispatched_at"] = dispatched_at
+    updated_data[LAST_DISPATCHED_RUN_ID] = run_id
+    updated_data[LAST_DISPATCHED_NODE_ID] = node_id
+    updated_data[LAST_DISPATCHED_AT] = dispatched_at
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -302,9 +322,9 @@ def extract_plan_header_dispatch_info(
     if block is None:
         return (None, None, None)
 
-    run_id = block.data.get("last_dispatched_run_id")
-    node_id = block.data.get("last_dispatched_node_id")
-    dispatched_at = block.data.get("last_dispatched_at")
+    run_id = block.data.get(LAST_DISPATCHED_RUN_ID)
+    node_id = block.data.get(LAST_DISPATCHED_NODE_ID)
+    dispatched_at = block.data.get(LAST_DISPATCHED_AT)
 
     return (run_id, node_id, dispatched_at)
 
@@ -322,7 +342,7 @@ def extract_plan_header_worktree_name(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("worktree_name")
+    return block.data.get(WORKTREE_NAME)
 
 
 def extract_plan_header_comment_id(issue_body: str) -> int | None:
@@ -338,7 +358,7 @@ def extract_plan_header_comment_id(issue_body: str) -> int | None:
     if block is None:
         return None
 
-    return block.data.get("plan_comment_id")
+    return block.data.get(PLAN_COMMENT_ID)
 
 
 def update_plan_header_comment_id(
@@ -368,7 +388,7 @@ def update_plan_header_comment_id(
 
     # Update plan_comment_id field
     updated_data = dict(block.data)
-    updated_data["plan_comment_id"] = comment_id
+    updated_data[PLAN_COMMENT_ID] = comment_id
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -409,7 +429,7 @@ def update_plan_header_local_impl(
 
     # Update local impl field
     updated_data = dict(block.data)
-    updated_data["last_local_impl_at"] = local_impl_at
+    updated_data[LAST_LOCAL_IMPL_AT] = local_impl_at
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -450,7 +470,7 @@ def update_plan_header_worktree_name(
 
     # Update worktree_name field
     updated_data = dict(block.data)
-    updated_data["worktree_name"] = worktree_name
+    updated_data[WORKTREE_NAME] = worktree_name
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -477,7 +497,7 @@ def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("last_local_impl_at")
+    return block.data.get(LAST_LOCAL_IMPL_AT)
 
 
 def update_plan_header_local_impl_event(
@@ -511,10 +531,10 @@ def update_plan_header_local_impl_event(
 
     # Update all local impl fields atomically
     updated_data = dict(block.data)
-    updated_data["last_local_impl_at"] = local_impl_at
-    updated_data["last_local_impl_event"] = event
-    updated_data["last_local_impl_session"] = session_id
-    updated_data["last_local_impl_user"] = user
+    updated_data[LAST_LOCAL_IMPL_AT] = local_impl_at
+    updated_data[LAST_LOCAL_IMPL_EVENT] = event
+    updated_data[LAST_LOCAL_IMPL_SESSION] = session_id
+    updated_data[LAST_LOCAL_IMPL_USER] = user
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -541,7 +561,7 @@ def extract_plan_header_local_impl_event(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("last_local_impl_event")
+    return block.data.get(LAST_LOCAL_IMPL_EVENT)
 
 
 def update_plan_header_remote_impl(
@@ -571,7 +591,7 @@ def update_plan_header_remote_impl(
 
     # Update remote impl field
     updated_data = dict(block.data)
-    updated_data["last_remote_impl_at"] = remote_impl_at
+    updated_data[LAST_REMOTE_IMPL_AT] = remote_impl_at
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -598,7 +618,7 @@ def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("last_remote_impl_at")
+    return block.data.get(LAST_REMOTE_IMPL_AT)
 
 
 def extract_plan_header_source_repo(issue_body: str) -> str | None:
@@ -614,7 +634,7 @@ def extract_plan_header_source_repo(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("source_repo")
+    return block.data.get(SOURCE_REPO)
 
 
 def extract_plan_header_objective_issue(issue_body: str) -> int | None:
@@ -630,7 +650,7 @@ def extract_plan_header_objective_issue(issue_body: str) -> int | None:
     if block is None:
         return None
 
-    return block.data.get("objective_issue")
+    return block.data.get(OBJECTIVE_ISSUE)
 
 
 def extract_plan_header_created_from_session(issue_body: str) -> str | None:
@@ -646,7 +666,7 @@ def extract_plan_header_created_from_session(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("created_from_session")
+    return block.data.get(CREATED_FROM_SESSION)
 
 
 def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
@@ -662,7 +682,7 @@ def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("last_local_impl_session")
+    return block.data.get(LAST_LOCAL_IMPL_SESSION)
 
 
 def update_plan_header_learn_event(
@@ -695,8 +715,8 @@ def update_plan_header_learn_event(
 
     # Update learn fields atomically
     updated_data = dict(block.data)
-    updated_data["last_learn_at"] = learn_at
-    updated_data["last_learn_session"] = session_id
+    updated_data[LAST_LEARN_AT] = learn_at
+    updated_data[LAST_LEARN_SESSION] = session_id
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -723,7 +743,7 @@ def extract_plan_header_last_learn_session(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("last_learn_session")
+    return block.data.get(LAST_LEARN_SESSION)
 
 
 def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
@@ -739,4 +759,4 @@ def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
     if block is None:
         return None
 
-    return block.data.get("last_learn_at")
+    return block.data.get(LAST_LEARN_AT)

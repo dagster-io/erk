@@ -19,6 +19,11 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
 )
+from erk_shared.github.metadata.schemas import (
+    CREATED_FROM_SESSION,
+    OBJECTIVE_ISSUE,
+    SOURCE_REPO,
+)
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
 from erk_shared.plan_store.backend import PlanBackend
@@ -255,11 +260,11 @@ class GitHubPlanStore(PlanBackend):
         if title_suffix_raw is not None:
             title_suffix_str = str(title_suffix_raw)
 
-        source_repo_raw = metadata.get("source_repo")
+        source_repo_raw = metadata.get(SOURCE_REPO)
         source_repo_str: str | None = str(source_repo_raw) if source_repo_raw is not None else None
 
         # Handle int field
-        objective_issue_raw = metadata.get("objective_issue")
+        objective_issue_raw = metadata.get(OBJECTIVE_ISSUE)
         objective_issue_int: int | None = None
         if objective_issue_raw is not None:
             objective_issue_int = int(objective_issue_raw)  # type: ignore[arg-type]
@@ -269,7 +274,7 @@ class GitHubPlanStore(PlanBackend):
         extra_labels = [lbl for lbl in labels if lbl != "erk-plan"]
 
         # Extract created_from_session from metadata if provided
-        created_from_session_raw = metadata.get("created_from_session")
+        created_from_session_raw = metadata.get(CREATED_FROM_SESSION)
         created_from_session_str: str | None = (
             str(created_from_session_raw) if created_from_session_raw is not None else None
         )
