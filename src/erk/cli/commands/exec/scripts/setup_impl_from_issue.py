@@ -24,13 +24,16 @@ from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_git, require_repo_root
-from erk_shared.gateway.time.real import RealTime
+from erk_shared.context.helpers import (
+    require_branch_manager,
+    require_cwd,
+    require_git,
+    require_plan_backend,
+    require_repo_root,
+)
 from erk_shared.git.abc import Git
-from erk_shared.github.issues import RealGitHubIssues
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import generate_issue_branch_name
-from erk_shared.plan_store.github import GitHubPlanStore
 
 
 def _get_current_branch(git: Git, cwd: Path) -> str:
@@ -83,15 +86,11 @@ def setup_impl_from_issue(
     cwd = require_cwd(ctx)
     repo_root = require_repo_root(ctx)
     git = require_git(ctx)
-
-    # Direct instantiation of required dependencies
-    time = RealTime()
-    github_issues = RealGitHubIssues(target_repo=None)
-    plan_store = GitHubPlanStore(github_issues, time)
+    plan_backend = require_plan_backend(ctx)
 
     # Step 1: Fetch plan from GitHub
     try:
-        plan = plan_store.get_plan(repo_root, str(issue_number))
+        plan = plan_backend.get_plan(repo_root, str(issue_number))
     except RuntimeError as e:
         error_output = {
             "success": False,
@@ -124,9 +123,9 @@ def setup_impl_from_issue(
             # Stack on current feature branch
             base_branch = current_branch
 
-        # Create and checkout branch
-        git.create_branch(repo_root, branch_name, base_branch)
-        git.checkout_branch(cwd, branch_name)
+        # Create branch using BranchManager (handles Graphite tracking automatically)
+        branch_manager = require_branch_manager(ctx)
+        branch_manager.create_branch(repo_root, branch_name, base_branch)
         click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
 
     # Step 3: Create .impl/ folder with plan content (unless --no-impl)

@@ -16,6 +16,7 @@ from pathlib import Path
 
 import click
 
+from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.context.types import LoadedConfig, NoRepoSentinel
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
@@ -417,3 +418,31 @@ def require_time(ctx: click.Context) -> Time:
         raise SystemExit(1)
 
     return ctx.obj.time
+
+
+def require_branch_manager(ctx: click.Context) -> BranchManager:
+    """Get BranchManager from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        BranchManager instance from context (GitBranchManager or GraphiteBranchManager)
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     branch_manager = require_branch_manager(ctx)
+        ...     branch_manager.create_branch(repo_root, "feature-branch", "main")
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.branch_manager
