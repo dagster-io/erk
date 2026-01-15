@@ -9,7 +9,7 @@ from pathlib import Path
 from erk.artifacts.detection import is_in_erk_repo
 from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
 from erk.artifacts.models import ArtifactFileState, ArtifactState
-from erk.artifacts.state import save_artifact_state
+from erk.artifacts.state import load_installed_capabilities, save_artifact_state
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -229,7 +229,10 @@ def _sync_commands(
 
 
 def _sync_workflows(
-    bundled_github_dir: Path, target_workflows_dir: Path
+    bundled_github_dir: Path,
+    target_workflows_dir: Path,
+    *,
+    installed_capabilities: frozenset[str],
 ) -> tuple[int, list[SyncedArtifact]]:
     """Sync erk-managed workflows to project's .github/workflows/ directory.
 
@@ -245,7 +248,9 @@ def _sync_workflows(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for name in sorted(_get_bundled_by_type("workflow", installed_capabilities=None)):
+    for name in sorted(
+        _get_bundled_by_type("workflow", installed_capabilities=installed_capabilities)
+    ):
         workflow_name = f"{name}.yml"
         source_path = source_workflows_dir / workflow_name
         if source_path.exists():
@@ -264,7 +269,10 @@ def _sync_workflows(
 
 
 def _sync_actions(
-    bundled_github_dir: Path, target_actions_dir: Path
+    bundled_github_dir: Path,
+    target_actions_dir: Path,
+    *,
+    installed_capabilities: frozenset[str],
 ) -> tuple[int, list[SyncedArtifact]]:
     """Sync erk-managed actions to project's .github/actions/ directory.
 
@@ -280,7 +288,9 @@ def _sync_actions(
 
     count = 0
     synced: list[SyncedArtifact] = []
-    for action_name in sorted(_get_bundled_by_type("action", installed_capabilities=None)):
+    for action_name in sorted(
+        _get_bundled_by_type("action", installed_capabilities=installed_capabilities)
+    ):
         source_path = source_actions_dir / action_name
         if source_path.exists() and source_path.is_dir():
             target_path = target_actions_dir / action_name
@@ -567,6 +577,9 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
             message=f"Bundled .claude/ not found at {bundled_claude_dir}",
         )
 
+    # Load installed capabilities to filter artifacts
+    installed_caps = load_installed_capabilities(project_dir)
+
     target_claude_dir = project_dir / ".claude"
     target_claude_dir.mkdir(parents=True, exist_ok=True)
 
@@ -577,14 +590,14 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     count, synced = _sync_directory_artifacts(
         bundled_claude_dir / "skills",
         target_claude_dir / "skills",
-        _get_bundled_by_type("skill", installed_capabilities=None),
+        _get_bundled_by_type("skill", installed_capabilities=installed_caps),
         "skills",
     )
     total_copied += count
     all_synced.extend(synced)
 
     # Sync agents (supports both directory-based and single-file)
-    agent_names = _get_bundled_by_type("agent", installed_capabilities=None)
+    agent_names = _get_bundled_by_type("agent", installed_capabilities=installed_caps)
     count, synced = _sync_agent_artifacts(
         bundled_claude_dir / "agents", target_claude_dir / "agents", agent_names
     )
@@ -599,12 +612,16 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     bundled_github_dir = get_bundled_github_dir()
     if bundled_github_dir.exists():
         target_workflows_dir = project_dir / ".github" / "workflows"
-        count, synced = _sync_workflows(bundled_github_dir, target_workflows_dir)
+        count, synced = _sync_workflows(
+            bundled_github_dir, target_workflows_dir, installed_capabilities=installed_caps
+        )
         total_copied += count
         all_synced.extend(synced)
 
         target_actions_dir = project_dir / ".github" / "actions"
-        count, synced = _sync_actions(bundled_github_dir, target_actions_dir)
+        count, synced = _sync_actions(
+            bundled_github_dir, target_actions_dir, installed_capabilities=installed_caps
+        )
         total_copied += count
         all_synced.extend(synced)
 
