@@ -9,7 +9,23 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.github.metadata.core import find_metadata_block
-from erk_shared.github.metadata.schemas import PLAN_HEADER_FIELDS
+from erk_shared.github.metadata.schemas import (
+    CREATED_BY,
+    CREATED_FROM_SESSION,
+    LAST_DISPATCHED_AT,
+    LAST_DISPATCHED_RUN_ID,
+    LAST_LEARN_AT,
+    LAST_LEARN_SESSION,
+    LAST_LOCAL_IMPL_AT,
+    LAST_LOCAL_IMPL_EVENT,
+    LAST_LOCAL_IMPL_SESSION,
+    LAST_LOCAL_IMPL_USER,
+    LAST_REMOTE_IMPL_AT,
+    OBJECTIVE_ISSUE,
+    SCHEMA_VERSION,
+    SOURCE_REPO,
+    WORKTREE_NAME,
+)
 from erk_shared.output.output import user_output
 
 
@@ -54,7 +70,6 @@ def _format_header_section(header_info: dict[str, object]) -> list[str]:
     Returns:
         List of formatted lines for display
     """
-    f = PLAN_HEADER_FIELDS
     lines: list[str] = []
 
     # Skip if no header info
@@ -65,66 +80,66 @@ def _format_header_section(header_info: dict[str, object]) -> list[str]:
     lines.append(click.style("--- Header Info ---", bold=True))
 
     # Basic metadata
-    if f.CREATED_BY in header_info:
-        lines.append(f"Created by: {header_info[f.CREATED_BY]}")
+    if CREATED_BY in header_info:
+        lines.append(f"Created by: {header_info[CREATED_BY]}")
 
-    if f.SCHEMA_VERSION in header_info:
-        lines.append(f"Schema version: {header_info[f.SCHEMA_VERSION]}")
+    if SCHEMA_VERSION in header_info:
+        lines.append(f"Schema version: {header_info[SCHEMA_VERSION]}")
 
-    if f.WORKTREE_NAME in header_info:
-        lines.append(f"Worktree: {header_info[f.WORKTREE_NAME]}")
+    if WORKTREE_NAME in header_info:
+        lines.append(f"Worktree: {header_info[WORKTREE_NAME]}")
 
-    if f.OBJECTIVE_ISSUE in header_info:
-        lines.append(f"Objective: #{header_info[f.OBJECTIVE_ISSUE]}")
+    if OBJECTIVE_ISSUE in header_info:
+        lines.append(f"Objective: #{header_info[OBJECTIVE_ISSUE]}")
 
-    if f.SOURCE_REPO in header_info:
-        lines.append(f"Source repo: {header_info[f.SOURCE_REPO]}")
+    if SOURCE_REPO in header_info:
+        lines.append(f"Source repo: {header_info[SOURCE_REPO]}")
 
     # Local implementation info
     has_local_impl = any(
         k in header_info
-        for k in [f.LAST_LOCAL_IMPL_AT, f.LAST_LOCAL_IMPL_EVENT, f.LAST_LOCAL_IMPL_SESSION]
+        for k in [LAST_LOCAL_IMPL_AT, LAST_LOCAL_IMPL_EVENT, LAST_LOCAL_IMPL_SESSION]
     )
     if has_local_impl:
         lines.append("")
         lines.append(click.style("--- Local Implementation ---", bold=True))
-        if f.LAST_LOCAL_IMPL_AT in header_info:
-            event = header_info.get(f.LAST_LOCAL_IMPL_EVENT, "")
+        if LAST_LOCAL_IMPL_AT in header_info:
+            event = header_info.get(LAST_LOCAL_IMPL_EVENT, "")
             event_str = f" ({event})" if event else ""
-            timestamp = _format_value(header_info[f.LAST_LOCAL_IMPL_AT])
+            timestamp = _format_value(header_info[LAST_LOCAL_IMPL_AT])
             lines.append(f"Last impl: {timestamp}{event_str}")
-        if f.LAST_LOCAL_IMPL_SESSION in header_info:
-            lines.append(f"Session: {header_info[f.LAST_LOCAL_IMPL_SESSION]}")
-        if f.LAST_LOCAL_IMPL_USER in header_info:
-            lines.append(f"User: {header_info[f.LAST_LOCAL_IMPL_USER]}")
+        if LAST_LOCAL_IMPL_SESSION in header_info:
+            lines.append(f"Session: {header_info[LAST_LOCAL_IMPL_SESSION]}")
+        if LAST_LOCAL_IMPL_USER in header_info:
+            lines.append(f"User: {header_info[LAST_LOCAL_IMPL_USER]}")
 
     # Remote implementation info
-    if f.LAST_REMOTE_IMPL_AT in header_info:
+    if LAST_REMOTE_IMPL_AT in header_info:
         lines.append("")
         lines.append(click.style("--- Remote Implementation ---", bold=True))
-        lines.append(f"Last impl: {_format_value(header_info[f.LAST_REMOTE_IMPL_AT])}")
+        lines.append(f"Last impl: {_format_value(header_info[LAST_REMOTE_IMPL_AT])}")
 
     # Remote dispatch info (GitHub Actions workflow triggers)
-    has_dispatch = f.LAST_DISPATCHED_AT in header_info or f.LAST_DISPATCHED_RUN_ID in header_info
+    has_dispatch = LAST_DISPATCHED_AT in header_info or LAST_DISPATCHED_RUN_ID in header_info
     if has_dispatch:
         lines.append("")
         lines.append(click.style("--- Remote Dispatch ---", bold=True))
-        if f.LAST_DISPATCHED_AT in header_info:
-            lines.append(f"Last dispatched: {_format_value(header_info[f.LAST_DISPATCHED_AT])}")
-        if f.LAST_DISPATCHED_RUN_ID in header_info:
-            lines.append(f"Run ID: {header_info[f.LAST_DISPATCHED_RUN_ID]}")
+        if LAST_DISPATCHED_AT in header_info:
+            lines.append(f"Last dispatched: {_format_value(header_info[LAST_DISPATCHED_AT])}")
+        if LAST_DISPATCHED_RUN_ID in header_info:
+            lines.append(f"Run ID: {header_info[LAST_DISPATCHED_RUN_ID]}")
 
     # Learn info - always show this section
     lines.append("")
     lines.append(click.style("--- Learn ---", bold=True))
-    if f.CREATED_FROM_SESSION in header_info:
-        lines.append(f"Plan created from session: {header_info[f.CREATED_FROM_SESSION]}")
-    has_learn_evaluation = f.LAST_LEARN_AT in header_info or f.LAST_LEARN_SESSION in header_info
+    if CREATED_FROM_SESSION in header_info:
+        lines.append(f"Plan created from session: {header_info[CREATED_FROM_SESSION]}")
+    has_learn_evaluation = LAST_LEARN_AT in header_info or LAST_LEARN_SESSION in header_info
     if has_learn_evaluation:
-        if f.LAST_LEARN_AT in header_info:
-            lines.append(f"Last learn: {_format_value(header_info[f.LAST_LEARN_AT])}")
-        if f.LAST_LEARN_SESSION in header_info:
-            lines.append(f"Learn session: {header_info[f.LAST_LEARN_SESSION]}")
+        if LAST_LEARN_AT in header_info:
+            lines.append(f"Last learn: {_format_value(header_info[LAST_LEARN_AT])}")
+        if LAST_LEARN_SESSION in header_info:
+            lines.append(f"Learn session: {header_info[LAST_LEARN_SESSION]}")
     else:
         lines.append("No learn evaluation")
 
