@@ -881,7 +881,7 @@ def test_config_set_local_global_key_fails() -> None:
         )
 
         assert result.exit_code == 1
-        assert "Global key 'use_graphite' cannot be written to local config" in result.output
+        assert "cannot be written to local or repo config" in result.output
 
 
 def test_config_set_local_trunk_branch_fails() -> None:
@@ -1176,3 +1176,351 @@ def test_config_set_local_pool_checkout_commands() -> None:
         local_config_path = env.cwd / ".erk" / "config.local.toml"
         content = local_config_path.read_text(encoding="utf-8")
         assert "commands" in content
+
+
+# Three-level config override tests
+
+
+def test_config_set_repo_flag_writes_to_config_toml() -> None:
+    """Test that --repo flag writes to config.toml (repo level)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--repo", "pool.max_slots", "10"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set pool.max_slots=10 (repo)" in result.output
+
+        # Verify config.toml was created (not config.local.toml)
+        config_path = env.cwd / ".erk" / "config.toml"
+        assert config_path.exists()
+        content = config_path.read_text(encoding="utf-8")
+        assert "max_slots = 10" in content
+
+        # Verify config.local.toml was NOT created
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        assert not local_config_path.exists()
+
+
+def test_config_set_repo_flag_short_form() -> None:
+    """Test that -r short flag works the same as --repo."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "set", "-r", "pool.max_slots", "5"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Set pool.max_slots=5 (repo)" in result.output
+
+
+def test_config_set_local_and_repo_flags_mutually_exclusive() -> None:
+    """Test that --local and --repo flags cannot be used together."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "--repo", "pool.max_slots", "5"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "Cannot use both --local and --repo flags" in result.output
+
+
+def test_config_set_overridable_global_key_with_local_flag() -> None:
+    """Test setting an overridable global key with --local flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "prompt_learn_on_land", "false"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set prompt_learn_on_land=false (local)" in result.output
+
+        # Verify config.local.toml contains the setting
+        local_config_path = env.cwd / ".erk" / "config.local.toml"
+        content = local_config_path.read_text(encoding="utf-8")
+        assert "prompt_learn_on_land = false" in content
+
+
+def test_config_set_overridable_global_key_with_repo_flag() -> None:
+    """Test setting an overridable global key with --repo flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--repo", "prompt_learn_on_land", "true"], obj=test_ctx
+        )
+
+        assert result.exit_code == 0, result.output
+        assert "Set prompt_learn_on_land=true (repo)" in result.output
+
+        # Verify config.toml contains the setting
+        config_path = env.cwd / ".erk" / "config.toml"
+        content = config_path.read_text(encoding="utf-8")
+        assert "prompt_learn_on_land = true" in content
+
+
+def test_config_set_non_overridable_global_key_with_local_flag_fails() -> None:
+    """Test that non-overridable global keys cannot be set with --local flag."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--local", "erk_root", "/some/path"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "cannot be written to local or repo config" in result.output
+
+
+def test_config_set_non_overridable_global_key_with_repo_flag_fails() -> None:
+    """Test that non-overridable global keys cannot be set with --repo flag."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        test_ctx = env.build_context(
+            git=git_ops,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--repo", "use_graphite", "false"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "cannot be written to local or repo config" in result.output
+
+
+def test_config_list_shows_source_annotation_for_local_override() -> None:
+    """Test that config list shows (local) annotation for locally overridden keys."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Create config.local.toml with prompt_learn_on_land
+        local_config_dir = env.cwd / ".erk"
+        local_config_dir.mkdir(parents=True, exist_ok=True)
+        local_config_path = local_config_dir / "config.local.toml"
+        local_config_path.write_text("prompt_learn_on_land = false\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        # Pass local config directly
+        local_config = LoadedConfig.test(prompt_learn_on_land=False)
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "prompt_learn_on_land=false (local)" in result.output
+
+
+def test_config_list_shows_source_annotation_for_repo_override() -> None:
+    """Test that config list shows (repo) annotation for repo-level overridden keys."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Create config.toml with prompt_learn_on_land (repo level)
+        repo_config_dir = env.cwd / ".erk"
+        repo_config_dir.mkdir(parents=True, exist_ok=True)
+        repo_config_path = repo_config_dir / "config.toml"
+        repo_config_path.write_text("prompt_learn_on_land = true\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        # Pass local config directly (this is the merged repo+local config)
+        local_config = LoadedConfig.test(prompt_learn_on_land=True)
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "prompt_learn_on_land=true (repo)" in result.output
+
+
+def test_config_list_shows_pool_source_annotation() -> None:
+    """Test that config list shows (local) annotation for pool.max_slots."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Create config.local.toml with pool.max_slots
+        local_config_dir = env.cwd / ".erk"
+        local_config_dir.mkdir(parents=True, exist_ok=True)
+        local_config_path = local_config_dir / "config.local.toml"
+        local_config_path.write_text("[pool]\nmax_slots = 12\n", encoding="utf-8")
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        local_config = LoadedConfig.test(pool_size=12)
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            local_config=local_config,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(cli, ["config", "list"], obj=test_ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "pool.max_slots=12 (local)" in result.output
+
+
+def test_config_set_trunk_branch_rejects_repo_flag() -> None:
+    """Test that trunk-branch rejects --repo flag."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            repo=repo,
+            script_writer=env.script_writer,
+            cwd=env.cwd,
+        )
+
+        result = runner.invoke(
+            cli, ["config", "set", "--repo", "trunk-branch", "main"], obj=test_ctx
+        )
+
+        assert result.exit_code == 1
+        assert "trunk-branch lives in pyproject.toml" in result.output

@@ -188,6 +188,8 @@ class LoadedConfig:
     pool_size: int | None  # None = use default
     pool_checkout_commands: list[str]  # Commands to run after pooled checkout
     pool_checkout_shell: str | None  # Shell to use for checkout commands
+    # Overridable global keys (can be set at repo or local level to override global config)
+    prompt_learn_on_land: bool | None  # None = not set at this level, use global
 
     @staticmethod
     def test(
@@ -199,6 +201,7 @@ class LoadedConfig:
         pool_size: int | None = None,
         pool_checkout_commands: list[str] | None = None,
         pool_checkout_shell: str | None = None,
+        prompt_learn_on_land: bool | None = None,
     ) -> LoadedConfig:
         """Create a LoadedConfig with sensible test defaults."""
         return LoadedConfig(
@@ -211,4 +214,5 @@ class LoadedConfig:
                 pool_checkout_commands if pool_checkout_commands is not None else []
             ),
             pool_checkout_shell=pool_checkout_shell,
+            prompt_learn_on_land=prompt_learn_on_land,
         )

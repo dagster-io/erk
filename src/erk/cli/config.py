@@ -76,6 +76,12 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     if pool_checkout_shell is not None:
         pool_checkout_shell = str(pool_checkout_shell)
 
+    # Parse overridable global keys
+    prompt_learn_on_land: bool | None = None
+    raw_prompt_learn = data.get("prompt_learn_on_land")
+    if raw_prompt_learn is not None:
+        prompt_learn_on_land = bool(raw_prompt_learn)
+
     return LoadedConfig(
         env=env,
         post_create_commands=commands,
@@ -84,6 +90,7 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         pool_size=pool_size,
         pool_checkout_commands=pool_checkout_commands,
         pool_checkout_shell=pool_checkout_shell,
+        prompt_learn_on_land=prompt_learn_on_land,
     )
 
 
@@ -167,6 +174,7 @@ def load_config(repo_root: Path) -> LoadedConfig:
         pool_size=None,
         pool_checkout_commands=[],
         pool_checkout_shell=None,
+        prompt_learn_on_land=None,
     )
 
 
@@ -196,6 +204,7 @@ def load_local_config(repo_root: Path) -> LoadedConfig:
         pool_size=None,
         pool_checkout_commands=[],
         pool_checkout_shell=None,
+        prompt_learn_on_land=None,
     )
 
 
@@ -268,6 +277,8 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         pool_size=repo_config.pool_size,  # Pool is repo-level only, no project override
         pool_checkout_commands=repo_config.pool_checkout_commands,
         pool_checkout_shell=repo_config.pool_checkout_shell,
+        # Repo-level only, no project override
+        prompt_learn_on_land=repo_config.prompt_learn_on_land,
     )
 
 
@@ -286,6 +297,7 @@ def merge_configs_with_local(
     - pool_size: Local overrides base if set
     - pool_checkout_commands: Base first, then local (list concat)
     - pool_checkout_shell: Local overrides base if set
+    - prompt_learn_on_land: Local overrides base if set
 
     Args:
         base_config: Repository-level configuration
@@ -317,5 +329,10 @@ def merge_configs_with_local(
             local_config.pool_checkout_shell
             if local_config.pool_checkout_shell is not None
             else base_config.pool_checkout_shell
+        ),
+        prompt_learn_on_land=(
+            local_config.prompt_learn_on_land
+            if local_config.prompt_learn_on_land is not None
+            else base_config.prompt_learn_on_land
         ),
     )
