@@ -51,8 +51,7 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool, claude_mode: 
     # Mutual exclusivity: --script and --claude-mode cannot be used together
     if script and claude_mode:
         user_output(
-            click.style("Error:", fg="red")
-            + " --script and --claude-mode are mutually exclusive."
+            click.style("Error:", fg="red") + " --script and --claude-mode are mutually exclusive."
         )
         raise SystemExit(1)
 
