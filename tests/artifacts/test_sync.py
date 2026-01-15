@@ -483,9 +483,7 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
         "erk.artifacts.artifact_health._get_bundled_by_type",
         return_value=frozenset({"setup-claude-erk", "setup-claude-code"}),
     ):
-        copied, synced = _sync_actions(
-            source_dir, target_dir, installed_capabilities=frozenset()
-        )
+        copied, synced = _sync_actions(source_dir, target_dir, installed_capabilities=frozenset())
 
     # Should copy exactly 2 files (both bundled actions)
     assert copied == 2
@@ -711,9 +709,7 @@ def test_sync_workflows_filters_by_installed_capabilities(tmp_path: Path) -> Non
         "erk.artifacts.artifact_health._get_bundled_by_type",
         return_value=frozenset({"required-workflow"}),
     ):
-        copied, synced = _sync_workflows(
-            source_dir, target_dir, installed_capabilities=frozenset()
-        )
+        copied, synced = _sync_workflows(source_dir, target_dir, installed_capabilities=frozenset())
 
     # Should only sync the required workflow
     assert copied == 1
@@ -745,9 +741,7 @@ def test_sync_actions_filters_by_installed_capabilities(tmp_path: Path) -> None:
         "erk.artifacts.artifact_health._get_bundled_by_type",
         return_value=frozenset({"required-action"}),
     ):
-        copied, synced = _sync_actions(
-            source_dir, target_dir, installed_capabilities=frozenset()
-        )
+        copied, synced = _sync_actions(source_dir, target_dir, installed_capabilities=frozenset())
 
     # Should only sync the required action
     assert copied == 1

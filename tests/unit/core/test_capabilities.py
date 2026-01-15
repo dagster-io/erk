@@ -1937,10 +1937,20 @@ def test_tripwires_review_capability_managed_artifacts() -> None:
     assert ("tripwires-review", "prompt") in names
 
 
+def test_learned_docs_capability_managed_artifacts() -> None:
+    """Test that LearnedDocsCapability declares its managed artifacts."""
+    cap = LearnedDocsCapability()
+    managed = cap.managed_artifacts
+
+    assert len(managed) == 1
+    names = {(a.name, a.artifact_type) for a in managed}
+    assert ("learned-docs", "skill") in names
+
+
 def test_default_managed_artifacts_is_empty() -> None:
     """Test that default managed_artifacts returns empty list."""
-    # LearnedDocsCapability doesn't override managed_artifacts
-    cap = LearnedDocsCapability()
+    # _TestCapability doesn't override managed_artifacts, so it inherits the default
+    cap = _TestCapability()
     managed = cap.managed_artifacts
 
     assert managed == []
