@@ -7,6 +7,7 @@ from erk.core.capabilities.base import (
     CapabilityArtifact,
     CapabilityResult,
     CapabilityScope,
+    ManagedArtifact,
 )
 
 LEARNED_DOCS_README = """\
@@ -219,6 +220,11 @@ class LearnedDocsCapability(Capability):
             CapabilityArtifact(path=".claude/skills/learned-docs/", artifact_type="directory"),
             CapabilityArtifact(path=".claude/skills/learned-docs/SKILL.md", artifact_type="file"),
         ]
+
+    @property
+    def managed_artifacts(self) -> list[ManagedArtifact]:
+        """Declare learned-docs skill as managed artifact."""
+        return [ManagedArtifact(name="learned-docs", artifact_type="skill")]
 
     def is_installed(self, repo_root: Path | None) -> bool:
         """Check if docs/learned/ directory exists."""

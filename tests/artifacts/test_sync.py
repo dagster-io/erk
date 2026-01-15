@@ -10,6 +10,7 @@ from erk.artifacts.sync import (
     _sync_commands,
     _sync_directory_artifacts,
     _sync_hooks,
+    _sync_workflows,
     get_bundled_claude_dir,
     get_bundled_github_dir,
     sync_artifacts,
@@ -65,6 +66,11 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
         patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
         patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+        # Mock installed capabilities to include learned-docs capability
+        patch(
+            "erk.artifacts.sync.load_installed_capabilities",
+            return_value=frozenset({"learned-docs"}),
+        ),
     ):
         result = sync_artifacts(target_dir, force=False)
 
@@ -200,6 +206,11 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
         patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
         patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+        # Mock installed capabilities to include erk-impl-workflow
+        patch(
+            "erk.artifacts.sync.load_installed_capabilities",
+            return_value=frozenset({"erk-impl-workflow"}),
+        ),
     ):
         result = sync_artifacts(target_dir, force=False)
 
@@ -382,6 +393,11 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
         patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
         patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+        # Mock installed capabilities to include learned-docs and devrun-agent
+        patch(
+            "erk.artifacts.sync.load_installed_capabilities",
+            return_value=frozenset({"learned-docs", "devrun-agent"}),
+        ),
     ):
         result = sync_artifacts(target_dir, force=False)
 
@@ -461,7 +477,13 @@ def test_sync_actions_copies_bundled_actions(tmp_path: Path) -> None:
 
     target_dir = tmp_path / "target" / "actions"
 
-    copied, synced = _sync_actions(source_dir, target_dir)
+    # Mock _get_bundled_by_type to return the expected bundled actions
+    # This simulates the capability registry returning these actions as managed
+    with patch(
+        "erk.artifacts.artifact_health._get_bundled_by_type",
+        return_value=frozenset({"setup-claude-erk", "setup-claude-code"}),
+    ):
+        copied, synced = _sync_actions(source_dir, target_dir, installed_capabilities=frozenset())
 
     # Should copy exactly 2 files (both bundled actions)
     assert copied == 2
@@ -503,6 +525,11 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
         patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
         patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
+        # Mock installed capabilities to include erk-impl-workflow (owns the actions)
+        patch(
+            "erk.artifacts.sync.load_installed_capabilities",
+            return_value=frozenset({"erk-impl-workflow"}),
+        ),
     ):
         result = sync_artifacts(target_dir, force=False)
 
@@ -659,3 +686,66 @@ def test_sync_hooks_returns_empty_when_no_erk_hooks_installed(tmp_path: Path) ->
     # Settings should be unchanged (no hooks added)
     updated_settings = json.loads(settings_path.read_text(encoding="utf-8"))
     assert updated_settings == settings
+
+
+def test_sync_workflows_filters_by_installed_capabilities(tmp_path: Path) -> None:
+    """_sync_workflows only syncs workflows from installed capabilities."""
+    source_dir = tmp_path / "source"
+    workflows_dir = source_dir / "workflows"
+    workflows_dir.mkdir(parents=True)
+
+    # Create two workflows - one from required capability, one from optional
+    (workflows_dir / "required-workflow.yml").write_text(
+        "name: Required Workflow", encoding="utf-8"
+    )
+    (workflows_dir / "optional-workflow.yml").write_text(
+        "name: Optional Workflow", encoding="utf-8"
+    )
+
+    target_dir = tmp_path / "target" / "workflows"
+
+    # Mock _get_bundled_by_type to return only required workflow when no capabilities installed
+    with patch(
+        "erk.artifacts.artifact_health._get_bundled_by_type",
+        return_value=frozenset({"required-workflow"}),
+    ):
+        copied, synced = _sync_workflows(source_dir, target_dir, installed_capabilities=frozenset())
+
+    # Should only sync the required workflow
+    assert copied == 1
+    assert (target_dir / "required-workflow.yml").exists()
+    assert not (target_dir / "optional-workflow.yml").exists()
+    assert len(synced) == 1
+    assert synced[0].key == "workflows/required-workflow.yml"
+
+
+def test_sync_actions_filters_by_installed_capabilities(tmp_path: Path) -> None:
+    """_sync_actions only syncs actions from installed capabilities."""
+    source_dir = tmp_path / "source"
+    actions_dir = source_dir / "actions"
+
+    # Create action from required capability
+    required_action = actions_dir / "required-action"
+    required_action.mkdir(parents=True)
+    (required_action / "action.yml").write_text("name: Required Action", encoding="utf-8")
+
+    # Create action from optional capability
+    optional_action = actions_dir / "optional-action"
+    optional_action.mkdir(parents=True)
+    (optional_action / "action.yml").write_text("name: Optional Action", encoding="utf-8")
+
+    target_dir = tmp_path / "target" / "actions"
+
+    # Mock _get_bundled_by_type to return only required action when no capabilities installed
+    with patch(
+        "erk.artifacts.artifact_health._get_bundled_by_type",
+        return_value=frozenset({"required-action"}),
+    ):
+        copied, synced = _sync_actions(source_dir, target_dir, installed_capabilities=frozenset())
+
+    # Should only sync the required action
+    assert copied == 1
+    assert (target_dir / "required-action" / "action.yml").exists()
+    assert not (target_dir / "optional-action").exists()
+    assert len(synced) == 1
+    assert synced[0].key == "actions/required-action"
