@@ -146,6 +146,30 @@ class GraphiteBranchManager(BranchManager):
         """
         self.graphite.track_branch(repo_root, branch_name, parent_branch)
 
+    def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
+        """Get parent branch from Graphite's cache.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to get the parent for
+
+        Returns:
+            Parent branch name, or None if branch is not tracked or is trunk.
+        """
+        return self.graphite.get_parent_branch(self.git, repo_root, branch)
+
+    def get_child_branches(self, repo_root: Path, branch: str) -> list[str]:
+        """Get child branches from Graphite's cache.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name of the branch to get children for
+
+        Returns:
+            List of child branch names, or empty list if none.
+        """
+        return self.graphite.get_child_branches(self.git, repo_root, branch)
+
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""
         return True

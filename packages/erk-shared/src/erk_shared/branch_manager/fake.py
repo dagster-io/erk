@@ -23,6 +23,10 @@ class FakeBranchManager(BranchManager):
     graphite_mode: bool = False
     # Mapping of branch name -> stack (list of branches from trunk to leaf)
     stacks: dict[str, list[str]] = field(default_factory=dict)
+    # Mapping of branch name -> parent branch name
+    parent_branches: dict[str, str] = field(default_factory=dict)
+    # Mapping of branch name -> list of child branch names
+    child_branches: dict[str, list[str]] = field(default_factory=dict)
     # Track created branches for assertions: list of (branch_name, base_branch) tuples
     _created_branches: list[tuple[str, str]] = field(default_factory=list)
     # Track deleted branches for assertions
@@ -109,6 +113,30 @@ class FakeBranchManager(BranchManager):
             parent_branch: Name of the parent branch
         """
         self._tracked_branches.append((branch_name, parent_branch))
+
+    def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
+        """Get parent branch from configured test data.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch: Name of the branch to get the parent for
+
+        Returns:
+            Parent branch name if configured, None otherwise.
+        """
+        return self.parent_branches.get(branch)
+
+    def get_child_branches(self, repo_root: Path, branch: str) -> list[str]:
+        """Get child branches from configured test data.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch: Name of the branch to get children for
+
+        Returns:
+            List of child branch names if configured, empty list otherwise.
+        """
+        return self.child_branches.get(branch, [])
 
     def is_graphite_managed(self) -> bool:
         """Returns the configured graphite_mode value."""

@@ -212,7 +212,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     Ensure.gt_authenticated(ctx)
 
     # Step 3: Check if already tracked by Graphite (idempotent)
-    parent_branch = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
+    parent_branch = ctx.branch_manager.get_parent_branch(repo.root, current_branch)
     if parent_branch is not None:
         user_output(
             click.style("✓", fg="green")
@@ -248,7 +248,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     # Step 5: Track with Graphite
     user_output(f"Tracking branch '{current_branch}' with parent '{base_branch}'...")
-    ctx.graphite.track_branch(ctx.cwd, current_branch, base_branch)
+    ctx.branch_manager.track_branch(ctx.cwd, current_branch, base_branch)
     user_output(click.style("✓", fg="green") + " Branch tracked with Graphite")
 
     # Step 6: Squash commits (idempotent)
@@ -277,7 +277,7 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # Step 8: Submit to link with Graphite
     # Force push is required because squashing rewrites history, causing divergence from remote
     user_output("Submitting to link with Graphite...")
-    ctx.graphite.submit_stack(repo.root, quiet=True, force=True)
+    ctx.branch_manager.submit_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" PR #{pr_number} synchronized with Graphite")
 
     user_output(f"\nBranch '{current_branch}' is now tracked by Graphite.")

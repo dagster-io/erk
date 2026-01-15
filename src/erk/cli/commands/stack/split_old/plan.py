@@ -52,13 +52,13 @@ def get_stack_branches(
     """
     if current_branch is None:
         # In detached HEAD state, get the full stack from trunk
-        stack_branches = ctx.graphite.get_branch_stack(ctx.git, repo_root, trunk_branch)
+        stack_branches = ctx.branch_manager.get_branch_stack(repo_root, trunk_branch)
         if stack_branches is None:
             user_output(f"Error: Trunk branch '{trunk_branch}' is not tracked by Graphite")
             raise SystemExit(1)
     else:
         # Get current branch's stack
-        stack_branches = ctx.graphite.get_branch_stack(ctx.git, repo_root, current_branch)
+        stack_branches = ctx.branch_manager.get_branch_stack(repo_root, current_branch)
         if stack_branches is None:
             user_output(f"Error: Branch '{current_branch}' is not tracked by Graphite")
             user_output(

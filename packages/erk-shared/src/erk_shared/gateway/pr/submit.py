@@ -178,7 +178,7 @@ def execute_core_submit(
 
     # Get parent branch (Graphite-aware, falls back to trunk)
     parent_branch = (
-        ctx.graphite.get_parent_branch(ctx.git, Path(repo_root), branch_name) or trunk_branch
+        ctx.branch_manager.get_parent_branch(Path(repo_root), branch_name) or trunk_branch
     )
 
     commit_count = ctx.git.count_commits_ahead(cwd, parent_branch)

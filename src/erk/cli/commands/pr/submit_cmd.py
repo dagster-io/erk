@@ -142,7 +142,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 
     # Get parent branch (Graphite-aware, falls back to trunk)
     parent_branch = (
-        ctx.graphite.get_parent_branch(ctx.git, Path(repo_root), current_branch) or trunk_branch
+        ctx.branch_manager.get_parent_branch(Path(repo_root), current_branch) or trunk_branch
     )
 
     # Get commit messages for AI context (only from current branch)

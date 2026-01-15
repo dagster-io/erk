@@ -51,7 +51,7 @@ class GraphiteStackCollector(StatusCollector):
             return None
 
         # Get the stack for current branch
-        stack = ctx.graphite.get_branch_stack(ctx.git, repo_root, branch)
+        stack = ctx.branch_manager.get_branch_stack(repo_root, branch)
         if stack is None:
             return None
 

@@ -33,7 +33,7 @@ def list_stack(ctx: ErkContext) -> None:
         raise SystemExit(1)
 
     # Get the stack for current branch
-    stack_branches = ctx.graphite.get_branch_stack(ctx.git, repo.root, current_branch)
+    stack_branches = ctx.branch_manager.get_branch_stack(repo.root, current_branch)
     if stack_branches is None:
         click.echo(f"Error: Branch '{current_branch}' is not tracked by Graphite", err=True)
         click.echo("Run 'gt track' to track this branch, or 'gt create' to create a new branch.")
