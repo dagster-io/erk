@@ -40,12 +40,8 @@ nav:
   - How-To Guides:
       - howto/index.md
       - howto/local-workflow.md
-      - howto/remote-execution.md
-      - howto/planless-workflow.md
-      - howto/pr-checkout-sync.md
-      - howto/conflict-resolution.md
+      - howto/navigate-branches-worktrees.md
       - howto/test-workflows.md
-      - howto/documentation-extraction.md
 
 extra_css:
   - stylesheets/extra.css
