@@ -63,7 +63,9 @@ def main() -> None:
         print("hint: Set ERK_VENV=/path/to/venv for non-standard locations", file=sys.stderr)
     else:
         # Case 1: Not in any project
-        print("erk: no project found", file=sys.stderr)
+        # Silence message in home directory (expected during shell init)
+        if Path.cwd() != Path.home():
+            print("erk: no project found", file=sys.stderr)
 
     sys.exit(1)
 
