@@ -109,7 +109,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     session_id = os.environ.get("SESSION_ID", str(uuid.uuid4()))
 
     # Phase 1: Core submit (git push + gh pr create)
-    click.echo(click.style("Phase 1: Creating PR", bold=True))
+    click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
     core_result = _run_core_submit(ctx, cwd, debug, force)
 
     if isinstance(core_result, CoreSubmitError):
