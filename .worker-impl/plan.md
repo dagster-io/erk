@@ -6,10 +6,10 @@ Add `--body-file` option to read body content from a file, making it easier to u
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
-| `src/erk/cli/commands/exec/scripts/update_issue_body.py` | Add `--body-file` option |
-| `tests/unit/cli/commands/exec/scripts/test_update_issue_body.py` | Add tests |
+| File                                                             | Changes                  |
+| ---------------------------------------------------------------- | ------------------------ |
+| `src/erk/cli/commands/exec/scripts/update_issue_body.py`         | Add `--body-file` option |
+| `tests/unit/cli/commands/exec/scripts/test_update_issue_body.py` | Add tests                |
 
 ## Implementation
 
