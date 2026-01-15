@@ -30,6 +30,26 @@ class SyncResult:
     message: str
 
 
+@dataclass(frozen=True)
+class ArtifactSyncConfig:
+    """Configuration for artifact sync - enables testing without mocks."""
+
+    bundled_claude_dir: Path
+    bundled_github_dir: Path
+    current_version: str
+    installed_capabilities: frozenset[str]
+
+
+def create_artifact_sync_config(project_dir: Path) -> ArtifactSyncConfig:
+    """Create config with real values for production use."""
+    return ArtifactSyncConfig(
+        bundled_claude_dir=get_bundled_claude_dir(),
+        bundled_github_dir=get_bundled_github_dir(),
+        current_version=get_current_version(),
+        installed_capabilities=load_installed_capabilities(project_dir),
+    )
+
+
 @cache
 def _get_erk_package_dir() -> Path:
     """Get the erk package directory (where erk/__init__.py lives)."""
@@ -543,11 +563,21 @@ def _sync_hooks(project_dir: Path) -> list[SyncedArtifact]:
     return synced
 
 
-def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
+def sync_artifacts(
+    project_dir: Path,
+    force: bool,
+    *,
+    config: ArtifactSyncConfig | None = None,
+) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
     When running in the erk repo itself, skips file copying but still computes
     and saves state for dogfooding.
+
+    Args:
+        project_dir: Target project directory
+        force: Force sync even if up to date
+        config: Optional config for testing. If None, creates real config.
     """
     # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import _get_bundled_by_type
@@ -569,12 +599,19 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
             message="Development mode: state.toml updated (artifacts read from source)",
         )
 
-    bundled_claude_dir = get_bundled_claude_dir()
-    if not bundled_claude_dir.exists():
+    # Create config if not provided (production path)
+    # Track whether config was explicitly provided - when provided, skip capability
+    # sync since capabilities use get_bundled_*_dir() directly and would overwrite
+    # test fixtures
+    config_was_provided = config is not None
+    if config is None:
+        config = create_artifact_sync_config(project_dir)
+
+    if not config.bundled_claude_dir.exists():
         return SyncResult(
             success=False,
             artifacts_installed=0,
-            message=f"Bundled .claude/ not found at {bundled_claude_dir}",
+            message=f"Bundled .claude/ not found at {config.bundled_claude_dir}",
         )
 
     # Load installed capabilities to filter artifacts
@@ -588,7 +625,7 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
 
     # Sync directory-based skills
     count, synced = _sync_directory_artifacts(
-        bundled_claude_dir / "skills",
+        config.bundled_claude_dir / "skills",
         target_claude_dir / "skills",
         _get_bundled_by_type("skill", installed_capabilities=installed_caps),
         "skills",
@@ -599,28 +636,33 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     # Sync agents (supports both directory-based and single-file)
     agent_names = _get_bundled_by_type("agent", installed_capabilities=installed_caps)
     count, synced = _sync_agent_artifacts(
-        bundled_claude_dir / "agents", target_claude_dir / "agents", agent_names
+        config.bundled_claude_dir / "agents", target_claude_dir / "agents", agent_names
     )
     total_copied += count
     all_synced.extend(synced)
 
-    count, synced = _sync_commands(bundled_claude_dir / "commands", target_claude_dir / "commands")
+    count, synced = _sync_commands(
+        config.bundled_claude_dir / "commands", target_claude_dir / "commands"
+    )
     total_copied += count
     all_synced.extend(synced)
 
     # Sync workflows and actions from .github/
-    bundled_github_dir = get_bundled_github_dir()
-    if bundled_github_dir.exists():
+    if config.bundled_github_dir.exists():
         target_workflows_dir = project_dir / ".github" / "workflows"
         count, synced = _sync_workflows(
-            bundled_github_dir, target_workflows_dir, installed_capabilities=installed_caps
+            config.bundled_github_dir,
+            target_workflows_dir,
+            installed_capabilities=installed_caps,
         )
         total_copied += count
         all_synced.extend(synced)
 
         target_actions_dir = project_dir / ".github" / "actions"
         count, synced = _sync_actions(
-            bundled_github_dir, target_actions_dir, installed_capabilities=installed_caps
+            config.bundled_github_dir,
+            target_actions_dir,
+            installed_capabilities=installed_caps,
         )
         total_copied += count
         all_synced.extend(synced)
@@ -632,23 +674,25 @@ def sync_artifacts(project_dir: Path, force: bool) -> SyncResult:
     # Sync installed capabilities - for each project-scoped capability that is
     # already installed, call install() to ensure it's up-to-date. Since install()
     # is idempotent, this safely updates existing capabilities.
-    from erk.core.capabilities.registry import list_capabilities
+    # Skip this when config is explicitly provided (test mode) - capabilities use
+    # get_bundled_*_dir() directly and would overwrite test fixtures.
+    if not config_was_provided:
+        from erk.core.capabilities.registry import list_capabilities
 
-    for cap in list_capabilities():
-        if cap.scope == "project" and cap.is_installed(project_dir):
-            cap.install(project_dir)
+        for cap in list_capabilities():
+            if cap.scope == "project" and cap.is_installed(project_dir):
+                cap.install(project_dir)
 
     # Build per-artifact state from synced artifacts
-    current_version = get_current_version()
     files: dict[str, ArtifactFileState] = {}
     for artifact in all_synced:
         files[artifact.key] = ArtifactFileState(
-            version=current_version,
+            version=config.current_version,
             hash=artifact.hash,
         )
 
     # Save state with current version and per-artifact state
-    save_artifact_state(project_dir, ArtifactState(version=current_version, files=files))
+    save_artifact_state(project_dir, ArtifactState(version=config.current_version, files=files))
 
     return SyncResult(
         success=True,
