@@ -222,6 +222,30 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
 
     user_output(f"Base branch: {base_branch}")
 
+    # Before tracking with Graphite, ensure the parent branch is in our history.
+    # This handles the case where the parent was restacked locally but not pushed.
+    # When checking out a stacked PR, we rebase onto origin/<base>, but if the local
+    # parent branch has been restacked (rebased onto trunk), the local parent has
+    # different commits than origin/<base>. Graphite's `gt track` requires the parent
+    # to be in the child's git history, so we rebase onto the local parent first.
+    trunk_branch = ctx.git.detect_trunk_branch(repo.root)
+    if base_branch != trunk_branch:
+        user_output(f"Rebasing onto {base_branch}...")
+        rebase_result = ctx.git.rebase_onto(repo.root, base_branch)
+        if not rebase_result.success:
+            user_output(click.style("\nRebase paused due to merge conflicts.", fg="yellow"))
+            if rebase_result.conflict_files:
+                user_output("Conflicted files:")
+                for file in rebase_result.conflict_files:
+                    user_output(f"  - {file}")
+            user_output("\nTo resolve conflicts:")
+            user_output("  1. Resolve conflicts in the listed files")
+            user_output("  2. Run: git add <files>")
+            user_output("  3. Run: git rebase --continue")
+            user_output("  4. Run: erk pr sync --dangerous")
+            raise SystemExit(1)
+        user_output(click.style("✓", fg="green") + " Rebased onto parent branch")
+
     # Step 5: Track with Graphite
     user_output(f"Tracking branch '{current_branch}' with parent '{base_branch}'...")
     ctx.graphite.track_branch(ctx.cwd, current_branch, base_branch)
