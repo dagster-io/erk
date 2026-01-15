@@ -11,6 +11,10 @@ permissions:
   actions: write # Needed to re-trigger workflow after autofix push
   statuses: write # Needed for autofix to update commit status
 
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-submission:
     if: github.event.pull_request.draft != true
