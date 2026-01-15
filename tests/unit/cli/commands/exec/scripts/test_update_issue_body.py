@@ -128,3 +128,79 @@ def test_update_issue_body_empty_body() -> None:
     # Verify empty body was set
     _, updated_body = fake_gh.updated_bodies[0]
     assert updated_body == ""
+
+
+def test_update_issue_body_from_file() -> None:
+    """Test updating issue body from a file."""
+    issue = _make_issue(42, "Test Issue", "Old body content")
+    fake_gh = FakeGitHubIssues(issues={42: issue})
+    runner = CliRunner()
+
+    file_content = """# Updated Plan
+
+## Summary
+Content from file.
+"""
+    with runner.isolated_filesystem():
+        # Create the body file
+        from pathlib import Path
+
+        body_file = Path("body.md")
+        body_file.write_text(file_content, encoding="utf-8")
+
+        result = runner.invoke(
+            update_issue_body,
+            ["42", "--body-file", str(body_file)],
+            obj=ErkContext.for_test(github_issues=fake_gh),
+        )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["issue_number"] == 42
+
+    # Verify the body was updated with file content
+    assert len(fake_gh.updated_bodies) == 1
+    updated_number, updated_body = fake_gh.updated_bodies[0]
+    assert updated_number == 42
+    assert updated_body == file_content
+
+
+def test_update_issue_body_fails_with_both_body_and_file() -> None:
+    """Test error when both --body and --body-file are specified."""
+    fake_gh = FakeGitHubIssues()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem():
+        from pathlib import Path
+
+        body_file = Path("body.md")
+        body_file.write_text("file content", encoding="utf-8")
+
+        result = runner.invoke(
+            update_issue_body,
+            ["42", "--body", "inline content", "--body-file", str(body_file)],
+            obj=ErkContext.for_test(github_issues=fake_gh),
+        )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "Cannot specify both --body and --body-file" in output["error"]
+
+
+def test_update_issue_body_fails_without_body_or_file() -> None:
+    """Test error when neither --body nor --body-file is specified."""
+    fake_gh = FakeGitHubIssues()
+    runner = CliRunner()
+
+    result = runner.invoke(
+        update_issue_body,
+        ["42"],
+        obj=ErkContext.for_test(github_issues=fake_gh),
+    )
+
+    assert result.exit_code == 1
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "Must specify --body or --body-file" in output["error"]
