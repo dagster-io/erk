@@ -130,3 +130,61 @@ set +a
 {post_activation_section}# Optional: show where we are
 {final_message}
 """
+
+
+def write_worktree_activate_script(
+    *,
+    worktree_path: Path,
+) -> Path:
+    """Write an activation script to .erk/activate.sh in the worktree.
+
+    The script will:
+      - CD to the worktree root
+      - Create .venv with `uv sync` if not present
+      - Source `.venv/bin/activate` if present
+      - Export variables from `.env` if present
+
+    Args:
+        worktree_path: Path to the worktree directory
+
+    Returns:
+        Path to the written activation script (.erk/activate.sh)
+    """
+    script_content = render_activation_script(
+        worktree_path=worktree_path,
+        target_subpath=None,
+        post_cd_commands=None,
+        final_message='echo "Activated: $(pwd)"',
+        comment="erk worktree activation script",
+    )
+
+    erk_dir = worktree_path / ".erk"
+    erk_dir.mkdir(parents=True, exist_ok=True)
+
+    script_path = erk_dir / "activate.sh"
+    script_path.write_text(script_content, encoding="utf-8")
+
+    return script_path
+
+
+def ensure_worktree_activate_script(
+    *,
+    worktree_path: Path,
+) -> Path:
+    """Ensure an activation script exists at .erk/activate.sh.
+
+    If the script doesn't exist, creates it. If it exists, returns
+    the path without modifying it (idempotent for existing scripts).
+
+    Args:
+        worktree_path: Path to the worktree directory
+
+    Returns:
+        Path to the activation script (.erk/activate.sh)
+    """
+    script_path = worktree_path / ".erk" / "activate.sh"
+
+    if not script_path.exists():
+        return write_worktree_activate_script(worktree_path=worktree_path)
+
+    return script_path
