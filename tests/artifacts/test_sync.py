@@ -30,7 +30,15 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
-    result = sync_artifacts(tmp_path, force=False)
+    # Config is checked after the erk repo early-return, so values don't matter
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=tmp_path,
+        bundled_github_dir=tmp_path,
+        current_version="1.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(tmp_path, force=False, config=config)
 
     assert result.success is True
     assert result.artifacts_installed == 0
@@ -45,6 +53,7 @@ def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
         bundled_github_dir=nonexistent,
         current_version="1.0.0",
         installed_capabilities=frozenset(),
+        sync_capabilities=False,
     )
     result = sync_artifacts(tmp_path, force=False, config=config)
 
@@ -73,6 +82,7 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
         bundled_github_dir=nonexistent,
         current_version="1.0.0",
         installed_capabilities=frozenset({"learned-docs"}),
+        sync_capabilities=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -100,6 +110,7 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
         bundled_github_dir=nonexistent,
         current_version="2.0.0",
         installed_capabilities=frozenset(),
+        sync_capabilities=False,
     )
     sync_artifacts(target_dir, force=False, config=config)
 
@@ -210,6 +221,7 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
         bundled_github_dir=bundled_github,
         current_version="1.0.0",
         installed_capabilities=frozenset({"erk-impl-workflow"}),
+        sync_capabilities=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -393,6 +405,7 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
         bundled_github_dir=nonexistent,
         current_version="1.0.0",
         installed_capabilities=frozenset({"learned-docs", "devrun-agent"}),
+        sync_capabilities=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -439,6 +452,7 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
         bundled_github_dir=nonexistent,
         current_version="1.0.0",
         installed_capabilities=frozenset(),
+        sync_capabilities=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -522,6 +536,7 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
         bundled_github_dir=bundled_github,
         current_version="1.0.0",
         installed_capabilities=frozenset({"erk-impl-workflow"}),
+        sync_capabilities=False,
     )
     result = sync_artifacts(target_dir, force=False, config=config)
 
@@ -624,12 +639,22 @@ def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> No
     nested_cmd.mkdir(parents=True)
     (nested_cmd / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
 
+    # Note: The erk repo code path uses get_bundled_*_dir() directly to compute state
+    # from source, so we still need to patch those. Config is required but not used
+    # because the erk repo check returns early.
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=tmp_path / ".github",
+        current_version="1.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
     with (
         patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
         patch("erk.artifacts.sync.get_bundled_github_dir", return_value=tmp_path / ".github"),
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
     ):
-        result = sync_artifacts(tmp_path, force=False)
+        result = sync_artifacts(tmp_path, force=False, config=config)
 
     assert result.success is True
     # Should be development mode (no files actually copied)

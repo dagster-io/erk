@@ -38,6 +38,7 @@ class ArtifactSyncConfig:
     bundled_github_dir: Path
     current_version: str
     installed_capabilities: frozenset[str]
+    sync_capabilities: bool  # False in tests to avoid capability install overwriting test fixtures
 
 
 def create_artifact_sync_config(project_dir: Path) -> ArtifactSyncConfig:
@@ -47,6 +48,7 @@ def create_artifact_sync_config(project_dir: Path) -> ArtifactSyncConfig:
         bundled_github_dir=get_bundled_github_dir(),
         current_version=get_current_version(),
         installed_capabilities=load_installed_capabilities(project_dir),
+        sync_capabilities=True,
     )
 
 
@@ -567,7 +569,7 @@ def sync_artifacts(
     project_dir: Path,
     force: bool,
     *,
-    config: ArtifactSyncConfig | None = None,
+    config: ArtifactSyncConfig,
 ) -> SyncResult:
     """Sync artifacts from erk package to project's .claude/ and .github/ directories.
 
@@ -577,7 +579,7 @@ def sync_artifacts(
     Args:
         project_dir: Target project directory
         force: Force sync even if up to date
-        config: Optional config for testing. If None, creates real config.
+        config: Configuration for artifact sync (use create_artifact_sync_config for production)
     """
     # Inline import: artifact_health.py imports get_bundled_*_dir from this module
     from erk.artifacts.artifact_health import _get_bundled_by_type
@@ -599,23 +601,12 @@ def sync_artifacts(
             message="Development mode: state.toml updated (artifacts read from source)",
         )
 
-    # Create config if not provided (production path)
-    # Track whether config was explicitly provided - when provided, skip capability
-    # sync since capabilities use get_bundled_*_dir() directly and would overwrite
-    # test fixtures
-    config_was_provided = config is not None
-    if config is None:
-        config = create_artifact_sync_config(project_dir)
-
     if not config.bundled_claude_dir.exists():
         return SyncResult(
             success=False,
             artifacts_installed=0,
             message=f"Bundled .claude/ not found at {config.bundled_claude_dir}",
         )
-
-    # Load installed capabilities to filter artifacts
-    installed_caps = load_installed_capabilities(project_dir)
 
     target_claude_dir = project_dir / ".claude"
     target_claude_dir.mkdir(parents=True, exist_ok=True)
@@ -627,14 +618,16 @@ def sync_artifacts(
     count, synced = _sync_directory_artifacts(
         config.bundled_claude_dir / "skills",
         target_claude_dir / "skills",
-        _get_bundled_by_type("skill", installed_capabilities=installed_caps),
+        _get_bundled_by_type("skill", installed_capabilities=config.installed_capabilities),
         "skills",
     )
     total_copied += count
     all_synced.extend(synced)
 
     # Sync agents (supports both directory-based and single-file)
-    agent_names = _get_bundled_by_type("agent", installed_capabilities=installed_caps)
+    agent_names = _get_bundled_by_type(
+        "agent", installed_capabilities=config.installed_capabilities
+    )
     count, synced = _sync_agent_artifacts(
         config.bundled_claude_dir / "agents", target_claude_dir / "agents", agent_names
     )
@@ -653,7 +646,7 @@ def sync_artifacts(
         count, synced = _sync_workflows(
             config.bundled_github_dir,
             target_workflows_dir,
-            installed_capabilities=installed_caps,
+            installed_capabilities=config.installed_capabilities,
         )
         total_copied += count
         all_synced.extend(synced)
@@ -662,7 +655,7 @@ def sync_artifacts(
         count, synced = _sync_actions(
             config.bundled_github_dir,
             target_actions_dir,
-            installed_capabilities=installed_caps,
+            installed_capabilities=config.installed_capabilities,
         )
         total_copied += count
         all_synced.extend(synced)
@@ -674,9 +667,9 @@ def sync_artifacts(
     # Sync installed capabilities - for each project-scoped capability that is
     # already installed, call install() to ensure it's up-to-date. Since install()
     # is idempotent, this safely updates existing capabilities.
-    # Skip this when config is explicitly provided (test mode) - capabilities use
+    # Skip when sync_capabilities=False (test mode) - capabilities use
     # get_bundled_*_dir() directly and would overwrite test fixtures.
-    if not config_was_provided:
+    if config.sync_capabilities:
         from erk.core.capabilities.registry import list_capabilities
 
         for cap in list_capabilities():
