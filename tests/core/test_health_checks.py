@@ -216,7 +216,7 @@ def test_check_gitignore_entries_no_gitignore(tmp_path: Path) -> None:
 def test_check_gitignore_entries_all_present(tmp_path: Path) -> None:
     """Test gitignore check when all required entries are present."""
     gitignore = tmp_path / ".gitignore"
-    gitignore.write_text("*.pyc\n.erk/scratch/\n.impl/\n", encoding="utf-8")
+    gitignore.write_text("*.pyc\n.erk/scratch/\n.impl/\n.erk/config.local.toml\n", encoding="utf-8")
 
     result = check_gitignore_entries(tmp_path)
 
