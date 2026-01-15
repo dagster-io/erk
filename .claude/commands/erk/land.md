@@ -11,19 +11,19 @@ Objective-aware wrapper for `erk land`. Lands the PR first, then offers to updat
 
 ```bash
 # Land PR for current branch
-/erk:pr-land
+/erk:land
 
 # Land PR for specific branch
-/erk:pr-land feature-branch
+/erk:land feature-branch
 
 # Land PR by number
-/erk:pr-land 123
+/erk:land 123
 
 # Land PR by URL
-/erk:pr-land https://github.com/owner/repo/pull/123
+/erk:land https://github.com/owner/repo/pull/123
 
 # Skip objective update prompt
-/erk:pr-land --skip-objective
+/erk:land --skip-objective
 ```
 
 ---
