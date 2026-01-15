@@ -745,3 +745,141 @@ def test_pr_sync_raises_non_conflict_restack_error(tmp_path: Path) -> None:
         assert "Restack paused due to merge conflicts" not in result.output
         # Should show the actual error message wrapped in ClickException
         assert "Unexpected internal error during restack" in result.output
+
+
+def test_pr_sync_rebases_onto_parent_before_tracking_stacked_pr(tmp_path: Path) -> None:
+    """When syncing a stacked PR, rebase onto parent before tracking.
+
+    This handles the case where the parent branch was restacked locally
+    but not pushed, causing gt track to fail because parent is not in
+    the child's git history.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # PR is stacked on parent-branch, not on trunk (main)
+        pr_info = _make_pr_info(123, "child-branch", title="Child PR")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="child-branch",
+            base_ref_name="parent-branch",  # Not trunk!
+            title="Child PR",
+        )
+        github = FakeGitHub(
+            prs={"child-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        graphite = FakeGraphite(branches={})
+
+        # Trunk is "main", but base_branch is "parent-branch"
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "child-branch"},
+            trunk_branches={env.cwd: "main"},
+            commits_ahead={(env.cwd, "main"): 2},
+        )
+        git._commits.append((env.cwd, "Original message", []))
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify rebase onto parent was called before track
+        assert len(git.rebase_onto_calls) == 1
+        assert git.rebase_onto_calls[0] == (env.cwd, "parent-branch")
+        # Verify "Rebased onto parent branch" message
+        assert "Rebased onto parent branch" in result.output
+        # Verify track was called after rebase
+        assert len(graphite.track_branch_calls) == 1
+        assert graphite.track_branch_calls[0] == (env.cwd, "child-branch", "parent-branch")
+
+
+def test_pr_sync_skips_rebase_for_trunk_based_pr(tmp_path: Path) -> None:
+    """When syncing a PR based on trunk, skip the rebase step."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # PR is based on trunk (main), not on another branch
+        pr_info = _make_pr_info(456, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name="feature-branch",
+            base_ref_name="main",  # Same as trunk
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={456: pr_details},
+        )
+
+        graphite = FakeGraphite(branches={})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+            trunk_branches={env.cwd: "main"},
+            commits_ahead={(env.cwd, "main"): 2},
+        )
+        git._commits.append((env.cwd, "Original message", []))
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Should NOT rebase (trunk-based PR)
+        assert len(git.rebase_onto_calls) == 0
+        assert "Rebased onto parent branch" not in result.output
+        # Should still track
+        assert len(graphite.track_branch_calls) == 1
+
+
+def test_pr_sync_handles_rebase_conflicts_for_stacked_pr(tmp_path: Path) -> None:
+    """When rebasing onto parent conflicts, show helpful error."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Stacked PR
+        pr_info = _make_pr_info(789, "child-branch", title="Child PR")
+        pr_details = _make_pr_details(
+            number=789,
+            head_ref_name="child-branch",
+            base_ref_name="parent-branch",
+            title="Child PR",
+        )
+        github = FakeGitHub(
+            prs={"child-branch": pr_info},
+            pr_details={789: pr_details},
+        )
+
+        graphite = FakeGraphite(branches={})
+
+        # Configure rebase to return conflict
+        from erk_shared.git.abc import RebaseResult
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "child-branch"},
+            trunk_branches={env.cwd: "main"},
+            rebase_onto_result=RebaseResult(
+                success=False,
+                conflict_files=("file.py", "other.py"),
+            ),
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Rebase paused due to merge conflicts" in result.output
+        assert "file.py" in result.output
+        assert "other.py" in result.output
+        assert "erk pr sync --dangerous" in result.output
+        # Should NOT track if rebase failed
+        assert len(graphite.track_branch_calls) == 0
