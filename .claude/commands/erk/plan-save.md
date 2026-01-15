@@ -145,32 +145,6 @@ Display: `Updated objective #<objective-issue> roadmap: step <step_id> → plan 
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
-### Step 4.6: Update Slot Objective (if applicable)
-
-**Only run this step if `--objective-issue` was provided and verification passed.**
-
-Update the current slot's objective so future `/erk:objective-next-plan` calls default to this objective:
-
-```bash
-erk exec slot-objective-update --objective-issue=<objective-number>
-```
-
-This command:
-
-- Detects the current slot automatically
-- Updates pool.json with the objective
-- Returns silently if not in a slot worktree (non-error)
-
-**On success** (where `slot_name` is not null in the JSON response):
-
-Display: `Updated slot objective: #<objective-number>`
-
-**On no-op** (where `slot_name` is null):
-
-No display needed - this is expected when not in a pool slot worktree.
-
-**Error handling:** If the command fails, warn but continue - the plan was saved successfully, just the slot tracking didn't update.
-
 ### Step 5: Display Results
 
 On success, display:
@@ -193,6 +167,10 @@ OR exit Claude Code first, then run one of:
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: <slot_name> → #<objective-number>`
+
+**Note:** Slot objective updates are handled automatically by `plan-save-to-issue` when `--objective-issue` is provided - no separate command call needed.
 
 On failure, display the error message and suggest:
 

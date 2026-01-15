@@ -26,6 +26,11 @@ from pathlib import Path
 
 import click
 
+from erk.core.worktree_pool import (
+    load_pool_state,
+    save_pool_state,
+    update_slot_objective,
+)
 from erk_shared.context.helpers import (
     get_repo_identifier,
     require_claude_installation,
@@ -36,6 +41,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_issues as require_github_issues,
 )
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.github.metadata.session import render_session_exchanges_block
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.learn.extraction.session_schema import extract_session_exchanges_from_jsonl
@@ -76,6 +82,72 @@ def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numb
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "plan-saved-issue.marker"
     marker_file.write_text(str(issue_number), encoding="utf-8")
+
+
+def _detect_current_slot(ctx: click.Context, cwd: Path) -> str | None:
+    """Detect current slot from working directory.
+
+    Returns:
+        Slot name if cwd is within an assigned slot worktree, None otherwise.
+    """
+    if ctx.obj is None:
+        return None
+
+    repo = ctx.obj.repo
+    if isinstance(repo, NoRepoSentinel):
+        return None
+
+    state = load_pool_state(repo.pool_json_path)
+    if state is None:
+        return None
+
+    cwd_resolved = cwd.resolve()
+
+    # First try exact match
+    for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            continue
+        if assignment.worktree_path.resolve() == cwd_resolved:
+            return assignment.slot_name
+
+    # Fall back to checking if cwd is within an assignment's worktree
+    for assignment in state.assignments:
+        if not assignment.worktree_path.exists():
+            continue
+        wt_resolved = assignment.worktree_path.resolve()
+        if cwd_resolved == wt_resolved or wt_resolved in cwd_resolved.parents:
+            return assignment.slot_name
+
+    return None
+
+
+def _update_slot_objective_if_applicable(
+    ctx: click.Context,
+    cwd: Path,
+    objective_issue: int,
+) -> str | None:
+    """Update the slot's objective if we're in a slot worktree.
+
+    Args:
+        ctx: Click context with repo info.
+        cwd: Current working directory.
+        objective_issue: Issue number to set as the slot's objective.
+
+    Returns:
+        Slot name if update succeeded, None if not in a slot.
+    """
+    slot_name = _detect_current_slot(ctx, cwd)
+    if slot_name is None:
+        return None
+
+    repo = ctx.obj.repo
+    state = load_pool_state(repo.pool_json_path)
+    if state is None:
+        return None
+
+    new_state = update_slot_objective(state, slot_name, objective_issue)
+    save_pool_state(repo.pool_json_path, new_state)
+    return slot_name
 
 
 @click.command(name="plan-save-to-issue")
@@ -253,6 +325,11 @@ def plan_save_to_issue(
             # NOTE: Plan file deletion moved to impl_signal.py on 'started' event
             # This allows the user to modify and re-save the plan before implementing
 
+    # Step 9.2: Update slot objective (if objective provided and in a slot worktree)
+    slot_name: str | None = None
+    if objective_issue is not None:
+        slot_name = _update_slot_objective_if_applicable(ctx, cwd, objective_issue)
+
     # Step 10: Output success
     # Detect enrichment status for informational output
     is_enriched = "## Enrichment Details" in plan
@@ -269,10 +346,12 @@ def plan_save_to_issue(
         click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+        if slot_name is not None:
+            click.echo(f"Slot objective updated: {slot_name} → #{objective_issue}")
         click.echo()
         click.echo(format_next_steps_plain(result.issue_number))
     else:
-        output_data = {
+        output_data: dict[str, str | int | bool | None] = {
             "success": True,
             "issue_number": result.issue_number,
             "issue_url": result.issue_url,
@@ -281,4 +360,7 @@ def plan_save_to_issue(
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)
+        if slot_name is not None:
+            output_data["slot_name"] = slot_name
+            output_data["slot_objective_updated"] = True
         click.echo(json.dumps(output_data))
