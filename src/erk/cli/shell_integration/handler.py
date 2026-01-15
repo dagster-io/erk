@@ -1,6 +1,7 @@
 import os
 import shlex
 import subprocess
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Final
@@ -177,9 +178,11 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     # Clean up stale scripts before running (opportunistic cleanup)
     cleanup_stale_scripts(max_age_seconds=STALE_SCRIPT_MAX_AGE_SECONDS)
 
-    # Build full command: erk <cli_cmd_parts> <args> --script
+    # Build full command: python -m erk <cli_cmd_parts> <args> --script
     # cli_cmd_parts contains the actual CLI path (e.g., ["wt", "create"] for "create")
-    cmd = ["erk", *cli_cmd_parts, *args, "--script"]
+    # Use sys.executable with -m erk to ensure erk is found when running from a venv
+    # where the erk script may not be in PATH (e.g., when invoked via erk-sh-bootstrap)
+    cmd = [sys.executable, "-m", "erk", *cli_cmd_parts, *args, "--script"]
 
     debug_log(f"Handler: Running subprocess: {cmd}")
 
