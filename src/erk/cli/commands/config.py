@@ -13,6 +13,7 @@ from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, write_trunk_to_pyproject
+from erk_shared.context.types import GlobalConfig
 from erk_shared.output.output import machine_output, user_output
 
 
@@ -30,6 +31,37 @@ def get_global_config_keys() -> dict[str, str]:
         "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",
         "prompt_learn_on_land": "Prompt about running learn before landing plan PRs",
+    }
+
+
+@cache
+def get_overridable_global_keys() -> set[str]:
+    """Get keys that can be set at global, repo, or local level.
+
+    These keys can be overridden per-repo or per-user:
+    - Global: `erk config set <key> <value>`
+    - Repo: `erk config set --repo <key> <value>`
+    - Local: `erk config set --local <key> <value>`
+
+    Override chain: Global < Repo < Local
+    """
+    return {
+        "prompt_learn_on_land",
+        "fix_conflicts_require_dangerous_flag",
+        "show_hidden_commands",
+        "use_graphite",
+        "github_planning",
+    }
+
+
+@cache
+def get_global_only_keys() -> set[str]:
+    """Get keys that can ONLY be set at global level.
+
+    These keys don't make sense at repo or local level.
+    """
+    return {
+        "erk_root",
     }
 
 
@@ -164,41 +196,123 @@ def _format_config_value(value: object) -> str:
     return str(value)
 
 
+def _get_overridable_key_source(
+    key: str,
+    *,
+    repo_config: LoadedConfig,
+    local_config: LoadedConfig,
+) -> str:
+    """Determine source annotation for an overridable global key.
+
+    Returns empty string for global, ' (repo)' for repo, ' (local)' for local.
+    """
+    local_value = getattr(local_config, key, None)
+    repo_value = getattr(repo_config, key, None)
+
+    if local_value is not None:
+        return " (local)"
+    if repo_value is not None:
+        return " (repo)"
+    return ""
+
+
+def _get_effective_value_for_overridable_key(
+    key: str,
+    *,
+    global_config: GlobalConfig | None,
+    merged_config: LoadedConfig,
+) -> object:
+    """Get effective value for an overridable key from the override chain."""
+    merged_value = getattr(merged_config, key, None)
+    if merged_value is not None:
+        return merged_value
+    if global_config is not None:
+        return getattr(global_config, key, None)
+    return None
+
+
 @config_group.command("list")
 @click.pass_obj
 def config_list(ctx: ErkContext) -> None:
     """Print a list of configuration keys and values."""
+    from erk.cli.config import load_config, load_local_config
+    from erk.core.repo_discovery import NoRepoSentinel
+
+    # Load repo and local configs separately for source detection
+    repo_only_config: LoadedConfig | None = None
+    local_only_config: LoadedConfig | None = None
+    if not isinstance(ctx.repo, NoRepoSentinel):
+        repo_only_config = load_config(ctx.repo.root)
+        local_only_config = load_local_config(ctx.repo.root)
+
     # Display global config
     user_output(click.style("Global configuration:", bold=True))
     if ctx.global_config:
+        overridable_keys = get_overridable_global_keys()
         for key in get_global_config_keys():
-            value = getattr(ctx.global_config, key)
-            user_output(f"  {key}={_format_config_value(value)}")
+            # For overridable keys, show effective value with source annotation
+            if key in overridable_keys and repo_only_config and local_only_config:
+                effective_value = _get_effective_value_for_overridable_key(
+                    key,
+                    global_config=ctx.global_config,
+                    merged_config=ctx.local_config,
+                )
+                source = _get_overridable_key_source(
+                    key,
+                    repo_config=repo_only_config,
+                    local_config=local_only_config,
+                )
+                user_output(f"  {key}={_format_config_value(effective_value)}{source}")
+            else:
+                # Non-overridable key or not in repo - show global value
+                value = getattr(ctx.global_config, key)
+                user_output(f"  {key}={_format_config_value(value)}")
     else:
         user_output("  (not configured - run 'erk init' to create)")
 
     # Display local config
     user_output(click.style("\nRepository configuration:", bold=True))
-    from erk.core.repo_discovery import NoRepoSentinel
 
     if isinstance(ctx.repo, NoRepoSentinel):
         user_output("  (not in a git repository)")
     else:
+        assert repo_only_config is not None
+        assert local_only_config is not None
+
         trunk_branch = ctx.trunk_branch
         cfg = ctx.local_config
         if trunk_branch:
             user_output(f"  trunk-branch={trunk_branch}")
+
+        # pool.max_slots with source annotation
         if cfg.pool_size is not None:
-            user_output(f"  pool.max_slots={cfg.pool_size}")
+            pool_source = (
+                " (local)"
+                if local_only_config.pool_size is not None
+                else (" (repo)" if repo_only_config.pool_size is not None else "")
+            )
+            user_output(f"  pool.max_slots={cfg.pool_size}{pool_source}")
         else:
             user_output(f"  pool.max_slots={DEFAULT_POOL_SIZE} (default)")
+
+        # env with source annotations
         if cfg.env:
-            for key, value in cfg.env.items():
-                user_output(f"  env.{key}={value}")
+            for env_key, value in cfg.env.items():
+                source = " (local)" if env_key in local_only_config.env else ""
+                user_output(f"  env.{env_key}={value}{source}")
+
+        # post_create.shell with source annotation
         if cfg.post_create_shell:
-            user_output(f"  post_create.shell={cfg.post_create_shell}")
+            shell_source = " (local)" if local_only_config.post_create_shell is not None else ""
+            user_output(f"  post_create.shell={cfg.post_create_shell}{shell_source}")
+
+        # post_create.commands with source annotation
         if cfg.post_create_commands:
-            user_output(f"  post_create.commands={cfg.post_create_commands}")
+            # Commands are concatenated, so source detection is more complex
+            # Just show if there are any local commands
+            has_local_commands = bool(local_only_config.post_create_commands)
+            cmds_source = " (includes local)" if has_local_commands else ""
+            user_output(f"  post_create.commands={cfg.post_create_commands}{cmds_source}")
 
         has_no_custom_config = (
             not trunk_branch
@@ -277,21 +391,47 @@ def _parse_config_value(key: str, value: str, current_type: type) -> object:
 
 @config_group.command("set")
 @click.option("-l", "--local", is_flag=True, help="Write to .erk/config.local.toml instead")
+@click.option(
+    "-r", "--repo", "repo_flag", is_flag=True, help="Write to .erk/config.toml (repo level)"
+)
 @click.argument("key", metavar="KEY")
 @click.argument("value", metavar="VALUE")
 @click.pass_obj
-def config_set(ctx: ErkContext, local: bool, key: str, value: str) -> None:
+def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: str) -> None:
     """Update configuration with a value for the given key."""
+    # Validate mutually exclusive flags
+    if local and repo_flag:
+        user_output("Cannot use both --local and --repo flags")
+        raise SystemExit(1)
+
     # Parse key into parts
     parts = key.split(".")
 
     # Handle global config keys
     if parts[0] in get_global_config_keys():
-        # Global keys cannot be written to local config
-        if local:
-            user_output(f"Global key '{key}' cannot be written to local config")
-            raise SystemExit(1)
+        # Check if this key is overridable at repo/local level
+        is_overridable = parts[0] in get_overridable_global_keys()
 
+        if local or repo_flag:
+            if not is_overridable:
+                user_output(f"Global key '{key}' cannot be written to local or repo config")
+                raise SystemExit(1)
+
+            # Write overridable key to repo or local config
+            repo = discover_repo_context(ctx, Path.cwd())
+
+            # Parse as boolean for known boolean keys
+            if value.lower() not in ("true", "false"):
+                user_output(f"Invalid boolean value: {value}")
+                raise SystemExit(1)
+            parsed_bool = value.lower() == "true"
+
+            _write_to_repo_config(repo_root=repo.root, key=key, value=parsed_bool, local=local)
+            level_suffix = " (local)" if local else " (repo)"
+            user_output(f"Set {key}={value}{level_suffix}")
+            return
+
+        # Write to global config (default behavior for global keys)
         config_path = ctx.erk_installation.config_path()
         global_config = Ensure.not_none(
             ctx.global_config,
@@ -312,8 +452,8 @@ def config_set(ctx: ErkContext, local: bool, key: str, value: str) -> None:
     # Handle repo config keys
     if parts[0] == "trunk-branch":
         # trunk-branch lives in pyproject.toml, not erk config
-        if local:
-            user_output("trunk-branch lives in pyproject.toml. Cannot use --local flag.")
+        if local or repo_flag:
+            user_output("trunk-branch lives in pyproject.toml. Cannot use --local or --repo flag.")
             raise SystemExit(1)
 
         # discover_repo_context checks for git repository and raises FileNotFoundError
@@ -361,5 +501,5 @@ def config_set(ctx: ErkContext, local: bool, key: str, value: str) -> None:
 
     repo = discover_repo_context(ctx, Path.cwd())
     _write_to_repo_config(repo_root=repo.root, key=key, value=transformed, local=local)
-    local_suffix = " (local)" if local else ""
-    user_output(f"Set {key}={transformed}{local_suffix}")
+    level_suffix = " (local)" if local else (" (repo)" if repo_flag else "")
+    user_output(f"Set {key}={transformed}{level_suffix}")

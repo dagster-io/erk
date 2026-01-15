@@ -84,8 +84,14 @@ def _check_learn_status_and_prompt(
     if force:
         return
 
-    # Check global config setting to skip learn prompt
-    if ctx.global_config is not None and not ctx.global_config.prompt_learn_on_land:
+    # Check override chain: local_config overrides global_config
+    # local_config contains merged repo+local values (local wins over repo)
+    if ctx.local_config.prompt_learn_on_land is not None:
+        # Repo or local level override exists
+        if not ctx.local_config.prompt_learn_on_land:
+            return
+    elif ctx.global_config is not None and not ctx.global_config.prompt_learn_on_land:
+        # Fall back to global config
         return
 
     # Skip learn check for learn plans (they don't need to be learned from)
