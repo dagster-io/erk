@@ -18,8 +18,14 @@ from erk_shared.output.output import user_output
 @click.command("checkout", cls=CommandWithHiddenOptions)
 @click.argument("worktree_name", shell_complete=complete_worktree_names)
 @script_option
+@click.option(
+    "--claude-mode",
+    is_flag=True,
+    hidden=True,
+    help="Output path for Claude Code !cd navigation",
+)
 @click.pass_obj
-def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
+def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool, claude_mode: bool) -> None:
     """Checkout a worktree by name.
 
     With shell integration (recommended):
@@ -42,10 +48,21 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     # Validate preconditions upfront (LBYL)
     Ensure.gh_authenticated(ctx)
 
+    # Mutual exclusivity: --script and --claude-mode cannot be used together
+    if script and claude_mode:
+        user_output(
+            click.style("Error:", fg="red")
+            + " --script and --claude-mode are mutually exclusive."
+        )
+        raise SystemExit(1)
+
     repo = discover_repo_context(ctx, ctx.cwd)
 
     # Special case: "root" navigates to root repository
     if worktree_name == "root":
+        if claude_mode:
+            user_output(str(repo.root))
+            return
         activate_root_repo(ctx, repo=repo, script=script, command_name="co", post_cd_commands=None)
         return  # activate_root_repo raises SystemExit, but explicit return for clarity
 
@@ -89,6 +106,11 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     target_worktree = Ensure.not_none(
         target_worktree, f"Worktree '{worktree_name}' not found in git worktree list"
     )
+
+    # Claude mode: output just the path for !cd navigation
+    if claude_mode:
+        user_output(str(worktree_path))
+        return
 
     # Navigate to worktree
     branch_name = target_worktree.branch or "(detached HEAD)"
