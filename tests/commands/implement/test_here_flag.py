@@ -280,3 +280,90 @@ class TestHereWithScriptMode:
             script_content = script_path.read_text(encoding="utf-8")
 
             assert "--dangerously-skip-permissions" in script_content
+
+
+class TestAutoDetectionFromBranch:
+    """Tests for auto-detecting plan number from branch name."""
+
+    def test_auto_detect_plan_from_branch_name(self) -> None:
+        """Test auto-detection of plan number from PXXXX-* branch."""
+        plan_issue = create_sample_plan_issue()
+
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner) as env:
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                local_branches={env.cwd: ["main", "P42-my-feature-01-16-1200"]},
+                default_branches={env.cwd: "main"},
+                current_branches={env.cwd: "P42-my-feature-01-16-1200"},
+            )
+            store, _ = create_plan_store_with_plans({"42": plan_issue})
+            ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+            # TARGET omitted, should auto-detect from branch name
+            result = runner.invoke(implement, ["--here", "--dry-run"], obj=ctx)
+
+            assert result.exit_code == 0
+            assert "Auto-detected plan #42" in result.output
+            assert "Dry-run mode" in result.output
+
+    def test_auto_detect_fails_on_non_plan_branch(self) -> None:
+        """Test error when TARGET omitted and not on PXXXX-* branch."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner) as env:
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                local_branches={env.cwd: ["main", "feature-branch"]},
+                default_branches={env.cwd: "main"},
+                current_branches={env.cwd: "feature-branch"},
+            )
+            ctx = build_workspace_test_context(env, git=git)
+
+            result = runner.invoke(implement, ["--here", "--dry-run"], obj=ctx)
+
+            assert result.exit_code != 0
+            assert "Could not auto-detect plan number" in result.output
+            assert "feature-branch" in result.output
+            assert "PXXXX-* pattern" in result.output
+
+    def test_target_required_without_here_flag(self) -> None:
+        """Test that TARGET is required when --here is not specified."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner) as env:
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                local_branches={env.cwd: ["main"]},
+                default_branches={env.cwd: "main"},
+            )
+            ctx = build_workspace_test_context(env, git=git)
+
+            # No TARGET, no --here flag
+            result = runner.invoke(implement, ["--dry-run"], obj=ctx)
+
+            assert result.exit_code != 0
+            assert "TARGET is required when not using --here" in result.output
+
+    def test_explicit_target_overrides_auto_detection(self) -> None:
+        """Test that explicit TARGET takes precedence over auto-detection."""
+        plan_issue_42 = create_sample_plan_issue("42")
+        plan_issue_99 = create_sample_plan_issue("99")
+
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner) as env:
+            git = FakeGit(
+                git_common_dirs={env.cwd: env.git_dir},
+                local_branches={env.cwd: ["main", "P42-feature-01-16-1200"]},
+                default_branches={env.cwd: "main"},
+                current_branches={env.cwd: "P42-feature-01-16-1200"},
+            )
+            store, _ = create_plan_store_with_plans({"42": plan_issue_42, "99": plan_issue_99})
+            ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+            # Explicit TARGET should override branch detection
+            result = runner.invoke(implement, ["99", "--here", "--dry-run"], obj=ctx)
+
+            assert result.exit_code == 0
+            # Should NOT show auto-detection message
+            assert "Auto-detected plan #42" not in result.output
+            # Should show that it detected the explicit target
+            assert "Detected GitHub issue #99" in result.output
