@@ -15,6 +15,9 @@ from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
+# Fixed timestamp for test Plan objects - deterministic test data
+TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
+
 
 def test_branch_create_creates_new_branch_and_assignment(tmp_path) -> None:
     """Test that branch create creates a new branch and assignment."""
@@ -354,7 +357,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         )
 
         # Create a plan with erk-plan label
-        now = datetime.now(UTC)
+        now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             plan_identifier="123",
             title="Add feature",
@@ -421,7 +424,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = datetime.now(UTC)
+        now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             plan_identifier="456",
             title="Fix bug",
@@ -473,7 +476,7 @@ def test_branch_create_for_plan_fails_without_erk_plan_label() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = datetime.now(UTC)
+        now = TEST_PLAN_TIMESTAMP
         # Plan WITHOUT erk-plan label
         plan = Plan(
             plan_identifier="789",
@@ -524,7 +527,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = datetime.now(UTC)
+        now = TEST_PLAN_TIMESTAMP
         plan = Plan(
             plan_identifier="100",
             title="No slot feature",
