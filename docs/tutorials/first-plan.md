@@ -95,37 +95,58 @@ When you develop a plan in Claude Code, it normally lives only in the conversati
 
 ## Step 5: Implement the Plan
 
-The standard erk workflow implements each plan in its own **worktree**, which is ideal for organizing and parallelizing your work.
+The standard erk workflow implements each plan in its own **worktree**.
 
 ### What's a Worktree?
 
 Git worktrees let you have multiple branches checked out simultaneously in separate directories. Instead of switching branches in your main directory, erk creates a new directory with the feature branch—completely isolated.
 
-This isolation is powerful: an agent can implement your plan in one worktree while you continue working in another.
+### Prepare the Worktree
 
-To switch to the new worktree, we first exit Claude Code:
+First, exit Claude Code:
 
 ```
 /exit
 ```
 
-Now run `erk implement`:
+Now prepare a worktree for your plan:
 
 ```bash
-erk implement 1
+erk prepare 1
 ```
 
-This command:
+This creates a worktree with the plan's content. You'll see output like:
 
-1. **Creates a worktree** with a new feature branch
-2. **Starts Claude Code** in that worktree with the plan loaded
-3. **Claude implements** each step from the plan
+```
+Created branch: P1-quit-command
+✓ Assigned P1-quit-command to slot-1
+Created .impl/ folder from issue #1
 
-Your plan is now implementing. While Claude works, let's see what else we can do.
+To activate the worktree environment:
+  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh
+
+To activate and start implementation:
+  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh && erk implement --here
+```
+
+### Activate and Implement
+
+Copy the second command and run it:
+
+```bash
+source /path/to/slot-1/.erk/activate.sh && erk implement --here
+```
+
+This does two things:
+
+1. **Activates** the worktree environment (changes directory, sets up venv, loads .env)
+2. **Starts Claude Code** with the plan loaded
+
+Your plan is now implementing.
 
 ### Work in Parallel
 
-Open a **new terminal** and return to your main worktree:
+Open a **new terminal** and return to your main directory:
 
 ```bash
 cd ~/say
@@ -137,19 +158,11 @@ From here, you can monitor progress with the erk dashboard:
 erk dash
 ```
 
-This launches an interactive TUI showing all your plans and their implementation status. You can watch progress here, or start planning something else entirely—the implementation continues in its own worktree.
+This launches an interactive TUI showing all your plans and their implementation status.
 
 ## Step 6: Submit the PR
 
-When the implementation finishes, switch back to the worktree:
-
-```bash
-erk br co P1-quit-command
-```
-
-(Your branch name will match the issue title.)
-
-Now submit the PR:
+When the implementation finishes, you're already in the worktree. Submit the PR:
 
 ```bash
 erk pr submit
@@ -159,7 +172,7 @@ This creates a pull request linked to the original issue.
 
 ## Step 7: Land the PR
 
-For this tutorial, you can merge your own PR. Once ready:
+For this tutorial, merge your own PR:
 
 ```bash
 erk pr land
@@ -171,7 +184,12 @@ This:
 2. Closes the linked issue
 3. Deletes the feature branch
 4. Frees the worktree for reuse
-5. Returns you to the main worktree
+
+After landing, return to your main repo:
+
+```bash
+cd ~/say
+```
 
 ## What You've Learned
 
@@ -187,15 +205,16 @@ You've completed the full erk workflow:
 
 ## Quick Reference
 
-| Task           | Command                 |
-| -------------- | ----------------------- |
-| Start Claude   | `claude`                |
-| Save plan      | `/erk:plan-save`        |
-| Exit Claude    | `/exit`                 |
-| Implement plan | `erk implement <issue>` |
-| Monitor plans  | `erk dash`              |
-| Submit PR      | `erk pr submit`         |
-| Land PR        | `erk pr land`           |
+| Task                 | Command                                           |
+| -------------------- | ------------------------------------------------- |
+| Start Claude         | `claude`                                          |
+| Save plan            | `/erk:plan-save`                                  |
+| Exit Claude          | `/exit`                                           |
+| Prepare worktree     | `erk prepare <issue>`                             |
+| Activate + implement | `source .erk/activate.sh && erk implement --here` |
+| Monitor plans        | `erk dash`                                        |
+| Submit PR            | `erk pr submit`                                   |
+| Land PR              | `erk pr land`                                     |
 
 ## Next Steps
 
