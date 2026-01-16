@@ -31,17 +31,17 @@ def get_lock_path(repo_root: Path) -> Path | None:
     Returns:
         Path to the index.lock file for this worktree, or None if not in a git repo.
     """
-    try:
-        result = subprocess.run(
-            ["git", "-C", str(repo_root), "rev-parse", "--git-path", "index.lock"],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        return Path(result.stdout.strip())
-    except subprocess.CalledProcessError:
+    result = subprocess.run(
+        ["git", "-C", str(repo_root), "rev-parse", "--git-path", "index.lock"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    # LBYL: Check returncode explicitly instead of using exception for control flow
+    if result.returncode != 0:
         # Not a git repository or git not available
         return None
+    return Path(result.stdout.strip())
 
 
 def wait_for_index_lock(
