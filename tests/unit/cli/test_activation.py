@@ -301,7 +301,7 @@ def test_write_worktree_activate_script_creates_script(tmp_path: Path) -> None:
     assert script_path == tmp_path / ".erk" / "activate.sh"
     assert script_path.exists()
 
-    content = script_path.read_text()
+    content = script_path.read_text(encoding="utf-8")
     assert f"cd {tmp_path}" in content
     assert "uv sync" in content
     assert ".venv/bin/activate" in content
@@ -325,7 +325,7 @@ def test_write_worktree_activate_script_overwrites_existing(tmp_path: Path) -> N
 
     write_worktree_activate_script(worktree_path=tmp_path)
 
-    content = script_path.read_text()
+    content = script_path.read_text(encoding="utf-8")
     assert "old content" not in content
     assert "uv sync" in content
 
@@ -351,4 +351,4 @@ def test_ensure_worktree_activate_script_returns_existing(tmp_path: Path) -> Non
     result = ensure_worktree_activate_script(worktree_path=tmp_path)
 
     assert result == script_path
-    assert script_path.read_text() == "existing content"
+    assert script_path.read_text(encoding="utf-8") == "existing content"
