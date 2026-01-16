@@ -18,6 +18,7 @@ from erk.core.worktree_pool import (
     save_pool_state,
 )
 from erk_shared.context import ErkContext
+from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.learn.extraction.claude_installation.fake import (
@@ -682,8 +683,15 @@ def test_plan_save_to_issue_updates_slot_objective_when_in_slot() -> None:
 - Step 1"""
         fake_store = FakeClaudeInstallation.for_test(plans={"slot-test": plan_content})
 
+        # Build worktrees including the slot worktree
+        base_worktrees = env.build_worktrees("main")
+        # Add the slot worktree to the list so get_repository_root can find it
+        base_worktrees[env.cwd].append(
+            WorktreeInfo(path=worktree_path, branch="feature-branch", is_root=False)
+        )
+
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
+            worktrees=base_worktrees,
             current_branches={worktree_path: "feature-branch"},
             git_common_dirs={worktree_path: env.git_dir},
         )
@@ -854,8 +862,15 @@ def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
 - Step 1"""
         fake_store = FakeClaudeInstallation.for_test(plans={"display-slot-test": plan_content})
 
+        # Build worktrees including the slot worktree
+        base_worktrees = env.build_worktrees("main")
+        # Add the slot worktree to the list so get_repository_root can find it
+        base_worktrees[env.cwd].append(
+            WorktreeInfo(path=worktree_path, branch="feature-branch", is_root=False)
+        )
+
         git_ops = FakeGit(
-            worktrees=env.build_worktrees("main"),
+            worktrees=base_worktrees,
             current_branches={worktree_path: "feature-branch"},
             git_common_dirs={worktree_path: env.git_dir},
         )

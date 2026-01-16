@@ -87,6 +87,9 @@ def _create_plan_saved_issue_marker(session_id: str, repo_root: Path, issue_numb
 def _detect_current_slot(ctx: click.Context, cwd: Path) -> str | None:
     """Detect current slot from working directory.
 
+    Uses git to determine worktree root - avoids fragile path comparisons
+    with .exists(), .resolve(), and parent checking.
+
     Returns:
         Slot name if cwd is within an assigned slot worktree, None otherwise.
     """
@@ -101,21 +104,12 @@ def _detect_current_slot(ctx: click.Context, cwd: Path) -> str | None:
     if state is None:
         return None
 
-    cwd_resolved = cwd.resolve()
+    # Use git to determine worktree root - avoids fragile path comparisons
+    git = ctx.obj.git
+    worktree_root = git.get_repository_root(cwd)
 
-    # First try exact match
     for assignment in state.assignments:
-        if not assignment.worktree_path.exists():
-            continue
-        if assignment.worktree_path.resolve() == cwd_resolved:
-            return assignment.slot_name
-
-    # Fall back to checking if cwd is within an assignment's worktree
-    for assignment in state.assignments:
-        if not assignment.worktree_path.exists():
-            continue
-        wt_resolved = assignment.worktree_path.resolve()
-        if cwd_resolved == wt_resolved or wt_resolved in cwd_resolved.parents:
+        if assignment.worktree_path == worktree_root:
             return assignment.slot_name
 
     return None
