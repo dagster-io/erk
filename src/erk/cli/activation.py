@@ -135,6 +135,7 @@ set +a
 def write_worktree_activate_script(
     *,
     worktree_path: Path,
+    post_create_commands: Sequence[str] | None,
 ) -> Path:
     """Write an activation script to .erk/activate.sh in the worktree.
 
@@ -143,9 +144,12 @@ def write_worktree_activate_script(
       - Create .venv with `uv sync` if not present
       - Source `.venv/bin/activate` if present
       - Export variables from `.env` if present
+      - Run post-create commands if provided
 
     Args:
         worktree_path: Path to the worktree directory
+        post_create_commands: Optional sequence of shell commands to embed in the
+            script. These run after venv activation and .env loading.
 
     Returns:
         Path to the written activation script (.erk/activate.sh)
@@ -153,7 +157,7 @@ def write_worktree_activate_script(
     script_content = render_activation_script(
         worktree_path=worktree_path,
         target_subpath=None,
-        post_cd_commands=None,
+        post_cd_commands=post_create_commands,
         final_message='echo "Activated: $(pwd)"',
         comment="erk worktree activation script",
     )
@@ -170,6 +174,7 @@ def write_worktree_activate_script(
 def ensure_worktree_activate_script(
     *,
     worktree_path: Path,
+    post_create_commands: Sequence[str] | None,
 ) -> Path:
     """Ensure an activation script exists at .erk/activate.sh.
 
@@ -178,6 +183,8 @@ def ensure_worktree_activate_script(
 
     Args:
         worktree_path: Path to the worktree directory
+        post_create_commands: Optional sequence of shell commands to embed in the
+            script. Only used if creating a new script.
 
     Returns:
         Path to the activation script (.erk/activate.sh)
@@ -185,6 +192,9 @@ def ensure_worktree_activate_script(
     script_path = worktree_path / ".erk" / "activate.sh"
 
     if not script_path.exists():
-        return write_worktree_activate_script(worktree_path=worktree_path)
+        return write_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=post_create_commands,
+        )
 
     return script_path

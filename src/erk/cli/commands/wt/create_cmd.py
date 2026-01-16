@@ -54,8 +54,11 @@ def run_post_worktree_setup(
         env_path = worktree_path / ".env"
         env_path.write_text(env_content, encoding="utf-8")
 
-    # Write activation script
-    write_worktree_activate_script(worktree_path=worktree_path)
+    # Write activation script with post-create commands embedded
+    write_worktree_activate_script(
+        worktree_path=worktree_path,
+        post_create_commands=config.post_create_commands or None,
+    )
 
     # Run post-create commands
     if config.post_create_commands:
@@ -859,8 +862,11 @@ def create_wt(
     )
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
 
-    # Write activation script
-    write_worktree_activate_script(worktree_path=wt_path)
+    # Write activation script with post-create commands embedded
+    write_worktree_activate_script(
+        worktree_path=wt_path,
+        post_create_commands=cfg.post_create_commands or None,
+    )
 
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if

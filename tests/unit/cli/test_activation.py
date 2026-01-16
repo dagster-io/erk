@@ -296,7 +296,10 @@ def test_render_activation_script_post_cd_commands_empty_list_no_section() -> No
 
 def test_write_worktree_activate_script_creates_script(tmp_path: Path) -> None:
     """write_worktree_activate_script creates .erk/activate.sh with correct content."""
-    script_path = write_worktree_activate_script(worktree_path=tmp_path)
+    script_path = write_worktree_activate_script(
+        worktree_path=tmp_path,
+        post_create_commands=None,
+    )
 
     assert script_path == tmp_path / ".erk" / "activate.sh"
     assert script_path.exists()
@@ -311,7 +314,10 @@ def test_write_worktree_activate_script_creates_erk_directory(tmp_path: Path) ->
     """write_worktree_activate_script creates .erk/ directory if needed."""
     assert not (tmp_path / ".erk").exists()
 
-    write_worktree_activate_script(worktree_path=tmp_path)
+    write_worktree_activate_script(
+        worktree_path=tmp_path,
+        post_create_commands=None,
+    )
 
     assert (tmp_path / ".erk").is_dir()
 
@@ -321,9 +327,12 @@ def test_write_worktree_activate_script_overwrites_existing(tmp_path: Path) -> N
     erk_dir = tmp_path / ".erk"
     erk_dir.mkdir()
     script_path = erk_dir / "activate.sh"
-    script_path.write_text("old content")
+    script_path.write_text("old content", encoding="utf-8")
 
-    write_worktree_activate_script(worktree_path=tmp_path)
+    write_worktree_activate_script(
+        worktree_path=tmp_path,
+        post_create_commands=None,
+    )
 
     content = script_path.read_text(encoding="utf-8")
     assert "old content" not in content
@@ -335,7 +344,10 @@ def test_write_worktree_activate_script_overwrites_existing(tmp_path: Path) -> N
 
 def test_ensure_worktree_activate_script_creates_if_missing(tmp_path: Path) -> None:
     """ensure_worktree_activate_script creates script if it doesn't exist."""
-    script_path = ensure_worktree_activate_script(worktree_path=tmp_path)
+    script_path = ensure_worktree_activate_script(
+        worktree_path=tmp_path,
+        post_create_commands=None,
+    )
 
     assert script_path == tmp_path / ".erk" / "activate.sh"
     assert script_path.exists()
@@ -346,9 +358,27 @@ def test_ensure_worktree_activate_script_returns_existing(tmp_path: Path) -> Non
     erk_dir = tmp_path / ".erk"
     erk_dir.mkdir()
     script_path = erk_dir / "activate.sh"
-    script_path.write_text("existing content")
+    script_path.write_text("existing content", encoding="utf-8")
 
-    result = ensure_worktree_activate_script(worktree_path=tmp_path)
+    result = ensure_worktree_activate_script(
+        worktree_path=tmp_path,
+        post_create_commands=None,
+    )
 
     assert result == script_path
     assert script_path.read_text(encoding="utf-8") == "existing content"
+
+
+def test_write_worktree_activate_script_with_post_create_commands(
+    tmp_path: Path,
+) -> None:
+    """write_worktree_activate_script embeds post_create_commands in script."""
+    script_path = write_worktree_activate_script(
+        worktree_path=tmp_path,
+        post_create_commands=["uv run make dev_install", "echo 'Setup complete'"],
+    )
+
+    content = script_path.read_text(encoding="utf-8")
+    assert "# Post-activation commands" in content
+    assert "uv run make dev_install" in content
+    assert "echo 'Setup complete'" in content
