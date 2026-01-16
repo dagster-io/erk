@@ -806,3 +806,121 @@ def test_pr_checkout_pool_full_no_force_fails() -> None:
 
         assert result.exit_code == 1
         assert "Pool is full" in result.output
+
+
+# --- Activation output tests ---
+
+
+def test_pr_checkout_prints_activation_instructions() -> None:
+    """Test that pr checkout prints activation script instructions.
+
+    Part of objective #4954, Phase 5: Activation output for create commands.
+    Verifies that erk pr checkout prints the activation path after checkout.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=2001,
+            head_ref_name="activation-test-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={2001: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "activation-test-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "2001"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify activation instructions are printed
+        assert "To activate the worktree environment:" in result.output
+        assert "source" in result.output
+        assert ".erk/activate.sh" in result.output
+        assert "To activate and start implementation:" in result.output
+        assert "erk implement --here" in result.output
+
+
+def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
+    """Test that pr checkout prints activation instructions for existing worktrees.
+
+    Part of objective #4954, Phase 5: Activation output for create commands.
+    When the worktree already exists, still print activation instructions.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=2002,
+            head_ref_name="existing-wt-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={2002: pr_details})
+        existing_wt_path = env.repo.worktrees_dir / "existing-wt-branch"
+        existing_wt_path.mkdir(parents=True, exist_ok=True)
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=existing_wt_path, branch="existing-wt-branch"),
+                ]
+            },
+            local_branches={env.cwd: ["main", "existing-wt-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir, existing_wt_path},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        # Simulate shell integration active to test output messages
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "2002"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "already checked out" in result.output
+        # Still should print activation instructions for existing worktrees
+        assert "To activate the worktree environment:" in result.output
+        assert "source" in result.output
+        assert ".erk/activate.sh" in result.output
+        assert "erk implement --here" in result.output
+
+
+def test_pr_checkout_script_mode_no_activation_instructions() -> None:
+    """Test that pr checkout --script does NOT print activation instructions.
+
+    Part of objective #4954, Phase 5: Activation output for create commands.
+    In script mode, shell integration handles navigation automatically.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+        pr_details = _make_pr_details(
+            number=2003,
+            head_ref_name="script-mode-branch",
+            is_cross_repository=False,
+            state="OPEN",
+        )
+        github = FakeGitHub(pr_details={2003: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "script-mode-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["checkout", "2003", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        # In script mode, activation instructions should NOT be printed
+        # (they go to stderr, stdout has the script path)
+        assert "To activate the worktree environment:" not in result.output
+        assert "erk implement --here" not in result.output

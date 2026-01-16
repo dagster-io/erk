@@ -34,6 +34,23 @@ from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan
 
 
+def print_activation_instructions(script_path: Path) -> None:
+    """Print activation script instructions.
+
+    Displays instructions for activating the worktree environment and
+    starting implementation. Used after worktree creation to guide users
+    through the opt-in shell integration workflow.
+
+    Args:
+        script_path: Path to the activation script (.erk/activate.sh)
+    """
+    user_output("\nTo activate the worktree environment:")
+    user_output(f"  source {script_path}")
+
+    user_output("\nTo activate and start implementation:")
+    user_output(f"  source {script_path} && erk implement --here")
+
+
 def run_post_worktree_setup(
     ctx: ErkContext, *, config: LoadedConfig, worktree_path: Path, repo_root: Path, name: str
 ) -> None:
@@ -864,8 +881,9 @@ def create_wt(
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
 
     # SPECULATIVE: activation-scripts - write activation script with post-create commands
+    activation_script_path: Path | None = None
     if ENABLE_ACTIVATION_SCRIPTS:
-        write_worktree_activate_script(
+        activation_script_path = write_worktree_activate_script(
             worktree_path=wt_path,
             post_create_commands=cfg.post_create_commands or None,
         )
@@ -969,11 +987,17 @@ def create_wt(
     elif stay:
         # User explicitly opted out of navigation
         user_output(f"Created worktree at {wt_path} checked out at branch '{branch}'")
+        # Print activation instructions for --stay mode
+        if activation_script_path is not None:
+            print_activation_instructions(activation_script_path)
     else:
         # Shell integration not detected - provide setup instructions
         user_output(f"Created worktree at {wt_path} checked out at branch '{branch}'")
         user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")
         user_output("Or use: source <(erk wt create --from-current-branch --script)")
+        # Print activation instructions when shell integration is not active
+        if activation_script_path is not None:
+            print_activation_instructions(activation_script_path)
 
 
 def run_commands_in_worktree(

@@ -12,7 +12,11 @@ from pathlib import Path
 
 import click
 
-from erk.cli.activation import render_activation_script
+from erk.cli.activation import (
+    ENABLE_ACTIVATION_SCRIPTS,
+    ensure_worktree_activate_script,
+    render_activation_script,
+)
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
@@ -215,6 +219,13 @@ def ensure_branch_has_worktree(
         worktree_path = result.worktree_path
         if not result.already_assigned:
             user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
+
+    # Write activation script for newly created worktrees
+    if ENABLE_ACTIVATION_SCRIPTS:
+        ensure_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=None,
+        )
 
     return worktree_path, False
 
