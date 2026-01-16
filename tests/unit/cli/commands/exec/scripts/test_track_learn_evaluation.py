@@ -17,7 +17,6 @@ from erk_shared.github.metadata.core import find_metadata_block
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
-
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
 # ============================================================================
