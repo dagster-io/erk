@@ -1,5 +1,10 @@
 import click
 
+from erk.cli.activation import (
+    ENABLE_ACTIVATION_SCRIPTS,
+    ensure_worktree_activate_script,
+    print_activation_instructions,
+)
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -117,6 +122,15 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             else:
                 user_output(f"Went to root repo: {root_path}")
 
+                # Print activation instructions for opt-in workflow
+                # SPECULATIVE: activation-scripts (objective #4954)
+                if ENABLE_ACTIVATION_SCRIPTS:
+                    script_path = ensure_worktree_activate_script(
+                        worktree_path=root_path,
+                        post_create_commands=None,
+                    )
+                    print_activation_instructions(script_path)
+
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
             unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
 
@@ -158,6 +172,15 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 "Run 'erk init --shell' to set up automatic activation."
             )
             user_output("\nOr use: source <(erk down --script)")
+
+            # Print activation instructions for opt-in workflow
+            # SPECULATIVE: activation-scripts (objective #4954)
+            if ENABLE_ACTIVATION_SCRIPTS:
+                script_path = ensure_worktree_activate_script(
+                    worktree_path=target_wt_path,
+                    post_create_commands=None,
+                )
+                print_activation_instructions(script_path)
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)

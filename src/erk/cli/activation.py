@@ -206,3 +206,25 @@ def ensure_worktree_activate_script(
         )
 
     return script_path
+
+
+def print_activation_instructions(script_path: Path) -> None:
+    """Print activation script instructions for opt-in workflow.
+
+    Displays user-friendly instructions for sourcing the activation script
+    after navigation commands complete. Used by navigation commands (up, down,
+    br checkout, wt checkout) in non-script mode.
+
+    SPECULATIVE: activation-scripts (objective #4954)
+
+    Args:
+        script_path: Path to the activation script (.erk/activate.sh)
+    """
+    # Import here to avoid circular import
+    from erk_shared.output.output import user_output
+
+    user_output("\nTo activate the worktree environment:")
+    user_output(f"  source {script_path}")
+
+    user_output("\nTo activate and start implementation:")
+    user_output(f"  source {script_path} && erk implement --here")

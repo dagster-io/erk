@@ -2,9 +2,12 @@
 
 from pathlib import Path
 
+import pytest
+
 from erk.cli.activation import (
     _render_logging_helper,
     ensure_worktree_activate_script,
+    print_activation_instructions,
     render_activation_script,
     write_worktree_activate_script,
 )
@@ -382,3 +385,32 @@ def test_write_worktree_activate_script_with_post_create_commands(
     assert "# Post-activation commands" in content
     assert "uv run make dev_install" in content
     assert "echo 'Setup complete'" in content
+
+
+# print_activation_instructions tests
+
+
+def test_print_activation_instructions_outputs_source_command(
+    capsys: "pytest.CaptureFixture[str]",
+) -> None:
+    """print_activation_instructions outputs correct source command."""
+    script_path = Path("/path/to/worktree/.erk/activate.sh")
+
+    print_activation_instructions(script_path)
+
+    captured = capsys.readouterr()
+    assert "To activate the worktree environment:" in captured.err
+    assert f"source {script_path}" in captured.err
+
+
+def test_print_activation_instructions_outputs_implement_command(
+    capsys: "pytest.CaptureFixture[str]",
+) -> None:
+    """print_activation_instructions outputs activate + implement command."""
+    script_path = Path("/path/to/worktree/.erk/activate.sh")
+
+    print_activation_instructions(script_path)
+
+    captured = capsys.readouterr()
+    assert "To activate and start implementation:" in captured.err
+    assert f"source {script_path} && erk implement --here" in captured.err

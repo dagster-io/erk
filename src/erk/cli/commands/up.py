@@ -1,6 +1,11 @@
 import click
 
-from erk.cli.activation import render_activation_script
+from erk.cli.activation import (
+    ENABLE_ACTIVATION_SCRIPTS,
+    ensure_worktree_activate_script,
+    print_activation_instructions,
+    render_activation_script,
+)
 from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
@@ -136,6 +141,15 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
             )
             user_output("\nOr use: source <(erk up --script)")
 
+            # Print activation instructions for opt-in workflow
+            # SPECULATIVE: activation-scripts (objective #4954)
+            if ENABLE_ACTIVATION_SCRIPTS:
+                script_path = ensure_worktree_activate_script(
+                    worktree_path=target_wt_path,
+                    post_create_commands=None,
+                )
+                print_activation_instructions(script_path)
+
         # Perform cleanup: unallocate worktree (slot-aware) and delete branch
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
 
@@ -152,3 +166,4 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
             preserve_relative_path=True,
             post_cd_commands=None,
         )
+        # activate_worktree raises SystemExit(0), code below is unreachable
