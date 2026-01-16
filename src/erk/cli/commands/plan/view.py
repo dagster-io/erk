@@ -10,6 +10,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.metadata.schemas import (
+    BRANCH_NAME,
     CREATED_BY,
     CREATED_FROM_SESSION,
     LAST_DISPATCHED_AT,
@@ -191,6 +192,17 @@ def view_plan(ctx: ErkContext, identifier: str, *, full: bool) -> None:
     user_output(f"State: {click.style(plan.state.value, fg=state_color)} | ID: {clickable_id}")
     user_output(f"URL: {plan.url}")
 
+    # Extract header info from issue body for branch display and later header section
+    issue_body = plan.metadata.get("issue_body")
+    header_info: dict[str, object] = {}
+    if isinstance(issue_body, str):
+        header_info = _extract_plan_header_info(issue_body)
+
+    # Display branch if available from plan-header
+    branch_name = header_info.get(BRANCH_NAME)
+    if branch_name:
+        user_output(f"Branch: {branch_name}")
+
     # Display labels
     if plan.labels:
         labels_str = ", ".join(
@@ -209,13 +221,10 @@ def view_plan(ctx: ErkContext, identifier: str, *, full: bool) -> None:
     user_output(f"Created: {created}")
     user_output(f"Updated: {updated}")
 
-    # Extract and display header info from metadata
-    issue_body = plan.metadata.get("issue_body")
-    if isinstance(issue_body, str):
-        header_info = _extract_plan_header_info(issue_body)
-        header_lines = _format_header_section(header_info)
-        for line in header_lines:
-            user_output(line)
+    # Display header info section
+    header_lines = _format_header_section(header_info)
+    for line in header_lines:
+        user_output(line)
 
     # Display body only with --full flag
     if full and plan.body:

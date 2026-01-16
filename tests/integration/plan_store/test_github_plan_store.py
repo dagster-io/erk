@@ -829,6 +829,22 @@ def test_update_metadata_worktree_name() -> None:
     metadata_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="testuser",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
     issue = create_test_issue(number=42, title="Plan Issue", body=metadata_body)
     fake_github = FakeGitHubIssues(issues={42: issue})
@@ -855,6 +871,22 @@ def test_update_metadata_whitelist_filter() -> None:
     metadata_body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="testuser",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
     issue = create_test_issue(number=42, title="Plan Issue", body=metadata_body)
     fake_github = FakeGitHubIssues(issues={42: issue})

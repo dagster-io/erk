@@ -315,6 +315,7 @@ PlanHeaderFieldName = Literal[
     "created_at",
     "created_by",
     "worktree_name",
+    "branch_name",
     "plan_comment_id",
     "last_dispatched_run_id",
     "last_dispatched_node_id",
@@ -339,6 +340,7 @@ CREATED_BY: Literal["created_by"] = "created_by"
 
 # Optional fields
 WORKTREE_NAME: Literal["worktree_name"] = "worktree_name"
+BRANCH_NAME: Literal["branch_name"] = "branch_name"
 PLAN_COMMENT_ID: Literal["plan_comment_id"] = "plan_comment_id"
 LAST_DISPATCHED_RUN_ID: Literal["last_dispatched_run_id"] = "last_dispatched_run_id"
 LAST_DISPATCHED_NODE_ID: Literal["last_dispatched_node_id"] = "last_dispatched_node_id"
@@ -364,6 +366,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Set when worktree is created (nullable)
+        branch_name: Git branch name for this plan (nullable)
         plan_comment_id: GitHub comment ID containing the plan content (nullable)
         last_dispatched_run_id: Updated by workflow, enables direct run lookup (nullable)
         last_dispatched_at: Updated by workflow (nullable)
@@ -388,6 +391,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         }
         optional_fields = {
             WORKTREE_NAME,
+            BRANCH_NAME,
             PLAN_COMMENT_ID,
             LAST_DISPATCHED_RUN_ID,
             LAST_DISPATCHED_NODE_ID,
@@ -426,6 +430,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("worktree_name must be a string or null")
             if len(data[WORKTREE_NAME]) == 0:
                 raise ValueError("worktree_name must not be empty when provided")
+
+        # Validate optional branch_name field
+        if BRANCH_NAME in data and data[BRANCH_NAME] is not None:
+            if not isinstance(data[BRANCH_NAME], str):
+                raise ValueError("branch_name must be a string or null")
+            if len(data[BRANCH_NAME]) == 0:
+                raise ValueError("branch_name must not be empty when provided")
 
         # Validate optional plan_comment_id field
         if PLAN_COMMENT_ID in data and data[PLAN_COMMENT_ID] is not None:

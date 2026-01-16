@@ -31,7 +31,22 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
     body = format_plan_header_body(
         created_at=datetime.now(UTC).isoformat(),
         created_by="testuser",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
         objective_issue=objective_number,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
     return IssueInfo(
         number=42,
