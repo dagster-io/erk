@@ -23,6 +23,11 @@ from erk_shared.github.types import GitHubRepoId
 # - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
 ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
 
+# Learn materials storage modes:
+# - "gist": Upload to GitHub Gist (default, original behavior)
+# - "artifact": Upload to learn-materials branch in the repository
+LearnMaterialsStorage = Literal["gist", "artifact"]
+
 
 @dataclass(frozen=True)
 class RepoContext:
@@ -146,7 +151,7 @@ class GlobalConfig:
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
-    learn_materials_storage: str = "gist"  # "gist" or "artifact"
+    learn_materials_storage: LearnMaterialsStorage = "gist"
     interactive_claude: InteractiveClaudeConfig = InteractiveClaudeConfig.default()
 
     @staticmethod
@@ -159,7 +164,7 @@ class GlobalConfig:
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
-        learn_materials_storage: str = "gist",
+        learn_materials_storage: LearnMaterialsStorage = "gist",
         interactive_claude: InteractiveClaudeConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
