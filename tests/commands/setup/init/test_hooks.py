@@ -176,7 +176,10 @@ def test_init_syncs_artifacts_successfully() -> None:
         # Mock sync_artifacts to return success
         from erk.artifacts.sync import SyncResult
 
-        with mock.patch("erk.cli.commands.init.main.sync_artifacts") as mock_sync:
+        with (
+            mock.patch("erk.cli.commands.init.main.sync_artifacts") as mock_sync,
+            mock.patch("erk.cli.commands.init.main.create_artifact_sync_config"),
+        ):
             mock_sync.return_value = SyncResult(
                 success=True, artifacts_installed=5, message="Synced 5 artifact files"
             )
@@ -185,7 +188,7 @@ def test_init_syncs_artifacts_successfully() -> None:
 
             assert result.exit_code == 0, result.output
             # Verify sync_artifacts was called with correct arguments
-            mock_sync.assert_called_once_with(env.cwd, force=False)
+            mock_sync.assert_called_once_with(env.cwd, force=False, config=mock.ANY)
             # Verify success message appears in output
             assert "Synced 5 artifact files" in result.output
 
@@ -209,7 +212,10 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
         # Mock sync_artifacts to return failure
         from erk.artifacts.sync import SyncResult
 
-        with mock.patch("erk.cli.commands.init.main.sync_artifacts") as mock_sync:
+        with (
+            mock.patch("erk.cli.commands.init.main.sync_artifacts") as mock_sync,
+            mock.patch("erk.cli.commands.init.main.create_artifact_sync_config"),
+        ):
             mock_sync.return_value = SyncResult(
                 success=False, artifacts_installed=0, message="Bundled .claude/ not found"
             )
@@ -219,7 +225,7 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
             # Init should continue despite sync failure (non-fatal)
             assert result.exit_code == 0, result.output
             # Verify sync_artifacts was called
-            mock_sync.assert_called_once_with(env.cwd, force=False)
+            mock_sync.assert_called_once_with(env.cwd, force=False, config=mock.ANY)
             # Verify warning appears in output
             assert "Artifact sync failed" in result.output
             assert "Bundled .claude/ not found" in result.output

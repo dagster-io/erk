@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 import tomlkit
 
-from erk.artifacts.sync import sync_artifacts
+from erk.artifacts.sync import create_artifact_sync_config, sync_artifacts
 from erk.cli.core import discover_repo_context
 from erk.core.capabilities.registry import list_capabilities, list_required_capabilities
 from erk.core.claude_settings import (
@@ -628,7 +628,8 @@ def run_init(
         user_output(f"  Wrote {version_file}")
 
         # Sync artifacts (skills, commands, agents, workflows, actions)
-        sync_result = sync_artifacts(repo_context.root, force=False)
+        config = create_artifact_sync_config(repo_context.root)
+        sync_result = sync_artifacts(repo_context.root, force=False, config=config)
         if sync_result.success:
             user_output(click.style("  ✓ ", fg="green") + sync_result.message)
         else:

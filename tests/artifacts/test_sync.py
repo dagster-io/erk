@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.artifacts.sync import (
+    ArtifactSyncConfig,
     _get_erk_package_dir,
     _is_editable_install,
     _sync_actions,
@@ -29,7 +30,15 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
     pyproject = tmp_path / "pyproject.toml"
     pyproject.write_text('[project]\nname = "erk"\n', encoding="utf-8")
 
-    result = sync_artifacts(tmp_path, force=False)
+    # Config is checked after the erk repo early-return, so values don't matter
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=tmp_path,
+        bundled_github_dir=tmp_path,
+        current_version="1.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(tmp_path, force=False, config=config)
 
     assert result.success is True
     assert result.artifacts_installed == 0
@@ -39,8 +48,14 @@ def test_sync_artifacts_skips_in_erk_repo(tmp_path: Path) -> None:
 def test_sync_artifacts_fails_when_bundled_not_found(tmp_path: Path) -> None:
     """Fails when bundled .claude/ directory doesn't exist."""
     nonexistent = tmp_path / "nonexistent"
-    with patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=nonexistent):
-        result = sync_artifacts(tmp_path, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=nonexistent,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(tmp_path, force=False, config=config)
 
     assert result.success is False
     assert result.artifacts_installed == 0
@@ -60,19 +75,16 @@ def test_sync_artifacts_copies_files(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    # Mock both bundled dirs - github dir doesn't exist so no workflows synced
+    # github dir doesn't exist so no workflows synced
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-        # Mock installed capabilities to include learned-docs capability
-        patch(
-            "erk.artifacts.sync.load_installed_capabilities",
-            return_value=frozenset({"learned-docs"}),
-        ),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+        installed_capabilities=frozenset({"learned-docs"}),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
     # 1 skill file (hooks are handled by HooksCapability, not artifact sync)
@@ -93,12 +105,14 @@ def test_sync_artifacts_saves_state(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="2.0.0"),
-    ):
-        sync_artifacts(target_dir, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=nonexistent,
+        current_version="2.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
+    sync_artifacts(target_dir, force=False, config=config)
 
     # Verify state was saved
     state_file = target_dir / ".erk" / "state.toml"
@@ -202,17 +216,14 @@ def test_sync_artifacts_copies_workflows(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-        # Mock installed capabilities to include erk-impl-workflow
-        patch(
-            "erk.artifacts.sync.load_installed_capabilities",
-            return_value=frozenset({"erk-impl-workflow"}),
-        ),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+        installed_capabilities=frozenset({"erk-impl-workflow"}),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
     # erk-impl.yml (hooks are handled by HooksCapability, not artifact sync)
@@ -389,17 +400,14 @@ def test_sync_artifacts_filters_all_artifact_types(tmp_path: Path) -> None:
     target_dir.mkdir()
 
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-        # Mock installed capabilities to include learned-docs and devrun-agent
-        patch(
-            "erk.artifacts.sync.load_installed_capabilities",
-            return_value=frozenset({"learned-docs", "devrun-agent"}),
-        ),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+        installed_capabilities=frozenset({"learned-docs", "devrun-agent"}),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
     # Should copy: 1 skill + 1 agent + 1 command (hooks handled by HooksCapability)
@@ -439,12 +447,14 @@ def test_sync_artifacts_syncs_installed_capabilities(tmp_path: Path) -> None:
     settings_path.write_text(json.dumps(settings), encoding="utf-8")
 
     nonexistent = tmp_path / "nonexistent"
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_dir),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=nonexistent),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_dir,
+        bundled_github_dir=nonexistent,
+        current_version="1.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
     # Hooks are managed by capability, not counted as file artifacts
@@ -521,17 +531,14 @@ def test_sync_artifacts_includes_actions(tmp_path: Path) -> None:
     target_dir = tmp_path / "project"
     target_dir.mkdir()
 
-    with (
-        patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
-        patch("erk.artifacts.sync.get_bundled_github_dir", return_value=bundled_github),
-        patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
-        # Mock installed capabilities to include erk-impl-workflow (owns the actions)
-        patch(
-            "erk.artifacts.sync.load_installed_capabilities",
-            return_value=frozenset({"erk-impl-workflow"}),
-        ),
-    ):
-        result = sync_artifacts(target_dir, force=False)
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=bundled_github,
+        current_version="1.0.0",
+        installed_capabilities=frozenset({"erk-impl-workflow"}),
+        sync_capabilities=False,
+    )
+    result = sync_artifacts(target_dir, force=False, config=config)
 
     assert result.success is True
     # 2 actions (hooks are handled by HooksCapability, not artifact sync)
@@ -632,12 +639,22 @@ def test_sync_artifacts_in_erk_repo_tracks_nested_commands(tmp_path: Path) -> No
     nested_cmd.mkdir(parents=True)
     (nested_cmd / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
 
+    # Note: The erk repo code path uses get_bundled_*_dir() directly to compute state
+    # from source, so we still need to patch those. Config is required but not used
+    # because the erk repo check returns early.
+    config = ArtifactSyncConfig(
+        bundled_claude_dir=bundled_claude,
+        bundled_github_dir=tmp_path / ".github",
+        current_version="1.0.0",
+        installed_capabilities=frozenset(),
+        sync_capabilities=False,
+    )
     with (
         patch("erk.artifacts.sync.get_bundled_claude_dir", return_value=bundled_claude),
         patch("erk.artifacts.sync.get_bundled_github_dir", return_value=tmp_path / ".github"),
         patch("erk.artifacts.sync.get_current_version", return_value="1.0.0"),
     ):
-        result = sync_artifacts(tmp_path, force=False)
+        result = sync_artifacts(tmp_path, force=False, config=config)
 
     assert result.success is True
     # Should be development mode (no files actually copied)

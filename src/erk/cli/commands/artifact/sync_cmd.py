@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk.artifacts.sync import sync_artifacts
+from erk.artifacts.sync import create_artifact_sync_config, sync_artifacts
 
 
 @click.command("sync")
@@ -29,8 +29,9 @@ def sync_cmd(force: bool) -> None:
       erk artifact sync --force
     """
     project_dir = Path.cwd()
+    config = create_artifact_sync_config(project_dir)
 
-    result = sync_artifacts(project_dir, force)
+    result = sync_artifacts(project_dir, force, config=config)
 
     if result.success:
         click.echo(click.style("✓ ", fg="green") + result.message)
