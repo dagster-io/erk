@@ -389,6 +389,8 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert "Created .impl/ folder from issue #123" in result.output
         assert "source" in result.output  # Activation script path
         assert "To activate the worktree environment:" in result.output
+        assert "To activate and start implementation:" in result.output
+        assert "erk implement --here" in result.output
 
         # Verify .impl/ folder was created in the worktree
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"

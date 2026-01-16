@@ -163,3 +163,7 @@ def branch_create(
         # Print source command
         user_output("\nTo activate the worktree environment:")
         user_output(f"  source {script_path}")
+
+        # Print combined activate + implement command
+        user_output("\nTo activate and start implementation:")
+        user_output(f"  source {script_path} && erk implement --here")
