@@ -227,10 +227,10 @@ def create_objective_issue(
     title: str | None,
     extra_labels: list[str] | None,
 ) -> CreatePlanIssueResult:
-    """Create objective issue with erk-plan + erk-objective labels.
+    """Create objective issue with erk-objective label.
 
     Objectives are roadmaps, not implementation plans. They have:
-    - Labels: erk-plan + erk-objective (like extraction has erk-plan + erk-extraction)
+    - Labels: erk-objective (NOT erk-plan - objectives are not plans)
     - Plan content directly in body (no metadata block)
     - No comment (content is in body)
     - No title suffix
@@ -241,7 +241,7 @@ def create_objective_issue(
         repo_root: Repository root directory
         plan_content: The full plan markdown content
         title: Optional title (extracted from H1 if None)
-        extra_labels: Additional labels beyond erk-plan and erk-objective
+        extra_labels: Additional labels beyond erk-objective
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -263,8 +263,8 @@ def create_objective_issue(
     if title is None:
         title = extract_title_from_plan(plan_content)
 
-    # Step 3: Build labels - objectives use erk-plan + erk-objective (like extraction)
-    labels = [_LABEL_ERK_PLAN, _LABEL_ERK_OBJECTIVE]
+    # Step 3: Build labels - objectives only use erk-objective (NOT erk-plan)
+    labels = [_LABEL_ERK_OBJECTIVE]
 
     # Add any extra labels
     if extra_labels:

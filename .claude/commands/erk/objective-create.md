@@ -333,7 +333,7 @@ Once approved:
 
 | Feature          | /erk:plan-save      | /erk:objective-create           |
 | ---------------- | ------------------- | ------------------------------- |
-| Label            | `erk-plan`          | `erk-plan` + `erk-objective`    |
+| Label            | `erk-plan`          | `erk-objective` only            |
 | Purpose          | Implementation plan | Roadmap or perpetual focus area |
 | Title suffix     | `[erk-plan]`        | None                            |
 | Metadata block   | Yes                 | No                              |
