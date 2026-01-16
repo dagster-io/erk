@@ -125,7 +125,7 @@ Display the gist URL to the user and save it for the plan issue.
 Upload preprocessed session files to the learn-materials branch:
 
 ```bash
-erk exec upload-learn-materials --issue <issue-number> .erk/scratch/sessions/<current-session-id>/learn/*.xml
+erk exec upload-learn-materials --issue <issue-number> --session-id <current-session-id> .erk/scratch/sessions/<current-session-id>/learn/*.xml
 ```
 
 Parse the JSON output to get file URLs. Display the URLs to the user and save them for the plan issue.

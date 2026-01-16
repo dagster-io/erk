@@ -1,11 +1,11 @@
 """Upload preprocessed session files to learn-materials branch.
 
 Usage:
-    erk exec upload-learn-materials --issue <number> <file>...
+    erk exec upload-learn-materials --issue <number> --session-id <id> <file>...
 
 This command:
 1. Creates learn-materials branch if it doesn't exist (from main/master)
-2. Uploads each file to .learn-materials/<issue>/<filename> on that branch
+2. Uploads each file to .learn-materials/<issue>/<session-id>/<filename> on that branch
 3. Returns JSON with file URLs
 
 Output:
@@ -16,11 +16,11 @@ Exit Codes:
     1: Error - branch creation or upload failed
 
 Examples:
-    $ erk exec upload-learn-materials --issue 4991 session.xml
+    $ erk exec upload-learn-materials --issue 4991 --session-id abc123 session.xml
     {
       "success": true,
       "files": [
-        {"path": ".learn-materials/4991/session.xml", "url": "https://..."}
+        {"path": ".learn-materials/4991/abc123/session.xml", "url": "https://..."}
       ]
     }
 """
@@ -192,6 +192,7 @@ def _upload_file(
     owner: str,
     repo: str,
     issue_number: int,
+    session_id: str,
     local_path: Path,
     dest_filename: str,
 ) -> UploadedFile | str:
@@ -207,7 +208,7 @@ def _upload_file(
     content_b64 = base64.b64encode(content_bytes).decode("ascii")
 
     # Construct destination path
-    dest_path = f"{LEARN_MATERIALS_DIR}/{issue_number}/{dest_filename}"
+    dest_path = f"{LEARN_MATERIALS_DIR}/{issue_number}/{session_id}/{dest_filename}"
 
     # Check if file exists (need SHA for update)
     existing_sha = _get_existing_file_sha(owner, repo, dest_path)
@@ -255,17 +256,25 @@ def _upload_file(
     required=True,
     help="GitHub issue number to organize files under",
 )
+@click.option(
+    "--session-id",
+    "session_id",
+    type=str,
+    required=True,
+    help="Session ID to include in the file path",
+)
 @click.argument("files", nargs=-1, required=True, type=click.Path(exists=True))
 @click.pass_context
 def upload_learn_materials(
     ctx: click.Context,
     issue_number: int,
+    session_id: str,
     files: tuple[str, ...],
 ) -> None:
     """Upload preprocessed session files to learn-materials branch.
 
     Creates the learn-materials branch if it doesn't exist, then uploads
-    each file to .learn-materials/<issue>/<filename>.
+    each file to .learn-materials/<issue>/<session-id>/<filename>.
 
     FILES are paths to local files to upload.
     """
@@ -290,6 +299,7 @@ def upload_learn_materials(
             owner=owner,
             repo=repo,
             issue_number=issue_number,
+            session_id=session_id,
             local_path=file_path,
             dest_filename=file_path.name,
         )

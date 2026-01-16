@@ -286,12 +286,13 @@ def test_upload_file_success(monkeypatch: Any, tmp_path: Path) -> None:
         owner="testowner",
         repo="testrepo",
         issue_number=123,
+        session_id="abc123",
         local_path=test_file,
         dest_filename="test.xml",
     )
 
     assert isinstance(result, UploadedFile)
-    assert result.path == ".learn-materials/123/test.xml"
+    assert result.path == ".learn-materials/123/abc123/test.xml"
     assert "testowner/testrepo" in result.url
     assert "learn-materials" in result.url
 
@@ -321,6 +322,7 @@ def test_upload_file_update_existing(monkeypatch: Any, tmp_path: Path) -> None:
         owner="testowner",
         repo="testrepo",
         issue_number=123,
+        session_id="abc123",
         local_path=test_file,
         dest_filename="test.xml",
     )
@@ -336,6 +338,7 @@ def test_upload_file_not_found() -> None:
         owner="testowner",
         repo="testrepo",
         issue_number=123,
+        session_id="abc123",
         local_path=Path("/nonexistent/file.xml"),
         dest_filename="file.xml",
     )
@@ -367,6 +370,7 @@ def test_upload_file_api_failure(monkeypatch: Any, tmp_path: Path) -> None:
         owner="testowner",
         repo="testrepo",
         issue_number=123,
+        session_id="abc123",
         local_path=test_file,
         dest_filename="test.xml",
     )
@@ -389,12 +393,14 @@ def test_upload_file_url_format(monkeypatch: Any, tmp_path: Path) -> None:
         owner="myorg",
         repo="myrepo",
         issue_number=456,
+        session_id="session-xyz",
         local_path=test_file,
         dest_filename="session.xml",
     )
 
     assert isinstance(result, UploadedFile)
     expected_url = (
-        "https://github.com/myorg/myrepo/blob/learn-materials/.learn-materials/456/session.xml"
+        "https://github.com/myorg/myrepo/blob/learn-materials/"
+        ".learn-materials/456/session-xyz/session.xml"
     )
     assert result.url == expected_url
