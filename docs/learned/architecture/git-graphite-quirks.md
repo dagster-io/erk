@@ -92,6 +92,53 @@ is_detached = symbolic_result.returncode != 0
 
 `git rev-parse --abbrev-ref HEAD` returns "HEAD" when detached, but using `symbolic-ref` is more explicit.
 
+## Git Index Lock and Worktree Concurrency
+
+**Surprising Behavior**: When multiple git operations run concurrently across different worktrees in the same repository, they can conflict on the shared `index.lock` file:
+
+```
+error: Unable to create '/repo/.git/index.lock': File exists.
+```
+
+**Why It's Surprising**: Each worktree appears isolated, but git's `.git/index` file is **repository-wide**, shared across all worktrees. When git modifies the index, it creates `index.lock` as a mutual exclusion mechanism. All worktrees contend for this single lock file.
+
+**Worktree-Specific .git Indirection**: Worktrees use git's sparse checkout feature:
+
+- Each worktree has `.git` as a **file** (not a directory)
+- The file contains: `gitdir: /main/repo/.git/worktrees/<name>`
+- The actual `.git` directory is in the main repository root
+- `index.lock` always lives in the shared `.git` directory
+
+**Correct Resolution Pattern**:
+
+```python
+def get_git_dir(repo_root: Path) -> Path:
+    """Resolve worktree indirection to find actual .git directory."""
+    dot_git = repo_root / ".git"
+    if dot_git.is_file():
+        # Worktree: .git is a file containing "gitdir: /path/to/..."
+        content = dot_git.read_text().strip()
+        if content.startswith("gitdir: "):
+            worktree_git = Path(content[8:])
+            # Resolve to the main .git directory
+            return worktree_git.parent.parent
+    return dot_git
+
+def wait_for_index_lock(repo_root: Path, time: Time, *, max_wait_seconds: float = 5.0) -> bool:
+    """Wait for index.lock to be released."""
+    git_dir = get_git_dir(repo_root)
+    lock_file = git_dir / "index.lock"
+    elapsed = 0.0
+    while lock_file.exists() and elapsed < max_wait_seconds:
+        time.sleep(0.5)
+        elapsed += 0.5
+    return not lock_file.exists()
+```
+
+**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
+
+**Applied To Operations**: `checkout_branch()`, `pull_branch()`, `stage_files()`, `commit()` in `RealGit`
+
 ## Adding New Quirks
 
 When you discover a new edge case, add it to this document with:

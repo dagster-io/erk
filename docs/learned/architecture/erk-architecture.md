@@ -24,6 +24,8 @@ tripwires:
     warning: "Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager."
   - action: 'using os.environ.get("CLAUDE_CODE_SESSION_ID") in erk code'
     warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
+  - action: "injecting Time dependency into gateway real.py for lock-waiting or retry logic"
+    warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
 ---
 
 # Erk Architecture Patterns
