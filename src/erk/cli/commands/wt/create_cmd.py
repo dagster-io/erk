@@ -859,6 +859,9 @@ def create_wt(
     )
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
 
+    # Write activation script
+    write_worktree_activate_script(worktree_path=wt_path)
+
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if
     # --from-plan-file or --from-plan was provided
