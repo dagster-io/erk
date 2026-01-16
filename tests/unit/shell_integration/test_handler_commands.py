@@ -12,7 +12,7 @@ from erk.cli.shell_integration.handler import (
 def test_land_top_level_command_registered() -> None:
     """Verify 'land' top-level command is registered for shell integration.
 
-    The land command was promoted from 'erk pr land' to 'erk land' (top-level)
+    The land command was promoted to 'erk land' (top-level)
     in issue #3711. It must be registered for shell integration so the
     --script flag is properly routed.
     """
@@ -168,7 +168,7 @@ def test_process_command_result_uses_script_even_when_command_fails(tmp_path: Pa
     2. pr land deletes worktree
     3. git pull fails → non-zero exit
     4. Handler sees exit_code != 0 → returns passthrough=True
-    5. Shell wrapper runs `command erk pr land` → fails (cwd gone)
+    5. Shell wrapper runs `command erk land` → fails (cwd gone)
 
     With this fix:
     1. pr land outputs script to stdout (early output)

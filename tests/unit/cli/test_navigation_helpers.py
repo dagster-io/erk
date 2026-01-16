@@ -645,7 +645,7 @@ def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path
     """Regression test: activate_root_repo uses main_repo_root, not repo.root.
 
     Bug: When repo.root (= worktree path) was used for the activation script,
-    `erk pr land` would delete the worktree, then the activation script would
+    `erk land` would delete the worktree, then the activation script would
     try to `cd` to the deleted worktree directory, causing "no such file or
     directory" error.
 

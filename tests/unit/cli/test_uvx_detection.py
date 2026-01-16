@@ -123,5 +123,5 @@ def test_warning_message_includes_command_name() -> None:
     message = get_uvx_warning_message("up")
     assert "erk up" in message
 
-    message = get_uvx_warning_message("pr land")
-    assert "erk pr land" in message
+    message = get_uvx_warning_message("land")
+    assert "erk land" in message

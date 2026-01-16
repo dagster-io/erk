@@ -162,7 +162,7 @@ This creates a pull request linked to the original issue.
 For this tutorial, you can merge your own PR. Once ready:
 
 ```bash
-erk pr land
+erk land
 ```
 
 This:
@@ -195,7 +195,7 @@ You've completed the full erk workflow:
 | Implement plan | `erk implement <issue>` |
 | Monitor plans  | `erk dash`              |
 | Submit PR      | `erk pr submit`         |
-| Land PR        | `erk pr land`           |
+| Land PR        | `erk land`           |
 
 ## Next Steps
 

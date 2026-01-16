@@ -44,7 +44,7 @@ The operation is:
 
 Examples:
 
-- `erk pr land` - Merges PR, deletes worktree (deterministic git operations)
+- `erk land` - Merges PR, deletes worktree (deterministic git operations)
 - `erk wt create` - Creates worktree (git operations)
 - `erk exec create-extraction-plan` - Creates GitHub issue (API call)
 
@@ -56,7 +56,7 @@ When a CLI command needs AI capabilities:
 2. CLI spawns `claude --print /agent-command` for AI work
 3. CLI handles results and cleanup (Python)
 
-Example: `erk pr land` could spawn `/erk:land-extraction` for AI-based session analysis, then continue with deterministic cleanup.
+Example: `erk land` could spawn `/erk:land-extraction` for AI-based session analysis, then continue with deterministic cleanup.
 
 ## Decision Tree
 

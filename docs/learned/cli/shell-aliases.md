@@ -14,9 +14,9 @@ Direct shell aliases bypass the `erk()` wrapper function, breaking shell integra
 
 ```bash
 # ❌ DANGEROUS: This alias bypasses shell integration
-alias land='erk pr land'
+alias land='erk land'
 
-# When you run `land`, it calls `erk pr land` directly,
+# When you run `land`, it calls `erk land` directly,
 # NOT through the erk() wrapper function
 # Result: shell gets stranded in deleted worktree
 ```
@@ -41,7 +41,7 @@ erk() {
 }
 ```
 
-**Key insight**: When you create an alias like `alias land='erk pr land'`, the shell expands `land` to `erk pr land` **before** looking for functions. Since `erk pr land` is not invoking the `erk` function (it's a literal command), the wrapper is bypassed.
+**Key insight**: When you create an alias like `alias land='erk land'`, the shell expands `land` to `erk land` **before** looking for functions. Since `erk land` is not invoking the `erk` function (it's a literal command), the wrapper is bypassed.
 
 ## Safe vs Unsafe Alias Patterns
 
@@ -51,7 +51,7 @@ These bypass shell integration and break worktree-deleting commands:
 
 ```bash
 # DON'T use these patterns
-alias land='erk pr land'
+alias land='erk land'
 alias down='erk down'
 alias up='erk up'
 alias rm='erk rm'
@@ -76,12 +76,12 @@ If you want short commands for shell-integrated operations, use functions:
 ```bash
 # Wrap through the erk function instead of direct alias
 land() {
-    erk pr land "$@"
+    erk land "$@"
 }
 
 # Or use the source pattern directly
 land() {
-    source <(command erk pr land --script "$@")
+    source <(command erk land --script "$@")
 }
 ```
 
@@ -91,7 +91,7 @@ If you must use aliases, make them invoke the erk function:
 
 ```bash
 # This works because 'erk' resolves to the function
-alias land='erk pr land'  # ❌ WRONG - 'erk' is literal here
+alias land='erk land'  # ❌ WRONG - 'erk' is literal here
 
 # But this approach doesn't work for the reason above
 # The expansion happens before function lookup
@@ -103,7 +103,7 @@ These commands MUST go through the `erk()` wrapper function:
 
 | Command                     | Reason                               |
 | --------------------------- | ------------------------------------ |
-| `erk pr land`               | Deletes current worktree             |
+| `erk land`               | Deletes current worktree             |
 | `erk down --delete-current` | Deletes current worktree, moves down |
 | `erk up --delete-current`   | Deletes current worktree, moves up   |
 | `erk rm`                    | May delete current worktree          |
@@ -115,7 +115,7 @@ These commands MUST go through the `erk()` wrapper function:
 ### Symptom: Shell stranded in deleted directory
 
 ```bash
-$ land  # Alias to 'erk pr land'
+$ land  # Alias to 'erk land'
 # PR landed successfully, but...
 $ pwd
 /Users/you/erks/erk/my-feature  # Directory is deleted!
@@ -129,7 +129,7 @@ ls: .: No such file or directory
 
    ```bash
    type land
-   # If output is: land is aliased to `erk pr land`
+   # If output is: land is aliased to `erk land`
    # That's the problem!
    ```
 
@@ -153,7 +153,7 @@ ls: .: No such file or directory
 2. If you want a short command, use a function:
 
    ```bash
-   land() { erk pr land "$@"; }
+   land() { erk land "$@"; }
    ```
 
 3. Ensure shell integration is active:
@@ -196,7 +196,7 @@ alias el='erk list'
 alias et='erk tree'
 
 # For commands needing shell integration, use functions
-land() { erk pr land "$@"; }
+land() { erk land "$@"; }
 down() { erk down "$@"; }
 up() { erk up "$@"; }
 ```

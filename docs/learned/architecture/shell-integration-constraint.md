@@ -20,7 +20,7 @@ Commands that delete the current worktree leave the user's shell stranded in a d
 
 ```bash
 # User is in ~/erks/erk/my-feature/
-$ erk pr land
+$ erk land
 # Worktree deleted, PR landed
 # But shell is still in the deleted directory!
 $ pwd
@@ -67,8 +67,8 @@ def land(ctx: ErkContext, script: bool) -> None:
             # Fail-fast: user needs shell integration
             raise click.ClickException(
                 "This command deletes the current worktree.\n"
-                "Use the shell wrapper function: erk pr land\n"
-                "Or with explicit script mode: source <(erk pr land --script)"
+                "Use the shell wrapper function: erk land\n"
+                "Or with explicit script mode: source <(erk land --script)"
             )
 
     # Proceed with operation...
@@ -76,9 +76,9 @@ def land(ctx: ErkContext, script: bool) -> None:
 
 ## How Shell Integration Works
 
-1. **User invokes command via shell wrapper**: `erk pr land`
+1. **User invokes command via shell wrapper**: `erk land`
 2. **Wrapper detects shell integration is needed**: Command deletes current directory
-3. **Wrapper runs with --script**: `source <(erk pr land --script)`
+3. **Wrapper runs with --script**: `source <(erk land --script)`
 4. **Command outputs activation script path**: Script includes `cd` to new location
 5. **Shell sources the script**: Parent shell's cwd changes correctly
 
@@ -143,7 +143,7 @@ os.listdir(".")  # Fails if we were in the deleted worktree
 ```python
 if not script:
     raise click.ClickException(
-        "Use shell wrapper for this command: erk pr land"
+        "Use shell wrapper for this command: erk land"
     )
 # With --script, output activation script that handles cd
 ```

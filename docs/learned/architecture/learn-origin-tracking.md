@@ -2,17 +2,17 @@
 title: Learn Origin Tracking
 read_when:
   - "understanding how learn PRs are identified"
-  - "modifying erk pr land behavior"
+  - "modifying erk land behavior"
   - "working with erk-skip-learn label"
 ---
 
 # Learn Origin Tracking
 
-PRs that originate from learn plans need to be identified during `erk pr land` to prevent infinite extraction loops.
+PRs that originate from learn plans need to be identified during `erk land` to prevent infinite extraction loops.
 
 ## The Problem
 
-When a PR is landed via `erk pr land`, the command normally queues the worktree for "pending learn" - a state that enables later session analysis to extract documentation improvements.
+When a PR is landed via `erk land`, the command normally queues the worktree for "pending learn" - a state that enables later session analysis to extract documentation improvements.
 
 However, PRs that _originate from_ learn plans should not trigger another extraction cycle. Otherwise:
 

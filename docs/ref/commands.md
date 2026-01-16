@@ -22,7 +22,7 @@ All erk CLI commands and their options.
 
 ## PR Commands
 
-<!-- TODO: erk pr submit, erk pr land, erk pr checkout, erk pr sync, erk pr auto-restack, erk pr check -->
+<!-- TODO: erk pr submit, erk land, erk pr checkout, erk pr sync, erk pr auto-restack, erk pr check -->
 
 ## Stack Commands
 

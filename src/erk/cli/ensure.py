@@ -445,7 +445,7 @@ class Ensure:
                 click.style("Error: ", fg="red")
                 + "Claude CLI is not installed\n\n"
                 + "Install it from: https://claude.ai/download\n"
-                + "Or skip extraction with: erk pr land --no-extract"
+                + "Or skip extraction with: erk land --no-extract"
             )
             raise SystemExit(1)
 

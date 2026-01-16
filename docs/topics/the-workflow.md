@@ -30,7 +30,7 @@ The complete journey from idea to merged PR.
 
 ## Phase 6: Landing
 
-<!-- TODO: erk pr land and cleanup -->
+<!-- TODO: erk land and cleanup -->
 
 ## The IDE-Free Promise
 

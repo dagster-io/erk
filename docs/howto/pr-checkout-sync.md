@@ -26,7 +26,7 @@ Review and iterate on existing PRs locally.
 
 ## Landing
 
-<!-- TODO: erk pr land when approved -->
+<!-- TODO: erk land when approved -->
 
 ## Use Cases
 

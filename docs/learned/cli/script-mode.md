@@ -269,7 +269,7 @@ For commands that **delete the current worktree**, script mode is mandatory. Wit
 
 | Command                     | Why Required                         |
 | --------------------------- | ------------------------------------ |
-| `erk pr land`               | Deletes worktree after landing PR    |
+| `erk land`               | Deletes worktree after landing PR    |
 | `erk down --delete-current` | Deletes current worktree, moves down |
 | `erk up --delete-current`   | Deletes current worktree, moves up   |
 | `erk rm` (in worktree)      | Deletes the current worktree         |
@@ -287,8 +287,8 @@ def land(ctx: ErkContext, script: bool) -> None:
     if is_in_current_worktree(ctx) and not script:
         raise click.ClickException(
             "This command deletes the current worktree.\n\n"
-            "Use the shell wrapper: erk pr land\n"
-            "Or explicitly: source <(erk pr land --script)\n\n"
+            "Use the shell wrapper: erk land\n"
+            "Or explicitly: source <(erk land --script)\n\n"
             "See: erk init --shell"
         )
     # ... proceed with operation

@@ -42,7 +42,7 @@ erk pr submit
 /erk:pr-address
 
 # 5. Land
-erk pr land
+erk land
 ```
 
 See [The Workflow](docs/concepts/the-workflow.md) for the complete guide.

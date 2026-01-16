@@ -139,7 +139,7 @@ def execute_land_pr(
                     f"PR #{pr_number} targets '{pr_base}' but should target '{trunk}'.\n\n"
                     f"The GitHub PR's base branch has diverged from your local stack.\n"
                     f"Run: gt restack && gt submit\n"
-                    f"Then retry: erk pr land"
+                    f"Then retry: erk land"
                 ),
                 details={
                     "current_branch": branch_name,

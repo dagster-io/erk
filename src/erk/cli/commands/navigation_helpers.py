@@ -23,7 +23,7 @@ def check_pending_learn_marker(worktree_path: Path, force: bool) -> None:
     """Check for pending learn marker and block deletion if present.
 
     This provides friction before worktree deletion to ensure insights are
-    extracted from the session logs. The marker is created by `erk pr land`
+    extracted from the session logs. The marker is created by `erk land`
     and deleted by `erk plan learn raw`.
 
     Args:

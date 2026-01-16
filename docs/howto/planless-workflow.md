@@ -22,7 +22,7 @@ Quick changes without formal plans.
 
 ## Landing
 
-<!-- TODO: erk pr land -->
+<!-- TODO: erk land -->
 
 ## Quick Submit
 
