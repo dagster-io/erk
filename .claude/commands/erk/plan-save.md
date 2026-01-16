@@ -164,6 +164,10 @@ OR exit Claude Code first, then run one of:
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`
 
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: <slot_name> → #<objective-number>`
+
+**Note:** Slot objective updates are handled automatically by `plan-save-to-issue` when `--objective-issue` is provided - no separate command call needed.
+
 On failure, display the error message and suggest:
 
 - Checking that a plan exists (enter Plan mode and exit it first)
