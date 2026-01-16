@@ -431,8 +431,12 @@ def _implement_from_issue(
     )
 
     # Extract objective from plan metadata (if present)
+    # NOTE: objective_issue is in the GitHub issue body (stored in metadata),
+    # NOT in plan.body which contains just the plan content from the comment.
     plan = ctx.plan_store.get_plan(repo.root, issue_number)
-    objective_issue = extract_plan_header_objective_issue(plan.body)
+    issue_body_raw = plan.metadata.get("issue_body") if plan.metadata else None
+    issue_body = issue_body_raw if isinstance(issue_body_raw, str) else plan.body
+    objective_issue = extract_plan_header_objective_issue(issue_body)
 
     # Create worktree with plan content, using the branch name
     result = _create_worktree_with_plan_content(

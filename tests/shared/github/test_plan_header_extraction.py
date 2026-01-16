@@ -12,6 +12,7 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
+    extract_plan_header_objective_issue,
     format_plan_header_body,
     update_plan_header_learn_event,
     update_plan_header_worktree_and_branch,
@@ -781,3 +782,96 @@ def test_update_plan_header_worktree_and_branch_raises_for_missing_block() -> No
             worktree_name="my-worktree",
             branch_name="feature-branch",
         )
+
+
+# === Objective Issue Extraction Tests ===
+
+
+def test_extract_plan_header_objective_issue() -> None:
+    """extract_plan_header_objective_issue extracts objective from body."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=42,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    result = extract_plan_header_objective_issue(body)
+    assert result == 42
+
+
+def test_extract_plan_header_objective_issue_returns_none_when_missing() -> None:
+    """extract_plan_header_objective_issue returns None when field is absent."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    result = extract_plan_header_objective_issue(body)
+    assert result is None
+
+
+def test_extract_plan_header_objective_issue_returns_none_for_plan_content() -> None:
+    """extract_plan_header_objective_issue returns None for plan content without metadata.
+
+    This test verifies the fix for a bug where objective_issue was extracted from
+    plan.body (which contains plan content) instead of plan.metadata["issue_body"]
+    (which contains the issue body with plan-header metadata block).
+
+    Plan content typically looks like markdown without metadata blocks, so extraction
+    should return None rather than incorrectly parsing the content.
+    """
+    # Simulate plan content (what's in plan.body from GitHubPlanStore)
+    plan_content = """# Plan: Add Feature X
+
+## Summary
+Implement feature X to do Y.
+
+## Implementation Steps
+1. Step one
+2. Step two
+
+## Test Plan
+- Unit tests for new functionality
+"""
+
+    result = extract_plan_header_objective_issue(plan_content)
+    assert result is None
+
+
+def test_extract_plan_header_objective_issue_returns_none_for_invalid_body() -> None:
+    """extract_plan_header_objective_issue returns None for body without metadata block."""
+    body = "No metadata block here"
+
+    result = extract_plan_header_objective_issue(body)
+    assert result is None
