@@ -17,6 +17,30 @@ Definitive terminology reference for the erk project.
 
 ## Core Concepts
 
+### activate.sh
+
+A shell script at `.erk/activate.sh` in each worktree that sets up the development environment when sourced.
+
+**Purpose**: Opt-in shell integration. Users explicitly source this script rather than relying on automatic shell manipulation.
+
+**What it does**:
+
+1. CDs to the worktree directory
+2. Sets up Python virtual environment (via `uv sync`)
+3. Sources `.venv/bin/activate`
+4. Loads `.env` file
+5. Runs post-create commands
+
+**Usage**:
+
+```bash
+source ~/erks/erk/my-feature/.erk/activate.sh
+```
+
+**Generation**: Created by `write_worktree_activate_script()` during worktree creation.
+
+**Related**: [Activation Scripts](cli/activation-scripts.md)
+
 ### Worktree
 
 Git's native feature for creating additional working directories for a repository.

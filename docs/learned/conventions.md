@@ -102,3 +102,41 @@ Always import from where the code is defined, not through re-export layers:
 
 - ✅ `from erk_shared.scratch.markers import create_marker`
 - ❌ `from erk.core.markers import create_marker` (if that's a re-export)
+
+## Speculative Feature Pattern
+
+For features that may be removed, use this pattern for easy reversal:
+
+### 1. Feature Constant at Module Top
+
+```python
+# SPECULATIVE: feature-name - set to False to disable
+ENABLE_FEATURE_NAME = True
+```
+
+### 2. Guard Call Sites with the Constant
+
+```python
+# SPECULATIVE: feature-name - description
+if ENABLE_FEATURE_NAME:
+    do_speculative_thing()
+```
+
+### 3. Document in Module Docstring
+
+```python
+"""Module description.
+
+SPECULATIVE: feature-name (objective #XXXX)
+This feature is speculative. Set ENABLE_FEATURE_NAME to False to disable.
+Grep for "SPECULATIVE: feature-name" to find all related code.
+"""
+```
+
+### Usage
+
+| Action               | Command                                    |
+| -------------------- | ------------------------------------------ |
+| **To disable**       | Set constant to `False`                    |
+| **To find all code** | `grep -r "SPECULATIVE: feature-name" src/` |
+| **To remove**        | Delete the module and guarded blocks       |
