@@ -244,7 +244,8 @@ def extract_plan_from_comment(comment_body: str) -> str | None:
         if block.key == "plan-body":
             # Extract content from <details> structure
             # The plan-body block uses <strong> tags in summary (not <code>)
-            pattern = r"<details>\s*<summary>.*?</summary>\s*(.*?)\s*</details>"
+            # Accept both <details> and <details open>
+            pattern = r"<details(?:\s+open)?>\s*<summary>.*?</summary>\s*(.*?)\s*</details>"
             match = re.search(pattern, block.body, re.DOTALL)
             if match:
                 return match.group(1).strip()

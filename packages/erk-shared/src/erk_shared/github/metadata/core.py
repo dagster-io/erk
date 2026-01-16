@@ -386,7 +386,7 @@ def render_plan_body_block(block: MetadataBlock) -> str:
 
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
 <!-- erk:metadata-block:{block.key} -->
-<details>
+<details open>
 <summary><strong>📋 Implementation Plan</strong></summary>
 
 {plan_content}
@@ -529,8 +529,9 @@ def parse_metadata_block_body(body: str) -> dict[str, Any]:
         ValueError: If body format is invalid or YAML parsing fails
     """
     # Phase 2 pattern: Extract YAML content from details structure
+    # Accept both <details> and <details open>
     pattern = (
-        r"<details>\s*<summary><code>[^<]+</code></summary>\s*"
+        r"<details(?:\s+open)?>\s*<summary><code>[^<]+</code></summary>\s*"
         r"```yaml\s*(.*?)\s*```\s*</details>"
     )
 
