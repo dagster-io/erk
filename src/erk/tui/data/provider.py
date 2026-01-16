@@ -492,6 +492,11 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_display = "-"
         checks_display = "-"
 
+        # Comment counts - "-" when no PR
+        resolved_comment_count = 0
+        total_comment_count = 0
+        comments_display = "-"
+
         if issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
             selected_pr = select_display_pr(issue_prs)
@@ -508,6 +513,13 @@ class RealPlanDataProvider(PlanDataProvider):
                     emoji += "🔗"
                 pr_display = f"#{selected_pr.number} {emoji}"
                 checks_display = format_checks_cell(selected_pr)
+
+                # Get review thread counts from batched PR data
+                if selected_pr.review_thread_counts is not None:
+                    resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
+                    comments_display = f"{resolved_comment_count}/{total_comment_count}"
+                else:
+                    comments_display = "0/0"
 
         # Workflow run info
         run_id: str | None = None
@@ -561,6 +573,9 @@ class RealPlanDataProvider(PlanDataProvider):
             run_status=run_status,
             run_conclusion=run_conclusion,
             log_entries=log_entries,
+            resolved_comment_count=resolved_comment_count,
+            total_comment_count=total_comment_count,
+            comments_display=comments_display,
         )
 
 

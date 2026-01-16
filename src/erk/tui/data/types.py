@@ -39,6 +39,9 @@ class PlanRowData:
         run_status: Workflow run status (e.g., "completed", "in_progress")
         run_conclusion: Workflow run conclusion (e.g., "success", "failure", "cancelled")
         log_entries: List of (event_name, timestamp, comment_url) for plan log
+        resolved_comment_count: Count of resolved PR review comments
+        total_comment_count: Total count of PR review comments
+        comments_display: Formatted display of comments (e.g., "3/5" or "-")
     """
 
     issue_number: int
@@ -66,6 +69,9 @@ class PlanRowData:
     run_status: str | None
     run_conclusion: str | None
     log_entries: tuple[tuple[str, str, str], ...]
+    resolved_comment_count: int
+    total_comment_count: int
+    comments_display: str
 
 
 @dataclass(frozen=True)

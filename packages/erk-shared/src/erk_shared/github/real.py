@@ -1261,6 +1261,7 @@ query {{
         checks_passing, checks_counts = self._parse_status_rollup(source.get("statusCheckRollup"))
         has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
         will_close_target = event.get("willCloseTarget", False)
+        review_thread_counts = self._parse_review_thread_counts(source.get("reviewThreads"))
 
         pr_info = PullRequestInfo(
             number=pr_number,
@@ -1274,6 +1275,7 @@ query {{
             has_conflicts=has_conflicts,
             checks_counts=checks_counts,
             will_close_target=will_close_target,
+            review_thread_counts=review_thread_counts,
         )
         return (pr_info, created_at_pr)
 
@@ -1314,6 +1316,26 @@ query {{
         if mergeable == "MERGEABLE":
             return False
         return None
+
+    def _parse_review_thread_counts(
+        self, review_threads: dict[str, Any] | None
+    ) -> tuple[int, int] | None:
+        """Parse review thread counts from reviewThreads field.
+
+        Returns (resolved_count, total_count) or None if not available.
+        """
+        if review_threads is None:
+            return None
+
+        total_count = review_threads.get("totalCount", 0)
+        if total_count == 0:
+            return (0, 0)
+
+        # Count resolved threads from the nodes
+        nodes = review_threads.get("nodes", [])
+        resolved_count = sum(1 for node in nodes if node and node.get("isResolved", False))
+
+        return (resolved_count, total_count)
 
     def _parse_issues_with_pr_linkages(
         self,

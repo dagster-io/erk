@@ -137,10 +137,11 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Should have: plan, title, pr, chks, local-wt, local-impl
-        assert len(values) == 6
+        # Should have: plan, title, pr, chks, comments, local-wt, local-impl
+        assert len(values) == 7
         assert values[2] == "#456"  # pr display
         assert values[3] == "-"  # checks
+        assert values[4] == "0/0"  # comments (default for PR with no counts)
 
     def test_row_to_values_with_pr_link_indicator(self) -> None:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
@@ -217,22 +218,24 @@ class TestLocalWtColumnIndex:
         assert expected_index == 2
 
     def test_expected_column_index_with_prs(self) -> None:
-        """Expected column index is 4 when show_prs=True (plan, title, pr, chks, local-wt).
+        """Expected column index is 5 when show_prs=True.
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
-        # Column layout with PRs: plan(0), title(1), pr(2), chks(3), local-wt(4), local-impl(5)
-        expected_index = 4
-        assert expected_index == 4
+        # Column layout with PRs:
+        # plan(0), title(1), pr(2), chks(3), comments(4), local-wt(5), local-impl(6)
+        expected_index = 5
+        assert expected_index == 5
 
     def test_expected_column_index_with_all_columns(self) -> None:
-        """Expected column index is 4 with show_prs=True and show_runs=True.
+        """Expected column index is 5 with show_prs=True and show_runs=True.
 
         The local-wt column index doesn't change with show_runs because
         run columns are added after local-wt.
         """
-        # Column layout: plan(0), title(1), pr(2), chks(3), local-wt(4), local-impl(5), ...runs
-        # Still 4: runs come after local-wt
-        expected_index = 4
-        assert expected_index == 4
+        # Column layout:
+        # plan(0), title(1), pr(2), chks(3), comments(4), local-wt(5), local-impl(6), ...runs
+        # Still 5: runs come after local-wt
+        expected_index = 5
+        assert expected_index == 5
