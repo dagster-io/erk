@@ -24,6 +24,8 @@ These docs are "token caches" - preserved reasoning and research so future agent
 
 **Bias toward capturing**: When uncertain whether something is worth documenting, include it. Over-documentation is better than losing insights.
 
+**Reject dismissiveness**: If you find yourself thinking "this doesn't need documentation," pause. That instinct is often wrong. New features, patterns, and capabilities almost always benefit from documentation, even when the code is "clear."
+
 ## Agent Instructions
 
 ### Step 1: Get Session Information
@@ -154,9 +156,17 @@ What documentation would have made the session faster?
 - **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere")
 - **Conventional doc**: Module-specific or localized patterns
 
-#### Teaching Gaps
+#### Teaching Gaps (MANDATORY)
 
-**If you built it, document it.** Review your Step 2 inventory. For EACH item, determine documentation needs:
+**If you built it, document it.** This is NOT optional.
+
+**IMPORTANT: "Self-documenting code" is NOT a valid reason to skip documentation.** Code shows WHAT but not WHY. Future agents need:
+
+- When to use this feature (context)
+- How it fits with other features (relationships)
+- Edge cases and gotchas (experience)
+
+**Reference: Common documentation locations**
 
 | What was built            | Documentation needed                                       |
 | ------------------------- | ---------------------------------------------------------- |
@@ -168,15 +178,44 @@ What documentation would have made the session faster?
 | New architectural pattern | Create architecture doc or add tripwire                    |
 | External API integration  | Document quirks, rate limits, auth patterns discovered     |
 
-For each item, ask: "If another agent needs to use or extend this, what would they need to know?"
+**MANDATORY: Create an enumerated table.** For EACH item from your Step 2 inventory, you MUST produce a row:
 
-**Checkpoint before proceeding:**
+| Item | Type | Documentation Needed? | If Yes: Location & Content | If No: Explicit Reason |
+| ---- | ---- | --------------------- | -------------------------- | ---------------------- |
+| ...  | ...  | Yes/No                | ...                        | ...                    |
 
-- [ ] Did you review EVERY item from your Step 2 inventory?
-- [ ] Did you determine documentation needs for each item?
-- [ ] If an item needs no documentation, did you explicitly state why?
+Valid reasons for "No":
 
-If no learning gaps AND no teaching gaps, report "No documentation needed" and proceed to Step 7.
+- Already documented at [location]
+- Pure refactoring with no new behavior
+- Internal helper with no external usage
+
+Invalid reasons (REJECT these):
+
+- "Code is self-documenting"
+- "Patterns are discoverable in the code"
+- "Well-tested so documentation unnecessary"
+- "Simple/straightforward implementation"
+
+**⚠️ CHECKPOINT: Before proceeding to Step 5**
+
+You MUST have:
+
+- [ ] Created the enumerated table above with ALL inventory items
+- [ ] Provided explicit reasoning for every "No documentation needed" row
+- [ ] At least considered each item (empty tables = incomplete analysis)
+
+If your Step 2 inventory had N items, your table MUST have N rows.
+
+**If no documentation needed for ANY item:**
+
+If your enumerated table shows NO documentation needed for ANY item:
+
+1. Re-read your table reasoning
+2. Ask yourself: "Would a future agent working on similar code benefit from this?"
+3. If still no documentation needed, state: "After explicit review of N inventory items, no documentation is needed because [specific reasons for top 3 items]"
+
+Only proceed to Step 7 (skipping Step 5-6) after this explicit justification.
 
 ### Step 5: Present Findings
 
