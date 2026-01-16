@@ -1,5 +1,7 @@
 """Unit tests for branch create command."""
 
+from datetime import UTC, datetime
+
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -9,7 +11,9 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
+from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.plan_helpers import create_plan_store_with_plans
 
 
 def test_branch_create_creates_new_branch_and_assignment(tmp_path) -> None:
@@ -326,3 +330,286 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
         assert len(state.assignments) == 1
         assert state.assignments[0].branch_name == "new-branch"
         assert state.assignments[0].slot_name == "erk-slot-01"
+
+
+def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None:
+    """Test that --for-plan creates branch, slot, and .impl/ folder."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create a plan with erk-plan label
+        now = datetime.now(UTC)
+        plan = Plan(
+            plan_identifier="123",
+            title="Add feature",
+            body="# Plan\nImplementation details",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/123",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        plan_store, _ = create_plan_store_with_plans({"123": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "123"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        # Branch name is derived from issue number and title
+        assert "Created branch:" in result.output
+        assert "P123" in result.output  # Branch should contain P123
+        assert "Assigned" in result.output
+        assert "erk-slot-01" in result.output
+        assert "Created .impl/ folder from issue #123" in result.output
+        assert "source" in result.output  # Activation script path
+
+        # Verify .impl/ folder was created in the worktree
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        impl_folder = worktree_path / ".impl"
+        assert impl_folder.exists()
+        assert (impl_folder / "plan.md").exists()
+        assert (impl_folder / "issue.json").exists()
+
+
+def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
+    """Test that --for-plan accepts GitHub issue URLs."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = datetime.now(UTC)
+        plan = Plan(
+            plan_identifier="456",
+            title="Fix bug",
+            body="# Bug fix plan",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/456",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        plan_store, _ = create_plan_store_with_plans({"456": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan", "https://github.com/owner/repo/issues/456"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "P456" in result.output
+        assert "Created .impl/ folder from issue #456" in result.output
+
+
+def test_branch_create_for_plan_fails_without_erk_plan_label() -> None:
+    """Test that --for-plan fails if issue doesn't have erk-plan label."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = datetime.now(UTC)
+        # Plan WITHOUT erk-plan label
+        plan = Plan(
+            plan_identifier="789",
+            title="Missing label",
+            body="# Plan content",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/789",
+            labels=["bug"],  # No erk-plan label
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        plan_store, _ = create_plan_store_with_plans({"789": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "789"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "erk-plan" in result.output
+        assert "must have" in result.output.lower() or "Error" in result.output
+
+
+def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
+    """Test that --for-plan with --no-slot creates branch but not .impl folder."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = datetime.now(UTC)
+        plan = Plan(
+            plan_identifier="100",
+            title="No slot feature",
+            body="# Plan",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/100",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        plan_store, _ = create_plan_store_with_plans({"100": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan", "100", "--no-slot"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch:" in result.output
+        assert "P100" in result.output
+        # Should NOT have slot assignment or .impl folder messages
+        assert "Assigned" not in result.output
+        assert ".impl folder not created" in result.output or "Note:" in result.output
+
+
+def test_branch_create_fails_with_both_branch_and_for_plan() -> None:
+    """Test that specifying both BRANCH and --for-plan fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
+
+        result = runner.invoke(
+            cli,
+            ["br", "create", "my-branch", "--for-plan", "123"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "Cannot specify both BRANCH and --for-plan" in result.output
+
+
+def test_branch_create_fails_without_branch_or_for_plan() -> None:
+    """Test that omitting both BRANCH and --for-plan fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo, use_graphite=True)
+
+        result = runner.invoke(cli, ["br", "create"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 1
+        assert "Must provide BRANCH argument or --for-plan option" in result.output
