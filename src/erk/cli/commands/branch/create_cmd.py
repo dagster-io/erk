@@ -100,13 +100,21 @@ def branch_create(
         )
         raise SystemExit(1) from None
 
-    # Create the new branch from trunk
+    # Create the new branch, respecting Graphite stacking
     trunk = ctx.git.detect_trunk_branch(repo.root)
     if trunk is None:
         user_output("Error: Could not detect trunk branch.")
         raise SystemExit(1) from None
-    ctx.git.create_branch(repo.root, branch_name, trunk)
-    ctx.branch_manager.track_branch(repo.root, branch_name, trunk)
+
+    # Stack on current branch if we're on a non-trunk branch
+    current_branch = ctx.git.get_current_branch(repo.root)
+    if current_branch and current_branch != trunk:
+        parent_branch = current_branch
+    else:
+        parent_branch = trunk
+
+    ctx.git.create_branch(repo.root, branch_name, parent_branch)
+    ctx.branch_manager.track_branch(repo.root, branch_name, parent_branch)
     user_output(f"Created branch: {branch_name}")
 
     # If --no-slot is specified, we're done (but warn about .impl if --for-plan was used)

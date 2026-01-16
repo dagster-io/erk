@@ -622,3 +622,144 @@ def test_branch_create_fails_without_branch_or_for_plan() -> None:
 
         assert result.exit_code == 1
         assert "Must provide BRANCH argument or --for-plan option" in result.output
+
+
+def test_branch_create_stacks_on_current_branch() -> None:
+    """Test that branch create stacks on current branch when not on trunk."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Current branch is feature-parent, not trunk
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "feature-parent"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-parent"]},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["br", "create", "feature-child"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch: feature-child" in result.output
+
+        # Verify branch was created from feature-parent, not main
+        assert (env.cwd, "feature-child", "feature-parent") in git_ops.created_branches
+
+        # Verify Graphite tracking was called with feature-parent as parent
+        assert len(graphite_ops.track_branch_calls) == 1
+        cwd, branch, parent = graphite_ops.track_branch_calls[0]
+        assert branch == "feature-child"
+        assert parent == "feature-parent"
+
+
+def test_branch_create_for_plan_stacks_on_current_branch() -> None:
+    """Test that --for-plan stacks on current branch when not on trunk."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Current branch is feature-parent, not trunk
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "feature-parent"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-parent"]},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="200",
+            title="Stacked feature",
+            body="# Plan\nStacked implementation",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/200",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+        )
+        plan_store, _ = create_plan_store_with_plans({"200": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["br", "create", "--for-plan", "200"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "P200" in result.output
+
+        # Verify Graphite tracking was called with feature-parent as parent
+        assert len(graphite_ops.track_branch_calls) == 1
+        cwd, branch, parent = graphite_ops.track_branch_calls[0]
+        assert "P200" in branch
+        assert parent == "feature-parent"
+
+
+def test_branch_create_uses_trunk_when_on_trunk() -> None:
+    """Test that branch create uses trunk when current branch is trunk."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Current branch is main (trunk)
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+        graphite_ops = FakeGraphite()
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, graphite=graphite_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["br", "create", "new-feature"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify branch was created from main (trunk)
+        assert (env.cwd, "new-feature", "main") in git_ops.created_branches
+
+        # Verify Graphite tracking was called with main as parent
+        assert len(graphite_ops.track_branch_calls) == 1
+        cwd, branch, parent = graphite_ops.track_branch_calls[0]
+        assert branch == "new-feature"
+        assert parent == "main"
