@@ -29,14 +29,17 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 
 ### PR Info
 
-| Field            | Type          | Description                            | Nullable?                   |
-| ---------------- | ------------- | -------------------------------------- | --------------------------- |
-| `pr_number`      | `int \| None` | PR number if linked                    | Yes                         |
-| `pr_url`         | `str \| None` | URL to PR (GitHub or Graphite)         | Yes                         |
-| `pr_display`     | `str`         | Formatted PR cell (e.g., "#123 👀")    | Never (empty/dash possible) |
-| `pr_title`       | `str \| None` | PR title if different from issue       | Yes                         |
-| `pr_state`       | `str \| None` | PR state: "OPEN", "MERGED", "CLOSED"   | Yes                         |
-| `checks_display` | `str`         | Formatted checks cell (e.g., "✓", "✗") | Never (dash possible)       |
+| Field                    | Type          | Description                            | Nullable?                   |
+| ------------------------ | ------------- | -------------------------------------- | --------------------------- |
+| `pr_number`              | `int \| None` | PR number if linked                    | Yes                         |
+| `pr_url`                 | `str \| None` | URL to PR (GitHub or Graphite)         | Yes                         |
+| `pr_display`             | `str`         | Formatted PR cell (e.g., "#123 👀")    | Never (empty/dash possible) |
+| `pr_title`               | `str \| None` | PR title if different from issue       | Yes                         |
+| `pr_state`               | `str \| None` | PR state: "OPEN", "MERGED", "CLOSED"   | Yes                         |
+| `checks_display`         | `str`         | Formatted checks cell (e.g., "✓", "✗") | Never (dash possible)       |
+| `resolved_comment_count` | `int`         | Count of resolved PR review comments   | Never (0 if no PR)          |
+| `total_comment_count`    | `int`         | Total count of PR review comments      | Never (0 if no PR)          |
+| `comments_display`       | `str`         | Formatted comments (e.g., "3/5", "-")  | Never (dash if no PR)       |
 
 ### Worktree Info
 
@@ -118,14 +121,15 @@ is_available=lambda _: True
 
 Many pieces of data have both a raw value and a display value:
 
-| Raw Field                     | Display Field              | Purpose                 |
-| ----------------------------- | -------------------------- | ----------------------- |
-| `issue_number`                | (used directly in display) | Issue number            |
-| `pr_number`                   | `pr_display`               | PR with state indicator |
-| `run_id`                      | `run_id_display`           | Run ID formatted        |
-| `run_status`/`run_conclusion` | `run_state_display`        | Human-readable state    |
-| `title`                       | (is already display)       | Truncated title         |
-| `full_title`                  | (is raw)                   | Full title for modals   |
+| Raw Field                                    | Display Field              | Purpose                 |
+| -------------------------------------------- | -------------------------- | ----------------------- |
+| `issue_number`                               | (used directly in display) | Issue number            |
+| `pr_number`                                  | `pr_display`               | PR with state indicator |
+| `resolved_comment_count`/`total_comment_count` | `comments_display`       | Comment counts (X/Y)    |
+| `run_id`                                     | `run_id_display`           | Run ID formatted        |
+| `run_status`/`run_conclusion`                | `run_state_display`        | Human-readable state    |
+| `title`                                      | (is already display)       | Truncated title         |
+| `full_title`                                 | (is raw)                   | Full title for modals   |
 
 **Rule:** Use raw fields in predicates (for `None` checks), display fields for rendering.
 
@@ -141,6 +145,9 @@ row = make_plan_row(123, "Test Plan")
 
 # With PR
 row = make_plan_row(123, "Test", pr_number=456, pr_url="https://...")
+
+# With PR and comment counts (resolved, total)
+row = make_plan_row(123, "Test", pr_number=456, comment_counts=(3, 5))
 
 # With local worktree
 row = make_plan_row(123, "Test", worktree_name="feature-123", exists_locally=True)
