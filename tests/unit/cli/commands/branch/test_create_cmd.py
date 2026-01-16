@@ -385,6 +385,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert "erk-slot-01" in result.output
         assert "Created .impl/ folder from issue #123" in result.output
         assert "source" in result.output  # Activation script path
+        assert "To activate the worktree environment:" in result.output
 
         # Verify .impl/ folder was created in the worktree
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"
@@ -392,6 +393,11 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert impl_folder.exists()
         assert (impl_folder / "plan.md").exists()
         assert (impl_folder / "issue.json").exists()
+
+        # Verify activation script was created
+        activate_script = worktree_path / ".erk" / "activate.sh"
+        assert activate_script.exists()
+        assert str(activate_script) in result.output
 
 
 def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
