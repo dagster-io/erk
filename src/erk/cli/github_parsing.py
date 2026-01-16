@@ -19,12 +19,12 @@ from erk_shared.output.output import user_output
 
 
 def parse_issue_identifier(identifier: str) -> int:
-    """Parse issue number from plain number or GitHub issue URL.
+    """Parse issue number from plain number, P-prefixed ID, or GitHub issue URL.
 
     This is a CLI-level function that handles user input.
 
     Args:
-        identifier: Plain number ("42") or GitHub issue URL
+        identifier: Plain number ("42"), P-prefixed ("P42"), or GitHub issue URL
 
     Returns:
         Issue number as int
@@ -35,9 +35,17 @@ def parse_issue_identifier(identifier: str) -> int:
     Examples:
         >>> parse_issue_identifier("42")
         42
+        >>> parse_issue_identifier("P123")
+        123
+        >>> parse_issue_identifier("p456")
+        456
         >>> parse_issue_identifier("https://github.com/owner/repo/issues/123")
         123
     """
+    # P-prefixed identifier (e.g., "P123" or "p123")
+    if identifier.upper().startswith("P") and identifier[1:].isdigit():
+        return int(identifier[1:])
+
     # Plain number (handles leading zeros like "0042" -> 42)
     if identifier.isdigit():
         return int(identifier)
@@ -52,6 +60,7 @@ def parse_issue_identifier(identifier: str) -> int:
         + f"Invalid issue number or URL: {identifier}\n\n"
         + "Expected formats:\n"
         + "  • Plain number: 123\n"
+        + "  • P-prefixed: P123\n"
         + "  • GitHub URL: https://github.com/owner/repo/issues/456"
     )
     raise SystemExit(1)
