@@ -531,7 +531,7 @@ class TestCreateObjectiveIssue:
     """Test objective issue creation using create_objective_issue()."""
 
     def test_creates_objective_issue_with_correct_labels(self, tmp_path: Path) -> None:
-        """Objective issues use erk-plan + erk-objective labels (like learn)."""
+        """Objective issues use only erk-objective label (NOT erk-plan)."""
         fake_gh = FakeGitHubIssues(username="testuser")
         plan_content = "# My Objective\n\n## Goal\n\nBuild a feature..."
 
@@ -547,13 +547,13 @@ class TestCreateObjectiveIssue:
         assert result.issue_number == 1
         assert result.title == "My Objective"
 
-        # Verify labels include both erk-plan and erk-objective (like learn)
+        # Verify labels only include erk-objective (NOT erk-plan)
         _, body, labels = fake_gh.created_issues[0]
-        assert labels == ["erk-plan", "erk-objective"]
+        assert labels == ["erk-objective"]
 
-        # Verify both labels were created
-        assert "erk-plan" in fake_gh.labels
+        # Verify only erk-objective label was created
         assert "erk-objective" in fake_gh.labels
+        assert "erk-plan" not in fake_gh.labels
 
     def test_objective_has_no_title_suffix(self, tmp_path: Path) -> None:
         """Objective issues have no title suffix."""
@@ -653,7 +653,7 @@ class TestCreateObjectiveIssue:
         assert result.success is True
 
         _, _, labels = fake_gh.created_issues[0]
-        assert "erk-plan" in labels
+        assert "erk-plan" not in labels  # objectives don't get erk-plan
         assert "erk-objective" in labels
         assert "priority-high" in labels
 

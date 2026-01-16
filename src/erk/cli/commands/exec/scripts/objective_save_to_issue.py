@@ -4,7 +4,7 @@ Usage:
     erk exec objective-save-to-issue [OPTIONS]
 
 This command extracts a plan and creates a GitHub issue with:
-- erk-plan + erk-objective labels (like extraction has erk-plan + erk-extraction)
+- erk-objective label only (NOT erk-plan - objectives are not plans)
 - No title suffix
 - Plan content directly in body (no metadata block)
 - No commands section
