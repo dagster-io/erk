@@ -260,7 +260,7 @@ def activate_root_repo(
         )
         machine_output(str(result.path), nl=False)
     else:
-        user_output(f"Went to root repo: {root_path}")
+        user_output(f"Root repo: {root_path}")
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=root_path,
@@ -333,7 +333,7 @@ def activate_worktree(
 
         result.output_for_shell_integration()
     else:
-        user_output(f"Went to worktree: {wt_path}")
+        user_output(f"Worktree: {wt_path}")
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=wt_path,

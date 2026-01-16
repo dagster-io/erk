@@ -120,7 +120,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 )
                 machine_output(str(result.path), nl=False)
             else:
-                user_output(f"Went to root repo: {root_path}")
+                user_output(f"Root repo: {root_path}")
 
                 # Print activation instructions for opt-in workflow
                 # SPECULATIVE: activation-scripts (objective #4954)
