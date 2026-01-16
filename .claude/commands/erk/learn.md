@@ -88,18 +88,18 @@ ls -la .claude/skills/ 2>/dev/null || echo "No .claude/skills/ directory"
 
 #### Preprocess Sessions
 
-For each session path from Step 1, preprocess to compressed XML format. Get the current session ID from the `SESSION_CONTEXT` reminder:
+For each session path from Step 1, preprocess to compressed XML format:
 
 ```bash
-mkdir -p .erk/scratch/sessions/<current-session-id>/learn
+mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
 
 # For the planning session:
 erk exec preprocess-session <planning-session-path> --max-tokens 15000 --stdout \
-    > .erk/scratch/sessions/<current-session-id>/learn/planning-session.xml
+    > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/planning-session.xml
 
 # For each implementation session:
 erk exec preprocess-session <impl-session-path> --max-tokens 15000 --stdout \
-    > .erk/scratch/sessions/<current-session-id>/learn/impl-session-<N>.xml
+    > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/impl-session-<N>.xml
 ```
 
 #### Upload to Gist
@@ -107,7 +107,7 @@ erk exec preprocess-session <impl-session-path> --max-tokens 15000 --stdout \
 Upload preprocessed session files to a secret gist:
 
 ```bash
-gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/<current-session-id>/learn/*.xml
+gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*.xml
 ```
 
 Display the gist URL to the user and save it for the plan issue.
@@ -203,7 +203,7 @@ If the user decides to skip (no valuable insights), proceed to Step 7.
 Write the plan content and create the issue:
 
 ```bash
-cat > .erk/scratch/sessions/<session-id>/learn-plan.md << 'EOF'
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md << 'EOF'
 # Documentation Plan: <title>
 
 ## Context
@@ -221,8 +221,8 @@ EOF
 
 erk exec plan-save-to-issue \
     --plan-type learn \
-    --plan-file .erk/scratch/sessions/<session-id>/learn-plan.md \
-    --session-id="<session-id>" \
+    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md \
+    --session-id="${CLAUDE_SESSION_ID}" \
     --format display
 ```
 
@@ -240,7 +240,7 @@ Raw materials: <gist-url>
 This ensures `erk land` won't warn about unlearned plans:
 
 ```bash
-erk exec track-learn-evaluation <issue-number> --session-id="<session-id>"
+erk exec track-learn-evaluation <issue-number> --session-id="${CLAUDE_SESSION_ID}"
 ```
 
 ### Tips

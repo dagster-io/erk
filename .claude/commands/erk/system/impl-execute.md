@@ -41,20 +41,16 @@ First, check if implementation is already set up (e.g., from `erk implement <iss
 erk exec impl-init --json
 ```
 
-If this succeeds with `"valid": true` and `"has_issue_tracking": true`, the `.impl/` folder is already configured. **Skip directly to Step 4** (Read Plan and Load Context).
+If this succeeds with `"valid": true` and `"has_issue_tracking": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
 
 If it fails or returns `"valid": false`, continue to Step 2 to save the plan.
 
-### Step 2: Extract Session ID
-
-Get the session ID by reading the `session:` line from the `SESSION_CONTEXT` reminder in your conversation context (e.g., `session: a8e2cb1d-...`). This value is already visible - just copy it directly, no tools needed.
-
-### Step 3: Save Plan to GitHub
+### Step 2: Save Plan to GitHub
 
 Save the current plan to GitHub and capture the issue number:
 
 ```bash
-erk exec plan-save-to-issue --format json --session-id="<session-id>"
+erk exec plan-save-to-issue --format json --session-id="${CLAUDE_SESSION_ID}"
 ```
 
 Parse the JSON output to get:
@@ -64,7 +60,7 @@ Parse the JSON output to get:
 
 If this fails, display the error and stop.
 
-### Step 3b: Create Branch and Setup .impl/
+### Step 2b: Create Branch and Setup .impl/
 
 Now set up the implementation environment using the saved issue:
 
@@ -81,7 +77,7 @@ This command:
 
 If this fails, display the error and stop.
 
-### Step 3c: Re-run Implementation Initialization
+### Step 2c: Re-run Implementation Initialization
 
 Run impl-init again now that .impl/ is set up:
 
@@ -91,7 +87,7 @@ erk exec impl-init --json
 
 Use the returned `phases` for TodoWrite entries. If validation fails, display error and stop.
 
-### Step 4: Read Plan and Load Context
+### Step 3: Read Plan and Load Context
 
 Read `.impl/plan.md` to understand:
 
@@ -102,18 +98,18 @@ Read `.impl/plan.md` to understand:
 
 **Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
 
-### Step 5: Load Related Documentation
+### Step 4: Load Related Documentation
 
 If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
 
-### Step 6: Create TodoWrite Entries
+### Step 5: Create TodoWrite Entries
 
 Create todo entries for each phase from impl-init output.
 
-### Step 7: Signal GitHub Started
+### Step 6: Signal GitHub Started
 
 ```bash
-erk exec impl-signal started --session-id="<session-id>" 2>/dev/null || true
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
 This also deletes the Claude plan file (from `~/.claude/plans/`) since:
@@ -122,7 +118,7 @@ This also deletes the Claude plan file (from `~/.claude/plans/`) since:
 - The content has been snapshotted to `.erk/scratch/`
 - Keeping it could cause confusion if the user tries to re-save
 
-### Step 8: Execute Each Phase Sequentially
+### Step 7: Execute Each Phase Sequentially
 
 For each phase:
 
@@ -137,21 +133,21 @@ For each phase:
 
 **Important:** `.impl/plan.md` is immutable - NEVER edit during implementation
 
-### Step 9: Report Progress
+### Step 8: Report Progress
 
 After each phase: report changes made and what's next.
 
-### Step 10: Final Verification
+### Step 9: Final Verification
 
 Confirm all tasks executed, success criteria met, note deviations, summarize changes.
 
-### Step 11: Signal GitHub Ended
+### Step 10: Signal GitHub Ended
 
 ```bash
-erk exec impl-signal ended --session-id="<session-id>" 2>/dev/null || true
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
-### Step 12: Verify .impl/ Preserved
+### Step 11: Verify .impl/ Preserved
 
 **CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
 
@@ -161,7 +157,7 @@ erk exec impl-verify
 
 If this fails, you have violated instructions. The .impl/ folder must be preserved for user review.
 
-### Step 13: Run CI Iteratively
+### Step 12: Run CI Iteratively
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
@@ -178,7 +174,7 @@ fi
 
 **CRITICAL**: Never delete `.impl/` - leave for user review (no auto-commit).
 
-### Step 14: Create/Update PR (if .worker-impl/ present)
+### Step 13: Create/Update PR (if .worker-impl/ present)
 
 **Only if .worker-impl/ was present:**
 
@@ -194,14 +190,14 @@ erk pr check
 
 If checks fail, display output and warn user.
 
-### Step 15: Output Format
+### Step 14: Output Format
 
 - **Start**: "Saving plan and setting up implementation..."
 - **After save**: "Plan saved as issue #X, setting up .impl/ folder..."
 - **Each phase**: "Phase X: [brief description]" with code changes
 - **End**: "Plan execution complete. [Summary]"
 
-### Step 16: Submit PR
+### Step 15: Submit PR
 
 After all phases complete and CI passes, submit the PR:
 

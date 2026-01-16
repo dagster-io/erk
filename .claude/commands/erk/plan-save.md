@@ -40,23 +40,19 @@ Else:
   - Set OBJECTIVE_FLAG to empty string
 ```
 
-### Step 2: Extract Session ID
+### Step 2: Run Save Command
 
-Get the session ID by reading the `session:` line from the `SESSION_CONTEXT` reminder in your conversation context (e.g., `session: a8e2cb1d-...`). This value is already visible - just copy it directly, no tools needed.
-
-### Step 3: Run Save Command
-
-Run this command with the extracted session ID and optional objective flag:
+Run this command with the session ID and optional objective flag:
 
 ```bash
-erk exec plan-save-to-issue --format json --session-id="<session-id>" ${OBJECTIVE_FLAG}
+erk exec plan-save-to-issue --format json --session-id="${CLAUDE_SESSION_ID}" ${OBJECTIVE_FLAG}
 ```
 
-Parse the JSON output to extract `issue_number` for verification in Step 4.
+Parse the JSON output to extract `issue_number` for verification in Step 3.
 
 If the command fails, display the error and stop.
 
-### Step 4: Verify Objective Link (if applicable)
+### Step 3: Verify Objective Link (if applicable)
 
 **Only run this step if `--objective-issue` was provided in arguments.**
 
@@ -91,7 +87,7 @@ Fix: Close issue #<issue_number> and re-run:
 
 Exit without creating the plan-saved marker. The session continues so the user can retry.
 
-### Step 4.5: Update Objective Roadmap (if objective linked)
+### Step 3.5: Update Objective Roadmap (if objective linked)
 
 **Only run this step if `--objective-issue` was provided and verification passed.**
 
@@ -100,7 +96,7 @@ Update the objective's roadmap table to show that a plan has been created for th
 1. **Read the roadmap step marker** to get the step ID:
 
 ```bash
-step_id=$(erk exec marker read --session-id <session-id> roadmap-step)
+step_id=$(erk exec marker read --session-id "${CLAUDE_SESSION_ID}" roadmap-step)
 ```
 
 If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-next-plan`.
@@ -145,7 +141,7 @@ Display: `Updated objective #<objective-issue> roadmap: step <step_id> → plan 
 
 **Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
 
-### Step 5: Display Results
+### Step 4: Display Results
 
 On success, display:
 
@@ -181,7 +177,7 @@ After successfully saving a plan, the issue number is stored in a marker file th
 **To read the saved issue number:**
 
 ```bash
-erk exec marker read --session-id <session-id> plan-saved-issue
+erk exec marker read --session-id "${CLAUDE_SESSION_ID}" plan-saved-issue
 ```
 
 This returns the issue number (exit code 0) or exits with code 1 if no plan was saved in this session.

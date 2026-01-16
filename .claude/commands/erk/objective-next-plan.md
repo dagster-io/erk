@@ -69,14 +69,12 @@ This returns JSON with `{success, issue_number, title, body, labels, url}`.
 
 Create a marker to persist the objective issue number for the exit-plan-mode hook.
 
-**Get the session ID** by reading the `session:` line from the system reminders in your conversation context (e.g., `session: a8e2cb1d-f658-4184-b359-b84bb67a487d`). This value is already visible in your context - just copy it directly, no tools needed.
-
 ```bash
-erk exec marker create --session-id <session-id-from-reminder> \
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
   --associated-objective <objective-number> objective-context
 ```
 
-Replace `<session-id-from-reminder>` with the session ID from the system reminder, and `<objective-number>` with the issue number from Step 2.
+Replace `<objective-number>` with the issue number from Step 2.
 
 This enables the exit-plan-mode-hook to suggest the correct save command with `--objective-issue` automatically.
 
@@ -145,7 +143,7 @@ If all steps are complete or have plans in progress, report appropriately:
 After the user selects a step, create a marker to store the selected step ID for later use by `plan-save`:
 
 ```bash
-erk exec marker create --session-id <session-id-from-reminder> \
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" \
   --content "<step-id>" roadmap-step
 ```
 

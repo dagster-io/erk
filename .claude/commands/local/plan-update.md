@@ -29,17 +29,13 @@ If no argument provided, check `.impl/issue.json` for a linked issue number.
 
 If still no issue number, ask the user for the issue number.
 
-### Step 2: Extract Session ID
-
-Get the session ID by reading the `session:` line from the `SESSION_CONTEXT` reminder in your conversation context (e.g., `session: a8e2cb1d-...`). This value is already visible - just copy it directly, no tools needed.
-
-### Step 3: Run Update Command
+### Step 2: Run Update Command
 
 ```bash
-erk exec plan-update-issue --issue-number <issue> --format display --session-id="<session-id>"
+erk exec plan-update-issue --issue-number <issue> --format display --session-id="${CLAUDE_SESSION_ID}"
 ```
 
-### Step 4: Display Results
+### Step 3: Display Results
 
 On success, display the command output verbatim.
 
