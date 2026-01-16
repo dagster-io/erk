@@ -429,11 +429,18 @@ class FakeLinearPlanBackend(PlanBackend):
         - Single assignee becomes list with 0 or 1 items
         - 5-state maps to OPEN/CLOSED
         - custom_fields becomes metadata
+        - objective_issue extracted from custom_fields
         """
         # Convert single assignee to list
         assignees: list[str] = []
         if issue.assignee is not None:
             assignees = [issue.assignee]
+
+        # Extract objective_issue from custom_fields (Linear's metadata equivalent)
+        objective_issue_raw = issue.custom_fields.get("objective_issue")
+        objective_issue: int | None = None
+        if objective_issue_raw is not None:
+            objective_issue = int(objective_issue_raw)  # type: ignore[arg-type]
 
         return Plan(
             plan_identifier=issue.id,
@@ -446,4 +453,5 @@ class FakeLinearPlanBackend(PlanBackend):
             created_at=issue.created_at,
             updated_at=issue.updated_at,
             metadata=dict(issue.custom_fields),
+            objective_issue=objective_issue,
         )

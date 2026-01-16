@@ -25,6 +25,7 @@ def test_view_plan_displays_issue() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -61,6 +62,7 @@ def test_view_plan_with_full_flag() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -93,6 +95,7 @@ def test_view_plan_with_short_full_flag() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -140,6 +143,7 @@ def test_view_plan_minimal_fields() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -170,6 +174,7 @@ def test_view_plan_with_github_url() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -246,6 +251,7 @@ Some other content here.
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -300,6 +306,7 @@ last_local_impl_user: testuser
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -332,6 +339,7 @@ def test_view_plan_without_header_info() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -379,6 +387,7 @@ created_from_session: abc123-session-id
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -428,6 +437,7 @@ last_learn_session: def456-learn-session
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()

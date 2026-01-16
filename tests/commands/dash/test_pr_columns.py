@@ -31,6 +31,7 @@ def test_plan_list_pr_column_open_pr() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 100},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -79,6 +80,7 @@ def test_plan_list_pr_column_draft_pr() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 101},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -127,6 +129,7 @@ def test_plan_list_pr_column_merged_pr() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 102},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -175,6 +178,7 @@ def test_plan_list_pr_column_closed_pr() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 103},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -223,6 +227,7 @@ def test_plan_list_pr_column_with_conflicts() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 104},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -271,6 +276,7 @@ def test_plan_list_pr_column_multiple_prs_prefers_open() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 105},
+        objective_issue=None,
     )
 
     # Older closed PR
@@ -333,6 +339,7 @@ def test_plan_list_pr_column_no_pr_linked() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 106},
+        objective_issue=None,
     )
 
     runner = CliRunner()

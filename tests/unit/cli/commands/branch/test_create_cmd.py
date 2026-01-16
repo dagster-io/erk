@@ -369,6 +369,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"123": plan})
 
@@ -438,6 +439,7 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"456": plan})
 
@@ -491,6 +493,7 @@ def test_branch_create_for_plan_fails_without_erk_plan_label() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"789": plan})
 
@@ -541,6 +544,7 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"100": plan})
 
@@ -705,6 +709,7 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"200": plan})
 

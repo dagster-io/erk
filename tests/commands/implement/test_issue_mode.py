@@ -145,6 +145,7 @@ def test_implement_from_issue_fails_without_erk_plan_label() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()

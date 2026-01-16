@@ -61,7 +61,6 @@ from erk.core.worktree_pool import (
     save_pool_state,
     update_slot_objective,
 )
-from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -430,13 +429,9 @@ def _implement_from_issue(
         ctx, repo.root, issue_number, base_branch=base_branch
     )
 
-    # Extract objective from plan metadata (if present)
-    # NOTE: objective_issue is in the GitHub issue body (stored in metadata),
-    # NOT in plan.body which contains just the plan content from the comment.
+    # Extract objective from plan (Plan dataclass now exposes objective_issue directly)
     plan = ctx.plan_store.get_plan(repo.root, issue_number)
-    issue_body_raw = plan.metadata.get("issue_body") if plan.metadata else None
-    issue_body = issue_body_raw if isinstance(issue_body_raw, str) else plan.body
-    objective_issue = extract_plan_header_objective_issue(issue_body)
+    objective_issue = plan.objective_issue
 
     # Create worktree with plan content, using the branch name
     result = _create_worktree_with_plan_content(

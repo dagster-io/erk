@@ -18,6 +18,7 @@ from erk_shared.github.issues import GitHubIssues, IssueInfo
 from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
+    extract_plan_header_objective_issue,
 )
 from erk_shared.github.metadata.schemas import (
     CREATED_FROM_SESSION,
@@ -470,6 +471,9 @@ class GitHubPlanStore(PlanBackend):
         # Use provided plan_body or fall back to issue body
         body = plan_body if plan_body is not None else issue_info.body
 
+        # Extract objective_issue from plan-header metadata
+        objective_issue = extract_plan_header_objective_issue(issue_info.body)
+
         return Plan(
             plan_identifier=str(issue_info.number),
             title=issue_info.title,
@@ -481,4 +485,5 @@ class GitHubPlanStore(PlanBackend):
             created_at=issue_info.created_at.astimezone(UTC),
             updated_at=issue_info.updated_at.astimezone(UTC),
             metadata=metadata,
+            objective_issue=objective_issue,
         )

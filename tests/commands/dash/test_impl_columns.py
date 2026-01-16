@@ -43,6 +43,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 200},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -115,6 +116,7 @@ last_dispatched_node_id: 'WFR_short_flag'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 201},
+        objective_issue=None,
     )
 
     pr = PullRequestInfo(
@@ -186,6 +188,7 @@ last_remote_impl_at: '2024-11-21T12:00:00Z'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1},
+        objective_issue=None,
     )
 
     runner = CliRunner()

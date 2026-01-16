@@ -25,6 +25,7 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
     extract_plan_header_local_impl_at,
+    extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_at,
     extract_plan_header_worktree_name,
 )
@@ -593,6 +594,7 @@ def _issue_to_plan(issue: IssueInfo) -> Plan:
         created_at=issue.created_at,
         updated_at=issue.updated_at,
         metadata={"number": issue.number},
+        objective_issue=extract_plan_header_objective_issue(issue.body),
     )
 
 

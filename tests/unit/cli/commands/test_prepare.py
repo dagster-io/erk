@@ -52,6 +52,7 @@ def test_prepare_creates_branch_and_impl_folder() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"123": plan})
 
@@ -111,6 +112,7 @@ def test_prepare_with_issue_url() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"456": plan})
 
@@ -163,6 +165,7 @@ def test_prepare_with_no_slot_flag() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"100": plan})
 
@@ -242,6 +245,7 @@ def test_prepare_with_force_flag() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"200": plan})
 
@@ -306,6 +310,7 @@ def test_prepare_fails_without_erk_plan_label() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store, _ = create_plan_store_with_plans({"789": plan})
 
@@ -355,6 +360,7 @@ def test_prepare_behaves_same_as_br_create_for_plan() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store1, _ = create_plan_store_with_plans({"300": plan1})
 
@@ -394,6 +400,7 @@ def test_prepare_behaves_same_as_br_create_for_plan() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
+            objective_issue=None,
         )
         plan_store2, _ = create_plan_store_with_plans({"300": plan2})
 
