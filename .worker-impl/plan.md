@@ -7,6 +7,7 @@ Enhance `erk pr fix-conflicts-remote` to accept an optional PR number argument, 
 ## Current Behavior
 
 The command requires being on the branch with the PR:
+
 1. Gets current branch from git
 2. Looks up PR for that branch
 3. Triggers rebase workflow
@@ -14,6 +15,7 @@ The command requires being on the branch with the PR:
 ## Proposed Change
 
 Add optional `pr_number` positional argument:
+
 - If provided: Look up PR directly by number
 - If not provided: Use current behavior (current branch → PR lookup)
 
@@ -24,6 +26,7 @@ Add optional `pr_number` positional argument:
 **Changes:**
 
 1. Add optional argument:
+
 ```python
 @click.argument("pr_number", type=int, required=False)
 ```
@@ -35,6 +38,7 @@ Add optional `pr_number` positional argument:
 3. Extract branch name from `PRDetails.head_ref_name` instead of current branch
 
 **Updated flow:**
+
 ```python
 if pr_number is not None:
     # Direct PR lookup
@@ -75,6 +79,7 @@ Usage: erk pr fix-conflicts-remote [OPTIONS] [PR_NUMBER]
 ## Tests
 
 Add unit tests in `tests/unit/cli/commands/pr/` for:
+
 - PR number argument provided → uses `get_pr()` path
 - No argument → uses existing `get_pr_for_branch()` path
 - Error handling for PRNotFound with explicit PR number

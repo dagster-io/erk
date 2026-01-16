@@ -18,6 +18,7 @@ from erk_shared.output.output import user_output
 
 
 @click.command("fix-conflicts-remote")
+@click.argument("pr_number", type=int, required=False)
 @click.option(
     "--no-squash",
     is_flag=True,
@@ -32,6 +33,7 @@ from erk_shared.output.output import user_output
 @click.pass_obj
 def pr_fix_conflicts_remote(
     ctx: ErkContext,
+    pr_number: int | None,
     *,
     no_squash: bool,
     model_name: str | None,
@@ -40,32 +42,40 @@ def pr_fix_conflicts_remote(
 
     This command triggers a GitHub Actions workflow that:
 
+    \b
     1. Squashes all commits on the branch (unless --no-squash)
-
     2. Rebases onto the PR's base branch
-
     3. Uses Claude to resolve any merge conflicts
-
     4. Force pushes the rebased branch
 
     This is useful when your PR has merge conflicts and you want to resolve
     them remotely without switching to the branch locally.
 
+    If PR_NUMBER is provided, triggers rebase for that PR (you don't need
+    to be on the branch). Otherwise, uses the PR for the current branch.
+
     Examples:
 
-        # Basic usage - squash and rebase
+    \b
+        # Basic usage - squash and rebase current branch's PR
         erk pr fix-conflicts-remote
 
+    \b
+        # Trigger rebase for a specific PR (without checking out)
+        erk pr fix-conflicts-remote 123
+
+    \b
         # Rebase without squashing
         erk pr fix-conflicts-remote --no-squash
 
+    \b
         # Use a specific model
         erk pr fix-conflicts-remote --model claude-sonnet-4-5
 
     Requirements:
 
-    - Must be on a branch with an open PR
-
+    \b
+    - Either be on a branch with an open PR, or provide a PR number
     - GitHub Actions secrets must be configured (ERK_QUEUE_GH_PAT, Claude credentials)
     """
     # Validate preconditions
@@ -77,38 +87,51 @@ def pr_fix_conflicts_remote(
     assert not isinstance(ctx.repo, NoRepoSentinel)  # Type narrowing for ty
     repo: RepoContext = ctx.repo
 
-    # Check we're on a branch (not detached HEAD)
-    current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd),
-        "Not on a branch - checkout a branch before running this command",
-    )
-
-    # Check if PR exists and get status
+    # Get PR details - either from explicit PR number or current branch
     user_output("Checking PR status...")
-    pr = ctx.github.get_pr_for_branch(repo.root, current_branch)
-    Ensure.invariant(
-        not isinstance(pr, PRNotFound),
-        f"No pull request found for branch '{current_branch}'",
-    )
-    # Type narrowing after invariant check
-    assert not isinstance(pr, PRNotFound)
+    if pr_number is not None:
+        # Direct PR lookup by number
+        pr = ctx.github.get_pr(repo.root, pr_number)
+        Ensure.invariant(
+            not isinstance(pr, PRNotFound),
+            f"No pull request found with number #{pr_number}",
+        )
+        # Type narrowing after invariant check
+        assert not isinstance(pr, PRNotFound)
+        branch_name = pr.head_ref_name
+    else:
+        # Get PR from current branch (original behavior)
+        current_branch = Ensure.not_none(
+            ctx.git.get_current_branch(ctx.cwd),
+            "Not on a branch - checkout a branch or provide a PR number",
+        )
+
+        pr = ctx.github.get_pr_for_branch(repo.root, current_branch)
+        Ensure.invariant(
+            not isinstance(pr, PRNotFound),
+            f"No pull request found for branch '{current_branch}'",
+        )
+        # Type narrowing after invariant check
+        assert not isinstance(pr, PRNotFound)
+        branch_name = current_branch
+
     Ensure.invariant(
         pr.state == "OPEN",
         f"Cannot rebase {pr.state} PR - only OPEN PRs can be rebased",
     )
 
-    pr_number = pr.number
+    resolved_pr_number = pr.number
     base_branch = pr.base_ref_name
 
-    user_output(f"PR #{pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
+    user_output(f"PR #{resolved_pr_number}: {click.style(pr.title, fg='cyan')} ({pr.state})")
     user_output(f"Base branch: {base_branch}")
     user_output("")
 
     # Build workflow inputs
     inputs: dict[str, str] = {
-        "branch_name": current_branch,
+        "branch_name": branch_name,
         "base_branch": base_branch,
-        "pr_number": str(pr_number),
+        "pr_number": str(resolved_pr_number),
         "squash": "false" if no_squash else "true",
     }
     if model_name is not None:
