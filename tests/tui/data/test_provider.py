@@ -1,6 +1,6 @@
 """Tests for plan data provider."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
@@ -459,8 +459,8 @@ class TestCommentCountsDisplay:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             metadata={},
         )
         pr_linkages = {
@@ -538,8 +538,8 @@ class TestCommentCountsDisplay:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             metadata={},
         )
         pr_linkages = {
@@ -617,8 +617,8 @@ class TestCommentCountsDisplay:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
+            updated_at=datetime.now(UTC),
             metadata={},
         )
         pr_linkages: dict[int, list[PullRequestInfo]] = {}  # No linked PRs

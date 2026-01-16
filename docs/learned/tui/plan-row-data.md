@@ -121,15 +121,15 @@ is_available=lambda _: True
 
 Many pieces of data have both a raw value and a display value:
 
-| Raw Field                                    | Display Field              | Purpose                 |
-| -------------------------------------------- | -------------------------- | ----------------------- |
-| `issue_number`                               | (used directly in display) | Issue number            |
-| `pr_number`                                  | `pr_display`               | PR with state indicator |
-| `resolved_comment_count`/`total_comment_count` | `comments_display`       | Comment counts (X/Y)    |
-| `run_id`                                     | `run_id_display`           | Run ID formatted        |
-| `run_status`/`run_conclusion`                | `run_state_display`        | Human-readable state    |
-| `title`                                      | (is already display)       | Truncated title         |
-| `full_title`                                 | (is raw)                   | Full title for modals   |
+| Raw Field                                      | Display Field              | Purpose                 |
+| ---------------------------------------------- | -------------------------- | ----------------------- |
+| `issue_number`                                 | (used directly in display) | Issue number            |
+| `pr_number`                                    | `pr_display`               | PR with state indicator |
+| `resolved_comment_count`/`total_comment_count` | `comments_display`         | Comment counts (X/Y)    |
+| `run_id`                                       | `run_id_display`           | Run ID formatted        |
+| `run_status`/`run_conclusion`                  | `run_state_display`        | Human-readable state    |
+| `title`                                        | (is already display)       | Truncated title         |
+| `full_title`                                   | (is raw)                   | Full title for modals   |
 
 **Rule:** Use raw fields in predicates (for `None` checks), display fields for rendering.
 
