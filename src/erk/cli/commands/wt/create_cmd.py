@@ -6,6 +6,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.activation import ENABLE_ACTIVATION_SCRIPTS, write_worktree_activate_script
 from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context, worktree_path_for
 from erk.cli.ensure import Ensure
@@ -52,6 +53,13 @@ def run_post_worktree_setup(
     if env_content:
         env_path = worktree_path / ".env"
         env_path.write_text(env_content, encoding="utf-8")
+
+    # SPECULATIVE: activation-scripts - write activation script with post-create commands
+    if ENABLE_ACTIVATION_SCRIPTS:
+        write_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=config.post_create_commands or None,
+        )
 
     # Run post-create commands
     if config.post_create_commands:
@@ -854,6 +862,13 @@ def create_wt(
         name=name,
     )
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
+
+    # SPECULATIVE: activation-scripts - write activation script with post-create commands
+    if ENABLE_ACTIVATION_SCRIPTS:
+        write_worktree_activate_script(
+            worktree_path=wt_path,
+            post_create_commands=cfg.post_create_commands or None,
+        )
 
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if
