@@ -13,8 +13,8 @@ def test_format_plan_issue_body_simple_basic() -> None:
     assert "<!-- erk:metadata-block:plan-body -->" in result
     assert "<!-- /erk:metadata-block:plan-body -->" in result
 
-    # Verify collapsible details structure
-    assert "<details>" in result
+    # Verify collapsible details structure (open by default)
+    assert "<details open>" in result
     assert "<summary><strong>📋 Implementation Plan</strong></summary>" in result
     assert "</details>" in result
 
