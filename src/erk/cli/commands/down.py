@@ -120,7 +120,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 )
                 machine_output(str(result.path), nl=False)
             else:
-                user_output(f"Went to root repo: {root_path}")
+                user_output(f"Root repo: {root_path}")
 
                 # Print activation instructions for opt-in workflow
                 # SPECULATIVE: activation-scripts (objective #4954)
@@ -129,7 +129,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                         worktree_path=root_path,
                         post_create_commands=None,
                     )
-                    print_activation_instructions(script_path)
+                    print_activation_instructions(script_path, include_implement_hint=False)
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
             unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
@@ -180,7 +180,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                     worktree_path=target_wt_path,
                     post_create_commands=None,
                 )
-                print_activation_instructions(script_path)
+                print_activation_instructions(script_path, include_implement_hint=True)
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)

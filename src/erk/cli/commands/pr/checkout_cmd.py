@@ -5,14 +5,17 @@ This command fetches PR code and creates a worktree for local review/testing.
 
 import click
 
-from erk.cli.activation import ENABLE_ACTIVATION_SCRIPTS, ensure_worktree_activate_script
+from erk.cli.activation import (
+    ENABLE_ACTIVATION_SCRIPTS,
+    ensure_worktree_activate_script,
+    print_activation_instructions,
+)
 from erk.cli.alias import alias
 from erk.cli.commands.checkout_helpers import (
     ensure_branch_has_worktree,
     navigate_and_display_checkout,
 )
 from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
-from erk.cli.commands.wt.create_cmd import print_activation_instructions
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
@@ -96,7 +99,7 @@ def pr_checkout(
                 worktree_path=existing_worktree,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path)
+            print_activation_instructions(script_path, include_implement_hint=True)
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
@@ -170,4 +173,4 @@ def pr_checkout(
             worktree_path=worktree_path,
             post_create_commands=None,
         )
-        print_activation_instructions(script_path)
+        print_activation_instructions(script_path, include_implement_hint=True)

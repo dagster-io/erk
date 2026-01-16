@@ -115,13 +115,10 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     )
 
     if should_output:
-        user_output(f"Went to worktree {styled_wt} [{styled_branch}]")
-
-        # Print activation instructions for opt-in workflow
-        # SPECULATIVE: activation-scripts (objective #4954)
+        user_output(f"Worktree {styled_wt} [{styled_branch}]")
         if ENABLE_ACTIVATION_SCRIPTS:
             activation_script_path = ensure_worktree_activate_script(
                 worktree_path=worktree_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(activation_script_path)
+            print_activation_instructions(activation_script_path, include_implement_hint=True)

@@ -231,7 +231,7 @@ def _perform_checkout(
                 worktree_path=target_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(activation_script_path)
+            print_activation_instructions(activation_script_path, include_implement_hint=True)
 
 
 @alias("co")
