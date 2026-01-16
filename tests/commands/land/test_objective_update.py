@@ -19,34 +19,18 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.fakes.claude_executor import FakeClaudeExecutor
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
     """Create a plan issue with objective_issue in plan-header metadata."""
-    # Create the plan-header body with objective_issue field
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at=datetime.now(UTC).isoformat(),
         created_by="testuser",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        source_repo=None,
         objective_issue=objective_number,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
     )
     return IssueInfo(
         number=42,

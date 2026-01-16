@@ -823,29 +823,10 @@ def test_add_comment_issue_not_found() -> None:
 
 def test_update_metadata_worktree_name() -> None:
     """Test updating worktree_name metadata field."""
-    from erk_shared.github.metadata.plan_header import format_plan_header_body
+    from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
     # Create issue with valid plan-header block
-    metadata_body = format_plan_header_body(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="testuser",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
-    )
+    metadata_body = format_plan_header_body_for_test()
     issue = create_test_issue(number=42, title="Plan Issue", body=metadata_body)
     fake_github = FakeGitHubIssues(issues={42: issue})
     store = GitHubPlanStore(fake_github)
@@ -865,29 +846,10 @@ def test_update_metadata_worktree_name() -> None:
 
 def test_update_metadata_whitelist_filter() -> None:
     """Test that only allowed fields are updated."""
-    from erk_shared.github.metadata.plan_header import format_plan_header_body
+    from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
     # Create issue with valid plan-header block
-    metadata_body = format_plan_header_body(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="testuser",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
-    )
+    metadata_body = format_plan_header_body_for_test(created_by="testuser")
     issue = create_test_issue(number=42, title="Plan Issue", body=metadata_body)
     fake_github = FakeGitHubIssues(issues={42: issue})
     store = GitHubPlanStore(fake_github)
