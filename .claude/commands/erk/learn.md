@@ -77,6 +77,25 @@ gh pr diff <pr-number>
 
 **Save this inventory** - you will reference it in Step 4 to ensure everything new gets documented.
 
+#### Fetch PR Comments
+
+If a PR was found for this plan, fetch review comments for analysis:
+
+```bash
+# Get inline review comments (code-level feedback)
+erk exec get-pr-review-comments --pr <pr-number> --include-resolved
+
+# Get discussion comments (main PR thread)
+erk exec get-pr-discussion-comments --pr <pr-number>
+```
+
+**Save these for analysis** - PR comments often reveal:
+
+- Edge cases reviewers identified
+- Clarifications about non-obvious behavior
+- Alternative approaches discussed
+- False positives or misunderstandings to prevent
+
 ### Step 3: Gather and Analyze Sessions
 
 #### Check Existing Documentation
@@ -104,12 +123,24 @@ erk exec preprocess-session <impl-session-path> --max-tokens 15000 --stdout \
     > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/impl-session-<N>.xml
 ```
 
-#### Upload to Gist
+#### Save PR Comments
 
-Upload preprocessed session files to a secret gist:
+If PR comments were fetched in Step 2, save them for the gist:
 
 ```bash
-gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*.xml
+erk exec get-pr-review-comments --pr <pr-number> --include-resolved \
+    > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/pr-review-comments.json
+
+erk exec get-pr-discussion-comments --pr <pr-number> \
+    > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/pr-discussion-comments.json
+```
+
+#### Upload to Gist
+
+Upload preprocessed session files and PR comments to a secret gist:
+
+```bash
+gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*
 ```
 
 Display the gist URL to the user and save it for the plan issue.
@@ -155,6 +186,35 @@ What documentation would have made the session faster?
 
 - **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere")
 - **Conventional doc**: Module-specific or localized patterns
+
+#### PR Comment Analysis
+
+If PR comments were fetched in Step 2, mine them for documentation opportunities:
+
+**Review Comments (Inline)**
+
+| Thread | Path | Key Insight | Documentation Opportunity |
+| ------ | ---- | ----------- | ------------------------- |
+| ...    | ...  | ...         | ...                       |
+
+Look for:
+
+- **False positives**: Reviewer misunderstood something → document to prevent future confusion
+- **Clarification requests**: "Why does this..." → document the reasoning
+- **Suggested alternatives**: Discussed but rejected → document the decision
+- **Edge case questions**: "What happens if..." → document the behavior
+
+**Discussion Comments (Main Thread)**
+
+| Author | Key Point | Documentation Opportunity |
+| ------ | --------- | ------------------------- |
+| ...    | ...       | ...                       |
+
+Look for:
+
+- Design discussions that led to choices
+- Trade-off conversations
+- Implementation details explained in prose
 
 #### Teaching Gaps (MANDATORY)
 
@@ -252,6 +312,10 @@ cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md << 'EOF'
 ## Raw Materials
 
 <gist-url>
+
+## PR Review Insights
+
+<If applicable, insights derived from PR #X comments>
 
 ## Documentation Items
 
