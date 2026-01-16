@@ -104,7 +104,15 @@ def checkout_plan(
     # Case 1: Single local branch found
     if len(local_branches) == 1:
         branch_name = local_branches[0]
-        _checkout_branch(ctx, repo, branch_name, issue_number, no_slot, force, script)
+        _checkout_branch(
+            ctx,
+            repo,
+            branch_name=branch_name,
+            issue_number=issue_number,
+            no_slot=no_slot,
+            force=force,
+            script=script,
+        )
         return
 
     # Case 2: Multiple local branches found - display table and exit
@@ -130,7 +138,15 @@ def checkout_plan(
     if len(open_prs) == 1:
         # Single PR - fetch and checkout
         pr = open_prs[0]
-        _checkout_pr(ctx, repo, pr.number, issue_number, no_slot, force, script)
+        _checkout_pr(
+            ctx,
+            repo,
+            pr_number=pr.number,
+            issue_number=issue_number,
+            no_slot=no_slot,
+            force=force,
+            script=script,
+        )
         return
 
     # Multiple open PRs - display table and exit
@@ -141,6 +157,7 @@ def checkout_plan(
 def _checkout_branch(
     ctx: ErkContext,
     repo: RepoContext,
+    *,
     branch_name: str,
     issue_number: int,
     no_slot: bool,
@@ -217,6 +234,7 @@ def _checkout_branch(
 def _checkout_pr(
     ctx: ErkContext,
     repo: RepoContext,
+    *,
     pr_number: int,
     issue_number: int,
     no_slot: bool,
