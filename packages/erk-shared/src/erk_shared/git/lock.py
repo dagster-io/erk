@@ -9,6 +9,9 @@ from pathlib import Path
 
 from erk_shared.gateway.time.abc import Time
 
+# Feature flag: set to False to disable index lock waiting
+INDEX_LOCK_WAITING_ENABLED = True
+
 
 def get_git_dir(repo_root: Path) -> Path:
     """Get actual .git directory, following worktree indirection.
@@ -64,7 +67,11 @@ def wait_for_index_lock(
 
     Returns:
         True if lock was released (or never existed), False if timed out.
+        Always returns True if INDEX_LOCK_WAITING_ENABLED is False.
     """
+    if not INDEX_LOCK_WAITING_ENABLED:
+        return True
+
     git_dir = get_git_dir(repo_root)
     lock_path = git_dir / "index.lock"
     elapsed = 0.0
