@@ -134,7 +134,8 @@ jobs:
       (needs.format.result == 'failure' ||
        needs.lint.result == 'failure' ||
        needs.prettier.result == 'failure' ||
-       needs.docs-check.result == 'failure')
+       needs.docs-check.result == 'failure' ||
+       needs.ty.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -289,6 +290,11 @@ jobs:
             errors+="$(make docs-sync-check 2>&1 || true)\n\n"
           fi
 
+          if [ "${{ needs.ty.result }}" = "failure" ]; then
+            errors+="=== TY TYPE ERRORS ===\n"
+            errors+="$(uv run ty check 2>&1 || true)\n\n"
+          fi
+
           # Save to file to avoid escaping issues
           echo -e "$errors" > /tmp/errors.txt
 
@@ -329,7 +335,7 @@ jobs:
             --output-format stream-json \
             --dangerously-skip-permissions \
             --verbose \
-            --allowedTools 'Read(*),Bash(uv run ruff:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
+            --allowedTools 'Read(*),Edit(*),Bash(uv run ruff:*),Bash(uv run ty:*),Bash(prettier:*),Bash(make docs-sync:*),Bash(git:*)'
 
       - name: Run full CI verification
         if: steps.check.outputs.skip != 'true' && steps.pr.outputs.skip != 'true' && steps.discover-pr.outputs.has_pr == 'true'

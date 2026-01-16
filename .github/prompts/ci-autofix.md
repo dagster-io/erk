@@ -8,7 +8,7 @@ Fix the style/formatting errors. You have full context of all CI job results.
 - lint: {{ lint }}
 - prettier: {{ prettier }}
 - docs-check: {{ docs-check }}
-- ty: {{ ty }} (NOT auto-fixable)
+- ty: {{ ty }}
 - unit-tests: {{ unit-tests }} (NOT auto-fixable)
 - integration-tests: {{ integration-tests }} (NOT auto-fixable)
 
@@ -22,7 +22,8 @@ Fix the style/formatting errors. You have full context of all CI job results.
 - For ruff lint errors: run `uv run ruff check --fix <file>` for auto-fixable errors
 - For prettier errors: run `prettier --write <file>` for each markdown file
 - For docs errors: run `make docs-sync` if generated docs are out of sync
-- DO NOT attempt to fix ty or test failures - those require human intervention
+- For ty type errors: read the files with errors, understand the type issue, and edit the files to fix the types. Run `uv run ty check` after fixing to verify.
+- DO NOT attempt to fix test failures - those require human intervention
 - Commit with a structured message:
   - Subject line: Brief summary of fixes (e.g., "style: fix ruff format in 2 files")
   - Blank line
