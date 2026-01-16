@@ -7,6 +7,7 @@ Refactor the learn workflow to support multiple session sources through a unifie
 ## Goal
 
 After this phase:
+
 1. Plan-header has fields to track remote implementation (`remote_impl_run_id`, `remote_impl_session_id`)
 2. `SessionSource` ABC exists with `LocalSessionSource` implementation
 3. `get-learn-sessions` returns session source metadata alongside existing fields
@@ -17,6 +18,7 @@ After this phase:
 ### Step 1.1: Add Plan Header Fields
 
 **Files to modify:**
+
 - `packages/erk-shared/src/erk_shared/github/metadata/schemas.py`
 - `packages/erk-shared/src/erk_shared/github/metadata/plan_header.py`
 - `packages/erk-shared/tests/unit/github/test_metadata_schemas.py`
@@ -25,6 +27,7 @@ After this phase:
 **Changes:**
 
 1. Add constants to `schemas.py`:
+
    ```python
    LAST_REMOTE_IMPL_RUN_ID: Literal["last_remote_impl_run_id"] = "last_remote_impl_run_id"
    LAST_REMOTE_IMPL_SESSION_ID: Literal["last_remote_impl_session_id"] = "last_remote_impl_session_id"
@@ -46,6 +49,7 @@ After this phase:
 ### Step 1.2: Create SessionSource Abstraction
 
 **New files:**
+
 ```
 packages/erk-shared/src/erk_shared/sessions/source/
 ├── __init__.py       # Re-exports
@@ -55,6 +59,7 @@ packages/erk-shared/src/erk_shared/sessions/source/
 ```
 
 **abc.py design:**
+
 ```python
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -97,6 +102,7 @@ class SessionSource(ABC):
 ```
 
 **local.py:**
+
 ```python
 @dataclass(frozen=True)
 class LocalSessionSource(SessionSource):
@@ -107,6 +113,7 @@ class LocalSessionSource(SessionSource):
 ```
 
 **fake.py:**
+
 ```python
 @dataclass(frozen=True)
 class FakeSessionSource(SessionSource):
@@ -117,16 +124,19 @@ class FakeSessionSource(SessionSource):
 ```
 
 **Tests:**
+
 - `packages/erk-shared/tests/unit/sessions/source/test_local.py`
 - `packages/erk-shared/tests/unit/sessions/source/test_fake.py`
 
 ### Step 1.3: Update get-learn-sessions Output
 
 **Files to modify:**
+
 - `src/erk/cli/commands/exec/scripts/get_learn_sessions.py`
 - `tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py`
 
 **Changes to output JSON (backwards compatible):**
+
 ```json
 {
   "success": true,
@@ -148,6 +158,7 @@ class FakeSessionSource(SessionSource):
 ```
 
 **Implementation:**
+
 1. Add `session_sources` field to `GetLearnSessionsResult`
 2. Add `remote_impl_run_id` and `remote_impl_session_id` fields
 3. Build `LocalSessionSource` objects in `_discover_sessions()`
@@ -156,9 +167,11 @@ class FakeSessionSource(SessionSource):
 ### Step 1.4: Update Learn Skill Documentation
 
 **File to modify:**
+
 - `.claude/commands/erk/learn.md`
 
 **Minimal changes for Phase 1:**
+
 1. Document new `session_sources` field in Step 1
 2. Note `remote_impl_run_id`/`remote_impl_session_id` for Phase 2
 3. Continue using `session_paths` directly (existing behavior)

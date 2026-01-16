@@ -42,8 +42,13 @@ Parse the JSON output to get:
 - `planning_session_id`: Session that created the plan
 - `implementation_session_ids`: Sessions that executed the plan
 - `local_session_ids`: Fallback sessions found locally
+- `last_remote_impl_at`: Timestamp if implemented via GitHub Actions (remote)
+- `last_remote_impl_run_id`: GitHub Actions run ID for remote implementation
+- `last_remote_impl_session_id`: Claude Code session ID from remote implementation
 
 If no sessions are found, inform the user and stop.
+
+**Note on remote implementations:** If `last_remote_impl_at` is set but `session_paths` is empty, the plan was implemented remotely (via GitHub Actions). In Phase 1, remote sessions are not yet downloadable - inform the user that the plan was implemented remotely but session logs are not available locally.
 
 ### Step 2: Analyze Implementation
 
