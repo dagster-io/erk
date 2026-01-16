@@ -10,7 +10,10 @@ import re
 import subprocess
 from pathlib import Path
 
+from erk_shared.gateway.time.abc import Time
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.lock import wait_for_index_lock
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -19,6 +22,14 @@ class RealGit(Git):
 
     All git operations execute actual git commands via subprocess.
     """
+
+    def __init__(self, time: Time | None = None) -> None:
+        """Initialize RealGit with optional Time provider.
+
+        Args:
+            time: Time provider for lock waiting. Defaults to RealTime().
+        """
+        self._time = time if time is not None else RealTime()
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository."""
@@ -326,6 +337,9 @@ class RealGit(Git):
 
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         """Checkout a branch in the given directory."""
+        # Wait for index lock if another git operation is in progress
+        wait_for_index_lock(cwd, self._time)
+
         run_subprocess_with_context(
             cmd=["git", "checkout", branch],
             operation_context=f"checkout branch '{branch}'",
@@ -608,6 +622,9 @@ class RealGit(Git):
 
     def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -> None:
         """Pull a specific branch from a remote."""
+        # Wait for index lock if another git operation is in progress
+        wait_for_index_lock(repo_root, self._time)
+
         cmd = ["git", "pull"]
         if ff_only:
             cmd.append("--ff-only")
@@ -654,6 +671,9 @@ class RealGit(Git):
 
     def stage_files(self, cwd: Path, paths: list[str]) -> None:
         """Stage specific files for commit."""
+        # Wait for index lock if another git operation is in progress
+        wait_for_index_lock(cwd, self._time)
+
         run_subprocess_with_context(
             cmd=["git", "add", *paths],
             operation_context=f"stage files: {', '.join(paths)}",
@@ -662,6 +682,9 @@ class RealGit(Git):
 
     def commit(self, cwd: Path, message: str) -> None:
         """Create a commit with staged changes."""
+        # Wait for index lock if another git operation is in progress
+        wait_for_index_lock(cwd, self._time)
+
         run_subprocess_with_context(
             cmd=["git", "commit", "--allow-empty", "-m", message],
             operation_context="create commit",
