@@ -1,6 +1,5 @@
 """Data provider for TUI plan table."""
 
-import logging
 import subprocess
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -32,8 +31,6 @@ from erk_shared.github.metadata.plan_header import (
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
-
-logger = logging.getLogger(__name__)
 
 
 class PlanDataProvider(ABC):
@@ -495,9 +492,10 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_display = "-"
         checks_display = "-"
 
-        # Unresolved comments - "-" when no PR
-        unresolved_comment_count = 0
-        unresolved_comments_display = "-"
+        # Comment counts - "-" when no PR
+        resolved_comment_count = 0
+        total_comment_count = 0
+        comments_display = "-"
 
         if issue_number in pr_linkages:
             issue_prs = pr_linkages[issue_number]
@@ -516,20 +514,12 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_display = f"#{selected_pr.number} {emoji}"
                 checks_display = format_checks_cell(selected_pr)
 
-                # Fetch unresolved review comments
-                try:
-                    threads = self._ctx.github.get_pr_review_threads(
-                        self._location.root, selected_pr.number, include_resolved=False
-                    )
-                    unresolved_comment_count = len(threads)
-                    unresolved_comments_display = str(unresolved_comment_count)
-                except Exception as e:
-                    # Rate limit or API errors - show "0" with logged warning
-                    logger.warning(
-                        "Failed to fetch PR review threads for PR #%s: %s", selected_pr.number, e
-                    )
-                    unresolved_comment_count = 0
-                    unresolved_comments_display = "0"
+                # Get review thread counts from batched PR data
+                if selected_pr.review_thread_counts is not None:
+                    resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
+                    comments_display = f"{resolved_comment_count}/{total_comment_count}"
+                else:
+                    comments_display = "0/0"
 
         # Workflow run info
         run_id: str | None = None
@@ -583,8 +573,9 @@ class RealPlanDataProvider(PlanDataProvider):
             run_status=run_status,
             run_conclusion=run_conclusion,
             log_entries=log_entries,
-            unresolved_comment_count=unresolved_comment_count,
-            unresolved_comments_display=unresolved_comments_display,
+            resolved_comment_count=resolved_comment_count,
+            total_comment_count=total_comment_count,
+            comments_display=comments_display,
         )
 
 

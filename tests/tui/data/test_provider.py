@@ -1,9 +1,7 @@
 """Tests for plan data provider."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-
-import pytest
 
 from erk.core.repo_discovery import RepoContext
 from erk.tui.data.provider import RealPlanDataProvider
@@ -16,7 +14,6 @@ from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import (
     GitHubRepoId,
     GitHubRepoLocation,
-    PRReviewThread,
     PullRequestInfo,
 )
 from erk_shared.plan_store.types import Plan, PlanState
@@ -409,11 +406,15 @@ class TestClosePlan:
         assert result is None
 
 
-class TestUnresolvedCommentsFetching:
-    """Tests for unresolved review comments fetching in _build_row_data."""
+class TestCommentCountsDisplay:
+    """Tests for review comment counts display in _build_row_data.
 
-    def test_unresolved_comments_success_returns_count(self, tmp_path: Path) -> None:
-        """When get_pr_review_threads succeeds, display the actual count."""
+    Comment counts are now fetched via the batched PR linkages GraphQL query
+    and stored in PullRequestInfo.review_thread_counts as (resolved, total).
+    """
+
+    def test_comment_counts_from_pr_data(self, tmp_path: Path) -> None:
+        """When PR has review_thread_counts, display as resolved/total."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -428,30 +429,7 @@ class TestUnresolvedCommentsFetching:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        # Configure FakeGitHub with 2 review threads for PR #456
-        github = FakeGitHub(
-            pr_issue_linkages={},
-            pr_review_threads={
-                456: [
-                    PRReviewThread(
-                        id="thread1",
-                        path="file.py",
-                        line=10,
-                        is_resolved=False,
-                        is_outdated=False,
-                        comments=[],
-                    ),
-                    PRReviewThread(
-                        id="thread2",
-                        path="file2.py",
-                        line=20,
-                        is_resolved=False,
-                        is_outdated=False,
-                        comments=[],
-                    ),
-                ],
-            },
-        )
+        github = FakeGitHub(pr_issue_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -472,7 +450,7 @@ class TestUnresolvedCommentsFetching:
             http_client=FakeHttpClient(),
         )
 
-        # Create test plan and PR linkage
+        # Create test plan and PR linkage with comment counts
         plan = Plan(
             plan_identifier="123",
             title="Test Plan",
@@ -481,8 +459,8 @@ class TestUnresolvedCommentsFetching:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(datetime.UTC),
-            updated_at=datetime.now(datetime.UTC),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             metadata={},
         )
         pr_linkages = {
@@ -496,6 +474,7 @@ class TestUnresolvedCommentsFetching:
                     checks_passing=True,
                     owner="test",
                     repo="repo",
+                    review_thread_counts=(3, 5),  # 3 resolved out of 5 total
                 ),
             ],
         }
@@ -509,15 +488,12 @@ class TestUnresolvedCommentsFetching:
             use_graphite=False,
         )
 
-        assert row.unresolved_comment_count == 2
-        assert row.unresolved_comments_display == "2"
+        assert row.resolved_comment_count == 3
+        assert row.total_comment_count == 5
+        assert row.comments_display == "3/5"
 
-    def test_unresolved_comments_exception_falls_back_to_zero(
-        self, tmp_path: Path, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """When get_pr_review_threads raises exception, fallback to 0 and log warning."""
-        import logging
-
+    def test_comment_counts_none_shows_zero(self, tmp_path: Path) -> None:
+        """When PR has no review_thread_counts (None), display 0/0."""
         repo_root = tmp_path / "repo"
         repo_root.mkdir()
         erk_dir = repo_root / ".erk"
@@ -532,11 +508,7 @@ class TestUnresolvedCommentsFetching:
             git_common_dirs={repo_root: repo_root / ".git"},
         )
 
-        # Configure FakeGitHub to raise RuntimeError (simulating rate limit)
-        github = FakeGitHub(
-            pr_issue_linkages={},
-            review_threads_rate_limited=True,
-        )
+        github = FakeGitHub(pr_issue_linkages={})
 
         ctx = create_test_context(
             git=git,
@@ -557,7 +529,7 @@ class TestUnresolvedCommentsFetching:
             http_client=FakeHttpClient(),
         )
 
-        # Create test plan and PR linkage
+        # Create test plan and PR linkage without comment counts
         plan = Plan(
             plan_identifier="123",
             title="Test Plan",
@@ -566,8 +538,8 @@ class TestUnresolvedCommentsFetching:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(datetime.UTC),
-            updated_at=datetime.now(datetime.UTC),
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
             metadata={},
         )
         pr_linkages = {
@@ -581,25 +553,85 @@ class TestUnresolvedCommentsFetching:
                     checks_passing=True,
                     owner="test",
                     repo="repo",
+                    # review_thread_counts defaults to None
                 ),
             ],
         }
 
-        with caplog.at_level(logging.WARNING, logger="erk.tui.data.provider"):
-            row = provider._build_row_data(
-                plan=plan,
-                issue_number=123,
-                pr_linkages=pr_linkages,
-                workflow_run=None,
-                worktree_by_issue={},
-                use_graphite=False,
-            )
+        row = provider._build_row_data(
+            plan=plan,
+            issue_number=123,
+            pr_linkages=pr_linkages,
+            workflow_run=None,
+            worktree_by_issue={},
+            use_graphite=False,
+        )
 
-        # Verify fallback values
-        assert row.unresolved_comment_count == 0
-        assert row.unresolved_comments_display == "0"
+        assert row.resolved_comment_count == 0
+        assert row.total_comment_count == 0
+        assert row.comments_display == "0/0"
 
-        # Verify warning was logged
-        assert len(caplog.records) == 1
-        assert "Failed to fetch PR review threads for PR #456" in caplog.records[0].message
-        assert "GraphQL API RATE_LIMIT exceeded" in caplog.records[0].message
+    def test_no_pr_shows_dash(self, tmp_path: Path) -> None:
+        """When plan has no linked PR, display '-' for comments."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        github = FakeGitHub(pr_issue_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        # Create test plan without PR linkage
+        plan = Plan(
+            plan_identifier="123",
+            title="Test Plan",
+            body="",
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc),
+            metadata={},
+        )
+        pr_linkages: dict[int, list[PullRequestInfo]] = {}  # No linked PRs
+
+        row = provider._build_row_data(
+            plan=plan,
+            issue_number=123,
+            pr_linkages=pr_linkages,
+            workflow_run=None,
+            worktree_by_issue={},
+            use_graphite=False,
+        )
+
+        assert row.resolved_comment_count == 0
+        assert row.total_comment_count == 0
+        assert row.comments_display == "-"

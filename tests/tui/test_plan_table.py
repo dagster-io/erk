@@ -141,7 +141,7 @@ class TestPlanDataTableRowConversion:
         assert len(values) == 7
         assert values[2] == "#456"  # pr display
         assert values[3] == "-"  # checks
-        assert values[4] == "0"  # comments (default for PR with no unresolved)
+        assert values[4] == "0/0"  # comments (default for PR with no counts)
 
     def test_row_to_values_with_pr_link_indicator(self) -> None:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""

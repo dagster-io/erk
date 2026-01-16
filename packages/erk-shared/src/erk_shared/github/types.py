@@ -141,6 +141,8 @@ class PullRequestInfo:
     will_close_target: bool = False
     # Head branch name (the source branch) - optional, populated by some API calls
     head_branch: str | None = None
+    # Review thread counts: (resolved_count, total_count) or None if not fetched
+    review_thread_counts: tuple[int, int] | None = None
 
 
 class _NotAvailable:

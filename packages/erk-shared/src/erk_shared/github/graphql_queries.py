@@ -142,6 +142,10 @@ GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
                     }
                   }
                   mergeable
+                  reviewThreads(first: 100) {
+                    totalCount
+                    nodes { isResolved }
+                  }
                 }
               }
             }

@@ -183,7 +183,7 @@ class PlanDataTable(DataTable):
             if row.pr_url:
                 pr_display = Text(pr_display, style="cyan underline")
             checks_display = _strip_rich_markup(row.checks_display)
-            comments_display = _strip_rich_markup(row.unresolved_comments_display)
+            comments_display = _strip_rich_markup(row.comments_display)
             values.extend([pr_display, checks_display, comments_display])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
