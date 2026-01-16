@@ -16,8 +16,8 @@ from tests.test_utils.env_helpers import erk_isolated_fs_env
 def _make_pr_info(
     number: int,
     branch: str,
-    state: str = "OPEN",
-    title: str | None = None,
+    state: str,
+    title: str | None,
 ) -> PullRequestInfo:
     """Create a PullRequestInfo for testing."""
     return PullRequestInfo(
@@ -34,10 +34,11 @@ def _make_pr_info(
 
 def _make_pr_details(
     number: int,
+    *,
     head_ref_name: str,
-    state: str = "OPEN",
-    base_ref_name: str = "main",
-    title: str | None = None,
+    state: str,
+    base_ref_name: str,
+    title: str | None,
 ) -> PRDetails:
     """Create a PRDetails for testing."""
     return PRDetails(
@@ -64,10 +65,12 @@ def test_fix_conflicts_remote_triggers_workflow(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # Setup PR info
-        pr_info = _make_pr_info(123, "feature-branch", title="Add feature")
+        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
         pr_details = _make_pr_details(
             number=123,
             head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
             title="Add feature",
         )
         github = FakeGitHub(
@@ -108,10 +111,12 @@ def test_fix_conflicts_remote_with_no_squash(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(456, "bugfix-branch", title="Fix bug")
+        pr_info = _make_pr_info(456, "bugfix-branch", "OPEN", "Fix bug")
         pr_details = _make_pr_details(
             number=456,
             head_ref_name="bugfix-branch",
+            state="OPEN",
+            base_ref_name="main",
             title="Fix bug",
         )
         github = FakeGitHub(
@@ -142,10 +147,12 @@ def test_fix_conflicts_remote_with_model(tmp_path: Path) -> None:
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        pr_info = _make_pr_info(789, "feature-branch", title="Feature")
+        pr_info = _make_pr_info(789, "feature-branch", "OPEN", "Feature")
         pr_details = _make_pr_details(
             number=789,
             head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
             title="Feature",
         )
         github = FakeGitHub(
@@ -221,11 +228,12 @@ def test_fix_conflicts_remote_fails_when_pr_is_closed(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR is closed
-        pr_info = _make_pr_info(111, "closed-branch", state="CLOSED", title="Closed PR")
+        pr_info = _make_pr_info(111, "closed-branch", "CLOSED", "Closed PR")
         pr_details = _make_pr_details(
             number=111,
             head_ref_name="closed-branch",
             state="CLOSED",
+            base_ref_name="main",
             title="Closed PR",
         )
         github = FakeGitHub(
@@ -253,11 +261,12 @@ def test_fix_conflicts_remote_fails_when_pr_is_merged(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR is merged
-        pr_info = _make_pr_info(222, "merged-branch", state="MERGED", title="Merged PR")
+        pr_info = _make_pr_info(222, "merged-branch", "MERGED", "Merged PR")
         pr_details = _make_pr_details(
             number=222,
             head_ref_name="merged-branch",
             state="MERGED",
+            base_ref_name="main",
             title="Merged PR",
         )
         github = FakeGitHub(
@@ -285,10 +294,11 @@ def test_fix_conflicts_remote_uses_correct_base_branch(tmp_path: Path) -> None:
         env.setup_repo_structure()
 
         # PR targets release branch, not main
-        pr_info = _make_pr_info(333, "hotfix-branch", title="Hotfix")
+        pr_info = _make_pr_info(333, "hotfix-branch", "OPEN", "Hotfix")
         pr_details = _make_pr_details(
             number=333,
             head_ref_name="hotfix-branch",
+            state="OPEN",
             base_ref_name="release/v1.0",  # Non-standard base
             title="Hotfix",
         )

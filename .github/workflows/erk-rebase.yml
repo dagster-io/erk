@@ -101,6 +101,7 @@ jobs:
         if: ${{ inputs.squash }}
         env:
           BASE_BRANCH: ${{ inputs.base_branch }}
+          PR_NUMBER: ${{ inputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
         run: |
           # Fetch the base branch to use as reference
@@ -115,7 +116,7 @@ jobs:
 
           if [ "$COMMIT_COUNT" -gt 1 ]; then
             # Get PR title for commit message
-            PR_TITLE=$(gh pr view "${{ inputs.pr_number }}" --json title -q '.title')
+            PR_TITLE=$(gh pr view "$PR_NUMBER" --json title -q '.title')
 
             # Soft reset to merge base (keeps changes staged)
             git reset --soft "$MERGE_BASE"
@@ -133,11 +134,14 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
+          TARGET_BRANCH: ${{ inputs.base_branch }}
+          BRANCH_NAME: ${{ inputs.branch_name }}
+          MODEL_NAME: ${{ inputs.model_name }}
         run: |
           erk exec rebase-with-conflict-resolution \
-            --target-branch "${{ inputs.base_branch }}" \
-            --branch-name "${{ inputs.branch_name }}" \
-            --model "${{ inputs.model_name }}"
+            --target-branch "$TARGET_BRANCH" \
+            --branch-name "$BRANCH_NAME" \
+            --model "$MODEL_NAME"
 
       - name: Post status comment to PR
         if: always()
@@ -145,8 +149,9 @@ jobs:
           PR_NUMBER: ${{ inputs.pr_number }}
           GH_TOKEN: ${{ github.token }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          JOB_STATUS: ${{ job.status }}
         run: |
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "$JOB_STATUS" = "success" ]; then
             BODY="✅ Remote rebase completed successfully.\n\n[View workflow run]($RUN_URL)"
           else
             BODY="❌ Remote rebase failed.\n\n[View workflow run]($RUN_URL)"
