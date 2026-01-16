@@ -5,6 +5,8 @@ read_when:
   - "handling rebase/restack edge cases"
   - "writing conflict detection logic"
   - "troubleshooting detached HEAD states"
+  - "handling concurrent worktree operations"
+  - "understanding worktree lock files"
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -91,6 +93,66 @@ is_detached = symbolic_result.returncode != 0
 ```
 
 `git rev-parse --abbrev-ref HEAD` returns "HEAD" when detached, but using `symbolic-ref` is more explicit.
+
+## Git Index Lock and Worktree Concurrency
+
+**Background**: Git's index and `index.lock` are **per-worktree**, not repository-wide. Each worktree has its own index stored in its admin directory (e.g., `.git/worktrees/<id>/index`).
+
+**What IS shared across worktrees:**
+
+- Objects (the object database)
+- Refs (branch pointers, tags)
+- Ref lockfiles (e.g., when updating the same branch from multiple worktrees)
+
+**What is NOT shared:**
+
+- Index and index.lock (each worktree has its own)
+- HEAD (each worktree tracks its own checked-out branch)
+- Other per-worktree files
+
+**Gitfile Indirection**: Linked worktrees use gitfile indirection (not sparse checkout):
+
+- Each worktree has `.git` as a **file** (not a directory)
+- The file contains: `gitdir: /main/repo/.git/worktrees/<name>`
+- The worktree's admin directory contains `index`, `HEAD`, and a `commondir` file pointing to the shared repo
+
+**Robust Lock File Resolution**:
+
+Use `git rev-parse --git-path` to let Git resolve paths correctly for any layout:
+
+```python
+import subprocess
+from pathlib import Path
+
+def git_path(repo_root: Path, rel: str) -> Path:
+    """Let Git resolve the correct path for this worktree."""
+    out = subprocess.check_output(
+        ["git", "-C", str(repo_root), "rev-parse", "--git-path", rel],
+        text=True,
+    ).strip()
+    return Path(out)
+
+def wait_for_index_lock(repo_root: Path, time: Time, *, max_wait_seconds: float = 5.0) -> bool:
+    """Wait for index.lock to be released."""
+    lock_file = git_path(repo_root, "index.lock")
+    elapsed = 0.0
+    while lock_file.exists() and elapsed < max_wait_seconds:
+        time.sleep(0.5)
+        elapsed += 0.5
+    return not lock_file.exists()
+```
+
+This handles all cases:
+
+- Normal repos (`.git` directory)
+- Linked worktrees (`.git` file → per-worktree admin dir)
+- Uncommon layouts (`$GIT_DIR`, `$GIT_COMMON_DIR`)
+
+**Anti-Pattern**: Don't manually parse `.git` files and compute paths with `parent.parent`. The worktree admin directory structure can vary, and Git uses `commondir` files for indirection.
+
+**When to Use**: Apply lock-waiting to operations that modify the index (`checkout`, `add`, `commit`, `reset`, etc.) when running concurrent git commands in the same worktree or when updating shared refs across worktrees.
+
+**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
 
 ## Adding New Quirks
 

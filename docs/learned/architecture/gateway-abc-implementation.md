@@ -210,6 +210,33 @@ class PrintingGitHub(GitHub):
 
 **Printing implementations often fall behind** - when adding a new method, verify PrintingGit/PrintingGitHub/PrintingGraphite is updated alongside the other implementations.
 
+## Dependency Injection for Testability
+
+When adding methods that benefit from testability (lock waiting, retry logic, timeouts), consider injecting dependencies via constructor rather than adding parameters to each method.
+
+**Example Pattern** (from `RealGit`):
+
+```python
+class RealGit(Git):
+    def __init__(self, *, time: Time | None = None) -> None:
+        # Accept optional dependency, default to production implementation
+        self._time = time if time is not None else RealTime()
+
+    def checkout_branch(self, repo_root: Path, branch: str) -> None:
+        # Use injected dependency before operation
+        wait_for_index_lock(repo_root, self._time)
+        # ... actual git operation
+```
+
+**Benefits**:
+
+- Centralizes all dependencies in one place (constructor)
+- Enables testing with `FakeTime` without blocking in unit tests
+- Consistent with erk's dependency injection pattern for all gateways
+- Lock-waiting and retry logic execute instantly in tests
+
+**Reference Implementation**: `packages/erk-shared/src/erk_shared/git/lock.py` and `packages/erk-shared/src/erk_shared/git/real.py`
+
 ## Integration with Fake-Driven Testing
 
 This pattern aligns with the [Fake-Driven Testing Architecture](../testing/):
