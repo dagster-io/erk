@@ -7,6 +7,9 @@ ERK_PLAN_LABEL = "erk-plan"
 DISPATCH_WORKFLOW_NAME = "erk-impl.yml"
 DISPATCH_WORKFLOW_METADATA_NAME = "erk-impl"
 
+# GitHub Actions workflow for remote rebase with conflict resolution
+REBASE_WORKFLOW_NAME = "erk-rebase.yml"
+
 # Workflow names that trigger the autofix workflow
 # Must match the `name:` field in each .yml file (which should match filename without .yml)
 AUTOFIX_TRIGGER_WORKFLOWS = frozenset(
