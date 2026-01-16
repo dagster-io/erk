@@ -323,3 +323,143 @@ def test_fix_conflicts_remote_uses_correct_base_branch(tmp_path: Path) -> None:
         assert len(github.triggered_workflows) == 1
         _, inputs = github.triggered_workflows[0]
         assert inputs["base_branch"] == "release/v1.0"
+
+
+def test_fix_conflicts_remote_with_pr_number_argument(tmp_path: Path) -> None:
+    """Test triggering workflow via explicit PR number (without being on the branch)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR - note the branch is different from current branch
+        pr_info = _make_pr_info(456, "other-feature", "OPEN", "Other Feature")
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name="other-feature",
+            state="OPEN",
+            base_ref_name="main",
+            title="Other Feature",
+        )
+        github = FakeGitHub(
+            prs={"other-feature": pr_info},
+            pr_details={456: pr_details},
+        )
+
+        # We're on a different branch (or even master)
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        # Pass PR number as argument
+        result = runner.invoke(pr_group, ["fix-conflicts-remote", "456"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "PR #456" in result.output
+        assert "Other Feature" in result.output
+        assert "Workflow triggered" in result.output
+
+        # Verify workflow was triggered with the PR's branch, not current branch
+        assert len(github.triggered_workflows) == 1
+        _, inputs = github.triggered_workflows[0]
+        assert inputs["branch_name"] == "other-feature"
+        assert inputs["pr_number"] == "456"
+
+
+def test_fix_conflicts_remote_with_pr_number_not_found(tmp_path: Path) -> None:
+    """Test error when explicit PR number doesn't exist."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # No PRs configured
+        github = FakeGitHub(prs={}, pr_details={})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["fix-conflicts-remote", "999"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "No pull request found with number #999" in result.output
+
+
+def test_fix_conflicts_remote_with_pr_number_closed(tmp_path: Path) -> None:
+    """Test error when explicit PR number refers to a closed PR."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # PR is closed
+        pr_info = _make_pr_info(111, "closed-feature", "CLOSED", "Closed Feature")
+        pr_details = _make_pr_details(
+            number=111,
+            head_ref_name="closed-feature",
+            state="CLOSED",
+            base_ref_name="main",
+            title="Closed Feature",
+        )
+        github = FakeGitHub(
+            prs={"closed-feature": pr_info},
+            pr_details={111: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["fix-conflicts-remote", "111"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Cannot rebase CLOSED PR" in result.output
+
+
+def test_fix_conflicts_remote_with_pr_number_on_detached_head(tmp_path: Path) -> None:
+    """Test that PR number argument works even when on detached HEAD."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR
+        pr_info = _make_pr_info(789, "feature-x", "OPEN", "Feature X")
+        pr_details = _make_pr_details(
+            number=789,
+            head_ref_name="feature-x",
+            state="OPEN",
+            base_ref_name="main",
+            title="Feature X",
+        )
+        github = FakeGitHub(
+            prs={"feature-x": pr_info},
+            pr_details={789: pr_details},
+        )
+
+        # Detached HEAD (no current branch)
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: None},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        # Should work with PR number even though we're on detached HEAD
+        result = runner.invoke(pr_group, ["fix-conflicts-remote", "789"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "PR #789" in result.output
+        assert "Feature X" in result.output
+        assert "Workflow triggered" in result.output
+
+        # Verify correct branch name from PR
+        assert len(github.triggered_workflows) == 1
+        _, inputs = github.triggered_workflows[0]
+        assert inputs["branch_name"] == "feature-x"
