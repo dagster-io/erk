@@ -3,6 +3,7 @@
 import click
 
 from erk.cli.commands.plan.check_cmd import check_plan
+from erk.cli.commands.plan.checkout_cmd import checkout_plan
 from erk.cli.commands.plan.close_cmd import close_plan
 from erk.cli.commands.plan.create_cmd import create_plan
 from erk.cli.commands.plan.docs import docs_group
@@ -20,6 +21,7 @@ def plan_group() -> None:
 
 
 plan_group.add_command(check_plan)
+plan_group.add_command(checkout_plan, name="co")
 plan_group.add_command(close_plan)
 plan_group.add_command(create_plan, name="create")
 plan_group.add_command(docs_group)
