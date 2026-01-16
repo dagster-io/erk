@@ -51,10 +51,47 @@ def print_activation_instructions(script_path: Path) -> None:
     user_output(f"  source {script_path} && erk implement --here")
 
 
-def run_post_worktree_setup(
-    ctx: ErkContext, *, config: LoadedConfig, worktree_path: Path, repo_root: Path, name: str
+def setup_worktree_files(
+    *,
+    config: LoadedConfig,
+    worktree_path: Path,
+    repo_root: Path,
+    name: str,
 ) -> None:
-    """Run post-worktree-creation setup: .env file and post-create commands.
+    """Write .env and activation script to worktree.
+
+    This function handles the file-based setup only (no command execution).
+    Called by both run_post_worktree_setup() and create_wt().
+
+    Args:
+        config: Loaded local configuration
+        worktree_path: Path to the worktree
+        repo_root: Path to repository root
+        name: Worktree name
+    """
+    env_content = make_env_content(
+        config, worktree_path=worktree_path, repo_root=repo_root, name=name
+    )
+    if env_content:
+        env_path = worktree_path / ".env"
+        env_path.write_text(env_content, encoding="utf-8")
+
+    if ENABLE_ACTIVATION_SCRIPTS:
+        write_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=config.post_create_commands or None,
+        )
+
+
+def run_post_worktree_setup(
+    ctx: ErkContext,
+    *,
+    config: LoadedConfig,
+    worktree_path: Path,
+    repo_root: Path,
+    name: str,
+) -> None:
+    """Run post-worktree-creation setup: files and commands.
 
     Args:
         ctx: Erk context
@@ -63,22 +100,13 @@ def run_post_worktree_setup(
         repo_root: Path to repository root
         name: Worktree name
     """
-    # Write .env file if template exists
-    env_content = make_env_content(
-        config, worktree_path=worktree_path, repo_root=repo_root, name=name
+    setup_worktree_files(
+        config=config,
+        worktree_path=worktree_path,
+        repo_root=repo_root,
+        name=name,
     )
-    if env_content:
-        env_path = worktree_path / ".env"
-        env_path.write_text(env_content, encoding="utf-8")
 
-    # SPECULATIVE: activation-scripts - write activation script with post-create commands
-    if ENABLE_ACTIVATION_SCRIPTS:
-        write_worktree_activate_script(
-            worktree_path=worktree_path,
-            post_create_commands=config.post_create_commands or None,
-        )
-
-    # Run post-create commands
     if config.post_create_commands:
         run_commands_in_worktree(
             ctx=ctx,
@@ -871,22 +899,18 @@ def create_wt(
             skip_remote_check=skip_remote_check,
         )
 
-    # Write .env based on config
-    env_content = make_env_content(
-        cfg,
+    # Write .env and activation script
+    setup_worktree_files(
+        config=cfg,
         worktree_path=wt_path,
         repo_root=repo.root,
         name=name,
     )
-    (wt_path / ".env").write_text(env_content, encoding="utf-8")
 
-    # SPECULATIVE: activation-scripts - write activation script with post-create commands
+    # Track activation script path for instructions (if feature enabled)
     activation_script_path: Path | None = None
     if ENABLE_ACTIVATION_SCRIPTS:
-        activation_script_path = write_worktree_activate_script(
-            worktree_path=wt_path,
-            post_create_commands=cfg.post_create_commands or None,
-        )
+        activation_script_path = wt_path / ".erk" / "activate.sh"
 
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if
