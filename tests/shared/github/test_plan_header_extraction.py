@@ -13,8 +13,11 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
     extract_plan_header_objective_issue,
+    extract_plan_header_remote_impl_run_id,
+    extract_plan_header_remote_impl_session_id,
     format_plan_header_body,
     update_plan_header_learn_event,
+    update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
 )
 from erk_shared.github.metadata.schemas import PlanHeaderSchema
@@ -153,6 +156,8 @@ def test_create_plan_header_block_minimal() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -182,6 +187,8 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=42,
         created_from_session="session-abc",
@@ -213,6 +220,8 @@ def test_create_plan_header_block_omits_none_values() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -246,6 +255,8 @@ def test_format_plan_header_body_minimal() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -277,6 +288,8 @@ def test_format_plan_header_body_with_optional_fields() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=42,
         created_from_session="session-abc",
@@ -309,6 +322,8 @@ def test_render_and_extract_round_trip() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=100,
         created_from_session="session-xyz",
@@ -392,6 +407,8 @@ def test_create_plan_header_block_with_learn_fields() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -420,6 +437,8 @@ def test_format_plan_header_body_with_learn_fields() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -451,6 +470,8 @@ def test_update_plan_header_learn_event() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -491,6 +512,8 @@ def test_update_plan_header_learn_event_with_none_session() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -538,6 +561,8 @@ def test_extract_plan_header_last_learn_session() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -565,6 +590,8 @@ def test_extract_plan_header_last_learn_session_returns_none_when_missing() -> N
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -600,6 +627,8 @@ def test_extract_plan_header_last_learn_at() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -627,6 +656,8 @@ def test_extract_plan_header_last_learn_at_returns_none_when_missing() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -685,6 +716,8 @@ def test_extract_plan_header_branch_name() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -712,6 +745,8 @@ def test_extract_plan_header_branch_name_returns_none_when_missing() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -748,6 +783,8 @@ def test_update_plan_header_worktree_and_branch() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -803,6 +840,8 @@ def test_extract_plan_header_objective_issue() -> None:
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=42,
         created_from_session=None,
@@ -830,6 +869,8 @@ def test_extract_plan_header_objective_issue_returns_none_when_missing() -> None
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
@@ -875,3 +916,258 @@ def test_extract_plan_header_objective_issue_returns_none_for_invalid_body() -> 
 
     result = extract_plan_header_objective_issue(body)
     assert result is None
+
+
+# === Remote Implementation Field Tests ===
+
+
+def test_create_plan_header_block_with_remote_impl_fields() -> None:
+    """create_plan_header_block includes remote impl fields when provided."""
+    block = create_plan_header_block(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at="2024-01-15T14:00:00Z",
+        last_remote_impl_run_id="12345678",
+        last_remote_impl_session_id="remote-session-abc",
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    assert block.key == "plan-header"
+    assert block.data["last_remote_impl_at"] == "2024-01-15T14:00:00Z"
+    assert block.data["last_remote_impl_run_id"] == "12345678"
+    assert block.data["last_remote_impl_session_id"] == "remote-session-abc"
+
+
+def test_extract_plan_header_remote_impl_run_id() -> None:
+    """extract_plan_header_remote_impl_run_id extracts run ID from body."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id="run-12345",
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    run_id = extract_plan_header_remote_impl_run_id(body)
+    assert run_id == "run-12345"
+
+
+def test_extract_plan_header_remote_impl_run_id_returns_none_when_missing() -> None:
+    """extract_plan_header_remote_impl_run_id returns None when field is absent."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    run_id = extract_plan_header_remote_impl_run_id(body)
+    assert run_id is None
+
+
+def test_extract_plan_header_remote_impl_run_id_returns_none_for_invalid_body() -> None:
+    """extract_plan_header_remote_impl_run_id returns None for invalid body."""
+    body = "No metadata block here"
+
+    run_id = extract_plan_header_remote_impl_run_id(body)
+    assert run_id is None
+
+
+def test_extract_plan_header_remote_impl_session_id() -> None:
+    """extract_plan_header_remote_impl_session_id extracts session ID from body."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id="remote-session-xyz",
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    session_id = extract_plan_header_remote_impl_session_id(body)
+    assert session_id == "remote-session-xyz"
+
+
+def test_extract_plan_header_remote_impl_session_id_returns_none_when_missing() -> None:
+    """extract_plan_header_remote_impl_session_id returns None when field is absent."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    session_id = extract_plan_header_remote_impl_session_id(body)
+    assert session_id is None
+
+
+def test_update_plan_header_remote_impl_event() -> None:
+    """update_plan_header_remote_impl_event updates all remote impl fields atomically."""
+    # Create initial body
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    # Update with remote impl event
+    updated_body = update_plan_header_remote_impl_event(
+        issue_body=body,
+        run_id="remote-run-123",
+        session_id="remote-session-abc",
+        remote_impl_at="2024-01-16T14:00:00Z",
+    )
+
+    # Verify the block was updated
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["last_remote_impl_at"] == "2024-01-16T14:00:00Z"
+    assert block.data["last_remote_impl_run_id"] == "remote-run-123"
+    assert block.data["last_remote_impl_session_id"] == "remote-session-abc"
+    # Original fields preserved
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "user123"
+
+
+def test_update_plan_header_remote_impl_event_with_none_session() -> None:
+    """update_plan_header_remote_impl_event handles None session_id."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    updated_body = update_plan_header_remote_impl_event(
+        issue_body=body,
+        run_id="remote-run-456",
+        session_id=None,
+        remote_impl_at="2024-01-16T15:00:00Z",
+    )
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["last_remote_impl_at"] == "2024-01-16T15:00:00Z"
+    assert block.data["last_remote_impl_run_id"] == "remote-run-456"
+    assert block.data["last_remote_impl_session_id"] is None
+
+
+def test_update_plan_header_remote_impl_event_raises_for_missing_block() -> None:
+    """update_plan_header_remote_impl_event raises ValueError if no plan-header block."""
+    body = "Some other content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_remote_impl_event(
+            issue_body=body,
+            run_id="remote-run-123",
+            session_id="session-123",
+            remote_impl_at="2024-01-16T14:00:00Z",
+        )

@@ -44,6 +44,8 @@ last_local_impl_event: null
 last_local_impl_session: null
 last_local_impl_user: null
 last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
 ```
 
 ### plan-header Fields
@@ -57,18 +59,20 @@ last_remote_impl_at: null
 
 **Optional fields:**
 
-| Field                     | Type         | Description                              |
-| ------------------------- | ------------ | ---------------------------------------- |
-| `worktree_name`           | string\|null | Set when worktree is created             |
-| `last_dispatched_run_id`  | string\|null | Workflow run ID (set by workflow)        |
-| `last_dispatched_node_id` | string\|null | GraphQL node ID (for batch queries)      |
-| `last_dispatched_at`      | string\|null | Dispatch timestamp                       |
-| `last_local_impl_at`      | string\|null | Local implementation timestamp           |
-| `last_local_impl_event`   | string\|null | "started" or "ended"                     |
-| `last_local_impl_session` | string\|null | Claude Code session ID                   |
-| `last_local_impl_user`    | string\|null | User who ran implementation              |
-| `last_remote_impl_at`     | string\|null | GitHub Actions implementation timestamp  |
-| `source_repo`             | string\|null | Implementation repo for cross-repo plans |
+| Field                         | Type         | Description                              |
+| ----------------------------- | ------------ | ---------------------------------------- |
+| `worktree_name`               | string\|null | Set when worktree is created             |
+| `last_dispatched_run_id`      | string\|null | Workflow run ID (set by workflow)        |
+| `last_dispatched_node_id`     | string\|null | GraphQL node ID (for batch queries)      |
+| `last_dispatched_at`          | string\|null | Dispatch timestamp                       |
+| `last_local_impl_at`          | string\|null | Local implementation timestamp           |
+| `last_local_impl_event`       | string\|null | "started" or "ended"                     |
+| `last_local_impl_session`     | string\|null | Claude Code session ID                   |
+| `last_local_impl_user`        | string\|null | User who ran implementation              |
+| `last_remote_impl_at`         | string\|null | GitHub Actions implementation timestamp  |
+| `last_remote_impl_run_id`     | string\|null | GitHub Actions run ID for remote impl    |
+| `last_remote_impl_session_id` | string\|null | Claude Code session ID for remote impl   |
+| `source_repo`                 | string\|null | Implementation repo for cross-repo plans |
 
 **Session tracking fields:**
 

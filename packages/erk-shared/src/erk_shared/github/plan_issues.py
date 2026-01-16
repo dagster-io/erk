@@ -162,6 +162,8 @@ def create_plan_issue(
         last_local_impl_session=None,
         last_local_impl_user=None,
         last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
         source_repo=source_repo,
         objective_issue=objective_id,
         created_from_session=created_from_session,

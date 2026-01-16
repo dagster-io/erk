@@ -32,6 +32,8 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
             implementation_session_ids=["impl-session-1"],
             learn_session_ids=["learn-session-1"],  # Already learned
             last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -95,6 +97,8 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
             implementation_session_ids=["impl-session-1"],
             learn_session_ids=[],  # Not learned
             last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -135,6 +139,8 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
             implementation_session_ids=["impl-session-1"],
             learn_session_ids=[],  # Not learned
             last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -297,6 +303,8 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
             implementation_session_ids=["impl-session-1"],
             learn_session_ids=["learn-session-1"],  # Already learned
             last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)

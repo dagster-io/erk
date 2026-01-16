@@ -325,6 +325,8 @@ PlanHeaderFieldName = Literal[
     "last_local_impl_session",
     "last_local_impl_user",
     "last_remote_impl_at",
+    "last_remote_impl_run_id",
+    "last_remote_impl_session_id",
     "source_repo",
     "objective_issue",
     "created_from_session",
@@ -350,6 +352,8 @@ LAST_LOCAL_IMPL_EVENT: Literal["last_local_impl_event"] = "last_local_impl_event
 LAST_LOCAL_IMPL_SESSION: Literal["last_local_impl_session"] = "last_local_impl_session"
 LAST_LOCAL_IMPL_USER: Literal["last_local_impl_user"] = "last_local_impl_user"
 LAST_REMOTE_IMPL_AT: Literal["last_remote_impl_at"] = "last_remote_impl_at"
+LAST_REMOTE_IMPL_RUN_ID: Literal["last_remote_impl_run_id"] = "last_remote_impl_run_id"
+LAST_REMOTE_IMPL_SESSION_ID: Literal["last_remote_impl_session_id"] = "last_remote_impl_session_id"
 SOURCE_REPO: Literal["source_repo"] = "source_repo"
 OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
 CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
@@ -375,6 +379,8 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_local_impl_session: Claude Code session ID from environment (nullable)
         last_local_impl_user: User who ran the implementation (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
+        last_remote_impl_run_id: GitHub Actions run ID for remote implementation (nullable)
+        last_remote_impl_session_id: Claude Code session ID for remote implementation (nullable)
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
@@ -401,6 +407,8 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_LOCAL_IMPL_SESSION,
             LAST_LOCAL_IMPL_USER,
             LAST_REMOTE_IMPL_AT,
+            LAST_REMOTE_IMPL_RUN_ID,
+            LAST_REMOTE_IMPL_SESSION_ID,
             SOURCE_REPO,
             OBJECTIVE_ISSUE,
             CREATED_FROM_SESSION,
@@ -470,6 +478,18 @@ class PlanHeaderSchema(MetadataBlockSchema):
             if data[LAST_REMOTE_IMPL_AT] is not None:
                 if not isinstance(data[LAST_REMOTE_IMPL_AT], str):
                     raise ValueError("last_remote_impl_at must be a string or null")
+
+        # Validate last_remote_impl_run_id
+        if LAST_REMOTE_IMPL_RUN_ID in data:
+            if data[LAST_REMOTE_IMPL_RUN_ID] is not None:
+                if not isinstance(data[LAST_REMOTE_IMPL_RUN_ID], str):
+                    raise ValueError("last_remote_impl_run_id must be a string or null")
+
+        # Validate last_remote_impl_session_id
+        if LAST_REMOTE_IMPL_SESSION_ID in data:
+            if data[LAST_REMOTE_IMPL_SESSION_ID] is not None:
+                if not isinstance(data[LAST_REMOTE_IMPL_SESSION_ID], str):
+                    raise ValueError("last_remote_impl_session_id must be a string or null")
 
         # Validate last_local_impl_event
         if LAST_LOCAL_IMPL_EVENT in data:
