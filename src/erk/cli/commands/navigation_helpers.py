@@ -4,7 +4,12 @@ from pathlib import Path
 
 import click
 
-from erk.cli.activation import render_activation_script
+from erk.cli.activation import (
+    ENABLE_ACTIVATION_SCRIPTS,
+    ensure_worktree_activate_script,
+    print_activation_instructions,
+    render_activation_script,
+)
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.ensure import Ensure
@@ -261,6 +266,15 @@ def activate_root_repo(
             "Run 'erk init --shell' to set up automatic activation."
         )
         user_output(f"Or use: source <(erk {command_name} --script)")
+
+        # Print activation instructions for opt-in workflow
+        # SPECULATIVE: activation-scripts (objective #4954)
+        if ENABLE_ACTIVATION_SCRIPTS:
+            script_path = ensure_worktree_activate_script(
+                worktree_path=root_path,
+                post_create_commands=None,
+            )
+            print_activation_instructions(script_path)
     raise SystemExit(0)
 
 
@@ -325,6 +339,15 @@ def activate_worktree(
             "Shell integration not detected. Run 'erk init --shell' to set up automatic activation."
         )
         user_output(f"\nOr use: source <(erk {command_name} --script)")
+
+        # Print activation instructions for opt-in workflow
+        # SPECULATIVE: activation-scripts (objective #4954)
+        if ENABLE_ACTIVATION_SCRIPTS:
+            script_path = ensure_worktree_activate_script(
+                worktree_path=wt_path,
+                post_create_commands=None,
+            )
+            print_activation_instructions(script_path)
     raise SystemExit(0)
 
 
