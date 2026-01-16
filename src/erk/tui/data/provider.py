@@ -1,5 +1,6 @@
 """Data provider for TUI plan table."""
 
+import logging
 import subprocess
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -31,6 +32,8 @@ from erk_shared.github.metadata.plan_header import (
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
+
+logger = logging.getLogger(__name__)
 
 
 class PlanDataProvider(ABC):
@@ -520,8 +523,11 @@ class RealPlanDataProvider(PlanDataProvider):
                     )
                     unresolved_comment_count = len(threads)
                     unresolved_comments_display = str(unresolved_comment_count)
-                except Exception:
+                except Exception as e:
                     # Rate limit or API errors - show "0" with logged warning
+                    logger.warning(
+                        "Failed to fetch PR review threads for PR #%s: %s", selected_pr.number, e
+                    )
                     unresolved_comment_count = 0
                     unresolved_comments_display = "0"
 
