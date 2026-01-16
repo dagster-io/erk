@@ -2,7 +2,9 @@
 
 import click
 
+from erk.cli.alias import register_with_aliases
 from erk.cli.commands.plan.check_cmd import check_plan
+from erk.cli.commands.plan.checkout_cmd import plan_checkout
 from erk.cli.commands.plan.close_cmd import close_plan
 from erk.cli.commands.plan.create_cmd import create_plan
 from erk.cli.commands.plan.docs import docs_group
@@ -28,3 +30,4 @@ plan_group.add_command(view_plan)
 plan_group.add_command(list_plans, name="list")
 plan_group.add_command(plan_log, name="log")
 plan_group.add_command(submit_cmd, name="submit")
+register_with_aliases(plan_group, plan_checkout)
