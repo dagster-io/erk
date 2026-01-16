@@ -59,16 +59,20 @@ This file routes to skills and docs; it doesn't contain everything.
 
 ## Claude Environment Manipulation
 
-### Session ID Injection
+### Session ID Access
 
-Hooks receive session ID via **stdin JSON**, NOT environment variables. When generating commands for Claude, interpolate the actual value:
+**In skills/commands**: Use `${CLAUDE_SESSION_ID}` string substitution (supported since Claude Code 2.1.9):
+
+```bash
+# Skills can use this substitution directly
+erk exec marker create --session-id "${CLAUDE_SESSION_ID}" ...
+```
+
+**In hooks**: Hooks receive session ID via **stdin JSON**, not environment variables. When generating commands for Claude from hooks, interpolate the actual value:
 
 ```python
-# CORRECT - Claude receives the actual value
+# Hook code interpolating session ID for Claude
 f"erk exec marker create --session-id {session_id} ..."
-
-# WRONG - Claude can't expand this variable
-"erk exec marker create --session-id $CLAUDE_CODE_SESSION_ID ..."
 ```
 
 ### Hook → Claude Communication
