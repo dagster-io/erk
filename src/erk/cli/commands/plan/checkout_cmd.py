@@ -8,9 +8,10 @@ import click
 from rich.console import Console
 from rich.table import Table
 
-from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
-from erk.cli.commands.slot.common import allocate_slot_for_branch
-from erk.cli.core import worktree_path_for
+from erk.cli.commands.checkout_helpers import (
+    ensure_branch_has_worktree,
+    navigate_and_display_checkout,
+)
 from erk.cli.ensure import Ensure
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
@@ -164,71 +165,23 @@ def _checkout_branch(
     force: bool,
     script: bool,
 ) -> None:
-    """Checkout an existing local branch.
+    """Checkout an existing local branch."""
+    worktree_path, already_existed = ensure_branch_has_worktree(
+        ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
+    )
 
-    If the branch is already in a worktree, navigate to it.
-    Otherwise, create a new worktree.
-    """
-    # Check if branch already exists in a worktree
-    existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
-    if existing_worktree is not None:
-        # Branch already exists in a worktree - activate it
-        styled_path = click.style(str(existing_worktree), fg="cyan", bold=True)
-        should_output = navigate_to_worktree(
-            ctx,
-            worktree_path=existing_worktree,
-            branch=branch_name,
-            script=script,
-            command_name="plan-checkout",
-            script_message=f'echo "Went to worktree for plan #{issue_number}"',
-            relative_path=None,
-            post_cd_commands=None,
-        )
-        if should_output:
-            user_output(f"Plan #{issue_number} already checked out at {styled_path}")
-            display_sync_status(
-                ctx, worktree_path=existing_worktree, branch=branch_name, script=script
-            )
-        return
-
-    # Create worktree for the branch
-    if no_slot:
-        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
-        ctx.git.add_worktree(
-            repo.root,
-            worktree_path,
-            branch=branch_name,
-            ref=None,
-            create_branch=False,
-        )
-    else:
-        result = allocate_slot_for_branch(
-            ctx,
-            repo,
-            branch_name,
-            force=force,
-            reuse_inactive_slots=True,
-            cleanup_artifacts=True,
-        )
-        worktree_path = result.worktree_path
-        if not result.already_assigned:
-            user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
-
-    # Navigate to the new worktree
-    styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
-    should_output = navigate_to_worktree(
+    navigate_and_display_checkout(
         ctx,
         worktree_path=worktree_path,
-        branch=branch_name,
+        branch_name=branch_name,
         script=script,
         command_name="plan-checkout",
-        script_message=f'echo "Checked out plan #{issue_number} at $(pwd)"',
-        relative_path=None,
-        post_cd_commands=None,
+        already_existed=already_existed,
+        existing_message=f"Plan #{issue_number} already checked out at {{styled_path}}",
+        new_message=f"Created worktree for plan #{issue_number} at {{styled_path}}",
+        script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
+        script_message_new=f'echo "Checked out plan #{issue_number} at $(pwd)"',
     )
-    if should_output:
-        user_output(f"Created worktree for plan #{issue_number} at {styled_path}")
-        display_sync_status(ctx, worktree_path=worktree_path, branch=branch_name, script=script)
 
 
 def _checkout_pr(
@@ -256,38 +209,32 @@ def _checkout_pr(
 
     branch_name = pr.head_ref_name
 
-    # Check if branch already exists in a worktree
+    # Check if branch already exists in a worktree - handle this case immediately
     existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
     if existing_worktree is not None:
-        styled_path = click.style(str(existing_worktree), fg="cyan", bold=True)
-        should_output = navigate_to_worktree(
+        navigate_and_display_checkout(
             ctx,
             worktree_path=existing_worktree,
-            branch=branch_name,
+            branch_name=branch_name,
             script=script,
             command_name="plan-checkout",
-            script_message=f'echo "Went to worktree for plan #{issue_number}"',
-            relative_path=None,
-            post_cd_commands=None,
+            already_existed=True,
+            existing_message=f"Plan #{issue_number} already checked out at {{styled_path}}",
+            new_message="",  # Not used when already_existed=True
+            script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
+            script_message_new="",  # Not used when already_existed=True
         )
-        if should_output:
-            user_output(f"Plan #{issue_number} already checked out at {styled_path}")
-            display_sync_status(
-                ctx, worktree_path=existing_worktree, branch=branch_name, script=script
-            )
         return
 
-    # Fetch the branch from remote
+    # Fetch the branch from remote if not local
     local_branches = ctx.git.list_local_branches(repo.root)
     if branch_name not in local_branches:
-        # Check remote and fetch
         remote_branches = ctx.git.list_remote_branches(repo.root)
         remote_ref = f"origin/{branch_name}"
         if remote_ref in remote_branches:
             ctx.git.fetch_branch(repo.root, "origin", branch_name)
             ctx.git.create_tracking_branch(repo.root, branch_name, remote_ref)
         else:
-            # Fetch via PR ref
             ctx.git.fetch_pr_ref(
                 repo_root=repo.root,
                 remote="origin",
@@ -295,44 +242,24 @@ def _checkout_pr(
                 local_branch=branch_name,
             )
 
-    # Create worktree
-    if no_slot:
-        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
-        ctx.git.add_worktree(
-            repo.root,
-            worktree_path,
-            branch=branch_name,
-            ref=None,
-            create_branch=False,
-        )
-    else:
-        result = allocate_slot_for_branch(
-            ctx,
-            repo,
-            branch_name,
-            force=force,
-            reuse_inactive_slots=True,
-            cleanup_artifacts=True,
-        )
-        worktree_path = result.worktree_path
-        if not result.already_assigned:
-            user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
+    # Create worktree and navigate
+    worktree_path, already_existed = ensure_branch_has_worktree(
+        ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
+    )
 
-    # Navigate to the new worktree
-    styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
-    should_output = navigate_to_worktree(
+    new_msg = f"Created worktree for plan #{issue_number} (PR #{pr_number}) at {{styled_path}}"
+    navigate_and_display_checkout(
         ctx,
         worktree_path=worktree_path,
-        branch=branch_name,
+        branch_name=branch_name,
         script=script,
         command_name="plan-checkout",
-        script_message=f'echo "Checked out plan #{issue_number} (PR #{pr_number}) at $(pwd)"',
-        relative_path=None,
-        post_cd_commands=None,
+        already_existed=already_existed,
+        existing_message=f"Plan #{issue_number} already checked out at {{styled_path}}",
+        new_message=new_msg,
+        script_message_existing=f'echo "Went to worktree for plan #{issue_number}"',
+        script_message_new=f'echo "Checked out plan #{issue_number} (PR #{pr_number}) at $(pwd)"',
     )
-    if should_output:
-        user_output(f"Created worktree for plan #{issue_number} (PR #{pr_number}) at {styled_path}")
-        display_sync_status(ctx, worktree_path=worktree_path, branch=branch_name, script=script)
 
 
 def _display_multiple_branches(issue_number: int, branches: list[str]) -> None:

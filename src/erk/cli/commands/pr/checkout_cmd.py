@@ -6,16 +6,16 @@ This command fetches PR code and creates a worktree for local review/testing.
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.checkout_helpers import display_sync_status, navigate_to_worktree
+from erk.cli.commands.checkout_helpers import (
+    ensure_branch_has_worktree,
+    navigate_and_display_checkout,
+)
 from erk.cli.commands.pr.parse_pr_reference import parse_pr_reference
-from erk.cli.commands.slot.common import allocate_slot_for_branch
-from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.types import PRNotFound
-from erk_shared.output.output import user_output
 
 
 @alias("co")
@@ -73,51 +73,38 @@ def pr_checkout(
     else:
         branch_name = pr.head_ref_name
 
-    # Check if branch already exists in a worktree
+    # Check if branch already exists in a worktree - handle immediately
     existing_worktree = ctx.git.find_worktree_for_branch(repo.root, branch_name)
     if existing_worktree is not None:
-        # Branch already exists in a worktree - activate it
-        styled_path = click.style(str(existing_worktree), fg="cyan", bold=True)
-        should_output = navigate_to_worktree(
+        navigate_and_display_checkout(
             ctx,
             worktree_path=existing_worktree,
-            branch=branch_name,
+            branch_name=branch_name,
             script=script,
             command_name="pr-checkout",
-            script_message=f'echo "Went to existing worktree for PR #{pr_number}"',
-            relative_path=None,
-            post_cd_commands=None,
+            already_existed=True,
+            existing_message=f"PR #{pr_number} already checked out at {{styled_path}}",
+            new_message="",  # Not used when already_existed=True
+            script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
+            script_message_new="",  # Not used when already_existed=True
         )
-        if should_output:
-            user_output(f"PR #{pr_number} already checked out at {styled_path}")
-            # Display sync status for existing worktree
-            display_sync_status(
-                ctx, worktree_path=existing_worktree, branch=branch_name, script=script
-            )
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
     # For same-repo PRs, check if branch exists locally first
     if pr.is_cross_repository:
-        # Fetch PR ref directly
         ctx.git.fetch_pr_ref(
             repo_root=repo.root, remote="origin", pr_number=pr_number, local_branch=branch_name
         )
     else:
-        # Check if branch exists locally or on remote
         local_branches = ctx.git.list_local_branches(repo.root)
-        if branch_name in local_branches:
-            # Branch already exists locally - just need to create worktree
-            pass
-        else:
-            # Check remote and fetch if needed
+        if branch_name not in local_branches:
             remote_branches = ctx.git.list_remote_branches(repo.root)
             remote_ref = f"origin/{branch_name}"
             if remote_ref in remote_branches:
                 ctx.git.fetch_branch(repo.root, "origin", branch_name)
                 ctx.git.create_tracking_branch(repo.root, branch_name, remote_ref)
             else:
-                # Branch not on remote (maybe local-only PR?), fetch via PR ref
                 ctx.git.fetch_pr_ref(
                     repo_root=repo.root,
                     remote="origin",
@@ -125,37 +112,16 @@ def pr_checkout(
                     local_branch=branch_name,
                 )
 
-    # Create worktree - use slot allocation unless --no-slot is specified
-    if no_slot:
-        # Old behavior: derive worktree path from branch name
-        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
-        ctx.git.add_worktree(
-            repo.root,
-            worktree_path,
-            branch=branch_name,
-            ref=None,
-            create_branch=False,
-        )
-    else:
-        # New behavior: use slot allocation
-        result = allocate_slot_for_branch(
-            ctx,
-            repo,
-            branch_name,
-            force=force,
-            reuse_inactive_slots=True,
-            cleanup_artifacts=True,
-        )
-        worktree_path = result.worktree_path
-        if not result.already_assigned:
-            user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
+    # Create worktree using shared helper
+    worktree_path, already_existed = ensure_branch_has_worktree(
+        ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
+    )
 
     # For stacked PRs (base is not trunk), rebase onto base branch
     # This ensures git history includes the base branch as an ancestor,
     # which `gt track` requires for proper stacking
     trunk_branch = ctx.git.detect_trunk_branch(repo.root)
     if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
-        # Check if base branch exists locally before fetching
         local_branches = ctx.git.list_local_branches(repo.root)
         if pr.base_ref_name not in local_branches:
             ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
@@ -174,19 +140,16 @@ def pr_checkout(
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
-    # Navigate to the new worktree
-    styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
-    should_output = navigate_to_worktree(
+    # Navigate and display checkout result
+    navigate_and_display_checkout(
         ctx,
         worktree_path=worktree_path,
-        branch=branch_name,
+        branch_name=branch_name,
         script=script,
         command_name="pr-checkout",
-        script_message=f'echo "Checked out PR #{pr_number} at $(pwd)"',
-        relative_path=None,
-        post_cd_commands=None,
+        already_existed=already_existed,
+        existing_message=f"PR #{pr_number} already checked out at {{styled_path}}",
+        new_message=f"Created worktree for PR #{pr_number} at {{styled_path}}",
+        script_message_existing=f'echo "Went to existing worktree for PR #{pr_number}"',
+        script_message_new=f'echo "Checked out PR #{pr_number} at $(pwd)"',
     )
-    if should_output:
-        user_output(f"Created worktree for PR #{pr_number} at {styled_path}")
-        # Display sync status for new worktree
-        display_sync_status(ctx, worktree_path=worktree_path, branch=branch_name, script=script)
