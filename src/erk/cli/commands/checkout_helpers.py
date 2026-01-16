@@ -13,7 +13,10 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import render_activation_script
+from erk.cli.commands.slot.common import allocate_slot_for_branch
+from erk.cli.core import worktree_path_for
 from erk.core.context import ErkContext
+from erk.core.repo_discovery import RepoContext
 from erk_shared.output.output import user_output
 
 
@@ -159,3 +162,107 @@ def navigate_to_worktree(
         sys.exit(exit_code)
     else:
         return True  # Caller should output custom message
+
+
+def ensure_branch_has_worktree(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    branch_name: str,
+    no_slot: bool,
+    force: bool,
+) -> tuple[Path, bool]:
+    """Ensure branch has a worktree, creating if needed.
+
+    Checks if the branch is already checked out in a worktree.
+    If not, creates a worktree using either slot allocation or direct path.
+
+    Args:
+        ctx: Erk context with git operations
+        repo: Repository context with worktrees directory
+        branch_name: Name of the branch to checkout
+        no_slot: If True, create worktree without slot assignment
+        force: Auto-unassign oldest branch if pool is full
+
+    Returns:
+        Tuple of (worktree_path, already_existed) where already_existed
+        is True if the branch was already in a worktree.
+    """
+    # Check if branch already exists in a worktree
+    existing = ctx.git.find_worktree_for_branch(repo.root, branch_name)
+    if existing is not None:
+        return existing, True
+
+    # Create worktree (with or without slot)
+    if no_slot:
+        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
+        ctx.git.add_worktree(
+            repo.root,
+            worktree_path,
+            branch=branch_name,
+            ref=None,
+            create_branch=False,
+        )
+    else:
+        result = allocate_slot_for_branch(
+            ctx,
+            repo,
+            branch_name,
+            force=force,
+            reuse_inactive_slots=True,
+            cleanup_artifacts=True,
+        )
+        worktree_path = result.worktree_path
+        if not result.already_assigned:
+            user_output(click.style(f"✓ Assigned {branch_name} to {result.slot_name}", fg="green"))
+
+    return worktree_path, False
+
+
+def navigate_and_display_checkout(
+    ctx: ErkContext,
+    *,
+    worktree_path: Path,
+    branch_name: str,
+    script: bool,
+    command_name: str,
+    already_existed: bool,
+    existing_message: str,
+    new_message: str,
+    script_message_existing: str,
+    script_message_new: str,
+) -> None:
+    """Navigate to worktree and display checkout status.
+
+    Handles the navigation and output display for checkout commands.
+    Formats the messages with {styled_path} placeholder for the worktree path.
+
+    Args:
+        ctx: Erk context with git operations
+        worktree_path: Path to the worktree
+        branch_name: Name of the branch
+        script: Whether running in script mode
+        command_name: Name of the command for script generation
+        already_existed: Whether the worktree already existed
+        existing_message: Message for existing worktree (use {styled_path} placeholder)
+        new_message: Message for new worktree (use {styled_path} placeholder)
+        script_message_existing: Script message for existing worktree
+        script_message_new: Script message for new worktree
+    """
+    styled_path = click.style(str(worktree_path), fg="cyan", bold=True)
+
+    should_output = navigate_to_worktree(
+        ctx,
+        worktree_path=worktree_path,
+        branch=branch_name,
+        script=script,
+        command_name=command_name,
+        script_message=script_message_existing if already_existed else script_message_new,
+        relative_path=None,
+        post_cd_commands=None,
+    )
+
+    if should_output:
+        message = existing_message if already_existed else new_message
+        user_output(message.format(styled_path=styled_path))
+        display_sync_status(ctx, worktree_path=worktree_path, branch=branch_name, script=script)
