@@ -261,20 +261,18 @@ def activate_root_repo(
         machine_output(str(result.path), nl=False)
     else:
         user_output(f"Went to root repo: {root_path}")
-        user_output(
-            "\nShell integration not detected. "
-            "Run 'erk init --shell' to set up automatic activation."
-        )
-        user_output(f"Or use: source <(erk {command_name} --script)")
-
-        # Print activation instructions for opt-in workflow
-        # SPECULATIVE: activation-scripts (objective #4954)
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=root_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path)
+            print_activation_instructions(script_path, include_implement_hint=False)
+        else:
+            user_output(
+                "\nShell integration not detected. "
+                "Run 'erk init --shell' to set up automatic activation."
+            )
+            user_output(f"Or use: source <(erk {command_name} --script)")
     raise SystemExit(0)
 
 
@@ -335,19 +333,19 @@ def activate_worktree(
 
         result.output_for_shell_integration()
     else:
-        user_output(
-            "Shell integration not detected. Run 'erk init --shell' to set up automatic activation."
-        )
-        user_output(f"\nOr use: source <(erk {command_name} --script)")
-
-        # Print activation instructions for opt-in workflow
-        # SPECULATIVE: activation-scripts (objective #4954)
+        user_output(f"Went to worktree: {wt_path}")
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=wt_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path)
+            print_activation_instructions(script_path, include_implement_hint=True)
+        else:
+            user_output(
+                "Shell integration not detected. "
+                "Run 'erk init --shell' to set up automatic activation."
+            )
+            user_output(f"\nOr use: source <(erk {command_name} --script)")
     raise SystemExit(0)
 
 
