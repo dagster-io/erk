@@ -5,6 +5,8 @@ read_when:
   - "handling rebase/restack edge cases"
   - "writing conflict detection logic"
   - "troubleshooting detached HEAD states"
+  - "handling concurrent worktree operations"
+  - "understanding worktree lock files"
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -94,40 +96,45 @@ is_detached = symbolic_result.returncode != 0
 
 ## Git Index Lock and Worktree Concurrency
 
-**Surprising Behavior**: When multiple git operations run concurrently across different worktrees in the same repository, they can conflict on the shared `index.lock` file:
+**Background**: Git's index and `index.lock` are **per-worktree**, not repository-wide. Each worktree has its own index stored in its admin directory (e.g., `.git/worktrees/<id>/index`).
 
-```
-error: Unable to create '/repo/.git/index.lock': File exists.
-```
+**What IS shared across worktrees:**
 
-**Why It's Surprising**: Each worktree appears isolated, but git's `.git/index` file is **repository-wide**, shared across all worktrees. When git modifies the index, it creates `index.lock` as a mutual exclusion mechanism. All worktrees contend for this single lock file.
+- Objects (the object database)
+- Refs (branch pointers, tags)
+- Ref lockfiles (e.g., when updating the same branch from multiple worktrees)
 
-**Worktree-Specific .git Indirection**: Worktrees use git's sparse checkout feature:
+**What is NOT shared:**
+
+- Index and index.lock (each worktree has its own)
+- HEAD (each worktree tracks its own checked-out branch)
+- Other per-worktree files
+
+**Gitfile Indirection**: Linked worktrees use gitfile indirection (not sparse checkout):
 
 - Each worktree has `.git` as a **file** (not a directory)
 - The file contains: `gitdir: /main/repo/.git/worktrees/<name>`
-- The actual `.git` directory is in the main repository root
-- `index.lock` always lives in the shared `.git` directory
+- The worktree's admin directory contains `index`, `HEAD`, and a `commondir` file pointing to the shared repo
 
-**Correct Resolution Pattern**:
+**Robust Lock File Resolution**:
+
+Use `git rev-parse --git-path` to let Git resolve paths correctly for any layout:
 
 ```python
-def get_git_dir(repo_root: Path) -> Path:
-    """Resolve worktree indirection to find actual .git directory."""
-    dot_git = repo_root / ".git"
-    if dot_git.is_file():
-        # Worktree: .git is a file containing "gitdir: /path/to/..."
-        content = dot_git.read_text().strip()
-        if content.startswith("gitdir: "):
-            worktree_git = Path(content[8:])
-            # Resolve to the main .git directory
-            return worktree_git.parent.parent
-    return dot_git
+import subprocess
+from pathlib import Path
+
+def git_path(repo_root: Path, rel: str) -> Path:
+    """Let Git resolve the correct path for this worktree."""
+    out = subprocess.check_output(
+        ["git", "-C", str(repo_root), "rev-parse", "--git-path", rel],
+        text=True,
+    ).strip()
+    return Path(out)
 
 def wait_for_index_lock(repo_root: Path, time: Time, *, max_wait_seconds: float = 5.0) -> bool:
     """Wait for index.lock to be released."""
-    git_dir = get_git_dir(repo_root)
-    lock_file = git_dir / "index.lock"
+    lock_file = git_path(repo_root, "index.lock")
     elapsed = 0.0
     while lock_file.exists() and elapsed < max_wait_seconds:
         time.sleep(0.5)
@@ -135,9 +142,17 @@ def wait_for_index_lock(repo_root: Path, time: Time, *, max_wait_seconds: float 
     return not lock_file.exists()
 ```
 
-**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
+This handles all cases:
 
-**Applied To Operations**: `checkout_branch()`, `pull_branch()`, `stage_files()`, `commit()` in `RealGit`
+- Normal repos (`.git` directory)
+- Linked worktrees (`.git` file → per-worktree admin dir)
+- Uncommon layouts (`$GIT_DIR`, `$GIT_COMMON_DIR`)
+
+**Anti-Pattern**: Don't manually parse `.git` files and compute paths with `parent.parent`. The worktree admin directory structure can vary, and Git uses `commondir` files for indirection.
+
+**When to Use**: Apply lock-waiting to operations that modify the index (`checkout`, `add`, `commit`, `reset`, etc.) when running concurrent git commands in the same worktree or when updating shared refs across worktrees.
+
+**Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
 
 ## Adding New Quirks
 

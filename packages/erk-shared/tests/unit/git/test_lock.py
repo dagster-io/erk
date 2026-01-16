@@ -1,60 +1,78 @@
 """Tests for git index lock waiting utilities."""
 
+import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.time.fake import FakeTime
-from erk_shared.git.lock import get_git_dir, wait_for_index_lock
+from erk_shared.git.lock import get_lock_path, wait_for_index_lock
 
 
-class TestGetGitDir:
-    """Tests for get_git_dir()."""
+def create_git_repo(path: Path) -> None:
+    """Create a minimal git repository at the given path."""
+    path.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        ["git", "init"],
+        cwd=path,
+        check=True,
+        capture_output=True,
+    )
 
-    def test_returns_git_path_for_normal_repo(self, tmp_path: Path) -> None:
-        """get_git_dir returns .git directory for a normal repository."""
-        git_dir = tmp_path / ".git"
-        git_dir.mkdir()
 
-        result = get_git_dir(tmp_path)
+class TestGetLockPath:
+    """Tests for get_lock_path()."""
 
-        assert result == git_dir
+    def test_returns_lock_path_for_normal_repo(self, tmp_path: Path) -> None:
+        """get_lock_path returns correct path for a normal repository."""
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
 
-    def test_returns_path_when_git_does_not_exist(self, tmp_path: Path) -> None:
-        """get_git_dir returns expected path even when .git doesn't exist."""
-        result = get_git_dir(tmp_path)
+        result = get_lock_path(repo)
 
-        assert result == tmp_path / ".git"
+        assert result is not None
+        assert result == repo / ".git" / "index.lock"
 
-    def test_follows_worktree_indirection(self, tmp_path: Path) -> None:
-        """get_git_dir follows gitdir pointer for worktrees."""
-        # Set up main repo structure
-        main_repo = tmp_path / "main-repo"
-        main_git = main_repo / ".git"
-        main_git.mkdir(parents=True)
-        worktrees_dir = main_git / "worktrees" / "feature"
-        worktrees_dir.mkdir(parents=True)
+    def test_returns_none_when_not_git_repo(self, tmp_path: Path) -> None:
+        """get_lock_path returns None when not in a git repository."""
+        non_repo = tmp_path / "not-a-repo"
+        non_repo.mkdir()
 
-        # Set up worktree with gitdir pointer
-        worktree = tmp_path / "worktrees" / "feature"
-        worktree.mkdir(parents=True)
-        worktree_git_file = worktree / ".git"
-        worktree_git_file.write_text(f"gitdir: {worktrees_dir}", encoding="utf-8")
+        result = get_lock_path(non_repo)
 
-        result = get_git_dir(worktree)
+        assert result is None
 
-        # Should return main .git, not worktree subdir
-        assert result == main_git
+    def test_returns_worktree_specific_lock_path(self, tmp_path: Path) -> None:
+        """get_lock_path returns the worktree-specific lock path, not main repo."""
+        # Create main repo
+        main_repo = tmp_path / "main"
+        create_git_repo(main_repo)
 
-    def test_handles_worktree_gitdir_not_existing(self, tmp_path: Path) -> None:
-        """get_git_dir handles case where gitdir target doesn't exist."""
+        # Create an initial commit so we can create a worktree
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "Initial commit"],
+            cwd=main_repo,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create a worktree
         worktree = tmp_path / "worktree"
-        worktree.mkdir()
-        worktree_git_file = worktree / ".git"
-        worktree_git_file.write_text("gitdir: /nonexistent/path/.git/worktrees/x", encoding="utf-8")
+        subprocess.run(
+            ["git", "worktree", "add", str(worktree), "-b", "feature"],
+            cwd=main_repo,
+            check=True,
+            capture_output=True,
+        )
 
-        result = get_git_dir(worktree)
+        # Get lock path for the worktree
+        result = get_lock_path(worktree)
 
-        # Should fall back to the .git file path
-        assert result == worktree_git_file
+        assert result is not None
+        # The lock path should be in the worktree's admin dir, NOT main repo
+        # Worktree index.lock is at .git/worktrees/<name>/index.lock
+        assert "worktrees" in str(result)
+        assert result.name == "index.lock"
+        # Verify it's NOT in the main repo's .git directly
+        assert result != main_repo / ".git" / "index.lock"
 
 
 class TestWaitForIndexLock:
@@ -62,11 +80,11 @@ class TestWaitForIndexLock:
 
     def test_returns_true_when_no_lock_exists(self, tmp_path: Path) -> None:
         """wait_for_index_lock returns True immediately when no lock exists."""
-        git_dir = tmp_path / ".git"
-        git_dir.mkdir()
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
         fake_time = FakeTime()
 
-        result = wait_for_index_lock(tmp_path, fake_time)
+        result = wait_for_index_lock(repo, fake_time)
 
         assert result is True
         # No sleeping should have occurred
@@ -74,9 +92,9 @@ class TestWaitForIndexLock:
 
     def test_waits_and_returns_true_when_lock_released(self, tmp_path: Path) -> None:
         """wait_for_index_lock waits and returns True when lock is released."""
-        git_dir = tmp_path / ".git"
-        git_dir.mkdir()
-        lock_file = git_dir / "index.lock"
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
+        lock_file = repo / ".git" / "index.lock"
         lock_file.touch()
         fake_time = FakeTime()
 
@@ -90,7 +108,7 @@ class TestWaitForIndexLock:
 
         fake_time.sleep = sleep_and_remove_lock  # type: ignore[method-assign]
 
-        result = wait_for_index_lock(tmp_path, fake_time)
+        result = wait_for_index_lock(repo, fake_time)
 
         assert result is True
         # Should have slept once before lock was released
@@ -98,14 +116,14 @@ class TestWaitForIndexLock:
 
     def test_returns_false_on_timeout(self, tmp_path: Path) -> None:
         """wait_for_index_lock returns False when lock is not released."""
-        git_dir = tmp_path / ".git"
-        git_dir.mkdir()
-        lock_file = git_dir / "index.lock"
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
+        lock_file = repo / ".git" / "index.lock"
         lock_file.touch()
         fake_time = FakeTime()
 
         result = wait_for_index_lock(
-            tmp_path,
+            repo,
             fake_time,
             max_wait_seconds=2.0,
             poll_interval=0.5,
@@ -119,14 +137,14 @@ class TestWaitForIndexLock:
 
     def test_respects_custom_poll_interval(self, tmp_path: Path) -> None:
         """wait_for_index_lock respects custom poll interval."""
-        git_dir = tmp_path / ".git"
-        git_dir.mkdir()
-        lock_file = git_dir / "index.lock"
+        repo = tmp_path / "repo"
+        create_git_repo(repo)
+        lock_file = repo / ".git" / "index.lock"
         lock_file.touch()
         fake_time = FakeTime()
 
         wait_for_index_lock(
-            tmp_path,
+            repo,
             fake_time,
             max_wait_seconds=1.0,
             poll_interval=0.25,
@@ -135,26 +153,49 @@ class TestWaitForIndexLock:
         # Should have slept with custom interval
         assert fake_time.sleep_calls == [0.25, 0.25, 0.25, 0.25]
 
-    def test_handles_worktree_lock(self, tmp_path: Path) -> None:
-        """wait_for_index_lock waits on main repo lock for worktrees."""
-        # Set up main repo with lock
-        main_repo = tmp_path / "main-repo"
-        main_git = main_repo / ".git"
-        main_git.mkdir(parents=True)
-        lock_file = main_git / "index.lock"
-        lock_file.touch()
-        worktrees_dir = main_git / "worktrees" / "feature"
-        worktrees_dir.mkdir(parents=True)
+    def test_returns_true_when_not_git_repo(self, tmp_path: Path) -> None:
+        """wait_for_index_lock returns True when not in a git repository."""
+        non_repo = tmp_path / "not-a-repo"
+        non_repo.mkdir()
+        fake_time = FakeTime()
 
-        # Set up worktree with gitdir pointer
-        worktree = tmp_path / "worktrees" / "feature"
-        worktree.mkdir(parents=True)
-        worktree_git_file = worktree / ".git"
-        worktree_git_file.write_text(f"gitdir: {worktrees_dir}", encoding="utf-8")
+        result = wait_for_index_lock(non_repo, fake_time)
+
+        assert result is True
+        # No sleeping should have occurred
+        assert fake_time.sleep_calls == []
+
+    def test_handles_worktree_lock(self, tmp_path: Path) -> None:
+        """wait_for_index_lock waits on the worktree's own lock, not main repo."""
+        # Create main repo
+        main_repo = tmp_path / "main"
+        create_git_repo(main_repo)
+
+        # Create an initial commit
+        subprocess.run(
+            ["git", "commit", "--allow-empty", "-m", "Initial commit"],
+            cwd=main_repo,
+            check=True,
+            capture_output=True,
+        )
+
+        # Create a worktree
+        worktree = tmp_path / "worktree"
+        subprocess.run(
+            ["git", "worktree", "add", str(worktree), "-b", "feature"],
+            cwd=main_repo,
+            check=True,
+            capture_output=True,
+        )
+
+        # Get the worktree's lock path and create a lock there
+        worktree_lock = get_lock_path(worktree)
+        assert worktree_lock is not None
+        worktree_lock.touch()
 
         fake_time = FakeTime()
 
-        # Should timeout since lock is on main repo
+        # Should timeout because the worktree-specific lock exists
         result = wait_for_index_lock(
             worktree,
             fake_time,

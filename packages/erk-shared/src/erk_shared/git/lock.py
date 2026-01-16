@@ -1,10 +1,15 @@
 """Git index lock waiting utilities.
 
 This module provides utilities for handling git's index.lock file, which is
-repository-wide and can cause conflicts when multiple operations run concurrently
-across worktrees.
+per-worktree (not repository-wide). Each worktree has its own index stored in
+its admin directory.
+
+Note: What IS shared across worktrees is refs and the object database. Ref
+lockfiles can cause contention when updating the same branch from multiple
+worktrees, but the index itself is per-worktree.
 """
 
+import subprocess
 from pathlib import Path
 
 from erk_shared.gateway.time.abc import Time
@@ -13,37 +18,30 @@ from erk_shared.gateway.time.abc import Time
 INDEX_LOCK_WAITING_ENABLED = True
 
 
-def get_git_dir(repo_root: Path) -> Path:
-    """Get actual .git directory, following worktree indirection.
+def get_lock_path(repo_root: Path) -> Path | None:
+    """Get the index.lock path for this worktree using git rev-parse.
 
-    For worktrees, the `.git` path is a file containing a gitdir pointer
-    to the real .git directory. The index.lock file lives in the main
-    repository's .git directory, not the worktree-specific subdirectory.
+    Uses `git rev-parse --git-path index.lock` to let git correctly resolve
+    the lock file path for any repository layout (normal repos, worktrees,
+    or custom GIT_DIR configurations).
 
     Args:
         repo_root: Repository or worktree root directory
 
     Returns:
-        Path to the main .git directory where index.lock lives
+        Path to the index.lock file for this worktree, or None if not in a git repo.
     """
-    git_path = repo_root / ".git"
-
-    if not git_path.exists():
-        # No .git at all - return what we have
-        return git_path
-
-    if git_path.is_file():
-        # Worktree: .git contains "gitdir: /path/to/real/.git/worktrees/name"
-        content = git_path.read_text(encoding="utf-8").strip()
-        if content.startswith("gitdir: "):
-            worktree_git = Path(content[8:])
-            # index.lock is in the main .git, not worktree subdir
-            # Structure: .git/worktrees/<name> -> go up two levels to get .git
-            if worktree_git.exists():
-                return worktree_git.parent.parent
-
-    # Either a normal .git directory or couldn't resolve worktree
-    return git_path
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "rev-parse", "--git-path", "index.lock"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return Path(result.stdout.strip())
+    except subprocess.CalledProcessError:
+        # Not a git repository or git not available
+        return None
 
 
 def wait_for_index_lock(
@@ -55,9 +53,12 @@ def wait_for_index_lock(
 ) -> bool:
     """Wait for index.lock to be released.
 
-    When multiple git operations run concurrently across worktrees, they can
-    conflict on git's repository-wide index.lock. This function waits with
-    polling until the lock is released or timeout occurs.
+    When multiple git operations run concurrently in the same worktree, they
+    can conflict on the index.lock file. This function waits with polling
+    until the lock is released or timeout occurs.
+
+    Note: The index.lock is per-worktree, not repository-wide. Operations in
+    different worktrees do NOT share the same index.lock.
 
     Args:
         repo_root: Repository root directory
@@ -67,13 +68,17 @@ def wait_for_index_lock(
 
     Returns:
         True if lock was released (or never existed), False if timed out.
-        Always returns True if INDEX_LOCK_WAITING_ENABLED is False.
+        Always returns True if INDEX_LOCK_WAITING_ENABLED is False or if
+        not in a git repository.
     """
     if not INDEX_LOCK_WAITING_ENABLED:
         return True
 
-    git_dir = get_git_dir(repo_root)
-    lock_path = git_dir / "index.lock"
+    lock_path = get_lock_path(repo_root)
+    if lock_path is None:
+        # Not a git repo, nothing to wait for
+        return True
+
     elapsed = 0.0
 
     while lock_path.exists() and elapsed < max_wait_seconds:
