@@ -604,6 +604,85 @@ def test_implement_from_file_does_not_propagate_objective() -> None:
             assert slot.last_objective_id is None
 
 
+def _create_plan_with_objective_in_metadata(issue_number: str, objective_issue: int) -> Plan:
+    """Create a plan where objective is in metadata['issue_body'], not in body.
+
+    This simulates the real-world scenario where:
+    - plan.body contains just the plan content (from the comment)
+    - plan.metadata['issue_body'] contains the full issue body with metadata blocks
+    """
+    # Body is just plain plan content - no metadata blocks
+    plan_content = "# Implementation Plan\n\nAdd user authentication to the application."
+
+    # Issue body contains the metadata block with objective
+    issue_body_with_metadata = format_plan_header_body_for_test(
+        created_at="2024-01-01T00:00:00+00:00",
+        created_by="testuser",
+        objective_issue=objective_issue,
+    )
+
+    return Plan(
+        plan_identifier=issue_number,
+        title="Plan With Objective In Metadata",
+        body=plan_content,  # Just plan content, no objective here
+        state=PlanState.OPEN,
+        url=f"https://github.com/owner/repo/issues/{issue_number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+        metadata={"issue_body": issue_body_with_metadata},  # Objective is HERE
+    )
+
+
+def test_implement_extracts_objective_from_metadata_issue_body() -> None:
+    """Regression test: objective extracted from metadata['issue_body'] not just body.
+
+    This is a regression test for a bug where objective extraction used plan.body
+    (the comment content) instead of the full issue body with metadata blocks.
+
+    In the schema v2 plan structure:
+    - Issue body contains compact metadata blocks (including objective_issue)
+    - First comment contains the plan content
+    - plan.body = comment content (no metadata blocks)
+    - plan.metadata['issue_body'] = full issue body (has metadata blocks)
+
+    The fix ensures objective is extracted from metadata['issue_body'] when present.
+    """
+    # Create plan where objective is ONLY in metadata['issue_body'], not in body
+    plan_issue = _create_plan_with_objective_in_metadata("400", 77)
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"400": plan_issue})
+        ctx = build_workspace_test_context(env, git=git, plan_store=store)
+
+        result = runner.invoke(implement, ["#400", "--script"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Assigned" in result.output
+        # Key assertion: objective should be found even though it's not in plan.body
+        assert "objective #77" in result.output
+
+        # Verify slot was created with objective
+        updated_state = load_pool_state(env.repo.pool_json_path)
+        assert updated_state is not None
+
+        # Find the slot that was assigned
+        assigned_slot_name = updated_state.assignments[0].slot_name
+        slot = next(
+            (s for s in updated_state.slots if s.name == assigned_slot_name),
+            None,
+        )
+        assert slot is not None
+        assert slot.last_objective_issue == 77
+
+
 def test_implement_objective_adds_new_slot_info() -> None:
     """Test that objective creates new SlotInfo when slot doesn't exist in slots list.
 
