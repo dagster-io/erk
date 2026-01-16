@@ -679,8 +679,149 @@ def test_create_from_current_branch_with_stay_flag() -> None:
             print(f"stdout: {result.stdout}")
         assert result.exit_code == 0
 
-        # Assert: Output contains only creation message, no navigation instructions
+        # Assert: Output contains creation message, no shell integration instructions
         assert "Created worktree at" in result.stderr
         assert "Shell integration not detected" not in result.stderr
         assert "erk init --shell" not in result.stderr
+        # Note: "source" IS present for activation instructions,
+        # but not "source <(" for shell integration
         assert "source <(" not in result.stderr
+
+
+def test_create_prints_activation_instructions() -> None:
+    """Test that create command prints activation script instructions.
+
+    Part of objective #4954, Phase 5: Activation output for create commands.
+    Verifies that erk wt create prints the activation path after worktree creation.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / "repos" / env.cwd.name
+
+        # Set up git state: in root worktree on feature branch
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                ]
+            },
+            current_branches={env.cwd: "my-feature"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(git=git_ops)
+
+        # Act: Create worktree from current branch (without --script flag)
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-current-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Assert: Command succeeded
+        if result.exit_code != 0:
+            print(f"stderr: {result.stderr}")
+            print(f"stdout: {result.stdout}")
+        assert result.exit_code == 0
+
+        # Assert: Output contains activation instructions
+        assert "To activate the worktree environment:" in result.stderr
+        assert "source" in result.stderr
+        assert ".erk/activate.sh" in result.stderr
+        assert "To activate and start implementation:" in result.stderr
+        assert "erk implement --here" in result.stderr
+
+        # Assert: Activation script file was created
+        expected_worktree_path = repo_dir / "worktrees" / "my-feature"
+        activate_script = expected_worktree_path / ".erk" / "activate.sh"
+        assert activate_script.exists()
+
+
+def test_create_with_stay_flag_prints_activation_instructions() -> None:
+    """Test that create --stay prints activation script instructions.
+
+    Part of objective #4954, Phase 5: Activation output for create commands.
+    Verifies that --stay mode still prints activation instructions.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.erk_root / "repos" / env.cwd.name
+
+        # Set up git state: in root worktree on feature branch
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                ]
+            },
+            current_branches={env.cwd: "my-feature"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(git=git_ops)
+
+        # Act: Create worktree with --stay flag
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-current-branch", "--stay"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0
+
+        # Assert: Output contains activation instructions
+        assert "To activate the worktree environment:" in result.stderr
+        assert "source" in result.stderr
+        assert ".erk/activate.sh" in result.stderr
+        assert "To activate and start implementation:" in result.stderr
+        assert "erk implement --here" in result.stderr
+
+        # Assert: Activation script file was created
+        expected_worktree_path = repo_dir / "worktrees" / "my-feature"
+        activate_script = expected_worktree_path / ".erk" / "activate.sh"
+        assert activate_script.exists()
+
+
+def test_create_script_mode_does_not_print_activation_instructions() -> None:
+    """Test that create --script does NOT print activation instructions.
+
+    Part of objective #4954, Phase 5: Activation output for create commands.
+    In script mode, shell integration handles navigation automatically,
+    so activation instructions would be redundant.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        # Set up git state: in root worktree on feature branch
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                ]
+            },
+            current_branches={env.cwd: "my-feature"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        test_ctx = env.build_context(git=git_ops)
+
+        # Act: Create worktree with --script flag
+        result = runner.invoke(
+            cli,
+            ["wt", "create", "--from-current-branch", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0
+
+        # Assert: Output does NOT contain activation instructions
+        # (shell integration handles navigation)
+        assert "To activate the worktree environment:" not in result.stderr
+        assert "erk implement --here" not in result.stderr
