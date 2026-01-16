@@ -23,6 +23,7 @@ from erk.cli.commands.implement_shared import (
     determine_base_branch,
     execute_interactive_mode,
     execute_non_interactive_mode,
+    extract_plan_from_current_branch,
     implement_common_options,
     normalize_model_name,
     output_activation_instructions,
@@ -847,7 +848,7 @@ def _implement_here_from_file(
 
 @alias("impl")
 @click.command("implement", cls=CommandWithHiddenOptions)
-@click.argument("target", shell_complete=complete_plan_files)
+@click.argument("target", required=False, shell_complete=complete_plan_files)
 @implement_common_options
 @click.option(
     "-f",
@@ -866,7 +867,7 @@ def _implement_here_from_file(
 def implement(
     ctx: ErkContext,
     *,
-    target: str,
+    target: str | None,
     dry_run: bool,
     submit: bool,
     dangerous: bool,
@@ -887,6 +888,7 @@ def implement(
     - GitHub issue number (e.g., #123 or 123)
     - GitHub issue URL (e.g., https://github.com/user/repo/issues/123)
     - Path to plan file (e.g., ./my-feature-plan.md)
+    - Omitted (auto-detects plan number from branch name when on PXXXX-* branch with --here)
 
     Note: Plain numbers (e.g., 809) are always interpreted as GitHub issues.
           For files with numeric names, use ./ prefix (e.g., ./809).
@@ -934,6 +936,31 @@ def implement(
 
     # Validate flag combinations
     validate_flags(submit, no_interactive, script, here=here, force=force)
+
+    # Auto-detect plan number from branch name when TARGET is omitted
+    if target is None:
+        if not here:
+            raise click.ClickException(
+                "TARGET is required when not using --here flag.\n\n"
+                "Either provide a TARGET (issue number or plan file) or use --here "
+                "to implement in the current directory with auto-detection."
+            )
+
+        # Extract plan number from current branch
+        detected_plan = extract_plan_from_current_branch(ctx)
+        if detected_plan is None:
+            current_branch = ctx.git.get_current_branch(ctx.cwd) or "unknown"
+            raise click.ClickException(
+                f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
+                f"Branch does not follow PXXXX-* pattern. Either:\n"
+                f"  1. Provide TARGET explicitly: erk implement <TARGET> --here\n"
+                f"  2. Switch to a plan branch: erk br checkout P<num>-...\n"
+                f"  3. Create branch from plan: erk br create --for-plan <issue>"
+            )
+
+        # Use detected plan number as target
+        target = detected_plan
+        user_output(f"Auto-detected plan #{target} from branch name")
 
     # Detect target type
     target_info = detect_target_type(target)

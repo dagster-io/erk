@@ -484,6 +484,34 @@ def detect_target_type(target: str) -> TargetInfo:
     return TargetInfo(target_type="file_path", issue_number=None)
 
 
+def extract_plan_from_current_branch(ctx: ErkContext) -> str | None:
+    """Extract plan number from current branch name if it follows PXXXX-* pattern.
+
+    Args:
+        ctx: ErkContext with git access
+
+    Returns:
+        Plan number as string if current branch follows PXXXX-* pattern, else None
+
+    Examples:
+        P123-fix-bug → "123"
+        P4567-feature → "4567"
+        main → None
+        feature-branch → None
+    """
+    from erk_shared.naming import extract_leading_issue_number
+
+    current_branch = ctx.git.get_current_branch(ctx.cwd)
+    if current_branch is None:
+        return None
+
+    issue_num = extract_leading_issue_number(current_branch)
+    if issue_num is None:
+        return None
+
+    return str(issue_num)
+
+
 @dataclass(frozen=True)
 class PlanSource:
     """Source information for creating a worktree with plan.
