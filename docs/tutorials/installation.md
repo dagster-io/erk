@@ -14,20 +14,6 @@ uv add erk
 uv sync
 ```
 
-**How shell integration works:**
-
-When you run `erk init --shell`, it adds a shell function that uses `uvx erk-sh-bootstrap` to:
-
-1. Find your project's `.venv/bin/erk`
-2. Delegate commands to your project-local erk
-3. Handle shell-specific features like directory switching
-
-This means:
-
-- **Per-project isolation**: Each project can have its own erk version
-- **No global installation needed**: Shell integration handles discovery
-- **Easy updates**: Update erk per-project with `uv upgrade erk`
-
 **Verify the installation:**
 
 ```bash
@@ -128,7 +114,6 @@ Each developer needs local state that isn't committed:
 - **`~/.erk/config.json`** — Global config with:
   - `erk_root`: Where worktrees are created (default: `~/.erk/repos/<repo>/worktrees/`)
   - `use_graphite`: Auto-detected based on whether `gt` is installed
-- **Shell integration** (optional) — Enables seamless `cd` behavior when switching worktrees
 
 The first time you run `erk init` (in any repo), it creates your global config. Subsequent runs in other repos skip this step.
 
