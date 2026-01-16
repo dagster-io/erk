@@ -14,9 +14,9 @@ from erk.cli.cli import cli
 from erk.cli.constants import ERK_LEARN_LABEL, ERK_PLAN_LABEL
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import format_plan_header_body
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_learn_issue(number: int) -> IssueInfo:
@@ -24,26 +24,7 @@ def _make_learn_issue(number: int) -> IssueInfo:
 
     Learn plans are identified by the erk-learn label.
     """
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
-    )
+    body = format_plan_header_body_for_test(created_by="user123")
     return IssueInfo(
         number=number,
         title=f"Learn Plan #{number} [erk-learn]",
@@ -77,26 +58,7 @@ def test_complete_is_deprecated() -> None:
 def test_complete_rejects_non_learn_plan() -> None:
     """Test complete fails for non-learn plan types."""
     # Standard plan (without erk-learn label)
-    standard_body = format_plan_header_body(
-        created_at="2024-01-15T10:30:00Z",
-        created_by="user123",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
-    )
+    standard_body = format_plan_header_body_for_test(created_by="user123")
     standard_issue = IssueInfo(
         number=100,
         title="Standard Plan [erk-plan]",

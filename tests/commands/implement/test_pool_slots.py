@@ -14,12 +14,14 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    format_plan_header_body_for_test,
+)
 
 # Branch Conflict Tests
 
@@ -473,25 +475,10 @@ def test_implement_not_from_slot_uses_new_slot() -> None:
 
 def _create_plan_with_objective(issue_number: str, objective_issue: int) -> Plan:
     """Create a plan issue with objective_issue in plan-header metadata."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-01T00:00:00+00:00",
         created_by="testuser",
-        worktree_name=None,
-        branch_name=None,
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        source_repo=None,
         objective_issue=objective_issue,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
     )
     return Plan(
         plan_identifier=issue_number,
