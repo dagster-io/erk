@@ -78,13 +78,39 @@ def test_sessions_for_plan_all_session_ids_order() -> None:
     assert result == ["plan-session", "impl-1", "impl-2", "learn-1"]
 
 
+def _make_plan_body(
+    *,
+    created_from_session: str | None = None,
+    last_local_impl_session: str | None = None,
+    last_remote_impl_at: str | None = None,
+) -> str:
+    """Create a plan-header body for testing."""
+    return format_plan_header_body(
+        created_at="2024-01-15T10:00:00Z",
+        created_by="testuser",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=last_local_impl_session,
+        last_local_impl_user=None,
+        last_remote_impl_at=last_remote_impl_at,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=created_from_session,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+
 def test_find_sessions_for_plan_no_sessions() -> None:
     """Find sessions returns empty collections when no sessions exist."""
     # Issue body without created_from_session
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
-    )
+    body = _make_plan_body()
     issue = create_test_issue(number=42, title="Plan", body=body)
     fake_gh = FakeGitHubIssues(issues={42: issue})
 
@@ -98,11 +124,7 @@ def test_find_sessions_for_plan_no_sessions() -> None:
 
 def test_find_sessions_for_plan_with_created_from_session() -> None:
     """Find sessions extracts planning session from metadata."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
-        created_from_session="planning-session-abc",
-    )
+    body = _make_plan_body(created_from_session="planning-session-abc")
     issue = create_test_issue(number=42, title="Plan", body=body)
     fake_gh = FakeGitHubIssues(issues={42: issue})
 
@@ -113,11 +135,7 @@ def test_find_sessions_for_plan_with_created_from_session() -> None:
 
 def test_find_sessions_for_plan_with_impl_session_in_metadata() -> None:
     """Find sessions extracts implementation session from plan-header."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
-        last_local_impl_session="impl-session-xyz",
-    )
+    body = _make_plan_body(last_local_impl_session="impl-session-xyz")
     issue = create_test_issue(number=42, title="Plan", body=body)
     fake_gh = FakeGitHubIssues(issues={42: issue})
 
@@ -128,10 +146,7 @@ def test_find_sessions_for_plan_with_impl_session_in_metadata() -> None:
 
 def test_find_sessions_for_plan_with_impl_comments() -> None:
     """Find sessions extracts sessions from impl comments."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
-    )
+    body = _make_plan_body()
     issue = create_test_issue(number=42, title="Plan", body=body)
     comments = [
         _make_impl_comment("started", "impl-comment-session"),
@@ -147,10 +162,7 @@ def test_find_sessions_for_plan_with_impl_comments() -> None:
 
 def test_find_sessions_for_plan_with_learn_comments() -> None:
     """Find sessions extracts sessions from learn comments."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
-    )
+    body = _make_plan_body()
     issue = create_test_issue(number=42, title="Plan", body=body)
     comments = [
         _make_learn_comment("learn-session-1"),
@@ -165,9 +177,7 @@ def test_find_sessions_for_plan_with_learn_comments() -> None:
 
 def test_find_sessions_for_plan_combines_all_sources() -> None:
     """Find sessions combines metadata and comments."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
+    body = _make_plan_body(
         created_from_session="planning-session",
         last_local_impl_session="metadata-impl-session",
     )
@@ -191,11 +201,7 @@ def test_find_sessions_for_plan_combines_all_sources() -> None:
 
 def test_find_sessions_for_plan_with_remote_impl() -> None:
     """Find sessions extracts last_remote_impl_at from plan-header."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
-        last_remote_impl_at="2024-01-16T14:30:00Z",
-    )
+    body = _make_plan_body(last_remote_impl_at="2024-01-16T14:30:00Z")
     issue = create_test_issue(number=42, title="Plan", body=body)
     fake_gh = FakeGitHubIssues(issues={42: issue})
 
@@ -208,9 +214,7 @@ def test_find_sessions_for_plan_with_remote_impl() -> None:
 
 def test_find_sessions_for_plan_with_both_local_and_remote_impl() -> None:
     """Find sessions returns both local sessions and remote timestamp."""
-    body = format_plan_header_body(
-        created_at="2024-01-15T10:00:00Z",
-        created_by="testuser",
+    body = _make_plan_body(
         last_local_impl_session="local-impl-session",
         last_remote_impl_at="2024-01-16T14:30:00Z",
     )

@@ -47,6 +47,7 @@ from erk_shared.github.metadata.core import render_erk_issue_event
 from erk_shared.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
+    update_plan_header_worktree_and_branch,
 )
 from erk_shared.impl_folder import (
     read_issue_reference,
@@ -253,6 +254,13 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
                 session_id=session_id,
                 user=user,
             )
+
+        # Set worktree and branch names atomically
+        updated_body = update_plan_header_worktree_and_branch(
+            issue_body=updated_body,
+            worktree_name=worktree_name,
+            branch_name=branch_name,
+        )
 
         github.update_issue_body(repo_root, issue_ref.issue_number, updated_body)
     except (RuntimeError, ValueError):

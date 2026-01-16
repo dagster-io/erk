@@ -9,10 +9,12 @@ import pytest
 from erk_shared.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.github.metadata.plan_header import (
     create_plan_header_block,
+    extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
     format_plan_header_body,
     update_plan_header_learn_event,
+    update_plan_header_worktree_and_branch,
 )
 from erk_shared.github.metadata.schemas import PlanHeaderSchema
 
@@ -139,6 +141,22 @@ def test_create_plan_header_block_minimal() -> None:
     block = create_plan_header_block(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     assert block.key == "plan-header"
@@ -153,13 +171,26 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name="my-worktree",
+        branch_name="feature-branch",
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         source_repo="owner/repo",
         objective_issue=42,
         created_from_session="session-abc",
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     assert block.key == "plan-header"
     assert block.data["worktree_name"] == "my-worktree"
+    assert block.data["branch_name"] == "feature-branch"
     assert block.data["source_repo"] == "owner/repo"
     assert block.data["objective_issue"] == 42
     assert block.data["created_from_session"] == "session-abc"
@@ -171,12 +202,26 @@ def test_create_plan_header_block_omits_none_values() -> None:
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         source_repo=None,
         objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     assert block.key == "plan-header"
     assert "worktree_name" not in block.data
+    assert "branch_name" not in block.data
     assert "source_repo" not in block.data
     assert "objective_issue" not in block.data
 
@@ -189,6 +234,22 @@ def test_format_plan_header_body_minimal() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     # Verify the block can be parsed back
@@ -204,14 +265,28 @@ def test_format_plan_header_body_with_optional_fields() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name="feature-branch",
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         source_repo="owner/repo",
         objective_issue=42,
         created_from_session="session-abc",
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     # Verify the block can be parsed back
     block = find_metadata_block(body, "plan-header")
     assert block is not None
+    assert block.data["branch_name"] == "feature-branch"
     assert block.data["source_repo"] == "owner/repo"
     assert block.data["objective_issue"] == 42
     assert block.data["created_from_session"] == "session-abc"
@@ -223,9 +298,21 @@ def test_render_and_extract_round_trip() -> None:
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name="my-worktree",
+        branch_name="feature-branch",
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
         source_repo="owner/repo",
         objective_issue=100,
         created_from_session="session-xyz",
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     rendered = render_metadata_block(block)
@@ -236,6 +323,7 @@ def test_render_and_extract_round_trip() -> None:
     assert extracted.data["created_at"] == "2024-01-15T10:30:00Z"
     assert extracted.data["created_by"] == "user123"
     assert extracted.data["worktree_name"] == "my-worktree"
+    assert extracted.data["branch_name"] == "feature-branch"
     assert extracted.data["source_repo"] == "owner/repo"
     assert extracted.data["objective_issue"] == 100
     assert extracted.data["created_from_session"] == "session-xyz"
@@ -292,6 +380,20 @@ def test_create_plan_header_block_with_learn_fields() -> None:
     block = create_plan_header_block(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
         last_learn_session="learn-session-abc",
         last_learn_at="2024-01-16T14:00:00Z",
     )
@@ -306,6 +408,20 @@ def test_format_plan_header_body_with_learn_fields() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
         last_learn_session="learn-session-xyz",
         last_learn_at="2024-01-16T15:00:00Z",
     )
@@ -323,6 +439,22 @@ def test_update_plan_header_learn_event() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     # Update with learn event
@@ -347,6 +479,22 @@ def test_update_plan_header_learn_event_with_none_session() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     updated_body = update_plan_header_learn_event(
@@ -378,7 +526,22 @@ def test_extract_plan_header_last_learn_session() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
         last_learn_session="learn-session-extract",
+        last_learn_at=None,
     )
 
     session_id = extract_plan_header_last_learn_session(body)
@@ -390,6 +553,22 @@ def test_extract_plan_header_last_learn_session_returns_none_when_missing() -> N
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     session_id = extract_plan_header_last_learn_session(body)
@@ -409,6 +588,21 @@ def test_extract_plan_header_last_learn_at() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
         last_learn_at="2024-01-16T14:00:00Z",
     )
 
@@ -421,7 +615,169 @@ def test_extract_plan_header_last_learn_at_returns_none_when_missing() -> None:
     body = format_plan_header_body(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     timestamp = extract_plan_header_last_learn_at(body)
     assert timestamp is None
+
+
+# === Branch Name Field Tests ===
+
+
+def test_plan_header_schema_accepts_branch_name() -> None:
+    """Schema accepts branch_name field."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "branch_name": "feature-branch",
+    }
+
+    # Should not raise
+    schema.validate(data)
+
+
+def test_plan_header_schema_rejects_empty_branch_name() -> None:
+    """Schema rejects empty branch_name."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "branch_name": "",
+    }
+
+    with pytest.raises(ValueError, match="branch_name must not be empty"):
+        schema.validate(data)
+
+
+def test_extract_plan_header_branch_name() -> None:
+    """extract_plan_header_branch_name extracts branch from body."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name="feature-branch",
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    branch = extract_plan_header_branch_name(body)
+    assert branch == "feature-branch"
+
+
+def test_extract_plan_header_branch_name_returns_none_when_missing() -> None:
+    """extract_plan_header_branch_name returns None when field is absent."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    branch = extract_plan_header_branch_name(body)
+    assert branch is None
+
+
+def test_extract_plan_header_branch_name_returns_none_for_invalid_body() -> None:
+    """extract_plan_header_branch_name returns None for invalid body."""
+    body = "No metadata block here"
+
+    branch = extract_plan_header_branch_name(body)
+    assert branch is None
+
+
+def test_update_plan_header_worktree_and_branch() -> None:
+    """update_plan_header_worktree_and_branch updates both fields atomically."""
+    # Create initial body without worktree or branch
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+    )
+
+    # Update with worktree and branch
+    updated_body = update_plan_header_worktree_and_branch(
+        issue_body=body,
+        worktree_name="my-worktree",
+        branch_name="feature-branch",
+    )
+
+    # Verify the block was updated
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["worktree_name"] == "my-worktree"
+    assert block.data["branch_name"] == "feature-branch"
+    # Original fields preserved
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "user123"
+
+
+def test_update_plan_header_worktree_and_branch_raises_for_missing_block() -> None:
+    """update_plan_header_worktree_and_branch raises ValueError if no plan-header."""
+    body = "Some other content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_worktree_and_branch(
+            issue_body=body,
+            worktree_name="my-worktree",
+            branch_name="feature-branch",
+        )

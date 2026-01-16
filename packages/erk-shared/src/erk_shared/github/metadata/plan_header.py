@@ -23,6 +23,7 @@ from erk_shared.github.metadata.core import (
     replace_metadata_block_in_body,
 )
 from erk_shared.github.metadata.schemas import (
+    BRANCH_NAME,
     CREATED_AT,
     CREATED_BY,
     CREATED_FROM_SESSION,
@@ -50,21 +51,22 @@ def create_plan_header_block(
     *,
     created_at: str,
     created_by: str,
-    worktree_name: str | None = None,
-    plan_comment_id: int | None = None,
-    last_dispatched_run_id: str | None = None,
-    last_dispatched_node_id: str | None = None,
-    last_dispatched_at: str | None = None,
-    last_local_impl_at: str | None = None,
-    last_local_impl_event: str | None = None,
-    last_local_impl_session: str | None = None,
-    last_local_impl_user: str | None = None,
-    last_remote_impl_at: str | None = None,
-    source_repo: str | None = None,
-    objective_issue: int | None = None,
-    created_from_session: str | None = None,
-    last_learn_session: str | None = None,
-    last_learn_at: str | None = None,
+    worktree_name: str | None,
+    branch_name: str | None,
+    plan_comment_id: int | None,
+    last_dispatched_run_id: str | None,
+    last_dispatched_node_id: str | None,
+    last_dispatched_at: str | None,
+    last_local_impl_at: str | None,
+    last_local_impl_event: str | None,
+    last_local_impl_session: str | None,
+    last_local_impl_user: str | None,
+    last_remote_impl_at: str | None,
+    source_repo: str | None,
+    objective_issue: int | None,
+    created_from_session: str | None,
+    last_learn_session: str | None,
+    last_learn_at: str | None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -72,6 +74,7 @@ def create_plan_header_block(
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Optional worktree name (set when worktree is created)
+        branch_name: Optional git branch name for this plan
         plan_comment_id: Optional GitHub comment ID containing plan content
         last_dispatched_run_id: Optional workflow run ID (set by workflow)
         last_dispatched_node_id: Optional GraphQL node ID (set by workflow, for batch queries)
@@ -110,6 +113,10 @@ def create_plan_header_block(
     if worktree_name is not None:
         data[WORKTREE_NAME] = worktree_name
 
+    # Only include branch_name if provided
+    if branch_name is not None:
+        data[BRANCH_NAME] = branch_name
+
     # Include source_repo for cross-repo plans
     if source_repo is not None:
         data[SOURCE_REPO] = source_repo
@@ -141,21 +148,22 @@ def format_plan_header_body(
     *,
     created_at: str,
     created_by: str,
-    worktree_name: str | None = None,
-    plan_comment_id: int | None = None,
-    last_dispatched_run_id: str | None = None,
-    last_dispatched_node_id: str | None = None,
-    last_dispatched_at: str | None = None,
-    last_local_impl_at: str | None = None,
-    last_local_impl_event: str | None = None,
-    last_local_impl_session: str | None = None,
-    last_local_impl_user: str | None = None,
-    last_remote_impl_at: str | None = None,
-    source_repo: str | None = None,
-    objective_issue: int | None = None,
-    created_from_session: str | None = None,
-    last_learn_session: str | None = None,
-    last_learn_at: str | None = None,
+    worktree_name: str | None,
+    branch_name: str | None,
+    plan_comment_id: int | None,
+    last_dispatched_run_id: str | None,
+    last_dispatched_node_id: str | None,
+    last_dispatched_at: str | None,
+    last_local_impl_at: str | None,
+    last_local_impl_event: str | None,
+    last_local_impl_session: str | None,
+    last_local_impl_user: str | None,
+    last_remote_impl_at: str | None,
+    source_repo: str | None,
+    objective_issue: int | None,
+    created_from_session: str | None,
+    last_learn_session: str | None,
+    last_learn_at: str | None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -166,6 +174,7 @@ def format_plan_header_body(
         created_at: ISO 8601 timestamp of plan creation
         created_by: GitHub username of plan creator
         worktree_name: Optional worktree name (set when worktree is created)
+        branch_name: Optional git branch name for this plan
         plan_comment_id: Optional GitHub comment ID containing plan content
         last_dispatched_run_id: Optional workflow run ID
         last_dispatched_node_id: Optional GraphQL node ID (for batch queries)
@@ -188,6 +197,7 @@ def format_plan_header_body(
         created_at=created_at,
         created_by=created_by,
         worktree_name=worktree_name,
+        branch_name=branch_name,
         plan_comment_id=plan_comment_id,
         last_dispatched_run_id=last_dispatched_run_id,
         last_dispatched_node_id=last_dispatched_node_id,
@@ -346,6 +356,22 @@ def extract_plan_header_worktree_name(issue_body: str) -> str | None:
     return block.data.get(WORKTREE_NAME)
 
 
+def extract_plan_header_branch_name(issue_body: str) -> str | None:
+    """Extract branch_name from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        branch_name if found, None if block is missing or field is unset
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(BRANCH_NAME)
+
+
 def extract_plan_header_comment_id(issue_body: str) -> int | None:
     """Extract plan_comment_id from plan-header block.
 
@@ -472,6 +498,50 @@ def update_plan_header_worktree_name(
     # Update worktree_name field
     updated_data = dict(block.data)
     updated_data[WORKTREE_NAME] = worktree_name
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def update_plan_header_worktree_and_branch(
+    *,
+    issue_body: str,
+    worktree_name: str,
+    branch_name: str,
+) -> str:
+    """Update worktree_name and branch_name fields in plan-header metadata block.
+
+    Sets both fields atomically in a single update. This is called when
+    implementation starts to record which worktree and branch are being used.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        worktree_name: The worktree name to set
+        branch_name: The git branch name to set
+
+    Returns:
+        Updated issue body with new worktree_name and branch_name fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update both fields atomically
+    updated_data = dict(block.data)
+    updated_data[WORKTREE_NAME] = worktree_name
+    updated_data[BRANCH_NAME] = branch_name
 
     # Validate updated data
     schema = PlanHeaderSchema()

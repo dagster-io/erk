@@ -152,6 +152,7 @@ def create_plan_issue(
         created_at=created_at,
         created_by=username,
         worktree_name=None,
+        branch_name=None,
         plan_comment_id=None,
         last_dispatched_run_id=None,
         last_dispatched_node_id=None,
@@ -164,6 +165,8 @@ def create_plan_issue(
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
+        last_learn_session=None,
+        last_learn_at=None,
     )
 
     # Create issue
