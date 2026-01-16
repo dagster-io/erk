@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of 15ca72b1f -->
+
+### Added
+
+- Add `erk plan co` command for checking out plan branches with flexible identifier formats (plain numbers, P-prefixed, or URLs) and automatic worktree creation (663ceee32)
+- Add unresolved PR comment count column to `erk dash` TUI (f676cd4d3)
+- Add git index lock retry logic to prevent conflicts during concurrent worktree operations (be578b881)
+- Add navigation guide for branches and worktrees documentation (490f346ca)
+
+### Changed
+
+- Show branch name in `erk plan view` output when implementation is active (138a62cbb)
+- Expand implementation plan details blocks by default in GitHub issues (92eac2403)
+- Enable CI autofix agent to automatically fix type errors (51cfa0e68)
+- Remove `erk-plan` label from objectives, keeping only `erk-objective` for clearer distinction (718393f3b)
+
+### Fixed
+
+- Fix `erk-bootstrap` to distinguish between "not in project" and "erk not installed" with targeted error messages (5fdc5f0e4)
+- Fix artifact sync to respect installed capabilities when syncing workflows and actions (6b09cd84a)
+
 ## [0.5.5] - 2026-01-15 06:53 PT
 
 ### Major Changes
