@@ -31,6 +31,7 @@ def get_global_config_keys() -> dict[str, str]:
         "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",
         "prompt_learn_on_land": "Prompt about running learn before landing plan PRs",
+        "learn_materials_storage": "Storage mode for learn materials ('gist' or 'artifact')",
     }
 
 

@@ -463,3 +463,58 @@ def test_roundtrip_interactive_claude_config(
     assert loaded.interactive_claude.verbose is True
     assert loaded.interactive_claude.permission_mode == "plan"
     assert loaded.interactive_claude.dangerous is True
+
+
+def test_real_config_store_roundtrip_learn_materials_storage(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealErkInstallation correctly saves and loads learn_materials_storage."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+
+    installation = RealErkInstallation()
+
+    # Create and save config with learn_materials_storage=artifact
+    config = GlobalConfig(
+        erk_root=tmp_path / "erks",
+        use_graphite=True,
+        shell_setup_complete=True,
+        github_planning=True,
+        learn_materials_storage="artifact",
+    )
+    installation.save_config(config)
+
+    # Load and verify
+    loaded = installation.load_config()
+    assert loaded.learn_materials_storage == "artifact"
+
+    # Verify the field is in the saved file
+    content = (erk_dir / "config.toml").read_text(encoding="utf-8")
+    assert 'learn_materials_storage = "artifact"' in content
+
+
+def test_real_config_store_loads_learn_materials_storage_default(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that RealErkInstallation defaults learn_materials_storage to 'gist' if missing."""
+    monkeypatch.setattr("pathlib.Path.home", lambda: tmp_path)
+
+    # Create .erk dir with config that doesn't have learn_materials_storage
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        f"""
+erk_root = "{tmp_path / "erks"}"
+use_graphite = true
+shell_setup_complete = true
+""".strip(),
+        encoding="utf-8",
+    )
+
+    installation = RealErkInstallation()
+    loaded = installation.load_config()
+
+    # Should default to "gist"
+    assert loaded.learn_materials_storage == "gist"
