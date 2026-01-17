@@ -84,8 +84,8 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_pr_checkout",
-            name="Copy: erk pr checkout && sync --dangerous",
-            description="Copy PR checkout command",
+            name="Copy: PR checkout && sync",
+            description="Copy PR checkout command (activates worktree)",
             shortcut="e",
             is_available=lambda ctx: ctx.row.pr_number is not None,
         ),

@@ -544,7 +544,7 @@ class ErkDashApp(App):
             self.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_pr_checkout":
-            cmd = f"erk pr checkout {row.pr_number} && erk pr sync --dangerous"
+            cmd = f'source "$(erk pr checkout {row.pr_number} --script)" && erk pr sync --dangerous'
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
