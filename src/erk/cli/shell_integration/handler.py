@@ -18,11 +18,23 @@ from erk.core.context import create_context
 from erk_shared.debug import debug_log
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.output.output import user_output
 
-# Module-level console for TTY interaction (injectable for testing)
-_console: Console = InteractiveConsole()
+
+@dataclass(frozen=True)
+class HandlerDependencies:
+    """Injectable dependencies for shell integration handler.
+
+    Used by _invoke_hidden_command() to enable testing without mocks.
+    Production code passes None (using defaults), tests inject fakes.
+    """
+
+    erk_installation: ErkInstallation
+    console: Console
+    is_uvx: bool  # Pre-computed uvx detection result
+
 
 PASSTHROUGH_MARKER: Final[str] = "__ERK_PASSTHROUGH__"
 PASSTHROUGH_COMMANDS: Final[set[str]] = {"sync"}
@@ -149,20 +161,26 @@ def process_command_result(
     return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
 
 
-def _is_shell_integration_enabled() -> bool:
+def _is_shell_integration_enabled(erk_installation: ErkInstallation) -> bool:
     """Check if shell integration is enabled in global config.
 
     Returns False if config doesn't exist or shell_integration is not set.
-    This function reads from ErkInstallation which handles missing config gracefully.
+
+    Args:
+        erk_installation: Gateway for reading erk config
     """
-    erk_installation = RealErkInstallation()
     if not erk_installation.config_exists():
         return False
     global_config = erk_installation.load_config()
     return global_config.shell_integration
 
 
-def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellIntegrationResult:
+def _invoke_hidden_command(
+    command_name: str,
+    args: tuple[str, ...],
+    *,
+    deps: HandlerDependencies | None = None,
+) -> ShellIntegrationResult:
     """Invoke a command with --script flag for shell integration.
 
     If shell integration is disabled in config, passthrough to regular command
@@ -174,6 +192,11 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     Uses subprocess.run instead of CliRunner to allow stderr (user messages)
     to stream directly to the terminal in real-time, while capturing stdout
     (the activation script path) for shell integration.
+
+    Args:
+        command_name: Shell command name (e.g., "wt checkout", "up")
+        args: Command arguments
+        deps: Optional dependencies for testing. If None, uses production defaults.
     """
     # Check if help flags, --script, --dry-run, or non-interactive flags are present
     # These should pass through to avoid shell integration adding --script.
@@ -188,16 +211,24 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
             return _build_passthrough_script(command_name, args)
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
+    # Initialize dependencies with production defaults if not provided
+    if deps is None:
+        deps = HandlerDependencies(
+            erk_installation=RealErkInstallation(),
+            console=InteractiveConsole(),
+            is_uvx=is_running_via_uvx(),
+        )
+
     # Check if shell integration is enabled in config
     # When disabled (default), passthrough to let CLI print activation instructions
-    if not _is_shell_integration_enabled():
+    if not _is_shell_integration_enabled(deps.erk_installation):
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
     # Check for uvx invocation and warn (command is already confirmed in SHELL_INTEGRATION_COMMANDS)
-    if is_running_via_uvx():
+    if deps.is_uvx:
         user_output(click.style("Warning: ", fg="yellow") + get_uvx_warning_message(command_name))
         user_output("")  # Blank line for readability
-        if not _console.confirm("Continue anyway?", default=False):
+        if not deps.console.confirm("Continue anyway?", default=False):
             return ShellIntegrationResult(passthrough=False, script=None, exit_code=1)
 
     # Clean up stale scripts before running (opportunistic cleanup)

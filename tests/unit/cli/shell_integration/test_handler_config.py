@@ -1,94 +1,111 @@
 """Tests for shell integration config-based behavior."""
 
+from pathlib import Path
 from unittest.mock import patch
 
 from erk.cli.shell_integration.handler import (
+    HandlerDependencies,
     ShellIntegrationResult,
     _invoke_hidden_command,
     _is_shell_integration_enabled,
 )
+from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.console.fake import FakeConsole
+from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+
+
+def _create_deps(
+    *,
+    config: GlobalConfig | None,
+    is_uvx: bool = False,
+) -> HandlerDependencies:
+    """Create HandlerDependencies with specified configuration.
+
+    Args:
+        config: GlobalConfig to use. If None, simulates config doesn't exist.
+        is_uvx: Whether to simulate running via uvx.
+    """
+    return HandlerDependencies(
+        erk_installation=FakeErkInstallation(config=config),
+        console=FakeConsole(
+            is_interactive=True,
+            is_stdout_tty=None,
+            is_stderr_tty=None,
+            confirm_responses=None,
+        ),
+        is_uvx=is_uvx,
+    )
 
 
 def test_is_shell_integration_enabled_returns_false_when_config_not_exists() -> None:
     """Returns False when config file doesn't exist."""
-    # Patch at the handler module where RealErkInstallation is imported
-    with patch("erk.cli.shell_integration.handler.RealErkInstallation") as mock_installation_class:
-        mock_installation = mock_installation_class.return_value
-        mock_installation.config_exists.return_value = False
+    erk_installation = FakeErkInstallation(config=None)
 
-        result = _is_shell_integration_enabled()
+    result = _is_shell_integration_enabled(erk_installation)
 
     assert result is False
 
 
 def test_is_shell_integration_enabled_returns_false_when_config_disabled() -> None:
     """Returns False when shell_integration is False in config."""
-    with patch("erk.cli.shell_integration.handler.RealErkInstallation") as mock_installation_class:
-        mock_installation = mock_installation_class.return_value
-        mock_installation.config_exists.return_value = True
-        mock_config = mock_installation.load_config.return_value
-        mock_config.shell_integration = False
+    config = GlobalConfig.test(Path("/fake/erk"), shell_integration=False)
+    erk_installation = FakeErkInstallation(config=config)
 
-        result = _is_shell_integration_enabled()
+    result = _is_shell_integration_enabled(erk_installation)
 
     assert result is False
 
 
 def test_is_shell_integration_enabled_returns_true_when_config_enabled() -> None:
     """Returns True when shell_integration is True in config."""
-    with patch("erk.cli.shell_integration.handler.RealErkInstallation") as mock_installation_class:
-        mock_installation = mock_installation_class.return_value
-        mock_installation.config_exists.return_value = True
-        mock_config = mock_installation.load_config.return_value
-        mock_config.shell_integration = True
+    config = GlobalConfig.test(Path("/fake/erk"), shell_integration=True)
+    erk_installation = FakeErkInstallation(config=config)
 
-        result = _is_shell_integration_enabled()
+    result = _is_shell_integration_enabled(erk_installation)
 
     assert result is True
 
 
 def test_handler_passthroughs_when_shell_integration_disabled() -> None:
     """Handler returns passthrough when shell_integration is disabled (default)."""
-    with patch(
-        "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=False
-    ):
-        # Use 'wt checkout' which IS in SHELL_INTEGRATION_COMMANDS
-        result = _invoke_hidden_command("wt checkout", ("feature-branch",))
+    config = GlobalConfig.test(Path("/fake/erk"), shell_integration=False)
+    deps = _create_deps(config=config)
+
+    # Use 'wt checkout' which IS in SHELL_INTEGRATION_COMMANDS
+    result = _invoke_hidden_command("wt checkout", ("feature-branch",), deps=deps)
 
     assert result == ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
 
-def test_handler_passthroughs_when_shell_integration_disabled_for_wt_checkout() -> None:
-    """Handler returns passthrough for wt checkout when disabled."""
-    with patch(
-        "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=False
-    ):
-        result = _invoke_hidden_command("wt checkout", ("feature-branch",))
+def test_handler_passthroughs_when_config_not_exists() -> None:
+    """Handler returns passthrough when config doesn't exist."""
+    deps = _create_deps(config=None)
+
+    result = _invoke_hidden_command("wt checkout", ("feature-branch",), deps=deps)
 
     assert result == ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
 
 def test_handler_passthroughs_when_shell_integration_disabled_for_up() -> None:
     """Handler returns passthrough for up command when disabled."""
-    with patch(
-        "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=False
-    ):
-        result = _invoke_hidden_command("up", ())
+    config = GlobalConfig.test(Path("/fake/erk"), shell_integration=False)
+    deps = _create_deps(config=config)
+
+    result = _invoke_hidden_command("up", (), deps=deps)
 
     assert result == ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
 
 def test_handler_proceeds_when_shell_integration_enabled() -> None:
     """Handler proceeds with shell integration when enabled."""
-    with patch(
-        "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=True
-    ):
-        with patch("erk.cli.shell_integration.handler.is_running_via_uvx", return_value=False):
-            with patch("erk.cli.shell_integration.handler.subprocess.run") as mock_run:
-                mock_run.return_value.returncode = 0
-                mock_run.return_value.stdout = "/tmp/script.sh"
+    config = GlobalConfig.test(Path("/fake/erk"), shell_integration=True)
+    deps = _create_deps(config=config, is_uvx=False)
 
-                result = _invoke_hidden_command("up", ())
+    with patch("erk.cli.shell_integration.handler.subprocess.run") as mock_run:
+        mock_run.return_value.returncode = 0
+        mock_run.return_value.stdout = "/tmp/script.sh"
+
+        result = _invoke_hidden_command("up", (), deps=deps)
 
     # subprocess.run should have been called
     mock_run.assert_called_once()
@@ -103,6 +120,7 @@ def test_deprecated_checkout_alias_passthroughs() -> None:
     because it never worked without shell integration anyway.
     """
     # Should passthrough regardless of shell_integration config setting
+    # (returns early before deps are checked)
     result = _invoke_hidden_command("checkout", ("feature-branch",))
     assert result == ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
