@@ -513,9 +513,11 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         ensure_erk_metadata_dir(repo)
         # Load config from primary location (.erk/config.toml)
         # Legacy locations are detected by 'erk doctor' only
-        repo_config = load_config(repo.root)
+        # Use main_repo_root so config is shared across all worktrees
+        main_root = repo.main_repo_root or repo.root
+        repo_config = load_config(main_root)
         # Load per-user local config (.erk/config.local.toml) and merge
-        user_local_config = load_local_config(repo.root)
+        user_local_config = load_local_config(main_root)
         local_config = merge_configs_with_local(
             base_config=repo_config,
             local_config=user_local_config,
