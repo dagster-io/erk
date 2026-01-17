@@ -846,7 +846,7 @@ def test_pr_checkout_prints_activation_instructions() -> None:
         # Verify activation instructions are printed
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
-        assert ".erk/activate.sh" in result.output
+        assert ".erk/bin/activate.sh" in result.output
         assert "To activate and start implementation:" in result.output
         assert "erk implement --here" in result.output
 
@@ -892,7 +892,7 @@ def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
         # Still should print activation instructions for existing worktrees
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
-        assert ".erk/activate.sh" in result.output
+        assert ".erk/bin/activate.sh" in result.output
         assert "erk implement --here" in result.output
 
 

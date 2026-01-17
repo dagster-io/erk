@@ -6,9 +6,11 @@ import pytest
 
 from erk.cli.activation import (
     _render_logging_helper,
+    ensure_land_script,
     ensure_worktree_activate_script,
     print_activation_instructions,
     render_activation_script,
+    render_land_script,
     write_worktree_activate_script,
 )
 
@@ -298,13 +300,13 @@ def test_render_activation_script_post_cd_commands_empty_list_no_section() -> No
 
 
 def test_write_worktree_activate_script_creates_script(tmp_path: Path) -> None:
-    """write_worktree_activate_script creates .erk/activate.sh with correct content."""
+    """write_worktree_activate_script creates .erk/bin/activate.sh with correct content."""
     script_path = write_worktree_activate_script(
         worktree_path=tmp_path,
         post_create_commands=None,
     )
 
-    assert script_path == tmp_path / ".erk" / "activate.sh"
+    assert script_path == tmp_path / ".erk" / "bin" / "activate.sh"
     assert script_path.exists()
 
     content = script_path.read_text(encoding="utf-8")
@@ -314,7 +316,7 @@ def test_write_worktree_activate_script_creates_script(tmp_path: Path) -> None:
 
 
 def test_write_worktree_activate_script_creates_erk_directory(tmp_path: Path) -> None:
-    """write_worktree_activate_script creates .erk/ directory if needed."""
+    """write_worktree_activate_script creates .erk/bin/ directory if needed."""
     assert not (tmp_path / ".erk").exists()
 
     write_worktree_activate_script(
@@ -322,14 +324,14 @@ def test_write_worktree_activate_script_creates_erk_directory(tmp_path: Path) ->
         post_create_commands=None,
     )
 
-    assert (tmp_path / ".erk").is_dir()
+    assert (tmp_path / ".erk" / "bin").is_dir()
 
 
 def test_write_worktree_activate_script_overwrites_existing(tmp_path: Path) -> None:
     """write_worktree_activate_script overwrites existing script."""
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-    script_path = erk_dir / "activate.sh"
+    bin_dir = tmp_path / ".erk" / "bin"
+    bin_dir.mkdir(parents=True)
+    script_path = bin_dir / "activate.sh"
     script_path.write_text("old content", encoding="utf-8")
 
     write_worktree_activate_script(
@@ -352,15 +354,15 @@ def test_ensure_worktree_activate_script_creates_if_missing(tmp_path: Path) -> N
         post_create_commands=None,
     )
 
-    assert script_path == tmp_path / ".erk" / "activate.sh"
+    assert script_path == tmp_path / ".erk" / "bin" / "activate.sh"
     assert script_path.exists()
 
 
 def test_ensure_worktree_activate_script_returns_existing(tmp_path: Path) -> None:
     """ensure_worktree_activate_script returns existing script without modifying."""
-    erk_dir = tmp_path / ".erk"
-    erk_dir.mkdir()
-    script_path = erk_dir / "activate.sh"
+    bin_dir = tmp_path / ".erk" / "bin"
+    bin_dir.mkdir(parents=True)
+    script_path = bin_dir / "activate.sh"
     script_path.write_text("existing content", encoding="utf-8")
 
     result = ensure_worktree_activate_script(
@@ -395,7 +397,7 @@ def test_print_activation_instructions_with_implement_hint(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """print_activation_instructions with include_implement_hint=True shows full instructions."""
-    script_path = tmp_path / ".erk" / "activate.sh"
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
@@ -416,7 +418,7 @@ def test_print_activation_instructions_without_implement_hint(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """print_activation_instructions with include_implement_hint=False omits implement hint."""
-    script_path = tmp_path / ".erk" / "activate.sh"
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
@@ -429,3 +431,46 @@ def test_print_activation_instructions_without_implement_hint(
     assert "start implementation" not in captured.err
     assert "erk implement --here" not in captured.err
     assert "--dangerous" not in captured.err
+
+
+# land.sh script tests
+
+
+def test_render_land_script_content() -> None:
+    """render_land_script returns correct shell script content."""
+    script = render_land_script()
+    assert "#!/usr/bin/env bash" in script
+    assert 'eval "$(erk land --script "$@")"' in script
+    assert "source this script" in script
+
+
+def test_ensure_land_script_creates_if_missing(tmp_path: Path) -> None:
+    """ensure_land_script creates land.sh if it doesn't exist."""
+    script_path = ensure_land_script(tmp_path)
+
+    assert script_path == tmp_path / ".erk" / "bin" / "land.sh"
+    assert script_path.exists()
+    content = script_path.read_text(encoding="utf-8")
+    assert 'eval "$(erk land --script "$@")"' in content
+
+
+def test_ensure_land_script_creates_bin_directory(tmp_path: Path) -> None:
+    """ensure_land_script creates .erk/bin/ directory if needed."""
+    assert not (tmp_path / ".erk").exists()
+
+    ensure_land_script(tmp_path)
+
+    assert (tmp_path / ".erk" / "bin").is_dir()
+
+
+def test_ensure_land_script_returns_existing(tmp_path: Path) -> None:
+    """ensure_land_script returns existing script without modifying."""
+    bin_dir = tmp_path / ".erk" / "bin"
+    bin_dir.mkdir(parents=True)
+    script_path = bin_dir / "land.sh"
+    script_path.write_text("existing land script", encoding="utf-8")
+
+    result = ensure_land_script(tmp_path)
+
+    assert result == script_path
+    assert script_path.read_text(encoding="utf-8") == "existing land script"

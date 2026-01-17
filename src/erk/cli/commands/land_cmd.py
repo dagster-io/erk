@@ -18,6 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
+from erk.cli.activation import ensure_land_script
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -648,13 +649,12 @@ def land(
 
     # Validate shell integration for activation script output (skip in dry-run mode)
     if not script and not ctx.dry_run:
+        # Ensure land.sh exists and show user-friendly message
+        land_script = ensure_land_script(repo.root)
         user_output(
             click.style("Error: ", fg="red")
-            + "This command requires shell integration for activation.\n\n"
-            + "Options:\n"
-            + "  1. Use shell integration: erk land\n"
-            + "     (Requires 'erk init --shell' setup)\n\n"
-            + "  2. Use --script flag: source <(erk land --script)\n"
+            + "This command requires shell integration.\n\n"
+            + f"Run: source {land_script}\n"
         )
         raise SystemExit(1)
 
