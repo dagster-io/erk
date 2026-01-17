@@ -15,4 +15,4 @@
 model_name = "claude-opus-4-5"
 
 [pool]
-max_slots = 16
+max_slots = 64
