@@ -707,26 +707,3 @@ class GitHub(ABC):
             Empty list if no PRs match or on API failure.
         """
         ...
-
-    @abstractmethod
-    def create_gist(
-        self,
-        *,
-        files: dict[str, str],
-        description: str,
-        public: bool = False,
-    ) -> str:
-        """Create a GitHub gist with the given files.
-
-        Args:
-            files: Mapping of filename -> file content
-            description: Gist description
-            public: Whether the gist should be public (default: secret/private)
-
-        Returns:
-            The URL of the created gist
-
-        Raises:
-            RuntimeError: If gh command fails (auth issues, network errors, etc.)
-        """
-        ...

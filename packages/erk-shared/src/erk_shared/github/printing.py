@@ -334,18 +334,3 @@ class PrintingGitHub(PrintingBase, GitHub):
     ) -> list[PullRequestInfo]:
         """Get open PRs with base branch (read-only, no printing)."""
         return self._wrapped.get_open_prs_with_base_branch(repo_root, base_branch)
-
-    def create_gist(
-        self,
-        *,
-        files: dict[str, str],
-        description: str,
-        public: bool = False,
-    ) -> str:
-        """Create gist with printed output."""
-        file_list = ", ".join(files.keys())
-        visibility = "--public" if public else ""
-        self._emit(self._format_command(f"gh gist create {visibility} {file_list}".strip()))
-        gist_url = self._wrapped.create_gist(files=files, description=description, public=public)
-        self._emit(f"-> Gist: {gist_url}")
-        return gist_url
