@@ -146,6 +146,7 @@ class GlobalConfig:
     fix_conflicts_require_dangerous_flag: bool = True
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
+    shell_integration: bool = False
     interactive_claude: InteractiveClaudeConfig = InteractiveClaudeConfig.default()
 
     @staticmethod
@@ -158,6 +159,7 @@ class GlobalConfig:
         fix_conflicts_require_dangerous_flag: bool = True,
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
+        shell_integration: bool = False,
         interactive_claude: InteractiveClaudeConfig | None = None,
     ) -> GlobalConfig:
         """Create a GlobalConfig with sensible test defaults."""
@@ -169,6 +171,7 @@ class GlobalConfig:
             fix_conflicts_require_dangerous_flag=fix_conflicts_require_dangerous_flag,
             show_hidden_commands=show_hidden_commands,
             prompt_learn_on_land=prompt_learn_on_land,
+            shell_integration=shell_integration,
             interactive_claude=(
                 interactive_claude
                 if interactive_claude is not None

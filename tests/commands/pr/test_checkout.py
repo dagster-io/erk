@@ -347,8 +347,12 @@ def test_pr_checkout_script_mode_outputs_script_path() -> None:
         assert ".venv" in script_content
 
 
-def test_pr_checkout_non_script_mode_spawns_subshell() -> None:
-    """Test that non-script mode without shell integration spawns subshell."""
+def test_pr_checkout_non_script_mode_prints_activation_instructions() -> None:
+    """Test that non-script mode without shell integration prints activation instructions.
+
+    Shell integration is now opt-in. Without it, commands print activation path
+    instructions instead of spawning a subshell.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -367,16 +371,15 @@ def test_pr_checkout_non_script_mode_spawns_subshell() -> None:
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
 
-        # Without ERK_SHELL set, the command spawns a subshell
+        # Without ERK_SHELL set, the command prints activation instructions
         # Ensure ERK_SHELL is NOT set
         env_copy = {k: v for k, v in os.environ.items() if k != "ERK_SHELL"}
         with patch.dict(os.environ, env_copy, clear=True):
             result = runner.invoke(pr_group, ["checkout", "666"], obj=ctx)
 
-        # Subshell shows welcome banner
+        # Output shows worktree info and activation instructions
         assert result.exit_code == 0
-        assert "worktree subshell" in result.output
-        assert "exit" in result.output
+        assert "To activate" in result.output or "source" in result.output
 
 
 def test_pr_checkout_stacked_pr_rebases_onto_base() -> None:
@@ -843,7 +846,7 @@ def test_pr_checkout_prints_activation_instructions() -> None:
         # Verify activation instructions are printed
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
-        assert ".erk/activate.sh" in result.output
+        assert ".erk/bin/activate.sh" in result.output
         assert "To activate and start implementation:" in result.output
         assert "erk implement --here" in result.output
 
@@ -889,7 +892,7 @@ def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
         # Still should print activation instructions for existing worktrees
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
-        assert ".erk/activate.sh" in result.output
+        assert ".erk/bin/activate.sh" in result.output
         assert "erk implement --here" in result.output
 
 

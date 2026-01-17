@@ -145,7 +145,7 @@ def write_worktree_activate_script(
     worktree_path: Path,
     post_create_commands: Sequence[str] | None,
 ) -> Path:
-    """Write an activation script to .erk/activate.sh in the worktree.
+    """Write an activation script to .erk/bin/activate.sh in the worktree.
 
     The script will:
       - CD to the worktree root
@@ -160,7 +160,7 @@ def write_worktree_activate_script(
             script. These run after venv activation and .env loading.
 
     Returns:
-        Path to the written activation script (.erk/activate.sh)
+        Path to the written activation script (.erk/bin/activate.sh)
     """
     script_content = render_activation_script(
         worktree_path=worktree_path,
@@ -170,10 +170,10 @@ def write_worktree_activate_script(
         comment="erk worktree activation script",
     )
 
-    erk_dir = worktree_path / ".erk"
-    erk_dir.mkdir(parents=True, exist_ok=True)
+    bin_dir = worktree_path / ".erk" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
 
-    script_path = erk_dir / "activate.sh"
+    script_path = bin_dir / "activate.sh"
     script_path.write_text(script_content, encoding="utf-8")
 
     return script_path
@@ -184,7 +184,7 @@ def ensure_worktree_activate_script(
     worktree_path: Path,
     post_create_commands: Sequence[str] | None,
 ) -> Path:
-    """Ensure an activation script exists at .erk/activate.sh.
+    """Ensure an activation script exists at .erk/bin/activate.sh.
 
     If the script doesn't exist, creates it. If it exists, returns
     the path without modifying it (idempotent for existing scripts).
@@ -195,9 +195,9 @@ def ensure_worktree_activate_script(
             script. Only used if creating a new script.
 
     Returns:
-        Path to the activation script (.erk/activate.sh)
+        Path to the activation script (.erk/bin/activate.sh)
     """
-    script_path = worktree_path / ".erk" / "activate.sh"
+    script_path = worktree_path / ".erk" / "bin" / "activate.sh"
 
     if not script_path.exists():
         return write_worktree_activate_script(
@@ -222,7 +222,7 @@ def print_activation_instructions(
     SPECULATIVE: activation-scripts (objective #4954)
 
     Args:
-        script_path: Path to the activation script (.erk/activate.sh)
+        script_path: Path to the activation script (.erk/bin/activate.sh)
         include_implement_hint: If True, also print "erk implement --here" hint.
             Set to True for worktrees (where implementation happens),
             False for root repo navigation.
@@ -237,3 +237,39 @@ def print_activation_instructions(
         user_output(f"  source {script_path} && erk implement --here")
         user_output("\nTo activate and start implementation (skip permission prompts):")
         user_output(f"  source {script_path} && erk implement --here --dangerous")
+
+
+def render_land_script() -> str:
+    """Return shell script content for land.sh.
+
+    The script wraps `erk land --script` to provide shell integration,
+    allowing the command to navigate the shell after landing a PR.
+    """
+    return """#!/usr/bin/env bash
+# erk land wrapper - source this script to land with shell integration
+# Usage: source .erk/bin/land.sh [args...]
+eval "$(erk land --script "$@")"
+"""
+
+
+def ensure_land_script(worktree_path: Path) -> Path:
+    """Ensure land.sh exists at .erk/bin/land.sh in the worktree.
+
+    Creates the script if it doesn't exist. The script wraps
+    `erk land --script` to provide shell integration.
+
+    Args:
+        worktree_path: Path to the worktree directory
+
+    Returns:
+        Path to the land script (.erk/bin/land.sh)
+    """
+    bin_dir = worktree_path / ".erk" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+
+    script_path = bin_dir / "land.sh"
+
+    if not script_path.exists():
+        script_path.write_text(render_land_script(), encoding="utf-8")
+
+    return script_path

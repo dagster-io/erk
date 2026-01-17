@@ -18,6 +18,7 @@ from erk.core.context import create_context
 from erk_shared.debug import debug_log
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.output.output import user_output
 
 # Module-level console for TTY interaction (injectable for testing)
@@ -33,10 +34,13 @@ GLOBAL_FLAGS: Final[set[str]] = {"--debug", "--dry-run", "--verbose", "-v"}
 # Commands that require shell integration (directory switching)
 # Maps command names (as received from shell) to CLI command paths (for subprocess)
 # Keys are what the shell handler receives, values are what gets passed to subprocess
+#
+# NOTE: Top-level "checkout" and "co" aliases are intentionally removed.
+# Users should use "erk wt checkout" or "erk br checkout" explicitly.
+# These never worked without shell integration anyway since there's no
+# top-level "checkout" CLI command.
 SHELL_INTEGRATION_COMMANDS: Final[dict[str, list[str]]] = {
     # Top-level commands (key matches CLI path)
-    "checkout": ["checkout"],
-    "co": ["checkout"],  # Alias for checkout
     "up": ["up"],
     "down": ["down"],
     "implement": ["implement"],
@@ -145,8 +149,24 @@ def process_command_result(
     return ShellIntegrationResult(passthrough=False, script=script_path, exit_code=exit_code)
 
 
+def _is_shell_integration_enabled() -> bool:
+    """Check if shell integration is enabled in global config.
+
+    Returns False if config doesn't exist or shell_integration is not set.
+    This function reads from ErkInstallation which handles missing config gracefully.
+    """
+    erk_installation = RealErkInstallation()
+    if not erk_installation.config_exists():
+        return False
+    global_config = erk_installation.load_config()
+    return global_config.shell_integration
+
+
 def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellIntegrationResult:
     """Invoke a command with --script flag for shell integration.
+
+    If shell integration is disabled in config, passthrough to regular command
+    which will print activation instructions.
 
     If args contain help flags or explicit --script, passthrough to regular command.
     Otherwise, add --script flag and run as subprocess with live stderr streaming.
@@ -166,6 +186,11 @@ def _invoke_hidden_command(command_name: str, args: tuple[str, ...]) -> ShellInt
     if cli_cmd_parts is None:
         if command_name in PASSTHROUGH_COMMANDS:
             return _build_passthrough_script(command_name, args)
+        return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
+
+    # Check if shell integration is enabled in config
+    # When disabled (default), passthrough to let CLI print activation instructions
+    if not _is_shell_integration_enabled():
         return ShellIntegrationResult(passthrough=True, script=None, exit_code=0)
 
     # Check for uvx invocation and warn (command is already confirmed in SHELL_INTEGRATION_COMMANDS)

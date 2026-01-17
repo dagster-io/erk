@@ -118,17 +118,16 @@ def navigate_to_worktree(
     relative_path: Path | None,
     post_cd_commands: Sequence[str] | None,
 ) -> bool:
-    """Navigate to worktree, handling script/subshell/shell-integration modes.
+    """Navigate to worktree, handling script mode vs interactive mode.
 
-    This function consolidates the three-mode navigation pattern used by checkout commands:
+    This function handles two navigation modes:
     1. Script mode: Generate activation script and output for shell integration
-    2. No shell integration: Spawn a subshell in the worktree directory
-    3. Shell integration active: Return True so caller can output custom message
+    2. Interactive mode: Return True so caller can output custom message and activation path
 
     Args:
-        ctx: Erk context (for script_writer and shell gateway)
+        ctx: Erk context (for script_writer)
         worktree_path: Path to the target worktree directory
-        branch: Branch name (for subshell display)
+        branch: Branch name (for script comment)
         script: Whether running in script mode
         command_name: Name of the command (for script generation)
         script_message: Message to echo in activation script (e.g., 'echo "Switched to worktree"')
@@ -136,11 +135,9 @@ def navigate_to_worktree(
         post_cd_commands: Optional shell commands to run after cd
 
     Returns:
-        True if caller should output custom message (shell integration mode).
-        In script and subshell modes, this function exits via sys.exit() and does not return.
+        True if caller should output custom message and activation instructions.
+        In script mode, this function exits via sys.exit() and does not return.
     """
-    from erk.cli.subshell import is_shell_integration_active, spawn_simple_subshell
-
     if script:
         activation_script = render_activation_script(
             worktree_path=worktree_path,
@@ -156,16 +153,9 @@ def navigate_to_worktree(
         )
         result.output_for_shell_integration()
         sys.exit(0)
-    elif not is_shell_integration_active():
-        exit_code = spawn_simple_subshell(
-            ctx.shell,
-            worktree_path=worktree_path,
-            branch=branch,
-            shell=None,
-        )
-        sys.exit(exit_code)
-    else:
-        return True  # Caller should output custom message
+
+    # Interactive mode: caller handles output and activation instructions
+    return True
 
 
 def ensure_branch_has_worktree(

@@ -729,13 +729,13 @@ def test_create_prints_activation_instructions() -> None:
         # Assert: Output contains activation instructions
         assert "To activate the worktree environment:" in result.stderr
         assert "source" in result.stderr
-        assert ".erk/activate.sh" in result.stderr
+        assert ".erk/bin/activate.sh" in result.stderr
         assert "To activate and start implementation:" in result.stderr
         assert "erk implement --here" in result.stderr
 
         # Assert: Activation script file was created
         expected_worktree_path = repo_dir / "worktrees" / "my-feature"
-        activate_script = expected_worktree_path / ".erk" / "activate.sh"
+        activate_script = expected_worktree_path / ".erk" / "bin" / "activate.sh"
         assert activate_script.exists()
 
 
@@ -777,13 +777,13 @@ def test_create_with_stay_flag_prints_activation_instructions() -> None:
         # Assert: Output contains activation instructions
         assert "To activate the worktree environment:" in result.stderr
         assert "source" in result.stderr
-        assert ".erk/activate.sh" in result.stderr
+        assert ".erk/bin/activate.sh" in result.stderr
         assert "To activate and start implementation:" in result.stderr
         assert "erk implement --here" in result.stderr
 
         # Assert: Activation script file was created
         expected_worktree_path = repo_dir / "worktrees" / "my-feature"
-        activate_script = expected_worktree_path / ".erk" / "activate.sh"
+        activate_script = expected_worktree_path / ".erk" / "bin" / "activate.sh"
         assert activate_script.exists()
 
 

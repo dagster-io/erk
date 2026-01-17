@@ -40,16 +40,18 @@ from erk_shared.output.output import machine_output, user_output
 def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
     """Move to child branch in worktree stack.
 
-    With shell integration (recommended):
+    Prints the activation path for the target worktree.
+    To navigate automatically, enable shell integration:
+
+      erk config set shell_integration true
+      erk init --shell  # Then restart your shell
+
+    With shell integration enabled:
       erk up
 
-    The shell wrapper function automatically activates the worktree.
-    Run 'erk init --shell' to set up shell integration.
-
     Without shell integration:
-      source <(erk up --script)
+      source <(erk up --script)  # Or use the printed activation path
 
-    This will cd to the child branch's worktree, create/activate .venv, and load .env variables.
     Requires Graphite to be enabled: 'erk config set use_graphite true'
     """
     # Validate preconditions upfront (LBYL)
