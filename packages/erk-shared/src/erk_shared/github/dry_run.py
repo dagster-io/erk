@@ -317,3 +317,16 @@ class DryRunGitHub(GitHub):
     ) -> list[PullRequestInfo]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_open_prs_with_base_branch(repo_root, base_branch)
+
+    def create_gist(
+        self,
+        *,
+        files: dict[str, str],
+        description: str,
+        public: bool = False,
+    ) -> str:
+        """No-op for creating gist in dry-run mode.
+
+        Returns a fake URL to allow dry-run workflows to continue.
+        """
+        return "https://gist.github.com/dry-run/noop-gist-12345"

@@ -977,3 +977,58 @@ def test_fake_github_update_pr_comment_tracks_mutation() -> None:
     ops.update_pr_comment(sentinel_path(), 12345, "Updated body")
 
     assert ops.pr_comment_updates == [(12345, "Updated body")]
+
+
+# Tests for create_gist
+
+
+def test_fake_github_create_gist_returns_url() -> None:
+    """Test create_gist returns a URL string."""
+    ops = FakeGitHub()
+
+    result = ops.create_gist(
+        files={"test.txt": "content"},
+        description="Test gist",
+    )
+
+    assert isinstance(result, str)
+    assert result.startswith("https://")
+    assert "gist.github.com" in result
+
+
+def test_fake_github_create_gist_tracks_mutation() -> None:
+    """Test create_gist tracks the gist creation in mutation list."""
+    ops = FakeGitHub()
+    files = {"file1.txt": "content1", "file2.py": "print('hello')"}
+
+    ops.create_gist(files=files, description="My gist")
+
+    assert ops.created_gists == [(files, "My gist", False)]
+
+
+def test_fake_github_create_gist_tracks_public_flag() -> None:
+    """Test create_gist tracks the public flag."""
+    ops = FakeGitHub()
+
+    ops.create_gist(files={"test.txt": "content"}, description="Public gist", public=True)
+
+    assert ops.created_gists == [({"test.txt": "content"}, "Public gist", True)]
+
+
+def test_fake_github_create_gist_multiple_calls() -> None:
+    """Test create_gist tracks multiple gist creations."""
+    ops = FakeGitHub()
+
+    ops.create_gist(files={"a.txt": "a"}, description="First")
+    ops.create_gist(files={"b.txt": "b"}, description="Second", public=True)
+
+    assert len(ops.created_gists) == 2
+    assert ops.created_gists[0] == ({"a.txt": "a"}, "First", False)
+    assert ops.created_gists[1] == ({"b.txt": "b"}, "Second", True)
+
+
+def test_fake_github_created_gists_empty_initially() -> None:
+    """Test created_gists property is empty list initially."""
+    ops = FakeGitHub()
+
+    assert ops.created_gists == []

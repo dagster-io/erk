@@ -137,6 +137,7 @@ class FakeGitHub(GitHub):
         self._pr_comment_updates: list[tuple[int, str]] = []
         self._next_comment_id = 1000000
         self._deleted_remote_branches: list[str] = []
+        self._created_gists: list[tuple[dict[str, str], str, bool]] = []
         # Ordered log of all mutation operations for testing operation ordering
         self._operation_log: list[tuple[Any, ...]] = []
 
@@ -929,3 +930,25 @@ class FakeGitHub(GitHub):
                 )
 
         return result
+
+    def create_gist(
+        self,
+        *,
+        files: dict[str, str],
+        description: str,
+        public: bool = False,
+    ) -> str:
+        """Record gist creation in mutation tracking list.
+
+        Returns a fake gist URL for testing.
+        """
+        self._created_gists.append((files, description, public))
+        return "https://gist.github.com/test-user/fake-gist-id"
+
+    @property
+    def created_gists(self) -> list[tuple[dict[str, str], str, bool]]:
+        """Read-only access to tracked gist creations for test assertions.
+
+        Returns list of (files, description, public) tuples.
+        """
+        return self._created_gists
