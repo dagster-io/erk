@@ -16,7 +16,7 @@ def _create_deps(
     *,
     shell_integration: bool,
     is_uvx: bool,
-    confirm_responses: list[bool] | None = None,
+    confirm_responses: list[bool] | None,
 ) -> HandlerDependencies:
     """Create HandlerDependencies with specified configuration."""
     config = GlobalConfig.test(Path("/fake/erk"), shell_integration=shell_integration)
@@ -110,6 +110,7 @@ def test_handler_no_warning_for_regular_venv(capsys) -> None:
     deps = _create_deps(
         shell_integration=True,
         is_uvx=False,
+        confirm_responses=None,
     )
 
     with patch("erk.cli.shell_integration.handler.subprocess.run") as mock_run:

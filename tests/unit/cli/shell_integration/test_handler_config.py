@@ -17,7 +17,7 @@ from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 def _create_deps(
     *,
     config: GlobalConfig | None,
-    is_uvx: bool = False,
+    is_uvx: bool,
 ) -> HandlerDependencies:
     """Create HandlerDependencies with specified configuration.
 
@@ -69,7 +69,7 @@ def test_is_shell_integration_enabled_returns_true_when_config_enabled() -> None
 def test_handler_passthroughs_when_shell_integration_disabled() -> None:
     """Handler returns passthrough when shell_integration is disabled (default)."""
     config = GlobalConfig.test(Path("/fake/erk"), shell_integration=False)
-    deps = _create_deps(config=config)
+    deps = _create_deps(config=config, is_uvx=False)
 
     # Use 'wt checkout' which IS in SHELL_INTEGRATION_COMMANDS
     result = _invoke_hidden_command("wt checkout", ("feature-branch",), deps=deps)
@@ -79,7 +79,7 @@ def test_handler_passthroughs_when_shell_integration_disabled() -> None:
 
 def test_handler_passthroughs_when_config_not_exists() -> None:
     """Handler returns passthrough when config doesn't exist."""
-    deps = _create_deps(config=None)
+    deps = _create_deps(config=None, is_uvx=False)
 
     result = _invoke_hidden_command("wt checkout", ("feature-branch",), deps=deps)
 
@@ -89,7 +89,7 @@ def test_handler_passthroughs_when_config_not_exists() -> None:
 def test_handler_passthroughs_when_shell_integration_disabled_for_up() -> None:
     """Handler returns passthrough for up command when disabled."""
     config = GlobalConfig.test(Path("/fake/erk"), shell_integration=False)
-    deps = _create_deps(config=config)
+    deps = _create_deps(config=config, is_uvx=False)
 
     result = _invoke_hidden_command("up", (), deps=deps)
 
