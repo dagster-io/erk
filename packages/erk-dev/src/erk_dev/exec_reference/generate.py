@@ -163,9 +163,21 @@ def _generate_command_section(
     return lines
 
 
+SKILL_FRONTMATTER = """\
+---
+description: Reference for all `erk exec` subcommands with flags and usage
+read_when: Using or looking up erk exec commands
+---
+"""
+
+
 def generate_exec_reference(commands: list[ExecCommandInfo]) -> str:
     """Generate markdown reference documentation for exec commands."""
     lines: list[str] = []
+
+    # Frontmatter for skill
+    lines.append(SKILL_FRONTMATTER.rstrip())
+    lines.append("")
 
     # Header
     lines.append("<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->")

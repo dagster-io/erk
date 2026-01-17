@@ -37,7 +37,7 @@ def gen_exec_reference_docs_command(*, check: bool) -> None:
     """Generate erk exec commands reference documentation.
 
     This command introspects the `erk exec` command group and generates
-    a markdown reference document at docs/dev/erk-exec-commands.md.
+    a skill at .claude/skills/erk-exec-reference/SKILL.md.
 
     The file is formatted with prettier after generation to match CI style.
     Use --check in CI to verify the document is in sync.
@@ -46,7 +46,7 @@ def gen_exec_reference_docs_command(*, check: bool) -> None:
     if repo_root is None:
         raise click.ClickException("Could not find repository root")
 
-    output_path = repo_root / "docs" / "dev" / "erk-exec-commands.md"
+    output_path = repo_root / ".claude" / "skills" / "erk-exec-reference" / "SKILL.md"
 
     # Collect and generate
     commands = collect_exec_commands()

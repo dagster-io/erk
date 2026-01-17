@@ -1,3 +1,8 @@
+---
+description: Reference for all `erk exec` subcommands with flags and usage
+read_when: Using or looking up erk exec commands
+---
+
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
 <!-- Run 'erk-dev gen-exec-reference-docs' to regenerate. -->
 
