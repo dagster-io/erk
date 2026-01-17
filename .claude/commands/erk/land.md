@@ -3,9 +3,9 @@ description: Land PR with objective awareness - updates objective after landing
 argument-hint: "[branch|PR#|URL] [--skip-objective]"
 ---
 
-# /erk:pr-land
+# /erk:land
 
-Objective-aware wrapper for `erk pr land`. Lands the PR first, then offers to update the linked objective if one exists.
+Objective-aware wrapper for `erk land`. Lands the PR first, then offers to update the linked objective if one exists.
 
 ## Usage
 
@@ -56,7 +56,7 @@ gh pr view <number> --json headRefName -q '.headRefName'
 
 ### Step 3: Resolve to PR Number
 
-**Critical:** Always resolve the branch to a PR number. The `erk pr land` command only accepts PR numbers or URLs, not branch names.
+**Critical:** Always resolve the branch to a PR number. The `erk land` command only accepts PR numbers or URLs, not branch names.
 
 ```bash
 # Get PR number for branch
@@ -102,12 +102,12 @@ erk exec get-plan-metadata <plan-number> objective_issue
 - If `success` is `true` and `value` is `null`, there's no objective link
 - If `success` is `false`, warn and skip objective workflow (fail-open behavior)
 
-### Step 6: Execute erk pr land
+### Step 6: Execute erk land
 
 Land the PR using the resolved PR number. Use `--force` to skip interactive confirmation (required for non-TTY execution):
 
 ```bash
-erk pr land <PR_NUMBER> --force
+erk land <PR_NUMBER> --force
 ```
 
 **If landing fails:** Report the error and exit.
@@ -188,6 +188,6 @@ The command lands normally (no blocking) when:
 ## Error Handling
 
 - **No PR found:** Report error and exit (cannot land without PR)
-- **Landing fails:** Report `erk pr land` error output and exit
+- **Landing fails:** Report `erk land` error output and exit
 - **Objective update fails:** Warn but report landing as successful
 - **API errors during objective check:** Warn and skip objective workflow
