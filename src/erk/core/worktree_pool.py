@@ -138,9 +138,7 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
     data = {
         "version": state.version,
         "pool_size": state.pool_size,
-        "slots": [
-            {"name": s.name, "last_objective_id": s.last_objective_id} for s in state.slots
-        ],
+        "slots": [{"name": s.name, "last_objective_id": s.last_objective_id} for s in state.slots],
         "assignments": [
             {
                 "slot_name": a.slot_name,
