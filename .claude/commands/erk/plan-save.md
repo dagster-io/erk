@@ -153,12 +153,12 @@ Next steps:
 
 View Issue: gh issue view <issue_number> --web
 
-In Claude Code: /erk:plan-submit
+In Claude Code:
+  Prepare worktree: /erk:prepare
+  Submit to queue: /erk:plan-submit
 
 OR exit Claude Code first, then run one of:
-  Interactive: erk implement <issue_number>
-  Dangerous Interactive: erk implement <issue_number> --dangerous
-  Auto-Submit: erk implement <issue_number> --yolo
+  Local: erk prepare <issue_number>
   Submit to Queue: erk plan submit <issue_number>
 ```
 
