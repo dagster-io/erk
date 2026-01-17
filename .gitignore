@@ -16,6 +16,7 @@ activate.sh
 
 # Local implementation and configuration (not tracked in git)
 .impl/
+.erk/bin/
 .erk/scratch/
 .erk/config.local.toml
 .env
