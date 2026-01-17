@@ -19,7 +19,9 @@ Output:
         "readable_session_ids": [...],
         "session_paths": [...],
         "local_session_ids": [...],
-        "last_remote_impl_at": "2024-01-01T..." | null
+        "last_remote_impl_at": "2024-01-01T..." | null,
+        "last_remote_impl_run_id": "12345678" | null,
+        "last_remote_impl_session_id": "abc-def-ghi" | null
     }
 
 Exit Codes:
@@ -62,6 +64,8 @@ class GetLearnSessionsResult:
     session_paths: list[str]
     local_session_ids: list[str]
     last_remote_impl_at: str | None
+    last_remote_impl_run_id: str | None
+    last_remote_impl_session_id: str | None
 
 
 @dataclass(frozen=True)
@@ -113,6 +117,8 @@ def _build_result(
         session_paths=session_paths,
         local_session_ids=local_session_ids,
         last_remote_impl_at=sessions_for_plan.last_remote_impl_at,
+        last_remote_impl_run_id=sessions_for_plan.last_remote_impl_run_id,
+        last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
     )
 
 

@@ -37,6 +37,8 @@ from erk_shared.github.metadata.schemas import (
     LAST_LOCAL_IMPL_SESSION,
     LAST_LOCAL_IMPL_USER,
     LAST_REMOTE_IMPL_AT,
+    LAST_REMOTE_IMPL_RUN_ID,
+    LAST_REMOTE_IMPL_SESSION_ID,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     SCHEMA_VERSION,
@@ -62,6 +64,8 @@ def create_plan_header_block(
     last_local_impl_session: str | None,
     last_local_impl_user: str | None,
     last_remote_impl_at: str | None,
+    last_remote_impl_run_id: str | None,
+    last_remote_impl_session_id: str | None,
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
@@ -84,6 +88,8 @@ def create_plan_header_block(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
+        last_remote_impl_run_id: Optional GitHub Actions run ID for remote implementation
+        last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -108,6 +114,8 @@ def create_plan_header_block(
         LAST_LOCAL_IMPL_SESSION: last_local_impl_session,
         LAST_LOCAL_IMPL_USER: last_local_impl_user,
         LAST_REMOTE_IMPL_AT: last_remote_impl_at,
+        LAST_REMOTE_IMPL_RUN_ID: last_remote_impl_run_id,
+        LAST_REMOTE_IMPL_SESSION_ID: last_remote_impl_session_id,
     }
     # Only include worktree_name if provided
     if worktree_name is not None:
@@ -159,6 +167,8 @@ def format_plan_header_body(
     last_local_impl_session: str | None,
     last_local_impl_user: str | None,
     last_remote_impl_at: str | None,
+    last_remote_impl_run_id: str | None,
+    last_remote_impl_session_id: str | None,
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
@@ -184,6 +194,8 @@ def format_plan_header_body(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp
+        last_remote_impl_run_id: Optional GitHub Actions run ID for remote implementation
+        last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
@@ -207,6 +219,8 @@ def format_plan_header_body(
         last_local_impl_session=last_local_impl_session,
         last_local_impl_user=last_local_impl_user,
         last_remote_impl_at=last_remote_impl_at,
+        last_remote_impl_run_id=last_remote_impl_run_id,
+        last_remote_impl_session_id=last_remote_impl_session_id,
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
@@ -831,3 +845,84 @@ def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get(LAST_LEARN_AT)
+
+
+def extract_plan_header_remote_impl_run_id(issue_body: str) -> str | None:
+    """Extract last_remote_impl_run_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        GitHub Actions run ID if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_REMOTE_IMPL_RUN_ID)
+
+
+def extract_plan_header_remote_impl_session_id(issue_body: str) -> str | None:
+    """Extract last_remote_impl_session_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Claude Code session ID for remote implementation if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_REMOTE_IMPL_SESSION_ID)
+
+
+def update_plan_header_remote_impl_event(
+    *,
+    issue_body: str,
+    run_id: str,
+    session_id: str | None,
+    remote_impl_at: str,
+) -> str:
+    """Update remote implementation event fields in plan-header metadata block.
+
+    Updates all 3 remote implementation fields atomically:
+    - last_remote_impl_at (timestamp)
+    - last_remote_impl_run_id (GitHub Actions run ID)
+    - last_remote_impl_session_id (Claude Code session ID)
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        run_id: GitHub Actions run ID
+        session_id: Claude Code session ID (optional)
+        remote_impl_at: ISO 8601 timestamp of remote implementation
+
+    Returns:
+        Updated issue body with new remote implementation event fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update all remote impl fields atomically
+    updated_data = dict(block.data)
+    updated_data[LAST_REMOTE_IMPL_AT] = remote_impl_at
+    updated_data[LAST_REMOTE_IMPL_RUN_ID] = run_id
+    updated_data[LAST_REMOTE_IMPL_SESSION_ID] = session_id
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)

@@ -13,6 +13,8 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_last_learn_session,
     extract_plan_header_local_impl_session,
     extract_plan_header_remote_impl_at,
+    extract_plan_header_remote_impl_run_id,
+    extract_plan_header_remote_impl_session_id,
 )
 from erk_shared.learn.extraction.claude_installation.abc import (
     ClaudeInstallation,
@@ -33,12 +35,16 @@ class SessionsForPlan:
         implementation_session_ids: Sessions where plan was implemented
         learn_session_ids: Sessions where learn was previously invoked
         last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
+        last_remote_impl_run_id: GitHub Actions run ID for remote implementation
+        last_remote_impl_session_id: Claude Code session ID for remote implementation
     """
 
     planning_session_id: str | None
     implementation_session_ids: list[str]
     learn_session_ids: list[str]
     last_remote_impl_at: str | None
+    last_remote_impl_run_id: str | None
+    last_remote_impl_session_id: str | None
 
     def all_session_ids(self) -> list[str]:
         """Return all session IDs in logical order.
@@ -97,6 +103,8 @@ def find_sessions_for_plan(
     metadata_impl_session = extract_plan_header_local_impl_session(issue_info.body)
     metadata_learn_session = extract_plan_header_last_learn_session(issue_info.body)
     last_remote_impl_at = extract_plan_header_remote_impl_at(issue_info.body)
+    last_remote_impl_run_id = extract_plan_header_remote_impl_run_id(issue_info.body)
+    last_remote_impl_session_id = extract_plan_header_remote_impl_session_id(issue_info.body)
 
     # Get comments to find implementation and learn sessions
     comments = github.get_issue_comments(repo_root, issue_number)
@@ -135,6 +143,8 @@ def find_sessions_for_plan(
         implementation_session_ids=implementation_session_ids,
         learn_session_ids=learn_session_ids,
         last_remote_impl_at=last_remote_impl_at,
+        last_remote_impl_run_id=last_remote_impl_run_id,
+        last_remote_impl_session_id=last_remote_impl_session_id,
     )
 
 
