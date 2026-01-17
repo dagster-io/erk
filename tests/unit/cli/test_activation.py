@@ -406,6 +406,9 @@ def test_print_activation_instructions_with_implement_hint(
     assert f"source {script_path}" in captured.err
     assert "To activate and start implementation:" in captured.err
     assert "erk implement --here" in captured.err
+    # Should include dangerous variant
+    assert "skip permission prompts" in captured.err
+    assert "erk implement --here --dangerous" in captured.err
 
 
 def test_print_activation_instructions_without_implement_hint(
@@ -422,6 +425,7 @@ def test_print_activation_instructions_without_implement_hint(
     captured = capsys.readouterr()
     assert "To activate the worktree environment:" in captured.err
     assert f"source {script_path}" in captured.err
-    # Should NOT contain implement hint
+    # Should NOT contain implement hint or dangerous variant
     assert "start implementation" not in captured.err
     assert "erk implement --here" not in captured.err
+    assert "--dangerous" not in captured.err
