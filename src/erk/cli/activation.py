@@ -245,11 +245,11 @@ def render_land_script() -> str:
     The script wraps `erk land --script` to provide shell integration,
     allowing the command to navigate the shell after landing a PR.
     """
-    return '''#!/usr/bin/env bash
+    return """#!/usr/bin/env bash
 # erk land wrapper - source this script to land with shell integration
 # Usage: source .erk/bin/land.sh [args...]
 eval "$(erk land --script "$@")"
-'''
+"""
 
 
 def ensure_land_script(worktree_path: Path) -> Path:
