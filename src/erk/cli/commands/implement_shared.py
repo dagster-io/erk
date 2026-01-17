@@ -272,15 +272,16 @@ def execute_interactive_mode(
     dangerous: bool,
     model: str | None,
     executor: ClaudeExecutor,
+    here_mode: bool,
 ) -> None:
     """Execute implementation in interactive mode using executor.
 
-    When shell integration is active (ERK_SHELL is set), uses the existing
-    executor.execute_interactive() which replaces the current process.
+    When here_mode is True or shell integration is active (ERK_SHELL is set),
+    uses executor.execute_interactive() which replaces the current process.
 
-    When shell integration is not active, spawns a subshell in the worktree
-    directory and auto-launches Claude within it. This allows users to work
-    without configuring shell integration.
+    When shell integration is not active and not in here_mode, spawns a subshell
+    in the worktree directory and auto-launches Claude within it. This allows
+    users to work without configuring shell integration.
 
     Args:
         ctx: Erk context for accessing git and current working directory
@@ -289,17 +290,22 @@ def execute_interactive_mode(
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for process replacement
+        here_mode: Whether running in --here mode (current directory, no worktree switch)
 
     Raises:
         click.ClickException: If Claude CLI not found
 
     Note:
-        With shell integration: This function never returns - process is replaced
-        Without shell integration: Returns when user exits the subshell
+        With shell integration or here_mode: This function never returns - process is replaced
+        Without shell integration and not here_mode: Returns when user exits the subshell
     """
-    if is_shell_integration_active():
-        # Shell integration handles activation - use existing flow
-        click.echo("Entering interactive implementation mode...", err=True)
+    # For --here mode or when shell integration is active,
+    # use process replacement (no subshell needed)
+    if here_mode or is_shell_integration_active():
+        if here_mode:
+            click.echo("Launching Claude...", err=True)
+        else:
+            click.echo("Entering interactive implementation mode...", err=True)
         try:
             executor.execute_interactive(
                 worktree_path=worktree_path,
@@ -307,13 +313,15 @@ def execute_interactive_mode(
                 command="/erk:system:impl-execute",
                 target_subpath=compute_relative_path_in_worktree(
                     ctx.git.list_worktrees(repo_root), ctx.cwd
-                ),
+                )
+                if not here_mode
+                else None,
                 model=model,
             )
         except RuntimeError as e:
             raise click.ClickException(str(e)) from e
     else:
-        # No shell integration - spawn subshell with Claude
+        # No shell integration and not --here mode - spawn subshell
         click.echo("Spawning worktree subshell...", err=True)
         branch = ctx.git.get_current_branch(worktree_path)
         if branch is None:

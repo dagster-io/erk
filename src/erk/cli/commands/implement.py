@@ -497,6 +497,7 @@ def _implement_from_issue(
             dangerous=dangerous,
             model=model,
             executor=executor,
+            here_mode=False,
         )
 
 
@@ -601,6 +602,7 @@ def _implement_from_file(
             dangerous=dangerous,
             model=model,
             executor=executor,
+            here_mode=False,
         )
 
 
@@ -742,6 +744,7 @@ def _implement_here_from_issue(
             dangerous=dangerous,
             model=model,
             executor=executor,
+            here_mode=True,
         )
 
 
@@ -842,6 +845,7 @@ def _implement_here_from_file(
             dangerous=dangerous,
             model=model,
             executor=executor,
+            here_mode=True,
         )
 
 
