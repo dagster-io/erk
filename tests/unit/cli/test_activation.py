@@ -436,7 +436,7 @@ def test_render_land_script_content() -> None:
     """render_land_script returns correct shell script content."""
     script = render_land_script()
     assert "#!/usr/bin/env bash" in script
-    assert 'eval "$(erk land --script "$@")"' in script
+    assert 'source "$(erk land --script "$@")"' in script
     assert "source this script" in script
 
 
@@ -447,7 +447,7 @@ def test_ensure_land_script_creates_if_missing(tmp_path: Path) -> None:
     assert script_path == tmp_path / ".erk" / "bin" / "land.sh"
     assert script_path.exists()
     content = script_path.read_text(encoding="utf-8")
-    assert 'eval "$(erk land --script "$@")"' in content
+    assert 'source "$(erk land --script "$@")"' in content
 
 
 def test_ensure_land_script_creates_bin_directory(tmp_path: Path) -> None:
