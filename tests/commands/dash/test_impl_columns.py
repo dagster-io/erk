@@ -3,18 +3,15 @@
 Tests --runs flag behavior and impl column headers (lcl-impl, remote-impl).
 """
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.types import PullRequestInfo, WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
-from tests.commands.dash.conftest import plan_to_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import make_test_plan, plan_to_issue
 
 
 def test_plan_list_runs_flag_shows_run_columns() -> None:
@@ -32,18 +29,7 @@ last_dispatched_node_id: 'WFR_all_flag'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    plan = Plan(
-        plan_identifier="200",
-        title="Plan with PR and Run",
-        body=plan_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/200",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 200},
-    )
+    plan = make_test_plan("200", title="Plan with PR and Run", body=plan_body)
 
     pr = PullRequestInfo(
         number=300,
@@ -104,18 +90,7 @@ last_dispatched_node_id: 'WFR_short_flag'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    plan = Plan(
-        plan_identifier="201",
-        title="Plan for short flag test",
-        body=plan_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/201",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 201},
-    )
+    plan = make_test_plan("201", title="Plan for short flag test", body=plan_body)
 
     pr = PullRequestInfo(
         number=301,
@@ -175,18 +150,7 @@ last_remote_impl_at: '2024-11-21T12:00:00Z'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    plan = Plan(
-        plan_identifier="1",
-        title="Test Plan",
-        body=body_with_impl,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1},
-    )
+    plan = make_test_plan("1", title="Test Plan", body=body_with_impl)
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

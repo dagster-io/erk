@@ -1,32 +1,17 @@
 """Tests for top-level plan commands (dash, get, close, retry)."""
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.cli.commands.plan.list_cmd import dash
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.github.issues import FakeGitHubIssues
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
-
-
-def plan_to_issue(plan: Plan) -> IssueInfo:
-    """Convert Plan to IssueInfo for test setup."""
-    return IssueInfo(
-        number=int(plan.plan_identifier),
-        title=plan.title,
-        body=plan.body,
-        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
-        url=plan.url or "",
-        labels=plan.labels,
-        assignees=plan.assignees,
-        created_at=plan.created_at,
-        updated_at=plan.updated_at,
-        author="test-user",
-    )
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    make_test_plan,
+    plan_to_issue,
+)
 
 
 def test_top_level_dash_command_works() -> None:
@@ -62,18 +47,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
     from erk_shared.github.fake import FakeGitHub
 
     # Arrange
-    plan1 = Plan(
-        plan_identifier="1",
-        title="Test Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-    )
+    plan1 = make_test_plan(1, title="Test Plan")
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -103,18 +77,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
     from erk_shared.github.fake import FakeGitHub
 
     # Arrange
-    open_plan = Plan(
-        plan_identifier="1",
-        title="Open Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-    )
+    open_plan = make_test_plan(1, title="Open Plan")
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -138,18 +101,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
 def test_top_level_view_command_works() -> None:
     """Test that 'erk plan view' command works."""
     # Arrange
-    issue1 = Plan(
-        plan_identifier="123",
-        title="Test Issue",
-        body="Issue body content",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/123",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-    )
+    issue1 = make_test_plan(123, title="Test Issue", body="Issue body content")
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -169,18 +121,7 @@ def test_top_level_view_command_works() -> None:
 def test_top_level_close_command_works() -> None:
     """Test that 'erk plan close' command works."""
     # Arrange
-    issue1 = Plan(
-        plan_identifier="456",
-        title="Plan to Close",
-        body="content",  # GitHubPlanStore requires non-empty body
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/456",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 456},
-    )
+    issue1 = make_test_plan(456, title="Plan to Close", body="content", metadata={"number": 456})
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:

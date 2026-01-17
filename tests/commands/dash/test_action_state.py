@@ -3,34 +3,20 @@
 Tests workflow status display (Pending, Running, Complete, Failed).
 """
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues
-from erk_shared.plan_store.types import Plan, PlanState
-from tests.commands.dash.conftest import plan_to_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
+from tests.test_utils.plan_helpers import make_test_plan, plan_to_issue
 
 
 def test_plan_list_shows_action_state_with_no_queue_label() -> None:
     """Test that plans without erk-queue label show '-' for action state."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="1001",
-        title="Regular Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1001",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1001},
-    )
+    plan1 = make_test_plan("1001", title="Regular Plan")
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -49,18 +35,7 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
 def test_plan_list_shows_pending_action_state() -> None:
     """Test that plans with erk-queue label but no metadata show 'Pending'."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="1002",
-        title="Pending Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1002",
-        labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1002},
-    )
+    plan1 = make_test_plan("1002", title="Pending Plan", labels=["erk-plan", "erk-queue"])
 
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -79,18 +54,7 @@ def test_plan_list_shows_pending_action_state() -> None:
 def test_plan_list_shows_running_action_state_with_workflow_started() -> None:
     """Test that plans with workflow-started metadata show 'Running'."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="1003",
-        title="Running Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1003",
-        labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1003},
-    )
+    plan1 = make_test_plan("1003", title="Running Plan", labels=["erk-plan", "erk-queue"])
 
     # Create comment with workflow-started metadata
     comment = """
@@ -126,18 +90,7 @@ issue_number: 1003
 def test_plan_list_shows_complete_action_state() -> None:
     """Test that plans with complete implementation status show 'Complete'."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="1004",
-        title="Complete Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1004",
-        labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1004},
-    )
+    plan1 = make_test_plan("1004", title="Complete Plan", labels=["erk-plan", "erk-queue"])
 
     # Create comment with complete status
     comment = """
@@ -172,18 +125,7 @@ timestamp: "2024-11-23T12:00:00Z"
 def test_plan_list_shows_failed_action_state() -> None:
     """Test that plans with failed implementation status show 'Failed'."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="1005",
-        title="Failed Plan",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1005",
-        labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1005},
-    )
+    plan1 = make_test_plan("1005", title="Failed Plan", labels=["erk-plan", "erk-queue"])
 
     # Create comment with failed status
     comment = """

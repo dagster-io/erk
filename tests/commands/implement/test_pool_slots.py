@@ -4,8 +4,6 @@ Covers branch conflict/force flag, pre-existing slot directory, pool size config
 uncommitted changes detection, and implementing from managed slots.
 """
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
@@ -14,13 +12,14 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.types import Plan
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.plan_helpers import (
     create_plan_store_with_plans,
     format_plan_header_body_for_test,
+    make_test_plan,
 )
 
 # Branch Conflict Tests
@@ -480,17 +479,11 @@ def _create_plan_with_objective(issue_number: str, objective_issue: int) -> Plan
         created_by="testuser",
         objective_issue=objective_issue,
     )
-    return Plan(
-        plan_identifier=issue_number,
+    return make_test_plan(
+        issue_number,
         title="Plan With Objective",
         body=body,
-        state=PlanState.OPEN,
         url=f"https://github.com/owner/repo/issues/{issue_number}",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
     )
 
 

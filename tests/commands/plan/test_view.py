@@ -5,26 +5,22 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.types import PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store_with_plans, make_test_plan
 
 
 def test_view_plan_displays_issue() -> None:
     """Test fetching and displaying a plan issue."""
     # Arrange
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Test Issue",
         body="This is a test issue description",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
         labels=["erk-plan", "bug"],
         assignees=["alice"],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -50,17 +46,11 @@ def test_view_plan_displays_issue() -> None:
 def test_view_plan_with_full_flag() -> None:
     """Test viewing plan with --full flag shows the body."""
     # Arrange
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Test Issue",
         body="This is a test issue description",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -82,17 +72,11 @@ def test_view_plan_with_full_flag() -> None:
 def test_view_plan_with_short_full_flag() -> None:
     """Test viewing plan with -f flag (short form of --full)."""
     # Arrange
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Test Issue",
         body="This is a test issue description",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -129,17 +113,12 @@ def test_view_plan_not_found() -> None:
 def test_view_plan_minimal_fields() -> None:
     """Test displaying issue with minimal fields (no labels, assignees, body)."""
     # Arrange
-    plan_issue = Plan(
-        plan_identifier="1",
+    plan_issue = make_test_plan(
+        1,
         title="Minimal Issue",
         body="minimal content",  # GitHubPlanStore requires non-empty body
         state=PlanState.CLOSED,
-        url="https://github.com/owner/repo/issues/1",
         labels=[],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -159,17 +138,11 @@ def test_view_plan_minimal_fields() -> None:
 def test_view_plan_with_github_url() -> None:
     """Test fetching plan using GitHub issue URL."""
     # Arrange
-    plan_issue = Plan(
-        plan_identifier="123",
+    plan_issue = make_test_plan(
+        123,
         title="URL Test Issue",
         body="Issue from URL",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/123",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -235,17 +208,11 @@ objective_issue: 100
 Some other content here.
 """
 
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Plan with Header",
-        body=issue_body,  # Raw issue body with plan-header goes here
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        body=issue_body,
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -289,17 +256,11 @@ last_local_impl_user: testuser
 <!-- /erk:metadata-block:plan-header -->
 """
 
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Plan with Impl Info",
-        body=issue_body,  # Raw issue body with plan-header
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        body=issue_body,
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -321,17 +282,11 @@ last_local_impl_user: testuser
 def test_view_plan_without_header_info() -> None:
     """Test displaying plan without plan-header metadata shows no header section."""
     # Arrange - plan without issue_body metadata
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Plan without Header",
         body="The plan content here",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -368,17 +323,11 @@ created_from_session: abc123-session-id
 <!-- /erk:metadata-block:plan-header -->
 """
 
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Plan with no learn",
         body=issue_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()
@@ -417,17 +366,11 @@ last_learn_session: def456-learn-session
 <!-- /erk:metadata-block:plan-header -->
 """
 
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        42,
         title="Plan with learn data",
         body=issue_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()

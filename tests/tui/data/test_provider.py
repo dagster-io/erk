@@ -1,6 +1,5 @@
 """Tests for plan data provider."""
 
-from datetime import UTC, datetime
 from pathlib import Path
 
 from erk.core.repo_discovery import RepoContext
@@ -16,8 +15,8 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
+from tests.test_utils.plan_helpers import make_test_plan
 
 
 def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
@@ -248,8 +247,6 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return empty PR linkages
-        from erk_shared.github.fake import FakeGitHub
-
         github = FakeGitHub(pr_issue_linkages={})
 
         ctx = create_test_context(
@@ -304,9 +301,6 @@ class TestClosePlan:
         )
 
         # Configure fake GitHub to return linked PRs
-        from erk_shared.github.fake import FakeGitHub
-        from erk_shared.github.types import PullRequestInfo
-
         github = FakeGitHub(
             pr_issue_linkages={
                 123: [
@@ -451,17 +445,10 @@ class TestCommentCountsDisplay:
         )
 
         # Create test plan and PR linkage with comment counts
-        plan = Plan(
-            plan_identifier="123",
+        plan = make_test_plan(
+            123,
             title="Test Plan",
-            body="",
-            state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
-            labels=[],
-            assignees=[],
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            metadata={},
         )
         pr_linkages = {
             123: [
@@ -530,17 +517,10 @@ class TestCommentCountsDisplay:
         )
 
         # Create test plan and PR linkage without comment counts
-        plan = Plan(
-            plan_identifier="123",
+        plan = make_test_plan(
+            123,
             title="Test Plan",
-            body="",
-            state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
-            labels=[],
-            assignees=[],
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            metadata={},
         )
         pr_linkages = {
             123: [
@@ -609,17 +589,10 @@ class TestCommentCountsDisplay:
         )
 
         # Create test plan without PR linkage
-        plan = Plan(
-            plan_identifier="123",
+        plan = make_test_plan(
+            123,
             title="Test Plan",
-            body="",
-            state=PlanState.OPEN,
             url="https://github.com/test/repo/issues/123",
-            labels=[],
-            assignees=[],
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
-            metadata={},
         )
         pr_linkages: dict[int, list[PullRequestInfo]] = {}  # No linked PRs
 

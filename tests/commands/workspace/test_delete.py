@@ -18,13 +18,13 @@ from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.metadata.core import render_metadata_block
 from erk_shared.github.metadata.types import MetadataBlock
 from erk_shared.github.types import PRDetails, PullRequestInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.types import PlanState
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, create_marker
 from tests.fakes.shell import FakeShell
 from tests.test_utils.cli_helpers import assert_cli_error, assert_cli_success
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store_with_plans, make_test_plan
 
 
 def _make_plan_body_with_worktree(worktree_name: str) -> str:
@@ -422,14 +422,10 @@ def test_delete_all_closes_pr_and_plan() -> None:
 
         # Create plan with worktree_name in metadata
         now = datetime.now(UTC)
-        plan = Plan(
-            plan_identifier="123",
+        plan = make_test_plan(
+            123,
             title="Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/123",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=now,
             updated_at=now,
             metadata={},
@@ -605,14 +601,11 @@ def test_delete_all_shows_closed_plan_status() -> None:
 
         # Create a CLOSED plan with worktree_name in metadata
         now = datetime.now(UTC)
-        plan = Plan(
-            plan_identifier="456",
+        plan = make_test_plan(
+            456,
             title="Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
             state=PlanState.CLOSED,  # Already closed
-            url="https://github.com/owner/repo/issues/456",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=now,
             updated_at=now,
             metadata={},
@@ -652,14 +645,10 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
 
         # Create OPEN plan with worktree_name in metadata
         now = datetime.now(UTC)
-        plan = Plan(
-            plan_identifier="789",
+        plan = make_test_plan(
+            789,
             title="Implement feature",
             body=_make_plan_body_with_worktree("test-feature"),
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/789",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=now,
             updated_at=now,
             metadata={},

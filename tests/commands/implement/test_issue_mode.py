@@ -1,16 +1,13 @@
 """Tests for GitHub issue mode in implement command."""
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.commands.implement import implement
 from erk_shared.git.fake import FakeGit
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.implement.conftest import create_sample_plan_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store_with_plans, make_test_plan
 
 
 def test_implement_from_plain_issue_number() -> None:
@@ -134,17 +131,12 @@ def test_implement_assigns_to_pool_slot() -> None:
 
 def test_implement_from_issue_fails_without_erk_plan_label() -> None:
     """Test that command fails when issue doesn't have erk-plan label."""
-    plan_issue = Plan(
-        plan_identifier="42",
+    plan_issue = make_test_plan(
+        "42",
         title="Regular Issue",
         body="Not a plan issue",
-        state=PlanState.OPEN,
         url="https://github.com/owner/repo/issues/42",
         labels=["bug"],  # Missing "erk-plan" label
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
     )
 
     runner = CliRunner()

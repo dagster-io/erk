@@ -7,7 +7,6 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.github.issues import FakeGitHubIssues
-from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.core import (
     create_implementation_status_block,
     create_plan_block,
@@ -16,43 +15,23 @@ from erk_shared.github.metadata.core import (
     render_metadata_block,
 )
 from erk_shared.plan_store.github import GitHubPlanStore
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
-
-
-def _make_issue_info(plan: Plan) -> IssueInfo:
-    """Helper to convert Plan to IssueInfo for tests needing custom FakeGitHubIssues config."""
-    state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
-    return IssueInfo(
-        number=int(plan.plan_identifier),
-        title=plan.title,
-        body=plan.body,
-        state=state,
-        url=plan.url,
-        labels=plan.labels,
-        assignees=plan.assignees,
-        created_at=plan.created_at.astimezone(UTC),
-        updated_at=plan.updated_at.astimezone(UTC),
-        author="test-author",
-    )
+from tests.test_utils.plan_helpers import (
+    create_plan_store_with_plans,
+    make_test_plan,
+    plan_to_issue,
+)
 
 
 def test_log_displays_timeline_chronologically() -> None:
     """Test log command displays events in chronological order."""
     # Arrange: Create plan and comments with metadata blocks
-    plan = Plan(
-        plan_identifier="42",
+    plan = make_test_plan(
+        42,
         title="Test Plan",
         body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     # Create metadata blocks (intentionally out of order to test sorting)
@@ -83,7 +62,7 @@ def test_log_displays_timeline_chronologically() -> None:
     comment3 = render_metadata_block(submission_block)
 
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: plan_to_issue(plan)},
         comments={42: [comment1, comment2, comment3]},
     )
     store = GitHubPlanStore(fake_issues)
@@ -99,7 +78,7 @@ def test_log_displays_timeline_chronologically() -> None:
         assert result.exit_code == 0
         assert "Plan #42 Event Timeline" in result.output
 
-        # Verify chronological order (plan created → queued → workflow started)
+        # Verify chronological order (plan created -> queued -> workflow started)
         output_lines = result.output.split("\n")
 
         # Find event lines (lines with timestamps)
@@ -116,17 +95,11 @@ def test_log_displays_timeline_chronologically() -> None:
 def test_log_json_output() -> None:
     """Test log command with --json flag outputs valid JSON."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
+    plan = make_test_plan(
+        42,
         title="Test Plan",
         body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     plan_block = create_plan_block(
@@ -138,7 +111,7 @@ def test_log_json_output() -> None:
     comment = render_metadata_block(plan_block)
 
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: plan_to_issue(plan)},
         comments={42: [comment]},
     )
     store = GitHubPlanStore(fake_issues)
@@ -168,21 +141,15 @@ def test_log_json_output() -> None:
 def test_log_with_no_events() -> None:
     """Test log command when issue has no comments."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
+    plan = make_test_plan(
+        42,
         title="Test Plan",
         body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: plan_to_issue(plan)},
         comments={42: []},  # No comments
     )
     store = GitHubPlanStore(fake_issues)
@@ -202,17 +169,11 @@ def test_log_with_no_events() -> None:
 def test_log_with_all_event_types() -> None:
     """Test log command displays all supported event types."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
+    plan = make_test_plan(
+        42,
         title="Test Plan",
         body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     # Create all event types
@@ -250,7 +211,7 @@ def test_log_with_all_event_types() -> None:
     ]
 
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: plan_to_issue(plan)},
         comments={42: comments},
     )
     store = GitHubPlanStore(fake_issues)
@@ -291,17 +252,11 @@ def test_log_with_invalid_plan_identifier() -> None:
 def test_log_multiple_status_updates() -> None:
     """Test log command with multiple implementation status updates."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
+    plan = make_test_plan(
+        42,
         title="Test Plan",
         body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     # Create multiple status updates
@@ -327,7 +282,7 @@ def test_log_multiple_status_updates() -> None:
     ]
 
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: plan_to_issue(plan)},
         comments={42: comments},
     )
     store = GitHubPlanStore(fake_issues)
@@ -350,17 +305,11 @@ def test_log_multiple_status_updates() -> None:
 def test_log_json_structure() -> None:
     """Test JSON output has correct structure with metadata."""
     # Arrange
-    plan = Plan(
-        plan_identifier="42",
+    plan = make_test_plan(
+        42,
         title="Test Plan",
         body="Implementation plan",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/42",
-        labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
     )
 
     submission_block = create_submission_queued_block(
@@ -374,7 +323,7 @@ def test_log_json_structure() -> None:
     comment = render_metadata_block(submission_block)
 
     fake_issues = FakeGitHubIssues(
-        issues={42: _make_issue_info(plan)},
+        issues={42: plan_to_issue(plan)},
         comments={42: [comment]},
     )
     store = GitHubPlanStore(fake_issues)

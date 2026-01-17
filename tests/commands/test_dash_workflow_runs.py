@@ -8,28 +8,12 @@ from erk.cli.cli import cli
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.types import WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 from tests.test_utils.output_helpers import strip_ansi
-
-
-def plan_to_issue(plan: Plan) -> IssueInfo:
-    """Convert Plan to IssueInfo for test setup."""
-    return IssueInfo(
-        number=int(plan.plan_identifier),
-        title=plan.title,
-        body=plan.body,
-        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
-        url=plan.url or "",
-        labels=plan.labels,
-        assignees=plan.assignees,
-        created_at=plan.created_at,
-        updated_at=plan.updated_at,
-        author="test-user",
-    )
+from tests.test_utils.plan_helpers import make_test_plan, plan_to_issue
 
 
 def test_list_displays_workflow_run_id_for_plan_with_impl_folder() -> None:
@@ -67,14 +51,10 @@ last_dispatched_node_id: 'WFR_abc123'
 
 Implementation details"""
 
-        plan = Plan(
-            plan_identifier="123",
+        plan = make_test_plan(
+            123,
             title="Test Implementation",
             body=plan_body,
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/123",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 123, "url": "https://github.com/owner/repo/issues/123"},
@@ -154,14 +134,11 @@ last_dispatched_node_id: 'WFR_def456'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-        plan = Plan(
-            plan_identifier="456",
+        plan = make_test_plan(
+            456,
             title="Test with URL",
             body=plan_body,
-            state=PlanState.OPEN,
             url="https://github.com/testowner/testrepo/issues/456",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={
@@ -242,14 +219,11 @@ last_dispatched_node_id: 'WFR_ghi789'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-        plan = Plan(
-            plan_identifier="789",
+        plan = make_test_plan(
+            789,
             title="Plan without URL",
             body=plan_body,
-            state=PlanState.OPEN,
             url=None,
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 789},  # No "url" key
@@ -312,14 +286,9 @@ def test_plan_list_handles_missing_workflow_run() -> None:
             encoding="utf-8",
         )
 
-        plan = Plan(
-            plan_identifier="111",
+        plan = make_test_plan(
+            111,
             title="Plan without workflow",
-            body="",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/111",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 111},
@@ -379,14 +348,9 @@ def test_plan_list_handles_batch_query_failure() -> None:
             encoding="utf-8",
         )
 
-        plan = Plan(
-            plan_identifier="222",
+        plan = make_test_plan(
+            222,
             title="Plan with API failure",
-            body="",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/222",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 222},
@@ -480,27 +444,19 @@ last_dispatched_node_id: 'WFR_node2'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-        plan1 = Plan(
-            plan_identifier="301",
+        plan1 = make_test_plan(
+            301,
             title="First Implementation",
             body=plan1_body,
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/301",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 301},
         )
 
-        plan2 = Plan(
-            plan_identifier="302",
+        plan2 = make_test_plan(
+            302,
             title="Second Implementation",
             body=plan2_body,
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/302",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 302},
@@ -559,14 +515,9 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         # Create plan WITHOUT corresponding .impl/issue.json
-        plan = Plan(
-            plan_identifier="999",
+        plan = make_test_plan(
+            999,
             title="Plan without worktree",
-            body="",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/999",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 999},
