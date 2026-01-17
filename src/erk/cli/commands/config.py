@@ -426,7 +426,9 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
                 raise SystemExit(1)
             parsed_bool = value.lower() == "true"
 
-            _write_to_repo_config(repo_root=repo.root, key=key, value=parsed_bool, local=local)
+            _write_to_repo_config(
+                repo_root=repo.main_repo_root or repo.root, key=key, value=parsed_bool, local=local
+            )
             level_suffix = " (local)" if local else " (repo)"
             user_output(f"Set {key}={value}{level_suffix}")
             return
@@ -500,6 +502,8 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
             raise SystemExit(1)
 
     repo = discover_repo_context(ctx, Path.cwd())
-    _write_to_repo_config(repo_root=repo.root, key=key, value=transformed, local=local)
+    _write_to_repo_config(
+        repo_root=repo.main_repo_root or repo.root, key=key, value=transformed, local=local
+    )
     level_suffix = " (local)" if local else (" (repo)" if repo_flag else "")
     user_output(f"Set {key}={transformed}{level_suffix}")
