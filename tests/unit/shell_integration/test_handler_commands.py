@@ -90,10 +90,14 @@ def test_compound_commands_have_all_expected_entries() -> None:
 
 
 def test_top_level_commands_registered() -> None:
-    """Verify top-level commands are registered for shell integration."""
+    """Verify top-level commands are registered for shell integration.
+
+    NOTE: Top-level "checkout" and "co" aliases were intentionally removed
+    because they never worked without shell integration anyway (no top-level
+    "checkout" CLI command exists). Users should use "erk wt checkout" or
+    "erk br checkout" explicitly.
+    """
     expected_top_level = [
-        "checkout",
-        "co",  # alias
         "up",
         "down",
         "implement",
@@ -103,6 +107,10 @@ def test_top_level_commands_registered() -> None:
 
     for cmd in expected_top_level:
         assert cmd in SHELL_INTEGRATION_COMMANDS, f"Missing top-level command: {cmd}"
+
+    # Verify deprecated aliases are NOT in the list
+    assert "checkout" not in SHELL_INTEGRATION_COMMANDS
+    assert "co" not in SHELL_INTEGRATION_COMMANDS
 
 
 def test_legacy_aliases_registered() -> None:

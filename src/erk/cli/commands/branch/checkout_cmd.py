@@ -244,6 +244,9 @@ def _perform_checkout(
 def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, script: bool) -> None:
     """Checkout BRANCH by finding and switching to its worktree.
 
+    Prints the activation path for the target worktree. Enable shell integration
+    for automatic navigation: erk config set shell_integration true
+
     This command finds which worktree has the specified branch checked out
     and switches to it. If the branch exists but isn't checked out anywhere,
     a worktree is automatically created. If the branch exists on origin but

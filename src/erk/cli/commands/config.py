@@ -31,6 +31,7 @@ def get_global_config_keys() -> dict[str, str]:
         "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
         "show_hidden_commands": "Show deprecated/hidden commands in help output",
         "prompt_learn_on_land": "Prompt about running learn before landing plan PRs",
+        "shell_integration": "Enable auto-navigation shell integration (opt-in)",
     }
 
 
@@ -51,6 +52,7 @@ def get_overridable_global_keys() -> set[str]:
         "show_hidden_commands",
         "use_graphite",
         "github_planning",
+        "shell_integration",
     }
 
 

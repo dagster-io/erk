@@ -41,17 +41,18 @@ from erk_shared.output.output import machine_output, user_output
 def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> None:
     """Move to parent branch in worktree stack.
 
-    With shell integration (recommended):
+    Prints the activation path for the target worktree.
+    To navigate automatically, enable shell integration:
+
+      erk config set shell_integration true
+      erk init --shell  # Then restart your shell
+
+    With shell integration enabled:
       erk down
 
-    The shell wrapper function automatically activates the worktree.
-    Run 'erk init --shell' to set up shell integration.
-
     Without shell integration:
-      source <(erk down --script)
+      source <(erk down --script)  # Or use the printed activation path
 
-    This will cd to the parent branch's worktree (or root repo if parent is trunk),
-    create/activate .venv, and load .env variables.
     Requires Graphite to be enabled: 'erk config set use_graphite true'
     """
     # Validate preconditions upfront (LBYL)
