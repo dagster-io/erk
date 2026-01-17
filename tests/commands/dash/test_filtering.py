@@ -30,6 +30,7 @@ def test_plan_list_no_filters() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
     plan2 = Plan(
         plan_identifier="2",
@@ -42,6 +43,7 @@ def test_plan_list_no_filters() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -76,6 +78,7 @@ def test_plan_list_filter_by_state() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
     closed_plan = Plan(
         plan_identifier="2",
@@ -88,6 +91,7 @@ def test_plan_list_filter_by_state() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -123,6 +127,7 @@ def test_plan_list_filter_by_labels() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
     plan_with_one = Plan(
         plan_identifier="2",
@@ -135,6 +140,7 @@ def test_plan_list_filter_by_labels() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -179,6 +185,7 @@ def test_plan_list_with_limit() -> None:
             created_at=datetime(2024, 1, i, tzinfo=UTC),
             updated_at=datetime(2024, 1, i, tzinfo=UTC),
             metadata={},
+            objective_issue=None,
         )
         issue = plan_to_issue(plan)
         plans_dict[i] = issue
@@ -212,6 +219,7 @@ def test_plan_list_combined_filters() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
     wrong_state_plan = Plan(
         plan_identifier="2",
@@ -224,6 +232,7 @@ def test_plan_list_combined_filters() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
     wrong_labels_plan = Plan(
         plan_identifier="3",
@@ -236,6 +245,7 @@ def test_plan_list_combined_filters() -> None:
         created_at=datetime(2024, 1, 3, tzinfo=UTC),
         updated_at=datetime(2024, 1, 3, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -293,6 +303,7 @@ def test_plan_list_empty_results() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
     runner = CliRunner()

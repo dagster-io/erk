@@ -29,6 +29,8 @@ def make_plan(
     labels: list[str],
     body: str,
     day: int,
+    *,
+    objective_issue: int | None = None,
 ) -> Plan:
     """Create a Plan with common defaults for testing."""
     return Plan(
@@ -42,4 +44,5 @@ def make_plan(
         created_at=datetime(2024, 1, day, tzinfo=UTC),
         updated_at=datetime(2024, 1, day, tzinfo=UTC),
         metadata={"number": int(plan_identifier)},
+        objective_issue=objective_issue,
     )

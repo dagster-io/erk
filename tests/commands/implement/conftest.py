@@ -18,4 +18,5 @@ def create_sample_plan_issue(issue_number: str = "42") -> Plan:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )

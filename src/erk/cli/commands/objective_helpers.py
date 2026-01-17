@@ -12,7 +12,6 @@ import click
 from erk.cli.output import stream_command_with_feedback
 from erk.core.context import ErkContext
 from erk_shared.gateway.pr.submit import has_issue_closing_reference
-from erk_shared.github.metadata.plan_header import extract_plan_header_objective_issue
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
@@ -150,14 +149,14 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     if plan_number is None:
         return None
 
-    # GitHubIssues.get_issue raises RuntimeError for missing issues.
+    # PlanStore.get_plan raises RuntimeError for missing issues.
     # This is a fail-open feature (non-critical), so we catch and return None.
     try:
-        issue = ctx.issues.get_issue(repo_root, plan_number)
+        plan = ctx.plan_store.get_plan(repo_root, str(plan_number))
     except RuntimeError:
         return None
 
-    return extract_plan_header_objective_issue(issue.body)
+    return plan.objective_issue
 
 
 def prompt_objective_update(

@@ -78,6 +78,7 @@ Implementation details"""
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 123, "url": "https://github.com/owner/repo/issues/123"},
+            objective_issue=None,
         )
 
         # Build fake git ops with worktree info
@@ -168,6 +169,7 @@ last_dispatched_node_id: 'WFR_def456'
                 "number": 456,
                 "url": "https://github.com/testowner/testrepo/issues/456",
             },
+            objective_issue=None,
         )
 
         git = FakeGit(
@@ -252,7 +254,8 @@ last_dispatched_node_id: 'WFR_ghi789'
             assignees=[],
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
-            metadata={"number": 789},  # No "url" key
+            metadata={"number": 789},
+            objective_issue=None,
         )
 
         git = FakeGit(
@@ -323,6 +326,7 @@ def test_plan_list_handles_missing_workflow_run() -> None:
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 111},
+            objective_issue=None,
         )
 
         git = FakeGit(
@@ -390,6 +394,7 @@ def test_plan_list_handles_batch_query_failure() -> None:
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 222},
+            objective_issue=None,
         )
 
         git = FakeGit(
@@ -491,6 +496,7 @@ last_dispatched_node_id: 'WFR_node2'
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 301},
+            objective_issue=None,
         )
 
         plan2 = Plan(
@@ -504,6 +510,7 @@ last_dispatched_node_id: 'WFR_node2'
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 302},
+            objective_issue=None,
         )
 
         git = FakeGit(
@@ -570,6 +577,7 @@ def test_plan_list_skips_run_id_for_plans_without_impl_folder() -> None:
             created_at=datetime(2025, 1, 20, tzinfo=UTC),
             updated_at=datetime(2025, 1, 20, tzinfo=UTC),
             metadata={"number": 999},
+            objective_issue=None,
         )
 
         git = FakeGit(

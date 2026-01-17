@@ -491,6 +491,7 @@ def _create_plan_with_objective(issue_number: str, objective_issue: int) -> Plan
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
+        objective_issue=None,
     )
 
 
