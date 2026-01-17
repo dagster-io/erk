@@ -405,7 +405,7 @@ def generate_compressed_xml(
         message = entry.get("message", {})
 
         if entry_type == "user":
-            # Extract user content - may contain both text and tool_result blocks
+            # Extract user content - may contain text and/or tool_result blocks
             content = message.get("content", "")
             if isinstance(content, list):
                 # Handle list of content blocks - separate text from tool_results
@@ -413,46 +413,45 @@ def generate_compressed_xml(
                 tool_results = []
                 for block in content:
                     if isinstance(block, dict):
-                        block_type = block.get("type")
-                        if block_type == "text":
+                        if block.get("type") == "text":
                             text_parts.append(block.get("text", ""))
-                        elif block_type == "tool_result":
+                        elif block.get("type") == "tool_result":
+                            # Collect tool_result for separate output
                             tool_results.append(block)
                     elif isinstance(block, str):
                         text_parts.append(block)
 
-                # Output text content if present
+                # Output user text content if any
                 if text_parts:
                     text_content = "\n".join(text_parts)
                     xml_lines.append(f"  <user>{escape_xml(text_content)}</user>")
 
-                # Output tool_results as separate elements
-                for tool_result in tool_results:
-                    tool_use_id = tool_result.get("tool_use_id", "")
-                    result_content = tool_result.get("content", "")
+                # Output tool_results embedded in user messages
+                for tr_block in tool_results:
+                    tool_use_id = tr_block.get("tool_use_id", "")
+                    tr_content = tr_block.get("content", "")
 
-                    # Handle content that may be a string or list of blocks
-                    if isinstance(result_content, list):
+                    # Extract text from nested content
+                    if isinstance(tr_content, list):
                         result_parts = []
-                        for item in result_content:
-                            if isinstance(item, dict):
-                                if item.get("type") == "text":
-                                    result_parts.append(item.get("text", ""))
-                                elif "text" in item:
-                                    result_parts.append(item["text"])
+                        for item in tr_content:
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                result_parts.append(item.get("text", ""))
                             elif isinstance(item, str):
                                 result_parts.append(item)
-                        result_content = "\n".join(result_parts)
+                        result_text = "\n".join(result_parts)
+                    else:
+                        result_text = str(tr_content)
 
                     # Apply pruning if enabled
                     if enable_pruning:
-                        result_content = prune_tool_result_content(result_content)
+                        result_text = prune_tool_result_content(result_text)
 
                     xml_lines.append(f'  <tool_result tool="{escape_xml(tool_use_id)}">')
-                    xml_lines.append(escape_xml(result_content))
+                    xml_lines.append(escape_xml(result_text))
                     xml_lines.append("  </tool_result>")
             else:
-                # String content
+                # Simple string content
                 xml_lines.append(f"  <user>{escape_xml(content)}</user>")
 
         elif entry_type == "assistant":
