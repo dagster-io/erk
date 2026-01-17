@@ -52,12 +52,10 @@ Before analyzing sessions, understand what code actually changed. A smooth imple
 Get the PR information for this plan:
 
 ```bash
-# Get PR number from issue
-gh issue view <issue-number> --json body | jq -r '.body' | grep -o 'PR #[0-9]*' | head -1
-
-# Or find PR by branch pattern
-gh pr list --search "head:P<issue-number>-" --json number,title,files
+erk exec get-pr-for-plan <issue-number>
 ```
+
+This returns JSON with PR details (`number`, `title`, `state`, `url`, `head_ref_name`, `base_ref_name`) or an error if no PR exists.
 
 Analyze the changes:
 
