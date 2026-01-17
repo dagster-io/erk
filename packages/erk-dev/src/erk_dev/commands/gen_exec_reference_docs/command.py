@@ -1,6 +1,7 @@
 """Generate erk exec commands reference documentation."""
 
 import subprocess
+import tempfile
 from pathlib import Path
 
 import click
@@ -54,8 +55,6 @@ def gen_exec_reference_docs_command(*, check: bool) -> None:
 
     if check:
         # Check mode: write to temp file, format, then compare
-        import tempfile
-
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".md", delete=False, encoding="utf-8"
         ) as tmp:
