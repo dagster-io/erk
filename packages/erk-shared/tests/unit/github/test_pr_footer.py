@@ -11,7 +11,7 @@ def test_build_pr_body_footer_without_issue_number() -> None:
     result = build_pr_body_footer(pr_number=1895, issue_number=None, plans_repo=None)
 
     assert "---" in result
-    assert "erk pr checkout 1895 && erk pr sync --dangerous" in result
+    assert 'source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous' in result
     assert "Closes #" not in result
 
 
@@ -21,7 +21,7 @@ def test_build_pr_body_footer_with_issue_number() -> None:
 
     assert "---" in result
     assert "Closes #123" in result
-    assert "erk pr checkout 1895 && erk pr sync --dangerous" in result
+    assert 'source "$(erk pr checkout 1895 --script)" && erk pr sync --dangerous' in result
 
 
 def test_build_pr_body_footer_issue_number_before_checkout() -> None:
@@ -41,7 +41,7 @@ def test_build_pr_body_footer_includes_sync_command() -> None:
     result = build_pr_body_footer(pr_number=100, issue_number=None, plans_repo=None)
 
     assert "&& erk pr sync --dangerous" in result
-    assert "erk pr checkout 100 && erk pr sync --dangerous" in result
+    assert 'source "$(erk pr checkout 100 --script)" && erk pr sync --dangerous' in result
 
 
 def test_build_pr_body_footer_cross_repo_issue() -> None:
