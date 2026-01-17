@@ -55,7 +55,7 @@ Each line is a JSON object representing one conversation entry:
 ```json
 {
   "sessionId": "abc123-def456",
-  "type": "user|assistant|tool_result",
+  "type": "user|assistant|summary|system",
   "message": {
     "content": [...],
     "timestamp": 1700000000.0
@@ -67,15 +67,15 @@ Each line is a JSON object representing one conversation entry:
 
 ### Key Fields
 
-| Field       | Type   | Description                                               |
-| ----------- | ------ | --------------------------------------------------------- |
-| `sessionId` | string | UUID identifying the session                              |
-| `type`      | string | Entry type: `user`, `assistant`, `tool_result`, `summary` |
-| `message`   | object | Message content (structure varies by type)                |
-| `timestamp` | float  | Unix timestamp (in message object)                        |
-| `gitBranch` | string | Current git branch (optional)                             |
-| `usage`     | object | Token usage statistics                                    |
-| `slug`      | string | Plan mode identifier (maps to ~/.claude/plans/{slug}.md)  |
+| Field       | Type   | Description                                                                                      |
+| ----------- | ------ | ------------------------------------------------------------------------------------------------ |
+| `sessionId` | string | UUID identifying the session                                                                     |
+| `type`      | string | Entry type: `user`, `assistant`, `summary`, `system`, `queue-operation`, `file-history-snapshot` |
+| `message`   | object | Message content (structure varies by type)                                                       |
+| `timestamp` | float  | Unix timestamp (in message object)                                                               |
+| `gitBranch` | string | Current git branch (optional)                                                                    |
+| `usage`     | object | Token usage statistics                                                                           |
+| `slug`      | string | Plan mode identifier (maps to ~/.claude/plans/{slug}.md)                                         |
 
 ## Entry Types
 
@@ -113,22 +113,39 @@ Each line is a JSON object representing one conversation entry:
 }
 ```
 
-### Tool Result Entry
+### User Entry with Tool Results
+
+**⚠️ CRITICAL: Tool results are content blocks INSIDE user entries, NOT top-level entry types.**
+
+When a tool completes execution, the result is delivered as a `tool_result` content block within a `user` entry:
 
 ```json
 {
   "sessionId": "test-session",
-  "type": "tool_result",
+  "type": "user",
   "message": {
-    "tool_use_id": "toolu_abc123",
     "content": [
-      { "type": "text", "text": "Exit code 0\n===== 42 passed in 1.23s =====" }
+      {
+        "type": "tool_result",
+        "tool_use_id": "toolu_abc123",
+        "content": "Exit code 0\n===== 42 passed in 1.23s =====",
+        "is_error": false
+      }
     ],
-    "is_error": false,
     "timestamp": 1700000002.0
   }
 }
 ```
+
+**Key points:**
+
+- The top-level `type` is `"user"`, NOT `"tool_result"`
+- `tool_result` appears as `content[].type` inside the message
+- `tool_use_id` links to the corresponding `tool_use` block in a prior assistant entry
+- `content` field can be a string or array of content blocks
+- `is_error` indicates whether tool execution failed
+
+**Common mistake:** Code that checks for `entry["type"] == "tool_result"` will never match because tool results are embedded in user entries. You must iterate through `message.content[]` and check `block["type"] == "tool_result"`.
 
 ### File History Snapshot Entry
 
@@ -181,6 +198,62 @@ When context is compacted, a summary entry is created:
   "message": {
     "content": "Summary of previous conversation...",
     "timestamp": 1700003600.0
+  }
+}
+```
+
+## Content Block Types
+
+Content blocks appear in the `message.content` array. Understanding these is critical for parsing sessions correctly.
+
+### Text Block
+
+```json
+{ "type": "text", "text": "Human-readable text content" }
+```
+
+### Tool Use Block (in assistant entries)
+
+```json
+{
+  "type": "tool_use",
+  "id": "toolu_abc123xyz",
+  "name": "Bash",
+  "input": { "command": "pytest", "description": "Run tests" }
+}
+```
+
+### Tool Result Block (in user entries)
+
+**⚠️ This is a content block, NOT a top-level entry type.**
+
+```json
+{
+  "type": "tool_result",
+  "tool_use_id": "toolu_abc123xyz",
+  "content": "Tool output text",
+  "is_error": false
+}
+```
+
+### Thinking Block (extended thinking models)
+
+```json
+{
+  "type": "thinking",
+  "thinking": "Internal reasoning process..."
+}
+```
+
+### Image Block
+
+```json
+{
+  "type": "image",
+  "source": {
+    "type": "base64",
+    "media_type": "image/png",
+    "data": "base64_encoded_data..."
   }
 }
 ```
@@ -381,18 +454,46 @@ def extract_key_messages(entries: list[dict]) -> list[dict]:
     messages = []
     for entry in entries:
         entry_type = entry.get("type")
-        if entry_type in ("tool_result", "summary"):
+        if entry_type in ("summary", "file-history-snapshot", "system"):
             continue
         message = entry.get("message", {})
         content = message.get("content", [])
-        for item in content:
-            if item.get("type") == "text":
-                text = item.get("text", "").strip()
-                if text:
-                    messages.append({
-                        "type": entry_type,
-                        "text": text,
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict) and item.get("type") == "text":
+                    text = item.get("text", "").strip()
+                    if text:
+                        messages.append({
+                            "type": entry_type,
+                            "text": text,
+                            "timestamp": message.get("timestamp")
+                        })
+    return messages
+```
+
+### Extract Tool Results from User Entries
+
+```python
+def extract_tool_results(entries: list[dict]) -> list[dict]:
+    """Extract tool results from user entries.
+
+    IMPORTANT: tool_results are content blocks inside user entries,
+    NOT top-level entry types.
+    """
+    results = []
+    for entry in entries:
+        if entry.get("type") != "user":
+            continue
+        message = entry.get("message", {})
+        content = message.get("content", [])
+        if isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    results.append({
+                        "tool_use_id": block.get("tool_use_id"),
+                        "content": block.get("content"),
+                        "is_error": block.get("is_error", False),
                         "timestamp": message.get("timestamp")
                     })
-    return messages
+    return results
 ```

@@ -130,11 +130,11 @@ For each session path from Step 1, preprocess to compressed XML format:
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
 
 # For the planning session:
-erk exec preprocess-session <planning-session-path> --max-tokens 15000 --stdout \
+erk exec preprocess-session <planning-session-path> --stdout \
     > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/planning-session.xml
 
 # For each implementation session:
-erk exec preprocess-session <impl-session-path> --max-tokens 15000 --stdout \
+erk exec preprocess-session <impl-session-path> --stdout \
     > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/impl-session-<N>.xml
 ```
 

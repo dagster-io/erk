@@ -195,6 +195,111 @@ def test_generate_xml_empty_entries() -> None:
     assert xml == "<session>\n</session>"
 
 
+def test_generate_xml_tool_result_embedded_in_user_message() -> None:
+    """Regression test: tool_results embedded in user messages are extracted.
+
+    Bug: In Claude Code's JSONL format, tool_results are NOT top-level entries.
+    Instead, they're embedded inside user-type entries as content[].type = "tool_result".
+    The preprocessor was only handling top-level tool_result entries (which don't exist
+    in this format) and type: text blocks within user messages, causing all tool_results
+    to be silently dropped.
+
+    Fix: The user message handler now detects type: tool_result blocks in content[]
+    and outputs them as separate <tool_result> elements.
+    """
+    # This is the ACTUAL format Claude Code uses for tool results
+    entry = {
+        "type": "user",  # Note: NOT "tool_result" at top level
+        "message": {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_abc123",
+                    "content": "File contents:\n     1→def hello():\n     2→    print('Hello')",
+                }
+            ],
+        },
+    }
+
+    xml = generate_compressed_xml([entry])
+
+    # Tool result should be extracted and output as <tool_result> element
+    assert '<tool_result tool="toolu_abc123">' in xml
+    assert "File contents:" in xml
+    assert "def hello():" in xml
+    # Should NOT output an empty <user> tag since there's no text content
+    assert "<user></user>" not in xml
+
+
+def test_generate_xml_user_with_mixed_text_and_tool_results() -> None:
+    """Test user message containing both text and tool_result blocks.
+
+    Claude Code sometimes includes both text and tool_result in the same user message.
+    Both should be extracted and output separately.
+    """
+    entry = {
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Here are the results:"},
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_read_001",
+                    "content": "Content of file A",
+                },
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_read_002",
+                    "content": "Content of file B",
+                },
+            ],
+        },
+    }
+
+    xml = generate_compressed_xml([entry])
+
+    # Text should be in <user> element
+    assert "<user>Here are the results:</user>" in xml
+
+    # Both tool results should be extracted
+    assert '<tool_result tool="toolu_read_001">' in xml
+    assert "Content of file A" in xml
+    assert '<tool_result tool="toolu_read_002">' in xml
+    assert "Content of file B" in xml
+
+
+def test_generate_xml_tool_result_with_pruning() -> None:
+    """Test that embedded tool_results are pruned when enable_pruning=True."""
+    # Create a long tool result that exceeds 30 lines
+    long_content = "\n".join([f"Line {i}" for i in range(50)])
+
+    entry = {
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_long",
+                    "content": long_content,
+                }
+            ],
+        },
+    }
+
+    xml = generate_compressed_xml([entry], enable_pruning=True)
+
+    # Should contain pruning marker
+    assert "omitted" in xml
+    # First lines should be present
+    assert "Line 0" in xml
+    assert "Line 29" in xml
+    # Lines beyond 30 should be omitted (unless they contain errors)
+    assert "Line 49" not in xml
+
+
 # ============================================================================
 # 4. Log File Processing Tests (6 tests)
 # ============================================================================

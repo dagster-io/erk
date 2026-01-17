@@ -405,18 +405,55 @@ def generate_compressed_xml(
         message = entry.get("message", {})
 
         if entry_type == "user":
-            # Extract user content
+            # Extract user content - may contain both text and tool_result blocks
             content = message.get("content", "")
             if isinstance(content, list):
-                # Handle list of content blocks
+                # Handle list of content blocks - separate text from tool_results
                 text_parts = []
+                tool_results = []
                 for block in content:
-                    if isinstance(block, dict) and block.get("type") == "text":
-                        text_parts.append(block.get("text", ""))
+                    if isinstance(block, dict):
+                        block_type = block.get("type")
+                        if block_type == "text":
+                            text_parts.append(block.get("text", ""))
+                        elif block_type == "tool_result":
+                            tool_results.append(block)
                     elif isinstance(block, str):
                         text_parts.append(block)
-                content = "\n".join(text_parts)
-            xml_lines.append(f"  <user>{escape_xml(content)}</user>")
+
+                # Output text content if present
+                if text_parts:
+                    text_content = "\n".join(text_parts)
+                    xml_lines.append(f"  <user>{escape_xml(text_content)}</user>")
+
+                # Output tool_results as separate elements
+                for tool_result in tool_results:
+                    tool_use_id = tool_result.get("tool_use_id", "")
+                    result_content = tool_result.get("content", "")
+
+                    # Handle content that may be a string or list of blocks
+                    if isinstance(result_content, list):
+                        result_parts = []
+                        for item in result_content:
+                            if isinstance(item, dict):
+                                if item.get("type") == "text":
+                                    result_parts.append(item.get("text", ""))
+                                elif "text" in item:
+                                    result_parts.append(item["text"])
+                            elif isinstance(item, str):
+                                result_parts.append(item)
+                        result_content = "\n".join(result_parts)
+
+                    # Apply pruning if enabled
+                    if enable_pruning:
+                        result_content = prune_tool_result_content(result_content)
+
+                    xml_lines.append(f'  <tool_result tool="{escape_xml(tool_use_id)}">')
+                    xml_lines.append(escape_xml(result_content))
+                    xml_lines.append("  </tool_result>")
+            else:
+                # String content
+                xml_lines.append(f"  <user>{escape_xml(content)}</user>")
 
         elif entry_type == "assistant":
             # Extract text and tool uses
