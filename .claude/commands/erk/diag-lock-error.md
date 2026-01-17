@@ -11,7 +11,7 @@ When a git operation fails with `fatal: Unable to create '.../.git/index.lock': 
 Run this command when you encounter a git index.lock error:
 
 ```bash
-/local:diag-lock-error
+/erk:diag-lock-error
 ```
 
 ## Implementation
