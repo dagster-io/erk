@@ -8,6 +8,7 @@ The `/local:fast-ci` skill references a `make check` target that doesn't exist i
 2. **Line 41**: Instructs running `make format-check prettier-check md-check docs-validate test check`
 
 But the Makefile has no `check` target. The actual `fast-ci` target (Makefile:90-102) runs:
+
 - Lint, Format Check, Prettier Check, Markdown Check, **Exec Reference Check**, ty, Unit Tests
 
 ## Root Cause
@@ -21,11 +22,13 @@ The skill documentation is out of sync with the actual Makefile. The `check` tar
 ### Change 1: Update the CI Pipeline list (line 24)
 
 Replace:
+
 ```
 8. **check** - Artifact synchronization validation
 ```
 
 With:
+
 ```
 8. **exec-reference-check** - Exec subcommand reference documentation validation
 ```
@@ -33,11 +36,13 @@ With:
 ### Change 2: Update the Phase 2 command (line 41)
 
 Replace:
+
 ```
 make format-check prettier-check md-check docs-validate test check
 ```
 
 With:
+
 ```
 make format-check prettier-check md-check docs-validate exec-reference-check test
 ```
