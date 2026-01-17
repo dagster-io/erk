@@ -97,20 +97,28 @@ git worktree list > "$DIAG_DIR/07-worktree-list.txt" 2>&1
 pwd >> "$DIAG_DIR/07-worktree-list.txt"
 ```
 
-#### 2h. Session ID
+#### 2h. Git Reflog
+
+Capture recent git operations to understand what was happening around the time of the error:
 
 ```bash
-echo "${CLAUDE_SESSION_ID:-unknown}" > "$DIAG_DIR/08-session-id.txt"
+git reflog --date=iso -n 50 > "$DIAG_DIR/08-git-reflog.txt" 2>&1
 ```
 
-#### 2i. Session XML Content
+#### 2i. Session ID
+
+```bash
+echo "${CLAUDE_SESSION_ID:-unknown}" > "$DIAG_DIR/09-session-id.txt"
+```
+
+#### 2j. Session XML Content
 
 Preprocess the current session to compressed XML format for analysis:
 
 ```bash
 erk exec preprocess-session ~/.claude/projects/*/sessions/${CLAUDE_SESSION_ID}/session.jsonl \
-    --max-tokens 30000 --stdout > "$DIAG_DIR/09-session.xml" 2>/dev/null || \
-    echo "Session preprocessing unavailable" > "$DIAG_DIR/09-session.xml"
+    --max-tokens 30000 --stdout > "$DIAG_DIR/10-session.xml" 2>/dev/null || \
+    echo "Session preprocessing unavailable" > "$DIAG_DIR/10-session.xml"
 ```
 
 This captures the conversation leading up to the error, including tool calls and results.
@@ -151,8 +159,9 @@ The diagnostic report has been uploaded. Share this URL when reporting the issue
 5. `05-erk-history.jsonl` - Recent erk command history
 6. `06-git-config.txt` - Git configuration
 7. `07-worktree-list.txt` - Git worktree information
-8. `08-session-id.txt` - Claude Code session ID
-9. `09-session.xml` - Preprocessed session XML (conversation leading to error)
+8. `08-git-reflog.txt` - Recent git operations (reflog with timestamps)
+9. `09-session-id.txt` - Claude Code session ID
+10. `10-session.xml` - Preprocessed session XML (conversation leading to error)
 ```
 
 ## Notes
