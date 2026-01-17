@@ -28,6 +28,16 @@ This document defines naming and code organization conventions for the erk codeb
 | Constants           | `UPPER_SNAKE_CASE` | `MAX_RETRIES`, `DEFAULT_TIMEOUT` |
 | CLI commands        | `kebab-case`       | `erk create`, `erk wt list`      |
 
+## Variable Naming by Type
+
+| Type                  | Convention               | Example                          |
+| --------------------- | ------------------------ | -------------------------------- |
+| Issue numbers (`int`) | `_id` suffix             | `objective_id`, `plan_id`        |
+| Issue objects         | No suffix or `_issue`    | `objective`, `plan_issue`        |
+| String identifiers    | `_identifier` or `_name` | `plan_identifier`, `branch_name` |
+
+**Rationale:** When a variable holds an integer ID (like a GitHub issue number), the `_id` suffix makes the type immediately clear. This distinguishes `objective_id: int` (an issue number) from `objective: ObjectiveInfo` (an object).
+
 ## Claude Artifacts
 
 All files in `.claude/` (commands, skills, agents, hooks) MUST use `kebab-case`.
