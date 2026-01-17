@@ -165,8 +165,8 @@ def _generate_command_section(
 
 SKILL_FRONTMATTER = """\
 ---
-description: Reference for all `erk exec` subcommands with flags and usage
-read_when: Using or looking up erk exec commands
+name: erk-exec-reference
+description: Reference for all `erk exec` subcommands with flags and usage. Use when looking up erk exec command syntax, flags, or options.
 ---
 """
 
