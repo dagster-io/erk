@@ -18,6 +18,7 @@ from erk.core.context import create_context
 from erk_shared.debug import debug_log
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.output.output import user_output
 
 # Module-level console for TTY interaction (injectable for testing)
@@ -154,8 +155,6 @@ def _is_shell_integration_enabled() -> bool:
     Returns False if config doesn't exist or shell_integration is not set.
     This function reads from ErkInstallation which handles missing config gracefully.
     """
-    from erk_shared.gateway.erk_installation.real import RealErkInstallation
-
     erk_installation = RealErkInstallation()
     if not erk_installation.config_exists():
         return False
