@@ -278,12 +278,36 @@ Valid reasons for "No":
 - Pure refactoring with no new behavior
 - Internal helper with no external usage
 
+**⚠️ Reference vs. Conceptual Documentation**
+
+Auto-generated reference docs (like `erk-exec-reference/SKILL.md`) show WHAT exists:
+
+- Option names and types
+- Required vs optional flags
+- Basic descriptions
+
+But reference docs do NOT cover:
+
+- **Why** the feature exists (the problem it solves)
+- **When** to use it (context, workflows, use cases)
+- **How** it fits with other features (relationships)
+- **Best practices** (recommended values, common patterns)
+
+**Example:** A new `--max-tokens` option might be reference-documented as "INTEGER - Split output into multiple files." But future agents need to know:
+
+- "Use 20000 to stay safely under Claude's 25000 token read limit"
+- "Combine with --output-dir/--prefix for named files"
+
+If a feature changes how a workflow operates, it needs conceptual documentation even when reference docs exist.
+
 Invalid reasons (REJECT these):
 
 - "Code is self-documenting"
 - "Patterns are discoverable in the code"
 - "Well-tested so documentation unnecessary"
 - "Simple/straightforward implementation"
+- "Auto-documented by generator"
+- "Reference docs exist"
 
 **⚠️ CHECKPOINT: Before proceeding to Step 5**
 
