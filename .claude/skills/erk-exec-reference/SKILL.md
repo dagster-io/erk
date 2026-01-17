@@ -38,6 +38,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-plans-for-objective`         | Fetch erk-plan issues linked to an objective.                             |
 | `get-pr-body-footer`              | Generate PR body footer with checkout command.                            |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                 |
+| `get-pr-for-plan`                 | Get PR details for a plan issue.                                          |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                     |
 | `impl-init`                       | Initialize implementation by validating .impl/ folder.                    |
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
@@ -337,6 +338,18 @@ Fetch PR discussion comments for agent context injection.
 | Flag   | Type    | Required | Default | Description                                 |
 | ------ | ------- | -------- | ------- | ------------------------------------------- |
 | `--pr` | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
+
+### get-pr-for-plan
+
+Get PR details for a plan issue.
+
+**Usage:** `erk exec get-pr-for-plan` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
 
 ### get-pr-review-comments
 
