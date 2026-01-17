@@ -241,11 +241,14 @@ def render_land_script() -> str:
 
     The script wraps `erk land --script` to provide shell integration,
     allowing the command to navigate the shell after landing a PR.
+
+    Uses process substitution with `cat` to read the temp file immediately,
+    avoiding race conditions where the file might be deleted before sourcing.
     """
     return """#!/usr/bin/env bash
 # erk land wrapper - source this script to land with shell integration
 # Usage: source .erk/bin/land.sh [args...]
-source "$(erk land --script "$@")"
+source <(cat "$(erk land --script "$@")")
 """
 
 
