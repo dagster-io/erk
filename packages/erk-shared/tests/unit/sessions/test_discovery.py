@@ -100,7 +100,7 @@ def _make_plan_body(
         last_local_impl_user=None,
         last_remote_impl_at=last_remote_impl_at,
         source_repo=None,
-        objective_issue=None,
+        objective_id=None,
         created_from_session=created_from_session,
         last_learn_session=None,
         last_learn_at=None,

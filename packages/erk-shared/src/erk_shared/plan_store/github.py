@@ -31,6 +31,27 @@ from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
 
 
+def _parse_objective_id(value: object) -> int | None:
+    """Parse objective_id from metadata value.
+
+    Args:
+        value: Raw value from metadata (str, int, or None)
+
+    Returns:
+        Parsed integer or None
+
+    Raises:
+        ValueError: If value cannot be converted to int
+    """
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        return int(value)
+    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+
+
 class GitHubPlanStore(PlanBackend):
     """GitHub implementation using gh CLI.
 
@@ -266,9 +287,7 @@ class GitHubPlanStore(PlanBackend):
 
         # Handle int field
         objective_issue_raw = metadata.get(OBJECTIVE_ISSUE)
-        objective_issue_int: int | None = None
-        if objective_issue_raw is not None:
-            objective_issue_int = int(objective_issue_raw)  # type: ignore[arg-type]
+        objective_id: int | None = _parse_objective_id(objective_issue_raw)
 
         # Convert tuple labels to list, excluding standard 'erk-plan' label
         # since create_plan_issue adds it automatically
@@ -288,7 +307,7 @@ class GitHubPlanStore(PlanBackend):
             extra_labels=extra_labels if extra_labels else None,
             title_suffix=title_suffix_str,
             source_repo=source_repo_str,
-            objective_issue=objective_issue_int,
+            objective_id=objective_id,
             created_from_session=created_from_session_str,
         )
 
@@ -472,7 +491,7 @@ class GitHubPlanStore(PlanBackend):
         body = plan_body if plan_body is not None else issue_info.body
 
         # Extract objective_issue from plan-header metadata
-        objective_issue = extract_plan_header_objective_issue(issue_info.body)
+        objective_id = extract_plan_header_objective_issue(issue_info.body)
 
         return Plan(
             plan_identifier=str(issue_info.number),
@@ -485,5 +504,5 @@ class GitHubPlanStore(PlanBackend):
             created_at=issue_info.created_at.astimezone(UTC),
             updated_at=issue_info.updated_at.astimezone(UTC),
             metadata=metadata,
-            objective_issue=objective_issue,
+            objective_id=objective_id,
         )

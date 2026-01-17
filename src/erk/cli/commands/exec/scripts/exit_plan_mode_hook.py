@@ -130,7 +130,7 @@ class HookInput:
     plan_saved_marker_exists: bool
     incremental_plan_marker_exists: bool
     objective_context_marker_exists: bool
-    objective_issue: int | None  # Objective issue number if marker exists
+    objective_id: int | None  # Objective issue number if marker exists
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     plan_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
@@ -149,7 +149,7 @@ class HookInput:
         plan_saved_marker_exists: bool = False,
         incremental_plan_marker_exists: bool = False,
         objective_context_marker_exists: bool = False,
-        objective_issue: int | None = None,
+        objective_id: int | None = None,
         plan_file_path: Path | None = None,
         plan_title: str | None = None,
         current_branch: str | None = "feature-branch",
@@ -180,7 +180,7 @@ class HookInput:
             plan_saved_marker_exists=plan_saved_marker_exists,
             incremental_plan_marker_exists=incremental_plan_marker_exists,
             objective_context_marker_exists=objective_context_marker_exists,
-            objective_issue=objective_issue,
+            objective_id=objective_id,
             plan_file_path=plan_file_path,
             plan_title=plan_title,
             current_branch=current_branch,
@@ -247,7 +247,7 @@ def build_blocking_message(
     session_id: str,
     current_branch: str | None,
     plan_file_path: Path | None,
-    objective_issue: int | None,
+    objective_id: int | None,
     plan_title: str | None,
     worktree_name: str | None,
     pr_number: int | None,
@@ -332,8 +332,8 @@ def build_blocking_message(
         )
 
     # Build the save command with optional --objective-issue flag
-    if objective_issue is not None:
-        save_cmd = f"/erk:plan-save --objective-issue={objective_issue}"
+    if objective_id is not None:
+        save_cmd = f"/erk:plan-save --objective-issue={objective_id}"
     else:
         save_cmd = "/erk:plan-save"
 
@@ -446,7 +446,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             session_id=hook_input.session_id,
             current_branch=hook_input.current_branch,
             plan_file_path=hook_input.plan_file_path,
-            objective_issue=hook_input.objective_issue,
+            objective_id=hook_input.objective_id,
             plan_title=hook_input.plan_title,
             worktree_name=hook_input.worktree_name,
             pr_number=hook_input.pr_number,
@@ -659,7 +659,7 @@ def _gather_inputs(
     plan_saved_marker_exists = False
     incremental_plan_marker_exists = False
     objective_context_marker_exists = False
-    objective_issue: int | None = None
+    objective_id: int | None = None
     if session_id is not None:
         implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
         plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
@@ -668,7 +668,7 @@ def _gather_inputs(
         objective_context_marker_exists = _get_objective_context_marker_path(
             session_id, repo_root
         ).exists()
-        objective_issue = _read_objective_context(session_id, repo_root)
+        objective_id = _read_objective_context(session_id, repo_root)
 
     # Find plan file path (None if doesn't exist)
     plan_file_path: Path | None = None
@@ -711,7 +711,7 @@ def _gather_inputs(
         plan_saved_marker_exists=plan_saved_marker_exists,
         incremental_plan_marker_exists=incremental_plan_marker_exists,
         objective_context_marker_exists=objective_context_marker_exists,
-        objective_issue=objective_issue,
+        objective_id=objective_id,
         plan_file_path=plan_file_path,
         plan_title=plan_title,
         current_branch=current_branch,

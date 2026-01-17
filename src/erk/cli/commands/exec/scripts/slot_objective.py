@@ -83,14 +83,14 @@ def slot_objective(ctx: click.Context) -> None:
         _null_result()
         return
 
-    # Find slot info to get last_objective_issue
-    objective_issue: int | None = None
+    # Find slot info to get last_objective_id
+    objective_id: int | None = None
     for slot in state.slots:
         if slot.name == slot_name:
-            objective_issue = slot.last_objective_issue
+            objective_id = slot.last_objective_id
             break
 
-    result = {"objective_issue": objective_issue, "slot_name": slot_name}
+    result = {"objective_issue": objective_id, "slot_name": slot_name}
     click.echo(json.dumps(result))
 
 

@@ -30,7 +30,7 @@ def test_plan_list_shows_action_state_with_no_queue_label() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1001},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -61,7 +61,7 @@ def test_plan_list_shows_pending_action_state() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1002},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -92,7 +92,7 @@ def test_plan_list_shows_running_action_state_with_workflow_started() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1003},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create comment with workflow-started metadata
@@ -140,7 +140,7 @@ def test_plan_list_shows_complete_action_state() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1004},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create comment with complete status
@@ -187,7 +187,7 @@ def test_plan_list_shows_failed_action_state() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1005},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create comment with failed status

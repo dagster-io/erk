@@ -1083,7 +1083,7 @@ def test_check_legacy_slot_naming_empty_assignments(tmp_path: Path) -> None:
     state = PoolState(
         version="1.0",
         pool_size=4,
-        slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
+        slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
         assignments=(),
     )
     save_pool_state(repo.pool_json_path, state)
@@ -1105,8 +1105,8 @@ def test_check_legacy_slot_naming_all_new_style(tmp_path: Path) -> None:
         version="1.0",
         pool_size=4,
         slots=(
-            SlotInfo(name="erk-slot-01", last_objective_issue=None),
-            SlotInfo(name="erk-slot-02", last_objective_issue=None),
+            SlotInfo(name="erk-slot-01", last_objective_id=None),
+            SlotInfo(name="erk-slot-02", last_objective_id=None),
         ),
         assignments=(
             SlotAssignment(
@@ -1142,8 +1142,8 @@ def test_check_legacy_slot_naming_has_old_style(tmp_path: Path) -> None:
         version="1.0",
         pool_size=4,
         slots=(
-            SlotInfo(name="erk-managed-wt-01", last_objective_issue=None),
-            SlotInfo(name="erk-managed-wt-02", last_objective_issue=None),
+            SlotInfo(name="erk-managed-wt-01", last_objective_id=None),
+            SlotInfo(name="erk-managed-wt-02", last_objective_id=None),
         ),
         assignments=(
             SlotAssignment(
@@ -1189,8 +1189,8 @@ def test_check_legacy_slot_naming_mixed_styles(tmp_path: Path) -> None:
         version="1.0",
         pool_size=4,
         slots=(
-            SlotInfo(name="erk-slot-01", last_objective_issue=None),
-            SlotInfo(name="erk-managed-wt-02", last_objective_issue=None),
+            SlotInfo(name="erk-slot-01", last_objective_id=None),
+            SlotInfo(name="erk-managed-wt-02", last_objective_id=None),
         ),
         assignments=(
             SlotAssignment(

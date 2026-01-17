@@ -708,7 +708,7 @@ def test_plan_save_to_issue_updates_slot_objective_when_in_slot() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-slot-01",
@@ -743,7 +743,7 @@ def test_plan_save_to_issue_updates_slot_objective_when_in_slot() -> None:
         # Verify pool.json was updated
         updated_state = load_pool_state(repo.pool_json_path)
         assert updated_state is not None
-        assert updated_state.slots[0].last_objective_issue == 456
+        assert updated_state.slots[0].last_objective_id == 456
 
 
 def test_plan_save_to_issue_no_slot_update_when_not_in_slot() -> None:
@@ -806,7 +806,7 @@ def test_plan_save_to_issue_no_slot_update_without_objective_flag() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=123),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_id=123),),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-slot-01",
@@ -843,7 +843,7 @@ def test_plan_save_to_issue_no_slot_update_without_objective_flag() -> None:
         # Verify pool.json was NOT modified
         unchanged_state = load_pool_state(repo.pool_json_path)
         assert unchanged_state is not None
-        assert unchanged_state.slots[0].last_objective_issue == 123
+        assert unchanged_state.slots[0].last_objective_id == 123
 
 
 def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
@@ -887,7 +887,7 @@ def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-slot-01",

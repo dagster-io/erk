@@ -433,7 +433,7 @@ def test_delete_all_closes_pr_and_plan() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         fake_plan_store, fake_issues = create_plan_store_with_plans({"123": plan})
 
@@ -617,7 +617,7 @@ def test_delete_all_shows_closed_plan_status() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         fake_plan_store, fake_issues = create_plan_store_with_plans({"456": plan})
 
@@ -665,7 +665,7 @@ def test_delete_all_shows_actual_pr_and_plan_numbers_in_confirmation() -> None:
             created_at=now,
             updated_at=now,
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         fake_plan_store, fake_issues = create_plan_store_with_plans({"789": plan})
 

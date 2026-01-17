@@ -60,7 +60,7 @@ def create_plan(
         created_at=now,
         updated_at=now,
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
 

@@ -51,6 +51,27 @@ from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
 
 
+def _parse_objective_id(value: object) -> int | None:
+    """Parse objective_id from custom_fields value.
+
+    Args:
+        value: Raw value from custom_fields (str, int, or None)
+
+    Returns:
+        Parsed integer or None
+
+    Raises:
+        ValueError: If value cannot be converted to int
+    """
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, str):
+        return int(value)
+    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+
+
 def _generate_hex_id() -> str:
     """Generate an 8-character hex ID guaranteed to contain at least one letter.
 
@@ -438,9 +459,7 @@ class FakeLinearPlanBackend(PlanBackend):
 
         # Extract objective_issue from custom_fields (Linear's metadata equivalent)
         objective_issue_raw = issue.custom_fields.get("objective_issue")
-        objective_issue: int | None = None
-        if objective_issue_raw is not None:
-            objective_issue = int(objective_issue_raw)  # type: ignore[arg-type]
+        objective_id: int | None = _parse_objective_id(objective_issue_raw)
 
         return Plan(
             plan_identifier=issue.id,
@@ -453,5 +472,5 @@ class FakeLinearPlanBackend(PlanBackend):
             created_at=issue.created_at,
             updated_at=issue.updated_at,
             metadata=dict(issue.custom_fields),
-            objective_issue=objective_issue,
+            objective_id=objective_id,
         )

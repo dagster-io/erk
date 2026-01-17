@@ -44,5 +44,5 @@ def make_plan(
         created_at=datetime(2024, 1, day, tzinfo=UTC),
         updated_at=datetime(2024, 1, day, tzinfo=UTC),
         metadata={"number": int(plan_identifier)},
-        objective_issue=objective_issue,
+        objective_id=objective_issue,
     )

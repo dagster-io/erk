@@ -28,7 +28,7 @@ class Plan:
         created_at: Creation timestamp
         updated_at: Last update timestamp
         metadata: Provider-specific fields (e.g., {"number": 42} for GitHub)
-        objective_issue: Parent objective issue number, or None if not linked
+        objective_id: Parent objective issue number, or None if not linked
     """
 
     plan_identifier: str
@@ -41,7 +41,7 @@ class Plan:
     created_at: datetime
     updated_at: datetime
     metadata: dict[str, object]
-    objective_issue: int | None
+    objective_id: int | None
 
 
 @dataclass(frozen=True)

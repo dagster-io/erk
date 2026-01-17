@@ -73,7 +73,7 @@ def test_dash_command_routes_to_interactive_mode() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -115,7 +115,7 @@ def test_dash_command_passes_filters_to_interactive_mode() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -151,7 +151,7 @@ def test_top_level_view_command_works() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -183,7 +183,7 @@ def test_top_level_close_command_works() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 456},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()

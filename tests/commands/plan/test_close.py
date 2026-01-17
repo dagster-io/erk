@@ -29,7 +29,7 @@ def test_close_plan_with_issue_number() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -96,7 +96,7 @@ def test_close_plan_closes_linked_open_prs() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create linked PRs (one draft, one non-draft, both OPEN)
@@ -140,7 +140,7 @@ def test_close_plan_skips_closed_and_merged_prs() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create PRs in various states
@@ -183,7 +183,7 @@ def test_close_plan_no_linked_prs() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -257,7 +257,7 @@ def test_close_plan_reports_closed_prs() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create multiple linked OPEN PRs

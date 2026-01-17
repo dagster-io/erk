@@ -41,7 +41,7 @@ def test_plan_list_no_filters() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
     plan2 = Plan(
         plan_identifier="2",
@@ -54,7 +54,7 @@ def test_plan_list_no_filters() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -86,7 +86,7 @@ def test_plan_list_filter_by_state() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
     closed_plan = Plan(
         plan_identifier="2",
@@ -99,7 +99,7 @@ def test_plan_list_filter_by_state() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -132,7 +132,7 @@ def test_plan_list_filter_by_labels() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
     plan_with_one = Plan(
         plan_identifier="2",
@@ -145,7 +145,7 @@ def test_plan_list_filter_by_labels() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -187,7 +187,7 @@ def test_plan_list_with_limit() -> None:
             created_at=datetime(2024, 1, i, tzinfo=UTC),
             updated_at=datetime(2024, 1, i, tzinfo=UTC),
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         issue = plan_to_issue(plan)
         plans_dict[i] = issue
@@ -218,7 +218,7 @@ def test_plan_list_empty_results() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -260,7 +260,7 @@ last_dispatched_node_id: 'WFR_all_flag'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 200},
-        objective_issue=None,
+        objective_id=None,
     )
 
     workflow_run = WorkflowRun(
@@ -314,7 +314,7 @@ last_dispatched_node_id: 'WFR_short_flag'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 201},
-        objective_issue=None,
+        objective_id=None,
     )
 
     workflow_run = WorkflowRun(
@@ -354,7 +354,7 @@ def test_plan_list_sort_issue_default() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1},
-        objective_issue=None,
+        objective_id=None,
     )
     plan2 = Plan(
         plan_identifier="2",
@@ -367,7 +367,7 @@ def test_plan_list_sort_issue_default() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={"number": 2},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -403,7 +403,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1},
-        objective_issue=None,
+        objective_id=None,
     )
     # Plan 2: newer issue, no local branch
     plan2 = Plan(
@@ -417,7 +417,7 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={"number": 2},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -491,7 +491,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1},
-        objective_issue=None,
+        objective_id=None,
     )
     # Plan 2: has local branch with newer commit
     plan2 = Plan(
@@ -505,7 +505,7 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={"number": 2},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()

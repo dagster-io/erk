@@ -57,7 +57,7 @@ Objective #100: "Improve authentication"
 └── Plan #103: "Add session management"
 ```
 
-Each plan's metadata includes an `objective_issue` field linking to its parent. Most ticketing systems support this pattern (epics, sub-tasks, parent issues) and it is applicable to objectives, plans and other future use cases.
+Each plan's metadata includes an `objective_id` field linking to its parent. Most ticketing systems support this pattern (epics, sub-tasks, parent issues) and it is applicable to objectives, plans and other future use cases.
 
 ## Plans as Context Graphs
 

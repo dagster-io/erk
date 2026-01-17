@@ -55,7 +55,7 @@ last_dispatched_node_id: 'WFR_running'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1010},
-        objective_issue=None,
+        objective_id=None,
     )
 
     running_plan = Plan(
@@ -69,7 +69,7 @@ last_dispatched_node_id: 'WFR_running'
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={"number": 1011},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Configure workflow runs with node_id lookup
@@ -147,7 +147,7 @@ last_dispatched_node_id: 'WFR_failed'
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1020},
-        objective_issue=None,
+        objective_id=None,
     )
 
     failed_plan = Plan(
@@ -161,7 +161,7 @@ last_dispatched_node_id: 'WFR_failed'
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={"number": 1021},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Configure workflow runs with node_id lookup
@@ -215,7 +215,7 @@ def test_plan_list_run_state_filter_no_matches() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 1030},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Configure workflow run with completed/success state

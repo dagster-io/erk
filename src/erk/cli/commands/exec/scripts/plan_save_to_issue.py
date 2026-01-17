@@ -118,14 +118,14 @@ def _detect_current_slot(ctx: click.Context, cwd: Path) -> str | None:
 def _update_slot_objective_if_applicable(
     ctx: click.Context,
     cwd: Path,
-    objective_issue: int,
+    objective_id: int,
 ) -> str | None:
     """Update the slot's objective if we're in a slot worktree.
 
     Args:
         ctx: Click context with repo info.
         cwd: Current working directory.
-        objective_issue: Issue number to set as the slot's objective.
+        objective_id: Issue number to set as the slot's objective.
 
     Returns:
         Slot name if update succeeded, None if not in a slot.
@@ -139,7 +139,7 @@ def _update_slot_objective_if_applicable(
     if state is None:
         return None
 
-    new_state = update_slot_objective(state, slot_name, objective_issue)
+    new_state = update_slot_objective(state, slot_name, objective_id)
     save_pool_state(repo.pool_json_path, new_state)
     return slot_name
 
@@ -237,7 +237,7 @@ def plan_save_to_issue(
         extra_labels=extra_labels,
         title_suffix=None,
         source_repo=source_repo,
-        objective_issue=objective_issue,
+        objective_id=objective_issue,
         created_from_session=effective_session_id,
     )
 

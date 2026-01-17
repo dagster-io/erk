@@ -67,7 +67,7 @@ def create_plan_issue(
     extra_labels: list[str] | None,
     title_suffix: str | None,
     source_repo: str | None,
-    objective_issue: int | None,
+    objective_id: int | None,
     created_from_session: str | None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2/v3 plan issue with proper structure.
@@ -87,7 +87,7 @@ def create_plan_issue(
         extra_labels: Additional labels beyond erk-plan (include "erk-learn" for learn plans)
         title_suffix: Suffix for issue title (defaults based on labels)
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
-        objective_issue: Optional parent objective issue number
+        objective_id: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
 
     Returns:
@@ -163,7 +163,7 @@ def create_plan_issue(
         last_local_impl_user=None,
         last_remote_impl_at=None,
         source_repo=source_repo,
-        objective_issue=objective_issue,
+        objective_issue=objective_id,
         created_from_session=created_from_session,
         last_learn_session=None,
         last_learn_at=None,

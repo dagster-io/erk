@@ -491,7 +491,7 @@ def _create_plan_with_objective(issue_number: str, objective_issue: int) -> Plan
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
 
@@ -529,7 +529,7 @@ def test_implement_from_issue_with_objective_propagates_to_slot() -> None:
             None,
         )
         assert slot is not None
-        assert slot.last_objective_issue == 42
+        assert slot.last_objective_id == 42
 
 
 def test_implement_from_issue_without_objective_does_not_create_slot_info() -> None:
@@ -565,7 +565,7 @@ def test_implement_from_issue_without_objective_does_not_create_slot_info() -> N
         )
         # Either no slot exists, or if it does, it has no objective
         if slot is not None:
-            assert slot.last_objective_issue is None
+            assert slot.last_objective_id is None
 
 
 def test_implement_from_file_does_not_propagate_objective() -> None:
@@ -601,7 +601,7 @@ def test_implement_from_file_does_not_propagate_objective() -> None:
         )
         # Either no slot or no objective
         if slot is not None:
-            assert slot.last_objective_issue is None
+            assert slot.last_objective_id is None
 
 
 def test_implement_objective_adds_new_slot_info() -> None:
@@ -658,4 +658,4 @@ def test_implement_objective_adds_new_slot_info() -> None:
         # Should have one SlotInfo for slot-02 with the objective
         slot02_infos = [s for s in updated_state.slots if s.name == "erk-slot-02"]
         assert len(slot02_infos) == 1
-        assert slot02_infos[0].last_objective_issue == 99
+        assert slot02_infos[0].last_objective_id == 99

@@ -256,7 +256,7 @@ class RealErkInstallation(ErkInstallation):
         data = json.loads(content)
 
         slots = tuple(
-            SlotInfo(name=s["name"], last_objective_issue=s.get("last_objective_issue"))
+            SlotInfo(name=s["name"], last_objective_id=s.get("last_objective_id"))
             for s in data.get("slots", [])
         )
 
@@ -292,8 +292,7 @@ class RealErkInstallation(ErkInstallation):
             "version": state.version,
             "pool_size": state.pool_size,
             "slots": [
-                {"name": s.name, "last_objective_issue": s.last_objective_issue}
-                for s in state.slots
+                {"name": s.name, "last_objective_id": s.last_objective_id} for s in state.slots
             ],
             "assignments": [
                 {
