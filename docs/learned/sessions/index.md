@@ -9,6 +9,7 @@
 - **[jsonl-schema-reference.md](jsonl-schema-reference.md)** — parsing Claude Code session files, understanding JSONL entry types, extracting data from session logs, building tools that process session transcripts, debugging session parsing issues
 - **[layout.md](layout.md)** — working with session logs, parsing session logs, understanding ~/.claude/projects/ structure, debugging session lookup issues, implementing features that depend on project directory resolution
 - **[parallel-session-awareness.md](parallel-session-awareness.md)** — working with session-specific data, implementing session-scoped features, accessing plans, scratch files, or session metadata
+- **[preprocessing.md](preprocessing.md)** — preprocessing Claude Code session logs for analysis
 - **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format
 - **[session-hierarchy.md](session-hierarchy.md)** — understanding Claude Code session structure, working with parent and agent sessions, finding session files on disk, correlating agent logs to parent sessions, implementing session-scoped file discovery
 - **[tools.md](tools.md)** — finding session logs, inspecting agent execution, debugging session issues
