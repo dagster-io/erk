@@ -107,6 +107,21 @@ ls -la docs/learned/ 2>/dev/null || echo "No docs/learned/ directory"
 ls -la .claude/skills/ 2>/dev/null || echo "No .claude/skills/ directory"
 ```
 
+#### Analyze Current Conversation
+
+Before preprocessing session files, analyze the current conversation context:
+
+**You have direct access to this session.** No preprocessing needed - examine what happened:
+
+1. **User corrections**: Did the user correct any assumptions or approaches?
+2. **External lookups**: What did you WebFetch or WebSearch? Why wasn't it already documented?
+3. **Unexpected discoveries**: What surprised you during implementation?
+4. **Repeated patterns**: Did you do something multiple times that could be streamlined?
+
+**Key question**: "What would have made this session faster if I'd known it beforehand?"
+
+These insights are often the most valuable because they represent real friction encountered during implementation.
+
 #### Preprocess Sessions
 
 For each session path from Step 1, preprocess to compressed XML format:
