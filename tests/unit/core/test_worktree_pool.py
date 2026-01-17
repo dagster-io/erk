@@ -99,8 +99,8 @@ def test_save_and_load_pool_state_with_assignments(tmp_path: Path) -> None:
     """Test round-trip save and load with assignments."""
     pool_json = tmp_path / "pool.json"
 
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
-    slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
+    slot2 = SlotInfo(name="erk-slot-02", last_objective_id=None)
 
     assignment1 = SlotAssignment(
         slot_name="erk-slot-01",
@@ -159,24 +159,24 @@ def test_save_pool_state_creates_parent_dirs(tmp_path: Path) -> None:
 
 def test_slot_info_creation() -> None:
     """Test that SlotInfo is created correctly."""
-    slot = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+    slot = SlotInfo(name="erk-slot-01", last_objective_id=None)
 
     assert slot.name == "erk-slot-01"
-    assert slot.last_objective_issue is None
+    assert slot.last_objective_id is None
 
 
 def test_slot_info_with_objective() -> None:
     """Test that SlotInfo preserves last_objective_issue."""
-    slot = SlotInfo(name="erk-slot-01", last_objective_issue=42)
+    slot = SlotInfo(name="erk-slot-01", last_objective_id=42)
 
     assert slot.name == "erk-slot-01"
-    assert slot.last_objective_issue == 42
+    assert slot.last_objective_id == 42
 
 
 def test_pool_state_with_slots_no_assignments() -> None:
     """Test PoolState with initialized slots but no assignments."""
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
-    slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
+    slot2 = SlotInfo(name="erk-slot-02", last_objective_id=None)
 
     state = PoolState(
         version="1.0",
@@ -197,8 +197,8 @@ def test_save_and_load_pool_state_with_objective(tmp_path: Path) -> None:
     """Test round-trip save and load preserves last_objective_issue."""
     pool_json = tmp_path / "pool.json"
 
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=123)
-    slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=123)
+    slot2 = SlotInfo(name="erk-slot-02", last_objective_id=None)
 
     state = PoolState(
         version="1.0",
@@ -211,8 +211,8 @@ def test_save_and_load_pool_state_with_objective(tmp_path: Path) -> None:
     loaded = load_pool_state(pool_json)
 
     assert loaded is not None
-    assert loaded.slots[0].last_objective_issue == 123
-    assert loaded.slots[1].last_objective_issue is None
+    assert loaded.slots[0].last_objective_id == 123
+    assert loaded.slots[1].last_objective_id is None
 
 
 def test_load_pool_state_missing_objective_field(tmp_path: Path) -> None:
@@ -229,44 +229,44 @@ def test_load_pool_state_missing_objective_field(tmp_path: Path) -> None:
 
     assert loaded is not None
     assert loaded.slots[0].name == "erk-slot-01"
-    assert loaded.slots[0].last_objective_issue is None
+    assert loaded.slots[0].last_objective_id is None
 
 
 def test_update_slot_objective_sets_value() -> None:
     """Test that update_slot_objective sets the objective on the correct slot."""
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
-    slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
+    slot2 = SlotInfo(name="erk-slot-02", last_objective_id=None)
     state = PoolState.test(slots=(slot1, slot2))
 
     new_state = update_slot_objective(state, "erk-slot-01", 123)
 
-    assert new_state.slots[0].last_objective_issue == 123
-    assert new_state.slots[1].last_objective_issue is None
+    assert new_state.slots[0].last_objective_id == 123
+    assert new_state.slots[1].last_objective_id is None
 
 
 def test_update_slot_objective_clears_value() -> None:
     """Test that update_slot_objective can clear an existing objective."""
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=123)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=123)
     state = PoolState.test(slots=(slot1,))
 
     new_state = update_slot_objective(state, "erk-slot-01", None)
 
-    assert new_state.slots[0].last_objective_issue is None
+    assert new_state.slots[0].last_objective_id is None
 
 
 def test_update_slot_objective_replaces_value() -> None:
     """Test that update_slot_objective replaces an existing objective."""
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=100)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=100)
     state = PoolState.test(slots=(slot1,))
 
     new_state = update_slot_objective(state, "erk-slot-01", 200)
 
-    assert new_state.slots[0].last_objective_issue == 200
+    assert new_state.slots[0].last_objective_id == 200
 
 
 def test_update_slot_objective_returns_unchanged_for_unknown_slot() -> None:
     """Test that update_slot_objective returns state unchanged if slot not found."""
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
     state = PoolState.test(slots=(slot1,))
 
     new_state = update_slot_objective(state, "erk-slot-99", 123)
@@ -276,7 +276,7 @@ def test_update_slot_objective_returns_unchanged_for_unknown_slot() -> None:
 
 def test_update_slot_objective_preserves_other_fields() -> None:
     """Test that update_slot_objective preserves version, pool_size, assignments."""
-    slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+    slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
     assignment = SlotAssignment(
         slot_name="erk-slot-01",
         branch_name="feature-a",

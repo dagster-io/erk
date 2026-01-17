@@ -28,7 +28,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -64,7 +64,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=["erk-learn"],
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -93,7 +93,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -115,7 +115,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix="[custom-suffix]",
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -136,7 +136,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=["bug", "priority-high"],
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -157,7 +157,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_repo="owner/impl-repo",
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -182,7 +182,7 @@ class TestCreatePlanIssueSuccess:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -210,7 +210,7 @@ class TestCreatePlanIssueTitleExtraction:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -229,7 +229,7 @@ class TestCreatePlanIssueTitleExtraction:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -248,7 +248,7 @@ class TestCreatePlanIssueTitleExtraction:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -271,7 +271,7 @@ class TestCreatePlanIssueErrors:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -301,7 +301,7 @@ class TestCreatePlanIssueErrors:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -328,7 +328,7 @@ class TestCreatePlanIssueErrors:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -360,7 +360,7 @@ class TestCreatePlanIssuePartialSuccess:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -389,7 +389,7 @@ class TestCreatePlanIssuePartialSuccess:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -413,7 +413,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -438,7 +438,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=["erk-learn"],
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -462,7 +462,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -483,7 +483,7 @@ class TestCreatePlanIssueLabelManagement:
             extra_labels=["erk-plan", "bug"],  # erk-plan would be duplicate
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -674,7 +674,7 @@ class TestCreatePlanIssueCommandsSection:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -705,7 +705,7 @@ class TestCreatePlanIssueCommandsSection:
             extra_labels=["erk-learn"],
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 
@@ -734,7 +734,7 @@ class TestCreatePlanIssueCommandsSection:
             extra_labels=None,
             title_suffix=None,
             source_repo=None,
-            objective_issue=None,
+            objective_id=None,
             created_from_session=None,
         )
 

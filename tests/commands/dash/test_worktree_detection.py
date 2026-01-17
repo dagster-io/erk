@@ -51,7 +51,7 @@ Implementation details here."""
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 867},
-        objective_issue=None,
+        objective_id=None,
     )
 
     plan2 = Plan(
@@ -65,7 +65,7 @@ Implementation details here."""
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={"number": 868},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Configure fake GitHub issues
@@ -123,7 +123,7 @@ Issue updated with current worktree name."""
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 900},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Configure fake with issue
@@ -158,7 +158,7 @@ def test_plan_list_shows_worktree_from_local_impl() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 950},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -219,7 +219,7 @@ def test_plan_list_prefers_local_over_github() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 960},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create GitHub comment with different worktree name
@@ -314,7 +314,7 @@ Plan content."""
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 970},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()
@@ -347,7 +347,7 @@ def test_plan_list_handles_multiple_local_worktrees() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"number": 980},
-        objective_issue=None,
+        objective_id=None,
     )
 
     runner = CliRunner()

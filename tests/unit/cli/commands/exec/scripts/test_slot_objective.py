@@ -47,7 +47,7 @@ def test_slot_objective_returns_objective_when_in_slot() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=123),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_id=123),),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-slot-01",
@@ -97,7 +97,7 @@ def test_slot_objective_returns_null_when_slot_has_no_objective() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=None),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-slot-01",
@@ -151,7 +151,7 @@ def test_slot_objective_returns_null_when_not_in_slot() -> None:
         state = PoolState(
             version="1.0",
             pool_size=4,
-            slots=(SlotInfo(name="erk-slot-01", last_objective_issue=123),),
+            slots=(SlotInfo(name="erk-slot-01", last_objective_id=123),),
             assignments=(
                 SlotAssignment(
                     slot_name="erk-slot-01",

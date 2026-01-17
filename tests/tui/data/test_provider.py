@@ -462,7 +462,7 @@ class TestCommentCountsDisplay:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         pr_linkages = {
             123: [
@@ -542,7 +542,7 @@ class TestCommentCountsDisplay:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         pr_linkages = {
             123: [
@@ -622,7 +622,7 @@ class TestCommentCountsDisplay:
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
             metadata={},
-            objective_issue=None,
+            objective_id=None,
         )
         pr_linkages: dict[int, list[PullRequestInfo]] = {}  # No linked PRs
 

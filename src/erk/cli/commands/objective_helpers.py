@@ -141,7 +141,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
 
     Returns objective issue number if:
     1. Branch has P<number>- prefix (plan issue link)
-    2. Plan issue has objective_issue in its metadata
+    2. Plan issue has objective_id in its metadata
 
     Returns None otherwise (fail-open - never blocks landing).
     """
@@ -156,7 +156,7 @@ def get_objective_for_branch(ctx: ErkContext, repo_root: Path, branch: str) -> i
     except RuntimeError:
         return None
 
-    return plan.objective_issue
+    return plan.objective_id
 
 
 def prompt_objective_update(

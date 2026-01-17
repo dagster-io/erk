@@ -20,12 +20,12 @@ class SlotInfo:
 
     Attributes:
         name: The pool slot identifier (e.g., "erk-slot-01")
-        last_objective_issue: Issue number of the last objective worked on in this slot.
+        last_objective_id: Issue number of the last objective worked on in this slot.
             Persists across assignment cycles so /erk:objective-next-plan can default to it.
     """
 
     name: str
-    last_objective_issue: int | None
+    last_objective_id: int | None
 
 
 @dataclass(frozen=True)
@@ -102,7 +102,7 @@ def load_pool_state(pool_json_path: Path) -> PoolState | None:
     data = json.loads(content)
 
     slots = tuple(
-        SlotInfo(name=s["name"], last_objective_issue=s.get("last_objective_issue"))
+        SlotInfo(name=s["name"], last_objective_id=s.get("last_objective_id"))
         for s in data.get("slots", [])
     )
 
@@ -139,7 +139,7 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
         "version": state.version,
         "pool_size": state.pool_size,
         "slots": [
-            {"name": s.name, "last_objective_issue": s.last_objective_issue} for s in state.slots
+            {"name": s.name, "last_objective_id": s.last_objective_id} for s in state.slots
         ],
         "assignments": [
             {
@@ -158,7 +158,7 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
 def update_slot_objective(
     state: PoolState, slot_name: str, objective_issue: int | None
 ) -> PoolState:
-    """Return new PoolState with slot's last_objective_issue updated.
+    """Return new PoolState with slot's last_objective_id updated.
 
     Args:
         state: Current pool state
@@ -174,7 +174,7 @@ def update_slot_objective(
 
     for slot in state.slots:
         if slot.name == slot_name:
-            new_slots.append(SlotInfo(name=slot.name, last_objective_issue=objective_issue))
+            new_slots.append(SlotInfo(name=slot.name, last_objective_id=objective_issue))
             found = True
         else:
             new_slots.append(slot)

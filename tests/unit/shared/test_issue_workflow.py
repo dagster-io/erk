@@ -33,7 +33,7 @@ def _make_plan(
         created_at=datetime(2024, 1, 1),
         updated_at=datetime(2024, 1, 1),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
 

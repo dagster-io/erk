@@ -30,7 +30,7 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
     body = format_plan_header_body_for_test(
         created_at=datetime.now(UTC).isoformat(),
         created_by="testuser",
-        objective_issue=objective_number,
+        objective_id=objective_number,
     )
     return IssueInfo(
         number=42,

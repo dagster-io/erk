@@ -53,7 +53,7 @@ def test_log_displays_timeline_chronologically() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create metadata blocks (intentionally out of order to test sorting)
@@ -128,7 +128,7 @@ def test_log_json_output() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     plan_block = create_plan_block(
@@ -181,7 +181,7 @@ def test_log_with_no_events() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     fake_issues = FakeGitHubIssues(
@@ -216,7 +216,7 @@ def test_log_with_all_event_types() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create all event types
@@ -306,7 +306,7 @@ def test_log_multiple_status_updates() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     # Create multiple status updates
@@ -366,7 +366,7 @@ def test_log_json_structure() -> None:
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
         metadata={},
-        objective_issue=None,
+        objective_id=None,
     )
 
     submission_block = create_submission_queued_block(

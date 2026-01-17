@@ -337,14 +337,14 @@ class TestIsSlotInitialized:
 
     def test_returns_true_when_slot_exists(self) -> None:
         """Returns True when the slot is in the initialized list."""
-        slot = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+        slot = SlotInfo(name="erk-slot-01", last_objective_id=None)
         state = PoolState.test(slots=(slot,))
 
         assert is_slot_initialized(state, "erk-slot-01") is True
 
     def test_returns_false_for_different_slot(self) -> None:
         """Returns False when checking for a slot not in the list."""
-        slot = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+        slot = SlotInfo(name="erk-slot-01", last_objective_id=None)
         state = PoolState.test(slots=(slot,))
 
         assert is_slot_initialized(state, "erk-slot-02") is False
@@ -403,7 +403,7 @@ class TestFindNextAvailableSlot:
         find_next_available_slot should NOT return that slot number.
         """
         # Slot 1 exists on disk but has no assignment
-        slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+        slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
         state = PoolState.test(pool_size=4, slots=(slot1,))
 
         result = find_next_available_slot(state, None)
@@ -414,9 +414,9 @@ class TestFindNextAvailableSlot:
     def test_skips_both_assigned_and_initialized_slots(self) -> None:
         """Returns first slot that is neither assigned nor initialized."""
         # Slot 1: initialized but not assigned
-        slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
+        slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
         # Slot 2: initialized AND assigned
-        slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
+        slot2 = SlotInfo(name="erk-slot-02", last_objective_id=None)
         assignment2 = SlotAssignment(
             slot_name="erk-slot-02",
             branch_name="feature-b",
@@ -432,8 +432,8 @@ class TestFindNextAvailableSlot:
 
     def test_returns_none_when_all_slots_initialized(self) -> None:
         """Returns None when all slots are initialized (even without assignments)."""
-        slot1 = SlotInfo(name="erk-slot-01", last_objective_issue=None)
-        slot2 = SlotInfo(name="erk-slot-02", last_objective_issue=None)
+        slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
+        slot2 = SlotInfo(name="erk-slot-02", last_objective_id=None)
         state = PoolState.test(pool_size=2, slots=(slot1, slot2))
 
         result = find_next_available_slot(state, None)
