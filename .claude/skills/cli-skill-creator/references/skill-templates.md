@@ -17,10 +17,10 @@ description: What this skill does and when to use it. Include trigger phrases.
 
 **Fields:**
 
-| Field         | Required | Purpose                                                       |
-| ------------- | -------- | ------------------------------------------------------------- |
-| `name`        | Yes      | Skill identifier (kebab-case)                                 |
-| `description` | Yes      | What the skill does AND when Claude should use it             |
+| Field         | Required | Purpose                                           |
+| ------------- | -------- | ------------------------------------------------- |
+| `name`        | Yes      | Skill identifier (kebab-case)                     |
+| `description` | Yes      | What the skill does AND when Claude should use it |
 
 **CRITICAL:** These are the ONLY fields Claude reads to determine when the skill gets used. The description must be comprehensive - include "when to use" information directly in the description, not as a separate field.
 
@@ -39,9 +39,9 @@ description: This skill should be used when working with Docker for container ma
 ---
 name: docker-cli
 description: Docker container management
-read_when: Using docker commands  # NOT A REAL FIELD - Claude ignores this
+read_when: Using docker commands # NOT A REAL FIELD - Claude ignores this
 triggers:
-  - docker  # NOT A REAL FIELD - Claude ignores this
+  - docker # NOT A REAL FIELD - Claude ignores this
 ---
 ```
 
