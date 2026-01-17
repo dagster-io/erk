@@ -32,8 +32,10 @@ Quick reference for all `erk exec` subcommands.
 | `get-closing-text`                | Get closing text for PR body based on .impl/issue.json or branch name.    |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                         |
 | `get-issue-body`                  | Fetch an issue's body using REST API (avoids GraphQL rate limits).        |
+| `get-issue-timeline-prs`          | Fetch PRs referencing an issue via REST API timeline.                     |
 | `get-learn-sessions`              | Get session information for a plan issue.                                 |
 | `get-plan-metadata`               | Extract a metadata field from a plan issue's plan-header block.           |
+| `get-plans-for-objective`         | Fetch erk-plan issues linked to an objective.                             |
 | `get-pr-body-footer`              | Generate PR body footer with checkout command.                            |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                 |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                     |
@@ -261,6 +263,18 @@ Fetch an issue's body using REST API (avoids GraphQL rate limits).
 | -------------- | -------- | ----------- |
 | `ISSUE_NUMBER` | Yes      | -           |
 
+### get-issue-timeline-prs
+
+Fetch PRs referencing an issue via REST API timeline.
+
+**Usage:** `erk exec get-issue-timeline-prs` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
 ### get-learn-sessions
 
 Get session information for a plan issue.
@@ -285,6 +299,18 @@ Extract a metadata field from a plan issue's plan-header block.
 | -------------- | -------- | ----------- |
 | `ISSUE_NUMBER` | Yes      | -           |
 | `FIELD_NAME`   | Yes      | -           |
+
+### get-plans-for-objective
+
+Fetch erk-plan issues linked to an objective.
+
+**Usage:** `erk exec get-plans-for-objective` <objective_number>
+
+**Arguments:**
+
+| Name               | Required | Description |
+| ------------------ | -------- | ----------- |
+| `OBJECTIVE_NUMBER` | Yes      | -           |
 
 ### get-pr-body-footer
 
