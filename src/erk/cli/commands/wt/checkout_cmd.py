@@ -27,16 +27,17 @@ from erk_shared.output.output import user_output
 def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     """Checkout a worktree by name.
 
-    With shell integration (recommended):
-      erk wt co WORKTREE_NAME
+    Prints the activation path for the target worktree.
+    To navigate automatically, enable shell integration:
 
-    The shell wrapper function automatically activates the worktree.
-    Run 'erk init --shell' to set up shell integration.
+      erk config set shell_integration true
+      erk init --shell  # Then restart your shell
+
+    With shell integration enabled:
+      erk wt co WORKTREE_NAME
 
     Without shell integration:
       source <(erk wt co WORKTREE_NAME --script)
-
-    This will cd to the worktree, create/activate .venv, and load .env variables.
 
     Special keyword:
       erk wt co root    # Switch to the root repository

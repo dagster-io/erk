@@ -442,7 +442,12 @@ def test_shell_integration_shows_note_for_no_directory_change() -> None:
     When a command completes successfully (exit_code=0) but produces no activation
     script (empty stdout), the handler should display a note explaining that no
     directory change is needed. This clarifies expected behavior for users.
+
+    NOTE: This test requires shell_integration to be enabled in config, since
+    shell integration is opt-in by default.
     """
+    from unittest.mock import patch
+
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_inmem_env
@@ -462,9 +467,13 @@ def test_shell_integration_shows_note_for_no_directory_change() -> None:
 
         test_ctx = env.build_context(git=git_ops)
 
-        # Use consolidate command - when there's nothing to consolidate, it succeeds
-        # but produces no script output (no directory change needed)
-        result = runner.invoke(cli, ["__shell", "consolidate"], obj=test_ctx)
+        # Enable shell integration by mocking the config check
+        with patch(
+            "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=True
+        ):
+            # Use consolidate command - when there's nothing to consolidate, it succeeds
+            # but produces no script output (no directory change needed)
+            result = runner.invoke(cli, ["__shell", "consolidate"], obj=test_ctx)
 
         # Command should succeed with no work to do
         if result.exit_code == 0:
@@ -480,8 +489,13 @@ def test_shell_integration_create_from_current_branch_returns_script_path() -> N
     The handler reads result.stdout to get the script path - if stdout is empty,
     the handler displays "no directory change needed" instead of switching directories.
 
+    NOTE: This test requires shell_integration to be enabled in config, since
+    shell integration is opt-in by default.
+
     See: https://github.com/anthropics/erk/issues/XXX
     """
+    from unittest.mock import patch
+
     from erk_shared.git.abc import WorktreeInfo
     from erk_shared.git.fake import FakeGit
     from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -502,13 +516,17 @@ def test_shell_integration_create_from_current_branch_returns_script_path() -> N
 
         test_ctx = env.build_context(git=git_ops)
 
-        # Act: Create worktree from current branch through __shell handler
-        result = runner.invoke(
-            cli,
-            ["__shell", "create", "--from-current-branch"],
-            obj=test_ctx,
-            catch_exceptions=False,
-        )
+        # Enable shell integration by mocking the config check
+        with patch(
+            "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=True
+        ):
+            # Act: Create worktree from current branch through __shell handler
+            result = runner.invoke(
+                cli,
+                ["__shell", "create", "--from-current-branch"],
+                obj=test_ctx,
+                catch_exceptions=False,
+            )
 
         # Handler creates its own context, so command may fail for various reasons
         # (missing config, filesystem setup, etc.). That's OK - the key test is:

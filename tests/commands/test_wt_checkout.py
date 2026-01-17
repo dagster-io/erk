@@ -169,8 +169,12 @@ def test_checkout_shows_branch_info_with_shell_integration() -> None:
         assert "feature-1" in result.output
 
 
-def test_checkout_spawns_subshell_without_shell_integration() -> None:
-    """Test that non-script mode without shell integration spawns subshell."""
+def test_checkout_prints_activation_instructions_without_shell_integration() -> None:
+    """Test that non-script mode without shell integration prints activation instructions.
+
+    Shell integration is now opt-in. Without it, commands print activation path
+    instructions instead of spawning a subshell.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         # Set up worktrees: root on main, feature-work on feature-1
@@ -191,7 +195,7 @@ def test_checkout_spawns_subshell_without_shell_integration() -> None:
         test_ctx = env.build_context(git=git_ops)
 
         # Act: Navigate to feature-work worktree WITHOUT --script flag
-        # Without shell integration, spawns subshell with welcome banner
+        # Without shell integration, prints activation instructions
         env_copy = {k: v for k, v in os.environ.items() if k != "ERK_SHELL"}
         with patch.dict(os.environ, env_copy, clear=True):
             result = runner.invoke(
@@ -204,9 +208,9 @@ def test_checkout_spawns_subshell_without_shell_integration() -> None:
         # Assert: Command succeeded
         assert result.exit_code == 0
 
-        # Assert: Output shows subshell welcome banner
-        assert "worktree subshell" in result.output
-        assert "exit" in result.output
+        # Assert: Output shows worktree info and activation instructions
+        assert "feature-work" in result.output
+        assert "To activate" in result.output or "source" in result.output
 
 
 def test_checkout_script_mode() -> None:

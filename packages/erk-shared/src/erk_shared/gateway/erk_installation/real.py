@@ -78,6 +78,7 @@ class RealErkInstallation(ErkInstallation):
             ),
             show_hidden_commands=bool(data.get("show_hidden_commands", False)),
             prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
+            shell_integration=bool(data.get("shell_integration", False)),
             interactive_claude=interactive_claude,
         )
 
@@ -138,6 +139,7 @@ class RealErkInstallation(ErkInstallation):
         doc["fix_conflicts_require_dangerous_flag"] = config.fix_conflicts_require_dangerous_flag
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
+        doc["shell_integration"] = config.shell_integration
 
         # Add [interactive-claude] section if any non-default values are set
         ic = config.interactive_claude
