@@ -130,15 +130,19 @@ For each session path from Step 1, preprocess to compressed XML format:
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
 
 # For the planning session:
-erk exec preprocess-session <planning-session-path> --stdout \
-    > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/planning-session.xml
+erk exec preprocess-session "<planning-session-path>" \
+    --max-tokens 20000 \
+    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
+    --prefix planning
 
 # For each implementation session:
-erk exec preprocess-session <impl-session-path> --stdout \
-    > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/impl-session-<N>.xml
+erk exec preprocess-session "<impl-session-path>" \
+    --max-tokens 20000 \
+    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
+    --prefix impl
 ```
 
-Note: The preprocessor applies deduplication, truncation, and pruning optimizations automatically. Full session content is preserved for thorough analysis.
+Note: The preprocessor applies deduplication, truncation, and pruning optimizations automatically. Files are auto-chunked if they exceed the token limit (20000 tokens safely under Claude's 25000 read limit). Output files include session IDs in filenames (e.g., `planning-{session-id}.xml` or `impl-{session-id}-part{N}.xml` for chunked files).
 
 #### Save PR Comments
 
@@ -164,7 +168,16 @@ Display the gist URL to the user and save it for the plan issue.
 
 #### Deep Analysis
 
-Read the preprocessed XML files and mine them thoroughly.
+Read all preprocessed session files in the learn directory:
+
+```bash
+# Use Glob to find all XML files (they include session IDs and may be chunked)
+ls .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*.xml
+```
+
+Files are named: `{prefix}-{session_id}.xml` or `{prefix}-{session_id}-part{N}.xml` for chunked files.
+
+Read each file and mine them thoroughly.
 
 **Compaction Awareness:** Long sessions may have been "compacted" (earlier messages summarized), but pre-compaction content still contains valuable research.
 

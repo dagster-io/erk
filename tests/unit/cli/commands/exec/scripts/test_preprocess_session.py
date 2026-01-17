@@ -1849,3 +1849,266 @@ def test_preprocess_session_max_tokens_file_naming(tmp_path: Path) -> None:
             assert f"part{i}" in path.name
             # Should contain session ID
             assert session_id in path.name
+
+
+# ============================================================================
+# 14. Output Dir and Prefix Tests
+# ============================================================================
+
+
+def test_preprocess_session_output_dir_and_prefix_single_file(tmp_path: Path) -> None:
+    """Test that --output-dir and --prefix create named file with session ID."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        session_id = "abc-123-xyz"
+        log_file = Path(f"{session_id}.jsonl")
+
+        # Create entries with matching session ID
+        entries = [
+            json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "Hello"}}),
+            json.dumps(
+                {
+                    "sessionId": session_id,
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "Hi"}]},
+                }
+            ),
+            json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "Thanks"}}),
+        ]
+        log_file.write_text("\n".join(entries), encoding="utf-8")
+
+        output_dir = tmp_path / "output"
+
+        result = runner.invoke(
+            preprocess_session,
+            [
+                str(log_file),
+                "--output-dir",
+                str(output_dir),
+                "--prefix",
+                "planning",
+                "--no-filtering",
+            ],
+        )
+        assert result.exit_code == 0
+
+        # Check output file path
+        output_lines = result.output.strip().split("\n")
+        assert len(output_lines) == 1
+
+        # File should be named: {prefix}-{session_id}.xml
+        expected_file = output_dir / f"planning-{session_id}.xml"
+        assert expected_file.exists()
+        assert str(expected_file) == output_lines[0]
+
+        # Verify content is valid XML
+        content = expected_file.read_text(encoding="utf-8")
+        assert "<session>" in content
+        assert "</session>" in content
+
+
+def test_preprocess_session_output_dir_creates_directory(tmp_path: Path) -> None:
+    """Test that --output-dir creates the directory if it doesn't exist."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        session_id = "test-session"
+        log_file = Path(f"{session_id}.jsonl")
+
+        entries = [
+            json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "A"}}),
+            json.dumps(
+                {
+                    "sessionId": session_id,
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "B"}]},
+                }
+            ),
+            json.dumps({"sessionId": session_id, "type": "user", "message": {"content": "C"}}),
+        ]
+        log_file.write_text("\n".join(entries), encoding="utf-8")
+
+        # Use nested directory that doesn't exist
+        output_dir = tmp_path / "deep" / "nested" / "dir"
+        assert not output_dir.exists()
+
+        result = runner.invoke(
+            preprocess_session,
+            [
+                str(log_file),
+                "--output-dir",
+                str(output_dir),
+                "--prefix",
+                "impl",
+                "--no-filtering",
+            ],
+        )
+        assert result.exit_code == 0
+
+        # Directory should be created
+        assert output_dir.exists()
+        # File should exist
+        expected_file = output_dir / f"impl-{session_id}.xml"
+        assert expected_file.exists()
+
+
+def test_preprocess_session_output_dir_with_max_tokens_creates_chunks(tmp_path: Path) -> None:
+    """Test that --output-dir with --max-tokens creates numbered chunk files."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        session_id = "chunk-test"
+        log_file = Path(f"{session_id}.jsonl")
+
+        # Create enough content to force splitting
+        entries = []
+        for i in range(20):
+            entries.append(
+                json.dumps(
+                    {
+                        "sessionId": session_id,
+                        "type": "user",
+                        "message": {"content": f"Msg{i} " + "x" * 200},
+                    }
+                )
+            )
+            entries.append(
+                json.dumps(
+                    {
+                        "sessionId": session_id,
+                        "type": "assistant",
+                        "message": {"content": [{"type": "text", "text": f"R{i}"}]},
+                    }
+                )
+            )
+        log_file.write_text("\n".join(entries), encoding="utf-8")
+
+        output_dir = tmp_path / "chunks"
+
+        result = runner.invoke(
+            preprocess_session,
+            [
+                str(log_file),
+                "--output-dir",
+                str(output_dir),
+                "--prefix",
+                "impl",
+                "--max-tokens",
+                "100",
+                "--no-filtering",
+            ],
+        )
+        assert result.exit_code == 0
+
+        # Should have multiple output files
+        output_lines = result.output.strip().split("\n")
+        assert len(output_lines) > 1
+
+        # Each file should follow naming pattern: {prefix}-{session_id}-part{N}.xml
+        for i, line in enumerate(output_lines, start=1):
+            path = Path(line.strip())
+            assert path.exists()
+            assert path.name == f"impl-{session_id}-part{i}.xml"
+            # Verify valid XML
+            content = path.read_text(encoding="utf-8")
+            assert "<session>" in content
+            assert "</session>" in content
+
+
+def test_preprocess_session_output_dir_requires_prefix(tmp_path: Path) -> None:
+    """Test that --output-dir without --prefix raises error."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Create a dummy log file so the path validation passes
+        log_file = Path("test.jsonl")
+        log_file.write_text("{}", encoding="utf-8")
+
+        result = runner.invoke(
+            preprocess_session,
+            [str(log_file), "--output-dir", "/some/dir"],
+        )
+        assert result.exit_code != 0
+        assert "--output-dir and --prefix must be used together" in result.output
+
+
+def test_preprocess_session_prefix_requires_output_dir(tmp_path: Path) -> None:
+    """Test that --prefix without --output-dir raises error."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        # Create a dummy log file so the path validation passes
+        log_file = Path("test.jsonl")
+        log_file.write_text("{}", encoding="utf-8")
+
+        result = runner.invoke(
+            preprocess_session,
+            [str(log_file), "--prefix", "planning"],
+        )
+        assert result.exit_code != 0
+        assert "--output-dir and --prefix must be used together" in result.output
+
+
+def test_preprocess_session_output_dir_and_stdout_mutually_exclusive(tmp_path: Path) -> None:
+    """Test that --output-dir/--prefix and --stdout are mutually exclusive."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        log_file = Path("test.jsonl")
+        log_file.write_text("{}", encoding="utf-8")
+
+        result = runner.invoke(
+            preprocess_session,
+            [str(log_file), "--output-dir", str(tmp_path), "--prefix", "test", "--stdout"],
+        )
+        assert result.exit_code != 0
+        assert "--output-dir/--prefix cannot be used with --stdout" in result.output
+
+
+def test_preprocess_session_output_dir_preserves_all_content(tmp_path: Path) -> None:
+    """Test that --output-dir preserves all content across chunks."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        session_id = "preserve-test"
+        log_file = Path(f"{session_id}.jsonl")
+
+        # Create entries with unique identifiable content
+        messages = ["UNIQUE_AAA", "UNIQUE_BBB", "UNIQUE_CCC"]
+        entries = []
+        for msg in messages:
+            content = msg + " " + "x" * 100
+            entry = {"sessionId": session_id, "type": "user", "message": {"content": content}}
+            entries.append(json.dumps(entry))
+        # Add assistant response
+        entries.append(
+            json.dumps(
+                {
+                    "sessionId": session_id,
+                    "type": "assistant",
+                    "message": {"content": [{"type": "text", "text": "Response"}]},
+                }
+            )
+        )
+        log_file.write_text("\n".join(entries), encoding="utf-8")
+
+        output_dir = tmp_path / "preserve"
+
+        result = runner.invoke(
+            preprocess_session,
+            [
+                str(log_file),
+                "--output-dir",
+                str(output_dir),
+                "--prefix",
+                "test",
+                "--max-tokens",
+                "100",
+                "--no-filtering",
+            ],
+        )
+        assert result.exit_code == 0
+
+        # Read all output files and combine content
+        combined_content = ""
+        for line in result.output.strip().split("\n"):
+            path = Path(line.strip())
+            combined_content += path.read_text(encoding="utf-8")
+
+        # All unique messages should be present
+        for msg in messages:
+            assert msg in combined_content

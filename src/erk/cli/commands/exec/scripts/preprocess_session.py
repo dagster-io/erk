@@ -789,6 +789,18 @@ def split_entries_to_chunks(
     default=None,
     help="Split output into multiple files of ~max-tokens each",
 )
+@click.option(
+    "--output-dir",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Directory to write output files (requires --prefix)",
+)
+@click.option(
+    "--prefix",
+    type=str,
+    default=None,
+    help="Prefix for output filenames (requires --output-dir)",
+)
 def preprocess_session(
     *,
     log_path: Path,
@@ -797,6 +809,8 @@ def preprocess_session(
     no_filtering: bool,
     stdout: bool,
     max_tokens: int | None,
+    output_dir: Path | None,
+    prefix: str | None,
 ) -> None:
     """Preprocess session log JSONL to compressed XML format.
 
@@ -813,14 +827,26 @@ def preprocess_session(
 
     Use --no-filtering to disable all optimizations and get raw output.
     Use --max-tokens to split output into multiple files.
+    Use --output-dir and --prefix together for named output files with session IDs.
 
     Args:
         log_path: Path to the main session JSONL file
         session_id: Optional session ID to filter entries by
         include_agents: Whether to include agent logs
         no_filtering: Disable all filtering optimizations
+        stdout: Output XML to stdout instead of files
         max_tokens: Optional maximum tokens per output file (splits if exceeded)
+        output_dir: Directory to write output files (requires --prefix)
+        prefix: Prefix for output filenames (requires --output-dir)
     """
+    # Validate --output-dir and --prefix are used together
+    if (output_dir is None) != (prefix is None):
+        raise click.UsageError("--output-dir and --prefix must be used together")
+
+    # Validate --output-dir/--prefix are mutually exclusive with --stdout
+    if output_dir is not None and stdout:
+        raise click.UsageError("--output-dir/--prefix cannot be used with --stdout")
+
     # Track whether user explicitly provided session ID (for diagnostic output)
     user_provided_session_id = session_id is not None
 
@@ -939,11 +965,33 @@ def preprocess_session(
             click.echo("\n---CHUNK---\n".join(xml_sections))
         else:
             click.echo("\n\n".join(xml_sections))
+    elif output_dir is not None:
+        # Write to named files in specified directory (--output-dir/--prefix mode)
+        # prefix is guaranteed to be non-None due to validation above
+        assert prefix is not None
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        output_paths: list[Path] = []
+        if len(xml_sections) > 1:
+            # Multiple chunks: {prefix}-{session_id}-part{N}.xml
+            for i, section in enumerate(xml_sections, start=1):
+                file_path = output_dir / f"{prefix}-{filename_session_id}-part{i}.xml"
+                file_path.write_text(section, encoding="utf-8")
+                output_paths.append(file_path)
+        else:
+            # Single file: {prefix}-{session_id}.xml
+            file_path = output_dir / f"{prefix}-{filename_session_id}.xml"
+            file_path.write_text("\n\n".join(xml_sections), encoding="utf-8")
+            output_paths.append(file_path)
+
+        # Print all paths to stdout
+        for path in output_paths:
+            click.echo(str(path))
     else:
-        # Write to file(s) and print path(s)
+        # Write to temp file(s) and print path(s) (backward compatible)
         if max_tokens is not None and len(xml_sections) > 1:
             # Write multiple numbered files
-            output_paths: list[Path] = []
+            temp_output_paths: list[Path] = []
             for i, section in enumerate(xml_sections, start=1):
                 with tempfile.NamedTemporaryFile(
                     mode="w",
@@ -954,10 +1002,10 @@ def preprocess_session(
                     dir=tempfile.gettempdir(),
                 ) as f:
                     f.write(section)
-                    output_paths.append(Path(f.name))
+                    temp_output_paths.append(Path(f.name))
 
             # Print all paths to stdout
-            for path in output_paths:
+            for path in temp_output_paths:
                 click.echo(str(path))
         else:
             # Write single file (backward compatible)

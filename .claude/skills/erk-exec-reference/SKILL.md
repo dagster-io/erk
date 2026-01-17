@@ -628,6 +628,8 @@ Preprocess session log JSONL to compressed XML format.
 | `--no-filtering`   | FLAG    | No       | -       | Disable all filtering optimizations (raw output)        |
 | `--stdout`         | FLAG    | No       | -       | Output XML to stdout instead of temp file               |
 | `--max-tokens`     | INTEGER | No       | -       | Split output into multiple files of ~max-tokens each    |
+| `--output-dir`     | PATH    | No       | -       | Directory to write output files (requires --prefix)     |
+| `--prefix`         | TEXT    | No       | -       | Prefix for output filenames (requires --output-dir)     |
 
 ### quick-submit
 
