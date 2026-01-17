@@ -13,6 +13,8 @@ import shlex
 from collections.abc import Sequence
 from pathlib import Path
 
+from erk_shared.output.output import user_output
+
 # SPECULATIVE: activation-scripts - set to False to disable this feature
 ENABLE_ACTIVATION_SCRIPTS = True
 
@@ -227,8 +229,6 @@ def print_activation_instructions(
             Set to True for worktrees (where implementation happens),
             False for root repo navigation.
     """
-    from erk_shared.output.output import user_output
-
     user_output("\nTo activate the worktree environment:")
     user_output(f"  source {script_path}")
 
