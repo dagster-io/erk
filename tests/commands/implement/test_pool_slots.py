@@ -478,7 +478,7 @@ def _create_plan_with_objective(issue_number: str, objective_issue: int) -> Plan
     body = format_plan_header_body_for_test(
         created_at="2024-01-01T00:00:00+00:00",
         created_by="testuser",
-        objective_id=objective_issue,
+        objective_issue=objective_issue,
     )
     return Plan(
         plan_identifier=issue_number,

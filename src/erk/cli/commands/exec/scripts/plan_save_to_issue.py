@@ -182,7 +182,7 @@ def plan_save_to_issue(
     output_format: str,
     plan_file: Path | None,
     session_id: str | None,
-    objective_id: int | None,
+    objective_issue: int | None,
     plan_type: str | None,
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
@@ -237,7 +237,7 @@ def plan_save_to_issue(
         extra_labels=extra_labels,
         title_suffix=None,
         source_repo=source_repo,
-        objective_id=objective_id,
+        objective_id=objective_issue,
         created_from_session=effective_session_id,
     )
 
@@ -321,8 +321,8 @@ def plan_save_to_issue(
 
     # Step 9.2: Update slot objective (if objective provided and in a slot worktree)
     slot_name: str | None = None
-    if objective_id is not None:
-        slot_name = _update_slot_objective_if_applicable(ctx, cwd, objective_id)
+    if objective_issue is not None:
+        slot_name = _update_slot_objective_if_applicable(ctx, cwd, objective_issue)
 
     # Step 10: Output success
     # Detect enrichment status for informational output
@@ -341,7 +341,7 @@ def plan_save_to_issue(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         if slot_name is not None:
-            click.echo(f"Slot objective updated: {slot_name} → #{objective_id}")
+            click.echo(f"Slot objective updated: {slot_name} → #{objective_issue}")
         click.echo()
         click.echo(format_next_steps_plain(result.issue_number))
     else:
