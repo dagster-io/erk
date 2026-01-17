@@ -688,8 +688,7 @@ class TestCreatePlanIssueCommandsSection:
 
         # Check for commands section with correct issue number
         assert "## Commands" in updated_body
-        assert "erk implement 1" in updated_body
-        assert "erk implement 1 --dangerous" in updated_body
+        assert "erk prepare 1" in updated_body
         assert "erk plan submit 1" in updated_body
 
     def test_learn_plan_does_not_include_commands_section(self, tmp_path: Path) -> None:
@@ -719,7 +718,7 @@ class TestCreatePlanIssueCommandsSection:
 
         # Commands section should NOT be present
         assert "## Commands" not in updated_body
-        assert "erk implement" not in updated_body
+        assert "erk prepare" not in updated_body
 
     def test_commands_section_uses_correct_issue_number(self, tmp_path: Path) -> None:
         """Commands section should reference the actual issue number."""
@@ -743,6 +742,5 @@ class TestCreatePlanIssueCommandsSection:
 
         # Verify commands reference issue 42, not 1
         _, updated_body = fake_gh.updated_bodies[0]
-        assert "erk implement 42" in updated_body
-        assert "erk implement 42 --dangerous" in updated_body
+        assert "erk prepare 42" in updated_body
         assert "erk plan submit 42" in updated_body

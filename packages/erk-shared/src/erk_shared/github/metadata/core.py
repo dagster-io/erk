@@ -419,11 +419,7 @@ def format_plan_commands_section(issue_number: int) -> str:
     return f"""## Commands
 
 ```bash
-erk implement {issue_number}
-```
-
-```bash
-erk implement {issue_number} --dangerous
+erk prepare {issue_number}
 ```
 
 ```bash
