@@ -223,6 +223,7 @@ def activate_root_repo(
     script: bool,
     command_name: str,
     post_cd_commands: Sequence[str] | None,
+    source_branch: str | None,
 ) -> None:
     """Activate the root repository and exit.
 
@@ -232,6 +233,8 @@ def activate_root_repo(
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation)
         post_cd_commands: Optional shell commands to run after cd (e.g., git pull)
+        source_branch: Branch being navigated away from. If provided, shows delete hint
+            instead of implement hint in activation instructions.
 
     Raises:
         SystemExit: Always (successful exit after activation)
@@ -260,13 +263,12 @@ def activate_root_repo(
         )
         machine_output(str(result.path), nl=False)
     else:
-        user_output(f"Root repo: {root_path}")
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=root_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path, include_implement_hint=False)
+            print_activation_instructions(script_path, source_branch=source_branch)
         else:
             user_output(
                 "\nShell integration not detected. "
@@ -285,6 +287,7 @@ def activate_worktree(
     command_name: str,
     preserve_relative_path: bool,
     post_cd_commands: Sequence[str] | None,
+    source_branch: str | None,
 ) -> None:
     """Activate a worktree and exit.
 
@@ -297,6 +300,8 @@ def activate_worktree(
         preserve_relative_path: If True (default), compute and preserve the user's
             relative directory position from the current worktree
         post_cd_commands: Optional shell commands to run after activation (e.g., entry scripts)
+        source_branch: Branch being navigated away from. If provided, shows delete hint
+            instead of implement hint in activation instructions.
 
     Raises:
         SystemExit: If worktree not found, or after successful activation
@@ -333,13 +338,12 @@ def activate_worktree(
 
         result.output_for_shell_integration()
     else:
-        user_output(f"Worktree: {wt_path}")
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=wt_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path, include_implement_hint=True)
+            print_activation_instructions(script_path, source_branch=source_branch)
         else:
             user_output(
                 "Shell integration not detected. "

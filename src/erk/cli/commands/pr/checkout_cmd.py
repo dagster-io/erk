@@ -99,7 +99,7 @@ def pr_checkout(
                 worktree_path=existing_worktree,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path, include_implement_hint=True)
+            print_activation_instructions(script_path, source_branch=None)
         return
 
     # For cross-repository PRs, always fetch via refs/pull/<n>/head
@@ -173,4 +173,4 @@ def pr_checkout(
             worktree_path=worktree_path,
             post_create_commands=None,
         )
-        print_activation_instructions(script_path, include_implement_hint=True)
+        print_activation_instructions(script_path, source_branch=None)

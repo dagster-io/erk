@@ -121,8 +121,6 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 )
                 machine_output(str(result.path), nl=False)
             else:
-                user_output(f"Root repo: {root_path}")
-
                 # Print activation instructions for opt-in workflow
                 # SPECULATIVE: activation-scripts (objective #4954)
                 if ENABLE_ACTIVATION_SCRIPTS:
@@ -130,7 +128,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                         worktree_path=root_path,
                         post_create_commands=None,
                     )
-                    print_activation_instructions(script_path, include_implement_hint=False)
+                    print_activation_instructions(script_path, source_branch=current_branch)
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
             unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
@@ -140,7 +138,12 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
         else:
             # No cleanup needed, use standard activation
             activate_root_repo(
-                ctx, repo=repo, script=script, command_name="down", post_cd_commands=None
+                ctx,
+                repo=repo,
+                script=script,
+                command_name="down",
+                post_cd_commands=None,
+                source_branch=current_branch,
             )
 
     # Resolve target branch to actual worktree path
@@ -181,7 +184,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                     worktree_path=target_wt_path,
                     post_create_commands=None,
                 )
-                print_activation_instructions(script_path, include_implement_hint=True)
+                print_activation_instructions(script_path, source_branch=current_branch)
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
@@ -198,4 +201,5 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             command_name="down",
             preserve_relative_path=True,
             post_cd_commands=None,
+            source_branch=current_branch,
         )

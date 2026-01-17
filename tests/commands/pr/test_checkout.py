@@ -847,8 +847,8 @@ def test_pr_checkout_prints_activation_instructions() -> None:
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
         assert ".erk/bin/activate.sh" in result.output
-        assert "To activate and start implementation:" in result.output
-        assert "erk implement --here" in result.output
+        # Should NOT contain implement hint (only shown for up/down navigation)
+        assert "erk implement --here" not in result.output
 
 
 def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
@@ -893,7 +893,8 @@ def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
         assert "To activate the worktree environment:" in result.output
         assert "source" in result.output
         assert ".erk/bin/activate.sh" in result.output
-        assert "erk implement --here" in result.output
+        # Should NOT contain implement hint (only shown for up/down navigation)
+        assert "erk implement --here" not in result.output
 
 
 def test_pr_checkout_script_mode_no_activation_instructions() -> None:

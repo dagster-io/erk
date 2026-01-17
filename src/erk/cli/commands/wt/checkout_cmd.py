@@ -52,7 +52,14 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
 
     # Special case: "root" navigates to root repository
     if worktree_name == "root":
-        activate_root_repo(ctx, repo=repo, script=script, command_name="co", post_cd_commands=None)
+        activate_root_repo(
+            ctx,
+            repo=repo,
+            script=script,
+            command_name="co",
+            post_cd_commands=None,
+            source_branch=None,
+        )
         return  # activate_root_repo raises SystemExit, but explicit return for clarity
 
     # Get all worktrees for error messages and lookup
@@ -122,4 +129,4 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
                 worktree_path=worktree_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(activation_script_path, include_implement_hint=True)
+            print_activation_instructions(activation_script_path, source_branch=None)

@@ -976,7 +976,7 @@ def create_wt(
         user_output(f"Created worktree at {wt_path} checked out at branch '{branch}'")
         # Print activation instructions for --stay mode
         if activation_script_path is not None:
-            print_activation_instructions(activation_script_path, include_implement_hint=True)
+            print_activation_instructions(activation_script_path, source_branch=None)
     else:
         # Shell integration not detected - provide setup instructions
         user_output(f"Created worktree at {wt_path} checked out at branch '{branch}'")
@@ -984,7 +984,7 @@ def create_wt(
         user_output("Or use: source <(erk wt create --from-current-branch --script)")
         # Print activation instructions when shell integration is not active
         if activation_script_path is not None:
-            print_activation_instructions(activation_script_path, include_implement_hint=True)
+            print_activation_instructions(activation_script_path, source_branch=None)
 
 
 def run_commands_in_worktree(

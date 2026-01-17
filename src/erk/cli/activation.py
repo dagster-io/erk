@@ -211,7 +211,7 @@ def ensure_worktree_activate_script(
 def print_activation_instructions(
     script_path: Path,
     *,
-    include_implement_hint: bool,
+    source_branch: str | None,
 ) -> None:
     """Print activation script instructions.
 
@@ -223,20 +223,17 @@ def print_activation_instructions(
 
     Args:
         script_path: Path to the activation script (.erk/bin/activate.sh)
-        include_implement_hint: If True, also print "erk implement --here" hint.
-            Set to True for worktrees (where implementation happens),
-            False for root repo navigation.
+        source_branch: If provided, shows delete command for this branch
+            instead of the implement hint.
     """
     from erk_shared.output.output import user_output
 
     user_output("\nTo activate the worktree environment:")
     user_output(f"  source {script_path}")
 
-    if include_implement_hint:
-        user_output("\nTo activate and start implementation:")
-        user_output(f"  source {script_path} && erk implement --here")
-        user_output("\nTo activate and start implementation (skip permission prompts):")
-        user_output(f"  source {script_path} && erk implement --here --dangerous")
+    if source_branch is not None:
+        user_output(f"\nTo activate and delete branch {source_branch}:")
+        user_output(f"  source {script_path} && erk br delete {source_branch}")
 
 
 def render_land_script() -> str:

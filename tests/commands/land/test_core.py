@@ -316,7 +316,8 @@ def test_land_no_script_flag_fails_fast() -> None:
         # Should fail with clear error about needing shell integration
         assert result.exit_code == 1
         assert "requires shell integration" in result.output
-        assert "source" in result.output and ".erk/bin/land.sh" in result.output
+        assert "source" in result.output
+        assert ".erk/bin/land.sh" in result.output
 
         # CRITICAL: No operations should have happened
         assert len(github_ops.merged_prs) == 0, "PR should NOT be merged without shell integration"
