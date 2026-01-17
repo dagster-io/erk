@@ -632,6 +632,7 @@ def _create_plan_with_objective_in_metadata(issue_number: str, objective_issue: 
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
         metadata={"issue_body": issue_body_with_metadata},  # Objective is HERE
+        objective_id=None,
     )
 
 
@@ -680,7 +681,7 @@ def test_implement_extracts_objective_from_metadata_issue_body() -> None:
             None,
         )
         assert slot is not None
-        assert slot.last_objective_issue == 77
+        assert slot.last_objective_id == 77
 
 
 def test_implement_objective_adds_new_slot_info() -> None:
