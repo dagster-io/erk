@@ -1,33 +1,38 @@
 # Shell Integration
 
-An optional enhancement that provides seamless `cd` behavior when switching worktrees.
+An optional power-user enhancement that provides automatic `cd` behavior when switching worktrees.
 
 ## Do You Need This?
 
-**No.** `erk` works out-of-the-box without shell integration.
+**No.** The default erk workflow uses **activation scripts**—explicit commands you copy-paste to enter a worktree:
 
-When you run worktree-entering commands like `erk implement` or `erk wt checkout`, erk spawns a subshell in the target directory. Type `exit` when you're done to return to your previous directory.
+```bash
+# Default workflow: erk outputs this, you copy-paste it
+source /path/to/.erk/activate.sh && erk implement --here
+```
 
-Shell integration changes this behavior: instead of spawning a subshell, erk changes your current shell's directory (like `cd`). Some users prefer this workflow.
+This explicit approach is portable, requires no setup, and makes it clear when you're changing directories.
 
-| Behavior              | Without Shell Integration       | With Shell Integration |
-| --------------------- | ------------------------------- | ---------------------- |
-| Directory change      | Subshell (use `exit` to return) | In-place `cd`          |
-| Shell history         | Separate per subshell           | Continuous             |
-| Environment variables | Fresh in each subshell          | Preserved              |
+**Shell integration is an alternative** that enables automatic directory switching. Instead of copy-pasting activation commands, worktree-entering commands like `erk wt checkout` change your shell's directory directly (like `cd`).
+
+| Behavior              | Default (Activation Scripts) | With Shell Integration |
+| --------------------- | ---------------------------- | ---------------------- |
+| Directory change      | Copy-paste `source` command  | Automatic `cd`         |
+| Shell history         | Continuous                   | Continuous             |
+| Environment variables | Loaded by activation script  | Preserved              |
 
 ## When to Consider Shell Integration
 
 You might want shell integration if you:
 
-- Switch between worktrees frequently and dislike typing `exit`
-- Want a single continuous shell history
-- Prefer `cd` semantics over subshell semantics
+- Switch between worktrees frequently and want to skip copy-pasting
+- Prefer automatic `cd` over explicit activation commands
+- Use worktree navigation commands (`erk br co`, `erk up/down`) heavily
 
 You probably don't need it if you:
 
 - Only occasionally switch worktrees
-- Like the isolation of subshells (fresh environment each time)
+- Like the explicitness of activation scripts
 - Are just getting started with erk
 
 ## Setup
@@ -117,7 +122,7 @@ These commands change directories when shell integration is enabled:
 - `erk land` / `erk branch land` - Land a PR and navigate to the next worktree
 - `erk up` / `erk down` - Navigate the worktree stack
 
-Without shell integration, these commands spawn subshells instead.
+Without shell integration, these commands output activation instructions instead of changing directories automatically.
 
 ## Troubleshooting
 

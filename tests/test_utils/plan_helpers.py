@@ -22,14 +22,25 @@ def _plan_to_issue_info(plan: Plan) -> IssueInfo:
 
     Returns:
         IssueInfo with equivalent data
+
+    Note:
+        For schema v2 plans where metadata['issue_body'] contains the full issue body
+        with metadata blocks, we use that for the IssueInfo.body so that GitHubPlanStore
+        can properly extract plan headers (including objective_issue) when it converts
+        back to a Plan via _convert_to_plan().
     """
     # Map PlanState to GitHub state string
     state = "OPEN" if plan.state == PlanState.OPEN else "CLOSED"
 
+    # Use original issue body from metadata if available (schema v2)
+    # Otherwise fall back to plan.body (schema v1 or tests without metadata)
+    raw_issue_body = plan.metadata.get("issue_body") if plan.metadata else None
+    body = raw_issue_body if isinstance(raw_issue_body, str) else plan.body
+
     return IssueInfo(
         number=int(plan.plan_identifier),
         title=plan.title,
-        body=plan.body,
+        body=body,
         state=state,
         url=plan.url,
         labels=plan.labels,

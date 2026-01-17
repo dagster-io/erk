@@ -133,12 +133,12 @@ See [Graphite Integration](graphite-integration.md) for setup instructions.
 
 ### Shell Integration
 
-Shell integration enables **seamless directory switching** when you navigate between worktrees. Without it, you need to manually `cd` after switching branches.
+By default, erk uses **activation scripts** for worktree switching—you copy-paste a `source .erk/activate.sh` command that handles the directory change. Shell integration is an alternative that enables automatic `cd` behavior.
 
 **What it enables:**
 
-- Automatic directory changes when switching worktrees
-- `erk br co <branch>` changes your shell's working directory
+- Automatic directory changes when switching worktrees (no copy-paste needed)
+- `erk br co <branch>` changes your shell's working directory directly
 
 See [Shell Integration](shell-integration.md) for setup instructions.
 
