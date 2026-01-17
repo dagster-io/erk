@@ -1018,9 +1018,7 @@ def test_land_shell_integration_error_includes_flags(
             git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
         )
 
-        result = runner.invoke(
-            cli, ["land", *cli_args], obj=test_ctx, catch_exceptions=False
-        )
+        result = runner.invoke(cli, ["land", *cli_args], obj=test_ctx, catch_exceptions=False)
 
         assert result.exit_code == 1
         assert "requires shell integration" in result.output
