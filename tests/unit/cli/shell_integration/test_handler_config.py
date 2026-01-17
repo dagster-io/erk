@@ -11,9 +11,9 @@ from erk.cli.shell_integration.handler import (
 
 def test_is_shell_integration_enabled_returns_false_when_config_not_exists() -> None:
     """Returns False when config file doesn't exist."""
-    # Patch at the source module where RealErkInstallation is defined
+    # Patch at the handler module where RealErkInstallation is imported
     with patch(
-        "erk_shared.gateway.erk_installation.real.RealErkInstallation"
+        "erk.cli.shell_integration.handler.RealErkInstallation"
     ) as mock_installation_class:
         mock_installation = mock_installation_class.return_value
         mock_installation.config_exists.return_value = False
@@ -26,7 +26,7 @@ def test_is_shell_integration_enabled_returns_false_when_config_not_exists() -> 
 def test_is_shell_integration_enabled_returns_false_when_config_disabled() -> None:
     """Returns False when shell_integration is False in config."""
     with patch(
-        "erk_shared.gateway.erk_installation.real.RealErkInstallation"
+        "erk.cli.shell_integration.handler.RealErkInstallation"
     ) as mock_installation_class:
         mock_installation = mock_installation_class.return_value
         mock_installation.config_exists.return_value = True
@@ -41,7 +41,7 @@ def test_is_shell_integration_enabled_returns_false_when_config_disabled() -> No
 def test_is_shell_integration_enabled_returns_true_when_config_enabled() -> None:
     """Returns True when shell_integration is True in config."""
     with patch(
-        "erk_shared.gateway.erk_installation.real.RealErkInstallation"
+        "erk.cli.shell_integration.handler.RealErkInstallation"
     ) as mock_installation_class:
         mock_installation = mock_installation_class.return_value
         mock_installation.config_exists.return_value = True
