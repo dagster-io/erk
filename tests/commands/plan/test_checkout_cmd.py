@@ -315,7 +315,7 @@ def test_checkout_no_branch_no_pr_shows_help() -> None:
 
         assert result.exit_code == 1
         assert "No local branch or open PR found for plan #999" in result.output
-        assert "erk implement 999" in result.output
+        assert "erk prepare 999" in result.output
 
 
 def test_checkout_invalid_identifier() -> None:

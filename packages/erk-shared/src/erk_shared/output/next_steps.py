@@ -14,24 +14,17 @@ class IssueNextSteps:
         return f"gh issue view {self.issue_number} --web"
 
     @property
-    def implement(self) -> str:
-        return f"erk implement {self.issue_number}"
-
-    @property
-    def implement_dangerous(self) -> str:
-        return f"erk implement {self.issue_number} --dangerous"
-
-    @property
-    def implement_yolo(self) -> str:
-        return f"erk implement {self.issue_number} --yolo"
+    def prepare(self) -> str:
+        return f"erk prepare {self.issue_number}"
 
     @property
     def submit(self) -> str:
         return f"erk plan submit {self.issue_number}"
 
 
-# Slash command (static, doesn't need issue number)
+# Slash commands (static, don't need issue number)
 SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
+PREPARE_SLASH_COMMAND = "/erk:prepare"
 
 
 def format_next_steps_plain(issue_number: int) -> str:
@@ -41,12 +34,12 @@ def format_next_steps_plain(issue_number: int) -> str:
 
 View Issue: {s.view}
 
-In Claude Code: {SUBMIT_SLASH_COMMAND}
+In Claude Code:
+  Prepare worktree: {PREPARE_SLASH_COMMAND}
+  Submit to queue: {SUBMIT_SLASH_COMMAND}
 
 OR exit Claude Code first, then run one of:
-  Interactive: {s.implement}
-  Dangerous Interactive: {s.implement_dangerous}
-  Auto-Submit: {s.implement_yolo}
+  Local: {s.prepare}
   Submit to Queue: {s.submit}"""
 
 
@@ -64,17 +57,7 @@ def format_next_steps_markdown(issue_number: int) -> str:
 
 ### Local Execution
 
-**Standard mode (interactive):**
+**Prepare worktree:**
 ```bash
-{s.implement}
-```
-
-**Yolo mode (fully automated, skips confirmation):**
-```bash
-{s.implement_yolo}
-```
-
-**Dangerous mode (auto-submit PR after implementation):**
-```bash
-{s.implement_dangerous}
+{s.prepare}
 ```"""
