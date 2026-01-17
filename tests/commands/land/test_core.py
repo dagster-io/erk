@@ -13,6 +13,7 @@ It accepts:
 
 from pathlib import Path
 
+import pytest
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
@@ -944,3 +945,184 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
             f"Got update_base_idx={update_base_idx}, merge_idx={merge_idx}. "
             f"operation_log={operation_log}"
         )
+
+
+@pytest.mark.parametrize(
+    ("cli_args", "expected_in_message"),
+    [
+        # Single flags
+        (["-f"], "-f"),
+        (["--up"], "--up"),
+        (["--no-pull"], "--no-pull"),
+        (["--no-delete"], "--no-delete"),
+        # Target argument
+        (["123"], "123"),
+        (["feature-branch"], "feature-branch"),
+        # Combined flags
+        (["-f", "--up"], "-f"),  # Both should be present
+        (["123", "-f"], "123"),  # Target + flag
+        (["-f", "--no-pull"], "-f"),  # Multiple flags
+        # All flags combined
+        (["123", "--up", "-f", "--no-pull", "--no-delete"], "123"),
+    ],
+    ids=[
+        "force",
+        "up",
+        "no-pull",
+        "no-delete",
+        "target-number",
+        "target-branch",
+        "force-and-up",
+        "target-with-force",
+        "force-and-no-pull",
+        "all-flags",
+    ],
+)
+def test_land_shell_integration_error_includes_flags(
+    cli_args: list[str], expected_in_message: str
+) -> None:
+    """Test that shell integration error message includes passed flags.
+
+    When 'erk land -f' is run without shell integration, the error should show:
+    'source .../land.sh -f' (not just 'source .../land.sh').
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli, ["land", *cli_args], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 1
+        assert "requires shell integration" in result.output
+        # Verify the expected flag/argument appears somewhere in the land.sh command line
+        assert expected_in_message in result.output
+
+
+def test_land_shell_integration_error_all_flags_order() -> None:
+    """Test that all flags appear in correct order in shell integration error.
+
+    The flags should appear in the order: target, --up, -f, --no-pull, --no-delete.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        # Run with all flags in arbitrary order
+        result = runner.invoke(
+            cli,
+            ["land", "--no-delete", "123", "-f", "--no-pull", "--up"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "requires shell integration" in result.output
+        # Verify the expected ordering in the message
+        assert ".erk/bin/land.sh 123 --up -f --no-pull --no-delete" in result.output
+
+
+def test_land_shell_integration_error_no_extra_args_when_none_passed() -> None:
+    """Test that shell integration error has no trailing args when no flags passed.
+
+    When 'erk land' is run without any flags, the message should be:
+    'source .../land.sh' (without trailing whitespace or empty args).
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["land"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 1
+        assert "requires shell integration" in result.output
+        # The message should end with just land.sh followed by newline, no extra args
+        assert ".erk/bin/land.sh\n" in result.output
+        # Should NOT have trailing space or empty arguments
+        assert ".erk/bin/land.sh \n" not in result.output
+        assert ".erk/bin/land.sh  " not in result.output
