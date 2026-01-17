@@ -25,6 +25,7 @@ Search the current conversation context for the git index.lock error. Look for:
 - The command that triggered the error
 
 **Extract the lock file path** from the error message. Examples:
+
 - Regular repo: `.git/index.lock`
 - Worktree: `/path/to/.git/worktrees/<name>/index.lock`
 
@@ -44,6 +45,7 @@ echo "Collecting diagnostics in $DIAG_DIR"
 #### 2a. Error Context
 
 Write the error details from the conversation to a file. Include:
+
 - The exact command that failed (e.g., `erk exec quick-submit`, `git add -A`)
 - The full error message including the lock file path
 - Timestamp if visible
@@ -101,7 +103,7 @@ ps aux | grep -E '[g]it|[c]laude' | head -20 > "$DIAG_DIR/04-processes.txt" 2>&1
 
 ```bash
 if [ -f ~/.erk/command_history.jsonl ]; then
-    tail -50 ~/.erk/command_history.jsonl > "$DIAG_DIR/05-erk-history.jsonl"
+    tail -200 ~/.erk/command_history.jsonl > "$DIAG_DIR/05-erk-history.jsonl"
 else
     echo "No erk command history found" > "$DIAG_DIR/05-erk-history.jsonl"
 fi
@@ -209,6 +211,7 @@ The diagnostic report has been uploaded. Share this URL when reporting the issue
 ## Quick Fix
 
 If the lock file is 0 bytes (stale), it's safe to remove:
+
 ```bash
 rm <lock-file-path>
 ```
