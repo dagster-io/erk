@@ -57,7 +57,8 @@ def _make_issue(
     state: str = "OPEN",
 ) -> IssueInfo:
     """Create a test IssueInfo."""
-    now = datetime.now(UTC)
+    # Use fixed timestamp for deterministic tests
+    fixed_time = datetime(2025, 11, 25, 14, 37, 43, tzinfo=UTC)
     return IssueInfo(
         number=number,
         title=title,
@@ -66,8 +67,8 @@ def _make_issue(
         url=f"https://github.com/test/repo/issues/{number}",
         labels=["erk-plan"],
         assignees=[],
-        created_at=now,
-        updated_at=now,
+        created_at=fixed_time,
+        updated_at=fixed_time,
         author="testuser",
     )
 
