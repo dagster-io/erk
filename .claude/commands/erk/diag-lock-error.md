@@ -21,10 +21,16 @@ Run this command when you encounter a git index.lock error:
 Search the current conversation context for the git index.lock error. Look for:
 
 - Tool results containing `fatal: Unable to create` and `index.lock`
-- The specific repository path where the error occurred
+- The specific repository path where the error occurred (extract the full lock file path)
 - The command that triggered the error
 
-If no lock error is found in the recent context, report "No git index.lock error found in current context" and stop.
+**Extract the lock file path** from the error message. Examples:
+- Regular repo: `.git/index.lock`
+- Worktree: `/path/to/.git/worktrees/<name>/index.lock`
+
+Save this path for Step 2c.
+
+If no lock error is found in the recent context, ask the user: "No git index.lock error found. Run diagnostic anyway to capture system state?" If yes, proceed with data collection (error context will note "proactive collection - no current error").
 
 ### Step 2: Collect Diagnostic Data
 
@@ -37,12 +43,25 @@ echo "Collecting diagnostics in $DIAG_DIR"
 
 #### 2a. Error Context
 
-Write the error message and context from the conversation to a file:
+Write the error details from the conversation to a file. Include:
+- The exact command that failed (e.g., `erk exec quick-submit`, `git add -A`)
+- The full error message including the lock file path
+- Timestamp if visible
+- Whether the lock was removed and how (manual rm, or still present)
 
 ```bash
 cat > "$DIAG_DIR/01-error-context.txt" << 'EOF'
 # Error Context
-<paste the error message and surrounding context here>
+
+Command: <command that triggered the error>
+Time: <timestamp if known>
+Repository: <working directory path>
+Lock file path: <full path from error message>
+
+Error output:
+<full error message>
+
+Resolution: <how it was resolved, or "still investigating">
 EOF
 ```
 
@@ -54,17 +73,21 @@ git status > "$DIAG_DIR/02-git-status.txt" 2>&1
 
 #### 2c. Lock File State
 
-Check if the lock file exists and get details:
+Check if the lock file exists using the **exact path from the error message** (Step 1):
 
 ```bash
-LOCK_FILE=".git/index.lock"
+# Use the lock file path extracted from the error message
+LOCK_FILE="<path from error message>"
 if [ -f "$LOCK_FILE" ]; then
     echo "Lock file EXISTS" > "$DIAG_DIR/03-lock-state.txt"
     ls -la "$LOCK_FILE" >> "$DIAG_DIR/03-lock-state.txt"
-    # Try to get file creation time (macOS)
+    # File details (macOS)
     stat "$LOCK_FILE" >> "$DIAG_DIR/03-lock-state.txt" 2>&1
+    # Check if empty (stale lock indicator)
+    echo "" >> "$DIAG_DIR/03-lock-state.txt"
+    echo "File size: $(wc -c < "$LOCK_FILE") bytes" >> "$DIAG_DIR/03-lock-state.txt"
 else
-    echo "Lock file does NOT exist" > "$DIAG_DIR/03-lock-state.txt"
+    echo "Lock file does NOT exist (may have been removed)" > "$DIAG_DIR/03-lock-state.txt"
 fi
 ```
 
@@ -107,13 +130,15 @@ git reflog --date=iso -n 50 > "$DIAG_DIR/08-git-reflog.txt" 2>&1
 
 #### 2i. Session ID
 
+The session ID is provided by the skill loader via string substitution. Write it to a file:
+
 ```bash
-echo "${CLAUDE_SESSION_ID:-unknown}" > "$DIAG_DIR/09-session-id.txt"
+echo "${CLAUDE_SESSION_ID}" > "$DIAG_DIR/09-session-id.txt"
 ```
 
 #### 2j. Session XML Content
 
-Preprocess the current session to compressed XML format for analysis:
+Preprocess the current session to compressed XML format for analysis. The session ID `${CLAUDE_SESSION_ID}` is substituted by the skill loader:
 
 ```bash
 SESSION_FILE=$(find ~/.claude/projects -name "${CLAUDE_SESSION_ID}.jsonl" 2>/dev/null | head -1)
@@ -124,7 +149,7 @@ else
 fi
 ```
 
-This captures the conversation leading up to the error, including tool calls and results.
+This captures the conversation leading up to the error, including tool calls and results (typically ~45-100KB after compression).
 
 ### Step 3: Create Gist
 
@@ -173,3 +198,17 @@ The diagnostic report has been uploaded. Share this URL when reporting the issue
 - The gist is created as a secret (not public) by default
 - Run this command immediately after encountering the error for best results
 - The error context must be visible in the current conversation
+
+## Common Causes
+
+- **Stale lock (0 bytes)**: A git process crashed or was killed, leaving an empty lock file
+- **Parallel operations**: Multiple Claude sessions or erk commands running git operations simultaneously
+- **Worktree conflicts**: Operations across worktrees can sometimes conflict
+- **Interrupted operations**: Ctrl+C during git operations can leave stale locks
+
+## Quick Fix
+
+If the lock file is 0 bytes (stale), it's safe to remove:
+```bash
+rm <lock-file-path>
+```
