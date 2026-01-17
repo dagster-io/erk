@@ -144,12 +144,15 @@ def get_pr_review_comments(ctx: click.Context, pr: int | None, include_resolved:
     except RuntimeError as e:
         exit_with_error("github-api-failed", str(e))
 
+    # Filter out threads with invalid IDs (null from GraphQL becomes empty string in gateway)
+    valid_threads = [t for t in threads if t.id]
+
     result_success = ReviewCommentSuccess(
         success=True,
         pr_number=pr_result.number,
         pr_url=pr_result.url,
         pr_title=pr_result.title,
-        threads=[_format_thread_for_json(t) for t in threads],
+        threads=[_format_thread_for_json(t) for t in valid_threads],
     )
     click.echo(json.dumps(asdict(result_success), indent=2))
     raise SystemExit(0)

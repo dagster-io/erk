@@ -184,6 +184,61 @@ def test_get_pr_review_comments_no_threads(tmp_path: Path) -> None:
     assert output["threads"] == []
 
 
+def test_get_pr_review_comments_filters_null_ids(tmp_path: Path) -> None:
+    """Test threads with null/empty IDs are filtered out.
+
+    GraphQL can return null for thread ID field (malformed GitHub data).
+    The gateway defaults this to empty string. The command should filter
+    these invalid threads to prevent downstream errors when agents try
+    to resolve them.
+    """
+    valid_thread = make_thread("PRRT_valid", "src/foo.py", 10, "Valid comment")
+
+    # Create thread with empty ID using direct construction (simulates null from GraphQL)
+    invalid_thread = PRReviewThread(
+        id="",  # Empty ID (from null GraphQL response)
+        path="src/bar.py",
+        line=20,
+        is_resolved=False,
+        is_outdated=False,
+        comments=(
+            PRReviewComment(
+                id=1,
+                body="Invalid comment",
+                author="reviewer",
+                path="src/bar.py",
+                line=20,
+                created_at="2024-01-01T10:00:00Z",
+            ),
+        ),
+    )
+
+    pr_details = make_pr_details(123)
+
+    fake_github = FakeGitHub(
+        pr_details={123: pr_details},
+        pr_review_threads={123: [valid_thread, invalid_thread]},
+    )
+    fake_git = FakeGit()
+    runner = CliRunner()
+
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        result = runner.invoke(
+            get_pr_review_comments,
+            ["--pr", "123"],
+            obj=ErkContext.for_test(github=fake_github, git=fake_git, repo_root=cwd, cwd=cwd),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    # Only the valid thread should appear (invalid one filtered out)
+    assert len(output["threads"]) == 1
+    assert output["threads"][0]["id"] == "PRRT_valid"
+
+
 # ============================================================================
 # get-pr-review-comments Error Cases
 # ============================================================================
