@@ -116,9 +116,12 @@ echo "${CLAUDE_SESSION_ID:-unknown}" > "$DIAG_DIR/09-session-id.txt"
 Preprocess the current session to compressed XML format for analysis:
 
 ```bash
-erk exec preprocess-session ~/.claude/projects/*/sessions/${CLAUDE_SESSION_ID}/session.jsonl \
-    --max-tokens 30000 --stdout > "$DIAG_DIR/10-session.xml" 2>/dev/null || \
-    echo "Session preprocessing unavailable" > "$DIAG_DIR/10-session.xml"
+SESSION_FILE=$(find ~/.claude/projects -name "${CLAUDE_SESSION_ID}.jsonl" 2>/dev/null | head -1)
+if [ -n "$SESSION_FILE" ] && [ -f "$SESSION_FILE" ]; then
+    erk exec preprocess-session "$SESSION_FILE" --max-tokens 100000 --stdout > "$DIAG_DIR/10-session.xml"
+else
+    echo "Session file not found for ID: ${CLAUDE_SESSION_ID}" > "$DIAG_DIR/10-session.xml"
+fi
 ```
 
 This captures the conversation leading up to the error, including tool calls and results.
