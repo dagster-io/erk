@@ -11,9 +11,8 @@ from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, s
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.test_utils.env_helpers import erk_isolated_fs_env
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store_with_plans, make_test_plan
 
 # Fixed timestamp for test Plan objects - deterministic test data
 TEST_PLAN_TIMESTAMP = datetime(2024, 1, 15, 10, 30, 0, tzinfo=UTC)
@@ -357,19 +356,12 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         )
 
         # Create a plan with erk-plan label
-        now = TEST_PLAN_TIMESTAMP
-        plan = Plan(
-            plan_identifier="123",
+        plan = make_test_plan(
+            123,
             title="Add feature",
             body="# Plan\nImplementation details",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/123",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            metadata={},
-            objective_issue=None,
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
         )
         plan_store, _ = create_plan_store_with_plans({"123": plan})
 
@@ -427,19 +419,12 @@ def test_branch_create_for_plan_with_issue_url(tmp_path) -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = TEST_PLAN_TIMESTAMP
-        plan = Plan(
-            plan_identifier="456",
+        plan = make_test_plan(
+            456,
             title="Fix bug",
             body="# Bug fix plan",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/456",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            metadata={},
-            objective_issue=None,
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
         )
         plan_store, _ = create_plan_store_with_plans({"456": plan})
 
@@ -480,20 +465,14 @@ def test_branch_create_for_plan_fails_without_erk_plan_label() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = TEST_PLAN_TIMESTAMP
         # Plan WITHOUT erk-plan label
-        plan = Plan(
-            plan_identifier="789",
+        plan = make_test_plan(
+            789,
             title="Missing label",
             body="# Plan content",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/789",
             labels=["bug"],  # No erk-plan label
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            metadata={},
-            objective_issue=None,
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
         )
         plan_store, _ = create_plan_store_with_plans({"789": plan})
 
@@ -532,19 +511,12 @@ def test_branch_create_for_plan_with_no_slot_skips_impl() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = TEST_PLAN_TIMESTAMP
-        plan = Plan(
-            plan_identifier="100",
+        plan = make_test_plan(
+            100,
             title="No slot feature",
             body="# Plan",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/100",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            metadata={},
-            objective_issue=None,
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
         )
         plan_store, _ = create_plan_store_with_plans({"100": plan})
 
@@ -697,19 +669,12 @@ def test_branch_create_for_plan_stacks_on_current_branch() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        now = TEST_PLAN_TIMESTAMP
-        plan = Plan(
-            plan_identifier="200",
+        plan = make_test_plan(
+            200,
             title="Stacked feature",
             body="# Plan\nStacked implementation",
-            state=PlanState.OPEN,
-            url="https://github.com/owner/repo/issues/200",
-            labels=["erk-plan"],
-            assignees=[],
-            created_at=now,
-            updated_at=now,
-            metadata={},
-            objective_issue=None,
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
         )
         plan_store, _ = create_plan_store_with_plans({"200": plan})
 

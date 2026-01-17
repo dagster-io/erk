@@ -7,54 +7,25 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
-from erk_shared.plan_store.types import Plan, PlanState
+from erk_shared.plan_store.types import PlanState
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
-
-
-def plan_to_issue(plan: Plan) -> IssueInfo:
-    """Convert Plan to IssueInfo for test setup."""
-    return IssueInfo(
-        number=int(plan.plan_identifier),
-        title=plan.title,
-        body=plan.body,
-        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
-        url=plan.url,
-        labels=plan.labels,
-        assignees=plan.assignees,
-        created_at=plan.created_at,
-        updated_at=plan.updated_at,
-        author="test-user",
-    )
+from tests.test_utils.plan_helpers import make_test_plan, plan_to_issue
 
 
 def test_plan_list_no_filters() -> None:
     """Test listing all plan issues with no filters."""
-    plan1 = Plan(
-        plan_identifier="1",
+    plan1 = make_test_plan(
+        "1",
         title="Issue 1",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
-    plan2 = Plan(
-        plan_identifier="2",
+    plan2 = make_test_plan(
+        "2",
         title="Issue 2",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
-        assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -75,31 +46,18 @@ def test_plan_list_no_filters() -> None:
 
 def test_plan_list_filter_by_state() -> None:
     """Test filtering plan issues by state."""
-    open_plan = Plan(
-        plan_identifier="1",
+    open_plan = make_test_plan(
+        "1",
         title="Open Issue",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
-    closed_plan = Plan(
-        plan_identifier="2",
+    closed_plan = make_test_plan(
+        "2",
         title="Closed Issue",
-        body="",
         state=PlanState.CLOSED,
-        url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
-        assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -121,31 +79,18 @@ def test_plan_list_filter_by_state() -> None:
 
 def test_plan_list_filter_by_labels() -> None:
     """Test filtering plan issues by labels with AND logic."""
-    plan_with_both = Plan(
-        plan_identifier="1",
+    plan_with_both = make_test_plan(
+        "1",
         title="Issue with both labels",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
         labels=["erk-plan", "erk-queue"],
-        assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
-    plan_with_one = Plan(
-        plan_identifier="2",
+    plan_with_one = make_test_plan(
+        "2",
         title="Issue with one label",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
-        assignees=[],
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -176,18 +121,11 @@ def test_plan_list_with_limit() -> None:
     plans_dict: dict[int, IssueInfo] = {}
     issues_list: list[IssueInfo] = []
     for i in range(1, 6):
-        plan = Plan(
-            plan_identifier=str(i),
+        plan = make_test_plan(
+            str(i),
             title=f"Issue {i}",
-            body="",
-            state=PlanState.OPEN,
-            url=f"https://github.com/owner/repo/issues/{i}",
-            labels=["erk-plan"],
-            assignees=[],
             created_at=datetime(2024, 1, i, tzinfo=UTC),
             updated_at=datetime(2024, 1, i, tzinfo=UTC),
-            metadata={},
-            objective_issue=None,
         )
         issue = plan_to_issue(plan)
         plans_dict[i] = issue
@@ -207,18 +145,11 @@ def test_plan_list_with_limit() -> None:
 
 def test_plan_list_empty_results() -> None:
     """Test querying with filters that match no issues."""
-    plan = Plan(
-        plan_identifier="1",
+    plan = make_test_plan(
+        "1",
         title="Issue",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={},
-        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -249,18 +180,13 @@ last_dispatched_node_id: 'WFR_all_flag'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    plan = Plan(
-        plan_identifier="200",
+    plan = make_test_plan(
+        "200",
         title="Plan with Run",
         body=plan_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/200",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 200},
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 200},
-        objective_issue=None,
     )
 
     workflow_run = WorkflowRun(
@@ -303,18 +229,13 @@ last_dispatched_node_id: 'WFR_short_flag'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    plan = Plan(
-        plan_identifier="201",
+    plan = make_test_plan(
+        "201",
         title="Plan for short flag test",
         body=plan_body,
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/201",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 201},
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 201},
-        objective_issue=None,
     )
 
     workflow_run = WorkflowRun(
@@ -343,31 +264,19 @@ last_dispatched_node_id: 'WFR_short_flag'
 
 def test_plan_list_sort_issue_default() -> None:
     """Test that --sort issue (default) returns plans sorted by issue number descending."""
-    plan1 = Plan(
-        plan_identifier="1",
+    plan1 = make_test_plan(
+        "1",
         title="First Issue",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 1},
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1},
-        objective_issue=None,
     )
-    plan2 = Plan(
-        plan_identifier="2",
+    plan2 = make_test_plan(
+        "2",
         title="Second Issue",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 2},
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={"number": 2},
-        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -392,32 +301,20 @@ def test_plan_list_sort_activity_with_local_branch() -> None:
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     # Plan 1: older issue, but has local branch with recent activity
-    plan1 = Plan(
-        plan_identifier="1",
+    plan1 = make_test_plan(
+        "1",
         title="Older Issue with Activity",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 1},
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1},
-        objective_issue=None,
     )
     # Plan 2: newer issue, no local branch
-    plan2 = Plan(
-        plan_identifier="2",
+    plan2 = make_test_plan(
+        "2",
         title="Newer Issue no Activity",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 2},
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={"number": 2},
-        objective_issue=None,
     )
 
     runner = CliRunner()
@@ -480,32 +377,20 @@ def test_plan_list_sort_activity_orders_by_recency() -> None:
     from tests.test_utils.env_helpers import erk_isolated_fs_env
 
     # Plan 1: has local branch with older commit
-    plan1 = Plan(
-        plan_identifier="1",
+    plan1 = make_test_plan(
+        "1",
         title="Issue with Older Commit",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 1},
         created_at=datetime(2024, 1, 1, tzinfo=UTC),
         updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1},
-        objective_issue=None,
     )
     # Plan 2: has local branch with newer commit
-    plan2 = Plan(
-        plan_identifier="2",
+    plan2 = make_test_plan(
+        "2",
         title="Issue with Newer Commit",
-        body="",
-        state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/2",
-        labels=["erk-plan"],
-        assignees=[],
+        metadata={"number": 2},
         created_at=datetime(2024, 1, 2, tzinfo=UTC),
         updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={"number": 2},
-        objective_issue=None,
     )
 
     runner = CliRunner()

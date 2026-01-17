@@ -5,13 +5,63 @@ It converts Plan objects to IssueInfo so tests can use GitHubPlanStore
 backed by FakeGitHubIssues.
 """
 
-from datetime import UTC
+from datetime import UTC, datetime
 
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import Plan, PlanState
+
+
+def make_test_plan(
+    plan_identifier: str | int,
+    *,
+    title: str | None = None,
+    body: str = "",
+    state: PlanState | None = None,
+    url: str | None = None,
+    labels: list[str] | None = None,
+    assignees: list[str] | None = None,
+    created_at: datetime | None = None,
+    updated_at: datetime | None = None,
+    metadata: dict[str, object] | None = None,
+    objective_issue: int | None = None,
+) -> Plan:
+    """Create a test Plan with sensible defaults.
+
+    Args:
+        plan_identifier: Plan ID (int or str)
+        title: Plan title, defaults to "Test Plan {id}"
+        body: Plan body/description
+        state: Plan state, defaults to OPEN
+        url: Plan URL, defaults to GitHub pattern
+        labels: List of labels, defaults to ["erk-plan"]
+        assignees: List of assignees, defaults to []
+        created_at: Creation timestamp, defaults to 2024-01-01
+        updated_at: Update timestamp, defaults to 2024-01-01
+        metadata: Provider metadata, defaults to {}
+        objective_issue: Parent objective issue number
+
+    Returns:
+        Plan with the specified values and defaults applied
+    """
+    plan_id = str(plan_identifier)
+    default_timestamp = datetime(2024, 1, 1, tzinfo=UTC)
+
+    return Plan(
+        plan_identifier=plan_id,
+        title=title if title is not None else f"Test Plan {plan_id}",
+        body=body,
+        state=state if state is not None else PlanState.OPEN,
+        url=url if url is not None else f"https://github.com/test/repo/issues/{plan_id}",
+        labels=labels if labels is not None else ["erk-plan"],
+        assignees=assignees if assignees is not None else [],
+        created_at=created_at if created_at is not None else default_timestamp,
+        updated_at=updated_at if updated_at is not None else default_timestamp,
+        metadata=metadata if metadata is not None else {},
+        objective_issue=objective_issue,
+    )
 
 
 def _plan_to_issue_info(plan: Plan) -> IssueInfo:
@@ -36,8 +86,22 @@ def _plan_to_issue_info(plan: Plan) -> IssueInfo:
         assignees=plan.assignees,
         created_at=plan.created_at.astimezone(UTC),
         updated_at=plan.updated_at.astimezone(UTC),
-        author="test-author",
+        author="test-user",
     )
+
+
+def plan_to_issue(plan: Plan) -> IssueInfo:
+    """Convert a Plan to IssueInfo.
+
+    Public alias for _plan_to_issue_info used in tests.
+
+    Args:
+        plan: Plan to convert
+
+    Returns:
+        IssueInfo with equivalent data
+    """
+    return _plan_to_issue_info(plan)
 
 
 def create_plan_store_with_plans(

@@ -5,7 +5,6 @@ local .impl/issue.json files, not from GitHub metadata.
 """
 
 import json
-from datetime import UTC, datetime
 
 from click.testing import CliRunner
 
@@ -14,8 +13,8 @@ from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues
-from erk_shared.plan_store.types import Plan, PlanState
-from tests.commands.dash.conftest import plan_to_issue
+from erk_shared.plan_store.types import PlanState
+from tests.commands.dash.conftest import make_plan, plan_to_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
@@ -40,32 +39,22 @@ worktree_name: rename-erk-slash-commands
 
 Implementation details here."""
 
-    plan1 = Plan(
-        plan_identifier="867",
+    plan1 = make_plan(
+        "867",
         title="Rename Erk Slash Commands",
-        body=body_with_worktree,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/867",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 867},
-        objective_issue=None,
+        body=body_with_worktree,
+        day=1,
     )
 
-    plan2 = Plan(
-        plan_identifier="868",
+    plan2 = make_plan(
+        "868",
         title="Issue Without Worktree",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/868",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 2, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={"number": 868},
-        objective_issue=None,
+        body="",
+        day=2,
     )
 
     # Configure fake GitHub issues
@@ -112,18 +101,13 @@ worktree_name: second-attempt
 
 Issue updated with current worktree name."""
 
-    plan1 = Plan(
-        plan_identifier="900",
+    plan1 = make_plan(
+        "900",
         title="Issue with Updated Worktree",
-        body=body_with_worktree,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/900",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 900},
-        objective_issue=None,
+        body=body_with_worktree,
+        day=1,
     )
 
     # Configure fake with issue
@@ -147,18 +131,13 @@ Issue updated with current worktree name."""
 def test_plan_list_shows_worktree_from_local_impl() -> None:
     """Test that list command detects worktree from local .impl/issue.json file."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="950",
+    plan1 = make_plan(
+        "950",
         title="Test Local Detection",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/950",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 950},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     runner = CliRunner()
@@ -208,18 +187,13 @@ def test_plan_list_shows_worktree_from_local_impl() -> None:
 def test_plan_list_prefers_local_over_github() -> None:
     """Test that local .impl/issue.json detection takes precedence over GitHub comments."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="960",
+    plan1 = make_plan(
+        "960",
         title="Test Precedence",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/960",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 960},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     # Create GitHub comment with different worktree name
@@ -303,18 +277,13 @@ worktree_name: github-worktree
 
 Plan content."""
 
-    plan1 = Plan(
-        plan_identifier="970",
+    plan1 = make_plan(
+        "970",
         title="Test Fallback",
-        body=body_with_worktree,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/970",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 970},
-        objective_issue=None,
+        body=body_with_worktree,
+        day=1,
     )
 
     runner = CliRunner()
@@ -336,18 +305,13 @@ Plan content."""
 def test_plan_list_handles_multiple_local_worktrees() -> None:
     """Test first-found worktree shown when multiple worktrees reference same issue."""
     # Arrange
-    plan1 = Plan(
-        plan_identifier="980",
+    plan1 = make_plan(
+        "980",
         title="Test Multiple Local",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/980",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 980},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     runner = CliRunner()

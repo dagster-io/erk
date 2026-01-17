@@ -5,6 +5,8 @@ Tests the shared logic for preparing plans for worktree creation.
 
 from datetime import datetime
 
+from tests.test_utils.plan_helpers import make_test_plan
+
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
@@ -22,18 +24,13 @@ def _make_plan(
     labels: list[str] | None = None,
 ) -> Plan:
     """Create a minimal Plan for testing."""
-    return Plan(
-        plan_identifier=plan_identifier,
+    return make_test_plan(
+        plan_identifier,
         title=title,
         body=body,
         state=state,
         url=url,
         labels=labels if labels is not None else ["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1),
-        updated_at=datetime(2024, 1, 1),
-        metadata={},
-        objective_issue=None,
     )
 
 

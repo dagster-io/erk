@@ -2,24 +2,10 @@
 
 from datetime import UTC, datetime
 
-from erk_shared.github.issues import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
+from tests.test_utils.plan_helpers import make_test_plan, plan_to_issue
 
-
-def plan_to_issue(plan: Plan) -> IssueInfo:
-    """Convert Plan to IssueInfo for test setup."""
-    return IssueInfo(
-        number=int(plan.plan_identifier),
-        title=plan.title,
-        body=plan.body,
-        state="OPEN" if plan.state == PlanState.OPEN else "CLOSED",
-        url=plan.url,
-        labels=plan.labels,
-        assignees=plan.assignees,
-        created_at=plan.created_at,
-        updated_at=plan.updated_at,
-        author="test-user",
-    )
+__all__ = ["make_plan", "plan_to_issue"]
 
 
 def make_plan(
@@ -32,15 +18,17 @@ def make_plan(
     *,
     objective_issue: int | None = None,
 ) -> Plan:
-    """Create a Plan with common defaults for testing."""
-    return Plan(
-        plan_identifier=plan_identifier,
+    """Create a Plan with common defaults for testing.
+
+    Wrapper around make_test_plan for backward compatibility with existing code
+    that uses the dash-specific parameter names (day instead of timestamps).
+    """
+    return make_test_plan(
+        plan_identifier,
         title=title,
         body=body,
         state=state,
-        url=f"https://github.com/owner/repo/issues/{plan_identifier}",
         labels=labels,
-        assignees=[],
         created_at=datetime(2024, 1, day, tzinfo=UTC),
         updated_at=datetime(2024, 1, day, tzinfo=UTC),
         metadata={"number": int(plan_identifier)},

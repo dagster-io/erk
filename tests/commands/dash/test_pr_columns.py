@@ -3,16 +3,14 @@
 Tests PR emoji display (open 👀, draft 🚧, merged 🎉, closed ⛔, conflict 💥).
 """
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.types import PullRequestInfo
-from erk_shared.plan_store.types import Plan, PlanState
-from tests.commands.dash.conftest import plan_to_issue
+from erk_shared.plan_store.types import PlanState
+from tests.commands.dash.conftest import make_plan, plan_to_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -20,18 +18,13 @@ from tests.test_utils.env_helpers import erk_inmem_env
 def test_plan_list_pr_column_open_pr() -> None:
     """Test PR column displays open PR with 👀 emoji."""
     # Arrange
-    plan = Plan(
-        plan_identifier="100",
+    plan = make_plan(
+        "100",
         title="Plan with Open PR",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/100",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 100},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     pr = PullRequestInfo(
@@ -69,18 +62,13 @@ def test_plan_list_pr_column_open_pr() -> None:
 def test_plan_list_pr_column_draft_pr() -> None:
     """Test PR column displays draft PR with 🚧 emoji."""
     # Arrange
-    plan = Plan(
-        plan_identifier="101",
+    plan = make_plan(
+        "101",
         title="Plan with Draft PR",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/101",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 101},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     pr = PullRequestInfo(
@@ -118,18 +106,13 @@ def test_plan_list_pr_column_draft_pr() -> None:
 def test_plan_list_pr_column_merged_pr() -> None:
     """Test PR column displays merged PR with 🎉 emoji."""
     # Arrange
-    plan = Plan(
-        plan_identifier="102",
+    plan = make_plan(
+        "102",
         title="Plan with Merged PR",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/102",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 102},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     pr = PullRequestInfo(
@@ -167,18 +150,13 @@ def test_plan_list_pr_column_merged_pr() -> None:
 def test_plan_list_pr_column_closed_pr() -> None:
     """Test PR column displays closed PR with ⛔ emoji."""
     # Arrange
-    plan = Plan(
-        plan_identifier="103",
+    plan = make_plan(
+        "103",
         title="Plan with Closed PR",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/103",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 103},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     pr = PullRequestInfo(
@@ -216,18 +194,13 @@ def test_plan_list_pr_column_closed_pr() -> None:
 def test_plan_list_pr_column_with_conflicts() -> None:
     """Test PR column shows conflict indicator 💥 for open/draft PRs with conflicts."""
     # Arrange
-    plan = Plan(
-        plan_identifier="104",
+    plan = make_plan(
+        "104",
         title="Plan with Conflicted PR",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/104",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 104},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     pr = PullRequestInfo(
@@ -265,18 +238,13 @@ def test_plan_list_pr_column_with_conflicts() -> None:
 def test_plan_list_pr_column_multiple_prs_prefers_open() -> None:
     """Test PR column shows most recent open PR when multiple PRs exist."""
     # Arrange
-    plan = Plan(
-        plan_identifier="105",
+    plan = make_plan(
+        "105",
         title="Plan with Multiple PRs",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/105",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 105},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     # Older closed PR
@@ -328,18 +296,13 @@ def test_plan_list_pr_column_multiple_prs_prefers_open() -> None:
 def test_plan_list_pr_column_no_pr_linked() -> None:
     """Test PR column shows '-' when no PR is linked to issue."""
     # Arrange
-    plan = Plan(
-        plan_identifier="106",
+    plan = make_plan(
+        "106",
         title="Plan without PR",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/106",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 106},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     runner = CliRunner()

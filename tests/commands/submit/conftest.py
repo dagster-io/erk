@@ -9,7 +9,7 @@ from erk.core.repo_discovery import RepoContext
 from erk_shared.github.metadata.core import render_metadata_block
 from erk_shared.github.metadata.types import MetadataBlock
 from erk_shared.plan_store.types import Plan, PlanState
-from tests.test_utils.plan_helpers import create_plan_store_with_plans
+from tests.test_utils.plan_helpers import create_plan_store_with_plans, make_test_plan
 
 
 def make_plan_body(content: str = "Implementation details...") -> str:
@@ -49,18 +49,15 @@ def create_plan(
 ) -> Plan:
     """Create a Plan with common defaults for testing."""
     now = datetime.now(UTC)
-    return Plan(
-        plan_identifier=plan_identifier,
+    return make_test_plan(
+        plan_identifier,
         title=title,
         body=body if body is not None else make_plan_body(),
         state=state,
         url=f"https://github.com/test-owner/test-repo/issues/{plan_identifier}",
         labels=labels if labels is not None else [ERK_PLAN_LABEL],
-        assignees=[],
         created_at=now,
         updated_at=now,
-        metadata={},
-        objective_issue=None,
     )
 
 

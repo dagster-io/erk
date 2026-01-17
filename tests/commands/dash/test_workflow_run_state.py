@@ -3,16 +3,14 @@
 Tests filtering plans by workflow run state (queued, in_progress, success).
 """
 
-from datetime import UTC, datetime
-
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues import FakeGitHubIssues
 from erk_shared.github.types import WorkflowRun
-from erk_shared.plan_store.types import Plan, PlanState
-from tests.commands.dash.conftest import plan_to_issue
+from erk_shared.plan_store.types import PlanState
+from tests.commands.dash.conftest import make_plan, plan_to_issue
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_inmem_env
 
@@ -44,32 +42,22 @@ last_dispatched_node_id: 'WFR_running'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    queued_plan = Plan(
-        plan_identifier="1010",
+    queued_plan = make_plan(
+        "1010",
         title="Queued Plan",
-        body=queued_plan_body,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1010",
         labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1010},
-        objective_issue=None,
+        body=queued_plan_body,
+        day=1,
     )
 
-    running_plan = Plan(
-        plan_identifier="1011",
+    running_plan = make_plan(
+        "1011",
         title="Running Plan",
-        body=running_plan_body,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1011",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 2, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={"number": 1011},
-        objective_issue=None,
+        body=running_plan_body,
+        day=2,
     )
 
     # Configure workflow runs with node_id lookup
@@ -136,32 +124,22 @@ last_dispatched_node_id: 'WFR_failed'
 </details>
 <!-- /erk:metadata-block:plan-header -->"""
 
-    success_plan = Plan(
-        plan_identifier="1020",
+    success_plan = make_plan(
+        "1020",
         title="Success Plan",
-        body=success_plan_body,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1020",
         labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1020},
-        objective_issue=None,
+        body=success_plan_body,
+        day=1,
     )
 
-    failed_plan = Plan(
-        plan_identifier="1021",
+    failed_plan = make_plan(
+        "1021",
         title="Failed Plan",
-        body=failed_plan_body,
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1021",
         labels=["erk-plan", "erk-queue"],
-        assignees=[],
-        created_at=datetime(2024, 1, 2, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
-        metadata={"number": 1021},
-        objective_issue=None,
+        body=failed_plan_body,
+        day=2,
     )
 
     # Configure workflow runs with node_id lookup
@@ -204,18 +182,13 @@ last_dispatched_node_id: 'WFR_failed'
 def test_plan_list_run_state_filter_no_matches() -> None:
     """Test run-state filter with no matching plans."""
     # Arrange - Plan with workflow run that doesn't match filter
-    plan = Plan(
-        plan_identifier="1030",
+    plan = make_plan(
+        "1030",
         title="Regular Plan",
-        body="",
         state=PlanState.OPEN,
-        url="https://github.com/owner/repo/issues/1030",
         labels=["erk-plan"],
-        assignees=[],
-        created_at=datetime(2024, 1, 1, tzinfo=UTC),
-        updated_at=datetime(2024, 1, 1, tzinfo=UTC),
-        metadata={"number": 1030},
-        objective_issue=None,
+        body="",
+        day=1,
     )
 
     # Configure workflow run with completed/success state

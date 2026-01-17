@@ -16,8 +16,8 @@ from erk_shared.github.types import (
     GitHubRepoLocation,
     PullRequestInfo,
 )
-from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
+from tests.test_utils.plan_helpers import make_test_plan
 
 
 def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
@@ -451,18 +451,11 @@ class TestCommentCountsDisplay:
         )
 
         # Create test plan and PR linkage with comment counts
-        plan = Plan(
-            plan_identifier="123",
-            title="Test Plan",
-            body="",
-            state=PlanState.OPEN,
-            url="https://github.com/test/repo/issues/123",
+        plan = make_test_plan(
+            123,
             labels=[],
-            assignees=[],
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
-            metadata={},
-            objective_issue=None,
         )
         pr_linkages = {
             123: [
@@ -531,18 +524,11 @@ class TestCommentCountsDisplay:
         )
 
         # Create test plan and PR linkage without comment counts
-        plan = Plan(
-            plan_identifier="123",
-            title="Test Plan",
-            body="",
-            state=PlanState.OPEN,
-            url="https://github.com/test/repo/issues/123",
+        plan = make_test_plan(
+            123,
             labels=[],
-            assignees=[],
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
-            metadata={},
-            objective_issue=None,
         )
         pr_linkages = {
             123: [
@@ -611,18 +597,11 @@ class TestCommentCountsDisplay:
         )
 
         # Create test plan without PR linkage
-        plan = Plan(
-            plan_identifier="123",
-            title="Test Plan",
-            body="",
-            state=PlanState.OPEN,
-            url="https://github.com/test/repo/issues/123",
+        plan = make_test_plan(
+            123,
             labels=[],
-            assignees=[],
             created_at=datetime.now(UTC),
             updated_at=datetime.now(UTC),
-            metadata={},
-            objective_issue=None,
         )
         pr_linkages: dict[int, list[PullRequestInfo]] = {}  # No linked PRs
 
