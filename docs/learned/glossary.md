@@ -240,6 +240,16 @@ Shell integration mode where commands run directly without script sourcing.
 
 **Related**: [Shell Integration Architecture](architecture/shell-integration-architecture.md)
 
+### shell_integration (config option)
+
+Boolean global config option (default: `false`) that enables automatic directory navigation when using navigation commands like `erk up`, `erk down`, and `erk wt checkout`. When enabled, the shell wrapper functions handle directory changes. When disabled (default), commands print activation instructions instead.
+
+**Enable with:** `erk config set shell_integration true`
+
+**Requires:** Shell integration must also be set up via `erk init --shell` and sourcing the init script.
+
+**Related:** [Shell Integration](#shell-integration)
+
 ### Shell Integration
 
 A mechanism that allows erk commands to change the parent shell's working directory and environment.
@@ -343,6 +353,7 @@ Configuration stored in `~/.erk/config.toml`.
 erks_root = "/Users/you/worktrees"
 use_graphite = true
 shell_setup_complete = true
+shell_integration = true  # Enable auto-navigation for erk up/down/checkout
 prompt_learn_on_land = true  # Set false to disable learn prompts on erk land
 ```
 

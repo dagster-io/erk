@@ -30,6 +30,7 @@ User-wide settings that apply across all repositories.
 - `erks_root` - Where worktrees are stored
 - `use_graphite` - Enable/disable Graphite integration
 - `shell_setup_complete` - Whether shell integration is configured
+- `shell_integration` - Enable auto-navigation shell integration (default: `false`)
 - `github_planning` - Enable GitHub-based planning
 - `prompt_learn_on_land` - Prompt for learning extraction on PR land
 
