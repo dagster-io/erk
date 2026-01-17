@@ -1,6 +1,8 @@
 ---
 name: erk-exec-reference
-description: Reference for all `erk exec` subcommands with flags and usage. Use when looking up erk exec command syntax, flags, or options.
+description: >
+  Reference for all `erk exec` subcommands with flags and usage.
+  Use when looking up erk exec command syntax, flags, or options.
 ---
 
 <!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
