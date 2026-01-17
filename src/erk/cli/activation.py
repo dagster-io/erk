@@ -245,7 +245,7 @@ def render_land_script() -> str:
     return """#!/usr/bin/env bash
 # erk land wrapper - source this script to land with shell integration
 # Usage: source .erk/bin/land.sh [args...]
-eval "$(erk land --script "$@")"
+source "$(erk land --script "$@")"
 """
 
 
