@@ -235,3 +235,5 @@ def print_activation_instructions(
     if include_implement_hint:
         user_output("\nTo activate and start implementation:")
         user_output(f"  source {script_path} && erk implement --here")
+        user_output("\nTo activate and start implementation (skip permission prompts):")
+        user_output(f"  source {script_path} && erk implement --here --dangerous")
