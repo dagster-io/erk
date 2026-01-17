@@ -34,6 +34,7 @@ erk prepare <issue_number>
 Display the command output to the user. The `erk prepare` command handles worktree creation and slot allocation.
 
 The output will include activation instructions like:
+
 ```
 To activate the worktree environment:
   source /path/to/worktree/.erk/bin/activate.sh
