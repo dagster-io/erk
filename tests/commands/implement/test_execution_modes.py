@@ -177,6 +177,50 @@ def test_interactive_mode_uses_subshell_fallback_without_shell_integration() -> 
         assert "/erk:system:impl-execute" in call.command
 
 
+def test_here_mode_uses_process_replacement_without_shell_integration() -> None:
+    """Verify --here mode uses process replacement even without shell integration.
+
+    The --here flag should bypass the subshell fallback and use executor.execute_interactive()
+    directly, since no worktree switching is needed.
+    """
+    from erk_shared.gateway.shell import FakeShell
+
+    plan_issue = create_sample_plan_issue()
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            current_branches={env.cwd: "main"},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        executor = FakeClaudeExecutor(claude_available=True)
+        shell = FakeShell(subshell_exit_code=0)
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=store, claude_executor=executor, shell=shell
+        )
+
+        # Do NOT set ERK_SHELL, but use --here flag
+        # This should use execute_interactive, NOT spawn_subshell
+        result = runner.invoke(implement, ["#42", "--here", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify execute_interactive was called (not spawn_subshell)
+        assert len(executor.interactive_calls) == 1
+        assert len(shell.subshell_calls) == 0
+
+        # Verify the execute_interactive call arguments
+        worktree_path, dangerous, command, target_subpath, model, _ = executor.interactive_calls[0]
+        assert worktree_path == env.cwd  # --here mode runs in current directory
+        assert dangerous is True
+        assert command == "/erk:system:impl-execute"
+        assert target_subpath is None  # --here mode doesn't preserve subpath
+        assert model is None
+
+
 # Non-Interactive Mode Tests
 
 
