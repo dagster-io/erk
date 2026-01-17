@@ -138,6 +138,8 @@ erk exec preprocess-session <impl-session-path> --stdout \
     > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/impl-session-<N>.xml
 ```
 
+Note: The preprocessor applies deduplication, truncation, and pruning optimizations automatically. Full session content is preserved for thorough analysis.
+
 #### Save PR Comments
 
 If PR comments were fetched in Step 2, save them for the gist:
