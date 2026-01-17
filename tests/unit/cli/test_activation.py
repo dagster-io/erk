@@ -392,45 +392,41 @@ def test_write_worktree_activate_script_with_post_create_commands(
 # print_activation_instructions tests
 
 
-def test_print_activation_instructions_with_implement_hint(
+def test_print_activation_instructions_with_source_branch(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with include_implement_hint=True shows full instructions."""
+    """print_activation_instructions with source_branch shows delete hint."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
-    print_activation_instructions(script_path, include_implement_hint=True)
+    print_activation_instructions(script_path, source_branch="feature-branch")
 
     captured = capsys.readouterr()
     assert "To activate the worktree environment:" in captured.err
     assert f"source {script_path}" in captured.err
-    assert "To activate and start implementation:" in captured.err
-    assert "erk implement --here" in captured.err
-    # Should include dangerous variant
-    assert "skip permission prompts" in captured.err
-    assert "erk implement --here --dangerous" in captured.err
+    assert "To activate and delete branch feature-branch:" in captured.err
+    assert "erk br delete feature-branch" in captured.err
 
 
-def test_print_activation_instructions_without_implement_hint(
+def test_print_activation_instructions_without_source_branch(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with include_implement_hint=False omits implement hint."""
+    """print_activation_instructions without source_branch shows only basic activation."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
-    print_activation_instructions(script_path, include_implement_hint=False)
+    print_activation_instructions(script_path, source_branch=None)
 
     captured = capsys.readouterr()
     assert "To activate the worktree environment:" in captured.err
     assert f"source {script_path}" in captured.err
-    # Should NOT contain implement hint or dangerous variant
-    assert "start implementation" not in captured.err
-    assert "erk implement --here" not in captured.err
-    assert "--dangerous" not in captured.err
+    # Should NOT contain delete hint
+    assert "delete branch" not in captured.err
+    assert "erk br delete" not in captured.err
 
 
 # land.sh script tests

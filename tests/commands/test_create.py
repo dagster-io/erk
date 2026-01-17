@@ -730,8 +730,8 @@ def test_create_prints_activation_instructions() -> None:
         assert "To activate the worktree environment:" in result.stderr
         assert "source" in result.stderr
         assert ".erk/bin/activate.sh" in result.stderr
-        assert "To activate and start implementation:" in result.stderr
-        assert "erk implement --here" in result.stderr
+        # Should NOT contain implement hint (only shown for up/down navigation)
+        assert "erk implement --here" not in result.stderr
 
         # Assert: Activation script file was created
         expected_worktree_path = repo_dir / "worktrees" / "my-feature"
@@ -778,8 +778,8 @@ def test_create_with_stay_flag_prints_activation_instructions() -> None:
         assert "To activate the worktree environment:" in result.stderr
         assert "source" in result.stderr
         assert ".erk/bin/activate.sh" in result.stderr
-        assert "To activate and start implementation:" in result.stderr
-        assert "erk implement --here" in result.stderr
+        # Should NOT contain implement hint (only shown for up/down navigation)
+        assert "erk implement --here" not in result.stderr
 
         # Assert: Activation script file was created
         expected_worktree_path = repo_dir / "worktrees" / "my-feature"
