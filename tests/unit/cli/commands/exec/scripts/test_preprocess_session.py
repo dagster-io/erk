@@ -300,6 +300,92 @@ def test_generate_xml_tool_result_with_pruning() -> None:
     assert "Line 49" not in xml
 
 
+def test_generate_xml_tool_result_with_list_of_text_blocks() -> None:
+    """Test tool_result with content as list of typed text blocks.
+
+    Claude Code sometimes returns tool_result content as a list of
+    structured blocks with type="text".
+    """
+    entry = {
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_list_text",
+                    "content": [
+                        {"type": "text", "text": "First line of output"},
+                        {"type": "text", "text": "Second line of output"},
+                    ],
+                }
+            ],
+        },
+    }
+
+    xml = generate_compressed_xml([entry])
+
+    assert '<tool_result tool="toolu_list_text">' in xml
+    assert "First line of output" in xml
+    assert "Second line of output" in xml
+
+
+def test_generate_xml_tool_result_with_list_of_strings() -> None:
+    """Test tool_result with content as list of plain strings.
+
+    Some tool results return content as a simple list of strings.
+    """
+    entry = {
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_list_str",
+                    "content": ["Line one", "Line two", "Line three"],
+                }
+            ],
+        },
+    }
+
+    xml = generate_compressed_xml([entry])
+
+    assert '<tool_result tool="toolu_list_str">' in xml
+    assert "Line one" in xml
+    assert "Line two" in xml
+    assert "Line three" in xml
+
+
+def test_generate_xml_tool_result_with_mixed_content_list() -> None:
+    """Test tool_result with content as list of mixed types.
+
+    Content list may contain both typed text blocks and plain strings.
+    """
+    entry = {
+        "type": "user",
+        "message": {
+            "role": "user",
+            "content": [
+                {
+                    "type": "tool_result",
+                    "tool_use_id": "toolu_mixed",
+                    "content": [
+                        {"type": "text", "text": "Typed text block"},
+                        "Plain string item",
+                    ],
+                }
+            ],
+        },
+    }
+
+    xml = generate_compressed_xml([entry])
+
+    assert '<tool_result tool="toolu_mixed">' in xml
+    assert "Typed text block" in xml
+    assert "Plain string item" in xml
+
+
 # ============================================================================
 # 4. Log File Processing Tests (6 tests)
 # ============================================================================
