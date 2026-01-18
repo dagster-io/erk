@@ -87,15 +87,44 @@ pr_number = require_pr_number("https://github.com/owner/repo/pull/123")
 - Uses click.echo for output formatting
 - Only used in CLI command implementations
 
+### Extended Identifier Parsing
+
+For commands that need to accept user-friendly identifiers beyond URLs, use the `parse_*_identifier` functions:
+
+```python
+from erk.cli.github_parsing import (
+    parse_issue_identifier,
+    parse_pr_identifier,
+)
+
+# parse_issue_identifier handles three formats:
+issue_num = parse_issue_identifier("123")       # Plain number -> 123
+issue_num = parse_issue_identifier("P456")      # P-prefixed -> 456
+issue_num = parse_issue_identifier("p789")      # Case-insensitive -> 789
+issue_num = parse_issue_identifier("https://github.com/owner/repo/issues/42")  # URL -> 42
+
+# parse_pr_identifier handles two formats:
+pr_num = parse_pr_identifier("123")             # Plain number -> 123
+pr_num = parse_pr_identifier("https://github.com/owner/repo/pull/42")  # URL -> 42
+```
+
+**When to use:**
+
+- `parse_issue_identifier`: Plan-related commands (`erk plan co`, `erk plan view`, etc.) where users may use P-prefixed IDs
+- `parse_pr_identifier`: PR-related commands that accept PR numbers or URLs
+- `require_issue_number`/`require_pr_number`: When you only need URL parsing (no P-prefix support)
+
 ## Canonical Import Locations
 
-| Function               | Import From                 | Returns        |
-| ---------------------- | --------------------------- | -------------- |
-| `parse_pr_number`      | `erk_shared.github.parsing` | `int \| None`  |
-| `parse_issue_number`   | `erk_shared.github.parsing` | `int \| None`  |
-| `parse_repo_from_url`  | `erk_shared.github.parsing` | `str \| None`  |
-| `require_pr_number`    | `erk.cli.github_parsing`    | `int` or exits |
-| `require_issue_number` | `erk.cli.github_parsing`    | `int` or exits |
+| Function                 | Import From                 | Returns        |
+| ------------------------ | --------------------------- | -------------- |
+| `parse_pr_number`        | `erk_shared.github.parsing` | `int \| None`  |
+| `parse_issue_number`     | `erk_shared.github.parsing` | `int \| None`  |
+| `parse_repo_from_url`    | `erk_shared.github.parsing` | `str \| None`  |
+| `require_pr_number`      | `erk.cli.github_parsing`    | `int` or exits |
+| `require_issue_number`   | `erk.cli.github_parsing`    | `int` or exits |
+| `parse_issue_identifier` | `erk.cli.github_parsing`    | `int` or exits |
+| `parse_pr_identifier`    | `erk.cli.github_parsing`    | `int` or exits |
 
 ## Usage Guidelines
 
