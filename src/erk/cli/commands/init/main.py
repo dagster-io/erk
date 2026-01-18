@@ -594,9 +594,6 @@ def run_init(
     if hook_path.exists():
         user_output("")
         user_output(
-            click.style("📋 Post-init hook detected:", fg="cyan")
-            + f" {hook_path.relative_to(repo_root)}"
-        )
-        user_output(
-            "   Run " + click.style("/erk:post-init", fg="yellow") + " to execute project setup"
+            click.style("📋 Post-init hook detected.", fg="cyan")
+            + f" Now read and execute {hook_path.relative_to(repo_root)}"
         )
