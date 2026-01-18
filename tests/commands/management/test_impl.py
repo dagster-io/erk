@@ -1,11 +1,9 @@
 from datetime import datetime
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
-from erk.cli.commands.shell_integration import hidden_shell_cmd
 from erk.cli.shell_utils import render_cd_script
 from erk.core.context import context_for_test
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
@@ -402,48 +400,3 @@ def test_create_with_script_flag() -> None:
 
         # Cleanup
         script_path.unlink(missing_ok=True)
-
-
-def test_hidden_shell_cmd_wt_checkout_passthrough_on_help() -> None:
-    """Shell integration command signals passthrough for help.
-
-    Note: Top-level 'checkout' was removed from SHELL_INTEGRATION_COMMANDS.
-    Now testing 'wt checkout' which is still active in shell integration.
-    """
-    runner = CliRunner()
-    result = runner.invoke(hidden_shell_cmd, ["wt", "checkout", "--help"])
-
-    assert result.exit_code == 0
-    assert result.output.strip() == "__ERK_PASSTHROUGH__"
-
-
-def test_hidden_shell_cmd_wt_checkout_error_no_passthrough(tmp_path: Path) -> None:
-    """Shell integration command does NOT passthrough on errors.
-
-    When a shell-integrated command fails, we don't passthrough because that would
-    run the command again WITHOUT --script, showing misleading errors instead of
-    the actual failure reason.
-
-    Note: Top-level 'checkout' was removed from SHELL_INTEGRATION_COMMANDS.
-    Now testing 'wt checkout' error behavior which is still active.
-    """
-    runner = CliRunner()
-
-    # Mock subprocess.run to simulate command failure without spawning real subprocess
-    mock_result = MagicMock()
-    mock_result.returncode = 1
-    mock_result.stdout = ""
-
-    # Also mock _is_shell_integration_enabled to return True so the command proceeds
-    with patch(
-        "erk.cli.shell_integration.handler._is_shell_integration_enabled", return_value=True
-    ):
-        with patch("erk.cli.shell_integration.handler.subprocess.run", return_value=mock_result):
-            # Try to checkout - subprocess mock returns failure
-            result = runner.invoke(hidden_shell_cmd, ["wt", "checkout", "test-worktree"])
-
-            # Should fail with non-zero exit code but NOT passthrough
-            # Passthrough would run command again without --script, showing wrong error
-            assert result.exit_code != 0
-            # No passthrough marker - error is handled directly by shell integration
-            assert "__ERK_PASSTHROUGH__" not in result.output

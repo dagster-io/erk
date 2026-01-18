@@ -65,8 +65,6 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
-**CRITICAL: Before adding a command with --script flag** → Read [CLI Script Mode](cli/script-mode.md) first. Must register in SHELL_INTEGRATION_COMMANDS with all alias variants (e.g., br land, branch land).
-
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
 **CRITICAL: Before adding --force flag to a CLI command** → Read [Code Conventions](conventions.md) first. Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)

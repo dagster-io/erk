@@ -31,7 +31,6 @@ from erk.core.capabilities.registry import (
     list_required_capabilities,
 )
 from erk.core.capabilities.ruff_format import RuffFormatCapability
-from erk.core.capabilities.shell_integration import ShellIntegrationCapability
 from erk.core.capabilities.skills import (
     DignifiedPythonCapability,
     FakeDrivenTestingCapability,
@@ -39,8 +38,6 @@ from erk.core.capabilities.skills import (
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
-from erk_shared.gateway.console.fake import FakeConsole
-from erk_shared.gateway.shell.fake import FakeShell
 from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
 # =============================================================================
@@ -1155,7 +1152,6 @@ def test_default_capabilities_not_required() -> None:
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
         StatuslineCapability(claude_installation=None),
-        ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None),
     ]
 
     for cap in optional_caps:
@@ -1413,190 +1409,6 @@ def test_ruff_format_install_fails_with_none_repo_root() -> None:
 def test_ruff_format_is_not_required() -> None:
     """Test that RuffFormatCapability is not required."""
     cap = RuffFormatCapability()
-    assert cap.required is False
-
-
-# =============================================================================
-# Tests for ShellIntegrationCapability
-# =============================================================================
-
-
-def test_shell_integration_capability_properties() -> None:
-    """Test ShellIntegrationCapability has correct properties."""
-    cap = ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None)
-    assert cap.name == "shell-integration"
-    assert cap.scope == "user"
-    assert "shell" in cap.description.lower() or "wrapper" in cap.description.lower()
-    assert "marker" in cap.installation_check_description.lower()
-
-
-def test_shell_integration_capability_artifacts() -> None:
-    """Test ShellIntegrationCapability lists correct artifacts."""
-    cap = ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None)
-    artifacts = cap.artifacts
-
-    # RC file is user's existing file, not an artifact we own
-    assert len(artifacts) == 0
-
-
-def test_shell_integration_is_installed_false_when_shell_not_detected() -> None:
-    """Test is_installed returns False when shell cannot be detected."""
-    fake_shell = FakeShell(detected_shell=None)
-    cap = ShellIntegrationCapability(shell=fake_shell, console=None, shell_integration_dir=None)
-
-    # User-level capability ignores repo_root
-    assert cap.is_installed(None) is False
-
-
-def test_shell_integration_is_installed_false_when_not_in_rc(tmp_path: Path) -> None:
-    """Test is_installed returns False when marker not in RC file."""
-    rc_path = tmp_path / ".zshrc"
-    rc_path.write_text("# some other content\n", encoding="utf-8")
-
-    fake_shell = FakeShell(detected_shell=("zsh", rc_path))
-    cap = ShellIntegrationCapability(shell=fake_shell, console=None, shell_integration_dir=None)
-
-    assert cap.is_installed(None) is False
-
-
-def test_shell_integration_is_installed_true_when_marker_present(tmp_path: Path) -> None:
-    """Test is_installed returns True when marker is in RC file."""
-    rc_path = tmp_path / ".zshrc"
-    rc_path.write_text("# Erk shell integration\nerk() { ... }\n", encoding="utf-8")
-
-    fake_shell = FakeShell(detected_shell=("zsh", rc_path))
-    cap = ShellIntegrationCapability(shell=fake_shell, console=None, shell_integration_dir=None)
-
-    assert cap.is_installed(None) is True
-
-
-def test_shell_integration_install_fails_when_shell_not_detected() -> None:
-    """Test install fails when shell cannot be detected."""
-    fake_shell = FakeShell(detected_shell=None)
-    fake_console = FakeConsole(
-        is_interactive=True,
-        is_stdout_tty=True,
-        is_stderr_tty=True,
-        confirm_responses=[],
-    )
-    cap = ShellIntegrationCapability(
-        shell=fake_shell, console=fake_console, shell_integration_dir=None
-    )
-
-    result = cap.install(None)
-
-    assert result.success is False
-    assert "Could not detect shell" in result.message
-
-
-def test_shell_integration_install_already_configured(tmp_path: Path) -> None:
-    """Test install returns success when already configured."""
-    rc_path = tmp_path / ".zshrc"
-    rc_path.write_text("# Erk shell integration\nerk() { ... }\n", encoding="utf-8")
-
-    fake_shell = FakeShell(detected_shell=("zsh", rc_path))
-    fake_console = FakeConsole(
-        is_interactive=True,
-        is_stdout_tty=True,
-        is_stderr_tty=True,
-        confirm_responses=[],
-    )
-    cap = ShellIntegrationCapability(
-        shell=fake_shell, console=fake_console, shell_integration_dir=None
-    )
-
-    result = cap.install(None)
-
-    assert result.success is True
-    assert "already configured" in result.message
-
-
-def test_shell_integration_install_auto_modify(tmp_path: Path) -> None:
-    """Test install auto-modifies RC file when user confirms."""
-    rc_path = tmp_path / ".zshrc"
-    rc_path.write_text("# existing content\n", encoding="utf-8")
-
-    # Create shell integration directory with zsh wrapper
-    shell_integration_dir = tmp_path / "shell_integration"
-    shell_integration_dir.mkdir()
-    (shell_integration_dir / "zsh_wrapper.sh").write_text(
-        "erk() { echo 'wrapper'; }\n", encoding="utf-8"
-    )
-
-    fake_shell = FakeShell(detected_shell=("zsh", rc_path))
-    fake_console = FakeConsole(
-        is_interactive=True,
-        is_stdout_tty=True,
-        is_stderr_tty=True,
-        confirm_responses=[True],  # User confirms auto-modify
-    )
-    cap = ShellIntegrationCapability(
-        shell=fake_shell, console=fake_console, shell_integration_dir=shell_integration_dir
-    )
-
-    result = cap.install(None)
-
-    assert result.success is True
-    assert "Installed" in result.message
-
-    # Verify RC file was modified
-    rc_content = rc_path.read_text(encoding="utf-8")
-    assert "# Erk shell integration" in rc_content
-    assert "erk() { echo 'wrapper'; }" in rc_content
-
-    # Verify backup was created
-    backup_path = tmp_path / ".zshrc.erk-backup"
-    assert backup_path.exists()
-    assert backup_path.read_text(encoding="utf-8") == "# existing content\n"
-
-
-def test_shell_integration_install_manual_instructions(tmp_path: Path) -> None:
-    """Test install shows manual instructions when user declines auto-modify."""
-    rc_path = tmp_path / ".zshrc"
-    rc_path.write_text("# existing content\n", encoding="utf-8")
-
-    # Create shell integration directory with zsh wrapper
-    shell_integration_dir = tmp_path / "shell_integration"
-    shell_integration_dir.mkdir()
-    (shell_integration_dir / "zsh_wrapper.sh").write_text(
-        "erk() { echo 'wrapper'; }\n", encoding="utf-8"
-    )
-
-    fake_shell = FakeShell(detected_shell=("zsh", rc_path))
-    fake_console = FakeConsole(
-        is_interactive=True,
-        is_stdout_tty=True,
-        is_stderr_tty=True,
-        confirm_responses=[False],  # User declines auto-modify
-    )
-    cap = ShellIntegrationCapability(
-        shell=fake_shell, console=fake_console, shell_integration_dir=shell_integration_dir
-    )
-
-    result = cap.install(None)
-
-    assert result.success is True
-    assert "Manual installation" in result.message
-
-    # Verify RC file was NOT modified
-    rc_content = rc_path.read_text(encoding="utf-8")
-    assert rc_content == "# existing content\n"
-
-    # Verify instructions were shown
-    assert any("manually" in msg.lower() for msg in fake_console.messages)
-
-
-def test_shell_integration_capability_registered() -> None:
-    """Test that shell-integration capability is registered."""
-    cap = get_capability("shell-integration")
-    assert cap is not None
-    assert cap.name == "shell-integration"
-    assert cap.scope == "user"
-
-
-def test_shell_integration_is_not_required() -> None:
-    """Test that ShellIntegrationCapability is not required."""
-    cap = ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None)
     assert cap.required is False
 
 

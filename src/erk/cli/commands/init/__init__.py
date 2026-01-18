@@ -11,11 +11,6 @@ from erk.core.context import ErkContext
 @click.group("init", cls=ErkCommandGroup, invoke_without_command=True)
 @click.option("-f", "--force", is_flag=True, help="Overwrite existing repo config if present.")
 @click.option(
-    "--shell",
-    is_flag=True,
-    help="Show shell integration setup instructions (completion + auto-activation wrapper).",
-)
-@click.option(
     "--statusline",
     "statusline_only",
     is_flag=True,
@@ -25,14 +20,13 @@ from erk.core.context import ErkContext
     "--no-interactive",
     "no_interactive",
     is_flag=True,
-    help="Skip all interactive prompts (gitignore, permissions, shell setup).",
+    help="Skip all interactive prompts (gitignore, permissions).",
 )
 @click.pass_context
 def init_group(
     ctx: click.Context,
     *,
     force: bool,
-    shell: bool,
     statusline_only: bool,
     no_interactive: bool,
 ) -> None:
@@ -47,7 +41,6 @@ def init_group(
         run_init(
             erk_ctx,
             force=force,
-            shell=shell,
             statusline_only=statusline_only,
             no_interactive=no_interactive,
         )

@@ -27,8 +27,6 @@ from erk.core.claude_settings import (
 from erk.core.context import ErkContext
 from erk.core.init_utils import (
     add_gitignore_entry,
-    get_shell_wrapper_content,
-    has_shell_integration_in_rc,
     is_repo_erk_ified,
 )
 from erk.core.release_notes import get_current_version
@@ -37,9 +35,9 @@ from erk.core.repo_discovery import (
     discover_repo_or_sentinel,
     ensure_erk_metadata_dir,
 )
-from erk.core.shell import Shell
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
@@ -232,70 +230,6 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
     if env_added or scratch_added or impl_added or local_added:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
         user_output(f"Updated {gitignore_path}")
-
-
-def print_shell_setup_instructions(
-    shell: str, rc_file: Path, completion_line: str, wrapper_content: str
-) -> None:
-    """Print formatted shell integration setup instructions for manual installation.
-
-    Args:
-        shell: The shell type (e.g., "zsh", "bash", "fish")
-        rc_file: Path to the shell's rc file (e.g., ~/.zshrc)
-        completion_line: The completion command to add (e.g., "source <(erk completion zsh)")
-        wrapper_content: The full wrapper function content to add
-    """
-    user_output("\n" + "━" * 60)
-    user_output("Shell Integration Setup")
-    user_output("━" * 60)
-    user_output(f"\nDetected shell: {shell} ({rc_file})")
-    user_output("\nAdd the following to your rc file:\n")
-    user_output("# Erk shell integration")
-    user_output(wrapper_content)
-    user_output("# Erk completion")
-    user_output(f"{completion_line}")
-    user_output("\nThen reload your shell:")
-    user_output(f"  source {rc_file}")
-    user_output("━" * 60)
-
-
-def perform_shell_setup(shell_ops: Shell) -> bool:
-    """Print shell integration setup instructions for manual installation.
-
-    Returns True if instructions were printed, False if setup was skipped.
-    """
-    shell_info = shell_ops.detect_shell()
-    if not shell_info:
-        user_output("Unable to detect shell. Skipping shell integration setup.")
-        return False
-
-    shell, rc_file = shell_info
-
-    # Resolve symlinks to show the real file path in instructions
-    if rc_file.exists():
-        rc_file = rc_file.resolve()
-
-    user_output(f"\nDetected shell: {shell}")
-    user_output("Shell integration is an optional enhancement that provides:")
-    user_output("  - Tab completion for erk commands")
-    user_output("  - Seamless 'cd' behavior on 'erk br co' (instead of subshell)")
-    user_output("Note: erk works without this - worktree commands spawn subshells by default.")
-
-    if not click.confirm("\nSet up shell integration?", default=False):
-        user_output("Skipping. Erk will use subshells for worktree navigation (works great!).")
-        user_output("You can add shell integration later with 'erk init --shell'.")
-        return False
-
-    # Generate the instructions
-    completion_line = f"source <(erk completion {shell})"
-    # parent.parent.parent = commands/ (from init/main.py -> init/ -> commands/)
-    shell_integration_dir = Path(__file__).parent.parent.parent / "shell_integration"
-    wrapper_content = get_shell_wrapper_content(shell_integration_dir, shell)
-
-    # Print the formatted instructions
-    print_shell_setup_instructions(shell, rc_file, completion_line, wrapper_content)
-
-    return True
 
 
 def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
@@ -491,7 +425,6 @@ def run_init(
     ctx: ErkContext,
     *,
     force: bool,
-    shell: bool,
     statusline_only: bool,
     no_interactive: bool,
 ) -> None:
@@ -500,47 +433,8 @@ def run_init(
     Runs in three sequential steps:
     1. Repo verification - checks that you're in a git repository
     2. Project setup - erk-ifies the repo (if not already)
-    3. User setup - configures shell integration and Claude Code status line
+    3. User setup - configures Claude Code status line
     """
-    # Handle --shell flag: only do shell setup (doesn't require repo)
-    if shell:
-        if ctx.global_config is None:
-            config_path = ctx.erk_installation.config_path()
-            user_output(f"Global config not found at {config_path}")
-            user_output("Run 'erk init' without --shell to create global config first.")
-            raise SystemExit(1)
-
-        setup_complete = perform_shell_setup(ctx.shell)
-        if setup_complete:
-            # Show what we're about to write
-            config_path = ctx.erk_installation.config_path()
-            user_output("\nTo remember that shell setup is complete, erk needs to update:")
-            user_output(f"  {config_path}")
-
-            if not _console.confirm("Proceed with updating global config?", default=False):
-                user_output("\nShell integration instructions shown above.")
-                user_output("Run 'erk init --shell' to save this preference.")
-                return
-
-            # Update global config with shell_setup_complete=True
-            new_config = GlobalConfig(
-                erk_root=ctx.global_config.erk_root,
-                use_graphite=ctx.global_config.use_graphite,
-                shell_setup_complete=True,
-                github_planning=ctx.global_config.github_planning,
-                prompt_learn_on_land=ctx.global_config.prompt_learn_on_land,
-            )
-            try:
-                ctx.erk_installation.save_config(new_config)
-                user_output(click.style("✓", fg="green") + " Global config updated")
-            except PermissionError as e:
-                user_output(click.style("\n❌ Error: ", fg="red") + "Could not save global config")
-                user_output(str(e))
-                user_output("\nShell integration instructions shown above.")
-                user_output("You can use them now - erk just couldn't save.")
-                raise SystemExit(1) from e
-        return
-
     # =========================================================================
     # STEP 1: Repo Verification
     # =========================================================================
@@ -677,71 +571,6 @@ def run_init(
     # STEP 3: Optional Enhancements (always runs)
     # =========================================================================
     user_output("\nStep 3: Optional enhancements...")
-
-    # Skip interactive prompts if requested
-    interactive = not no_interactive
-
-    # 3a. Global config (if not exists) - already handled in step 2 if needed
-
-    # 3b. Shell integration
-    if interactive:
-        # Only check if global config exists
-        if ctx.global_config is not None or ctx.erk_installation.config_exists():
-            config_exists = ctx.erk_installation.config_exists()
-            fresh_config = ctx.erk_installation.load_config() if config_exists else None
-            if fresh_config is not None and not fresh_config.shell_setup_complete:
-                # Check if shell integration is already in the RC file
-                shell_info = ctx.shell.detect_shell()
-                already_in_rc = False
-                if shell_info is not None:
-                    shell_name, rc_path = shell_info
-                    already_in_rc = has_shell_integration_in_rc(rc_path)
-                    if already_in_rc:
-                        # Already configured - just show message and update config flag
-                        msg = f" Shell integration already configured ({shell_name})"
-                        user_output(click.style("✓", fg="green") + msg)
-                        # Update global config to remember this
-                        new_config = GlobalConfig(
-                            erk_root=fresh_config.erk_root,
-                            use_graphite=fresh_config.use_graphite,
-                            shell_setup_complete=True,
-                            github_planning=fresh_config.github_planning,
-                            prompt_learn_on_land=fresh_config.prompt_learn_on_land,
-                        )
-                        ctx.erk_installation.save_config(new_config)
-
-                if not already_in_rc:
-                    setup_complete = perform_shell_setup(ctx.shell)
-                    if setup_complete:
-                        # Show what we're about to write
-                        config_path = ctx.erk_installation.config_path()
-                        shell_msg = "To remember that shell setup is complete, erk needs to update:"
-                        user_output(f"\n  {shell_msg}")
-                        user_output(f"    {config_path}")
-
-                        prompt = "  Proceed with updating global config?"
-                        if not _console.confirm(prompt, default=False):
-                            user_output("\n  Shell integration instructions shown above.")
-                            user_output("  Run 'erk init --shell' to save this preference.")
-                        else:
-                            # Update global config with shell_setup_complete=True
-                            new_config = GlobalConfig(
-                                erk_root=fresh_config.erk_root,
-                                use_graphite=fresh_config.use_graphite,
-                                shell_setup_complete=True,
-                                github_planning=fresh_config.github_planning,
-                                prompt_learn_on_land=fresh_config.prompt_learn_on_land,
-                            )
-                            try:
-                                ctx.erk_installation.save_config(new_config)
-                                msg = click.style("  ✓", fg="green") + " Global config updated"
-                                user_output(msg)
-                            except PermissionError as e:
-                                error_msg = "Could not save global config"
-                                user_output(click.style("\n  ❌ Error: ", fg="red") + error_msg)
-                                user_output(f"  {e}")
-                                user_output("\n  Shell integration instructions shown above.")
-                                user_output("  You can use them now - erk just couldn't save.")
 
     # Show capability status
     all_caps = list_capabilities()
