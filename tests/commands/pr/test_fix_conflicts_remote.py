@@ -473,8 +473,8 @@ def _make_issue_info(
     number: int,
     body: str,
     *,
-    title: str | None = None,
-    state: str = "OPEN",
+    title: str | None,
+    state: str,
 ) -> IssueInfo:
     """Create an IssueInfo for testing."""
     now = datetime.now(UTC)
@@ -522,7 +522,7 @@ def test_fix_conflicts_remote_updates_dispatch_metadata_for_plan_branch(tmp_path
             last_learn_session=None,
             last_learn_at=None,
         )
-        plan_issue = _make_issue_info(123, plan_body, title="Fix auth bug")
+        plan_issue = _make_issue_info(123, plan_body, title="Fix auth bug", state="OPEN")
         issues_gateway = FakeGitHubIssues(issues={123: plan_issue})
 
         pr_info = _make_pr_info(456, branch_name, "OPEN", "Fix auth bug")
@@ -613,7 +613,9 @@ def test_fix_conflicts_remote_handles_missing_plan_header_gracefully(tmp_path: P
         branch_name = "P456-fix-bug-01-15-1430"
 
         # Issue exists but has no plan-header block (just plain text)
-        plain_issue = _make_issue_info(456, "This is a regular issue body without metadata")
+        plain_issue = _make_issue_info(
+            456, "This is a regular issue body without metadata", title=None, state="OPEN"
+        )
         issues_gateway = FakeGitHubIssues(issues={456: plain_issue})
 
         pr_info = _make_pr_info(789, branch_name, "OPEN", "Fix bug")

@@ -13,6 +13,7 @@ from erk.cli.constants import REBASE_WORKFLOW_NAME
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 from erk_shared.github.types import PRNotFound
 from erk_shared.naming import extract_leading_issue_number
@@ -153,8 +154,11 @@ def pr_fix_conflicts_remote(
     if plan_issue_number is not None:
         node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
         if node_id is not None:
-            try:
-                plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
+            plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
+            # LBYL: Check if plan-header block exists before attempting update
+            # This is expected to be missing for non-erk-plan issues that happen
+            # to have P{number} prefix in their branch name
+            if find_metadata_block(plan_issue.body, "plan-header") is not None:
                 updated_body = update_plan_header_dispatch(
                     issue_body=plan_issue.body,
                     run_id=run_id,
@@ -165,14 +169,6 @@ def pr_fix_conflicts_remote(
                 user_output(
                     click.style("✓", fg="green")
                     + f" Updated dispatch metadata on plan #{plan_issue_number}"
-                )
-            except ValueError:
-                # Plan issue doesn't have a plan-header block - skip silently
-                pass
-            except Exception as e:
-                user_output(
-                    click.style("Warning: ", fg="yellow")
-                    + f"Failed to update plan dispatch metadata: {e}"
                 )
 
     user_output("")
