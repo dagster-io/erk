@@ -1,5 +1,6 @@
 """Tests for activation script generation."""
 
+import base64
 from pathlib import Path
 
 import pytest
@@ -401,7 +402,12 @@ def test_print_activation_instructions_with_source_branch_and_force(
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
-    print_activation_instructions(script_path, source_branch="feature-branch", force=True)
+    print_activation_instructions(
+        script_path,
+        source_branch="feature-branch",
+        force=True,
+        mode="activate_only",
+    )
 
     captured = capsys.readouterr()
     assert "To activate the worktree environment:" in captured.err
@@ -419,7 +425,12 @@ def test_print_activation_instructions_with_source_branch_no_force(
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
-    print_activation_instructions(script_path, source_branch="feature-branch", force=False)
+    print_activation_instructions(
+        script_path,
+        source_branch="feature-branch",
+        force=False,
+        mode="activate_only",
+    )
 
     captured = capsys.readouterr()
     assert "To activate the worktree environment:" in captured.err
@@ -438,7 +449,12 @@ def test_print_activation_instructions_without_source_branch(
     script_path.parent.mkdir(parents=True)
     script_path.touch()
 
-    print_activation_instructions(script_path, source_branch=None, force=False)
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="activate_only",
+    )
 
     captured = capsys.readouterr()
     assert "To activate the worktree environment:" in captured.err
@@ -446,6 +462,153 @@ def test_print_activation_instructions_without_source_branch(
     # Should NOT contain delete hint
     assert "delete branch" not in captured.err
     assert "erk br delete" not in captured.err
+
+
+def test_print_activation_instructions_emits_osc52_clipboard_sequence(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions emits OSC 52 sequence to copy command to clipboard."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="activate_only",
+    )
+
+    captured = capsys.readouterr()
+
+    # Should contain OSC 52 escape sequence for clipboard
+    assert "\033]52;c;" in captured.err, "Expected OSC 52 clipboard sequence"
+    assert "\033\\" in captured.err, "Expected OSC 52 terminator"
+
+    # Verify the base64-encoded content is the source command
+    # OSC 52 format: ESC ] 52 ; c ; <base64> ESC \
+    osc52_start = captured.err.index("\033]52;c;") + 7
+    osc52_end = captured.err.index("\033\\", osc52_start)
+    encoded_content = captured.err[osc52_start:osc52_end]
+    decoded_content = base64.b64decode(encoded_content).decode("utf-8")
+    assert decoded_content == f"source {script_path}"
+
+
+def test_print_activation_instructions_shows_clipboard_hint(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions shows '(copied to clipboard)' hint."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="activate_only",
+    )
+
+    captured = capsys.readouterr()
+    assert "(copied to clipboard)" in captured.err
+
+
+def test_print_activation_instructions_implement_mode_shows_implement_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with mode='implement' shows implement command."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="implement",
+    )
+
+    captured = capsys.readouterr()
+    assert "To activate and start implementation:" in captured.err
+    assert f"source {script_path} && erk implement --here" in captured.err
+    # Should NOT contain --dangerous
+    assert "--dangerous" not in captured.err
+
+
+def test_print_activation_instructions_implement_dangerous_mode_shows_dangerous_flag(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with mode='implement_dangerous' shows --dangerous flag."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="implement_dangerous",
+    )
+
+    captured = capsys.readouterr()
+    assert "To activate and start implementation (skip permissions):" in captured.err
+    assert f"source {script_path} && erk implement --here --dangerous" in captured.err
+
+
+def test_print_activation_instructions_implement_dangerous_copies_dangerous_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with mode='implement_dangerous' copies dangerous command."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="implement_dangerous",
+    )
+
+    captured = capsys.readouterr()
+
+    # Extract and verify the OSC 52 clipboard content
+    osc52_start = captured.err.index("\033]52;c;") + 7
+    osc52_end = captured.err.index("\033\\", osc52_start)
+    encoded_content = captured.err[osc52_start:osc52_end]
+    decoded_content = base64.b64decode(encoded_content).decode("utf-8")
+    assert decoded_content == f"source {script_path} && erk implement --here --dangerous"
+
+
+def test_print_activation_instructions_implement_mode_copies_implement_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with mode='implement' copies implement command to clipboard."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="implement",
+    )
+
+    captured = capsys.readouterr()
+
+    # Extract and verify the OSC 52 clipboard content
+    osc52_start = captured.err.index("\033]52;c;") + 7
+    osc52_end = captured.err.index("\033\\", osc52_start)
+    encoded_content = captured.err[osc52_start:osc52_end]
+    decoded_content = base64.b64decode(encoded_content).decode("utf-8")
+    assert decoded_content == f"source {script_path} && erk implement --here"
 
 
 # land.sh script tests

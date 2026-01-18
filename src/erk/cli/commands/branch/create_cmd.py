@@ -2,7 +2,11 @@
 
 import click
 
-from erk.cli.activation import write_worktree_activate_script
+from erk.cli.activation import (
+    ActivationMode,
+    print_activation_instructions,
+    write_worktree_activate_script,
+)
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
@@ -28,6 +32,16 @@ from erk_shared.output.output import user_output
 )
 @click.option("--no-slot", is_flag=True, help="Create branch without slot assignment")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
+@click.option(
+    "--create-only",
+    is_flag=True,
+    help="Only create worktree, don't include implementation command",
+)
+@click.option(
+    "--dangerous",
+    is_flag=True,
+    help="Include --dangerous flag to skip permission prompts during implementation",
+)
 @click.pass_obj
 def branch_create(
     ctx: ErkContext,
@@ -35,6 +49,9 @@ def branch_create(
     for_plan: str | None,
     no_slot: bool,
     force: bool,
+    *,
+    create_only: bool,
+    dangerous: bool,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -160,14 +177,18 @@ def branch_create(
             post_create_commands=None,
         )
 
-        # Print source command
-        user_output("\nTo activate the worktree environment:")
-        user_output(f"  source {script_path}")
+        # Print single activation command based on flags
+        # Determine activation mode from CLI flags
+        if create_only:
+            mode: ActivationMode = "activate_only"
+        elif dangerous:
+            mode = "implement_dangerous"
+        else:
+            mode = "implement"
 
-        # Print combined activate + implement command
-        user_output("\nTo activate and start implementation:")
-        user_output(f"  source {script_path} && erk implement --here")
-
-        # Print dangerous mode option (skip permission prompts)
-        user_output("\nTo activate and start implementation (skip permissions):")
-        user_output(f"  source {script_path} && erk implement --here --dangerous")
+        print_activation_instructions(
+            script_path,
+            source_branch=None,
+            force=False,
+            mode=mode,
+        )

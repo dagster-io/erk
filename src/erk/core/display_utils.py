@@ -5,6 +5,7 @@ information in the CLI. All functions are pure (no I/O) and can be tested withou
 filesystem access.
 """
 
+import base64
 import re
 from datetime import datetime
 
@@ -27,6 +28,23 @@ def get_visible_length(text: str) -> int:
     # Remove OSC 8 hyperlink sequences (\033]8;;URL\033\\)
     text = re.sub(r"\033\]8;;[^\033]*\033\\", "", text)
     return len(text)
+
+
+def copy_to_clipboard_osc52(text: str) -> str:
+    """Return OSC 52 escape sequence to copy text to system clipboard.
+
+    OSC 52 is a terminal escape sequence that copies text to the clipboard.
+    Supported by iTerm2, Kitty, Alacritty, WezTerm, and other modern terminals.
+    Terminals that don't support it will silently ignore the sequence.
+
+    Args:
+        text: Text to copy to clipboard
+
+    Returns:
+        OSC 52 escape sequence string (invisible when printed)
+    """
+    encoded = base64.b64encode(text.encode("utf-8")).decode("ascii")
+    return f"\033]52;c;{encoded}\033\\"
 
 
 def get_pr_status_emoji(pr: PullRequestInfo) -> str:

@@ -12,8 +12,18 @@ related code.
 import shlex
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Literal
 
+import click
+
+from erk.core.display_utils import copy_to_clipboard_osc52
 from erk_shared.output.output import user_output
+
+# Mode for activation instructions output
+# - "activate_only": Show only `source <path>` (for navigation commands)
+# - "implement": Show `source <path> && erk implement --here` (default for prepare)
+# - "implement_dangerous": Show `source <path> && erk implement --here --dangerous`
+ActivationMode = Literal["activate_only", "implement", "implement_dangerous"]
 
 # SPECULATIVE: activation-scripts - set to False to disable this feature
 ENABLE_ACTIVATION_SCRIPTS = True
@@ -215,6 +225,7 @@ def print_activation_instructions(
     *,
     source_branch: str | None,
     force: bool,
+    mode: ActivationMode,
 ) -> None:
     """Print activation script instructions.
 
@@ -222,19 +233,43 @@ def print_activation_instructions(
     worktree creation or navigation to guide users through the opt-in shell
     integration workflow.
 
+    The primary activation command is auto-copied to the clipboard via OSC 52
+    (supported by iTerm2, Kitty, Alacritty, WezTerm, and other modern terminals).
+    Terminals without OSC 52 support will silently ignore the sequence.
+
     SPECULATIVE: activation-scripts (objective #4954)
 
     Args:
         script_path: Path to the activation script (.erk/bin/activate.sh)
         source_branch: If provided and force is True, shows delete command for this branch.
         force: If True and source_branch is provided, shows the delete hint.
+        mode: What command to show and copy:
+            - "activate_only": Just `source <path>` (for navigation commands)
+            - "implement": `source <path> && erk implement --here` (default for prepare)
+            - "implement_dangerous": Include --dangerous flag
     """
-    user_output("\nTo activate the worktree environment:")
-    user_output(f"  source {script_path}")
+    source_cmd = f"source {script_path}"
+
+    # Determine the command to show and copy based on mode
+    if mode == "activate_only":
+        primary_cmd = source_cmd
+        instruction = "To activate the worktree environment:"
+    elif mode == "implement_dangerous":
+        primary_cmd = f"{source_cmd} && erk implement --here --dangerous"
+        instruction = "To activate and start implementation (skip permissions):"
+    else:  # mode == "implement"
+        primary_cmd = f"{source_cmd} && erk implement --here"
+        instruction = "To activate and start implementation:"
+
+    user_output(f"\n{instruction}")
+    clipboard_hint = click.style("(copied to clipboard)", dim=True)
+    user_output(f"  {primary_cmd}  {clipboard_hint}")
+    # Emit OSC 52 to copy the command to clipboard (invisible escape sequence)
+    user_output(copy_to_clipboard_osc52(primary_cmd), nl=False)
 
     if source_branch is not None and force:
         user_output(f"\nTo activate and delete branch {source_branch}:")
-        user_output(f"  source {script_path} && erk br delete {source_branch}")
+        user_output(f"  {source_cmd} && erk br delete {source_branch}")
 
 
 def render_land_script() -> str:
