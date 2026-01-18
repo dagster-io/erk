@@ -234,6 +234,7 @@ class PlanDetailScreen(ModalScreen):
         self._auto_open_palette = auto_open_palette
         self._running_process: subprocess.Popen[str] | None = None
         self._stream_timeout_timer: Timer | None = None
+        self._stream_timeout_seconds: float = 0.0
 
     def on_mount(self) -> None:
         """Handle mount event - optionally open command palette."""
@@ -408,6 +409,7 @@ class PlanDetailScreen(ModalScreen):
 
         # Set timeout timer if enabled
         if timeout > 0:
+            self._stream_timeout_seconds = timeout
             self._stream_timeout_timer = self.set_timer(timeout, self._handle_stream_timeout)
 
         # Run subprocess in worker thread
@@ -495,7 +497,14 @@ class PlanDetailScreen(ModalScreen):
         panel = self._output_panel
         if panel is not None:
             panel.append_line("")
-            panel.append_line("⏱️  Command timed out after 30 seconds")
+            # Format timeout as minutes if >= 60 seconds for readability
+            timeout_secs = self._stream_timeout_seconds
+            if timeout_secs >= 60:
+                minutes = int(timeout_secs // 60)
+                timeout_str = f"{minutes} minute{'s' if minutes != 1 else ''}"
+            else:
+                timeout_str = f"{int(timeout_secs)} seconds"
+            panel.append_line(f"⏱️  Command timed out after {timeout_str}")
             panel.set_completed(success=False)
 
         # Mark command as no longer running
@@ -651,6 +660,7 @@ class PlanDetailScreen(ModalScreen):
                     ["erk", "land", str(row.pr_number), "-f", "--script"],
                     cwd=self._repo_root,
                     title=f"Landing PR #{row.pr_number}",
+                    timeout=600.0,
                 )
 
     def compose(self) -> ComposeResult:
