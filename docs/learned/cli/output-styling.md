@@ -337,6 +337,131 @@ Ensure.invariant("/" not in name, f"Invalid name '{name}' - path separators not 
 
 **Exit Codes:** All Ensure methods use exit code 1 for validation failures. This is consistent across all CLI commands.
 
+## Ensure Migration Decisions
+
+When migrating existing `user_output() + SystemExit(1)` patterns to use the `Ensure` class, follow this decision tree to determine the right approach.
+
+### Decision Tree for Migration
+
+1. **If error has a boolean condition** → Use `Ensure.invariant()`
+
+   ```python
+   # Before:
+   if not condition:
+       user_output(click.style("Error: ", fg="red") + "Something is wrong")
+       raise SystemExit(1)
+
+   # After:
+   Ensure.invariant(condition, "Something is wrong")
+   ```
+
+2. **If error returns a value when truthy** → Use `Ensure.truthy()`
+
+   ```python
+   # Before:
+   result = get_something()
+   if not result:
+       user_output(click.style("Error: ", fg="red") + "No results found")
+       raise SystemExit(1)
+
+   # After:
+   result = Ensure.truthy(get_something(), "No results found")
+   ```
+
+3. **If error checks for None specifically** → Use `Ensure.not_none()`
+
+   ```python
+   # Before:
+   value = might_return_none()
+   if value is None:
+       user_output(click.style("Error: ", fg="red") + "Value is required")
+       raise SystemExit(1)
+
+   # After:
+   value = Ensure.not_none(might_return_none(), "Value is required")
+   ```
+
+4. **If error has a specialized type** (PR, branch, session) → Use typed unwrapper
+
+   ```python
+   # Before:
+   pr = ctx.github.get_pr_for_branch(branch)
+   if isinstance(pr, PRNotFound):
+       user_output(click.style("Error: ", fg="red") + f"No PR for {branch}")
+       raise SystemExit(1)
+
+   # After:
+   pr = Ensure.unwrap_pr(ctx.github.get_pr_for_branch(branch), f"No PR for {branch}")
+   ```
+
+5. **If error has no clear condition or needs custom flow** → Keep as direct pattern
+
+### When NOT to Migrate
+
+**Pattern: Fallthrough/catch-all errors with no clear boolean condition**
+
+Some errors occur as the "else" case after multiple checks have been exhausted. There's no meaningful boolean condition to express - the error state IS the remaining case.
+
+```python
+# Example from navigation_helpers.py - NOT a migration candidate
+if on_trunk:
+    # Handle trunk case
+    ...
+elif has_parent:
+    # Handle parent case
+    ...
+else:
+    # Fallthrough: not on trunk, no parent - no clear condition to check
+    user_output(
+        click.style("Error: ", fg="red")
+        + "Could not determine parent branch from Graphite metadata"
+    )
+    raise SystemExit(1)
+```
+
+**Why not migrate:** Using `Ensure.invariant(True, ...)` or wrapping with an artificial condition would be misleading. The error isn't about a condition being false - it's about reaching a catch-all state.
+
+**Pattern: Errors with complex multi-line remediation messages**
+
+When the error message spans multiple lines with detailed instructions, the `Ensure` API may not accommodate the formatting needs cleanly.
+
+**Pattern: Errors that need conditional additional output before exit**
+
+If code needs to emit additional context (tables, lists, suggestions) before exiting, the direct pattern provides more control.
+
+### Migration Checklist
+
+When migrating a `user_output() + SystemExit(1)` pattern:
+
+1. **Identify the error condition** - Is there a clear boolean/truthy/None check?
+2. **Choose the right Ensure method** - Use the decision tree above
+3. **Write the error message** - Follow the Error Message Guidelines (no "Error: " prefix)
+4. **Test behavior is unchanged** - Error should trigger at the same conditions
+5. **Check for fallthrough cases** - If this is a catch-all, don't migrate
+
+### Good Migration Examples
+
+From `navigation_helpers.py` (PR #5187):
+
+```python
+# Before:
+if not children:
+    user_output(click.style("Error: ", fg="red") + "Already at the top...")
+    raise SystemExit(1)
+
+# After:
+children = Ensure.truthy(
+    ctx.branch_manager.get_child_branches(...),
+    "Already at the top of the stack (no child branches)"
+)
+```
+
+The migration works because:
+
+- There's a clear truthy condition (`children`)
+- The return value is used (`children` variable)
+- The error message is a single line
+
 ## Table Rendering Standards
 
 When displaying tabular data, use Rich tables with these conventions.
