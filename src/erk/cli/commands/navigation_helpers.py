@@ -275,7 +275,7 @@ def activate_root_repo(
                 source_branch=source_branch,
                 force=force,
                 mode="activate_only",
-                copy=False,
+                copy=True,
             )
         else:
             user_output(
@@ -358,7 +358,7 @@ def activate_worktree(
                 source_branch=source_branch,
                 force=force,
                 mode="activate_only",
-                copy=False,
+                copy=True,
             )
         else:
             user_output(

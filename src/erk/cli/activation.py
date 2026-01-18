@@ -258,10 +258,10 @@ def print_activation_instructions(
         primary_cmd = source_cmd
         instruction = "To activate the worktree environment:"
     elif mode == "implement_dangerous":
-        primary_cmd = f"{source_cmd} && erk implement --copy --dangerous"
+        primary_cmd = f"{source_cmd} && erk implement --dangerous"
         instruction = "To activate and start implementation (skip permissions):"
     else:  # mode == "implement"
-        primary_cmd = f"{source_cmd} && erk implement --copy"
+        primary_cmd = f"{source_cmd} && erk implement"
         instruction = "To activate and start implementation:"
 
     user_output(f"\n{instruction}")
