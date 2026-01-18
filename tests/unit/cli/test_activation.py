@@ -539,7 +539,7 @@ def test_print_activation_instructions_implement_mode_shows_implement_command(
 
     captured = capsys.readouterr()
     assert "To activate and start implementation:" in captured.err
-    assert f"source {script_path} && erk implement --here" in captured.err
+    assert f"source {script_path} && erk implement --copy" in captured.err
     # Should NOT contain --dangerous
     assert "--dangerous" not in captured.err
 
@@ -563,7 +563,7 @@ def test_print_activation_instructions_implement_dangerous_mode_shows_dangerous_
 
     captured = capsys.readouterr()
     assert "To activate and start implementation (skip permissions):" in captured.err
-    assert f"source {script_path} && erk implement --here --dangerous" in captured.err
+    assert f"source {script_path} && erk implement --copy --dangerous" in captured.err
 
 
 def test_print_activation_instructions_implement_dangerous_copies_dangerous_command(
@@ -590,7 +590,7 @@ def test_print_activation_instructions_implement_dangerous_copies_dangerous_comm
     osc52_end = captured.err.index("\033\\", osc52_start)
     encoded_content = captured.err[osc52_start:osc52_end]
     decoded_content = base64.b64decode(encoded_content).decode("utf-8")
-    assert decoded_content == f"source {script_path} && erk implement --here --dangerous"
+    assert decoded_content == f"source {script_path} && erk implement --copy --dangerous"
 
 
 def test_print_activation_instructions_implement_mode_copies_implement_command(
@@ -617,7 +617,7 @@ def test_print_activation_instructions_implement_mode_copies_implement_command(
     osc52_end = captured.err.index("\033\\", osc52_start)
     encoded_content = captured.err[osc52_start:osc52_end]
     decoded_content = base64.b64decode(encoded_content).decode("utf-8")
-    assert decoded_content == f"source {script_path} && erk implement --here"
+    assert decoded_content == f"source {script_path} && erk implement --copy"
 
 
 def test_print_activation_instructions_copy_false_no_osc52(

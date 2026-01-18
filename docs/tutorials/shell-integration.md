@@ -8,7 +8,7 @@ An optional power-user enhancement that provides automatic `cd` behavior when sw
 
 ```bash
 # Default workflow: erk outputs this, you copy-paste it
-source /path/to/.erk/activate.sh && erk implement --here
+source /path/to/.erk/activate.sh && erk implement --copy
 ```
 
 This explicit approach is portable, requires no setup, and makes it clear when you're changing directories.
