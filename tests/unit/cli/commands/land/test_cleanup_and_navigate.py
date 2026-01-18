@@ -18,6 +18,7 @@ from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.types import GitHubRepoId
+from tests.fakes.script_writer import FakeScriptWriter
 
 
 def _create_test_assignment(
@@ -807,8 +808,6 @@ def test_cleanup_and_navigate_outputs_noop_script_when_not_current_branch(
     Fix: When is_current_branch is False and script is True, output a no-op activation
     script that maintains the contract that --script always outputs a valid script path.
     """
-    from tests.fakes.script_writer import FakeScriptWriter
-
     worktree_path = tmp_path / "worktrees" / "feature-branch"
     worktree_path.mkdir(parents=True)
     main_repo_root = tmp_path / "main-repo"
