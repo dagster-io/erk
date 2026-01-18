@@ -588,3 +588,15 @@ def run_init(
                 user_output(click.style("  ○ ", fg="yellow") + cap_line + "  " + check_desc)
 
     user_output(click.style("\n✓", fg="green") + " Initialization complete!")
+
+    # Check for post-init prompt hook
+    hook_path = repo_root / ".erk" / "prompt-hooks" / "post-init.md"
+    if hook_path.exists():
+        user_output("")
+        user_output(
+            click.style("📋 Post-init hook detected:", fg="cyan")
+            + f" {hook_path.relative_to(repo_root)}"
+        )
+        user_output(
+            "   Run " + click.style("/erk:post-init", fg="yellow") + " to execute project setup"
+        )
