@@ -257,13 +257,11 @@ def check_unresolved_comments(
             click.style("⚠ ", fg="yellow")
             + f"PR #{pr_number} has {len(threads)} unresolved review comment(s)."
         )
-        if not ctx.console.is_stdin_interactive():
-            user_output(
-                click.style("Error: ", fg="red")
-                + "Cannot prompt for confirmation in non-interactive mode.\n"
-                + "Use --force to skip this check."
-            )
-            raise SystemExit(1)
+        Ensure.invariant(
+            ctx.console.is_stdin_interactive(),
+            "Cannot prompt for confirmation in non-interactive mode.\n"
+            + "Use --force to skip this check.",
+        )
         if not ctx.console.confirm("Continue anyway?", default=False):
             raise SystemExit(0)
 
@@ -297,24 +295,20 @@ def _execute_simple_land(
     pr_number = pr_details.number
 
     # Validate PR state
-    if pr_details.state != "OPEN":
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Pull request #{pr_number} is not open (state: {pr_details.state})."
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_details.state == "OPEN",
+        f"Pull request #{pr_number} is not open (state: {pr_details.state}).",
+    )
 
     # Validate PR base is trunk
     trunk = ctx.git.detect_trunk_branch(repo_root)
-    if pr_details.base_ref_name != trunk:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
-            + f"but should target '{trunk}'.\n\n"
-            + "The GitHub PR's base branch has diverged from your local stack.\n"
-            + "Update the PR base to trunk before landing."
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_details.base_ref_name == trunk,
+        f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
+        + f"but should target '{trunk}'.\n\n"
+        + "The GitHub PR's base branch has diverged from your local stack.\n"
+        + "Update the PR base to trunk before landing.",
+    )
 
     # Merge the PR via GitHub API
     user_output(f"Merging PR #{pr_number}...")
@@ -322,12 +316,11 @@ def _execute_simple_land(
     body = pr_details.body or None
     merge_result = ctx.github.merge_pr(repo_root, pr_number, subject=subject, body=body)
 
-    if merge_result is not True:
-        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-        user_output(
-            click.style("Error: ", fg="red") + f"Failed to merge PR #{pr_number}\n\n{error_detail}"
-        )
-        raise SystemExit(1)
+    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+    Ensure.invariant(
+        merge_result is True,
+        f"Failed to merge PR #{pr_number}\n\n{error_detail}",
+    )
 
     return pr_number
 
@@ -446,13 +439,11 @@ def _cleanup_and_navigate(
         else:
             # Non-slot worktree: preserve worktree, delete branch only
             # Check for uncommitted changes before switching branches
-            if ctx.git.has_uncommitted_changes(worktree_path):
-                user_output(
-                    click.style("Error: ", fg="red")
-                    + f"Worktree has uncommitted changes at {worktree_path}.\n"
-                    "Commit or stash your changes before landing."
-                )
-                raise SystemExit(1)
+            Ensure.invariant(
+                not ctx.git.has_uncommitted_changes(worktree_path),
+                f"Worktree has uncommitted changes at {worktree_path}.\n"
+                "Commit or stash your changes before landing.",
+            )
 
             if not force and not ctx.dry_run:
                 if not ctx.console.confirm(
@@ -735,12 +726,10 @@ def land(
             )
         else:
             # Landing a specific PR by number or URL
-            if parsed.pr_number is None:
-                user_output(
-                    click.style("Error: ", fg="red") + f"Invalid PR identifier: {target}\n"
-                    "Expected a PR number (e.g., 123) or GitHub URL."
-                )
-                raise SystemExit(1)
+            pr_number = Ensure.not_none(
+                parsed.pr_number,
+                f"Invalid PR identifier: {target}\nExpected a PR number (e.g., 123) or GitHub URL.",
+            )
             _land_specific_pr(
                 ctx,
                 repo=repo,
@@ -748,7 +737,7 @@ def land(
                 up_flag=up_flag,
                 force=force,
                 pull_flag=pull_flag,
-                pr_number=parsed.pr_number,
+                pr_number=pr_number,
                 no_delete=no_delete,
             )
 
@@ -780,34 +769,26 @@ def _land_current_branch(
     target_child_branch: str | None = None
     if up_flag:
         # --up requires Graphite for child branch tracking
-        if not ctx.branch_manager.is_graphite_managed():
-            user_output(
-                click.style("Error: ", fg="red")
-                + "--up flag requires Graphite for child branch tracking.\n\n"
-                + "To enable Graphite: erk config set use_graphite true\n\n"
-                + "Without --up, erk land will navigate to trunk after landing."
-            )
-            raise SystemExit(1)
+        Ensure.invariant(
+            ctx.branch_manager.is_graphite_managed(),
+            "--up flag requires Graphite for child branch tracking.\n\n"
+            + "To enable Graphite: erk config set use_graphite true\n\n"
+            + "Without --up, erk land will navigate to trunk after landing.",
+        )
 
-        children = ctx.branch_manager.get_child_branches(repo.root, current_branch)
-        if len(children) == 0:
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Cannot use --up: branch '{current_branch}' has no children.\n"
-                "Use 'erk land' without --up to return to trunk."
-            )
-            raise SystemExit(1)
-        elif len(children) > 1:
-            children_list = ", ".join(f"'{c}'" for c in children)
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"Cannot use --up: branch '{current_branch}' has multiple children: "
-                f"{children_list}.\n"
-                "Use 'erk land' without --up, then 'erk co <branch>' to choose."
-            )
-            raise SystemExit(1)
-        else:
-            target_child_branch = children[0]
+        children = Ensure.truthy(
+            ctx.branch_manager.get_child_branches(repo.root, current_branch),
+            f"Cannot use --up: branch '{current_branch}' has no children.\n"
+            "Use 'erk land' without --up to return to trunk.",
+        )
+        children_list = ", ".join(f"'{c}'" for c in children)
+        Ensure.invariant(
+            len(children) == 1,
+            f"Cannot use --up: branch '{current_branch}' has multiple children: "
+            f"{children_list}.\n"
+            "Use 'erk land' without --up, then 'erk co <branch>' to choose.",
+        )
+        target_child_branch = children[0]
 
     # Look up PR for current branch to check unresolved comments BEFORE merge
     pr_details = ctx.github.get_pr_for_branch(repo.root, current_branch)
@@ -825,16 +806,13 @@ def _land_current_branch(
     # Step 1: Execute land (merges the PR)
     if not ctx.branch_manager.is_graphite_managed():
         # Simple GitHub-only merge path (no stack validation)
-        if isinstance(pr_details, PRNotFound):
-            user_output(
-                click.style("Error: ", fg="red")
-                + f"No pull request found for branch '{current_branch}'."
-            )
-            raise SystemExit(1)
-        merged_pr_number = _execute_simple_land(
-            ctx, repo_root=repo.root, branch=current_branch, pr_details=pr_details
+        unwrapped_pr = Ensure.unwrap_pr(
+            pr_details, f"No pull request found for branch '{current_branch}'."
         )
-        pr_body = pr_details.body or ""
+        merged_pr_number = _execute_simple_land(
+            ctx, repo_root=repo.root, branch=current_branch, pr_details=unwrapped_pr
+        )
+        pr_body = unwrapped_pr.body or ""
     else:
         # Full Graphite-aware path with stack validation
         # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
@@ -897,20 +875,18 @@ def _land_specific_pr(
 ) -> None:
     """Land a specific PR by number."""
     # Validate --up is not used with PR argument
-    if up_flag:
-        user_output(
-            click.style("Error: ", fg="red") + "Cannot use --up when specifying a PR.\n"
-            "The --up flag only works when landing the current branch's PR."
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        not up_flag,
+        "Cannot use --up when specifying a PR.\n"
+        "The --up flag only works when landing the current branch's PR.",
+    )
 
     # Fetch PR details
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    pr_details = ctx.github.get_pr(main_repo_root, pr_number)
-
-    if isinstance(pr_details, PRNotFound):
-        user_output(click.style("Error: ", fg="red") + f"Pull request #{pr_number} not found.")
-        raise SystemExit(1)
+    pr_details = Ensure.unwrap_pr(
+        ctx.github.get_pr(main_repo_root, pr_number),
+        f"Pull request #{pr_number} not found.",
+    )
 
     # Resolve branch name (handles fork PRs)
     branch = resolve_branch_for_pr(ctx, main_repo_root, pr_details)
@@ -927,25 +903,21 @@ def _land_specific_pr(
         check_clean_working_tree(ctx)
 
     # Validate PR state
-    if pr_details.state != "OPEN":
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Pull request #{pr_number} is not open (state: {pr_details.state})."
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_details.state == "OPEN",
+        f"Pull request #{pr_number} is not open (state: {pr_details.state}).",
+    )
 
     # Validate PR base is trunk
     trunk = ctx.git.detect_trunk_branch(main_repo_root)
-    if pr_details.base_ref_name != trunk:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
-            + f"but should target '{trunk}'.\n\n"
-            + "The GitHub PR's base branch has diverged from your local stack.\n"
-            + "Run: gt restack && gt submit\n"
-            + f"Then retry: erk land {pr_number}"
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_details.base_ref_name == trunk,
+        f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
+        + f"but should target '{trunk}'.\n\n"
+        + "The GitHub PR's base branch has diverged from your local stack.\n"
+        + "Run: gt restack && gt submit\n"
+        + f"Then retry: erk land {pr_number}",
+    )
 
     # Check for unresolved comments BEFORE merge
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
@@ -964,12 +936,11 @@ def _land_specific_pr(
     body = pr_details.body or None
     merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
 
-    if merge_result is not True:
-        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-        user_output(
-            click.style("Error: ", fg="red") + f"Failed to merge PR #{pr_number}\n\n{error_detail}"
-        )
-        raise SystemExit(1)
+    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+    Ensure.invariant(
+        merge_result is True,
+        f"Failed to merge PR #{pr_number}\n\n{error_detail}",
+    )
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
 
@@ -1018,13 +989,10 @@ def _land_by_branch(
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
     # Look up PR for branch
-    pr_details = ctx.github.get_pr_for_branch(main_repo_root, branch_name)
-
-    if isinstance(pr_details, PRNotFound):
-        user_output(
-            click.style("Error: ", fg="red") + f"No pull request found for branch '{branch_name}'."
-        )
-        raise SystemExit(1)
+    pr_details = Ensure.unwrap_pr(
+        ctx.github.get_pr_for_branch(main_repo_root, branch_name),
+        f"No pull request found for branch '{branch_name}'.",
+    )
 
     pr_number = pr_details.number
 
@@ -1040,25 +1008,21 @@ def _land_by_branch(
         check_clean_working_tree(ctx)
 
     # Validate PR state
-    if pr_details.state != "OPEN":
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"Pull request #{pr_number} is not open (state: {pr_details.state})."
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_details.state == "OPEN",
+        f"Pull request #{pr_number} is not open (state: {pr_details.state}).",
+    )
 
     # Validate PR base is trunk
     trunk = ctx.git.detect_trunk_branch(main_repo_root)
-    if pr_details.base_ref_name != trunk:
-        user_output(
-            click.style("Error: ", fg="red")
-            + f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
-            + f"but should target '{trunk}'.\n\n"
-            + "The GitHub PR's base branch has diverged from your local stack.\n"
-            + "Run: gt restack && gt submit\n"
-            + f"Then retry: erk land {branch_name}"
-        )
-        raise SystemExit(1)
+    Ensure.invariant(
+        pr_details.base_ref_name == trunk,
+        f"PR #{pr_number} targets '{pr_details.base_ref_name}' "
+        + f"but should target '{trunk}'.\n\n"
+        + "The GitHub PR's base branch has diverged from your local stack.\n"
+        + "Run: gt restack && gt submit\n"
+        + f"Then retry: erk land {branch_name}",
+    )
 
     # Check for unresolved comments BEFORE merge
     check_unresolved_comments(ctx, main_repo_root, pr_number, force=force)
@@ -1077,12 +1041,11 @@ def _land_by_branch(
     body = pr_details.body or None
     merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
 
-    if merge_result is not True:
-        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-        user_output(
-            click.style("Error: ", fg="red") + f"Failed to merge PR #{pr_number}\n\n{error_detail}"
-        )
-        raise SystemExit(1)
+    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+    Ensure.invariant(
+        merge_result is True,
+        f"Failed to merge PR #{pr_number}\n\n{error_detail}",
+    )
 
     user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
 
