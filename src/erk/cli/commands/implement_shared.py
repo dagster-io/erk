@@ -88,6 +88,7 @@ def implement_common_options(fn: F) -> F:
         help="Execute commands via subprocess without user interaction",
     )(fn)
     fn = click.option(
+        "-d",
         "--dangerous",
         is_flag=True,
         default=False,

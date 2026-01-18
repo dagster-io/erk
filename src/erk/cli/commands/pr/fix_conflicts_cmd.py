@@ -13,7 +13,7 @@ from erk.core.context import ErkContext
 
 @click.command("fix-conflicts")
 @click.option(
-    "-f",
+    "-d",
     "--dangerous",
     is_flag=True,
     help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",

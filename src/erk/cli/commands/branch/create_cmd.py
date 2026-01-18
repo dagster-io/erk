@@ -38,6 +38,7 @@ from erk_shared.output.output import user_output
     help="Only create worktree, don't include implementation command",
 )
 @click.option(
+    "-d",
     "--dangerous",
     is_flag=True,
     help="Include --dangerous flag to skip permission prompts during implementation",

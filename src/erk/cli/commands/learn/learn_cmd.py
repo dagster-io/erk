@@ -68,6 +68,7 @@ def _extract_issue_number(identifier: str) -> int | None:
     help="Launch Claude to extract insights without prompting",
 )
 @click.option(
+    "-d",
     "--dangerous",
     is_flag=True,
     help="Launch Claude with --dangerously-skip-permissions (skip all permission prompts)",
