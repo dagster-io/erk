@@ -214,22 +214,6 @@ impl_dir = repo_root / ".impl"
 
 ## Shell Concepts
 
-### erk-sh-bootstrap
-
-Zero-dependency PyPI package that enables the `erk` command to work globally without global installation.
-
-**How it works:**
-
-1. Shell wrapper calls `uvx erk-sh-bootstrap`
-2. Bootstrap walks up from cwd looking for `.venv/bin/erk`
-3. If found, delegates via `os.execv()` to project-local erk
-
-**Location**: `packages/erk-sh-bootstrap/`
-
-**Publishing**: Separate from main erk, version 1.0.0. Only republish when delegation logic changes.
-
-**Related**: [Shell Integration Architecture](architecture/shell-integration-architecture.md)
-
 ### Passthrough Mode
 
 Shell integration mode where commands run directly without script sourcing.
@@ -237,8 +221,6 @@ Shell integration mode where commands run directly without script sourcing.
 **Marker**: `__ERK_PASSTHROUGH__`
 
 **When used**: Commands that don't need directory switching (e.g., `erk version`, `erk doctor`)
-
-**Related**: [Shell Integration Architecture](architecture/shell-integration-architecture.md)
 
 ### shell_integration (config option)
 
@@ -281,7 +263,6 @@ type erk
 
 **Related**:
 
-- [Shell Integration Architecture](architecture/shell-integration-architecture.md) - Full architecture documentation
 - [Shell Integration Constraint](architecture/shell-integration-constraint.md) - The Unix process model limitation
 
 ---
