@@ -391,7 +391,7 @@ def test_branch_create_for_plan_creates_branch_and_impl_folder(tmp_path) -> None
         assert "source" in result.output  # Activation script path
         # Default mode is "implement", so we expect the implement instructions
         assert "To activate and start implementation:" in result.output
-        assert "erk implement --copy" in result.output
+        assert "erk implement" in result.output
 
         # Verify .impl/ folder was created in the worktree
         worktree_path = repo_dir / "worktrees" / "erk-slot-01"

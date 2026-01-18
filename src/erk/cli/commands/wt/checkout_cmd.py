@@ -135,5 +135,5 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
                 source_branch=None,
                 force=False,
                 mode="activate_only",
-                copy=False,
+                copy=True,
             )

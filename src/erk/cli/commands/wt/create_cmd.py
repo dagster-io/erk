@@ -981,7 +981,7 @@ def create_wt(
                 source_branch=None,
                 force=False,
                 mode="activate_only",
-                copy=False,
+                copy=True,
             )
     else:
         # Shell integration not detected - provide setup instructions
@@ -995,7 +995,7 @@ def create_wt(
                 source_branch=None,
                 force=False,
                 mode="activate_only",
-                copy=False,
+                copy=True,
             )
 
 
