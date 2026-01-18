@@ -150,7 +150,9 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
                     worktree_path=target_wt_path,
                     post_create_commands=None,
                 )
-                print_activation_instructions(script_path, source_branch=current_branch)
+                print_activation_instructions(
+                    script_path, source_branch=current_branch, force=force
+                )
 
         # Perform cleanup: unallocate worktree (slot-aware) and delete branch
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
@@ -168,5 +170,6 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
             preserve_relative_path=True,
             post_cd_commands=None,
             source_branch=current_branch,
+            force=force,
         )
         # activate_worktree raises SystemExit(0), code below is unreachable

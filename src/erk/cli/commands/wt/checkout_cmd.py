@@ -59,6 +59,7 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
             command_name="co",
             post_cd_commands=None,
             source_branch=None,
+            force=False,
         )
         return  # activate_root_repo raises SystemExit, but explicit return for clarity
 
@@ -129,4 +130,4 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
                 worktree_path=worktree_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(activation_script_path, source_branch=None)
+            print_activation_instructions(activation_script_path, source_branch=None, force=False)

@@ -704,6 +704,7 @@ def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path
             command_name="test",
             post_cd_commands=None,
             source_branch=None,
+            force=False,
         )
 
     # Assert: Function exited successfully
