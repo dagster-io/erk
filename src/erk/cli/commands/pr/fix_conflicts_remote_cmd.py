@@ -56,8 +56,7 @@ def _maybe_update_plan_dispatch_metadata(
     )
     ctx.issues.update_issue_body(repo.root, plan_issue_number, updated_body)
     user_output(
-        click.style("✓", fg="green")
-        + f" Updated dispatch metadata on plan #{plan_issue_number}"
+        click.style("✓", fg="green") + f" Updated dispatch metadata on plan #{plan_issue_number}"
     )
 
 
