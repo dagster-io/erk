@@ -49,6 +49,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("2", "copy_implement_dangerous", "Dangerous"),
         Binding("3", "copy_implement_yolo", "Yolo"),
         Binding("4", "copy_submit", "Submit"),
+        Binding("5", "copy_fix_conflicts_remote", "Fix Conflicts"),
     ]
 
     DEFAULT_CSS = """
@@ -342,6 +343,13 @@ class PlanDetailScreen(ModalScreen):
         cmd = f"erk plan submit {self._row.issue_number}"
         self._copy_and_notify(cmd)
 
+    def action_copy_fix_conflicts_remote(self) -> None:
+        """Copy remote conflict resolution command to clipboard."""
+        if self._row.pr_number is None:
+            return
+        cmd = f"erk pr fix-conflicts-remote {self._row.pr_number}"
+        self._copy_and_notify(cmd)
+
     def action_copy_output_logs(self) -> None:
         """Copy command output logs to clipboard."""
         if self._output_panel is None:
@@ -606,6 +614,12 @@ class PlanDetailScreen(ModalScreen):
             cmd = f"erk plan submit {row.issue_number}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_fix_conflicts_remote":
+            if row.pr_number is not None:
+                cmd = f"erk pr fix-conflicts-remote {row.pr_number}"
+                executor.copy_to_clipboard(cmd)
+                executor.notify(f"Copied: {cmd}")
 
         elif command_id == "close_plan":
             if row.issue_url:

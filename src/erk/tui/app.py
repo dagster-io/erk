@@ -568,6 +568,11 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
+        elif command_id == "copy_fix_conflicts_remote":
+            cmd = f"erk pr fix-conflicts-remote {row.pr_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
         elif command_id == "close_plan":
             if row.issue_url:
                 # Show starting toast and run async - no modal blocking
