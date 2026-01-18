@@ -94,6 +94,46 @@ table.add_row(issue_id, ...)
 - On unsupported terminals, links display as normal colored text
 - No action required for graceful degradation
 
+## Clipboard Copy (OSC 52)
+
+The CLI supports automatic clipboard copy using OSC 52 escape sequences. When emitted, supported terminals copy the text to the system clipboard silently.
+
+### When to Use
+
+Copy text to clipboard when:
+
+- Providing a command the user should paste and run
+- The command is long/complex and manual copying would be error-prone
+- There's a clear "primary" command among multiple options
+
+### Implementation Pattern
+
+```python
+import click
+
+from erk.core.display_utils import copy_to_clipboard_osc52
+from erk_shared.output.output import user_output
+
+# Display command with hint
+cmd = f"source {script_path}"
+clipboard_hint = click.style("(copied to clipboard)", dim=True)
+user_output(f"  {cmd}  {clipboard_hint}")
+
+# Emit invisible OSC 52 sequence
+user_output(copy_to_clipboard_osc52(cmd), nl=False)
+```
+
+### Terminal Compatibility
+
+- Supported: iTerm2, Kitty, Alacritty, WezTerm, Terminal.app (macOS 13+)
+- Unsupported terminals silently ignore the sequence (no errors)
+- No action required for graceful degradation
+
+### Reference Implementation
+
+- `src/erk/cli/activation.py` - `print_activation_instructions()` function
+- `src/erk/core/display_utils.py` - `copy_to_clipboard_osc52()` function
+
 ## Emoji Conventions
 
 Standard emojis for CLI output:
