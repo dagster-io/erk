@@ -24,7 +24,7 @@ Prompt hooks are markdown files that provide AI-readable instructions at specifi
 
 ### `post-init.md` — New Developer Setup
 
-**When:** After `erk init` completes (auto-executed by Claude)
+**When:** After `erk init` completes (auto-executed by Claude via the [auto-execution pattern](../cli/auto-execution-pattern.md))
 
 **Purpose:** Project-specific setup for developers joining the project.
 
