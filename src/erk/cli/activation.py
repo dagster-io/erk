@@ -212,6 +212,7 @@ def print_activation_instructions(
     script_path: Path,
     *,
     source_branch: str | None,
+    force: bool,
 ) -> None:
     """Print activation script instructions.
 
@@ -223,15 +224,15 @@ def print_activation_instructions(
 
     Args:
         script_path: Path to the activation script (.erk/bin/activate.sh)
-        source_branch: If provided, shows delete command for this branch
-            instead of the implement hint.
+        source_branch: If provided and force is True, shows delete command for this branch.
+        force: If True and source_branch is provided, shows the delete hint.
     """
     from erk_shared.output.output import user_output
 
     user_output("\nTo activate the worktree environment:")
     user_output(f"  source {script_path}")
 
-    if source_branch is not None:
+    if source_branch is not None and force:
         user_output(f"\nTo activate and delete branch {source_branch}:")
         user_output(f"  source {script_path} && erk br delete {source_branch}")
 

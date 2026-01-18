@@ -128,7 +128,9 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                         worktree_path=root_path,
                         post_create_commands=None,
                     )
-                    print_activation_instructions(script_path, source_branch=current_branch)
+                    print_activation_instructions(
+                        script_path, source_branch=current_branch, force=force
+                    )
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
             unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
@@ -144,6 +146,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                 command_name="down",
                 post_cd_commands=None,
                 source_branch=current_branch,
+                force=force,
             )
 
     # Resolve target branch to actual worktree path
@@ -184,7 +187,9 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                     worktree_path=target_wt_path,
                     post_create_commands=None,
                 )
-                print_activation_instructions(script_path, source_branch=current_branch)
+                print_activation_instructions(
+                    script_path, source_branch=current_branch, force=force
+                )
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
         unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
@@ -202,4 +207,5 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             preserve_relative_path=True,
             post_cd_commands=None,
             source_branch=current_branch,
+            force=force,
         )

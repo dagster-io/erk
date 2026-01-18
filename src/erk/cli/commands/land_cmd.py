@@ -546,6 +546,7 @@ def _navigate_after_land(
             preserve_relative_path=True,
             post_cd_commands=None,
             source_branch=None,
+            force=False,
         )
         # activate_worktree raises SystemExit(0)
     else:
@@ -568,6 +569,7 @@ def _navigate_after_land(
             command_name="land",
             post_cd_commands=None,
             source_branch=None,
+            force=False,
         )
         # activate_root_repo raises SystemExit(0)
 
