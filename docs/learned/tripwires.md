@@ -63,6 +63,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](ci/prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
 
+**CRITICAL: Before using ctx.plan_store.get_plan() in CLI code** → Read [Branch Create --for-plan Option](cli/branch-create-for-plan.md) first. Use try/except with RuntimeError (not custom exceptions). Plan store methods raise RuntimeError on not-found. Wrap with click.ClickException for user-friendly display.
+
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
