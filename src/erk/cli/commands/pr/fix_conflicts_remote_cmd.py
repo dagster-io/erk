@@ -20,6 +20,47 @@ from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
+def _maybe_update_plan_dispatch_metadata(
+    ctx: "ErkContext",
+    repo: "RepoContext",
+    branch_name: str,
+    run_id: str,
+) -> None:
+    """Update plan issue dispatch metadata if branch follows P{issue}-pattern.
+
+    Uses early returns to skip updates when:
+    - Branch doesn't match P{issue_number} pattern
+    - Workflow run node ID is not available
+    - Issue doesn't have a plan-header metadata block
+    """
+    plan_issue_number = extract_leading_issue_number(branch_name)
+    if plan_issue_number is None:
+        return
+
+    node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
+    if node_id is None:
+        return
+
+    plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
+    # LBYL: Check if plan-header block exists before attempting update
+    # This is expected to be missing for non-erk-plan issues that happen
+    # to have P{number} prefix in their branch name
+    if find_metadata_block(plan_issue.body, "plan-header") is None:
+        return
+
+    updated_body = update_plan_header_dispatch(
+        issue_body=plan_issue.body,
+        run_id=run_id,
+        node_id=node_id,
+        dispatched_at=ctx.time.now().isoformat(),
+    )
+    ctx.issues.update_issue_body(repo.root, plan_issue_number, updated_body)
+    user_output(
+        click.style("✓", fg="green")
+        + f" Updated dispatch metadata on plan #{plan_issue_number}"
+    )
+
+
 @click.command("fix-conflicts-remote")
 @click.argument("pr_number", type=int, required=False)
 @click.option(
@@ -149,27 +190,7 @@ def pr_fix_conflicts_remote(
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered")
 
-    # Update plan issue dispatch metadata if branch follows P{issue}-pattern
-    plan_issue_number = extract_leading_issue_number(branch_name)
-    if plan_issue_number is not None:
-        node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
-        if node_id is not None:
-            plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
-            # LBYL: Check if plan-header block exists before attempting update
-            # This is expected to be missing for non-erk-plan issues that happen
-            # to have P{number} prefix in their branch name
-            if find_metadata_block(plan_issue.body, "plan-header") is not None:
-                updated_body = update_plan_header_dispatch(
-                    issue_body=plan_issue.body,
-                    run_id=run_id,
-                    node_id=node_id,
-                    dispatched_at=ctx.time.now().isoformat(),
-                )
-                ctx.issues.update_issue_body(repo.root, plan_issue_number, updated_body)
-                user_output(
-                    click.style("✓", fg="green")
-                    + f" Updated dispatch metadata on plan #{plan_issue_number}"
-                )
+    _maybe_update_plan_dispatch_metadata(ctx, repo, branch_name, run_id)
 
     user_output("")
 
