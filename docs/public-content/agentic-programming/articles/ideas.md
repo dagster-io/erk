@@ -70,7 +70,7 @@ Topics to explore in agentic programming articles.
 
 ### Advanced Techniques
 
-- **Planning workflow with erk enrichment** - How to plan implementations, create worktrees from plans, and customize the enrichment step to inject project-specific context before autonomous execution
+- **Planning workflow with erk** - How to plan implementations, create worktrees from plans, and structure project-specific context for autonomous execution
 
 - **Parallel execution of worktrees** - Leveraging git worktrees to run multiple feature branches in parallel, enabling true concurrent development workflows
 

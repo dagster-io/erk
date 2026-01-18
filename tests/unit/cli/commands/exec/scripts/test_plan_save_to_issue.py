@@ -53,32 +53,6 @@ def test_plan_save_to_issue_success() -> None:
     assert output["success"] is True
     assert output["issue_number"] == 1
     assert output["title"] == "My Feature"
-    assert output["enriched"] is False
-
-
-def test_plan_save_to_issue_enriched_plan() -> None:
-    """Test detection of enriched plan."""
-    fake_gh = FakeGitHubIssues()
-    plan_content = """# My Feature
-
-## Enrichment Details
-
-Context here"""
-    fake_store = FakeClaudeInstallation.for_test(plans={"enriched-plan": plan_content})
-    runner = CliRunner()
-
-    result = runner.invoke(
-        plan_save_to_issue,
-        ["--format", "json"],
-        obj=ErkContext.for_test(
-            github_issues=fake_gh,
-            claude_installation=fake_store,
-        ),
-    )
-
-    assert result.exit_code == 0
-    output = json.loads(result.output)
-    assert output["enriched"] is True
 
 
 def test_plan_save_to_issue_no_plan() -> None:
@@ -160,7 +134,6 @@ def test_plan_save_to_issue_display_format() -> None:
     assert "Plan saved to GitHub issue #1" in result.output
     assert "Title: Test Feature" in result.output
     assert "URL: " in result.output
-    assert "Enrichment: No" in result.output
     # Verify Next steps section with copy/pasteable commands
     assert "Next steps:" in result.output
     assert "View Issue: gh issue view 1 --web" in result.output

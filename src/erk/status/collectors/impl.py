@@ -3,8 +3,6 @@
 import logging
 from pathlib import Path
 
-import frontmatter
-
 from erk.core.context import ErkContext
 from erk.status.collectors.base import StatusCollector
 from erk.status.models.status_data import PlanStatus
@@ -14,41 +12,6 @@ from erk_shared.impl_folder import (
 )
 
 logger = logging.getLogger(__name__)
-
-
-def detect_enriched_plan(repo_root: Path) -> tuple[Path | None, str | None]:
-    """Detect enriched plan file at repository root.
-
-    Scans for *-plan.md files and checks for erk_plan marker.
-
-    Args:
-        repo_root: Repository root path
-
-    Returns:
-        Tuple of (path, filename) or (None, None) if not found
-    """
-    if not repo_root.exists():
-        return None, None
-
-    # Find all *-plan.md files
-    plan_files = list(repo_root.glob("*-plan.md"))
-
-    if not plan_files:
-        return None, None
-
-    # Sort by modification time (most recent first)
-    plan_files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-
-    # Check each file for enrichment marker
-    for plan_file in plan_files:
-        # Use frontmatter library to parse YAML frontmatter
-        post = frontmatter.load(str(plan_file))
-
-        # Check for enrichment marker (handles missing frontmatter gracefully)
-        if post.get("erk_plan") is True:
-            return plan_file, plan_file.name
-
-    return None, None
 
 
 class PlanFileCollector(StatusCollector):
@@ -85,9 +48,6 @@ class PlanFileCollector(StatusCollector):
         """
         impl_path = get_impl_path(worktree_path, git_ops=ctx.git)
 
-        # Detect enriched plan at repo root
-        enriched_plan_path, enriched_plan_filename = detect_enriched_plan(repo_root)
-
         if impl_path is None:
             return PlanStatus(
                 exists=False,
@@ -96,8 +56,6 @@ class PlanFileCollector(StatusCollector):
                 line_count=0,
                 first_lines=[],
                 format="none",
-                enriched_plan_path=enriched_plan_path,
-                enriched_plan_filename=enriched_plan_filename,
             )
 
         # Read plan.md
@@ -138,8 +96,6 @@ class PlanFileCollector(StatusCollector):
             line_count=line_count,
             first_lines=first_lines,
             format="folder",
-            enriched_plan_path=enriched_plan_path,
-            enriched_plan_filename=enriched_plan_filename,
             issue_number=issue_number,
             issue_url=issue_url,
         )

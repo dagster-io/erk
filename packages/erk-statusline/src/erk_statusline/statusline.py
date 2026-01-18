@@ -232,15 +232,14 @@ def get_issue_number(git_root: str) -> int | None:
 
 
 def find_new_plan_file(git_root: str) -> str | None:
-    """Find plan file with enriched_by_persist_plan frontmatter at git root.
+    """Find plan file with erk_plan frontmatter at git root.
 
     Args:
         git_root: Absolute path to git repository root
 
     Returns:
         Filename (basename) of first matching *-impl.md file with
-        enriched_by_persist_plan: true in YAML frontmatter, or None if
-        no matching file found.
+        erk_plan: true in YAML frontmatter, or None if no matching file found.
     """
     if not git_root:
         return None
@@ -264,13 +263,10 @@ def find_new_plan_file(git_root: str) -> str | None:
                     if len(parts) >= 3:
                         frontmatter = parts[1]
 
-                        # Check for erk_plan: true (new standard) or
-                        # enriched_by_persist_plan: true (backward compat)
+                        # Check for erk_plan: true
                         for line in frontmatter.split("\n"):
                             line = line.strip()
-                            if line.startswith("erk_plan:") or line.startswith(
-                                "enriched_by_persist_plan:"
-                            ):
+                            if line.startswith("erk_plan:"):
                                 value = line.split(":", 1)[1].strip().lower()
                                 if value == "true":
                                     return plan_file.name
