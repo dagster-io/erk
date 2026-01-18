@@ -147,6 +147,10 @@ if [ -f ./.env ]; then
   . ./.env
 fi
 set +a
+# Load erk shell completions
+if command -v erk &>/dev/null; then
+  eval "$(erk completion "${{SHELL##*/}}")"
+fi
 {post_activation_section}# Optional: show where we are
 {final_message}
 """
