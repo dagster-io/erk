@@ -236,6 +236,7 @@ def _perform_checkout(
                 source_branch=None,
                 force=False,
                 mode="activate_only",
+                copy=False,
             )
 
 

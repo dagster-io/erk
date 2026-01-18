@@ -133,6 +133,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                         source_branch=current_branch,
                         force=force,
                         mode="activate_only",
+                        copy=False,
                     )
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
@@ -195,6 +196,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                     source_branch=current_branch,
                     force=force,
                     mode="activate_only",
+                    copy=False,
                 )
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)

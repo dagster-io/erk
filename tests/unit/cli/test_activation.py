@@ -407,6 +407,7 @@ def test_print_activation_instructions_with_source_branch_and_force(
         source_branch="feature-branch",
         force=True,
         mode="activate_only",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -430,6 +431,7 @@ def test_print_activation_instructions_with_source_branch_no_force(
         source_branch="feature-branch",
         force=False,
         mode="activate_only",
+        copy=False,
     )
 
     captured = capsys.readouterr()
@@ -454,6 +456,7 @@ def test_print_activation_instructions_without_source_branch(
         source_branch=None,
         force=False,
         mode="activate_only",
+        copy=False,
     )
 
     captured = capsys.readouterr()
@@ -478,6 +481,7 @@ def test_print_activation_instructions_emits_osc52_clipboard_sequence(
         source_branch=None,
         force=False,
         mode="activate_only",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -509,6 +513,7 @@ def test_print_activation_instructions_shows_clipboard_hint(
         source_branch=None,
         force=False,
         mode="activate_only",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -529,6 +534,7 @@ def test_print_activation_instructions_implement_mode_shows_implement_command(
         source_branch=None,
         force=False,
         mode="implement",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -552,6 +558,7 @@ def test_print_activation_instructions_implement_dangerous_mode_shows_dangerous_
         source_branch=None,
         force=False,
         mode="implement_dangerous",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -573,6 +580,7 @@ def test_print_activation_instructions_implement_dangerous_copies_dangerous_comm
         source_branch=None,
         force=False,
         mode="implement_dangerous",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -599,6 +607,7 @@ def test_print_activation_instructions_implement_mode_copies_implement_command(
         source_branch=None,
         force=False,
         mode="implement",
+        copy=True,
     )
 
     captured = capsys.readouterr()
@@ -609,6 +618,55 @@ def test_print_activation_instructions_implement_mode_copies_implement_command(
     encoded_content = captured.err[osc52_start:osc52_end]
     decoded_content = base64.b64decode(encoded_content).decode("utf-8")
     assert decoded_content == f"source {script_path} && erk implement --here"
+
+
+def test_print_activation_instructions_copy_false_no_osc52(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with copy=False does NOT emit OSC 52."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="activate_only",
+        copy=False,
+    )
+
+    captured = capsys.readouterr()
+    # Should NOT contain OSC 52 escape sequence
+    assert "\033]52;c;" not in captured.err
+    # Should NOT show clipboard hint
+    assert "(copied to clipboard)" not in captured.err
+    # Should still show the command
+    assert f"source {script_path}" in captured.err
+
+
+def test_print_activation_instructions_copy_true_emits_osc52(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with copy=True emits OSC 52."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        mode="activate_only",
+        copy=True,
+    )
+
+    captured = capsys.readouterr()
+    # Should contain OSC 52 escape sequence
+    assert "\033]52;c;" in captured.err
+    assert "(copied to clipboard)" in captured.err
 
 
 # land.sh script tests

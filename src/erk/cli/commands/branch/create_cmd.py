@@ -42,6 +42,13 @@ from erk_shared.output.output import user_output
     is_flag=True,
     help="Include --dangerous flag to skip permission prompts during implementation",
 )
+@click.option(
+    "-c",
+    "--copy",
+    "copy_to_clipboard",
+    is_flag=True,
+    help="Copy activation command to clipboard",
+)
 @click.pass_obj
 def branch_create(
     ctx: ErkContext,
@@ -52,6 +59,7 @@ def branch_create(
     *,
     create_only: bool,
     dangerous: bool,
+    copy_to_clipboard: bool,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -191,4 +199,5 @@ def branch_create(
             source_branch=None,
             force=False,
             mode=mode,
+            copy=copy_to_clipboard,
         )

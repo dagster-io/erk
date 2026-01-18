@@ -19,6 +19,13 @@ from erk.cli.commands.branch.create_cmd import branch_create
     is_flag=True,
     help="Include --dangerous flag to skip permission prompts during implementation",
 )
+@click.option(
+    "-c",
+    "--copy",
+    "copy_to_clipboard",
+    is_flag=True,
+    help="Copy activation command to clipboard",
+)
 @click.pass_context
 def prepare(
     ctx: click.Context,
@@ -27,6 +34,7 @@ def prepare(
     force: bool,
     create_only: bool,
     dangerous: bool,
+    copy_to_clipboard: bool,
 ) -> None:
     """Prepare a plan for execution by creating a worktree.
 
@@ -42,4 +50,5 @@ def prepare(
         force=force,
         create_only=create_only,
         dangerous=dangerous,
+        copy_to_clipboard=copy_to_clipboard,
     )

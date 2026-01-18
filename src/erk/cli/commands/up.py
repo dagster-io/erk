@@ -155,6 +155,7 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
                     source_branch=current_branch,
                     force=force,
                     mode="activate_only",
+                    copy=False,
                 )
 
         # Perform cleanup: unallocate worktree (slot-aware) and delete branch
