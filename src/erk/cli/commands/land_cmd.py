@@ -685,11 +685,10 @@ def land(
         args_str = " " + " ".join(args) if args else ""
 
         user_output(
-            click.style("Error: ", fg="red")
-            + "This command requires shell integration.\n\n"
+            "This command requires shell integration.\n\n"
             + f"Run: source {land_script}{args_str}\n"
         )
-        raise SystemExit(1)
+        raise SystemExit(0)
 
     # Determine if landing current branch or a specific target
     if target is None:

@@ -239,12 +239,11 @@ def test_land_detached_head() -> None:
         assert_cli_error(result, 1, "Not currently on a branch", "detached HEAD")
 
 
-def test_land_no_script_flag_fails_fast() -> None:
-    """Test land without --script fails before any operations.
+def test_land_no_script_flag_shows_shell_integration_message() -> None:
+    """Test land without --script shows shell integration message and exits cleanly.
 
-    When shell integration is bypassed (e.g., via alias), we fail fast BEFORE
-    merging the PR, because:
-    - Shell integration is required for activation script output
+    When shell integration is not active, land shows a helpful message about
+    how to run with shell integration and exits with code 0 (not an error).
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -314,13 +313,13 @@ def test_land_no_script_flag_fails_fast() -> None:
 
         result = runner.invoke(cli, ["land"], obj=test_ctx, catch_exceptions=False)
 
-        # Should fail with clear error about needing shell integration
-        assert result.exit_code == 1
+        # Should exit cleanly with shell integration message (not an error)
+        assert result.exit_code == 0
         assert "requires shell integration" in result.output
         assert "source" in result.output
         assert ".erk/bin/land.sh" in result.output
 
-        # CRITICAL: No operations should have happened
+        # No operations should have happened
         assert len(github_ops.merged_prs) == 0, "PR should NOT be merged without shell integration"
 
 
@@ -978,12 +977,12 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
         "all-flags",
     ],
 )
-def test_land_shell_integration_error_includes_flags(
+def test_land_shell_integration_message_includes_flags(
     cli_args: list[str], expected_in_message: str
 ) -> None:
-    """Test that shell integration error message includes passed flags.
+    """Test that shell integration message includes passed flags.
 
-    When 'erk land -f' is run without shell integration, the error should show:
+    When 'erk land -f' is run without shell integration, the message should show:
     'source .../land.sh -f' (not just 'source .../land.sh').
     """
     runner = CliRunner()
@@ -1020,14 +1019,14 @@ def test_land_shell_integration_error_includes_flags(
 
         result = runner.invoke(cli, ["land", *cli_args], obj=test_ctx, catch_exceptions=False)
 
-        assert result.exit_code == 1
+        assert result.exit_code == 0
         assert "requires shell integration" in result.output
         # Verify the expected flag/argument appears somewhere in the land.sh command line
         assert expected_in_message in result.output
 
 
-def test_land_shell_integration_error_all_flags_order() -> None:
-    """Test that all flags appear in correct order in shell integration error.
+def test_land_shell_integration_message_all_flags_order() -> None:
+    """Test that all flags appear in correct order in shell integration message.
 
     The flags should appear in the order: target, --up, -f, --no-pull, --no-delete.
     """
@@ -1071,14 +1070,14 @@ def test_land_shell_integration_error_all_flags_order() -> None:
             catch_exceptions=False,
         )
 
-        assert result.exit_code == 1
+        assert result.exit_code == 0
         assert "requires shell integration" in result.output
         # Verify the expected ordering in the message
         assert ".erk/bin/land.sh 123 --up -f --no-pull --no-delete" in result.output
 
 
-def test_land_shell_integration_error_no_extra_args_when_none_passed() -> None:
-    """Test that shell integration error has no trailing args when no flags passed.
+def test_land_shell_integration_message_no_extra_args_when_none_passed() -> None:
+    """Test that shell integration message has no trailing args when no flags passed.
 
     When 'erk land' is run without any flags, the message should be:
     'source .../land.sh' (without trailing whitespace or empty args).
@@ -1117,7 +1116,7 @@ def test_land_shell_integration_error_no_extra_args_when_none_passed() -> None:
 
         result = runner.invoke(cli, ["land"], obj=test_ctx, catch_exceptions=False)
 
-        assert result.exit_code == 1
+        assert result.exit_code == 0
         assert "requires shell integration" in result.output
         # The message should end with just land.sh followed by newline, no extra args
         assert ".erk/bin/land.sh\n" in result.output
