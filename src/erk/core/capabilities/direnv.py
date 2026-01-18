@@ -58,7 +58,7 @@ class DirenvCapability(Capability):
 
     @property
     def required(self) -> bool:
-        return True  # Auto-install during erk init
+        return False  # Optional - users can install with `erk init capability add direnv`
 
     @property
     def installation_check_description(self) -> str:
@@ -187,8 +187,35 @@ class DirenvCapability(Capability):
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Uninstall is blocked because direnv is a required capability."""
+        """Uninstall direnv capability by removing .envrc files.
+
+        Note: Does not remove .envrc from .gitignore to avoid git noise.
+        """
+        if repo_root is None:
+            return CapabilityResult(
+                success=False,
+                message="DirenvCapability requires repo_root",
+            )
+
+        removed_files: list[str] = []
+
+        envrc_path = repo_root / ".envrc"
+        if envrc_path.exists():
+            envrc_path.unlink()
+            removed_files.append(".envrc")
+
+        envrc_example_path = repo_root / ".envrc.example"
+        if envrc_example_path.exists():
+            envrc_example_path.unlink()
+            removed_files.append(".envrc.example")
+
+        if not removed_files:
+            return CapabilityResult(
+                success=True,
+                message="direnv already uninstalled (no .envrc files found)",
+            )
+
         return CapabilityResult(
-            success=False,
-            message="Cannot uninstall direnv: it is a required capability",
+            success=True,
+            message=f"Removed {', '.join(removed_files)}",
         )

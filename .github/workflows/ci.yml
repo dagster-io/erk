@@ -107,7 +107,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - uses: ./.github/actions/setup-graphite
-      - uses: ./.github/actions/setup-direnv
       - name: Run unit tests
         run: make test
 

@@ -10,8 +10,8 @@ This file uses minimal mocking for external boundaries:
    - Tests inject FakeErkInstallation with desired initial state
 
 2. Shell operations:
-   - Uses FakeShell with no direnv installed to skip DirenvCapability
-   - This prevents auto-creation of .gitignore which would trigger extra prompts
+   - Uses FakeShell with no direnv installed
+   - DirenvCapability is optional (not auto-installed), so .env prompt always appears
 """
 
 import json
@@ -54,9 +54,9 @@ def test_init_offers_claude_permission_when_missing() -> None:
             shell=shell,
         )
 
-        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
-        # Decline remaining gitignore (n*3), accept permission (y), write (y), delete backup (y)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\ny\ny\ny\n")
+        # No .gitignore exists, so gitignore prompts are skipped.
+        # Prompts: permission (y), write (y), delete backup (y)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\ny\n")
 
         assert result.exit_code == 0, result.output
         assert "Claude settings found" in result.output
@@ -151,9 +151,9 @@ def test_init_handles_declined_claude_permission() -> None:
             shell=shell,
         )
 
-        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
-        # Decline remaining gitignore (n*3), decline permission (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\n")
+        # No .gitignore exists, so gitignore prompts are skipped.
+        # Prompts: permission (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\n")
 
         assert result.exit_code == 0, result.output
         assert "Skipped" in result.output
@@ -188,9 +188,9 @@ def test_init_handles_declined_write_confirmation() -> None:
             shell=shell,
         )
 
-        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
-        # Decline remaining gitignore (n*3), accept permission (y), decline write (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\ny\nn\n")
+        # No .gitignore exists, so gitignore prompts are skipped.
+        # Prompts: permission (y), write (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Proceed with writing changes?" in result.output
@@ -228,10 +228,9 @@ def test_init_accepts_default_on_empty_input_for_write_confirmation() -> None:
             shell=shell,
         )
 
-        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
-        # Decline remaining gitignore (n*3), accept permission (y), hit Enter for write
-        # confirmation (empty = default=True), delete backup (y)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\ny\n\ny\n")
+        # No .gitignore exists, so gitignore prompts are skipped.
+        # Prompts: permission (y), write (Enter = default=True), delete backup (y)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\n\ny\n")
 
         assert result.exit_code == 0, result.output
         # Verify permission was added (write happened with default=True)

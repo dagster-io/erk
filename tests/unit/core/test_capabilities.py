@@ -1849,12 +1849,12 @@ def test_direnv_capability_properties() -> None:
     assert ".envrc" in cap.installation_check_description
 
 
-def test_direnv_capability_is_required() -> None:
-    """Test DirenvCapability is marked as required."""
+def test_direnv_capability_is_optional() -> None:
+    """Test DirenvCapability is marked as optional (not required)."""
     from erk.core.capabilities.direnv import DirenvCapability
 
     cap = DirenvCapability(shell=None)
-    assert cap.required is True
+    assert cap.required is False
 
 
 def test_direnv_capability_artifacts() -> None:
@@ -2095,15 +2095,44 @@ def test_direnv_install_fails_with_none_repo_root() -> None:
     assert "requires repo_root" in result.message
 
 
-def test_direnv_uninstall_is_blocked() -> None:
-    """Test uninstall returns error (required capability cannot be uninstalled)."""
+def test_direnv_uninstall_requires_repo_root() -> None:
+    """Test uninstall returns error when repo_root is None."""
     from erk.core.capabilities.direnv import DirenvCapability
 
     cap = DirenvCapability(shell=None)
     result = cap.uninstall(None)
 
     assert result.success is False
-    assert "required capability" in result.message
+    assert "requires repo_root" in result.message
+
+
+def test_direnv_uninstall_removes_files(tmp_path: Path) -> None:
+    """Test uninstall removes .envrc and .envrc.example files."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    # Create .envrc and .envrc.example
+    (tmp_path / ".envrc").write_text("# envrc", encoding="utf-8")
+    (tmp_path / ".envrc.example").write_text("# example", encoding="utf-8")
+
+    cap = DirenvCapability(shell=None)
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert ".envrc" in result.message
+    assert ".envrc.example" in result.message
+    assert not (tmp_path / ".envrc").exists()
+    assert not (tmp_path / ".envrc.example").exists()
+
+
+def test_direnv_uninstall_when_already_uninstalled(tmp_path: Path) -> None:
+    """Test uninstall succeeds when no .envrc files exist."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert "already uninstalled" in result.message
 
 
 def test_direnv_capability_registered() -> None:
@@ -2113,9 +2142,9 @@ def test_direnv_capability_registered() -> None:
     assert cap.name == "direnv"
 
 
-def test_direnv_capability_in_required_list() -> None:
-    """Test that direnv is in the list of required capabilities."""
+def test_direnv_capability_not_in_required_list() -> None:
+    """Test that direnv is NOT in the list of required capabilities (it's optional)."""
     required_caps = list_required_capabilities()
     names = [cap.name for cap in required_caps]
 
-    assert "direnv" in names
+    assert "direnv" not in names
