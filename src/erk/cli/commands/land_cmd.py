@@ -40,6 +40,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext, create_context
+from erk.core.display_utils import copy_to_clipboard_osc52
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
     SlotAssignment,
@@ -683,11 +684,12 @@ def land(
             args.append("--no-delete")
 
         args_str = " " + " ".join(args) if args else ""
+        source_cmd = f"source {land_script}{args_str}"
 
-        user_output(
-            "This command requires shell integration.\n\n"
-            + f"Run: source {land_script}{args_str}\n"
-        )
+        clipboard_hint = click.style("(copied to clipboard)", dim=True)
+        user_output("This command requires shell integration.\n")
+        user_output(f"Run: {source_cmd}  {clipboard_hint}")
+        user_output(copy_to_clipboard_osc52(source_cmd), nl=False)
         raise SystemExit(0)
 
     # Determine if landing current branch or a specific target

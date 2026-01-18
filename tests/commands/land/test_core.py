@@ -1072,8 +1072,11 @@ def test_land_shell_integration_message_all_flags_order() -> None:
 
         assert result.exit_code == 0
         assert "requires shell integration" in result.output
-        # Verify the expected ordering in the message
-        assert ".erk/bin/land.sh 123 --up -f --no-pull --no-delete" in result.output
+        # Verify the expected ordering in the message (with clipboard hint)
+        assert (
+            ".erk/bin/land.sh 123 --up -f --no-pull --no-delete  (copied to clipboard)"
+            in result.output
+        )
 
 
 def test_land_shell_integration_message_no_extra_args_when_none_passed() -> None:
@@ -1118,8 +1121,7 @@ def test_land_shell_integration_message_no_extra_args_when_none_passed() -> None
 
         assert result.exit_code == 0
         assert "requires shell integration" in result.output
-        # The message should end with just land.sh followed by newline, no extra args
-        assert ".erk/bin/land.sh\n" in result.output
-        # Should NOT have trailing space or empty arguments
-        assert ".erk/bin/land.sh \n" not in result.output
-        assert ".erk/bin/land.sh  " not in result.output
+        # The message should have land.sh without trailing args, followed by clipboard hint
+        assert ".erk/bin/land.sh  (copied to clipboard)" in result.output
+        # Should NOT have extra flags (e.g. --up) before the clipboard hint
+        assert ".erk/bin/land.sh --" not in result.output
