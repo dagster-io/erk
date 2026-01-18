@@ -262,6 +262,33 @@ class TestExecuteCommandLandPR:
         assert executor.refresh_count == 0
 
 
+class TestExecuteCommandFixConflictsRemote:
+    """Tests for fix_conflicts_remote command.
+
+    Note: fix_conflicts_remote uses streaming output via subprocess when repo_root
+    is provided and pr_number exists. These tests verify the guard conditions but
+    actual streaming behavior is tested via integration tests.
+    """
+
+    def test_fix_conflicts_remote_does_nothing_without_repo_root(self) -> None:
+        """fix_conflicts_remote does nothing if repo_root is not provided."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        # repo_root not provided - streaming command should not execute
+        screen = PlanDetailScreen(row=row, executor=executor)
+        screen.execute_command("fix_conflicts_remote")
+        # No executor methods should be called (streaming is independent)
+        assert executor.refresh_count == 0
+
+    def test_fix_conflicts_remote_does_nothing_without_pr_number(self) -> None:
+        """fix_conflicts_remote does nothing if no PR is associated with the plan."""
+        row = make_plan_row(123, "Test")  # No pr_number
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor, repo_root=Path("/some/path"))
+        screen.execute_command("fix_conflicts_remote")
+        assert executor.refresh_count == 0
+
+
 class TestExecuteCommandNoExecutor:
     """Tests for behavior when no executor is provided."""
 
@@ -275,3 +302,4 @@ class TestExecuteCommandNoExecutor:
         screen.execute_command("close_plan")
         screen.execute_command("submit_to_queue")
         screen.execute_command("land_pr")
+        screen.execute_command("fix_conflicts_remote")
