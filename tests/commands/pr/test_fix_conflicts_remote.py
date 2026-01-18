@@ -477,7 +477,8 @@ def _make_issue_info(
     state: str,
 ) -> IssueInfo:
     """Create an IssueInfo for testing."""
-    now = datetime.now(UTC)
+    # Use fixed timestamp for deterministic test data
+    fixed_timestamp = datetime(2024, 1, 15, 14, 30, 0, tzinfo=UTC)
     return IssueInfo(
         number=number,
         title=title or f"Issue #{number}",
@@ -486,8 +487,8 @@ def _make_issue_info(
         url=f"https://github.com/owner/repo/issues/{number}",
         labels=["erk-plan"],
         assignees=[],
-        created_at=now,
-        updated_at=now,
+        created_at=fixed_timestamp,
+        updated_at=fixed_timestamp,
         author="testuser",
     )
 
