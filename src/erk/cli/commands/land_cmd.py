@@ -653,10 +653,26 @@ def land(
     if not script and not ctx.dry_run:
         # Ensure land.sh exists and show user-friendly message
         land_script = ensure_land_script(repo.root)
+
+        # Reconstruct CLI args from parameters
+        args: list[str] = []
+        if target is not None:
+            args.append(target)
+        if up_flag:
+            args.append("--up")
+        if force:
+            args.append("-f")
+        if not pull_flag:
+            args.append("--no-pull")
+        if no_delete:
+            args.append("--no-delete")
+
+        args_str = " " + " ".join(args) if args else ""
+
         user_output(
             click.style("Error: ", fg="red")
             + "This command requires shell integration.\n\n"
-            + f"Run: source {land_script}\n"
+            + f"Run: source {land_script}{args_str}\n"
         )
         raise SystemExit(1)
 
