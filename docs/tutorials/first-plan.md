@@ -126,7 +126,7 @@ To activate the worktree environment:
   source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh
 
 To activate and start implementation:
-  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh && erk implement --here
+  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh && erk implement --copy
 ```
 
 ### Activate and Implement
@@ -134,7 +134,7 @@ To activate and start implementation:
 Copy the second command and run it:
 
 ```bash
-source /path/to/slot-1/.erk/activate.sh && erk implement --here
+source /path/to/slot-1/.erk/activate.sh && erk implement --copy
 ```
 
 This does two things:
@@ -211,7 +211,7 @@ You've completed the full erk workflow:
 | Save plan            | `/erk:plan-save`                                  |
 | Exit Claude          | `/exit`                                           |
 | Prepare worktree     | `erk prepare <issue>`                             |
-| Activate + implement | `source .erk/activate.sh && erk implement --here` |
+| Activate + implement | `source .erk/activate.sh && erk implement --copy` |
 | Monitor plans        | `erk dash`                                        |
 | Submit PR            | `erk pr submit`                                   |
 | Land PR              | `erk pr land`                                     |

@@ -21,8 +21,8 @@ from erk_shared.output.output import user_output
 
 # Mode for activation instructions output
 # - "activate_only": Show only `source <path>` (for navigation commands)
-# - "implement": Show `source <path> && erk implement --here` (default for prepare)
-# - "implement_dangerous": Show `source <path> && erk implement --here --dangerous`
+# - "implement": Show `source <path> && erk implement --copy` (default for prepare)
+# - "implement_dangerous": Show `source <path> && erk implement --copy --dangerous`
 ActivationMode = Literal["activate_only", "implement", "implement_dangerous"]
 
 # SPECULATIVE: activation-scripts - set to False to disable this feature
@@ -258,10 +258,10 @@ def print_activation_instructions(
         primary_cmd = source_cmd
         instruction = "To activate the worktree environment:"
     elif mode == "implement_dangerous":
-        primary_cmd = f"{source_cmd} && erk implement --here --dangerous"
+        primary_cmd = f"{source_cmd} && erk implement --copy --dangerous"
         instruction = "To activate and start implementation (skip permissions):"
     else:  # mode == "implement"
-        primary_cmd = f"{source_cmd} && erk implement --here"
+        primary_cmd = f"{source_cmd} && erk implement --copy"
         instruction = "To activate and start implementation:"
 
     user_output(f"\n{instruction}")
