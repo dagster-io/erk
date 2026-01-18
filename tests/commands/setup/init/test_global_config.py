@@ -45,17 +45,19 @@ def test_init_creates_global_config_first_time() -> None:
         # DirenvCapability will create .gitignore triggering prompts.
         shell_ops = FakeShell(installed_tools={})
 
+        # Decline all gitignore prompts that may appear
+        # (DirenvCapability may create .gitignore if direnv is on the real system)
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
+            confirm_responses=[False, False, False, False],
         )
 
-        # Input: erk_root, then decline all gitignore prompts that may appear
-        # (DirenvCapability may create .gitignore if direnv is on the real system)
+        # Input: erk_root path (uses click.prompt, not console.confirm)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
 
         assert result.exit_code == 0, result.output
         assert "Global config not found" in result.output
@@ -77,16 +79,18 @@ def test_init_prompts_for_erk_root() -> None:
         erk_installation = FakeErkInstallation(config=None)
         shell_ops = FakeShell(installed_tools={})
 
+        # Decline all gitignore prompts that may appear
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
+            confirm_responses=[False, False, False, False],
         )
 
-        # Input: erk_root, then decline all gitignore prompts that may appear
+        # Input: erk_root path (uses click.prompt, not console.confirm)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
 
         assert result.exit_code == 0, result.output
         assert ".erk folder" in result.output
@@ -106,16 +110,18 @@ def test_init_detects_graphite_installed() -> None:
         shell_ops = FakeShell(installed_tools={"gt": "/usr/local/bin/gt"})
         erk_installation = FakeErkInstallation(config=None)
 
+        # Decline all gitignore prompts that may appear
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
+            confirm_responses=[False, False, False, False],
         )
 
-        # Input: erk_root, then decline all gitignore prompts that may appear
+        # Input: erk_root path (uses click.prompt, not console.confirm)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) detected" in result.output
@@ -134,16 +140,18 @@ def test_init_detects_graphite_not_installed() -> None:
         erk_installation = FakeErkInstallation(config=None)
         shell_ops = FakeShell(installed_tools={})
 
+        # Decline all gitignore prompts that may appear
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
+            confirm_responses=[False, False, False, False],
         )
 
-        # Input: erk_root, then decline all gitignore prompts that may appear
+        # Input: erk_root path (uses click.prompt, not console.confirm)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) not detected" in result.output
@@ -176,14 +184,17 @@ def test_init_creates_global_config_even_when_repo_already_erkified() -> None:
         # No global config exists yet
         erk_installation = FakeErkInstallation(config=None)
 
+        # Decline confirmation prompts (already erkified, so no gitignore prompts)
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=None,
+            confirm_responses=[False],
         )
 
+        # Input: erk_root path (uses click.prompt, not console.confirm)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\n")
 
         assert result.exit_code == 0, result.output
         # Key assertion: global config should be created even though repo was already erkified

@@ -36,16 +36,13 @@ from erk.core.repo_discovery import (
     ensure_erk_metadata_dir,
 )
 from erk_shared.context.types import GlobalConfig
-from erk_shared.gateway.console.real import InteractiveConsole
+from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
 from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
 from erk_shared.output.output import user_output
-
-# Console for init command prompts (always interactive)
-_console = InteractiveConsole()
 
 
 def _build_repo_config_toml() -> str:
@@ -131,7 +128,11 @@ def create_and_save_global_config(
 
 
 def _add_gitignore_entry_with_prompt(
-    content: str, entry: str, prompt_message: str
+    content: str,
+    entry: str,
+    prompt_message: str,
+    *,
+    console: Console,
 ) -> tuple[str, bool]:
     """Add an entry to gitignore content if not present and user confirms.
 
@@ -141,6 +142,7 @@ def _add_gitignore_entry_with_prompt(
         content: Current gitignore content
         entry: Entry to add (e.g., ".env")
         prompt_message: Message to show user when confirming
+        console: Console for user confirmation
 
     Returns:
         Tuple of (updated_content, was_modified)
@@ -150,7 +152,7 @@ def _add_gitignore_entry_with_prompt(
         return (content, False)
 
     # User declined
-    if not click.confirm(prompt_message, default=True):
+    if not console.confirm(prompt_message, default=True):
         return (content, False)
 
     # Use pure function to add entry
@@ -184,13 +186,14 @@ def _create_prompt_hooks_directory(repo_root: Path) -> None:
         )
 
 
-def _run_gitignore_prompts(repo_root: Path) -> None:
+def _run_gitignore_prompts(repo_root: Path, *, console: Console) -> None:
     """Run interactive prompts for .gitignore entries.
 
     Offers to add .env, .erk/scratch/, .impl/, and .erk/local.toml to .gitignore.
 
     Args:
         repo_root: Path to the repository root
+        console: Console for user confirmation
     """
     gitignore_path = repo_root / ".gitignore"
     if not gitignore_path.exists():
@@ -203,6 +206,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         gitignore_content,
         ".env",
         "Add .env to .gitignore?",
+        console=console,
     )
 
     # Add .erk/scratch/
@@ -210,6 +214,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         gitignore_content,
         ".erk/scratch/",
         "Add .erk/scratch/ to .gitignore (session-specific working files)?",
+        console=console,
     )
 
     # Add .impl/
@@ -217,6 +222,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         gitignore_content,
         ".impl/",
         "Add .impl/ to .gitignore (temporary implementation plans)?",
+        console=console,
     )
 
     # Add .erk/config.local.toml
@@ -224,6 +230,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         gitignore_content,
         ".erk/config.local.toml",
         "Add .erk/config.local.toml to .gitignore (per-user local config)?",
+        console=console,
     )
 
     # Write if any entry was modified
@@ -232,7 +239,11 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         user_output(f"Updated {gitignore_path}")
 
 
-def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
+def offer_claude_permission_setup(
+    repo_root: Path,
+    *,
+    console: Console,
+) -> Path | NoBackupCreated:
     """Offer to add erk permission to repo's Claude Code settings.
 
     This checks if the repo's .claude/settings.json exists and whether the erk
@@ -241,6 +252,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
 
     Args:
         repo_root: Path to the repository root
+        console: Console for user confirmation
 
     Returns:
         Path to backup file if one was created, NoBackupCreated sentinel otherwise.
@@ -267,7 +279,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
     user_output("\nClaude settings found. The erk permission allows Claude to run")
     user_output("erk commands without prompting for approval each time.")
 
-    if not _console.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
+    if not console.confirm(f"Add {ERK_PERMISSION} to .claude/settings.json?", default=True):
         user_output("Skipped. You can add the permission manually to .claude/settings.json")
         return NoBackupCreated()
 
@@ -276,7 +288,7 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
 
     # Confirm before overwriting
     user_output(f"\nThis will update: {settings_path}")
-    if not _console.confirm("Proceed with writing changes?", default=True):
+    if not console.confirm("Proceed with writing changes?", default=True):
         user_output("Skipped. No changes made to settings.json")
         return NoBackupCreated()
 
@@ -291,13 +303,14 @@ def offer_claude_permission_setup(repo_root: Path) -> Path | NoBackupCreated:
     return backup_result
 
 
-def offer_backup_cleanup(backup_path: Path) -> None:
+def offer_backup_cleanup(backup_path: Path, *, console: Console) -> None:
     """Offer to delete a backup file.
 
     Args:
         backup_path: Path to the backup file to potentially delete
+        console: Console for user confirmation
     """
-    if click.confirm("Delete backup?", default=True):
+    if console.confirm("Delete backup?", default=True):
         backup_path.unlink()
         user_output(click.style("✓", fg="green") + " Backup deleted")
 
@@ -330,7 +343,12 @@ def create_plans_repo_labels(
     return None
 
 
-def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
+def offer_plans_repo_label_setup(
+    repo_root: Path,
+    plans_repo: str,
+    *,
+    console: Console,
+) -> None:
     """Offer to set up erk labels in the target issues repository.
 
     When a plans_repo is configured, issues are created in a separate repository
@@ -340,11 +358,12 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
     Args:
         repo_root: Path to the working repository root (used for gh CLI context)
         plans_repo: Target repository in "owner/repo" format
+        console: Console for user confirmation
     """
     user_output(f"\nPlans repo configured: {plans_repo}")
     user_output("Erk uses labels (erk-plan, erk-extraction, erk-objective) to organize issues.")
 
-    if not _console.confirm(f"Set up erk labels in {plans_repo}?", default=True):
+    if not console.confirm(f"Set up erk labels in {plans_repo}?", default=True):
         user_output("Skipped. You can set up labels later with: erk doctor --fix")
         return
 
@@ -360,7 +379,11 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
         user_output("   You can try again with: erk doctor --fix")
 
 
-def perform_statusline_setup(settings_path: Path | None) -> bool:
+def perform_statusline_setup(
+    settings_path: Path | None,
+    *,
+    console: Console,
+) -> bool:
     """Configure erk-statusline in global Claude Code settings.
 
     Reads ~/.claude/settings.json, adds statusLine configuration if not present
@@ -371,6 +394,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
 
     Args:
         settings_path: Path to settings.json. If None, uses ~/.claude/settings.json.
+        console: Console for user confirmation
 
     Returns:
         True if status line was configured, False otherwise.
@@ -407,7 +431,7 @@ def perform_statusline_setup(settings_path: Path | None) -> bool:
     # Different statusline configured - warn and prompt
     if not isinstance(current_config, StatuslineNotConfigured):
         user_output(f"\n  Existing statusLine found: {current_config.command}")
-        if not _console.confirm(f"  Replace with {get_erk_statusline_command()}?", default=False):
+        if not console.confirm(f"  Replace with {get_erk_statusline_command()}?", default=False):
             user_output("  Skipped. Keeping existing statusLine configuration.")
             return False
 
@@ -456,7 +480,7 @@ def run_init(
 
     # Handle --statusline flag: only do statusline setup
     if statusline_only:
-        perform_statusline_setup(settings_path=None)
+        perform_statusline_setup(settings_path=None, console=ctx.console)
         return
 
     # =========================================================================
@@ -553,19 +577,26 @@ def run_init(
         pending_backup: Path | NoBackupCreated = NoBackupCreated()
 
         if interactive:
-            _run_gitignore_prompts(repo_context.root)
-            pending_backup = offer_claude_permission_setup(repo_context.root)
+            _run_gitignore_prompts(repo_context.root, console=ctx.console)
+            pending_backup = offer_claude_permission_setup(
+                repo_context.root,
+                console=ctx.console,
+            )
 
             # Check if plans_repo is configured and offer label setup
             from erk.cli.config import load_config as load_repo_config
 
             repo_config = load_repo_config(repo_context.root)
             if repo_config.plans_repo is not None:
-                offer_plans_repo_label_setup(repo_context.root, repo_config.plans_repo)
+                offer_plans_repo_label_setup(
+                    repo_context.root,
+                    repo_config.plans_repo,
+                    console=ctx.console,
+                )
 
         # Offer to clean up any pending backup files (at end of project setup)
         if not isinstance(pending_backup, NoBackupCreated):
-            offer_backup_cleanup(pending_backup)
+            offer_backup_cleanup(pending_backup, console=ctx.console)
 
     # =========================================================================
     # STEP 3: Optional Enhancements (always runs)

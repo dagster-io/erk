@@ -47,14 +47,15 @@ def test_init_adds_env_to_gitignore() -> None:
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=False)
         erk_installation = FakeErkInstallation(config=global_config)
 
+        # Accept prompt for .env, decline .erk/scratch/, .impl/, .erk/config.local.toml, permission
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            confirm_responses=[True, False, False, False, False],
         )
 
-        # Accept prompt for .env, decline .erk/scratch/, .impl/, hooks, and statusline
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -65,7 +66,7 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
     """Test that init skips all gitignore entries if user declines."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        # Create .gitignore (DirenvCapability may add .envrc if direnv is installed)
+        # Create .gitignore without .env entry
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
 
@@ -76,17 +77,17 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
         erk_installation = FakeErkInstallation(config=global_config)
         shell_ops = FakeShell(installed_tools={})
 
+        # HooksCapability creates .claude/settings.json triggering permission prompt.
+        # Prompts: .env, .erk/scratch/, .impl/, .erk/config.local.toml, permission (all n)
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            confirm_responses=[False, False, False, False, False],
         )
 
-        # DirenvCapability adds .envrc which makes ".env" check skip (substring match).
-        # HooksCapability creates .claude/settings.json triggering Claude permission prompt.
-        # Prompts: .erk/scratch/ (n), .impl/ (n), .erk/config.local.toml (n), permission (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\n")
+        result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -101,7 +102,7 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
     """Test that init offers to add .erk/scratch/ and .impl/ to .gitignore."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
-        # Create .gitignore (DirenvCapability may add .envrc if direnv is installed)
+        # Create .gitignore without .env entry
         gitignore = env.cwd / ".gitignore"
         gitignore.write_text("*.pyc\n", encoding="utf-8")
 
@@ -112,18 +113,18 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
         erk_installation = FakeErkInstallation(config=global_config)
         shell_ops = FakeShell(installed_tools={})
 
+        # HooksCapability creates .claude/settings.json triggering permission prompt.
+        # Prompts: .env (n), .erk/scratch/ (y), .impl/ (y), config.local (n), permission (n)
         test_ctx = env.build_context(
             git=git_ops,
             shell=shell_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            confirm_responses=[False, True, True, False, False],
         )
 
-        # DirenvCapability adds .envrc which makes ".env" check skip (substring match).
-        # HooksCapability creates .claude/settings.json triggering Claude permission prompt.
-        # Prompts: .erk/scratch/ (y), .impl/ (y), .erk/config.local.toml (n), permission (n)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -173,15 +174,16 @@ def test_init_preserves_gitignore_formatting() -> None:
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
         erk_installation = FakeErkInstallation(config=global_config)
 
+        # Accept .env, decline .erk/scratch/, .impl/, .erk/config.local.toml, and permission
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            confirm_responses=[True, False, False, False, False],
         )
 
-        # Accept .env, decline .erk/scratch/, .impl/, .erk/config.local.toml, and hooks
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx)
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
