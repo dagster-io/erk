@@ -226,6 +226,7 @@ def print_activation_instructions(
     source_branch: str | None,
     force: bool,
     mode: ActivationMode,
+    copy: bool,
 ) -> None:
     """Print activation script instructions.
 
@@ -233,9 +234,10 @@ def print_activation_instructions(
     worktree creation or navigation to guide users through the opt-in shell
     integration workflow.
 
-    The primary activation command is auto-copied to the clipboard via OSC 52
-    (supported by iTerm2, Kitty, Alacritty, WezTerm, and other modern terminals).
-    Terminals without OSC 52 support will silently ignore the sequence.
+    When copy=True, the primary activation command is auto-copied to the
+    clipboard via OSC 52 (supported by iTerm2, Kitty, Alacritty, WezTerm,
+    and other modern terminals). Terminals without OSC 52 support will
+    silently ignore the sequence.
 
     SPECULATIVE: activation-scripts (objective #4954)
 
@@ -247,6 +249,7 @@ def print_activation_instructions(
             - "activate_only": Just `source <path>` (for navigation commands)
             - "implement": `source <path> && erk implement --here` (default for prepare)
             - "implement_dangerous": Include --dangerous flag
+        copy: If True, copy the primary command to clipboard via OSC 52 and show hint.
     """
     source_cmd = f"source {script_path}"
 
@@ -262,10 +265,13 @@ def print_activation_instructions(
         instruction = "To activate and start implementation:"
 
     user_output(f"\n{instruction}")
-    clipboard_hint = click.style("(copied to clipboard)", dim=True)
-    user_output(f"  {primary_cmd}  {clipboard_hint}")
-    # Emit OSC 52 to copy the command to clipboard (invisible escape sequence)
-    user_output(copy_to_clipboard_osc52(primary_cmd), nl=False)
+    if copy:
+        clipboard_hint = click.style("(copied to clipboard)", dim=True)
+        user_output(f"  {primary_cmd}  {clipboard_hint}")
+        # Emit OSC 52 to copy the command to clipboard (invisible escape sequence)
+        user_output(copy_to_clipboard_osc52(primary_cmd), nl=False)
+    else:
+        user_output(f"  {primary_cmd}")
 
     if source_branch is not None and force:
         user_output(f"\nTo activate and delete branch {source_branch}:")

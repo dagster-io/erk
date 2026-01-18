@@ -104,6 +104,7 @@ def pr_checkout(
                 source_branch=None,
                 force=False,
                 mode="activate_only",
+                copy=False,
             )
         return
 
@@ -183,4 +184,5 @@ def pr_checkout(
             source_branch=None,
             force=False,
             mode="activate_only",
+            copy=False,
         )
