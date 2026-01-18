@@ -49,7 +49,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("2", "copy_implement_dangerous", "Dangerous"),
         Binding("3", "copy_implement_yolo", "Yolo"),
         Binding("4", "copy_submit", "Submit"),
-        Binding("5", "copy_fix_conflicts_remote", "Fix Conflicts"),
+        Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
     ]
 
     DEFAULT_CSS = """
@@ -343,12 +343,15 @@ class PlanDetailScreen(ModalScreen):
         cmd = f"erk plan submit {self._row.issue_number}"
         self._copy_and_notify(cmd)
 
-    def action_copy_fix_conflicts_remote(self) -> None:
-        """Copy remote conflict resolution command to clipboard."""
-        if self._row.pr_number is None:
+    def action_fix_conflicts_remote(self) -> None:
+        """Launch remote conflict resolution workflow."""
+        if self._row.pr_number is None or self._repo_root is None:
             return
-        cmd = f"erk pr fix-conflicts-remote {self._row.pr_number}"
-        self._copy_and_notify(cmd)
+        self.run_streaming_command(
+            ["erk", "pr", "fix-conflicts-remote", str(self._row.pr_number)],
+            cwd=self._repo_root,
+            title=f"Fix Conflicts Remote PR #{self._row.pr_number}",
+        )
 
     def action_copy_output_logs(self) -> None:
         """Copy command output logs to clipboard."""
@@ -615,11 +618,13 @@ class PlanDetailScreen(ModalScreen):
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_fix_conflicts_remote":
-            if row.pr_number is not None:
-                cmd = f"erk pr fix-conflicts-remote {row.pr_number}"
-                executor.copy_to_clipboard(cmd)
-                executor.notify(f"Copied: {cmd}")
+        elif command_id == "fix_conflicts_remote":
+            if row.pr_number is not None and self._repo_root is not None:
+                self.run_streaming_command(
+                    ["erk", "pr", "fix-conflicts-remote", str(row.pr_number)],
+                    cwd=self._repo_root,
+                    title=f"Fix Conflicts Remote PR #{row.pr_number}",
+                )
 
         elif command_id == "close_plan":
             if row.issue_url:

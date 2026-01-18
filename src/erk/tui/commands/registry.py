@@ -45,6 +45,13 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.row.run_url is not None
             ),
         ),
+        CommandDefinition(
+            id="fix_conflicts_remote",
+            name="Action: Fix Conflicts Remote",
+            description="Launch remote conflict resolution workflow",
+            shortcut="5",
+            is_available=lambda ctx: ctx.row.pr_number is not None,
+        ),
         # === OPENS ===
         CommandDefinition(
             id="open_browser",
@@ -116,13 +123,6 @@ def get_all_commands() -> list[CommandDefinition]:
             description="Copy submit command",
             shortcut="4",
             is_available=lambda _: True,
-        ),
-        CommandDefinition(
-            id="copy_fix_conflicts_remote",
-            name="Copy: erk pr fix-conflicts-remote",
-            description="Copy remote conflict resolution command",
-            shortcut="5",
-            is_available=lambda ctx: ctx.row.pr_number is not None,
         ),
     ]
 
