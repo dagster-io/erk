@@ -11,7 +11,6 @@ resolution-markers = [
 members = [
     "erk",
     "erk-dev",
-    "erk-sh-bootstrap",
     "erk-shared",
     "erk-statusline",
 ]
@@ -485,11 +484,6 @@ requires-dist = [
     { name = "click", specifier = ">=8.1.7" },
     { name = "erk-shared", editable = "packages/erk-shared" },
 ]
-
-[[package]]
-name = "erk-sh-bootstrap"
-version = "1.0.0"
-source = { editable = "packages/erk-sh-bootstrap" }
 
 [[package]]
 name = "erk-shared"
