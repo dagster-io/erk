@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 15ca72b1f -->
+<!-- As of e56c06b01 -->
+
+### Major Changes
+
+- **Shell integration removed**: The shell integration system (shell wrappers, automatic directory switching, ERK_SHELL env var) has been completely eliminated. Navigation commands now print activation script instructions instead of automatically switching directories. Users source activation scripts manually or use `cd`. This simplifies the architecture while keeping core erk functionality intact. (9e972e801)
+
+- **Remote conflict resolution workflow**: Added `erk pr fix-conflicts-remote` command to trigger AI-powered conflict resolution on GitHub Actions without checking out branches locally. Squashes commits, rebases onto base branch, and uses Claude to resolve conflicts. Available in TUI via "5" key. (251f67273)
 
 ### Added
 
@@ -15,6 +21,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add unresolved PR comment count column to `erk dash` TUI (f676cd4d3)
 - Add git index lock retry logic to prevent conflicts during concurrent worktree operations (be578b881)
 - Add navigation guide for branches and worktrees documentation (490f346ca)
+- Add `erk prepare` command as shorthand for `erk br create --for-plan PLAN` (c60e625cc)
+- Auto-detect plan number from branch name with `erk implement --here` (e1cbbfbf6)
+- Add `--for-plan` option to `erk br create` for creating branches directly from GitHub issues (42ea3ab0a)
+- Add `objective_id` field to Plan dataclass for direct access to parent objectives (83c53770b)
+- Add "Fix Conflicts Remote" action to TUI dashboard with keyboard shortcut "5" (d3f66952b)
 
 ### Changed
 
@@ -22,11 +33,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expand implementation plan details blocks by default in GitHub issues (92eac2403)
 - Enable CI autofix agent to automatically fix type errors (51cfa0e68)
 - Remove `erk-plan` label from objectives, keeping only `erk-objective` for clearer distinction (718393f3b)
+- Simplify plan workflow to use `erk prepare` instead of three-mode `erk implement` (8846105f4)
+- Update PR checkout instructions to use shell script pattern for proper worktree activation (8cefccb57)
+- Rewrite first-plan.md tutorial clarifying two-step workflow: `erk prepare` then `erk implement --here` (eabc128e0)
+- Branch delete hint now only shown when `--force` flag is provided (95bce0f08)
 
 ### Fixed
 
 - Fix `erk-bootstrap` to distinguish between "not in project" and "erk not installed" with targeted error messages (5fdc5f0e4)
 - Fix artifact sync to respect installed capabilities when syncing workflows and actions (6b09cd84a)
+- Fix `--local` config to write to repo root instead of worktree, so config is shared across worktrees (dc5d24a0a)
+- Fix `erk land` hanging on confirmation prompts in script mode (42aa00837)
+- Fix `--here` mode to use process replacement instead of subshell fallback (9d402cca2)
+- Fix `land.sh` script sourcing with process substitution for reliable temp file handling (f6aad2774)
+- Fix `land.sh` to use `source` instead of `eval` (5e8a6508f)
+- Remove redundant "Error: " prefix from `erk land` shell integration message (e56c06b01)
+- Fix session preprocessing to correctly handle embedded `tool_result` blocks (47a4c4631)
+
+### Removed
+
+- Delete `erk-sh-bootstrap` package and related documentation (e21f4836c)
 
 ## [0.5.5] - 2026-01-15 06:53 PT
 

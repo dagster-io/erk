@@ -130,12 +130,12 @@ Example format:
 
 **Always filter:**
 
+- **Local-only commands** - ANY commit adding or modifying `.claude/commands/local/*` files. These are developer-only commands not shipped to users. Filter even if the commit message sounds like a new feature (e.g., "Add /local:foo command")
 - **Release housekeeping** - version bumps ("Bump version to X"), CHANGELOG finalization, lock file updates for releases
 - CI/CD-only changes (.github/workflows/)
 - Documentation-only changes (docs/, .md files in .erk/)
 - Test-only changes (tests/)
 - Internal code conventions (frozen dataclasses, parameter defaults)
-- Local-only commands (`.claude/commands/local/`)
 - Gateway method additions (abc.py + real.py + fake.py pattern)
 - Build tooling (Makefile, pyproject.toml deps)
 - Merge commits with no substantive changes
