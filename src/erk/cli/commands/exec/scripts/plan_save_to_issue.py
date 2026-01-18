@@ -325,9 +325,6 @@ def plan_save_to_issue(
         slot_name = _update_slot_objective_if_applicable(ctx, cwd, objective_issue)
 
     # Step 10: Output success
-    # Detect enrichment status for informational output
-    is_enriched = "## Enrichment Details" in plan
-
     # At this point result.success is True, so issue_number must be set
     # Guard for type narrowing
     if result.issue_number is None:
@@ -337,7 +334,6 @@ def plan_save_to_issue(
         click.echo(f"Plan saved to GitHub issue #{result.issue_number}")
         click.echo(f"Title: {result.title}")
         click.echo(f"URL: {result.issue_url}")
-        click.echo(f"Enrichment: {'Yes' if is_enriched else 'No'}")
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         if slot_name is not None:
@@ -350,7 +346,6 @@ def plan_save_to_issue(
             "issue_number": result.issue_number,
             "issue_url": result.issue_url,
             "title": result.title,
-            "enriched": is_enriched,
         }
         if snapshot_result is not None:
             output_data["archived_to"] = str(snapshot_result.snapshot_dir)

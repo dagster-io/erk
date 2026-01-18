@@ -18,7 +18,7 @@ The documentation is organized by topic category:
 | ----------------------------- | ------------------------------------------------ |
 | [Architecture](architecture/) | Core patterns, interfaces, subprocess wrappers   |
 | [CLI Development](cli/)       | Command organization, output styling, formatting |
-| [Planning](planning/)         | Plan lifecycle, enrichment, agent delegation     |
+| [Planning](planning/)         | Plan lifecycle, workflows, agent delegation      |
 | [Testing](testing/)           | Test architecture, fakes, rebase conflicts       |
 | [Sessions](sessions/)         | Session logs, context analysis, tools            |
 | [Hooks](hooks/)               | Hook system, erk-specific hooks                  |

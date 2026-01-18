@@ -293,7 +293,7 @@ class DependencyStatus:
 
 @dataclass(frozen=True)
 class PlanStatus:
-    """Status of .impl/ folder and enriched plans."""
+    """Status of .impl/ folder."""
 
     exists: bool
     path: Path | None
@@ -301,8 +301,6 @@ class PlanStatus:
     line_count: int
     first_lines: list[str]
     format: str  # "folder" or "none"
-    enriched_plan_path: Path | None = None  # Path to enriched plan file
-    enriched_plan_filename: str | None = None  # Filename of enriched plan
     issue_number: int | None = None  # GitHub issue number if linked
     issue_url: str | None = None  # GitHub issue URL if linked
 

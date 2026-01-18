@@ -678,7 +678,7 @@ erk_plan: false
             text_file = Path(tmpdir) / "feature-impl.txt"
             text_file.write_text(
                 """---
-enriched_by_persist_plan: true
+erk_plan: true
 ---
 
 ## Implementation Plan
