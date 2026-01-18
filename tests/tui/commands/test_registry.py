@@ -210,3 +210,21 @@ def test_land_pr_not_available_when_no_run() -> None:
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "land_pr" not in cmd_ids
+
+
+def test_fix_conflicts_remote_available_when_pr_exists() -> None:
+    """fix_conflicts_remote should be available when PR number exists."""
+    row = make_plan_row(123, "Test", pr_number=456)
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "fix_conflicts_remote" in cmd_ids
+
+
+def test_fix_conflicts_remote_not_available_when_no_pr() -> None:
+    """fix_conflicts_remote should not be available when no PR number."""
+    row = make_plan_row(123, "Test")
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "fix_conflicts_remote" not in cmd_ids

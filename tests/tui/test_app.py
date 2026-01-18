@@ -934,6 +934,91 @@ class TestExecutePaletteCommandLandPR:
             assert "-f" in captured_command
 
 
+class TestExecutePaletteCommandFixConflictsRemote:
+    """Tests for execute_palette_command('fix_conflicts_remote').
+
+    Note: fix_conflicts_remote uses streaming output via subprocess. These tests verify
+    the guard conditions. The guard condition test (no PR) doesn't invoke
+    subprocess, so it can be tested without a real directory. Testing the
+    positive case with actual subprocess execution is done via integration tests.
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_fix_conflicts_remote_with_no_pr(self) -> None:
+        """Execute palette command fix_conflicts_remote does nothing if no PR."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")]  # No pr_number
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Execute fix_conflicts_remote command with no PR
+            app.execute_palette_command("fix_conflicts_remote")
+            await pilot.pause()
+
+            # Should not have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_fix_conflicts_remote_pushes_screen_and_runs_command(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        """Execute palette command fix_conflicts_remote pushes screen and runs correct command."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        # Capture the command passed to run_streaming_command
+        captured_command = None
+
+        def mock_run_streaming_command(
+            self: PlanDetailScreen,
+            command: list[str],
+            cwd: Path,
+            title: str,
+            *,
+            timeout: float = 30.0,
+        ) -> None:
+            nonlocal captured_command
+            captured_command = command
+
+        # Patch run_streaming_command to capture the command
+        monkeypatch.setattr(
+            PlanDetailScreen,
+            "run_streaming_command",
+            mock_run_streaming_command,
+        )
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Execute fix_conflicts_remote command
+            app.execute_palette_command("fix_conflicts_remote")
+            await pilot.pause()
+
+            # Should have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len + 1
+
+            detail_screen = app.screen_stack[-1]
+            assert isinstance(detail_screen, PlanDetailScreen)
+
+            # Verify correct command was prepared
+            assert captured_command is not None
+            assert captured_command == ["erk", "pr", "fix-conflicts-remote", "456"]
+
+
 class TestStreamingCommandTimeout:
     """Tests for streaming command timeout behavior.
 
