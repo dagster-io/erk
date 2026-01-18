@@ -47,6 +47,7 @@ from erk.core.worktree_pool import (
     save_pool_state,
     update_slot_objective,
 )
+from erk_shared.gateway.console.real import InteractiveConsole, ScriptConsole
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -643,6 +644,10 @@ def land(
     if dry_run:
         ctx = create_context(dry_run=True)
         script = False  # Force human-readable output in dry-run mode
+    elif script and isinstance(ctx.console, InteractiveConsole):
+        # Replace InteractiveConsole with ScriptConsole to avoid interactive prompts.
+        # Only replace InteractiveConsole - preserve FakeConsole for tests.
+        ctx = replace(ctx, console=ScriptConsole())
 
     # Validate prerequisites
     Ensure.gh_authenticated(ctx)
