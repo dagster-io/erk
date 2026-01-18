@@ -13,7 +13,9 @@ from erk.cli.constants import REBASE_WORKFLOW_NAME
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
 from erk_shared.github.types import PRNotFound
+from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
 
@@ -145,6 +147,34 @@ def pr_fix_conflicts_remote(
         inputs=inputs,
     )
     user_output(click.style("✓", fg="green") + " Workflow triggered")
+
+    # Update plan issue dispatch metadata if branch follows P{issue}-pattern
+    plan_issue_number = extract_leading_issue_number(branch_name)
+    if plan_issue_number is not None:
+        node_id = ctx.github.get_workflow_run_node_id(repo.root, run_id)
+        if node_id is not None:
+            try:
+                plan_issue = ctx.issues.get_issue(repo.root, plan_issue_number)
+                updated_body = update_plan_header_dispatch(
+                    issue_body=plan_issue.body,
+                    run_id=run_id,
+                    node_id=node_id,
+                    dispatched_at=ctx.time.now().isoformat(),
+                )
+                ctx.issues.update_issue_body(repo.root, plan_issue_number, updated_body)
+                user_output(
+                    click.style("✓", fg="green")
+                    + f" Updated dispatch metadata on plan #{plan_issue_number}"
+                )
+            except ValueError:
+                # Plan issue doesn't have a plan-header block - skip silently
+                pass
+            except Exception as e:
+                user_output(
+                    click.style("Warning: ", fg="yellow")
+                    + f"Failed to update plan dispatch metadata: {e}"
+                )
+
     user_output("")
 
     # Build run URL

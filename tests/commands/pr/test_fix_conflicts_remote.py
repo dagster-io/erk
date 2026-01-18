@@ -1,5 +1,6 @@
 """Tests for erk pr fix-conflicts-remote command."""
 
+from datetime import UTC, datetime
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -8,6 +9,9 @@ from erk.cli.commands.pr import pr_group
 from erk.cli.constants import REBASE_WORKFLOW_NAME
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -463,3 +467,183 @@ def test_fix_conflicts_remote_with_pr_number_on_detached_head(tmp_path: Path) ->
         assert len(github.triggered_workflows) == 1
         _, inputs = github.triggered_workflows[0]
         assert inputs["branch_name"] == "feature-x"
+
+
+def _make_issue_info(
+    number: int,
+    body: str,
+    *,
+    title: str | None = None,
+    state: str = "OPEN",
+) -> IssueInfo:
+    """Create an IssueInfo for testing."""
+    now = datetime.now(UTC)
+    return IssueInfo(
+        number=number,
+        title=title or f"Issue #{number}",
+        body=body,
+        state=state,
+        url=f"https://github.com/owner/repo/issues/{number}",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=now,
+        updated_at=now,
+        author="testuser",
+    )
+
+
+def test_fix_conflicts_remote_updates_dispatch_metadata_for_plan_branch(tmp_path: Path) -> None:
+    """Test that dispatch metadata is updated when branch follows P-pattern."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Branch follows P{issue_number}-{slug} pattern
+        branch_name = "P123-fix-auth-bug-01-15-1430"
+
+        # Create plan issue with plan-header block
+        plan_body = format_plan_header_body(
+            created_at="2024-01-15T14:30:00Z",
+            created_by="testuser",
+            worktree_name=None,
+            branch_name=None,
+            plan_comment_id=None,
+            last_dispatched_run_id=None,
+            last_dispatched_node_id=None,
+            last_dispatched_at=None,
+            last_local_impl_at=None,
+            last_local_impl_event=None,
+            last_local_impl_session=None,
+            last_local_impl_user=None,
+            last_remote_impl_at=None,
+            source_repo=None,
+            objective_issue=None,
+            created_from_session=None,
+            last_learn_session=None,
+            last_learn_at=None,
+        )
+        plan_issue = _make_issue_info(123, plan_body, title="Fix auth bug")
+        issues_gateway = FakeGitHubIssues(issues={123: plan_issue})
+
+        pr_info = _make_pr_info(456, branch_name, "OPEN", "Fix auth bug")
+        pr_details = _make_pr_details(
+            number=456,
+            head_ref_name=branch_name,
+            state="OPEN",
+            base_ref_name="main",
+            title="Fix auth bug",
+        )
+        github = FakeGitHub(
+            prs={branch_name: pr_info},
+            pr_details={456: pr_details},
+            issues_gateway=issues_gateway,
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: branch_name},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Workflow triggered" in result.output
+        assert "Updated dispatch metadata on plan #123" in result.output
+
+        # Verify issue body was updated with dispatch metadata
+        assert len(issues_gateway.updated_bodies) == 1
+        updated_issue_number, updated_body = issues_gateway.updated_bodies[0]
+        assert updated_issue_number == 123
+        assert "last_dispatched_run_id" in updated_body
+        assert "last_dispatched_node_id" in updated_body
+
+
+def test_fix_conflicts_remote_skips_metadata_for_non_plan_branch(tmp_path: Path) -> None:
+    """Test that no metadata update occurs for branches without P-pattern."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Branch does NOT follow P{issue_number}-{slug} pattern
+        branch_name = "feature-branch"
+
+        pr_info = _make_pr_info(123, branch_name, "OPEN", "Add feature")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name=branch_name,
+            state="OPEN",
+            base_ref_name="main",
+            title="Add feature",
+        )
+
+        issues_gateway = FakeGitHubIssues()
+        github = FakeGitHub(
+            prs={branch_name: pr_info},
+            pr_details={123: pr_details},
+            issues_gateway=issues_gateway,
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: branch_name},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Workflow triggered" in result.output
+        # Should NOT see dispatch metadata update message
+        assert "Updated dispatch metadata" not in result.output
+
+        # Verify no issue updates occurred
+        assert len(issues_gateway.updated_bodies) == 0
+
+
+def test_fix_conflicts_remote_handles_missing_plan_header_gracefully(tmp_path: Path) -> None:
+    """Test that command succeeds when plan issue has no plan-header block."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Branch follows P{issue_number}-{slug} pattern
+        branch_name = "P456-fix-bug-01-15-1430"
+
+        # Issue exists but has no plan-header block (just plain text)
+        plain_issue = _make_issue_info(456, "This is a regular issue body without metadata")
+        issues_gateway = FakeGitHubIssues(issues={456: plain_issue})
+
+        pr_info = _make_pr_info(789, branch_name, "OPEN", "Fix bug")
+        pr_details = _make_pr_details(
+            number=789,
+            head_ref_name=branch_name,
+            state="OPEN",
+            base_ref_name="main",
+            title="Fix bug",
+        )
+        github = FakeGitHub(
+            prs={branch_name: pr_info},
+            pr_details={789: pr_details},
+            issues_gateway=issues_gateway,
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: branch_name},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(pr_group, ["fix-conflicts-remote"], obj=ctx)
+
+        # Command should succeed even though plan-header update failed
+        assert result.exit_code == 0
+        assert "Workflow triggered" in result.output
+        # Should NOT see error or warning about plan header (ValueError is silently caught)
+        assert "Updated dispatch metadata" not in result.output
+
+        # Verify no issue updates occurred (update failed due to missing plan-header)
+        assert len(issues_gateway.updated_bodies) == 0
