@@ -74,12 +74,19 @@ class ScriptConsole(Console):
     """
 
     def is_stdin_interactive(self) -> bool:
-        """Check if stdin is connected to an interactive terminal.
+        """Return True since ScriptConsole can handle prompts via auto-confirm.
+
+        ScriptConsole.confirm() returns the default value without prompting,
+        so it can always "handle" confirmation requests. Returning True here
+        allows script mode to proceed past interactivity checks.
+
+        Note: This returns True regardless of actual stdin state because
+        ScriptConsole.confirm() doesn't read from stdin - it returns defaults.
 
         Returns:
-            True if stdin is a TTY, False otherwise
+            True - ScriptConsole can handle prompts (via defaults)
         """
-        return sys.stdin.isatty()
+        return True
 
     def is_stdout_tty(self) -> bool:
         """Check if stdout is connected to a TTY.
