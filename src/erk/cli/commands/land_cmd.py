@@ -666,6 +666,8 @@ def land(
 
     # Validate shell integration for activation script output (skip in dry-run mode)
     if not script and not ctx.dry_run:
+        from erk.core.display_utils import copy_to_clipboard_osc52
+
         # Ensure land.sh exists and show user-friendly message
         land_script = ensure_land_script(repo.root)
 
@@ -683,11 +685,12 @@ def land(
             args.append("--no-delete")
 
         args_str = " " + " ".join(args) if args else ""
+        source_cmd = f"source {land_script}{args_str}"
 
-        user_output(
-            "This command requires shell integration.\n\n"
-            + f"Run: source {land_script}{args_str}\n"
-        )
+        clipboard_hint = click.style("(copied to clipboard)", dim=True)
+        user_output("This command requires shell integration.\n")
+        user_output(f"Run: {source_cmd}  {clipboard_hint}")
+        user_output(copy_to_clipboard_osc52(source_cmd), nl=False)
         raise SystemExit(0)
 
     # Determine if landing current branch or a specific target
