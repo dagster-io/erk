@@ -14,7 +14,6 @@ from erk.core.capabilities.reminders import (
     TripwiresReminderCapability,
 )
 from erk.core.capabilities.ruff_format import RuffFormatCapability
-from erk.core.capabilities.shell_integration import ShellIntegrationCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
@@ -37,7 +36,6 @@ def _all_capabilities() -> tuple[Capability, ...]:
         StatuslineCapability(claude_installation=None),
         HooksCapability(),
         RuffFormatCapability(),
-        ShellIntegrationCapability(shell=None, console=None, shell_integration_dir=None),
         # Reminder capabilities - opt-in context injection (required=False)
         DevrunReminderCapability(),
         DignifiedPythonReminderCapability(),
