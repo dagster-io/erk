@@ -395,13 +395,12 @@ def resolve_up_navigation(
     )
 
     # Fail explicitly if multiple children exist
-    if len(children) > 1:
-        children_list = ", ".join(f"'{child}'" for child in children)
-        user_output(
-            f"Error: Branch '{current_branch}' has multiple children: {children_list}.\n"
-            f"Please create worktree for specific child: erk create <branch-name>"
-        )
-        raise SystemExit(1)
+    children_list = ", ".join(f"'{c}'" for c in children)
+    Ensure.invariant(
+        len(children) <= 1,
+        f"Branch '{current_branch}' has multiple children: {children_list}.\n"
+        f"Please create worktree for specific child: erk create <branch-name>",
+    )
 
     # Use the single child
     target_branch = children[0]
@@ -446,12 +445,16 @@ def resolve_down_navigation(
     if parent_branch is None:
         # Check if we're already on trunk
         detected_trunk = ctx.git.detect_trunk_branch(repo.root)
-        if current_branch == detected_trunk:
-            user_output(f"Already at the bottom of the stack (on trunk branch '{detected_trunk}')")
-            raise SystemExit(1)
-        else:
-            user_output("Error: Could not determine parent branch from Graphite metadata")
-            raise SystemExit(1)
+        Ensure.invariant(
+            current_branch != detected_trunk,
+            f"Already at the bottom of the stack (on trunk branch '{detected_trunk}')",
+        )
+        # Not on trunk but no parent - keep as direct error (no clear condition to express)
+        user_output(
+            click.style("Error: ", fg="red")
+            + "Could not determine parent branch from Graphite metadata"
+        )
+        raise SystemExit(1)
 
     # Check if parent is the trunk - if so, switch to root
     detected_trunk = ctx.git.detect_trunk_branch(repo.root)
