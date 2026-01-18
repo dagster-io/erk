@@ -13,6 +13,9 @@ import shlex
 from collections.abc import Sequence
 from pathlib import Path
 
+import click
+
+from erk.core.display_utils import copy_to_clipboard_osc52
 from erk_shared.output.output import user_output
 
 # SPECULATIVE: activation-scripts - set to False to disable this feature
@@ -222,6 +225,10 @@ def print_activation_instructions(
     worktree creation or navigation to guide users through the opt-in shell
     integration workflow.
 
+    The primary activation command is auto-copied to the clipboard via OSC 52
+    (supported by iTerm2, Kitty, Alacritty, WezTerm, and other modern terminals).
+    Terminals without OSC 52 support will silently ignore the sequence.
+
     SPECULATIVE: activation-scripts (objective #4954)
 
     Args:
@@ -229,8 +236,13 @@ def print_activation_instructions(
         source_branch: If provided and force is True, shows delete command for this branch.
         force: If True and source_branch is provided, shows the delete hint.
     """
+    primary_cmd = f"source {script_path}"
+
     user_output("\nTo activate the worktree environment:")
-    user_output(f"  source {script_path}")
+    clipboard_hint = click.style("(copied to clipboard)", dim=True)
+    user_output(f"  {primary_cmd}  {clipboard_hint}")
+    # Emit OSC 52 to copy the command to clipboard (invisible escape sequence)
+    user_output(copy_to_clipboard_osc52(primary_cmd), nl=False)
 
     if source_branch is not None and force:
         user_output(f"\nTo activate and delete branch {source_branch}:")

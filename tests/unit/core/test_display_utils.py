@@ -1,8 +1,10 @@
 """Unit tests for display_utils.py color formatting."""
 
+import base64
 from datetime import UTC, datetime
 
 from erk.core.display_utils import (
+    copy_to_clipboard_osc52,
     format_relative_time,
     format_submission_time,
     format_workflow_outcome,
@@ -11,6 +13,42 @@ from erk.core.display_utils import (
     get_workflow_run_state,
 )
 from erk_shared.github.types import WorkflowRun
+
+
+def test_copy_to_clipboard_osc52_basic() -> None:
+    """Test OSC 52 clipboard escape sequence generation."""
+    result = copy_to_clipboard_osc52("hello")
+
+    # Verify OSC 52 format: ESC ] 52 ; c ; <base64> ESC \
+    assert result.startswith("\033]52;c;")
+    assert result.endswith("\033\\")
+
+    # Verify base64 encoding is correct
+    encoded_part = result[7:-2]  # Strip prefix and suffix
+    decoded = base64.b64decode(encoded_part).decode("utf-8")
+    assert decoded == "hello"
+
+
+def test_copy_to_clipboard_osc52_with_path() -> None:
+    """Test OSC 52 with a source command path."""
+    cmd = "source /path/to/worktree/.erk/bin/activate.sh"
+    result = copy_to_clipboard_osc52(cmd)
+
+    # Verify the encoding round-trips correctly
+    encoded_part = result[7:-2]
+    decoded = base64.b64decode(encoded_part).decode("utf-8")
+    assert decoded == cmd
+
+
+def test_copy_to_clipboard_osc52_unicode() -> None:
+    """Test OSC 52 handles unicode characters."""
+    text = "Hello 世界 🌍"
+    result = copy_to_clipboard_osc52(text)
+
+    # Verify unicode round-trips correctly
+    encoded_part = result[7:-2]
+    decoded = base64.b64decode(encoded_part).decode("utf-8")
+    assert decoded == text
 
 
 def test_pr_title_uses_cyan() -> None:
