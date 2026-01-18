@@ -5,3 +5,4 @@
 
 - **[erk.md](erk.md)** — working with erk-specific hooks, understanding context-aware reminders, modifying project hooks, creating project-scoped hooks, testing hooks with @project_scoped decorator, using @project_scoped decorator, creating hooks that only fire in managed projects
 - **[hooks.md](hooks.md)** — creating hooks, modifying hooks, understanding hook lifecycle
+- **[prompt-hooks.md](prompt-hooks.md)** — creating prompt hooks, customizing post-init setup, customizing CI workflow, understanding prompt hooks vs claude hooks

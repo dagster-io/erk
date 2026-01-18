@@ -13,6 +13,7 @@ from erk.core.health_checks import (
     check_hooks_disabled,
     check_legacy_slot_naming,
     check_managed_artifacts,
+    check_post_init_hook,
     check_post_plan_implement_ci_hook,
     check_repository,
     check_uv_version,
@@ -1046,6 +1047,39 @@ def test_check_post_plan_implement_ci_hook_missing(tmp_path: Path) -> None:
     assert result.details is not None
     assert "post-plan-implement-ci.md" in result.details
     assert "CI instructions" in result.details
+
+
+# --- Post-Init Hook Tests ---
+
+
+def test_check_post_init_hook_exists(tmp_path: Path) -> None:
+    """Test post-init hook check when hook file exists."""
+    hook_dir = tmp_path / ".erk" / "prompt-hooks"
+    hook_dir.mkdir(parents=True)
+    (hook_dir / "post-init.md").write_text("# Setup instructions", encoding="utf-8")
+
+    result = check_post_init_hook(tmp_path)
+
+    assert result.name == "post-init-hook"
+    assert result.passed is True
+    assert result.info is False  # Green check, not info
+    assert "Post-init hook configured" in result.message
+    assert ".erk/prompt-hooks/post-init.md" in result.message
+    assert result.details is None
+
+
+def test_check_post_init_hook_missing(tmp_path: Path) -> None:
+    """Test post-init hook check when hook file is missing."""
+    result = check_post_init_hook(tmp_path)
+
+    assert result.name == "post-init-hook"
+    assert result.passed is True
+    assert result.info is True
+    assert "No post-init hook" in result.message
+    assert ".erk/prompt-hooks/post-init.md" in result.message
+    assert result.details is not None
+    assert "post-init.md" in result.details
+    assert "setup instructions" in result.details
 
 
 # --- Legacy Slot Naming Tests ---
