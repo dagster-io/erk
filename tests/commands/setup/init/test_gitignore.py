@@ -85,7 +85,8 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
 
         # DirenvCapability is optional (not auto-installed), so .env prompt appears.
         # HooksCapability creates .claude/settings.json triggering Claude permission prompt.
-        # Prompts: .env (n), .erk/scratch/ (n), .impl/ (n), .erk/config.local.toml (n), permission (n)
+        # Prompts: .env (n), .erk/scratch/ (n), .impl/ (n), .erk/config.local.toml (n),
+        # permission (n)
         result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
@@ -121,7 +122,8 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
 
         # DirenvCapability is optional (not auto-installed), so .env prompt appears.
         # HooksCapability creates .claude/settings.json triggering Claude permission prompt.
-        # Prompts: .env (n), .erk/scratch/ (y), .impl/ (y), .erk/config.local.toml (n), permission (n)
+        # Prompts: .env (n), .erk/scratch/ (y), .impl/ (y), .erk/config.local.toml (n),
+        # permission (n)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
             result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\nn\n")
 
