@@ -32,7 +32,7 @@ def test_implement_with_submit_flag_from_issue() -> None:
         result = runner.invoke(implement, ["#42", "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Assigned" in result.output
+        assert "Created .impl/ folder" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
@@ -57,14 +57,14 @@ def test_implement_with_submit_flag_from_file() -> None:
         result = runner.invoke(implement, [str(plan_file), "--script", "--submit"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Assigned" in result.output
+        assert "Created .impl/ folder" in result.output
 
         # Script should be created
         assert "erk-implement-" in result.output
         assert ".sh" in result.output
 
-        # Verify plan file was deleted (moved to worktree)
-        assert not plan_file.exists()
+        # Verify plan file was preserved (not deleted)
+        assert plan_file.exists()
 
 
 def test_implement_without_submit_uses_default_command() -> None:
@@ -84,7 +84,7 @@ def test_implement_without_submit_uses_default_command() -> None:
         result = runner.invoke(implement, ["#42", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Assigned" in result.output
+        assert "Created .impl/ folder" in result.output
 
         # Verify script has only implement-plan command (not CI/submit)
         assert "erk-implement-" in result.output
@@ -155,8 +155,8 @@ def test_implement_submit_with_dry_run() -> None:
         assert "/fast-ci" in result.output
         assert "/gt:pr-submit" in result.output
 
-        # Verify no worktree was actually created
-        assert len(git.added_worktrees) == 0
+        # Verify no .impl/ created in dry-run
+        assert not (env.cwd / ".impl").exists()
 
 
 # Dangerous Flag Tests
@@ -297,8 +297,8 @@ def test_implement_with_dangerous_flag_in_dry_run() -> None:
         )
         assert expected_cmd in result.output
 
-        # Verify no worktree was created
-        assert len(git.added_worktrees) == 0
+        # Verify no .impl/ created in dry-run
+        assert not (env.cwd / ".impl").exists()
 
 
 def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
@@ -327,8 +327,8 @@ def test_implement_with_dangerous_and_submit_in_dry_run() -> None:
         # Verify all three commands show the dangerous flag
         assert result.output.count("--dangerously-skip-permissions") == 3
 
-        # Verify no worktree was created
-        assert len(git.added_worktrees) == 0
+        # Verify no .impl/ created in dry-run
+        assert not (env.cwd / ".impl").exists()
 
 
 def test_implement_plan_file_with_dangerous_flag() -> None:
@@ -362,12 +362,12 @@ def test_implement_plan_file_with_dangerous_flag() -> None:
         # Verify dangerous flag is present
         assert "--dangerously-skip-permissions" in script_content
 
-        # Verify plan file was moved to worktree (deleted from original location)
-        assert not plan_file.exists()
+        # Verify plan file was preserved (not deleted)
+        assert plan_file.exists()
 
 
-def test_implement_with_dangerous_shows_in_manual_instructions() -> None:
-    """Test that --dangerous flag appears in manual instructions when shell integration disabled."""
+def test_implement_with_dangerous_shows_in_script_content() -> None:
+    """Test that --dangerous flag appears in generated script content."""
     plan_issue = create_sample_plan_issue()
 
     runner = CliRunner()
@@ -384,7 +384,7 @@ def test_implement_with_dangerous_shows_in_manual_instructions() -> None:
         result = runner.invoke(implement, ["#42", "--dangerous", "--script"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Assigned" in result.output
+        assert "Created .impl/ folder" in result.output
 
         # Verify dangerous flag shown in script file
         assert result.stdout

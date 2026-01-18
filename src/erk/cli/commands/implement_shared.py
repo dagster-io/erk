@@ -1,11 +1,10 @@
 """Shared utilities for implement commands.
 
-This module contains the common logic for erk implement - worktree-based implementation.
+This module contains the common logic for erk implement.
 """
 
 import re
 import shlex
-import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
@@ -15,10 +14,8 @@ import click
 
 from erk.cli.activation import render_activation_script
 from erk.cli.help_formatter import script_option
-from erk.cli.subshell import is_shell_integration_active, spawn_worktree_subshell
 from erk.core.claude_executor import ClaudeExecutor
 from erk.core.context import ErkContext
-from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.issue_workflow import (
     IssueBranchSetup,
     IssueValidationFailed,
@@ -54,14 +51,10 @@ def implement_common_options(fn: F) -> F:
     - --verbose: Show full Claude Code output
     - -m/--model: Model to use for Claude
 
-    Each command using this decorator must also define its own --force option
-    since the behavior differs (worktree deletion vs pool slot unassignment).
-
     Example:
         @click.command("implement", cls=CommandWithHiddenOptions)
         @click.argument("target")
         @implement_common_options
-        @click.option("-f", "--force", ...)  # Command-specific force behavior
         @click.pass_obj
         def implement(ctx, target, dry_run, submit, dangerous, ...):
             ...
@@ -168,9 +161,6 @@ def validate_flags(
     submit: bool,
     no_interactive: bool,
     script: bool,
-    *,
-    here: bool,
-    force: bool,
 ) -> None:
     """Validate flag combinations and raise ClickException if invalid.
 
@@ -178,20 +168,10 @@ def validate_flags(
         submit: Whether to auto-submit PR after implementation
         no_interactive: Whether to execute non-interactively
         script: Whether to output shell integration script
-        here: Whether to run in current directory without switching worktrees
-        force: Whether to auto-unassign oldest slot if pool is full
 
     Raises:
         click.ClickException: If flag combination is invalid
     """
-    # --here and --force are mutually exclusive
-    if here and force:
-        raise click.ClickException(
-            "--here and --force are mutually exclusive\n"
-            "--here runs in current directory (no pool management)\n"
-            "--force manages pool slots when switching worktrees"
-        )
-
     # --submit requires --no-interactive UNLESS using --script mode
     # Script mode generates shell code, so --submit is allowed
     if submit and not no_interactive and not script:
@@ -272,16 +252,10 @@ def execute_interactive_mode(
     dangerous: bool,
     model: str | None,
     executor: ClaudeExecutor,
-    here_mode: bool,
 ) -> None:
     """Execute implementation in interactive mode using executor.
 
-    When here_mode is True or shell integration is active (ERK_SHELL is set),
-    uses executor.execute_interactive() which replaces the current process.
-
-    When shell integration is not active and not in here_mode, spawns a subshell
-    in the worktree directory and auto-launches Claude within it. This allows
-    users to work without configuring shell integration.
+    Uses executor.execute_interactive() which replaces the current process.
 
     Args:
         ctx: Erk context for accessing git and current working directory
@@ -290,52 +264,24 @@ def execute_interactive_mode(
         dangerous: Whether to skip permission prompts
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for process replacement
-        here_mode: Whether running in --here mode (current directory, no worktree switch)
 
     Raises:
         click.ClickException: If Claude CLI not found
 
     Note:
-        With shell integration or here_mode: This function never returns - process is replaced
-        Without shell integration and not here_mode: Returns when user exits the subshell
+        This function never returns - process is replaced.
     """
-    # For --here mode or when shell integration is active,
-    # use process replacement (no subshell needed)
-    if here_mode or is_shell_integration_active():
-        if here_mode:
-            click.echo("Launching Claude...", err=True)
-        else:
-            click.echo("Entering interactive implementation mode...", err=True)
-        try:
-            executor.execute_interactive(
-                worktree_path=worktree_path,
-                dangerous=dangerous,
-                command="/erk:system:impl-execute",
-                target_subpath=compute_relative_path_in_worktree(
-                    ctx.git.list_worktrees(repo_root), ctx.cwd
-                )
-                if not here_mode
-                else None,
-                model=model,
-            )
-        except RuntimeError as e:
-            raise click.ClickException(str(e)) from e
-    else:
-        # No shell integration and not --here mode - spawn subshell
-        click.echo("Spawning worktree subshell...", err=True)
-        branch = ctx.git.get_current_branch(worktree_path)
-        if branch is None:
-            branch = worktree_path.name
-        exit_code = spawn_worktree_subshell(
-            ctx.shell,
+    click.echo("Launching Claude...", err=True)
+    try:
+        executor.execute_interactive(
             worktree_path=worktree_path,
-            branch=branch,
-            claude_command="/erk:system:impl-execute",
             dangerous=dangerous,
+            command="/erk:system:impl-execute",
+            target_subpath=None,
             model=model,
-            shell=None,
         )
-        sys.exit(exit_code)
+    except RuntimeError as e:
+        raise click.ClickException(str(e)) from e
 
 
 def execute_non_interactive_mode(
@@ -653,10 +599,7 @@ def prepare_plan_source_from_file(ctx: ErkContext, plan_file: Path) -> PlanSourc
     cleaned_stem = strip_plan_from_filename(plan_stem)
     base_name = sanitize_worktree_name(cleaned_stem)
 
-    dry_run_desc = (
-        f"Would create worktree from plan file: {plan_file}\n"
-        f"  Plan file would be deleted: {plan_file}"
-    )
+    dry_run_desc = f"Would create .impl/ from plan file: {plan_file}\n  Plan file will be preserved"
 
     return PlanSource(
         plan_content=plan_content,
