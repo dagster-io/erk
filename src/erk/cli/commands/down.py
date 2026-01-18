@@ -129,7 +129,10 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                         post_create_commands=None,
                     )
                     print_activation_instructions(
-                        script_path, source_branch=current_branch, force=force
+                        script_path,
+                        source_branch=current_branch,
+                        force=force,
+                        mode="activate_only",
                     )
 
             # Perform cleanup (no context regeneration needed - we haven't changed dirs)
@@ -188,7 +191,10 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                     post_create_commands=None,
                 )
                 print_activation_instructions(
-                    script_path, source_branch=current_branch, force=force
+                    script_path,
+                    source_branch=current_branch,
+                    force=force,
+                    mode="activate_only",
                 )
 
         # Perform cleanup (no context regeneration needed - we haven't actually changed directories)

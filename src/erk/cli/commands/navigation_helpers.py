@@ -270,7 +270,12 @@ def activate_root_repo(
                 worktree_path=root_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path, source_branch=source_branch, force=force)
+            print_activation_instructions(
+                script_path,
+                source_branch=source_branch,
+                force=force,
+                mode="activate_only",
+            )
         else:
             user_output(
                 "\nShell integration not detected. "
@@ -347,7 +352,12 @@ def activate_worktree(
                 worktree_path=wt_path,
                 post_create_commands=None,
             )
-            print_activation_instructions(script_path, source_branch=source_branch, force=force)
+            print_activation_instructions(
+                script_path,
+                source_branch=source_branch,
+                force=force,
+                mode="activate_only",
+            )
         else:
             user_output(
                 "Shell integration not detected. "
