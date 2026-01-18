@@ -789,3 +789,92 @@ def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
     # Branch should have been deleted
     deleted_branches = [branch for _path, branch in fake_graphite.delete_branch_calls]
     assert "feature-branch" in deleted_branches
+
+
+def test_cleanup_and_navigate_outputs_noop_script_when_not_current_branch(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Test that --script outputs a no-op script when landing from a different directory.
+
+    Regression test for bug where land.sh wrapper failed with 'cat: : No such file or
+    directory' when landing a PR from a directory other than the branch's worktree.
+
+    Root cause: _cleanup_and_navigate() only outputs a script path when is_current_branch
+    is True. When False, it calls raise SystemExit(0) without outputting anything, causing
+    `cat ""` to fail in the land.sh wrapper.
+
+    Fix: When is_current_branch is False and script is True, output a no-op activation
+    script that maintains the contract that --script always outputs a valid script path.
+    """
+    from tests.fakes.script_writer import FakeScriptWriter
+
+    worktree_path = tmp_path / "worktrees" / "feature-branch"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "main-repo"
+    main_repo_root.mkdir(parents=True)
+    (main_repo_root / ".git").mkdir()
+    pool_json_path = main_repo_root / "pool.json"
+
+    fake_git = FakeGit(
+        worktrees={main_repo_root: [WorktreeInfo(path=worktree_path, branch="feature-branch")]},
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch"]},
+        existing_paths={worktree_path, main_repo_root, main_repo_root / ".git"},
+    )
+
+    # Create a FakeScriptWriter to verify script content
+    fake_script_writer = FakeScriptWriter()
+
+    # We're landing from main_repo_root, not from the branch's worktree
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        script_writer=fake_script_writer,
+        cwd=main_repo_root,  # Not the branch's worktree
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=pool_json_path,
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate with script=True but is_current_branch=False
+    # This simulates landing a PR by URL from master (not in the branch's worktree)
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=None,  # No worktree cleanup needed
+            script=True,  # Key: requesting script output
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,  # Key: not in branch's worktree
+            target_child_branch=None,
+            objective_number=None,
+            no_delete=False,
+        )
+    except SystemExit as e:
+        assert e.code == 0  # Should exit cleanly
+
+    # Capture stdout where machine_output writes to
+    captured = capsys.readouterr()
+
+    # Verify a script path was output (not empty)
+    # The key assertion: --script should ALWAYS output a path, even when no navigation needed
+    script_path_output = captured.out.strip()
+    assert script_path_output, "Expected script path output, got empty string"
+
+    # Verify the script content contains the no-op marker
+    # Use FakeScriptWriter's stored content instead of reading from disk
+    assert fake_script_writer.last_script is not None, "No script was written"
+    script_content = fake_script_writer.last_script.content
+    assert "land complete" in script_content.lower(), (
+        f"Expected 'land complete' in script content, got: {script_content[:200]}"
+    )

@@ -18,7 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
-from erk.cli.activation import ensure_land_script
+from erk.cli.activation import ensure_land_script, render_activation_script
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -54,7 +54,7 @@ from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
-from erk_shared.output.output import user_output
+from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
 
 
@@ -499,7 +499,21 @@ def _cleanup_and_navigate(
             target_child_branch=target_child_branch,
         )
     else:
-        # Command succeeded but no navigation needed - exit cleanly
+        if script:
+            # Output no-op script for shell integration consistency
+            script_content = render_activation_script(
+                worktree_path=ctx.cwd,
+                target_subpath=None,
+                post_cd_commands=None,
+                final_message='echo "Land complete"',
+                comment="land complete (no navigation needed)",
+            )
+            result = ctx.script_writer.write_activation_script(
+                script_content,
+                command_name="land",
+                comment="no-op",
+            )
+            machine_output(str(result.path), nl=False)
         raise SystemExit(0)
 
 
