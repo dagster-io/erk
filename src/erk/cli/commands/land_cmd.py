@@ -40,6 +40,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext, create_context
+from erk.core.display_utils import copy_to_clipboard_osc52
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
     SlotAssignment,
@@ -666,8 +667,6 @@ def land(
 
     # Validate shell integration for activation script output (skip in dry-run mode)
     if not script and not ctx.dry_run:
-        from erk.core.display_utils import copy_to_clipboard_osc52
-
         # Ensure land.sh exists and show user-friendly message
         land_script = ensure_land_script(repo.root)
 
