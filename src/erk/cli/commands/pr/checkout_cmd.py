@@ -179,8 +179,8 @@ def pr_checkout(
             post_create_commands=None,
         )
         print_activation_instructions(
-                script_path,
-                source_branch=None,
-                force=False,
-                mode="activate_only",
-            )
+            script_path,
+            source_branch=None,
+            force=False,
+            mode="activate_only",
+        )
