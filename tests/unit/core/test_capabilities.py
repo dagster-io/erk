@@ -11,6 +11,8 @@ These tests verify:
 
 from pathlib import Path
 
+from tests.fakes.shell import FakeShell
+
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import (
     Capability,

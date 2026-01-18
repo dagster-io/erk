@@ -40,16 +40,22 @@ def test_init_creates_global_config_first_time() -> None:
         )
         # Config doesn't exist yet (first-time init)
         erk_installation = FakeErkInstallation(config=None)
+        # Note: FakeShell only affects context.shell, not DirenvCapability which
+        # uses RealShell via registry. If direnv is installed on the real system,
+        # DirenvCapability will create .gitignore triggering prompts.
+        shell_ops = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
+            shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
         )
 
-        # Input: erk_root, decline hooks (shell not detected so no prompt)
+        # Input: erk_root, then decline all gitignore prompts that may appear
+        # (DirenvCapability may create .gitignore if direnv is on the real system)
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Global config not found" in result.output
@@ -69,15 +75,18 @@ def test_init_prompts_for_erk_root() -> None:
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         # Config doesn't exist yet
         erk_installation = FakeErkInstallation(config=None)
+        shell_ops = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
+            shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
         )
 
+        # Input: erk_root, then decline all gitignore prompts that may appear
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         assert ".erk folder" in result.output
@@ -93,6 +102,7 @@ def test_init_detects_graphite_installed() -> None:
         erk_root = env.cwd / "erks"
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
+        # gt installed (FakeShell affects context.shell for graphite detection)
         shell_ops = FakeShell(installed_tools={"gt": "/usr/local/bin/gt"})
         erk_installation = FakeErkInstallation(config=None)
 
@@ -103,8 +113,9 @@ def test_init_detects_graphite_installed() -> None:
             global_config=None,
         )
 
+        # Input: erk_root, then decline all gitignore prompts that may appear
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) detected" in result.output
@@ -121,15 +132,18 @@ def test_init_detects_graphite_not_installed() -> None:
 
         git_ops = FakeGit(git_common_dirs={env.cwd: env.git_dir})
         erk_installation = FakeErkInstallation(config=None)
+        shell_ops = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
+            shell=shell_ops,
             erk_installation=erk_installation,
             global_config=None,
         )
 
+        # Input: erk_root, then decline all gitignore prompts that may appear
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input=f"{erk_root}\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Graphite (gt) not detected" in result.output

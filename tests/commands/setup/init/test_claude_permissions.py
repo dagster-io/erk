@@ -8,6 +8,10 @@ This file uses minimal mocking for external boundaries:
    - Uses FakeErkInstallation for dependency injection
    - No mocking required - proper abstraction via ConfigStore interface
    - Tests inject FakeErkInstallation with desired initial state
+
+2. Shell operations:
+   - Uses FakeShell with no direnv installed to skip DirenvCapability
+   - This prevents auto-creation of .gitignore which would trigger extra prompts
 """
 
 import json
@@ -18,6 +22,7 @@ from erk.cli.cli import cli
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
 from erk_shared.git.fake import FakeGit
+from tests.fakes.shell import FakeShell
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -39,15 +44,19 @@ def test_init_offers_claude_permission_when_missing() -> None:
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
         erk_installation = FakeErkInstallation(config=global_config)
+        # No direnv installed - prevents DirenvCapability from creating .gitignore
+        shell = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            shell=shell,
         )
 
-        # Accept permission (y), confirm write (y), decline hooks (n), delete backup (y)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\ny\nn\ny\n")
+        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
+        # Decline remaining gitignore (n*3), accept permission (y), write (y), delete backup (y)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\ny\ny\ny\n")
 
         assert result.exit_code == 0, result.output
         assert "Claude settings found" in result.output
@@ -132,15 +141,19 @@ def test_init_handles_declined_claude_permission() -> None:
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
         erk_installation = FakeErkInstallation(config=global_config)
+        # No direnv installed - prevents DirenvCapability from creating .gitignore
+        shell = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            shell=shell,
         )
 
-        # Decline permission (n), decline hooks (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\n")
+        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
+        # Decline remaining gitignore (n*3), decline permission (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Skipped" in result.output
@@ -165,15 +178,19 @@ def test_init_handles_declined_write_confirmation() -> None:
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
         erk_installation = FakeErkInstallation(config=global_config)
+        # No direnv installed - prevents DirenvCapability from creating .gitignore
+        shell = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            shell=shell,
         )
 
-        # Accept permission (y), decline write (n), decline hooks (n)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\n")
+        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
+        # Decline remaining gitignore (n*3), accept permission (y), decline write (n)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\ny\nn\n")
 
         assert result.exit_code == 0, result.output
         assert "Proceed with writing changes?" in result.output
@@ -201,16 +218,20 @@ def test_init_accepts_default_on_empty_input_for_write_confirmation() -> None:
         global_config = GlobalConfig.test(erk_root, use_graphite=False, shell_setup_complete=True)
 
         erk_installation = FakeErkInstallation(config=global_config)
+        # No direnv installed - prevents DirenvCapability from creating .gitignore
+        shell = FakeShell(installed_tools={})
 
         test_ctx = env.build_context(
             git=git_ops,
             erk_installation=erk_installation,
             global_config=global_config,
+            shell=shell,
         )
 
-        # Accept permission (y), hit Enter for write confirmation (empty = default=True),
-        # decline hooks (n), delete backup (y)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\n\nn\ny\n")
+        # DirenvCapability creates .gitignore with .envrc, causing .env prompt to skip.
+        # Decline remaining gitignore (n*3), accept permission (y), hit Enter for write
+        # confirmation (empty = default=True), delete backup (y)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\ny\n\ny\n")
 
         assert result.exit_code == 0, result.output
         # Verify permission was added (write happened with default=True)
