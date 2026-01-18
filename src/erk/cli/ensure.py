@@ -22,7 +22,7 @@ from typing import TYPE_CHECKING, Any, TypeVar
 import click
 
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
-from erk_shared.github.types import PRDetails
+from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.non_ideal_state import (
     BranchDetectionFailed,
     GitHubAPIFailed,
@@ -570,6 +570,29 @@ class Ensure:
         """
         if isinstance(result, (NoPRForBranch, PRNotFoundError)):
             user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+        return result
+
+    @staticmethod
+    def unwrap_pr(result: PRDetails | PRNotFound, message: str) -> PRDetails:
+        """Ensure PR lookup returned a valid PR.
+
+        Unlike Ensure.pr() which works with NonIdealState types that have built-in
+        messages, this method works with PRNotFound sentinel from github.types and
+        requires the caller to provide the error message.
+
+        Args:
+            result: PRDetails or PRNotFound sentinel
+            message: Error message if not found
+
+        Returns:
+            The PRDetails
+
+        Raises:
+            SystemExit: If PR not found (with exit code 1)
+        """
+        if isinstance(result, PRNotFound):
+            user_output(click.style("Error: ", fg="red") + message)
             raise SystemExit(1)
         return result
 
