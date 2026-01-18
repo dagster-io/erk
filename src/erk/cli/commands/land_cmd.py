@@ -18,6 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
+from erk.cli.activation import ensure_land_script
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -627,6 +628,12 @@ def land(
       erk land <url>        # Land PR by GitHub URL
       erk land <branch>     # Land PR for branch
 
+    With shell integration (recommended):
+      erk land
+
+    Without shell integration:
+      source <(erk land --script)
+
     Requires:
     - PR must be open and ready to merge
     - PR's base branch must be trunk
@@ -654,6 +661,32 @@ def land(
     Ensure.gh_authenticated(ctx)
 
     repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Validate shell integration for activation script output (skip in dry-run mode)
+    if not script and not ctx.dry_run:
+        # Ensure land.sh exists and show user-friendly message
+        land_script = ensure_land_script(repo.root)
+
+        # Reconstruct CLI args from parameters
+        args: list[str] = []
+        if target is not None:
+            args.append(target)
+        if up_flag:
+            args.append("--up")
+        if force:
+            args.append("-f")
+        if not pull_flag:
+            args.append("--no-pull")
+        if no_delete:
+            args.append("--no-delete")
+
+        args_str = " " + " ".join(args) if args else ""
+
+        user_output(
+            "This command requires shell integration.\n\n"
+            + f"Run: source {land_script}{args_str}\n"
+        )
+        raise SystemExit(0)
 
     # Determine if landing current branch or a specific target
     if target is None:
