@@ -37,6 +37,7 @@ Key finding: The plan format (GitHub Issues) and `.impl/` folder are already por
 **Philosophy:** "Code serves specifications" - specs are primary, code is generated expression.
 
 **Workflow:**
+
 ```
 /speckit.specify  → specs/001-feature/spec.md (requirements)
 /speckit.plan     → specs/001-feature/plan.md (architecture)
@@ -45,6 +46,7 @@ Key finding: The plan format (GitHub Issues) and `.impl/` folder are already por
 ```
 
 **Multi-agent support:** 18+ agents via `--ai` flag:
+
 ```bash
 specify init my-project --ai claude    # .claude/commands/
 specify init my-project --ai copilot   # .github/agents/
@@ -59,6 +61,7 @@ specify init my-project --ai gemini    # .gemini/commands/
 **Website:** https://tessl.io/
 
 **Approach:**
+
 - Specs stored in codebase as "long-term memory"
 - **Spec Registry** with 10,000+ pre-built specifications
 - Plans created before changes, updated during execution
@@ -71,6 +74,7 @@ specify init my-project --ai gemini    # .gemini/commands/
 **Website:** https://kiro.dev/
 
 **Features:**
+
 - VS Code fork with native spec-driven development
 - **Persistent context across sessions** via `.kiro/steering/` markdown files
 - Three phases: user stories → technical design → trackable tasks
@@ -80,13 +84,13 @@ specify init my-project --ai gemini    # .gemini/commands/
 
 ### Comparison to Erk
 
-| Aspect | Spec Kit | Tessl | Kiro | Erk |
-|--------|----------|-------|------|-----|
-| Plan storage | Git repo (`specs/`) | Git repo (`.spec.md`) | `.kiro/` files | GitHub Issues |
-| Multi-agent | Yes (18+) | Via MCP | No (Claude only) | No (Claude only) |
-| Registry | No | Yes (10k+ specs) | No | No |
-| Remote execution | No | No | Yes (autonomous) | Yes (GitHub Actions) |
-| Issue lifecycle | Manual | Manual | Jira integration | Auto-close on merge |
+| Aspect           | Spec Kit            | Tessl                 | Kiro             | Erk                  |
+| ---------------- | ------------------- | --------------------- | ---------------- | -------------------- |
+| Plan storage     | Git repo (`specs/`) | Git repo (`.spec.md`) | `.kiro/` files   | GitHub Issues        |
+| Multi-agent      | Yes (18+)           | Via MCP               | No (Claude only) | No (Claude only)     |
+| Registry         | No                  | Yes (10k+ specs)      | No               | No                   |
+| Remote execution | No                  | No                    | Yes (autonomous) | Yes (GitHub Actions) |
+| Issue lifecycle  | Manual              | Manual                | Jira integration | Auto-close on merge  |
 
 ---
 
@@ -113,6 +117,7 @@ specify init my-project --ai gemini    # .gemini/commands/
 **Supported platforms:** Claude, OpenAI Codex, GitHub Copilot, Cursor, VS Code, Gemini CLI
 
 **Architecture:** Progressive disclosure
+
 - Discovery (~50 tokens): Lightweight metadata at startup
 - Activation (~2-5K tokens): Full instructions when task-relevant
 - Execution: Resources loaded dynamically
@@ -125,17 +130,17 @@ specify init my-project --ai gemini    # .gemini/commands/
 
 ### Feature Matrix
 
-| Feature | Claude Code | OpenAI Codex | GitHub Copilot | Gemini CLI | OpenCode |
-|---------|-------------|--------------|----------------|------------|----------|
-| **Command location** | `.claude/commands/` | `~/.codex/prompts/` | `.github/agents/` | `.gemini/commands/` | `.opencode/commands/` |
-| **File format** | Markdown + YAML | Markdown + YAML | Markdown + YAML | **TOML** | Markdown + YAML |
-| **Namespace syntax** | `/erk:name` | `/prompts:name` | `@agent-name` | `/namespace:name` | `/name` |
-| **Arguments** | `$1`-`$9`, `$NAME` | `$1`-`$9`, `$NAME` | In prompt | In prompt template | `$1`-`$9`, `$NAME` |
-| **Config format** | JSON | TOML | VS Code settings | JSON | JSON |
-| **AGENTS.md support** | Via CLAUDE.md | Native | Native | Via GEMINI.md | Native |
-| **MCP support** | Yes | Yes | Yes | Yes | Yes |
-| **Non-interactive** | Yes | Yes | Via GitHub Actions | Yes | Yes (`opencode run`) |
-| **Session ID env var** | `CLAUDE_SESSION_ID` | Unknown | Unknown | Unknown | `OPENCODE_SESSION_ID` (plugin) |
+| Feature                | Claude Code         | OpenAI Codex        | GitHub Copilot     | Gemini CLI          | OpenCode                       |
+| ---------------------- | ------------------- | ------------------- | ------------------ | ------------------- | ------------------------------ |
+| **Command location**   | `.claude/commands/` | `~/.codex/prompts/` | `.github/agents/`  | `.gemini/commands/` | `.opencode/commands/`          |
+| **File format**        | Markdown + YAML     | Markdown + YAML     | Markdown + YAML    | **TOML**            | Markdown + YAML                |
+| **Namespace syntax**   | `/erk:name`         | `/prompts:name`     | `@agent-name`      | `/namespace:name`   | `/name`                        |
+| **Arguments**          | `$1`-`$9`, `$NAME`  | `$1`-`$9`, `$NAME`  | In prompt          | In prompt template  | `$1`-`$9`, `$NAME`             |
+| **Config format**      | JSON                | TOML                | VS Code settings   | JSON                | JSON                           |
+| **AGENTS.md support**  | Via CLAUDE.md       | Native              | Native             | Via GEMINI.md       | Native                         |
+| **MCP support**        | Yes                 | Yes                 | Yes                | Yes                 | Yes                            |
+| **Non-interactive**    | Yes                 | Yes                 | Via GitHub Actions | Yes                 | Yes (`opencode run`)           |
+| **Session ID env var** | `CLAUDE_SESSION_ID` | Unknown             | Unknown            | Unknown             | `OPENCODE_SESSION_ID` (plugin) |
 
 ### Ease of Support Ranking
 
@@ -165,11 +170,13 @@ specify init my-project --ai gemini    # .gemini/commands/
 ### Recommendation
 
 **Start with OpenCode** if prioritizing:
+
 - Open source hedge against vendor lock-in
 - MIT license, community-driven
 - Session tracking via existing plugin
 
 **Start with Codex** if prioritizing:
+
 - Minimal migration effort
 - OpenAI ecosystem alignment
 - Same format as Claude Code
@@ -183,6 +190,7 @@ specify init my-project --ai gemini    # .gemini/commands/
 **Location:** `.opencode/commands/` (project) or `~/.config/opencode/commands/` (global)
 
 **Format:**
+
 ```markdown
 ---
 description: Brief explanation
@@ -199,14 +207,17 @@ Template content here with $ARGUMENTS, $1, $2 placeholders.
 ### Agent System
 
 **Primary agents:** Main assistants (switch with Tab)
+
 - `Build`: Default, all tools enabled
 - `Plan`: Restricted for analysis (writes/bash set to `ask`)
 
 **Subagents:** Invoked via `@agent-name` or by primary agents
+
 - `General`: Research and multi-step tasks
 - `Explore`: Fast codebase exploration
 
 **Configuration:** Markdown files in `.opencode/agents/`:
+
 ```markdown
 ---
 description: Specialized purpose
@@ -216,12 +227,14 @@ tools:
   write: false
   bash: false
 ---
+
 System prompt instructions here.
 ```
 
 ### Non-Interactive Mode
 
 Critical for CI/automation:
+
 ```bash
 # Run single prompt
 opencode run "Implement feature X"
@@ -242,6 +255,7 @@ opencode run --attach http://localhost:4096 "prompt"
 **Plugin required:** `opencode-session-metadata`
 
 **Environment variables injected:**
+
 - `OPENCODE_SESSION_ID`
 - `OPENCODE_WORKSPACE_ROOT`
 - `OPENCODE_SERVER`
@@ -255,6 +269,7 @@ opencode run --attach http://localhost:4096 "prompt"
 ### The Problem
 
 Erk uses `CLAUDE_SESSION_ID` for:
+
 - Linking plans to sessions (`created_from_session` in plan-header)
 - Scratch storage paths (`~/.erk/scratch/<session-id>/`)
 - Session-aware context in `erk learn`
@@ -372,13 +387,13 @@ created_by_agent: "claude"  # or "opencode", "codex"
 
 ### Claude-Specific Features Without Equivalent
 
-| Feature | Claude | Portable Alternative | Gap |
-|---------|--------|---------------------|-----|
-| Hooks | Automatic context injection | Instructions file (static) | No dynamic injection |
-| Plan Mode | `EnterPlanMode` tool | Agent reads `.impl/plan.md` | No approval workflow |
-| TodoWrite | Built-in tool | `progress.md` file | Less integrated |
-| Extended thinking | Model feature | None | Model-specific |
-| Skill triggers | Automatic loading | Explicit `@agent` invocation | Manual |
+| Feature           | Claude                      | Portable Alternative         | Gap                  |
+| ----------------- | --------------------------- | ---------------------------- | -------------------- |
+| Hooks             | Automatic context injection | Instructions file (static)   | No dynamic injection |
+| Plan Mode         | `EnterPlanMode` tool        | Agent reads `.impl/plan.md`  | No approval workflow |
+| TodoWrite         | Built-in tool               | `progress.md` file           | Less integrated      |
+| Extended thinking | Model feature               | None                         | Model-specific       |
+| Skill triggers    | Automatic loading           | Explicit `@agent` invocation | Manual               |
 
 ### Graceful Degradation Strategy
 
