@@ -305,6 +305,34 @@ If your enumerated table shows NO documentation needed for ANY item:
 
 Only proceed to Step 7 (skipping Step 5-6) after this explicit justification.
 
+#### Outdated Documentation Check (MANDATORY)
+
+**Removals and behavior changes require doc audits.** When the PR removes features or changes behavior, existing documentation may become incorrect.
+
+**Search for documentation that references changed features:**
+
+```bash
+# Search docs for terms related to removed/changed features
+grep -r "<removed-feature>" docs/learned/ .claude/commands/ .claude/skills/
+```
+
+**Categorize findings:**
+
+| Finding                           | File | Status        | Action Needed          |
+| --------------------------------- | ---- | ------------- | ---------------------- |
+| Reference to removed feature      | ...  | Outdated      | Remove/update section  |
+| Describes old behavior            | ...  | Incorrect     | Update to new behavior |
+| Conflicts with new implementation | ...  | Contradictory | Reconcile              |
+
+**Common patterns to check:**
+
+- **Removed CLI flags**: Search for `--flag-name` in docs
+- **Removed files/modules**: Search for import paths, file references
+- **Changed behavior**: Search for behavioral descriptions that no longer apply
+- **Removed modes**: Search for "three modes", "fallback", etc.
+
+**Include outdated doc updates in the documentation plan** alongside new documentation needs.
+
 ### Step 5: Present Findings
 
 Present findings to the user with:

@@ -95,10 +95,9 @@ def navigate_and_display_checkout(
 ### Behavior
 
 1. **Format path**: Styles worktree path for display with cyan + bold
-2. **Navigate**: Calls `navigate_to_worktree()` which handles three modes:
-   - **Script mode**: Generates activation script for shell integration
-   - **No shell integration**: Spawns subshell (exits process)
-   - **Shell integration active**: Returns `True` to signal caller should output message
+2. **Navigate**: Calls `navigate_to_worktree()` which handles two modes:
+   - **Script mode**: Generates activation script and exits via `sys.exit(0)`
+   - **Interactive mode**: Returns `True` so caller can output custom message
 3. **Display sync status** (only in shell integration mode):
    - Shows sync arrows (1^ = 1 commit ahead, 2v = 2 commits behind)
    - Distinguishes between diverged, ahead-only, and behind-only states
