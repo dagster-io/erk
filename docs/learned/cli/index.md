@@ -4,6 +4,7 @@
 # Cli Documentation
 
 - **[activation-scripts.md](activation-scripts.md)** — working with worktree environment setup, understanding .erk/activate.sh scripts, configuring post-create commands
+- **[ambiguity-resolution.md](ambiguity-resolution.md)** — implementing CLI commands that accept identifiers with multiple possible matches, designing CLI behavior for ambiguous input, displaying tables of options without interactive selection
 - **[command-group-structure.md](command-group-structure.md)** — creating a new command group, adding commands to an existing group, understanding command file organization
 - **[command-organization.md](command-organization.md)** — organizing CLI commands, understanding command structure, designing command hierarchies
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
