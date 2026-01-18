@@ -2,7 +2,7 @@
 
 import click
 
-from erk.cli.activation import write_worktree_activate_script
+from erk.cli.activation import print_activation_instructions, write_worktree_activate_script
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
@@ -160,9 +160,8 @@ def branch_create(
             post_create_commands=None,
         )
 
-        # Print source command
-        user_output("\nTo activate the worktree environment:")
-        user_output(f"  source {script_path}")
+        # Print primary activation command with clipboard copy
+        print_activation_instructions(script_path, source_branch=None, force=False)
 
         # Print combined activate + implement command
         user_output("\nTo activate and start implementation:")
