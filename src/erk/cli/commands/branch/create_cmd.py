@@ -167,3 +167,7 @@ def branch_create(
         # Print combined activate + implement command
         user_output("\nTo activate and start implementation:")
         user_output(f"  source {script_path} && erk implement --here")
+
+        # Print dangerous mode option (skip permission prompts)
+        user_output("\nTo activate and start implementation (skip permissions):")
+        user_output(f"  source {script_path} && erk implement --here --dangerous")
