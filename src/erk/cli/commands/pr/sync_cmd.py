@@ -123,6 +123,7 @@ def _git_only_sync(
 
 @click.command("sync")
 @click.option(
+    "-d",
     "--dangerous",
     is_flag=True,
     help="Required for Graphite mode (invokes Claude with --dangerously-skip-permissions).",

@@ -15,6 +15,7 @@ from erk.cli.commands.branch.create_cmd import branch_create
     help="Only create worktree, don't include implementation command",
 )
 @click.option(
+    "-d",
     "--dangerous",
     is_flag=True,
     help="Include --dangerous flag to skip permission prompts during implementation",
