@@ -207,6 +207,23 @@ def test_render_activation_script_logs_env_loading() -> None:
     assert '__erk_log "->" "Loading .env"' in script
 
 
+def test_render_activation_script_includes_shell_completions() -> None:
+    """Activation script loads erk shell completions."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        target_subpath=None,
+        post_cd_commands=None,
+        final_message='echo "Activated worktree: $(pwd)"',
+        comment="work activate-script",
+    )
+    # Should check if erk command exists
+    assert "command -v erk &>/dev/null" in script
+    # Should evaluate erk completion with shell name extracted from $SHELL
+    assert 'erk completion "${SHELL##*/}"' in script
+    # Should have a comment explaining the block
+    assert "# Load erk shell completions" in script
+
+
 def test_render_activation_script_shows_full_paths_in_normal_mode() -> None:
     """Activation script shows full paths in normal (non-verbose) mode."""
     script = render_activation_script(
