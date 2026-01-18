@@ -1864,10 +1864,9 @@ def test_direnv_capability_artifacts() -> None:
     cap = DirenvCapability(shell=None)
     artifacts = cap.artifacts
 
-    assert len(artifacts) == 2
+    assert len(artifacts) == 1
     paths = [a.path for a in artifacts]
     assert ".envrc" in paths
-    assert ".envrc.example" in paths
 
 
 def test_direnv_is_installed_false_when_envrc_missing(tmp_path: Path) -> None:
@@ -1933,8 +1932,8 @@ def test_direnv_install_skips_when_direnv_not_installed(tmp_path: Path) -> None:
     assert not (tmp_path / ".envrc").exists()
 
 
-def test_direnv_install_creates_envrc_files_with_zsh(tmp_path: Path) -> None:
-    """Test install creates .envrc and .envrc.example with zsh shell."""
+def test_direnv_install_creates_envrc_with_zsh(tmp_path: Path) -> None:
+    """Test install creates .envrc with zsh shell and commented alternatives."""
     from erk.core.capabilities.direnv import DirenvCapability
 
     fake_shell = FakeShell(
@@ -1946,21 +1945,16 @@ def test_direnv_install_creates_envrc_files_with_zsh(tmp_path: Path) -> None:
 
     assert result.success is True
     assert ".envrc" in result.created_files
-    assert ".envrc.example" in result.created_files
 
-    # Verify .envrc content
+    # Verify .envrc content includes active zsh and commented bash alternative
     envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
-    assert "erk completion zsh" in envrc_content
+    assert "source <(erk completion zsh)" in envrc_content
+    assert "# source <(erk completion bash)" in envrc_content
     assert ".venv" in envrc_content
 
-    # Verify .envrc.example content
-    example_content = (tmp_path / ".envrc.example").read_text(encoding="utf-8")
-    assert "# source <(erk completion bash)" in example_content
-    assert "# source <(erk completion zsh)" in example_content
 
-
-def test_direnv_install_creates_envrc_files_with_bash(tmp_path: Path) -> None:
-    """Test install creates .envrc with bash completions when bash detected."""
+def test_direnv_install_creates_envrc_with_bash(tmp_path: Path) -> None:
+    """Test install creates .envrc with bash completions and commented zsh alternative."""
     from erk.core.capabilities.direnv import DirenvCapability
 
     fake_shell = FakeShell(
@@ -1972,9 +1966,10 @@ def test_direnv_install_creates_envrc_files_with_bash(tmp_path: Path) -> None:
 
     assert result.success is True
 
-    # Verify .envrc uses bash
+    # Verify .envrc uses bash and has commented zsh alternative
     envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
-    assert "erk completion bash" in envrc_content
+    assert "source <(erk completion bash)" in envrc_content
+    assert "# source <(erk completion zsh)" in envrc_content
 
 
 def test_direnv_install_defaults_to_zsh_when_shell_not_detected(tmp_path: Path) -> None:
@@ -2106,22 +2101,19 @@ def test_direnv_uninstall_requires_repo_root() -> None:
     assert "requires repo_root" in result.message
 
 
-def test_direnv_uninstall_removes_files(tmp_path: Path) -> None:
-    """Test uninstall removes .envrc and .envrc.example files."""
+def test_direnv_uninstall_removes_envrc(tmp_path: Path) -> None:
+    """Test uninstall removes .envrc file."""
     from erk.core.capabilities.direnv import DirenvCapability
 
-    # Create .envrc and .envrc.example
+    # Create .envrc
     (tmp_path / ".envrc").write_text("# envrc", encoding="utf-8")
-    (tmp_path / ".envrc.example").write_text("# example", encoding="utf-8")
 
     cap = DirenvCapability(shell=None)
     result = cap.uninstall(tmp_path)
 
     assert result.success is True
     assert ".envrc" in result.message
-    assert ".envrc.example" in result.message
     assert not (tmp_path / ".envrc").exists()
-    assert not (tmp_path / ".envrc.example").exists()
 
 
 def test_direnv_uninstall_when_already_uninstalled(tmp_path: Path) -> None:

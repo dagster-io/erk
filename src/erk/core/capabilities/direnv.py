@@ -1,10 +1,11 @@
 """DirenvCapability - auto-loading shell environment with direnv.
 
-This capability creates .envrc and .envrc.example files for direnv integration,
+This capability creates .envrc file for direnv integration,
 enabling automatic shell environment loading (venv activation, erk completions)
 when entering the project directory.
 """
 
+import subprocess
 from pathlib import Path
 from typing import Literal
 
@@ -17,7 +18,6 @@ from erk.core.capabilities.base import (
 from erk.core.init_utils import (
     add_gitignore_entry,
     build_envrc_content,
-    build_envrc_example_content,
 )
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.shell.real import RealShell
@@ -26,9 +26,9 @@ from erk_shared.gateway.shell.real import RealShell
 class DirenvCapability(Capability):
     """Capability for setting up direnv integration.
 
-    Creates .envrc and .envrc.example files for automatic shell environment
-    loading. The .envrc file is gitignored (user-specific), while .envrc.example
-    is committed as a template.
+    Creates .envrc file for automatic shell environment loading.
+    The .envrc file is gitignored (user-specific) and includes commented
+    shell options so users can customize for their shell.
 
     Graceful degradation:
     - During `erk init`: Skips silently if direnv not installed
@@ -68,7 +68,6 @@ class DirenvCapability(Capability):
     def artifacts(self) -> list[CapabilityArtifact]:
         return [
             CapabilityArtifact(path=".envrc", artifact_type="file"),
-            CapabilityArtifact(path=".envrc.example", artifact_type="file"),
         ]
 
     def is_installed(self, repo_root: Path | None) -> bool:
@@ -107,7 +106,7 @@ class DirenvCapability(Capability):
         return CapabilityResult(success=True, message="")
 
     def install(self, repo_root: Path | None) -> CapabilityResult:
-        """Install direnv capability by creating .envrc and .envrc.example.
+        """Install direnv capability by creating .envrc.
 
         During auto-install (erk init), gracefully skips if direnv is not installed.
         Creates shell-specific .envrc with completions for the detected shell.
@@ -144,14 +143,10 @@ class DirenvCapability(Capability):
             elif detected_shell == "zsh":
                 shell_name = "zsh"
 
-        # Step 4: Create .envrc.example (template, committed to git)
-        envrc_example_path = repo_root / ".envrc.example"
-        envrc_example_path.write_text(build_envrc_example_content(), encoding="utf-8")
-
-        # Step 5: Create .envrc (user-specific, gitignored)
+        # Step 4: Create .envrc (user-specific, gitignored)
         envrc_path.write_text(build_envrc_content(shell=shell_name), encoding="utf-8")
 
-        # Step 6: Add .envrc to .gitignore
+        # Step 5: Add .envrc to .gitignore
         gitignore_path = repo_root / ".gitignore"
         if gitignore_path.exists():
             content = gitignore_path.read_text(encoding="utf-8")
@@ -161,33 +156,31 @@ class DirenvCapability(Capability):
         if new_content != content:
             gitignore_path.write_text(new_content, encoding="utf-8")
 
-        # Step 7: Run direnv allow (non-blocking, best-effort)
+        # Step 6: Run direnv allow (non-blocking, best-effort)
         # We don't fail if this doesn't work - user can run manually
-        import subprocess
-
         try:
             subprocess.run(
                 ["direnv", "allow"],
                 cwd=repo_root,
-                check=False,
+                check=True,
                 capture_output=True,
                 timeout=5,
             )
-        except (subprocess.TimeoutExpired, OSError):
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
             pass  # Non-critical, user can run direnv allow manually
 
-        created_files = [".envrc", ".envrc.example"]
+        created_files = [".envrc"]
         if new_content != content:
             created_files.append(".gitignore")
 
         return CapabilityResult(
             success=True,
-            message=f"Created .envrc ({shell_name}) and .envrc.example",
+            message=f"Created .envrc ({shell_name})",
             created_files=tuple(created_files),
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Uninstall direnv capability by removing .envrc files.
+        """Uninstall direnv capability by removing .envrc file.
 
         Note: Does not remove .envrc from .gitignore to avoid git noise.
         """
@@ -197,25 +190,16 @@ class DirenvCapability(Capability):
                 message="DirenvCapability requires repo_root",
             )
 
-        removed_files: list[str] = []
-
         envrc_path = repo_root / ".envrc"
-        if envrc_path.exists():
-            envrc_path.unlink()
-            removed_files.append(".envrc")
-
-        envrc_example_path = repo_root / ".envrc.example"
-        if envrc_example_path.exists():
-            envrc_example_path.unlink()
-            removed_files.append(".envrc.example")
-
-        if not removed_files:
+        if not envrc_path.exists():
             return CapabilityResult(
                 success=True,
-                message="direnv already uninstalled (no .envrc files found)",
+                message="direnv already uninstalled (.envrc not found)",
             )
+
+        envrc_path.unlink()
 
         return CapabilityResult(
             success=True,
-            message=f"Removed {', '.join(removed_files)}",
+            message="Removed .envrc",
         )
