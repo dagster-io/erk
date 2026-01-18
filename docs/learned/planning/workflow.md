@@ -108,12 +108,8 @@ erk implement <issue-number>
 
 This command:
 
-- Creates a dedicated worktree for the issue
-- Sets up the `.impl/` folder with plan content from the issue
-- Links the worktree to the GitHub issue for progress tracking
-- Automatically switches to the new worktree
-
-**Slot-Aware Behavior**: If you run `erk implement` from within a pool slot, it automatically reuses the current slot instead of creating a new worktree.
+- Sets up the `.impl/` folder in the current directory with plan content from the issue
+- Links to the GitHub issue for progress tracking
 
 ## Plan Save Workflow
 
@@ -312,4 +308,4 @@ gh run watch
 ### Implementation
 
 - `/erk:system:impl-execute` - Save plan to GitHub AND implement (full workflow: save → setup → implement → CI → PR)
-- `erk implement <issue>` - Create worktree and implement plan from existing GitHub issue
+- `erk implement <issue>` - Implement plan from existing GitHub issue in current directory
