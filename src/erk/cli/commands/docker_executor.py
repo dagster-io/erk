@@ -129,7 +129,7 @@ def build_docker_run_args(
     worktree_path: Path,
     image_name: str,
     interactive: bool,
-    home_dir: Path | None,
+    home_dir: Path,
 ) -> list[str]:
     """Build the docker run command arguments.
 
@@ -138,7 +138,7 @@ def build_docker_run_args(
         image_name: Docker image name
         interactive: Whether to run in interactive mode (TTY)
         home_dir: Home directory for locating .claude/ and .ssh/ dirs.
-            If None, uses Path.home(). Pass explicitly for testability.
+            Required parameter for testability - callers pass Path.home().
 
     Returns:
         List of docker run arguments
@@ -148,9 +148,8 @@ def build_docker_run_args(
     gid = os.getgid()
 
     # Get host paths for mounts
-    resolved_home = home_dir if home_dir is not None else Path.home()
-    claude_dir = resolved_home / ".claude"
-    ssh_dir = resolved_home / ".ssh"
+    claude_dir = home_dir / ".claude"
+    ssh_dir = home_dir / ".ssh"
 
     args = ["docker", "run", "--rm"]
 
@@ -237,7 +236,7 @@ def execute_docker_interactive(
         worktree_path=worktree_path,
         image_name=image_name,
         interactive=True,
-        home_dir=None,  # Use real home directory
+        home_dir=Path.home(),
     )
 
     claude_args = build_claude_command_args(
@@ -288,7 +287,7 @@ def execute_docker_non_interactive(
             worktree_path=worktree_path,
             image_name=image_name,
             interactive=False,
-            home_dir=None,  # Use real home directory
+            home_dir=Path.home(),
         )
 
         claude_args = build_claude_command_args(
