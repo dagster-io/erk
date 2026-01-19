@@ -330,3 +330,34 @@ def ensure_land_script(worktree_path: Path) -> Path:
         script_path.write_text(render_land_script(), encoding="utf-8")
 
     return script_path
+
+
+def print_temp_script_instructions(
+    script_path: Path,
+    *,
+    instruction: str,
+    copy: bool,
+) -> None:
+    """Print instructions for sourcing a temporary execution script.
+
+    Unlike print_activation_instructions() which is for persistent worktree
+    activation scripts at .erk/bin/activate.sh, this is for one-time execution
+    scripts (like land's deferred execution script) that contain specific state.
+
+    When copy=True, the source command is auto-copied to the clipboard via OSC 52
+    (supported by iTerm2, Kitty, Alacritty, WezTerm, and other modern terminals).
+
+    Args:
+        script_path: Path to the temporary script to source
+        instruction: Message to show before the command (e.g., "To land the PR:")
+        copy: If True, copy the source command to clipboard via OSC 52
+    """
+    source_cmd = f"source {script_path}"
+
+    user_output(f"\n{instruction}")
+    if copy:
+        clipboard_hint = click.style("(copied to clipboard)", dim=True)
+        user_output(f"  {source_cmd}  {clipboard_hint}")
+        user_output(copy_to_clipboard_osc52(source_cmd), nl=False)
+    else:
+        user_output(f"  {source_cmd}")

@@ -18,7 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
-from erk.cli.activation import render_activation_script
+from erk.cli.activation import print_temp_script_instructions, render_activation_script
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
@@ -1062,7 +1062,7 @@ def _land_current_branch(
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
 
-    # Generate activation script with all pre-validated state
+    # Generate execution script with all pre-validated state
     script_content = render_land_execution_script(
         pr_number=pr_number,
         branch=current_branch,
@@ -1076,13 +1076,22 @@ def _land_current_branch(
         target_path=target_path,
     )
 
-    # Write and output script path
-    result = ctx.script_writer.write_activation_script(
-        script_content,
-        command_name="land",
-        comment=f"land {current_branch}",
-    )
-    machine_output(str(result.path), nl=False)
+    # Write script to .erk/bin/land.sh
+    bin_dir = current_worktree_path / ".erk" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    script_path = bin_dir / "land.sh"
+    script_path.write_text(script_content, encoding="utf-8")
+
+    if script:
+        # Shell integration mode: output just the path
+        machine_output(str(script_path), nl=False)
+    else:
+        # Interactive mode: show instructions and copy to clipboard
+        print_temp_script_instructions(
+            script_path,
+            instruction="To land the PR:",
+            copy=True,
+        )
     raise SystemExit(0)
 
 
@@ -1188,7 +1197,7 @@ def _land_specific_pr(
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
 
-    # Generate activation script with pre-validated state
+    # Generate execution script with pre-validated state
     # Note: specific PR landing doesn't support Graphite path (no stack validation)
     script_content = render_land_execution_script(
         pr_number=pr_number,
@@ -1203,13 +1212,23 @@ def _land_specific_pr(
         target_path=target_path,
     )
 
-    # Write and output script path
-    result = ctx.script_writer.write_activation_script(
-        script_content,
-        command_name="land",
-        comment=f"land PR #{pr_number}",
-    )
-    machine_output(str(result.path), nl=False)
+    # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
+    script_dir = worktree_path if worktree_path is not None else main_repo_root
+    bin_dir = script_dir / ".erk" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    script_path = bin_dir / "land.sh"
+    script_path.write_text(script_content, encoding="utf-8")
+
+    if script:
+        # Shell integration mode: output just the path
+        machine_output(str(script_path), nl=False)
+    else:
+        # Interactive mode: show instructions and copy to clipboard
+        print_temp_script_instructions(
+            script_path,
+            instruction=f"To land PR #{pr_number}:",
+            copy=True,
+        )
     raise SystemExit(0)
 
 
@@ -1307,7 +1326,7 @@ def _land_by_branch(
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
 
-    # Generate activation script with pre-validated state
+    # Generate execution script with pre-validated state
     # Note: branch landing doesn't support Graphite path (no stack validation)
     script_content = render_land_execution_script(
         pr_number=pr_number,
@@ -1322,11 +1341,21 @@ def _land_by_branch(
         target_path=target_path,
     )
 
-    # Write and output script path
-    result = ctx.script_writer.write_activation_script(
-        script_content,
-        command_name="land",
-        comment=f"land {branch_name}",
-    )
-    machine_output(str(result.path), nl=False)
+    # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
+    script_dir = worktree_path if worktree_path is not None else main_repo_root
+    bin_dir = script_dir / ".erk" / "bin"
+    bin_dir.mkdir(parents=True, exist_ok=True)
+    script_path = bin_dir / "land.sh"
+    script_path.write_text(script_content, encoding="utf-8")
+
+    if script:
+        # Shell integration mode: output just the path
+        machine_output(str(script_path), nl=False)
+    else:
+        # Interactive mode: show instructions and copy to clipboard
+        print_temp_script_instructions(
+            script_path,
+            instruction=f"To land branch '{branch_name}':",
+            copy=True,
+        )
     raise SystemExit(0)
