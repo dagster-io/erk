@@ -1077,18 +1077,21 @@ def _land_current_branch(
     )
 
     # Write script to .erk/bin/land.sh
-    bin_dir = current_worktree_path / ".erk" / "bin"
-    bin_dir.mkdir(parents=True, exist_ok=True)
-    script_path = bin_dir / "land.sh"
-    script_path.write_text(script_content, encoding="utf-8")
+    result = ctx.script_writer.write_worktree_script(
+        script_content,
+        worktree_path=current_worktree_path,
+        script_name="land",
+        command_name="land",
+        comment=f"land {current_branch}",
+    )
 
     if script:
         # Shell integration mode: output just the path
-        machine_output(str(script_path), nl=False)
+        machine_output(str(result.path), nl=False)
     else:
         # Interactive mode: show instructions and copy to clipboard
         print_temp_script_instructions(
-            script_path,
+            result.path,
             instruction="To land the PR:",
             copy=True,
         )
@@ -1214,18 +1217,21 @@ def _land_specific_pr(
 
     # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
     script_dir = worktree_path if worktree_path is not None else main_repo_root
-    bin_dir = script_dir / ".erk" / "bin"
-    bin_dir.mkdir(parents=True, exist_ok=True)
-    script_path = bin_dir / "land.sh"
-    script_path.write_text(script_content, encoding="utf-8")
+    result = ctx.script_writer.write_worktree_script(
+        script_content,
+        worktree_path=script_dir,
+        script_name="land",
+        command_name="land",
+        comment=f"land PR #{pr_number}",
+    )
 
     if script:
         # Shell integration mode: output just the path
-        machine_output(str(script_path), nl=False)
+        machine_output(str(result.path), nl=False)
     else:
         # Interactive mode: show instructions and copy to clipboard
         print_temp_script_instructions(
-            script_path,
+            result.path,
             instruction=f"To land PR #{pr_number}:",
             copy=True,
         )
@@ -1343,18 +1349,21 @@ def _land_by_branch(
 
     # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
     script_dir = worktree_path if worktree_path is not None else main_repo_root
-    bin_dir = script_dir / ".erk" / "bin"
-    bin_dir.mkdir(parents=True, exist_ok=True)
-    script_path = bin_dir / "land.sh"
-    script_path.write_text(script_content, encoding="utf-8")
+    result = ctx.script_writer.write_worktree_script(
+        script_content,
+        worktree_path=script_dir,
+        script_name="land",
+        command_name="land",
+        comment=f"land {branch_name}",
+    )
 
     if script:
         # Shell integration mode: output just the path
-        machine_output(str(script_path), nl=False)
+        machine_output(str(result.path), nl=False)
     else:
         # Interactive mode: show instructions and copy to clipboard
         print_temp_script_instructions(
-            script_path,
+            result.path,
             instruction=f"To land branch '{branch_name}':",
             copy=True,
         )

@@ -67,6 +67,59 @@ class FakeScriptWriter(ScriptWriter):
 
         return result
 
+    def write_worktree_script(
+        self,
+        content: str,
+        *,
+        worktree_path: Path,
+        script_name: str,
+        command_name: str,
+        comment: str,
+    ) -> "ScriptResult":
+        """Write script to worktree location with sentinel path.
+
+        For testing, we use a sentinel path that matches the expected real path
+        pattern but don't actually write to the filesystem.
+
+        Args:
+            content: The shell script content
+            worktree_path: Path to the worktree directory
+            script_name: Name of the script file (e.g., 'land')
+            command_name: Command generating the script
+            comment: Description for the script header
+
+        Returns:
+            ScriptResult with sentinel path and full content including headers
+        """
+        # Generate unique ID (same pattern as real implementation)
+        unique_id = uuid.uuid4().hex[:8]
+
+        # Use the real target path as sentinel (tests can check this)
+        script_path = worktree_path / ".erk" / "bin" / f"{script_name}.sh"
+
+        # Build header (same structure as real implementation)
+        header = [
+            "#!/bin/bash",
+            f"# erk {command_name}",
+            f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"# UUID: {unique_id}",
+            f"# User: {os.getenv('USER', 'unknown')}",
+            f"# Working dir: {Path.cwd()}",
+            f"# {comment}",
+            "",  # Blank line before script
+        ]
+
+        full_content = "\n".join(header) + "\n" + content
+
+        # Store in memory
+        self._scripts[script_path] = full_content
+
+        # Track last script for test assertions
+        result = ScriptResult(path=script_path, content=full_content)
+        self.last_script = result
+
+        return result
+
     def get_script_content(self, path: Path) -> str | None:
         """Get stored script content for test assertions.
 
