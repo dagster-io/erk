@@ -1,32 +1,49 @@
 """Tests for review prompt assembly."""
 
+import pytest
+
 from erk.review.models import ParsedReview, ReviewFrontmatter
 from erk.review.prompt_assembly import assemble_review_prompt
 
 
-class TestAssembleReviewPrompt:
-    """Tests for prompt assembly."""
+def _make_review(
+    *,
+    name: str,
+    marker: str,
+    body: str,
+) -> ParsedReview:
+    """Create a test review with common defaults."""
+    return ParsedReview(
+        frontmatter=ReviewFrontmatter(
+            name=name,
+            paths=("**/*.py",),
+            marker=marker,
+            model="claude-sonnet-4-5",
+            timeout_minutes=30,
+            allowed_tools="Read(*)",
+            enabled=True,
+        ),
+        body=body,
+        filename=f"{name.lower().replace(' ', '-')}.md",
+    )
+
+
+class TestAssemblePrPrompt:
+    """Tests for PR mode prompt assembly."""
 
     def test_basic_prompt_assembly(self) -> None:
         """Assemble a basic review prompt with all boilerplate."""
-        review = ParsedReview(
-            frontmatter=ReviewFrontmatter(
-                name="Test Review",
-                paths=("**/*.py",),
-                marker="<!-- test-review -->",
-                model="claude-sonnet-4-5",
-                timeout_minutes=30,
-                allowed_tools="Read(*)",
-                enabled=True,
-            ),
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test-review -->",
             body="Check for bugs in the code.",
-            filename="test.md",
         )
 
         prompt = assemble_review_prompt(
             review=review,
             repository="owner/repo",
             pr_number=123,
+            base_branch=None,
         )
 
         # Check that key elements are present
@@ -42,24 +59,17 @@ class TestAssembleReviewPrompt:
 
     def test_prompt_includes_review_name_in_inline_comment_format(self) -> None:
         """Prompt includes review name in inline comment format."""
-        review = ParsedReview(
-            frontmatter=ReviewFrontmatter(
-                name="Dignified Python",
-                paths=("**/*.py",),
-                marker="<!-- dignified-python -->",
-                model="claude-sonnet-4-5",
-                timeout_minutes=30,
-                allowed_tools="Read(*)",
-                enabled=True,
-            ),
+        review = _make_review(
+            name="Dignified Python",
+            marker="<!-- dignified-python -->",
             body="Review body.",
-            filename="dignified-python.md",
         )
 
         prompt = assemble_review_prompt(
             review=review,
             repository="test/repo",
             pr_number=456,
+            base_branch=None,
         )
 
         # The inline comment format should include the review name
@@ -80,24 +90,17 @@ Check each file against the rules.
 
 Post findings.
 """
-        review = ParsedReview(
-            frontmatter=ReviewFrontmatter(
-                name="Multi-Step Review",
-                paths=("**/*.py",),
-                marker="<!-- multi-step -->",
-                model="claude-sonnet-4-5",
-                timeout_minutes=30,
-                allowed_tools="Read(*)",
-                enabled=True,
-            ),
+        review = _make_review(
+            name="Multi-Step Review",
+            marker="<!-- multi-step -->",
             body=body,
-            filename="multi-step.md",
         )
 
         prompt = assemble_review_prompt(
             review=review,
             repository="test/repo",
             pr_number=789,
+            base_branch=None,
         )
 
         # All body content should be preserved
@@ -108,27 +111,126 @@ Post findings.
 
     def test_prompt_uses_correct_pr_number(self) -> None:
         """Prompt uses the correct PR number throughout."""
-        review = ParsedReview(
-            frontmatter=ReviewFrontmatter(
-                name="Test",
-                paths=("**/*.py",),
-                marker="<!-- test -->",
-                model="claude-sonnet-4-5",
-                timeout_minutes=30,
-                allowed_tools="Read(*)",
-                enabled=True,
-            ),
+        review = _make_review(
+            name="Test",
+            marker="<!-- test -->",
             body="Body.",
-            filename="test.md",
         )
 
         prompt = assemble_review_prompt(
             review=review,
             repository="test/repo",
             pr_number=999,
+            base_branch=None,
         )
 
         # PR number should appear in multiple places
         assert "PR NUMBER: 999" in prompt
         assert "gh pr diff 999" in prompt
         assert "--pr-number 999" in prompt
+
+
+class TestAssembleLocalPrompt:
+    """Tests for local mode prompt assembly."""
+
+    def test_local_prompt_assembly(self) -> None:
+        """Assemble a local review prompt with git diff commands."""
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test-review -->",
+            body="Check for bugs.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=None,
+            base_branch="main",
+        )
+
+        # Should contain local mode elements
+        assert "REPO: owner/repo" in prompt
+        assert "BASE BRANCH: main" in prompt
+        assert "Test Review: Review local code changes" in prompt
+        assert "Check for bugs." in prompt
+        assert "git diff --name-only $(git merge-base main HEAD)...HEAD" in prompt
+        assert "git diff $(git merge-base main HEAD)...HEAD" in prompt
+
+        # Should NOT contain PR mode elements
+        assert "PR NUMBER:" not in prompt
+        assert "gh pr diff" not in prompt
+        assert "post-or-update-pr-summary" not in prompt
+
+    def test_local_prompt_uses_base_branch(self) -> None:
+        """Local prompt uses the specified base branch."""
+        review = _make_review(
+            name="Test",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="test/repo",
+            pr_number=None,
+            base_branch="develop",
+        )
+
+        assert "BASE BRANCH: develop" in prompt
+        assert "git merge-base develop HEAD" in prompt
+
+    def test_local_prompt_outputs_to_stdout(self) -> None:
+        """Local prompt instructs to output violations to stdout."""
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="test/repo",
+            pr_number=None,
+            base_branch="main",
+        )
+
+        # Should have stdout-based output instructions
+        assert "Output Violations" in prompt
+        assert "**Test Review Violation**" in prompt
+        assert "Summary" in prompt
+
+
+class TestAssembleValidation:
+    """Tests for parameter validation."""
+
+    def test_raises_if_both_pr_and_base_provided(self) -> None:
+        """Raises ValueError if both pr_number and base_branch provided."""
+        review = _make_review(
+            name="Test",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        with pytest.raises(ValueError, match="Cannot specify both"):
+            assemble_review_prompt(
+                review=review,
+                repository="test/repo",
+                pr_number=123,
+                base_branch="main",
+            )
+
+    def test_raises_if_neither_pr_nor_base_provided(self) -> None:
+        """Raises ValueError if neither pr_number nor base_branch provided."""
+        review = _make_review(
+            name="Test",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        with pytest.raises(ValueError, match="Must specify either"):
+            assemble_review_prompt(
+                review=review,
+                repository="test/repo",
+                pr_number=None,
+                base_branch=None,
+            )
