@@ -176,6 +176,22 @@ def execute_land_pr(
             if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
                 ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
 
+    # Re-parent children in Graphite's local tracking BEFORE merging
+    # Uses BranchManager abstraction: no-op for GitBranchManager (non-Graphite mode)
+    if all_children:
+        yield ProgressEvent("Updating Graphite tracking for child branches...")
+        for child_branch in all_children:
+            try:
+                ops.branch_manager.track_branch(repo_root, child_branch, trunk)
+            except Exception:
+                # Continue on failure - Graphite tracking is not critical
+                # Emit warning with remediation suggestion
+                yield ProgressEvent(
+                    f"Warning: Failed to update Graphite tracking for '{child_branch}'. "
+                    f"To fix manually, run: gt track --branch {child_branch} --parent {trunk}",
+                    style="warning",
+                )
+
     # Step 6: Get PR title and body for merge commit message (use same PRDetails object)
     yield ProgressEvent("Getting PR metadata...")
 
