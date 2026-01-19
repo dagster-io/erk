@@ -64,6 +64,7 @@ def _check_learn_status_and_prompt(
     repo_root: Path,
     plan_issue_number: int,
     force: bool,
+    script: bool,
 ) -> None:
     """Check if plan has been learned from and prompt user if not.
 
@@ -79,6 +80,7 @@ def _check_learn_status_and_prompt(
         repo_root: Repository root path
         plan_issue_number: Issue number of the plan
         force: If True, skip the check entirely
+        script: If True, output no-op activation script on abort
 
     Raises:
         SystemExit(0) if user declines to continue
@@ -124,6 +126,20 @@ def _check_learn_status_and_prompt(
 
     if not ctx.console.confirm("Continue landing without learning?", default=False):
         user_output("Cancelled. Run 'erk learn' first, then retry landing.")
+        if script:
+            script_content = render_activation_script(
+                worktree_path=ctx.cwd,
+                target_subpath=None,
+                post_cd_commands=None,
+                final_message='echo "Cancelled - run erk learn first"',
+                comment="land cancelled (learn check)",
+            )
+            result = ctx.script_writer.write_activation_script(
+                script_content,
+                command_name="land",
+                comment="cancelled",
+            )
+            machine_output(str(result.path), nl=False)
         raise SystemExit(0)
 
 
@@ -800,7 +816,11 @@ def _land_current_branch(
     if plan_issue_number is not None:
         main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
         _check_learn_status_and_prompt(
-            ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
+            ctx,
+            repo_root=main_repo_root,
+            plan_issue_number=plan_issue_number,
+            force=force,
+            script=script,
         )
 
     # Step 1: Execute land (merges the PR)
@@ -927,7 +947,11 @@ def _land_specific_pr(
     plan_issue_number = extract_leading_issue_number(branch)
     if plan_issue_number is not None and worktree_path is not None:
         _check_learn_status_and_prompt(
-            ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
+            ctx,
+            repo_root=main_repo_root,
+            plan_issue_number=plan_issue_number,
+            force=force,
+            script=script,
         )
 
     # Merge the PR via GitHub API
@@ -1032,7 +1056,11 @@ def _land_by_branch(
     plan_issue_number = extract_leading_issue_number(branch_name)
     if plan_issue_number is not None and worktree_path is not None:
         _check_learn_status_and_prompt(
-            ctx, repo_root=main_repo_root, plan_issue_number=plan_issue_number, force=force
+            ctx,
+            repo_root=main_repo_root,
+            plan_issue_number=plan_issue_number,
+            force=force,
+            script=script,
         )
 
     # Merge the PR via GitHub API
