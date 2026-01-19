@@ -1,4 +1,5 @@
 import os
+import shlex
 from collections.abc import Sequence
 from pathlib import Path
 
@@ -175,6 +176,69 @@ def find_assignment_by_worktree_path(
         if assignment.worktree_path.resolve() == resolved_path:
             return assignment
     return None
+
+
+def get_slot_name_for_worktree(pool_json_path: Path, worktree_path: Path) -> str | None:
+    """Get the slot name if the worktree is a pool slot.
+
+    Args:
+        pool_json_path: Path to the pool.json file
+        worktree_path: Path to the worktree to check
+
+    Returns:
+        Slot name if the worktree is a pool slot, None otherwise
+    """
+    state = load_pool_state(pool_json_path)
+    if state is None:
+        return None
+    assignment = find_assignment_by_worktree_path(state, worktree_path)
+    if assignment is None:
+        return None
+    return assignment.slot_name
+
+
+def render_deferred_deletion_commands(
+    *,
+    worktree_path: Path,
+    branch: str,
+    slot_name: str | None,
+    is_graphite_managed: bool,
+    main_repo_root: Path,
+) -> list[str]:
+    """Generate shell commands for deferred worktree/branch deletion.
+
+    These commands are embedded in the activation script's post_cd_commands,
+    so the deletion only happens when the user sources the activation script.
+    This makes the deletion atomic with the navigation.
+
+    Args:
+        worktree_path: Path to the worktree to delete
+        branch: Branch name to delete
+        slot_name: Slot name if the worktree is a pool slot, None otherwise
+        is_graphite_managed: Whether to use Graphite (gt) or plain Git for branch deletion
+        main_repo_root: Path to the main repository root (for operations after worktree removal)
+
+    Returns:
+        List of shell commands to execute for deferred deletion
+    """
+    commands: list[str] = []
+    quoted_main_repo = shlex.quote(str(main_repo_root))
+
+    # Worktree cleanup
+    if slot_name is not None:
+        commands.append(f"erk slot unassign {shlex.quote(slot_name)}")
+    else:
+        commands.append(f"git worktree remove --force {shlex.quote(str(worktree_path))}")
+
+    # Branch deletion (run from main repo root to ensure it exists after worktree removal)
+    quoted_branch = shlex.quote(branch)
+    if is_graphite_managed:
+        # Use gt delete to clean up Graphite metadata
+        commands.append(f"gt delete -f {quoted_branch}")
+    else:
+        commands.append(f"git -C {quoted_main_repo} branch -D {quoted_branch}")
+
+    return commands
 
 
 def unallocate_worktree_and_branch(

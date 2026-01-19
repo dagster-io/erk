@@ -4,15 +4,16 @@ from erk.cli.activation import (
     ENABLE_ACTIVATION_SCRIPTS,
     ensure_worktree_activate_script,
     print_activation_instructions,
+    render_activation_script,
 )
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
     check_clean_working_tree,
     check_pending_learn_marker,
-    render_activation_script,
+    get_slot_name_for_worktree,
+    render_deferred_deletion_commands,
     resolve_down_navigation,
-    unallocate_worktree_and_branch,
     verify_pr_closed_or_merged,
 )
 from erk.cli.core import discover_repo_context
@@ -101,16 +102,30 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
             + f" Created worktree for {click.style(target_name, fg='yellow')} and moved to it"
         )
 
+    # Prepare deferred deletion commands if --delete-current is set
+    deletion_commands: list[str] | None = None
+    if delete_current and current_worktree_path is not None:
+        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+        slot_name = get_slot_name_for_worktree(repo.pool_json_path, current_worktree_path)
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        deletion_commands = render_deferred_deletion_commands(
+            worktree_path=current_worktree_path,
+            branch=current_branch,
+            slot_name=slot_name,
+            is_graphite_managed=use_graphite,
+            main_repo_root=main_repo_root,
+        )
+
     # Check if target_name refers to 'root' which means root repo
     if target_name == "root":
         if delete_current and current_worktree_path is not None:
-            # Handle activation inline so we can do cleanup before exiting
-            root_path = repo.root
+            # Handle activation inline with deferred deletion
+            root_path = repo.main_repo_root if repo.main_repo_root else repo.root
             if script:
                 script_content = render_activation_script(
                     worktree_path=root_path,
                     target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
-                    post_cd_commands=None,
+                    post_cd_commands=deletion_commands,
                     final_message='echo "Went to root repo: $(pwd)"',
                     comment="work activate-script (root repo)",
                 )
@@ -136,10 +151,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                         copy=True,
                     )
 
-            # Perform cleanup (no context regeneration needed - we haven't changed dirs)
-            unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
-
-            # Exit after cleanup
+            # Deletion is deferred to script sourcing - no immediate cleanup
             raise SystemExit(0)
         else:
             # No cleanup needed, use standard activation
@@ -160,14 +172,14 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
     )
 
     if delete_current and current_worktree_path is not None:
-        # Handle activation inline so we can do cleanup before exiting
+        # Handle activation inline with deferred deletion
         Ensure.path_exists(ctx, target_wt_path, f"Worktree not found: {target_wt_path}")
 
         if script:
             activation_script = render_activation_script(
                 worktree_path=target_wt_path,
                 target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
-                post_cd_commands=None,
+                post_cd_commands=deletion_commands,
                 final_message='echo "Activated worktree: $(pwd)"',
                 comment="work activate-script",
             )
@@ -199,10 +211,7 @@ def down_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -
                     copy=True,
                 )
 
-        # Perform cleanup (no context regeneration needed - we haven't actually changed directories)
-        unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
-
-        # Exit after cleanup
+        # Deletion is deferred to script sourcing - no immediate cleanup
         raise SystemExit(0)
     else:
         # No cleanup needed, use standard activation

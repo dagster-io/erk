@@ -10,8 +10,9 @@ from erk.cli.commands.navigation_helpers import (
     activate_worktree,
     check_clean_working_tree,
     check_pending_learn_marker,
+    get_slot_name_for_worktree,
+    render_deferred_deletion_commands,
     resolve_up_navigation,
-    unallocate_worktree_and_branch,
     verify_pr_closed_or_merged,
 )
 from erk.cli.core import discover_repo_context
@@ -110,6 +111,20 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
             + f" Created worktree for {click.style(target_name, fg='yellow')} and moved to it"
         )
 
+    # Prepare deferred deletion commands if --delete-current is set
+    deletion_commands: list[str] | None = None
+    if delete_current and current_worktree_path is not None:
+        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+        slot_name = get_slot_name_for_worktree(repo.pool_json_path, current_worktree_path)
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        deletion_commands = render_deferred_deletion_commands(
+            worktree_path=current_worktree_path,
+            branch=current_branch,
+            slot_name=slot_name,
+            is_graphite_managed=use_graphite,
+            main_repo_root=main_repo_root,
+        )
+
     # Resolve target branch to actual worktree path
     target_wt_path = Ensure.not_none(
         ctx.git.find_worktree_for_branch(repo.root, target_name),
@@ -117,15 +132,15 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
     )
 
     if delete_current and current_worktree_path is not None:
-        # Handle activation inline when cleanup is needed
+        # Handle activation inline with deferred deletion
         Ensure.path_exists(ctx, target_wt_path, f"Worktree not found: {target_wt_path}")
 
         if script:
-            # Generate activation script for shell integration
+            # Generate activation script for shell integration with deferred deletion
             activation_script = render_activation_script(
                 worktree_path=target_wt_path,
                 target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
-                post_cd_commands=None,
+                post_cd_commands=deletion_commands,
                 final_message='echo "Activated worktree: $(pwd)"',
                 comment="work activate-script",
             )
@@ -158,10 +173,7 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
                     copy=True,
                 )
 
-        # Perform cleanup: unallocate worktree (slot-aware) and delete branch
-        unallocate_worktree_and_branch(ctx, repo, current_branch, current_worktree_path)
-
-        # Exit after cleanup
+        # Deletion is deferred to script sourcing - no immediate cleanup
         raise SystemExit(0)
     else:
         # No cleanup needed, use standard activation

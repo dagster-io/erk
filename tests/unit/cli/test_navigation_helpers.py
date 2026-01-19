@@ -8,9 +8,15 @@ import click
 import pytest
 
 from erk.cli.commands.completions import complete_branch_names, complete_plan_files
-from erk.cli.commands.navigation_helpers import activate_root_repo, delete_branch_and_worktree
+from erk.cli.commands.navigation_helpers import (
+    activate_root_repo,
+    delete_branch_and_worktree,
+    get_slot_name_for_worktree,
+    render_deferred_deletion_commands,
+)
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
+from erk.core.worktree_pool import PoolState, SlotAssignment, SlotInfo, save_pool_state
 from erk_shared.context.types import GlobalConfig
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
@@ -725,3 +731,172 @@ def test_activate_root_repo_uses_main_repo_root_not_worktree_path(tmp_path: Path
     assert f"cd {main_repo}" in script_content or f"cd '{main_repo}'" in script_content, (
         f"Expected 'cd' to main_repo_root ({main_repo}), but script content was:\n{script_content}"
     )
+
+
+# Tests for render_deferred_deletion_commands and get_slot_name_for_worktree
+
+
+def test_render_deferred_deletion_commands_slot_graphite(tmp_path: Path) -> None:
+    """Test deferred deletion commands for a slot worktree with Graphite."""
+    worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "repo"
+    main_repo_root.mkdir()
+
+    commands = render_deferred_deletion_commands(
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        slot_name="erk-slot-01",
+        is_graphite_managed=True,
+        main_repo_root=main_repo_root,
+    )
+
+    assert len(commands) == 2
+    # For slots, use erk slot unassign
+    assert commands[0] == "erk slot unassign erk-slot-01"
+    # For Graphite, use gt delete
+    assert commands[1] == "gt delete -f feature-branch"
+
+
+def test_render_deferred_deletion_commands_slot_git(tmp_path: Path) -> None:
+    """Test deferred deletion commands for a slot worktree with plain Git."""
+    worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "repo"
+    main_repo_root.mkdir()
+
+    commands = render_deferred_deletion_commands(
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        slot_name="erk-slot-01",
+        is_graphite_managed=False,
+        main_repo_root=main_repo_root,
+    )
+
+    assert len(commands) == 2
+    # For slots, use erk slot unassign
+    assert commands[0] == "erk slot unassign erk-slot-01"
+    # For plain Git, use git branch -D with -C flag
+    assert f"git -C {main_repo_root} branch -D feature-branch" in commands[1]
+
+
+def test_render_deferred_deletion_commands_regular_graphite(tmp_path: Path) -> None:
+    """Test deferred deletion commands for a regular worktree with Graphite."""
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "repo"
+    main_repo_root.mkdir()
+
+    commands = render_deferred_deletion_commands(
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        slot_name=None,
+        is_graphite_managed=True,
+        main_repo_root=main_repo_root,
+    )
+
+    assert len(commands) == 2
+    # For regular worktrees, use git worktree remove
+    assert f"git worktree remove --force {worktree_path}" in commands[0]
+    # For Graphite, use gt delete
+    assert commands[1] == "gt delete -f feature-branch"
+
+
+def test_render_deferred_deletion_commands_regular_git(tmp_path: Path) -> None:
+    """Test deferred deletion commands for a regular worktree with plain Git."""
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "repo"
+    main_repo_root.mkdir()
+
+    commands = render_deferred_deletion_commands(
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        slot_name=None,
+        is_graphite_managed=False,
+        main_repo_root=main_repo_root,
+    )
+
+    assert len(commands) == 2
+    # For regular worktrees, use git worktree remove
+    assert f"git worktree remove --force {worktree_path}" in commands[0]
+    # For plain Git, use git branch -D with -C flag
+    assert f"git -C {main_repo_root} branch -D feature-branch" in commands[1]
+
+
+def test_render_deferred_deletion_commands_special_characters(tmp_path: Path) -> None:
+    """Test that branch names with special characters are properly quoted."""
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path / "repo"
+    main_repo_root.mkdir()
+
+    commands = render_deferred_deletion_commands(
+        worktree_path=worktree_path,
+        branch="feature/add-login",
+        slot_name=None,
+        is_graphite_managed=True,
+        main_repo_root=main_repo_root,
+    )
+
+    assert len(commands) == 2
+    # Branch name should be quoted to handle the slash
+    assert "gt delete -f feature/add-login" in commands[1]
+
+
+def test_get_slot_name_for_worktree_returns_slot_name(tmp_path: Path) -> None:
+    """Test get_slot_name_for_worktree returns slot name for assigned worktree."""
+    worktree_path = tmp_path / "worktrees" / "erk-slot-01"
+    worktree_path.mkdir(parents=True)
+
+    # Create pool state with an assignment
+    pool_json_path = tmp_path / "pool.json"
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
+        assignments=(
+            SlotAssignment(
+                slot_name="erk-slot-01",
+                branch_name="feature-branch",
+                assigned_at="2025-01-01T00:00:00Z",
+                worktree_path=worktree_path,
+            ),
+        ),
+    )
+    save_pool_state(pool_json_path, state)
+
+    result = get_slot_name_for_worktree(pool_json_path, worktree_path)
+
+    assert result == "erk-slot-01"
+
+
+def test_get_slot_name_for_worktree_returns_none_for_regular_worktree(tmp_path: Path) -> None:
+    """Test get_slot_name_for_worktree returns None for non-slot worktree."""
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    # Create pool state with no matching assignment
+    pool_json_path = tmp_path / "pool.json"
+    state = PoolState(
+        version="1.0",
+        pool_size=4,
+        slots=(SlotInfo(name="erk-slot-01", last_objective_id=None),),
+        assignments=(),
+    )
+    save_pool_state(pool_json_path, state)
+
+    result = get_slot_name_for_worktree(pool_json_path, worktree_path)
+
+    assert result is None
+
+
+def test_get_slot_name_for_worktree_returns_none_without_pool_file(tmp_path: Path) -> None:
+    """Test get_slot_name_for_worktree returns None when pool.json doesn't exist."""
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+    pool_json_path = tmp_path / "pool.json"  # Does not exist
+
+    result = get_slot_name_for_worktree(pool_json_path, worktree_path)
+
+    assert result is None
