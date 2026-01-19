@@ -114,8 +114,7 @@ class RealErkInstallation(ErkInstallation):
                 f"Check permissions on your home directory.\n\n"
                 f"To fix this manually:\n"
                 f"  1. Create the directory: mkdir -p {parent}\n"
-                f"  2. Ensure it's writable: chmod 755 {parent}\n"
-                f"  3. Run erk init --shell again"
+                f"  2. Ensure it's writable: chmod 755 {parent}"
             ) from None
 
         # Check file writability BEFORE attempting write
@@ -125,7 +124,6 @@ class RealErkInstallation(ErkInstallation):
                 f"The file exists but is not writable.\n\n"
                 f"To fix this manually:\n"
                 f"  1. Make it writable: chmod 644 {config_path}\n"
-                f"  2. Run erk init --shell again\n"
                 f"  Or edit the file directly to add: shell_setup_complete = true"
             )
 

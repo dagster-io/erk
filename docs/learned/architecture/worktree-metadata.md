@@ -76,4 +76,3 @@ This pattern allows users to stay in `src/components/` when switching worktrees,
 ## Related Topics
 
 - [Template Variables](../cli/template-variables.md) - Variables available in configs
-- [Shell Integration Patterns](shell-integration-patterns.md) - Script generation for shell commands

@@ -14,5 +14,4 @@
 - **[list-formatting.md](list-formatting.md)** — formatting list output, designing list commands, ensuring consistent list display
 - **[optional-arguments.md](optional-arguments.md)** — making a CLI argument optional, inferring CLI arguments from context, implementing branch-based argument defaults
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
-- **[shell-aliases.md](shell-aliases.md)** — setting up shell aliases for erk commands, debugging shell integration issues, understanding why a command leaves shell stranded
 - **[template-variables.md](template-variables.md)** — configuring .env templates, using substitution variables in config.toml

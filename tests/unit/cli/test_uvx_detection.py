@@ -102,17 +102,14 @@ def test_warning_message_contains_key_phrases() -> None:
     """Warning message should contain key information."""
     message = get_uvx_warning_message("checkout")
 
-    # Should mention uvx/uv tool
-    assert "uvx" in message.lower() or "uv" in message
+    # Should mention uvx
+    assert "uvx" in message.lower()
 
-    # Should mention shell integration
-    assert "shell integration" in message.lower()
+    # Should mention persistent installation
+    assert "persistent installation" in message.lower()
 
     # Should mention the fix
     assert "uv tool install" in message
-
-    # Should mention init --shell
-    assert "erk init --shell" in message
 
 
 def test_warning_message_includes_command_name() -> None:

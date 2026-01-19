@@ -174,17 +174,15 @@ erk init capability add <capability-name>
 
 ## Quick Reference
 
-| Task                    | Command                 |
-| ----------------------- | ----------------------- |
-| Install erk             | `uv add erk && uv sync` |
-| Check version           | `erk --version`         |
-| Verify setup            | `erk doctor`            |
-| Verbose diagnostics     | `erk doctor --verbose`  |
-| Initialize repo         | `erk init`              |
-| Update erk              | `uv upgrade erk`        |
-| Shell integration setup | `erk init --shell`      |
+| Task                | Command                 |
+| ------------------- | ----------------------- |
+| Install erk         | `uv add erk && uv sync` |
+| Check version       | `erk --version`         |
+| Verify setup        | `erk doctor`            |
+| Verbose diagnostics | `erk doctor --verbose`  |
+| Initialize repo     | `erk init`              |
+| Update erk          | `uv upgrade erk`        |
 
 ## Next Steps
 
 - [Your First Plan](first-plan.md) — Create your first plan and land a PR
-- [Shell Integration](shell-integration.md) — Optional: Enable seamless directory switching

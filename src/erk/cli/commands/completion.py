@@ -15,10 +15,6 @@ def completion_bash(ctx: ErkContext) -> None:
     """Generate bash completion script.
 
     \b
-    For automatic setup of both completion and auto-activation:
-      erk init --shell
-
-    \b
     To load completions in your current shell session:
       source <(erk completion bash)
 
@@ -43,10 +39,6 @@ def completion_zsh(ctx: ErkContext) -> None:
     """Generate zsh completion script.
 
     \b
-    For automatic setup of both completion and auto-activation:
-      erk init --shell
-
-    \b
     To load completions in your current shell session:
       source <(erk completion zsh)
 
@@ -68,10 +60,6 @@ def completion_zsh(ctx: ErkContext) -> None:
 @click.pass_obj
 def completion_fish(ctx: ErkContext) -> None:
     """Generate fish completion script.
-
-    \b
-    For automatic setup of both completion and auto-activation:
-      erk init --shell
 
     \b
     To load completions in your current shell session:

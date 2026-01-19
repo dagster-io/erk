@@ -642,10 +642,8 @@ def test_create_from_current_branch_shows_shell_integration_instructions() -> No
             print(f"stdout: {result.stdout}")
         assert result.exit_code == 0
 
-        # Assert: Output contains shell integration setup instructions
-        assert "Shell integration not detected" in result.stderr
-        assert "erk init --shell" in result.stderr
-        assert "source <(erk wt create --from-current-branch --script)" in result.stderr
+        # Assert: Output contains worktree creation message
+        assert "Created worktree at" in result.stderr
 
 
 def test_create_from_current_branch_with_stay_flag() -> None:
