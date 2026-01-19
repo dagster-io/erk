@@ -1,9 +1,15 @@
-REPO: {{ github.repository }}
-PR NUMBER: {{ github.event.pull_request.number }}
-
-## Task
-
-Review code changes for violations of erk tripwire patterns.
+---
+name: Tripwires Review
+paths:
+  - "**/*.py"
+  - "**/*.sh"
+  - ".claude/**/*.md"
+marker: "<!-- tripwires-review -->"
+model: claude-sonnet-4-5
+timeout_minutes: 30
+allowed_tools: "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
+enabled: true
+---
 
 ## Step 1: Load Tripwire Index
 
@@ -21,24 +27,7 @@ Parse EVERY tripwire entry to extract:
 - **Linked doc**: The documentation file to read if triggered
 - **Summary**: Brief description of what the rule enforces
 
-## Step 2: Get Existing Review Comment
-
-Fetch the existing review comment to preserve the activity log:
-
-```
-gh pr view {{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("<!-- tripwires-review -->")) | .body'
-```
-
-If a comment exists, extract the Activity Log section (everything after `### Activity Log`). You will append to this log.
-
-## Step 3: Get the Diff
-
-```
-gh pr diff {{ github.event.pull_request.number }} --name-only
-gh pr diff {{ github.event.pull_request.number }}
-```
-
-## Step 4: Match Tripwires to Diff
+## Step 2: Match Tripwires to Diff
 
 For EACH tripwire parsed in Step 1, scan the diff for code matching its trigger pattern.
 
@@ -54,9 +43,9 @@ This is DYNAMIC - the tripwires.md file is the single source of truth. New tripw
 
 Track which tripwires matched the diff (triggered tripwires).
 
-## Step 5: Load Docs for Matched Tripwires (Lazy Loading)
+## Step 3: Load Docs for Matched Tripwires (Lazy Loading)
 
-For EACH tripwire that matched in Step 4:
+For EACH tripwire that matched in Step 2:
 
 1. Read the linked documentation file
 2. Extract ALL rules AND EXCEPTIONS from that doc
@@ -74,48 +63,19 @@ If the code matches an exception, it is NOT a violation. Do not flag it.
 
 **You MUST load and read the linked documentation before deciding if something is a violation.** The tripwire summary in tripwires.md is abbreviated - the full exceptions are only in the linked docs.
 
-## Step 6: Post Inline Comments for Violations
+## Step 4: Inline Comment Format
 
-**IMPORTANT: Post an inline comment for EACH violation found.**
-
-```
-erk exec post-pr-inline-comment \
-  --pr-number {{ github.event.pull_request.number }} \
-  --path "path/to/file" \
-  --line LINE_NUMBER \
-  --body "**Tripwire**: [pattern detected] - [why it's a problem] - [fix suggestion]"
-```
-
-## Step 7: Post Summary Comment
-
-**IMPORTANT: All timestamps MUST be in Pacific Time (PT), NOT UTC.**
-
-Get the current Pacific time timestamp:
+When posting inline comments for violations, use this format:
 
 ```
-TZ='America/Los_Angeles' date '+%Y-%m-%d %H:%M:%S'
+**Tripwire**: [pattern detected] - [why it's a problem] - [fix suggestion]
 ```
 
-Post/update the summary comment:
-
-```
-erk exec post-or-update-pr-summary \
-  --pr-number {{ github.event.pull_request.number }} \
-  --marker "<!-- tripwires-review -->" \
-  --body "SUMMARY_TEXT"
-```
+## Step 5: Summary Comment Format
 
 Summary format (preserve existing Activity Log entries and prepend new entry):
 
 ```
-<!-- tripwires-review -->
-
-## ✅ Tripwires Review   (use ✅ if 0 violations, ❌ if 1+ violations)
-
-**Last updated:** YYYY-MM-DD HH:MM:SS PT
-
-Found X violations across Y files. Inline comments posted for each.
-
 ### Tripwires Triggered
 - [tripwire name] → loaded [doc path]
 - [tripwire name] → loaded [doc path]
@@ -134,12 +94,6 @@ Found X violations across Y files. Inline comments posted for each.
 ### Files Reviewed
 - `file.py`: N violations
 - `file.sh`: N violations
-
----
-
-### Activity Log
-- **YYYY-MM-DD HH:MM:SS PT**: [Brief description of this review's findings]
-- [Previous log entries preserved here...]
 ```
 
 Activity log entry examples:
