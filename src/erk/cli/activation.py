@@ -313,8 +313,15 @@ def print_activation_instructions(
             the old combinatorial ActivationMode literal.
         copy: If True, copy the primary command to clipboard via OSC 52 and show hint.
     """
-    primary_cmd = build_activation_command(config, script_path)
-    instruction = _get_activation_instruction(config)
+    source_cmd = f"source {script_path}"
+
+    # If deleting current branch, make the delete command the primary command
+    if source_branch is not None and force:
+        primary_cmd = f"{source_cmd} && erk br delete {source_branch}"
+        instruction = f"To activate and delete branch {source_branch}:"
+    else:
+        primary_cmd = build_activation_command(config, script_path)
+        instruction = _get_activation_instruction(config)
 
     user_output(f"\n{instruction}")
     if copy:
