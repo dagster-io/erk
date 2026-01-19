@@ -13,6 +13,7 @@
 - **[cli-binary-ops-pattern.md](cli-binary-ops-pattern.md)** — wrapping external CLI binary, testing subprocess calls, creating fake for external tool
 - **[command-boundaries.md](command-boundaries.md)** — Choosing between agent vs CLI command, Deciding when to use .claude/commands/ vs src/erk/cli/, Understanding when AI capabilities are needed
 - **[commandresult-extension-pattern.md](commandresult-extension-pattern.md)** — adding new field to CommandResult, extending CommandResult dataclass, adding metadata extraction, implementing new CommandResult field
+- **[deferred-execution-pattern.md](deferred-execution-pattern.md)** — implementing operations that delete current worktree, implementing shell-level cd operations, implementing atomic multi-step operations, using --execute flags with state parameters
 - **[erk-architecture.md](erk-architecture.md)** — understanding erk architecture, implementing dry-run patterns, regenerating context after os.chdir, detecting root worktree, detecting worktree location, adding composing template methods to ABC
 - **[erk-shared-package.md](erk-shared-package.md)** — deciding where to put new utilities, moving code between packages
 - **[erk-statusline.md](erk-statusline.md)** — modifying the Claude Code status line, adding new status indicators to the statusline, understanding how statusline fetches GitHub data, working with Token/TokenSeq patterns, debugging statusline performance
