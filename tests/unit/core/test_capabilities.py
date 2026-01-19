@@ -11,6 +11,8 @@ These tests verify:
 
 from pathlib import Path
 
+from tests.fakes.shell import FakeShell
+
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import (
     Capability,
@@ -1829,3 +1831,312 @@ def test_is_capability_managed_type_matters() -> None:
     # dignified-python is a skill, not an agent
     assert is_capability_managed("dignified-python", "skill") is True
     assert is_capability_managed("dignified-python", "agent") is False
+
+
+# =============================================================================
+# Tests for DirenvCapability
+# =============================================================================
+
+
+def test_direnv_capability_properties() -> None:
+    """Test DirenvCapability has correct properties."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    assert cap.name == "direnv"
+    assert cap.scope == "project"
+    assert "direnv" in cap.description.lower()
+    assert ".envrc" in cap.installation_check_description
+
+
+def test_direnv_capability_is_optional() -> None:
+    """Test DirenvCapability is marked as optional (not required)."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    assert cap.required is False
+
+
+def test_direnv_capability_artifacts() -> None:
+    """Test DirenvCapability lists correct artifacts."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    artifacts = cap.artifacts
+
+    assert len(artifacts) == 1
+    paths = [a.path for a in artifacts]
+    assert ".envrc" in paths
+
+
+def test_direnv_is_installed_false_when_envrc_missing(tmp_path: Path) -> None:
+    """Test is_installed returns False when .envrc doesn't exist."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    assert cap.is_installed(tmp_path) is False
+
+
+def test_direnv_is_installed_true_when_envrc_exists(tmp_path: Path) -> None:
+    """Test is_installed returns True when .envrc exists."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    (tmp_path / ".envrc").write_text("# test", encoding="utf-8")
+    cap = DirenvCapability(shell=None)
+    assert cap.is_installed(tmp_path) is True
+
+
+def test_direnv_is_installed_returns_false_with_none_repo_root() -> None:
+    """Test is_installed returns False when repo_root is None."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    assert cap.is_installed(None) is False
+
+
+def test_direnv_preflight_fails_when_direnv_not_installed() -> None:
+    """Test preflight fails when direnv is not installed."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(installed_tools={})  # No direnv
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.preflight(None)
+
+    assert result.success is False
+    assert "direnv is not installed" in result.message
+    assert "brew install direnv" in result.message
+
+
+def test_direnv_preflight_succeeds_when_direnv_installed() -> None:
+    """Test preflight succeeds when direnv is installed."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(installed_tools={"direnv": "/usr/local/bin/direnv"})
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.preflight(None)
+
+    assert result.success is True
+
+
+def test_direnv_install_skips_when_direnv_not_installed(tmp_path: Path) -> None:
+    """Test install skips gracefully when direnv is not installed (auto-install)."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(installed_tools={})  # No direnv
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert "Skipped" in result.message
+    assert "direnv not installed" in result.message
+    assert not (tmp_path / ".envrc").exists()
+
+
+def test_direnv_install_creates_envrc_with_zsh(tmp_path: Path) -> None:
+    """Test install creates .envrc with zsh shell and commented alternatives."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=("zsh", Path.home() / ".zshrc"),
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert ".envrc" in result.created_files
+
+    # Verify .envrc content includes active zsh and commented bash alternative
+    envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
+    assert "source <(erk completion zsh)" in envrc_content
+    assert "# source <(erk completion bash)" in envrc_content
+    assert ".venv" in envrc_content
+
+
+def test_direnv_install_creates_envrc_with_bash(tmp_path: Path) -> None:
+    """Test install creates .envrc with bash completions and commented zsh alternative."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=("bash", Path.home() / ".bashrc"),
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+
+    # Verify .envrc uses bash and has commented zsh alternative
+    envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
+    assert "source <(erk completion bash)" in envrc_content
+    assert "# source <(erk completion zsh)" in envrc_content
+
+
+def test_direnv_install_defaults_to_zsh_when_shell_not_detected(tmp_path: Path) -> None:
+    """Test install defaults to zsh when shell cannot be detected."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=None,  # No shell detected
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+
+    # Verify .envrc uses zsh (default)
+    envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
+    assert "erk completion zsh" in envrc_content
+
+
+def test_direnv_install_adds_envrc_to_gitignore(tmp_path: Path) -> None:
+    """Test install adds .envrc to .gitignore."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    # Create existing .gitignore
+    gitignore_path = tmp_path / ".gitignore"
+    gitignore_path.write_text("*.pyc\n", encoding="utf-8")
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=("zsh", Path.home() / ".zshrc"),
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert ".gitignore" in result.created_files
+
+    # Verify .gitignore was updated
+    gitignore_content = gitignore_path.read_text(encoding="utf-8")
+    assert ".envrc" in gitignore_content
+    assert "*.pyc" in gitignore_content  # Existing content preserved
+
+
+def test_direnv_install_creates_gitignore_if_missing(tmp_path: Path) -> None:
+    """Test install creates .gitignore if it doesn't exist."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=("zsh", Path.home() / ".zshrc"),
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+
+    # Verify .gitignore was created
+    gitignore_path = tmp_path / ".gitignore"
+    assert gitignore_path.exists()
+    gitignore_content = gitignore_path.read_text(encoding="utf-8")
+    assert ".envrc" in gitignore_content
+
+
+def test_direnv_install_does_not_duplicate_gitignore_entry(tmp_path: Path) -> None:
+    """Test install doesn't duplicate .envrc in .gitignore if already present."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    # Create .gitignore with .envrc already in it
+    gitignore_path = tmp_path / ".gitignore"
+    gitignore_path.write_text("*.pyc\n.envrc\n", encoding="utf-8")
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=("zsh", Path.home() / ".zshrc"),
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    # .gitignore should NOT be in created_files since it wasn't modified
+    assert ".gitignore" not in result.created_files
+
+    # Verify .gitignore wasn't duplicated
+    gitignore_content = gitignore_path.read_text(encoding="utf-8")
+    assert gitignore_content.count(".envrc") == 1
+
+
+def test_direnv_install_idempotent(tmp_path: Path) -> None:
+    """Test install is idempotent when .envrc already exists."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    (tmp_path / ".envrc").write_text("# existing", encoding="utf-8")
+
+    fake_shell = FakeShell(
+        installed_tools={"direnv": "/usr/local/bin/direnv"},
+        detected_shell=("zsh", Path.home() / ".zshrc"),
+    )
+    cap = DirenvCapability(shell=fake_shell)
+    result = cap.install(tmp_path)
+
+    assert result.success is True
+    assert ".envrc already exists" in result.message
+
+    # Verify .envrc was NOT overwritten
+    envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
+    assert envrc_content == "# existing"
+
+
+def test_direnv_install_fails_with_none_repo_root() -> None:
+    """Test install fails when repo_root is None."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    result = cap.install(None)
+
+    assert result.success is False
+    assert "requires repo_root" in result.message
+
+
+def test_direnv_uninstall_requires_repo_root() -> None:
+    """Test uninstall returns error when repo_root is None."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    result = cap.uninstall(None)
+
+    assert result.success is False
+    assert "requires repo_root" in result.message
+
+
+def test_direnv_uninstall_removes_envrc(tmp_path: Path) -> None:
+    """Test uninstall removes .envrc file."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    # Create .envrc
+    (tmp_path / ".envrc").write_text("# envrc", encoding="utf-8")
+
+    cap = DirenvCapability(shell=None)
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert ".envrc" in result.message
+    assert not (tmp_path / ".envrc").exists()
+
+
+def test_direnv_uninstall_when_already_uninstalled(tmp_path: Path) -> None:
+    """Test uninstall succeeds when no .envrc files exist."""
+    from erk.core.capabilities.direnv import DirenvCapability
+
+    cap = DirenvCapability(shell=None)
+    result = cap.uninstall(tmp_path)
+
+    assert result.success is True
+    assert "already uninstalled" in result.message
+
+
+def test_direnv_capability_registered() -> None:
+    """Test that direnv capability is registered."""
+    cap = get_capability("direnv")
+    assert cap is not None
+    assert cap.name == "direnv"
+
+
+def test_direnv_capability_not_in_required_list() -> None:
+    """Test that direnv is NOT in the list of required capabilities (it's optional)."""
+    required_caps = list_required_capabilities()
+    names = [cap.name for cap in required_caps]
+
+    assert "direnv" not in names
