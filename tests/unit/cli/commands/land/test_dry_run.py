@@ -84,6 +84,7 @@ def test_cleanup_and_navigate_dry_run_does_not_save_pool_state(tmp_path: Path) -
             target_child_branch=None,
             objective_number=123,  # This would trigger pool state save
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -151,6 +152,7 @@ def test_cleanup_and_navigate_dry_run_shows_summary() -> None:
                 target_child_branch=None,
                 objective_number=None,
                 no_delete=False,
+                skip_activation_output=False,
             )
         except SystemExit as e:
             assert e.code == 0  # Should exit cleanly

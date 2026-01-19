@@ -80,6 +80,7 @@ def test_cleanup_and_navigate_uses_plain_git_delete_when_graphite_disabled(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -177,6 +178,7 @@ def test_cleanup_and_navigate_detects_slot_by_branch_name(tmp_path: Path) -> Non
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -288,6 +290,7 @@ def test_cleanup_and_navigate_detects_slot_by_path_pattern_without_assignment(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -395,6 +398,7 @@ def test_cleanup_and_navigate_non_slot_worktree_checkouts_trunk_before_deleting_
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -483,6 +487,7 @@ def test_cleanup_and_navigate_non_slot_worktree_fails_with_uncommitted_changes(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
         pytest.fail("Expected SystemExit(1) for uncommitted changes")
     except SystemExit as e:
@@ -599,6 +604,7 @@ def test_cleanup_ensures_branch_not_checked_out_before_delete_with_stale_pool_st
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -763,6 +769,7 @@ def test_cleanup_and_navigate_slot_without_assignment_force_suppresses_warning(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit:
         pass  # Expected - function raises SystemExit(0) at end
@@ -858,6 +865,7 @@ def test_cleanup_and_navigate_outputs_noop_script_when_not_current_branch(
             target_child_branch=None,
             objective_number=None,
             no_delete=False,
+            skip_activation_output=False,
         )
     except SystemExit as e:
         assert e.code == 0  # Should exit cleanly
