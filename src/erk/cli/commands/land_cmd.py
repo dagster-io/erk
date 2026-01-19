@@ -352,6 +352,7 @@ def _cleanup_and_navigate(
     target_child_branch: str | None,
     objective_number: int | None,
     no_delete: bool,
+    skip_activation_output: bool,
 ) -> None:
     """Handle worktree/branch cleanup and navigation after PR merge.
 
@@ -369,6 +370,8 @@ def _cleanup_and_navigate(
         target_child_branch: Target child branch for --up navigation (None for trunk)
         objective_number: Issue number of the objective linked to this branch (if any)
         no_delete: Whether to preserve the branch and slot assignment
+        skip_activation_output: If True, skip activation message (used in execute mode
+            where the script's cd command handles navigation)
     """
     # Handle --no-delete: skip cleanup, optionally navigate
     if no_delete:
@@ -383,6 +386,7 @@ def _cleanup_and_navigate(
                 script=script,
                 pull_flag=pull_flag,
                 target_child_branch=target_child_branch,
+                skip_activation_output=skip_activation_output,
             )
         else:
             raise SystemExit(0)
@@ -502,6 +506,7 @@ def _cleanup_and_navigate(
             script=script,
             pull_flag=pull_flag,
             target_child_branch=target_child_branch,
+            skip_activation_output=skip_activation_output,
         )
     else:
         if script:
@@ -529,6 +534,7 @@ def _navigate_after_land(
     script: bool,
     pull_flag: bool,
     target_child_branch: str | None,
+    skip_activation_output: bool,
 ) -> None:
     """Navigate to appropriate location after landing.
 
@@ -538,6 +544,8 @@ def _navigate_after_land(
         script: Whether to output activation script
         pull_flag: Whether to include git pull in activation
         target_child_branch: If set, navigate to this child branch (--up mode)
+        skip_activation_output: If True, skip activation message (used in execute mode
+            where the script's cd command handles navigation)
     """
     # Create post-deletion repo context with root pointing to main_repo_root
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
@@ -581,6 +589,11 @@ def _navigate_after_land(
                 user_output(
                     click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
                 )
+
+        # Skip activation output in execute mode (script's cd command handles navigation)
+        if skip_activation_output:
+            raise SystemExit(0)
+
         # Output activation script pointing to trunk/root repo
         activate_root_repo(
             ctx,
@@ -612,6 +625,10 @@ def render_land_execution_script(
     This script is generated after validation passes. When sourced, it:
     1. Calls `erk land --execute` with pre-validated state
     2. Navigates to the target location (trunk or child branch)
+
+    Note: The execute phase always skips confirmation prompts because the user
+    already approved by sourcing the script. --force is not passed because
+    _execute_land handles this internally.
 
     Args:
         pr_number: PR number to merge
@@ -675,6 +692,10 @@ def _execute_land(
     This function is called when `erk land --execute` is invoked by the
     activation script. All validation has already been done - this just
     performs the destructive operations.
+
+    Confirmations are skipped in execute mode because the user already approved
+    by sourcing the activation script. Confirmations happen during validation
+    phase only.
 
     Args:
         ctx: ErkContext
@@ -750,6 +771,8 @@ def _execute_land(
 
     # Step 3: Cleanup (delete branch, unassign slot)
     # Note: Navigation is handled by the activation script's cd command
+    # Always use force=True in execute mode because user already approved by
+    # sourcing the script. Confirmations happen during validation phase only.
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -757,11 +780,12 @@ def _execute_land(
         worktree_path=worktree_path,
         script=script,
         pull_flag=pull_flag,
-        force=True,  # Skip confirmation in execute mode
+        force=True,  # Execute mode skips confirmations (user approved via script)
         is_current_branch=is_current_branch,
         target_child_branch=target_child_branch,
         objective_number=objective_number,
         no_delete=no_delete,
+        skip_activation_output=True,  # Script's cd command handles navigation
     )
 
 
@@ -1022,21 +1046,12 @@ def _land_current_branch(
     # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
 
-    # Prompt for slot unassign confirmation (prompts happen during validation phase)
-    # This is handled in _cleanup_and_navigate, but we need to prompt here before
-    # generating the script. Check if worktree is a slot worktree and prompt.
+    # Check for slot assignment (needed for dry-run output)
+    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
     state = load_pool_state(repo.pool_json_path)
     slot_assignment: SlotAssignment | None = None
     if state is not None:
         slot_assignment = find_branch_assignment(state, current_branch)
-
-    if slot_assignment is not None and not force and not ctx.dry_run and not no_delete:
-        if not ctx.console.confirm(
-            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{current_branch}'?",
-            default=True,
-        ):
-            user_output("Slot preserved. Branch still exists locally.")
-            raise SystemExit(0)
 
     # Determine target path for navigation after landing
     if target_child_branch is not None:
@@ -1173,19 +1188,12 @@ def _land_specific_pr(
     # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
-    # Prompt for slot unassign confirmation if applicable
+    # Check for slot assignment (needed for dry-run output)
+    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
     state = load_pool_state(repo.pool_json_path)
     slot_assignment: SlotAssignment | None = None
     if state is not None:
         slot_assignment = find_branch_assignment(state, branch)
-
-    if slot_assignment is not None and not force and not ctx.dry_run and not no_delete:
-        if not ctx.console.confirm(
-            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{branch}'?",
-            default=True,
-        ):
-            user_output("Slot preserved. Branch still exists locally.")
-            raise SystemExit(0)
 
     # Determine target path for navigation (no --up for specific PR, always trunk)
     target_path = main_repo_root
@@ -1305,19 +1313,12 @@ def _land_by_branch(
     # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
 
-    # Prompt for slot unassign confirmation if applicable
+    # Check for slot assignment (needed for dry-run output)
+    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
     state = load_pool_state(repo.pool_json_path)
     slot_assignment: SlotAssignment | None = None
     if state is not None:
         slot_assignment = find_branch_assignment(state, branch_name)
-
-    if slot_assignment is not None and not force and not ctx.dry_run and not no_delete:
-        if not ctx.console.confirm(
-            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{branch_name}'?",
-            default=True,
-        ):
-            user_output("Slot preserved. Branch still exists locally.")
-            raise SystemExit(0)
 
     # Determine target path for navigation (no --up for branch landing, always trunk)
     target_path = main_repo_root
