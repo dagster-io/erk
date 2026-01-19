@@ -8,8 +8,8 @@ import re
 from collections.abc import Mapping
 from pathlib import Path
 
+import frontmatter
 import pathspec
-import yaml
 
 from erk.review.models import (
     DiscoveryResult,
@@ -18,7 +18,6 @@ from erk.review.models import (
     ReviewValidationResult,
 )
 
-FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---\s*\n?", re.DOTALL)
 MARKER_PATTERN = re.compile(r"^<!--\s+.+\s+-->$")
 
 # Default values for optional frontmatter fields
@@ -39,20 +38,26 @@ def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | Non
         If parsing fails, parsed_dict is None and error_message describes the issue.
         body_text is the content after the frontmatter.
     """
-    match = FRONTMATTER_PATTERN.match(content)
-    if match is None:
-        return None, "No frontmatter found", content
-
-    frontmatter_text = match.group(1)
-    body = content[match.end() :]
+    # Check if content has frontmatter delimiters before parsing
+    has_frontmatter_delimiters = content.startswith("---")
 
     try:
-        parsed = yaml.safe_load(frontmatter_text)
-        if not isinstance(parsed, dict):
-            return None, "Frontmatter is not a valid YAML mapping", body
-        return parsed, None, body
-    except yaml.YAMLError as e:
-        return None, f"Invalid YAML: {e}", body
+        post = frontmatter.loads(content)
+    except Exception as e:
+        return None, f"Invalid YAML: {e}", content
+
+    # Check if metadata is a dict (frontmatter library stores non-dict YAML differently)
+    if not isinstance(post.metadata, dict):
+        return None, "Frontmatter is not a valid YAML mapping", post.content
+
+    # Distinguish between "no frontmatter" vs "frontmatter was non-dict YAML"
+    # When frontmatter library encounters non-dict YAML, it returns empty metadata
+    if not post.metadata:
+        if has_frontmatter_delimiters:
+            return None, "Frontmatter is not a valid YAML mapping", post.content
+        return None, "No frontmatter found", content
+
+    return dict(post.metadata), None, post.content
 
 
 def _validate_paths(paths_data: object) -> tuple[tuple[str, ...], list[str]]:
