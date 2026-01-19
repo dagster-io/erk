@@ -73,42 +73,24 @@ class GraphiteBranchManager(BranchManager):
     def delete_branch(self, repo_root: Path, branch: str) -> None:
         """Delete a branch with Graphite metadata cleanup.
 
-        Falls back to plain git if Graphite can't delete (untracked/diverged).
+        Always uses gt delete when tracked (handles diverged branches gracefully).
+        Falls back to plain git only if branch is not tracked by Graphite.
 
         Args:
             repo_root: Repository root directory
             branch: Branch name to delete
         """
-        # LBYL: Check if Graphite can handle this branch
-        if not self._can_graphite_delete(repo_root, branch):
+        # LBYL: Check if branch is tracked by Graphite
+        if not self.graphite.is_branch_tracked(repo_root, branch):
+            # Branch not in Graphite - use plain git
             self.git.delete_branch(repo_root, branch, force=True)
             return
 
+        # Branch is tracked - use gt delete which:
+        # - Re-parents children to parent branch
+        # - Cleans up .graphite_cache_persist metadata
+        # - Handles diverged SHAs gracefully
         self.graphite.delete_branch(repo_root, branch)
-
-    def _can_graphite_delete(self, repo_root: Path, branch: str) -> bool:
-        """Check if Graphite can delete this branch (tracked and not diverged).
-
-        Args:
-            repo_root: Repository root directory
-            branch: Branch name to check
-
-        Returns:
-            True if Graphite can delete the branch, False if git fallback needed.
-        """
-        # Check 1: Is branch tracked?
-        if not self.graphite.is_branch_tracked(repo_root, branch):
-            return False
-
-        # Check 2: Is branch diverged from Graphite's cached SHA?
-        branches = self.graphite.get_all_branches(self.git, repo_root)
-        if branch in branches:
-            graphite_sha = branches[branch].commit_sha
-            actual_sha = self.git.get_branch_head(repo_root, branch)
-            if graphite_sha is not None and actual_sha is not None and graphite_sha != actual_sha:
-                return False
-
-        return True
 
     def submit_branch(self, repo_root: Path, branch: str) -> None:
         """Submit branch via Graphite.

@@ -62,8 +62,13 @@ def test_delete_branch_falls_back_to_git_when_untracked() -> None:
     assert fake_git.deleted_branches == ["feature-branch"]
 
 
-def test_delete_branch_falls_back_to_git_when_diverged() -> None:
-    """When branch SHA differs from Graphite's cached SHA, git delete is used."""
+def test_delete_branch_uses_graphite_even_when_diverged() -> None:
+    """When branch SHA differs from Graphite's cache, Graphite delete is STILL used.
+
+    gt delete -f handles diverged branches gracefully - it cleans up metadata
+    regardless of SHA mismatch. Previously this fell back to plain git which
+    left orphaned Graphite metadata (bug fix).
+    """
     repo_root = Path("/repo")
 
     fake_git = FakeGit(
@@ -84,10 +89,10 @@ def test_delete_branch_falls_back_to_git_when_diverged() -> None:
     manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
     manager.delete_branch(repo_root, "feature-branch")
 
-    # Graphite delete was NOT called
-    assert fake_graphite.delete_branch_calls == []
-    # Git delete WAS called with force=True
-    assert fake_git.deleted_branches == ["feature-branch"]
+    # Graphite delete WAS called (gt delete -f handles diverged branches)
+    assert fake_graphite.delete_branch_calls == [(repo_root, "feature-branch")]
+    # Git delete was NOT called
+    assert fake_git.deleted_branches == []
 
 
 def test_delete_branch_uses_graphite_when_commit_sha_is_none() -> None:
