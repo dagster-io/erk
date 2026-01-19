@@ -84,7 +84,7 @@ Add a tripwire to the relevant doc's frontmatter:
 
 ## CI Enforcement
 
-Tripwires are automatically enforced on pull requests via `.github/prompts/tripwires-review.md`.
+Tripwires are automatically enforced on pull requests via the convention-based code review system. The review definition is at `.github/reviews/tripwires.md`.
 
 ### How It Works
 
