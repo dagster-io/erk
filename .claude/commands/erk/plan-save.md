@@ -159,7 +159,11 @@ In Claude Code:
 
 OR exit Claude Code first, then run one of:
   Local: erk prepare <issue_number>
+  Local (dangerously): erk prepare -d <issue_number>
   Submit to Queue: erk plan submit <issue_number>
+
+The -d/--dangerous flag skips permission prompts during implementation,
+allowing the agent to execute without approval gates.
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`
