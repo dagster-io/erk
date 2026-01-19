@@ -3,7 +3,6 @@
 import click
 
 from erk.cli.activation import (
-    ENABLE_ACTIVATION_SCRIPTS,
     activation_config_activate_only,
     ensure_worktree_activate_script,
     print_activation_instructions,
@@ -117,15 +116,14 @@ def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
 
     if should_output:
         user_output(f"Worktree {styled_wt} [{styled_branch}]")
-        if ENABLE_ACTIVATION_SCRIPTS:
-            activation_script_path = ensure_worktree_activate_script(
-                worktree_path=worktree_path,
-                post_create_commands=None,
-            )
-            print_activation_instructions(
-                activation_script_path,
-                source_branch=None,
-                force=False,
-                config=activation_config_activate_only(),
-                copy=True,
-            )
+        activation_script_path = ensure_worktree_activate_script(
+            worktree_path=worktree_path,
+            post_create_commands=None,
+        )
+        print_activation_instructions(
+            activation_script_path,
+            source_branch=None,
+            force=False,
+            config=activation_config_activate_only(),
+            copy=True,
+        )

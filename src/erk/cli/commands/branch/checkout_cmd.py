@@ -5,7 +5,6 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import (
-    ENABLE_ACTIVATION_SCRIPTS,
     activation_config_activate_only,
     ensure_worktree_activate_script,
     print_activation_instructions,
@@ -226,19 +225,17 @@ def _perform_checkout(
         display_sync_status(ctx, worktree_path=target_path, branch=branch, script=script)
 
         # Print activation instructions for opt-in workflow
-        # SPECULATIVE: activation-scripts (objective #4954)
-        if ENABLE_ACTIVATION_SCRIPTS:
-            activation_script_path = ensure_worktree_activate_script(
-                worktree_path=target_path,
-                post_create_commands=None,
-            )
-            print_activation_instructions(
-                activation_script_path,
-                source_branch=None,
-                force=False,
-                config=activation_config_activate_only(),
-                copy=True,
-            )
+        activation_script_path = ensure_worktree_activate_script(
+            worktree_path=target_path,
+            post_create_commands=None,
+        )
+        print_activation_instructions(
+            activation_script_path,
+            source_branch=None,
+            force=False,
+            config=activation_config_activate_only(),
+            copy=True,
+        )
 
 
 @alias("co")

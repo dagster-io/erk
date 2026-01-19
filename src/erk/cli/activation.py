@@ -2,11 +2,6 @@
 
 This module provides utilities for generating shell scripts that activate
 worktree environments by setting up virtual environments and loading .env files.
-
-SPECULATIVE: activation-scripts (objective #4954)
-This feature is speculative and may be removed. Set ENABLE_ACTIVATION_SCRIPTS
-to False to disable. Grep for "SPECULATIVE: activation-scripts" to find all
-related code.
 """
 
 import shlex
@@ -76,9 +71,6 @@ def build_activation_command(config: ActivationConfig, script_path: Path) -> str
 
     return " ".join(parts)
 
-
-# SPECULATIVE: activation-scripts - set to False to disable this feature
-ENABLE_ACTIVATION_SCRIPTS = True
 
 
 def _render_logging_helper() -> str:
@@ -301,8 +293,6 @@ def print_activation_instructions(
     clipboard via OSC 52 (supported by iTerm2, Kitty, Alacritty, WezTerm,
     and other modern terminals). Terminals without OSC 52 support will
     silently ignore the sequence.
-
-    SPECULATIVE: activation-scripts (objective #4954)
 
     Args:
         script_path: Path to the activation script (.erk/bin/activate.sh)
