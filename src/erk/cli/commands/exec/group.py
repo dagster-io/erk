@@ -28,6 +28,7 @@ from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
     create_worker_impl_from_issue,
 )
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
+from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
 from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
@@ -86,6 +87,7 @@ from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
 )
+from erk.cli.commands.exec.scripts.run_review import run_review
 from erk.cli.commands.exec.scripts.session_id_injector_hook import (
     session_id_injector_hook,
 )
@@ -128,6 +130,7 @@ exec_group.add_command(create_learn_branch, name="create-learn-branch")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
+exec_group.add_command(discover_reviews, name="discover-reviews")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
 exec_group.add_command(find_project_dir, name="find-project-dir")
@@ -161,6 +164,7 @@ exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
+exec_group.add_command(run_review, name="run-review")
 exec_group.add_command(reply_to_discussion_comment, name="reply-to-discussion-comment")
 exec_group.add_command(session_id_injector_hook, name="session-id-injector-hook")
 exec_group.add_command(setup_impl_from_issue, name="setup-impl-from-issue")

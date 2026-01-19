@@ -1,0 +1,106 @@
+# Convention-based code reviews
+# Add a new review by dropping a markdown file in .github/reviews/
+name: code-reviews
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  discover:
+    if: github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install erk
+        run: uv tool install --from . --with ./packages/erk-shared erk
+
+      - name: Discover matching reviews
+        id: discover
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Run discovery and capture output
+          OUTPUT=$(erk exec discover-reviews --pr-number ${{ github.event.pull_request.number }})
+          echo "Discovery output:"
+          echo "$OUTPUT"
+
+          # Check if discovery succeeded
+          SUCCESS=$(echo "$OUTPUT" | jq -r '.success')
+          if [ "$SUCCESS" != "true" ]; then
+            echo "Discovery failed"
+            echo "$OUTPUT" | jq .
+            exit 1
+          fi
+
+          # Extract matrix and check if there are any reviews
+          MATRIX=$(echo "$OUTPUT" | jq -c '.matrix')
+          REVIEW_COUNT=$(echo "$OUTPUT" | jq '.reviews | length')
+
+          echo "Found $REVIEW_COUNT matching reviews"
+          echo "Matrix: $MATRIX"
+
+          # Set outputs
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ "$REVIEW_COUNT" -gt 0 ]; then
+            echo "has_reviews=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_reviews=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  review:
+    needs: discover
+    if: needs.discover.outputs.has_reviews == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Claude Code
+        uses: ./.github/actions/setup-claude-code
+
+      - name: Install erk
+        run: uv tool install --from . --with ./packages/erk-shared erk
+
+      - name: Run ${{ matrix.name }}
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Extract review name from filename (remove .md extension)
+          REVIEW_NAME="${{ matrix.filename }}"
+          REVIEW_NAME="${REVIEW_NAME%.md}"
+
+          echo "Running review: $REVIEW_NAME"
+          erk exec run-review \
+            --name "$REVIEW_NAME" \
+            --pr-number ${{ github.event.pull_request.number }}

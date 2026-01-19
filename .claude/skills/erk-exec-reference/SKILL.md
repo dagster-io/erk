@@ -25,6 +25,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                |
 | `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.          |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
+| `discover-reviews`                | Discover code reviews matching PR changed files.                          |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                        |
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                 |
@@ -62,6 +63,7 @@ Quick reference for all `erk exec` subcommands.
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.              |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.           |
 | `resolve-review-thread`           | Resolve a PR review thread.                                               |
+| `run-review`                      | Run a code review using Claude.                                           |
 | `session-id-injector-hook`        | Inject session ID into conversation context when relevant.                |
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
 | `slot-objective`                  | Get the last objective issue for the current slot.                        |
@@ -183,6 +185,19 @@ Create .worker-impl/ folder from GitHub issue with plan content.
 Detect whether repo uses main or master as trunk branch.
 
 **Usage:** `erk exec detect-trunk-branch`
+
+### discover-reviews
+
+Discover code reviews matching PR changed files.
+
+**Usage:** `erk exec discover-reviews`
+
+**Options:**
+
+| Flag            | Type    | Required | Default           | Description                                                        |
+| --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
+| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to analyze                                               |
+| `--reviews-dir` | TEXT    | No       | '.github/reviews' | Directory containing review definitions (default: .github/reviews) |
 
 ### exit-plan-mode-hook
 
@@ -691,6 +706,21 @@ Resolve a PR review thread.
 | ------------- | ---- | -------- | -------------- | ---------------------------------------- |
 | `--thread-id` | TEXT | Yes      | Sentinel.UNSET | GraphQL node ID of the thread to resolve |
 | `--comment`   | TEXT | No       | -              | Optional comment to add before resolving |
+
+### run-review
+
+Run a code review using Claude.
+
+**Usage:** `erk exec run-review`
+
+**Options:**
+
+| Flag            | Type    | Required | Default           | Description                                                        |
+| --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
+| `--name`        | TEXT    | Yes      | Sentinel.UNSET    | Review filename (without .md)                                      |
+| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to review                                                |
+| `--reviews-dir` | TEXT    | No       | '.github/reviews' | Directory containing review definitions (default: .github/reviews) |
+| `--dry-run`     | FLAG    | No       | -                 | Print assembled prompt without running Claude                      |
 
 ### session-id-injector-hook
 
