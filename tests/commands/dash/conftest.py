@@ -2,7 +2,7 @@
 
 from datetime import UTC, datetime
 
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.plan_store.types import Plan, PlanState
 
 

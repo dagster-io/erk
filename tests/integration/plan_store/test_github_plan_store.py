@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.types import PlanQuery, PlanState
 from tests.test_utils.github_helpers import create_test_issue

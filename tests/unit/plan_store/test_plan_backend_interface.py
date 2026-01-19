@@ -23,7 +23,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.fake_linear import FakeLinearPlanBackend, LinearIssue
 from erk_shared.plan_store.github import GitHubPlanStore

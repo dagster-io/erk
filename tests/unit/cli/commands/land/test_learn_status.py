@@ -9,7 +9,7 @@ from erk.cli.commands.land_cmd import _check_learn_status_and_prompt
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.fake import FakeConsole
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.sessions.discovery import SessionsForPlan
 from tests.test_utils.github_helpers import create_test_issue
 

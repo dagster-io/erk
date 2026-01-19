@@ -3,8 +3,8 @@
 This module provides the canonical ErkContext that holds all dependencies
 for erk and erk-kits operations.
 
-Note: Import helpers from erk_shared.context.helpers and types from
-erk_shared.context.types directly.
+Import from submodules:
+- erk_shared.context.context: ErkContext
+- erk_shared.context.helpers: context helper functions
+- erk_shared.context.types: GlobalConfig, LoadedConfig, etc.
 """
-
-from erk_shared.context.context import ErkContext as ErkContext

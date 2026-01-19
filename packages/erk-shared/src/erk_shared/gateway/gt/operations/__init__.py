@@ -6,18 +6,11 @@ This module contains the business logic for GT kit operations. Each operation:
 - Yields CompletionEvent with the final result
 
 CLI layers consume these generators and handle rendering.
+
+Import from submodules:
+- erk_shared.gateway.gt.operations.finalize: execute_finalize
+- erk_shared.gateway.gt.operations.land_pr: execute_land_pr
+- erk_shared.gateway.gt.operations.pre_analysis: execute_pre_analysis
+- erk_shared.gateway.gt.operations.preflight: execute_preflight
+- erk_shared.gateway.gt.operations.squash: execute_squash
 """
-
-from erk_shared.gateway.gt.operations.finalize import execute_finalize
-from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
-from erk_shared.gateway.gt.operations.pre_analysis import execute_pre_analysis
-from erk_shared.gateway.gt.operations.preflight import execute_preflight
-from erk_shared.gateway.gt.operations.squash import execute_squash
-
-__all__ = [
-    "execute_finalize",
-    "execute_land_pr",
-    "execute_pre_analysis",
-    "execute_preflight",
-    "execute_squash",
-]

@@ -56,7 +56,7 @@ from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
 from erk_shared.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.github.types import PRNotFound
-from erk_shared.prompt_executor import PromptExecutor
+from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 @dataclass(frozen=True)

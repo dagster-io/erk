@@ -7,7 +7,8 @@ import pytest
 
 from erk.core.services.plan_list_service import PlanListData, RealPlanListService
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 
 TEST_LOCATION = GitHubRepoLocation(root=Path("/test/repo"), repo_id=GitHubRepoId("owner", "repo"))

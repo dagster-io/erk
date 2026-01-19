@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.github.issues import RealGitHubIssues
+from erk_shared.github.issues.real import RealGitHubIssues
 
 
 @pytest.fixture

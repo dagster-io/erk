@@ -17,10 +17,10 @@ from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.learn.extraction.claude_installation.fake import (
     FakeClaudeInstallation,
     FakeProject,

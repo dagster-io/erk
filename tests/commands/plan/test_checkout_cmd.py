@@ -10,7 +10,7 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import PRReference
 from erk_shared.github.types import PRDetails
 from tests.test_utils.context_builders import build_workspace_test_context

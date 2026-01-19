@@ -17,7 +17,7 @@ from erk.cli.commands.exec.scripts.detect_trunk_branch import (
 from erk.cli.commands.exec.scripts.detect_trunk_branch import (
     detect_trunk_branch as detect_trunk_branch_command,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 
 # ============================================================================

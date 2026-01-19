@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.get_pr_review_comments import (
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PRReviewComment, PRReviewThread

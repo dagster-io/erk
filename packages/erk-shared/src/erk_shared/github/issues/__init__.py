@@ -1,19 +1,11 @@
 """GitHub issues integration for erk plan storage.
 
 This package provides an abstract interface and implementations for GitHub issue operations.
+
+Import from submodules:
+- erk_shared.github.issues.abc: GitHubIssues (ABC)
+- erk_shared.github.issues.real: RealGitHubIssues
+- erk_shared.github.issues.fake: FakeGitHubIssues
+- erk_shared.github.issues.dry_run: DryRunGitHubIssues
+- erk_shared.github.issues.types: IssueInfo, CreateIssueResult
 """
-
-from erk_shared.github.issues.abc import GitHubIssues
-from erk_shared.github.issues.dry_run import DryRunGitHubIssues
-from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.issues.real import RealGitHubIssues
-from erk_shared.github.issues.types import CreateIssueResult, IssueInfo
-
-__all__ = [
-    "CreateIssueResult",
-    "DryRunGitHubIssues",
-    "FakeGitHubIssues",
-    "GitHubIssues",
-    "IssueInfo",
-    "RealGitHubIssues",
-]

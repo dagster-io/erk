@@ -13,7 +13,7 @@ from erk.cli.commands.exec.scripts.setup_impl_from_issue import (
     _is_trunk_branch,
     setup_impl_from_issue,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.fake import FakeGit

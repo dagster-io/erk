@@ -15,7 +15,7 @@ from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues

@@ -21,10 +21,10 @@ from erk_shared.context.types import LoadedConfig, NoRepoSentinel
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
-from erk_shared.prompt_executor import PromptExecutor
+from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 def require_issues(ctx: click.Context) -> GitHubIssues:

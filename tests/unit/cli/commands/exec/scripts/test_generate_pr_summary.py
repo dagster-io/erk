@@ -13,7 +13,7 @@ from erk.cli.commands.exec.scripts.generate_pr_summary import (
     _build_prompt,
     generate_pr_summary,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 
 
 def test_build_prompt_contains_diff_and_context(tmp_path: Path) -> None:

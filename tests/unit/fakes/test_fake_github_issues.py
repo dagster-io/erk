@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
 

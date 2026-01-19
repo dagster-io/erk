@@ -20,7 +20,8 @@ from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import DryRunGitHubIssues, FakeGitHubIssues
+from erk_shared.github.issues.dry_run import DryRunGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.types import GitHubRepoId
 from tests.fakes.shell import FakeShell
 from tests.test_utils.github_helpers import create_test_issue

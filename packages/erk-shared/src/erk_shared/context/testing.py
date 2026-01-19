@@ -17,9 +17,9 @@ from erk_shared.core.fakes import (
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
-from erk_shared.prompt_executor import PromptExecutor
+from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 def context_for_test(
@@ -63,15 +63,15 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
-    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github.issues.fake import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore

@@ -8,8 +8,8 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
 )
-from erk_shared.context import ErkContext
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.context.context import ErkContext
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
 

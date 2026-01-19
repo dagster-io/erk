@@ -8,7 +8,8 @@ from click.testing import CliRunner
 from erk.cli.cli import cli
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 

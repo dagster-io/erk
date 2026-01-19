@@ -17,9 +17,7 @@ from pathlib import Path
 
 import pytest
 
-from erk_shared.gateway.gt import (
-    RealGtKit,
-)
+from erk_shared.gateway.gt.real import RealGtKit
 
 
 @pytest.fixture

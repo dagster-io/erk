@@ -5,7 +5,7 @@ Uses FakeGitHubIssues to test label creation behavior.
 """
 
 from erk.cli.commands.init.main import create_plans_repo_labels
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from tests.test_utils.paths import sentinel_path
 
 

@@ -14,7 +14,8 @@ from urllib.parse import urlparse
 
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
-from erk_shared.github.issues import GitHubIssues, IssueInfo
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,

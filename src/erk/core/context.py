@@ -34,16 +34,12 @@ from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 
 # Import ABCs and fakes from erk_shared.core
-from erk_shared.core import (
-    ClaudeExecutor,
-    FakePlanListService,
-    PlanListService,
-    PlannerRegistry,
-    ScriptWriter,
-)
-
-# Import erk-specific integrations
-from erk_shared.gateway.completion import Completion
+from erk_shared.core.claude_executor import ClaudeExecutor
+from erk_shared.core.fakes import FakePlanListService
+from erk_shared.core.plan_list_service import PlanListService
+from erk_shared.core.planner_registry import PlannerRegistry
+from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole, ScriptConsole
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
@@ -55,7 +51,7 @@ from erk_shared.gateway.graphite.disabled import (
 )
 from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.graphite.real import RealGraphite
-from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
@@ -63,7 +59,8 @@ from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
 from erk_shared.github.dry_run import DryRunGitHub
-from erk_shared.github.issues import GitHubIssues, RealGitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
+from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.real import RealGitHub
 from erk_shared.github.types import RepoInfo
@@ -72,7 +69,7 @@ from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallati
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.prompt_executor import PromptExecutor
+from erk_shared.prompt_executor.abc import PromptExecutor
 from erk_shared.prompt_executor.real import RealPromptExecutor
 
 
@@ -98,14 +95,14 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
-    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github.issues.fake import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
@@ -212,16 +209,16 @@ def context_for_test(
     from tests.test_utils.paths import sentinel_path
 
     from erk.core.planner.registry_fake import FakePlannerRegistry
-    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
-    from erk_shared.github.issues import FakeGitHubIssues
+    from erk_shared.github.issues.fake import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor

@@ -9,7 +9,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 
 
 def test_impl_verify_succeeds_when_impl_exists(tmp_path: Path) -> None:

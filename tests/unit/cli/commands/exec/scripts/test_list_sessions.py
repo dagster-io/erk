@@ -17,7 +17,7 @@ from erk.cli.commands.exec.scripts.list_sessions import (
     get_branch_context,
     list_sessions,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.learn.extraction.claude_installation.fake import (
     FakeClaudeInstallation,

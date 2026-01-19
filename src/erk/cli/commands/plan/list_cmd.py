@@ -11,7 +11,7 @@ from rich.table import Table
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk.core.display import LiveDisplay
+from erk.core.display.abc import LiveDisplay
 from erk.core.display_utils import (
     format_relative_time,
     format_workflow_outcome,
@@ -29,7 +29,7 @@ from erk_shared.gateway.clipboard.real import RealClipboard
 from erk_shared.gateway.http.auth import fetch_github_token
 from erk_shared.gateway.http.real import RealHttpClient
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import (
     extract_plan_header_local_impl_at,
     extract_plan_header_local_impl_event,
