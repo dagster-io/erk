@@ -30,4 +30,4 @@ Capture patterns for future agents.
 
 ## See Also
 
-- [docs/learned/](../learned/) - Browse existing agent documentation
+The `docs/learned/` directory contains agent-generated documentation for AI agents.

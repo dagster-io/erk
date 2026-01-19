@@ -30,5 +30,5 @@ The philosophy behind erk's approach to AI-assisted development.
 
 ## See Also
 
-- [The TAO of erk](../../TAO.md) - Design principles
+- [The TAO of erk](../TAO.md) - Design principles
 - [The Workflow](the-workflow.md) - Putting philosophy into practice
