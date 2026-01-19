@@ -25,11 +25,14 @@ theme:
 nav:
   - Getting Started:
       - index.md
+      - TAO.md
   - Tutorials:
       - tutorials/index.md
       - tutorials/prerequisites.md
       - tutorials/installation.md
       - tutorials/first-plan.md
+      - tutorials/shell-integration.md
+      - tutorials/graphite-integration.md
   - Topics:
       - topics/index.md
       - topics/worktrees.md
@@ -42,6 +45,24 @@ nav:
       - howto/local-workflow.md
       - howto/navigate-branches-worktrees.md
       - howto/test-workflows.md
+      - howto/conflict-resolution.md
+      - howto/planless-workflow.md
+      - howto/pr-checkout-sync.md
+      - howto/remote-execution.md
+      - howto/documentation-extraction.md
+  - Reference:
+      - ref/index.md
+      - ref/commands.md
+      - ref/slash-commands.md
+      - ref/configuration.md
+      - ref/file-locations.md
+  - FAQ:
+      - faq/index.md
+      - faq/general.md
+      - faq/shell-integration.md
+      - faq/graphite-issues.md
+  - Contributing:
+      - contributing/writing-documentation.md
 
 extra_css:
   - stylesheets/extra.css

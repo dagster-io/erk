@@ -62,5 +62,5 @@ Frequently asked questions about erk.
 
 ## See Also
 
-- [FAQ](README.md) - Detailed troubleshooting guides
-- [Getting Started](../tutorials/) - Setup guides
+- [FAQ Index](index.md) - All troubleshooting guides
+- [Getting Started](../tutorials/index.md) - Setup guides
