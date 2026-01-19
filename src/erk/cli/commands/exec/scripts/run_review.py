@@ -3,8 +3,19 @@
 This exec command loads a review definition file, assembles the prompt
 with boilerplate, and either runs Claude or prints the assembled prompt.
 
+Supports two modes:
+- PR mode (--pr-number): Reviews a PR and posts comments to GitHub
+- Local mode (--local): Reviews local changes and outputs to stdout
+
 Usage:
+    # CI mode (has PR number)
     erk exec run-review --name tripwires --pr-number 123
+
+    # Local mode (before PR exists)
+    erk exec run-review --name tripwires --local
+
+    # Local with specific base branch
+    erk exec run-review --name tripwires --local --base develop
 
     # Print assembled prompt without running Claude
     erk exec run-review --name tripwires --pr-number 123 --dry-run
@@ -23,6 +34,9 @@ Examples:
 
     $ erk exec run-review --name tripwires --pr-number 123
     [runs Claude with the prompt]
+
+    $ erk exec run-review --name tripwires --local --dry-run
+    [prints assembled prompt for local review]
 """
 
 import json
@@ -89,9 +103,44 @@ def _get_repository_name(cwd: Path) -> str:
     return "unknown/unknown"
 
 
+def _get_trunk_branch(cwd: Path) -> str:
+    """Auto-detect the trunk branch (main or master).
+
+    Args:
+        cwd: Current working directory.
+
+    Returns:
+        The detected trunk branch name ("main" or "master").
+    """
+    # Check if 'main' branch exists
+    result = subprocess.run(
+        ["git", "rev-parse", "--verify", "main"],
+        capture_output=True,
+        text=True,
+        cwd=cwd,
+        check=False,
+    )
+    if result.returncode == 0:
+        return "main"
+
+    # Fallback to 'master'
+    return "master"
+
+
 @click.command(name="run-review")
 @click.option("--name", "review_name", required=True, help="Review filename (without .md)")
-@click.option("--pr-number", required=True, type=int, help="PR number to review")
+@click.option("--pr-number", type=int, help="PR number to review (mutually exclusive with --local)")
+@click.option(
+    "--local",
+    "is_local",
+    is_flag=True,
+    help="Run in local mode (reviews local changes, outputs to stdout)",
+)
+@click.option(
+    "--base",
+    "base_branch",
+    help="Base branch for local mode diff (default: auto-detect main/master)",
+)
 @click.option(
     "--reviews-dir",
     default=".github/reviews",
@@ -106,7 +155,9 @@ def _get_repository_name(cwd: Path) -> str:
 def run_review(
     ctx: click.Context,
     review_name: str,
-    pr_number: int,
+    pr_number: int | None,
+    is_local: bool,
+    base_branch: str | None,
     reviews_dir: str,
     dry_run: bool,
 ) -> None:
@@ -119,6 +170,35 @@ def run_review(
     REVIEW_NAME: Name of the review file (e.g., "tripwires" for tripwires.md)
     """
     cwd = require_cwd(ctx)
+
+    # Validate mode flags
+    if pr_number is not None and is_local:
+        error = RunReviewError(
+            success=False,
+            error_type="invalid_flags",
+            message="Cannot specify both --pr-number and --local",
+        )
+        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+        raise SystemExit(1)
+
+    if pr_number is None and not is_local:
+        error = RunReviewError(
+            success=False,
+            error_type="invalid_flags",
+            message="Must specify either --pr-number or --local",
+        )
+        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+        raise SystemExit(1)
+
+    if base_branch is not None and not is_local:
+        error = RunReviewError(
+            success=False,
+            error_type="invalid_flags",
+            message="--base can only be used with --local",
+        )
+        click.echo(json.dumps(error.__dict__, indent=2), err=True)
+        raise SystemExit(1)
+
     reviews_path = cwd / reviews_dir
 
     # Construct the review file path
@@ -142,11 +222,17 @@ def run_review(
     # Get repository name
     repository = _get_repository_name(cwd)
 
+    # Determine the effective base branch for local mode
+    effective_base_branch: str | None = None
+    if is_local:
+        effective_base_branch = base_branch if base_branch is not None else _get_trunk_branch(cwd)
+
     # Assemble the prompt
     prompt = assemble_review_prompt(
         review=review,
         repository=repository,
         pr_number=pr_number,
+        base_branch=effective_base_branch,
     )
 
     if dry_run:
