@@ -370,7 +370,7 @@ def test_down_with_mismatched_worktree_name() -> None:
 
 
 def test_down_delete_current_success() -> None:
-    """Test --delete-current flag deletes current branch after navigation."""
+    """Test --delete-current embeds deletion commands in activation script."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -441,12 +441,14 @@ def test_down_delete_current_success() -> None:
         assert script_content is not None
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
-        # Assert: feature-2 worktree was removed
+        # Assert: Deletion is DEFERRED - no immediate removal
         feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path in git_ops.removed_worktrees, "feature-2 worktree should be removed"
+        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
 
-        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
+        # Assert: Script contains deferred deletion commands
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-2" in script_content
 
 
 def test_down_delete_current_uncommitted_changes() -> None:
@@ -689,11 +691,14 @@ def test_down_delete_current_force_with_open_pr_confirmed() -> None:
         assert script_content is not None
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
-        # Assert: feature-2 worktree was removed and branch deleted
+        # Assert: Deletion is DEFERRED - no immediate removal
         feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path in git_ops.removed_worktrees
-        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
+        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
+
+        # Assert: Script contains deferred deletion commands
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-2" in script_content
 
 
 def test_down_delete_current_force_with_open_pr_declined() -> None:
@@ -887,11 +892,14 @@ def test_down_delete_current_force_with_open_pr_close_confirmed() -> None:
         assert script_content is not None
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
-        # Assert: feature-2 worktree was removed and branch deleted
+        # Assert: Deletion is DEFERRED - no immediate removal
         feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path in git_ops.removed_worktrees
-        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
+        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
+
+        # Assert: Script contains deferred deletion commands
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-2" in script_content
 
 
 def test_down_delete_current_force_with_open_pr_close_declined() -> None:
@@ -992,11 +1000,14 @@ def test_down_delete_current_force_with_open_pr_close_declined() -> None:
         assert script_content is not None
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
-        # Assert: feature-2 worktree was removed and branch deleted (deletion still happened)
+        # Assert: Deletion is DEFERRED - no immediate removal
         feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path in git_ops.removed_worktrees
-        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
+        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
+
+        # Assert: Script contains deferred deletion commands
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-2" in script_content
 
 
 def test_down_delete_current_pr_closed() -> None:
@@ -1068,12 +1079,14 @@ def test_down_delete_current_pr_closed() -> None:
         assert script_content is not None
         assert str(repo_dir / "worktrees" / "feature-1") in script_content
 
-        # Assert: feature-2 worktree was removed
+        # Assert: Deletion is DEFERRED - no immediate removal
         feature_2_path = repo_dir / "worktrees" / "feature-2"
-        assert feature_2_path in git_ops.removed_worktrees, "feature-2 worktree should be removed"
+        assert feature_2_path not in git_ops.removed_worktrees, "Deletion should be deferred"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
 
-        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
+        # Assert: Script contains deferred deletion commands
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-2" in script_content
 
 
 def test_down_delete_current_no_pr() -> None:
@@ -1118,7 +1131,7 @@ def test_down_delete_current_no_pr() -> None:
         )
 
         result = runner.invoke(
-            cli, ["down", "--delete-current"], obj=test_ctx, catch_exceptions=False
+            cli, ["down", "--delete-current", "--script"], obj=test_ctx, catch_exceptions=False
         )
 
         # Assert: Command succeeded with warning about no PR
@@ -1128,10 +1141,13 @@ def test_down_delete_current_no_pr() -> None:
         assert "No pull request found for branch 'feature-2'" in result.output
         assert "Proceeding with deletion without PR verification" in result.output
 
-        # Assert: Branch and worktree were deleted
-        assert len(git_ops.removed_worktrees) == 1
-        # Assert: feature-2 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
+        # Assert: Deletion is DEFERRED - script generated with deletion commands
+        script_path = Path(result.stdout.strip().split("\n")[-1])
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert len(git_ops.removed_worktrees) == 0, "Deletion should be deferred"
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-2" in script_content
 
 
 def test_down_delete_current_trunk_in_root() -> None:
@@ -1200,17 +1216,18 @@ def test_down_delete_current_trunk_in_root() -> None:
         assert script_content is not None
         assert str(env.cwd) in script_content
 
-        # Assert: feature-1 worktree was removed
-        # Note: worktrees are in worktrees subdir based on build_worktrees
+        # Assert: Deletion is DEFERRED - no immediate removal
         feature_1_path = repo_dir / "worktrees" / "feature-1"
-        assert feature_1_path in git_ops.removed_worktrees, "feature-1 worktree should be removed"
+        assert feature_1_path not in git_ops.removed_worktrees, "Deletion should be deferred"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Deletion should be deferred"
 
-        # Assert: feature-1 branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
+        # Assert: Script contains deferred deletion commands
+        assert "git worktree remove --force" in script_content
+        assert "gt delete -f feature-1" in script_content
 
 
 def test_down_delete_current_slot_aware_unassigns_slot() -> None:
-    """Test --delete-current unassigns slot instead of removing worktree directory."""
+    """Test --delete-current uses slot unassign command in deferred script."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -1300,22 +1317,18 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
 
         assert result.exit_code == 0, f"Expected success, got: {result.output}"
 
-        # Assert: Slot was unassigned (placeholder branch checked out)
-        assert (
-            slot_path,
-            "__erk-slot-01-br-stub__",
-        ) in git_ops.checked_out_branches, "Slot should be checked out to placeholder"
+        # Assert: Deletion is DEFERRED - no immediate slot unassignment
+        assert slot_path not in git_ops.removed_worktrees, "Slot worktree should NOT be removed yet"
+        assert len(graphite_ops.delete_branch_calls) == 0, "Branch deletion should be deferred"
 
-        # Assert: Worktree directory was NOT removed (slot stays for reuse)
-        assert slot_path not in git_ops.removed_worktrees, "Slot worktree should NOT be removed"
+        # Assert: Script contains slot unassign command (not git worktree remove)
+        script_path = Path(result.stdout.strip())
+        # Read from filesystem since erk_isolated_fs_env uses RealScriptWriter
+        script_content = script_path.read_text()
+        assert "erk slot unassign erk-slot-01" in script_content
+        assert "gt delete -f feature-2" in script_content
 
-        # Assert: Branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-2" for _path, branch in graphite_ops.delete_branch_calls)
-
-        # Assert: Assignment was removed from pool state
+        # Assert: Pool state is unchanged (deferred)
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
-        assert len(state.assignments) == 0, "Assignment should be removed"
-
-        # Assert: Output indicates slot unassignment
-        assert "Unassigned slot" in result.output
+        assert len(state.assignments) == 1, "Assignment should still exist (deferred)"
