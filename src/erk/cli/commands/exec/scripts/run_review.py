@@ -26,16 +26,17 @@ Examples:
 """
 
 import json
-import subprocess
 from dataclasses import dataclass
-from pathlib import Path
 
 import click
 
 from erk.review.parsing import parse_review_file
 from erk.review.prompt_assembly import assemble_review_prompt
-from erk_shared.context.helpers import require_cwd, require_git
-from erk_shared.git.abc import Git
+from erk_shared.context.helpers import (
+    get_repo_identifier,
+    require_claude_executor,
+    require_cwd,
+)
 
 
 @dataclass(frozen=True)
@@ -45,47 +46,6 @@ class RunReviewError:
     success: bool
     error_type: str
     message: str
-
-
-def _get_repository_name(cwd: Path, git: Git) -> str:
-    """Get the repository name (owner/repo) from git remote.
-
-    Args:
-        cwd: Current working directory.
-        git: Git gateway for repository operations.
-
-    Returns:
-        Repository name in owner/repo format.
-    """
-    # Use gh repo view to get the canonical repo name
-    result = subprocess.run(
-        ["gh", "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"],
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-        check=False,
-    )
-    if result.returncode == 0:
-        return result.stdout.strip()
-
-    # Fallback: use Git gateway to get remote URL
-    # get_remote_url raises ValueError if remote doesn't exist - no LBYL alternative available
-    try:
-        url = git.get_remote_url(cwd)
-    except ValueError:
-        return "unknown/unknown"
-
-    # Handle git@github.com:owner/repo.git and https://github.com/owner/repo.git
-    if url.startswith("git@"):
-        # git@github.com:owner/repo.git
-        return url.split(":")[-1].replace(".git", "")
-    elif "github.com" in url:
-        # https://github.com/owner/repo.git
-        parts = url.rstrip(".git").split("/")
-        if len(parts) >= 2:
-            return f"{parts[-2]}/{parts[-1]}"
-
-    return "unknown/unknown"
 
 
 @click.command(name="run-review")
@@ -118,7 +78,6 @@ def run_review(
     REVIEW_NAME: Name of the review file (e.g., "tripwires" for tripwires.md)
     """
     cwd = require_cwd(ctx)
-    git = require_git(ctx)
     reviews_path = cwd / reviews_dir
 
     # Construct the review file path
@@ -139,8 +98,10 @@ def run_review(
     assert result.parsed_review is not None
     review = result.parsed_review
 
-    # Get repository name
-    repository = _get_repository_name(cwd, git)
+    # Get repository name from context
+    repository = get_repo_identifier(ctx)
+    if repository is None:
+        repository = "unknown/unknown"
 
     # Assemble the prompt
     prompt = assemble_review_prompt(
@@ -154,29 +115,20 @@ def run_review(
         click.echo(prompt)
         return
 
-    # Run Claude with the prompt
-    claude_cmd = [
-        "claude",
-        "--print",
-        "--model",
-        review.frontmatter.model,
-        "--allowedTools",
-        review.frontmatter.allowed_tools,
-        "--dangerously-skip-permissions",
-        "--output-format",
-        "stream-json",
-        "--verbose",
-        prompt,
-    ]
+    # Use ClaudeExecutor gateway for execution
+    executor = require_claude_executor(ctx)
 
-    # Execute Claude - use subprocess.run with stdin=subprocess.DEVNULL
-    # to avoid any interactive prompts
-    result_proc = subprocess.run(
-        claude_cmd,
+    # Parse allowed_tools from comma-separated string
+    tools: list[str] | None = None
+    if review.frontmatter.allowed_tools:
+        tools = [t.strip() for t in review.frontmatter.allowed_tools.split(",")]
+
+    exit_code = executor.execute_prompt_passthrough(
+        prompt,
+        model=review.frontmatter.model,
+        tools=tools,
         cwd=cwd,
-        stdin=subprocess.DEVNULL,
-        check=False,
+        dangerous=True,
     )
 
-    # Exit with Claude's exit code
-    raise SystemExit(result_proc.returncode)
+    raise SystemExit(exit_code)

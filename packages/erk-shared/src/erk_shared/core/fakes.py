@@ -43,6 +43,16 @@ class PromptCall(NamedTuple):
     system_prompt: str | None
 
 
+class PassthroughCall(NamedTuple):
+    """Record of an execute_prompt_passthrough call."""
+
+    prompt: str
+    model: str
+    tools: list[str] | None
+    cwd: Path
+    dangerous: bool
+
+
 class FakeClaudeExecutor(ClaudeExecutor):
     """Fake ClaudeExecutor for testing.
 
@@ -50,8 +60,10 @@ class FakeClaudeExecutor(ClaudeExecutor):
         is_available: Whether Claude CLI should appear available
         interactive_calls: List of InteractiveCall records
         prompt_calls: List of PromptCall records
+        passthrough_calls: List of PassthroughCall records
         prompt_results: Queue of PromptResult to return from execute_prompt
         streaming_events: Events to yield from execute_command_streaming
+        passthrough_exit_code: Exit code to return from execute_prompt_passthrough
     """
 
     def __init__(
@@ -60,12 +72,15 @@ class FakeClaudeExecutor(ClaudeExecutor):
         is_available: bool = True,
         prompt_results: list[PromptResult] | None = None,
         streaming_events: list[ClaudeEvent] | None = None,
+        passthrough_exit_code: int = 0,
     ) -> None:
         self.is_available_value = is_available
         self.interactive_calls: list[InteractiveCall] = []
         self.prompt_calls: list[PromptCall] = []
+        self.passthrough_calls: list[PassthroughCall] = []
         self.prompt_results = list(prompt_results) if prompt_results else []
         self.streaming_events = list(streaming_events) if streaming_events else []
+        self.passthrough_exit_code = passthrough_exit_code
         self._prompt_result_index = 0
 
     def is_claude_available(self) -> bool:
@@ -127,6 +142,26 @@ class FakeClaudeExecutor(ClaudeExecutor):
             self._prompt_result_index += 1
             return result
         return PromptResult(success=True, output="", error=None)
+
+    def execute_prompt_passthrough(
+        self,
+        prompt: str,
+        *,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path,
+        dangerous: bool,
+    ) -> int:
+        self.passthrough_calls.append(
+            PassthroughCall(
+                prompt=prompt,
+                model=model,
+                tools=tools,
+                cwd=cwd,
+                dangerous=dangerous,
+            )
+        )
+        return self.passthrough_exit_code
 
 
 class FakeScriptWriter(ScriptWriter):

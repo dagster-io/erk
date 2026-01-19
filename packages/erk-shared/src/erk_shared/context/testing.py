@@ -8,6 +8,7 @@ from pathlib import Path
 
 from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, RepoContext
+from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.fakes import (
     FakeClaudeExecutor,
     FakePlanListService,
@@ -30,6 +31,7 @@ def context_for_test(
     graphite: Graphite | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
+    claude_executor: ClaudeExecutor | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -49,6 +51,7 @@ def context_for_test(
         graphite: Optional Graphite implementation. If None, creates FakeGraphite.
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+        claude_executor: Optional ClaudeExecutor. If None, creates FakeClaudeExecutor.
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
         cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -107,6 +110,9 @@ def context_for_test(
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
     )
+    resolved_claude_executor: ClaudeExecutor = (
+        claude_executor if claude_executor is not None else FakeClaudeExecutor()
+    )
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
@@ -139,7 +145,7 @@ def context_for_test(
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
-        claude_executor=FakeClaudeExecutor(),
+        claude_executor=resolved_claude_executor,
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
         plan_list_service=FakePlanListService(),

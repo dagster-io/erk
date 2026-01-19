@@ -534,3 +534,44 @@ class RealClaudeExecutor(ClaudeExecutor):
             output=result.stdout.strip(),
             error=None,
         )
+
+    def execute_prompt_passthrough(
+        self,
+        prompt: str,
+        *,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path,
+        dangerous: bool,
+    ) -> int:
+        """Execute prompt with output streaming directly to terminal.
+
+        Implementation details:
+        - Uses subprocess.run with stdin=subprocess.DEVNULL to prevent interactive prompts
+        - Passes --print, --model, --output-format stream-json, --verbose
+        - Optionally passes --allowedTools when tools is provided
+        - Optionally passes --dangerously-skip-permissions when dangerous=True
+        - Output streams directly to terminal (stdout/stderr not captured)
+        """
+        cmd = [
+            "claude",
+            "--print",
+            "--model",
+            model,
+            "--output-format",
+            "stream-json",
+            "--verbose",
+        ]
+        if tools is not None:
+            cmd.extend(["--allowedTools", ",".join(tools)])
+        if dangerous:
+            cmd.append("--dangerously-skip-permissions")
+        cmd.append(prompt)
+
+        result = subprocess.run(
+            cmd,
+            cwd=cwd,
+            stdin=subprocess.DEVNULL,
+            check=False,
+        )
+        return result.returncode

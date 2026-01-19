@@ -178,6 +178,7 @@ class ErkContext:
         github: GitHub | None = None,
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
+        claude_executor: ClaudeExecutor | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -193,6 +194,7 @@ class ErkContext:
             github: Optional GitHub implementation. If None, creates FakeGitHub.
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
+            claude_executor: Optional ClaudeExecutor. If None, creates FakeClaudeExecutor.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -215,6 +217,7 @@ class ErkContext:
             github=github,
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
+            claude_executor=claude_executor,
             debug=debug,
             repo_root=repo_root,
             cwd=cwd,

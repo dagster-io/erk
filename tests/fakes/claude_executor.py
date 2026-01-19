@@ -83,6 +83,7 @@ class FakeClaudeExecutor(ClaudeExecutor):
         simulated_prompt_output: str | None = None,
         simulated_prompt_error: str | None = None,
         simulated_no_work_events: bool = False,
+        simulated_passthrough_exit_code: int = 0,
     ) -> None:
         """Initialize fake with predetermined behavior.
 
@@ -106,6 +107,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
                 but without emitting any work events (TextEvent or ToolEvent). This
                 tests the "empty response" failure mode where Claude produces JSON
                 but no actual work output.
+            simulated_passthrough_exit_code: Exit code to return from execute_prompt_passthrough().
+                Defaults to 0 (success).
         """
         self._claude_available = claude_available
         self._command_should_fail = command_should_fail
@@ -120,9 +123,11 @@ class FakeClaudeExecutor(ClaudeExecutor):
         self._simulated_prompt_output = simulated_prompt_output
         self._simulated_prompt_error = simulated_prompt_error
         self._simulated_no_work_events = simulated_no_work_events
+        self._simulated_passthrough_exit_code = simulated_passthrough_exit_code
         self._executed_commands: list[tuple[str, Path, bool, bool, str | None]] = []
         self._interactive_calls: list[tuple[Path, bool, str, Path | None, str | None, str]] = []
         self._prompt_calls: list[tuple[str, str | None]] = []
+        self._passthrough_calls: list[tuple[str, str, list[str] | None, Path, bool]] = []
 
     def is_claude_available(self) -> bool:
         """Return the availability configured at construction time."""
@@ -366,3 +371,40 @@ class FakeClaudeExecutor(ClaudeExecutor):
         This property is for test assertions only.
         """
         return self._prompt_calls.copy()
+
+    def execute_prompt_passthrough(
+        self,
+        prompt: str,
+        *,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path,
+        dangerous: bool,
+    ) -> int:
+        """Track passthrough execution and return configured exit code.
+
+        This method records the call parameters for test assertions.
+        It does not execute any actual subprocess operations.
+
+        Args:
+            prompt: The prompt text to send
+            model: Model to use (recorded for assertions)
+            tools: Optional list of allowed tools (recorded for assertions)
+            cwd: Working directory (recorded for assertions)
+            dangerous: Whether dangerous mode is enabled (recorded for assertions)
+
+        Returns:
+            The simulated exit code configured at construction time
+        """
+        self._passthrough_calls.append((prompt, model, tools, cwd, dangerous))
+        return self._simulated_passthrough_exit_code
+
+    @property
+    def passthrough_calls(self) -> list[tuple[str, str, list[str] | None, Path, bool]]:
+        """Get the list of execute_prompt_passthrough() calls that were made.
+
+        Returns list of (prompt, model, tools, cwd, dangerous) tuples.
+
+        This property is for test assertions only.
+        """
+        return self._passthrough_calls.copy()

@@ -84,3 +84,57 @@ def test_fake_claude_executor_no_output_takes_precedence_over_command_fail() -> 
     # no_output should take precedence over command_should_fail
     assert len(events) == 1
     assert isinstance(events[0], NoOutputEvent)
+
+
+def test_execute_prompt_passthrough_returns_configured_exit_code() -> None:
+    """Test that execute_prompt_passthrough returns the configured exit code."""
+    fake = FakeClaudeExecutor(simulated_passthrough_exit_code=5)
+
+    exit_code = fake.execute_prompt_passthrough(
+        "test prompt",
+        model="sonnet",
+        tools=["Read"],
+        cwd=Path("/tmp"),
+        dangerous=True,
+    )
+
+    assert exit_code == 5
+
+
+def test_execute_prompt_passthrough_default_exit_code_is_zero() -> None:
+    """Test that execute_prompt_passthrough defaults to exit code 0."""
+    fake = FakeClaudeExecutor()
+
+    exit_code = fake.execute_prompt_passthrough(
+        "test prompt",
+        model="haiku",
+        tools=None,
+        cwd=Path("/a"),
+        dangerous=False,
+    )
+
+    assert exit_code == 0
+
+
+def test_execute_prompt_passthrough_tracks_calls() -> None:
+    """Test that execute_prompt_passthrough tracks all call arguments."""
+    fake = FakeClaudeExecutor()
+
+    fake.execute_prompt_passthrough(
+        "prompt1",
+        model="haiku",
+        tools=None,
+        cwd=Path("/a"),
+        dangerous=False,
+    )
+    fake.execute_prompt_passthrough(
+        "prompt2",
+        model="opus",
+        tools=["Bash", "Read"],
+        cwd=Path("/b"),
+        dangerous=True,
+    )
+
+    assert len(fake.passthrough_calls) == 2
+    assert fake.passthrough_calls[0] == ("prompt1", "haiku", None, Path("/a"), False)
+    assert fake.passthrough_calls[1] == ("prompt2", "opus", ["Bash", "Read"], Path("/b"), True)
