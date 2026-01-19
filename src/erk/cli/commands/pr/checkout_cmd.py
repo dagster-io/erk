@@ -6,7 +6,6 @@ This command fetches PR code and creates a worktree for local review/testing.
 import click
 
 from erk.cli.activation import (
-    ENABLE_ACTIVATION_SCRIPTS,
     activation_config_activate_only,
     ensure_worktree_activate_script,
     print_activation_instructions,
@@ -95,7 +94,7 @@ def pr_checkout(
             script_message_new="",  # Not used when already_existed=True
         )
         # Print activation instructions for existing worktrees too
-        if not script and ENABLE_ACTIVATION_SCRIPTS:
+        if not script:
             script_path = ensure_worktree_activate_script(
                 worktree_path=existing_worktree,
                 post_create_commands=None,
@@ -175,7 +174,7 @@ def pr_checkout(
 
     # Print activation instructions (non-script mode only)
     # In script mode, shell integration handles navigation automatically
-    if not script and ENABLE_ACTIVATION_SCRIPTS:
+    if not script:
         script_path = ensure_worktree_activate_script(
             worktree_path=worktree_path,
             post_create_commands=None,

@@ -8,7 +8,6 @@ from typing import Literal, NoReturn
 import click
 
 from erk.cli.activation import (
-    ENABLE_ACTIVATION_SCRIPTS,
     activation_config_activate_only,
     ensure_worktree_activate_script,
     print_activation_instructions,
@@ -386,18 +385,17 @@ def activate_target(
 
         result.output_for_shell_integration()
     else:
-        if ENABLE_ACTIVATION_SCRIPTS:
-            script_path = ensure_worktree_activate_script(
-                worktree_path=target_path,
-                post_create_commands=None,
-            )
-            print_activation_instructions(
-                script_path,
-                source_branch=source_branch,
-                force=force,
-                config=activation_config_activate_only(),
-                copy=True,
-            )
+        script_path = ensure_worktree_activate_script(
+            worktree_path=target_path,
+            post_create_commands=None,
+        )
+        print_activation_instructions(
+            script_path,
+            source_branch=source_branch,
+            force=force,
+            config=activation_config_activate_only(),
+            copy=True,
+        )
     raise SystemExit(0)
 
 
@@ -825,18 +823,17 @@ def _activate_with_deferred_deletion(
         )
         machine_output(str(result.path), nl=False)
     else:
-        if ENABLE_ACTIVATION_SCRIPTS:
-            script_path = ensure_worktree_activate_script(
-                worktree_path=target_path,
-                post_create_commands=None,
-            )
-            print_activation_instructions(
-                script_path,
-                source_branch=current_branch,
-                force=force,
-                config=activation_config_activate_only(),
-                copy=True,
-            )
+        script_path = ensure_worktree_activate_script(
+            worktree_path=target_path,
+            post_create_commands=None,
+        )
+        print_activation_instructions(
+            script_path,
+            source_branch=current_branch,
+            force=force,
+            config=activation_config_activate_only(),
+            copy=True,
+        )
 
     # Deletion is deferred to script sourcing - no immediate cleanup
     raise SystemExit(0)

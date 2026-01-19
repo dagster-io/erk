@@ -7,7 +7,6 @@ from pathlib import Path
 import click
 
 from erk.cli.activation import (
-    ENABLE_ACTIVATION_SCRIPTS,
     activation_config_activate_only,
     print_activation_instructions,
     write_worktree_activate_script,
@@ -59,12 +58,11 @@ def run_post_worktree_setup(
         env_path = worktree_path / ".env"
         env_path.write_text(env_content, encoding="utf-8")
 
-    # SPECULATIVE: activation-scripts - write activation script with post-create commands
-    if ENABLE_ACTIVATION_SCRIPTS:
-        write_worktree_activate_script(
-            worktree_path=worktree_path,
-            post_create_commands=config.post_create_commands or None,
-        )
+    # Write activation script with post-create commands
+    write_worktree_activate_script(
+        worktree_path=worktree_path,
+        post_create_commands=config.post_create_commands or None,
+    )
 
     # Run post-create commands
     if config.post_create_commands:
@@ -859,13 +857,11 @@ def create_wt(
     )
     (wt_path / ".env").write_text(env_content, encoding="utf-8")
 
-    # SPECULATIVE: activation-scripts - write activation script with post-create commands
-    activation_script_path: Path | None = None
-    if ENABLE_ACTIVATION_SCRIPTS:
-        activation_script_path = write_worktree_activate_script(
-            worktree_path=wt_path,
-            post_create_commands=cfg.post_create_commands or None,
-        )
+    # Write activation script with post-create commands
+    activation_script_path: Path | None = write_worktree_activate_script(
+        worktree_path=wt_path,
+        post_create_commands=cfg.post_create_commands or None,
+    )
 
     # Create impl folder if plan file provided
     # Track impl folder destination: set to .impl/ path only if
