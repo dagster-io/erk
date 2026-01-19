@@ -34,7 +34,8 @@ import click
 
 from erk.review.parsing import parse_review_file
 from erk.review.prompt_assembly import assemble_review_prompt
-from erk_shared.context.helpers import require_cwd
+from erk_shared.context.helpers import require_cwd, require_git
+from erk_shared.git.abc import Git
 
 
 @dataclass(frozen=True)
@@ -46,11 +47,12 @@ class RunReviewError:
     message: str
 
 
-def _get_repository_name(cwd: Path) -> str:
+def _get_repository_name(cwd: Path, git: Git) -> str:
     """Get the repository name (owner/repo) from git remote.
 
     Args:
         cwd: Current working directory.
+        git: Git gateway for repository operations.
 
     Returns:
         Repository name in owner/repo format.
@@ -66,25 +68,22 @@ def _get_repository_name(cwd: Path) -> str:
     if result.returncode == 0:
         return result.stdout.strip()
 
-    # Fallback: try to parse from git remote
-    result = subprocess.run(
-        ["git", "remote", "get-url", "origin"],
-        capture_output=True,
-        text=True,
-        cwd=cwd,
-        check=False,
-    )
-    if result.returncode == 0:
-        url = result.stdout.strip()
-        # Handle git@github.com:owner/repo.git and https://github.com/owner/repo.git
-        if url.startswith("git@"):
-            # git@github.com:owner/repo.git
-            return url.split(":")[-1].replace(".git", "")
-        elif "github.com" in url:
-            # https://github.com/owner/repo.git
-            parts = url.rstrip(".git").split("/")
-            if len(parts) >= 2:
-                return f"{parts[-2]}/{parts[-1]}"
+    # Fallback: use Git gateway to get remote URL
+    # get_remote_url raises ValueError if remote doesn't exist - no LBYL alternative available
+    try:
+        url = git.get_remote_url(cwd)
+    except ValueError:
+        return "unknown/unknown"
+
+    # Handle git@github.com:owner/repo.git and https://github.com/owner/repo.git
+    if url.startswith("git@"):
+        # git@github.com:owner/repo.git
+        return url.split(":")[-1].replace(".git", "")
+    elif "github.com" in url:
+        # https://github.com/owner/repo.git
+        parts = url.rstrip(".git").split("/")
+        if len(parts) >= 2:
+            return f"{parts[-2]}/{parts[-1]}"
 
     return "unknown/unknown"
 
@@ -119,6 +118,7 @@ def run_review(
     REVIEW_NAME: Name of the review file (e.g., "tripwires" for tripwires.md)
     """
     cwd = require_cwd(ctx)
+    git = require_git(ctx)
     reviews_path = cwd / reviews_dir
 
     # Construct the review file path
@@ -140,7 +140,7 @@ def run_review(
     review = result.parsed_review
 
     # Get repository name
-    repository = _get_repository_name(cwd)
+    repository = _get_repository_name(cwd, git)
 
     # Assemble the prompt
     prompt = assemble_review_prompt(
