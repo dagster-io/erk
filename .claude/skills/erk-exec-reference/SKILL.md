@@ -718,7 +718,9 @@ Run a code review using Claude.
 | Flag            | Type    | Required | Default           | Description                                                        |
 | --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
 | `--name`        | TEXT    | Yes      | Sentinel.UNSET    | Review filename (without .md)                                      |
-| `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to review                                                |
+| `--pr-number`   | INTEGER | No       | Sentinel.UNSET    | PR number to review (PR mode)                                      |
+| `--local`       | FLAG    | No       | -                 | Review local changes (local mode)                                  |
+| `--base`        | TEXT    | No       | Sentinel.UNSET    | Base branch for local mode (default: auto-detect)                  |
 | `--reviews-dir` | TEXT    | No       | '.github/reviews' | Directory containing review definitions (default: .github/reviews) |
 | `--dry-run`     | FLAG    | No       | -                 | Print assembled prompt without running Claude                      |
 

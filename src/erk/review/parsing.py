@@ -237,7 +237,7 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
         )
 
     assert parsed is not None
-    frontmatter, validation_errors = validate_review_frontmatter(parsed)
+    frontmatter_result, validation_errors = validate_review_frontmatter(parsed)
 
     if validation_errors:
         return ReviewValidationResult(
@@ -246,11 +246,11 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
             errors=tuple(validation_errors),
         )
 
-    assert frontmatter is not None
+    assert frontmatter_result is not None
     return ReviewValidationResult(
         filename=filename,
         parsed_review=ParsedReview(
-            frontmatter=frontmatter,
+            frontmatter=frontmatter_result,
             body=body.strip(),
             filename=filename,
         ),
