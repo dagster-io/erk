@@ -2,7 +2,7 @@
 
 Tests for behavior when PRs have unresolved review comments:
 - Warning shown with prompt to continue
-- --force skips the warning
+- Execute mode skips the warning (no prompts in execute phase)
 - User can confirm to proceed despite warning
 - Non-interactive mode fails with error when unresolved comments exist
 """
@@ -138,10 +138,11 @@ def test_land_warns_on_unresolved_comments() -> None:
 
 
 def test_land_force_skips_unresolved_comments_warning() -> None:
-    """Test --force skips the unresolved comments confirmation.
+    """Test execute mode runs without unresolved comments confirmation.
 
-    With deferred execution, this test verifies the execute phase behavior
-    when --force is used with unresolved comments.
+    With deferred execution, the execute phase uses force=True internally
+    because all user confirmations happen during the validation phase.
+    This test verifies that execute phase runs without prompting.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -234,18 +235,17 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
             issues=issues_ops,
         )
 
-        # Execute mode with --force to skip all confirmations
+        # Execute mode: no prompts needed, execute phase always runs without confirmations
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--use-graphite",
                 "--script",
-                "--force",
             ],
             obj=test_ctx,
             catch_exceptions=False,
@@ -253,7 +253,7 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
 
         assert result.exit_code == 0
 
-        # Should NOT prompt about unresolved comments when --force is used
+        # Should NOT prompt about unresolved comments in execute phase
         assert "Continue anyway?" not in result.output
 
         # PR should have been merged
@@ -366,12 +366,12 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -481,12 +481,12 @@ def test_land_handles_rate_limit_gracefully() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,

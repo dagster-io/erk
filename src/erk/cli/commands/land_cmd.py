@@ -623,7 +623,7 @@ def render_land_execution_script(
     """Generate shell script that executes land and navigates.
 
     This script is generated after validation passes. When sourced, it:
-    1. Calls `erk land --execute` with pre-validated state
+    1. Calls `erk exec land-execute` with pre-validated state
     2. Navigates to the target location (trunk or child branch)
 
     Note: The execute phase always skips confirmation prompts because the user
@@ -645,20 +645,20 @@ def render_land_execution_script(
     Returns:
         Shell script content as string
     """
-    # Build erk land --execute command with all state parameters
-    cmd_parts = ["erk land --execute"]
-    cmd_parts.append(f"--exec-pr-number={pr_number}")
-    cmd_parts.append(f"--exec-branch={branch}")
+    # Build erk exec land-execute command with clean parameter names
+    cmd_parts = ["erk exec land-execute"]
+    cmd_parts.append(f"--pr-number={pr_number}")
+    cmd_parts.append(f"--branch={branch}")
     if worktree_path is not None:
-        cmd_parts.append(f"--exec-worktree-path={worktree_path}")
+        cmd_parts.append(f"--worktree-path={worktree_path}")
     if is_current_branch:
-        cmd_parts.append("--exec-is-current-branch")
+        cmd_parts.append("--is-current-branch")
     if target_child_branch is not None:
-        cmd_parts.append(f"--exec-target-child={target_child_branch}")
+        cmd_parts.append(f"--target-child={target_child_branch}")
     if objective_number is not None:
-        cmd_parts.append(f"--exec-objective-number={objective_number}")
+        cmd_parts.append(f"--objective-number={objective_number}")
     if use_graphite:
-        cmd_parts.append("--exec-use-graphite")
+        cmd_parts.append("--use-graphite")
     if not pull_flag:
         cmd_parts.append("--no-pull")
     if no_delete:
@@ -821,15 +821,6 @@ def _execute_land(
     is_flag=True,
     help="Preserve the local branch and its slot assignment after landing.",
 )
-# Hidden options for deferred execution (used by activation script)
-@click.option("--execute", is_flag=True, hidden=True)
-@click.option("--exec-pr-number", type=int, hidden=True)
-@click.option("--exec-branch", hidden=True)
-@click.option("--exec-worktree-path", type=click.Path(), hidden=True)
-@click.option("--exec-is-current-branch", is_flag=True, hidden=True)
-@click.option("--exec-target-child", hidden=True)
-@click.option("--exec-objective-number", type=int, hidden=True)
-@click.option("--exec-use-graphite", is_flag=True, hidden=True)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -841,14 +832,6 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
-    execute: bool,
-    exec_pr_number: int | None,
-    exec_branch: str | None,
-    exec_worktree_path: str | None,
-    exec_is_current_branch: bool,
-    exec_target_child: str | None,
-    exec_objective_number: int | None,
-    exec_use_graphite: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -868,23 +851,6 @@ def land(
 
     Note: The --up flag requires Graphite for child branch tracking.
     """
-    # Execute mode: skip validation and perform deferred operations from activation script
-    if execute:
-        _execute_land(
-            ctx,
-            pr_number=exec_pr_number,
-            branch=exec_branch,
-            worktree_path=Path(exec_worktree_path) if exec_worktree_path else None,
-            is_current_branch=exec_is_current_branch,
-            target_child_branch=exec_target_child,
-            objective_number=exec_objective_number,
-            use_graphite=exec_use_graphite,
-            pull_flag=pull_flag,
-            no_delete=no_delete,
-            script=script,
-        )
-        return
-
     # Replace context with appropriate wrappers based on flags.
     #
     # Note: Other commands (consolidate, branch checkout) handle --script by skipping

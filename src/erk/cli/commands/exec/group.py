@@ -58,6 +58,7 @@ from erk.cli.commands.exec.scripts.impl_verify import impl_verify
 from erk.cli.commands.exec.scripts.issue_title_to_filename import (
     issue_title_to_filename,
 )
+from erk.cli.commands.exec.scripts.land_execute import land_execute
 from erk.cli.commands.exec.scripts.list_sessions import list_sessions
 from erk.cli.commands.exec.scripts.mark_impl_ended import mark_impl_ended
 from erk.cli.commands.exec.scripts.mark_impl_started import mark_impl_started
@@ -150,6 +151,7 @@ exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")
 exec_group.add_command(issue_title_to_filename, name="issue-title-to-filename")
+exec_group.add_command(land_execute, name="land-execute")
 exec_group.add_command(list_sessions, name="list-sessions")
 exec_group.add_command(mark_impl_ended, name="mark-impl-ended")
 exec_group.add_command(mark_impl_started, name="mark-impl-started")

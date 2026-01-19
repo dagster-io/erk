@@ -13,6 +13,7 @@ This eliminates code duplication across kit CLI commands.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
@@ -26,6 +27,44 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.prompt_executor.abc import PromptExecutor
+
+if TYPE_CHECKING:
+    from erk_shared.context.context import ErkContext
+
+
+def require_context(ctx: click.Context) -> ErkContext:
+    """Get the full ErkContext, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing. If context is not
+    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        ErkContext instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     erk_ctx = require_context(ctx)
+        ...     # Access any attribute from erk_ctx
+    """
+    from erk_shared.context.context import ErkContext
+
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    if not isinstance(ctx.obj, ErkContext):
+        click.echo("Error: Context must be ErkContext", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj
 
 
 def require_issues(ctx: click.Context) -> GitHubIssues:
