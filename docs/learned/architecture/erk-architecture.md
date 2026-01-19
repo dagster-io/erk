@@ -936,6 +936,72 @@ def test_quick_submit_tracks_submission() -> None:
     assert fake_branch_manager.submitted_branches == ["feature-branch"]
 ```
 
+## Deferred Actions via Activation Scripts
+
+When actions must execute **after** the user changes directory (e.g., deleting the current worktree), use the `post_cd_commands` pattern to embed shell commands in activation scripts.
+
+### The Problem
+
+Some operations cannot complete while the shell is inside the target directory:
+
+- Deleting the current worktree fails because the directory is in use
+- The user needs to navigate away first, then perform the cleanup
+
+### The Pattern
+
+Pass shell commands to `render_activation_script()` via the `post_cd_commands` parameter. These commands execute after the `cd` command completes.
+
+```python
+from erk.core.activation import render_activation_script
+
+def navigate_with_cleanup(target_worktree: Path, cleanup_commands: list[str]) -> str:
+    return render_activation_script(
+        directory=target_worktree,
+        post_cd_commands=cleanup_commands,
+    )
+```
+
+### Real-World Example: `--delete-current` Flag
+
+The `erk up` and `erk down` commands support `--delete-current` to navigate away then delete the current worktree:
+
+```python
+# From navigation_helpers.py
+def render_deferred_deletion_commands(
+    worktree_path: Path,
+    branch_name: str,
+    git: Git,
+) -> list[str]:
+    """Generate shell commands to delete worktree and branch after navigation."""
+    return [
+        f"git worktree remove {shlex.quote(str(worktree_path))}",
+        f"git branch -D {shlex.quote(branch_name)}",
+    ]
+```
+
+The activation script structure:
+
+```bash
+cd /path/to/target/worktree
+# Post-cd commands execute here:
+git worktree remove /path/to/old/worktree
+git branch -D old-branch
+```
+
+### When to Use
+
+Use deferred actions via `post_cd_commands` when:
+
+- The action requires the shell to be outside a specific directory
+- The action must happen after successful navigation
+- The action involves cleanup of the source location
+
+### Implementation Notes
+
+- Commands are executed in sequence after `cd` succeeds
+- Use `shlex.quote()` for paths to handle special characters safely
+- Commands run in the target directory's context
+
 ## Design Principles
 
 These patterns reflect erk's core design principles:
