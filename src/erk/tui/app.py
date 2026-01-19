@@ -630,6 +630,7 @@ class ErkDashApp(App):
 
         elif command_id == "land_pr":
             if row.pr_number:
+                pr_num = row.pr_number
                 executor = RealCommandExecutor(
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,
@@ -646,11 +647,18 @@ class ErkDashApp(App):
                     repo_root=self._provider.repo_root,
                 )
                 self.push_screen(detail_screen)
+
+                def on_land_success() -> None:
+                    cmd = f"source .erk/bin/land.sh {pr_num} -f"
+                    executor.copy_to_clipboard(cmd)
+                    self.notify(f"Landed! Run: {cmd}")
+
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "land", str(row.pr_number), "-f", "--script"],
+                        ["erk", "land", str(pr_num), "-f", "--script"],
                         cwd=self._provider.repo_root,
-                        title=f"Landing PR #{row.pr_number}",
+                        title=f"Landing PR #{pr_num}",
+                        on_success=on_land_success,
                     )
                 )
 

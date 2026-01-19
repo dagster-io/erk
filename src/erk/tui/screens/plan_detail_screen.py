@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -235,6 +236,7 @@ class PlanDetailScreen(ModalScreen):
         self._running_process: subprocess.Popen[str] | None = None
         self._stream_timeout_timer: Timer | None = None
         self._stream_timeout_seconds: float = 0.0
+        self._on_success_callback: Callable[[], None] | None = None
 
     def on_mount(self) -> None:
         """Handle mount event - optionally open command palette."""
@@ -392,6 +394,7 @@ class PlanDetailScreen(ModalScreen):
         title: str,
         *,
         timeout: float = 30.0,
+        on_success: Callable[[], None] | None = None,
     ) -> None:
         """Run command with live output in bottom panel.
 
@@ -400,12 +403,14 @@ class PlanDetailScreen(ModalScreen):
             cwd: Working directory for the command
             title: Title to display in the output panel
             timeout: Timeout in seconds (default 30). Set to 0 to disable.
+            on_success: Optional callback to invoke on successful completion.
         """
         # Create and mount output panel
         self._output_panel = CommandOutputPanel(title)
         dialog = self.query_one("#detail-dialog")
         dialog.mount(self._output_panel)
         self._command_running = True
+        self._on_success_callback = on_success
 
         # Set timeout timer if enabled
         if timeout > 0:
@@ -560,6 +565,11 @@ class PlanDetailScreen(ModalScreen):
             success = return_code == 0
             self.app.call_from_thread(panel.set_completed, success)
             self._command_running = False
+            # Invoke success callback if provided and command succeeded
+            if success:
+                callback = self._on_success_callback
+                if callback is not None:
+                    self.app.call_from_thread(callback)
 
     def execute_command(self, command_id: str) -> None:
         """Execute a command from the palette.
@@ -656,11 +666,20 @@ class PlanDetailScreen(ModalScreen):
 
         elif command_id == "land_pr":
             if row.pr_number and self._repo_root is not None:
+                pr_num = row.pr_number
+
+                def on_land_success() -> None:
+                    cmd = f"source .erk/bin/land.sh {pr_num} -f"
+                    if self._executor:
+                        self._executor.copy_to_clipboard(cmd)
+                        self._executor.notify(f"Landed! Run: {cmd}")
+
                 self.run_streaming_command(
-                    ["erk", "land", str(row.pr_number), "-f", "--script"],
+                    ["erk", "land", str(pr_num), "-f", "--script"],
                     cwd=self._repo_root,
-                    title=f"Landing PR #{row.pr_number}",
+                    title=f"Landing PR #{pr_num}",
                     timeout=600.0,
+                    on_success=on_land_success,
                 )
 
     def compose(self) -> ComposeResult:
