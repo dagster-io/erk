@@ -27,16 +27,7 @@ from erk_shared.output.output import user_output
 def wt_checkout(ctx: ErkContext, worktree_name: str, script: bool) -> None:
     """Checkout a worktree by name.
 
-    Prints the activation path for the target worktree.
-    To navigate automatically, enable shell integration:
-
-      erk config set shell_integration true
-      erk init --shell  # Then restart your shell
-
-    With shell integration enabled:
-      erk wt co WORKTREE_NAME
-
-    Without shell integration:
+    Navigate to target worktree:
       source <(erk wt co WORKTREE_NAME --script)
 
     Special keyword:

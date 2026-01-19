@@ -984,11 +984,7 @@ def create_wt(
                 copy=True,
             )
     else:
-        # Shell integration not detected - provide setup instructions
         user_output(f"Created worktree at {wt_path} checked out at branch '{branch}'")
-        user_output("\nShell integration not detected. Run 'erk init --shell' to set up.")
-        user_output("Or use: source <(erk wt create --from-current-branch --script)")
-        # Print activation instructions when shell integration is not active
         if activation_script_path is not None:
             print_activation_instructions(
                 activation_script_path,

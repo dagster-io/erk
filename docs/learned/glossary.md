@@ -214,56 +214,18 @@ impl_dir = repo_root / ".impl"
 
 ## Shell Concepts
 
-### Passthrough Mode
+### Activation Scripts
 
-Shell integration mode where commands run directly without script sourcing.
+Shell scripts that change the parent shell's working directory. Used by navigation commands via the `--script` flag.
 
-**Marker**: `__ERK_PASSTHROUGH__`
-
-**When used**: Commands that don't need directory switching (e.g., `erk version`, `erk doctor`)
-
-### shell_integration (config option)
-
-Boolean global config option (default: `false`) that enables automatic directory navigation when using navigation commands like `erk up`, `erk down`, and `erk wt checkout`. When enabled, the shell wrapper functions handle directory changes. When disabled (default), commands print activation instructions instead.
-
-**Enable with:** `erk config set shell_integration true`
-
-**Requires:** Shell integration must also be set up via `erk init --shell` and sourcing the init script.
-
-**Related:** [Shell Integration](#shell-integration)
-
-### Shell Integration
-
-A mechanism that allows erk commands to change the parent shell's working directory and environment.
-
-**Why needed**: A subprocess cannot change its parent's cwd (Unix process isolation). Without shell integration, commands that delete the current worktree leave the shell stranded in a deleted directory.
-
-**Components**:
-
-1. **Wrapper function** (`erk()`): Intercepts erk commands and sources activation scripts
-2. **`--script` flag**: Commands output activation script paths instead of diagnostics
-3. **Activation scripts**: Shell scripts that `cd` and set environment variables
-4. **Init scripts**: `~/.erk/shell/init.zsh` and `init.bash` define the wrapper function
-
-**Setup**:
+**Usage**:
 
 ```bash
-erk init --shell
-source ~/.erk/shell/init.zsh  # or init.bash
+source <(erk up --script)
+source <(erk wt co my-worktree --script)
 ```
 
-**Verification**:
-
-```bash
-type erk
-# Expected: erk is a function (not a file path)
-```
-
-**⚠️ Alias Warning**: Direct aliases like `alias land='erk pr land'` bypass shell integration. Use functions or go through the `erk` wrapper. See [Shell Aliases](cli/shell-aliases.md) for safe patterns.
-
-**Related**:
-
-- [Shell Integration Constraint](architecture/shell-integration-constraint.md) - The Unix process model limitation
+**Why needed**: A subprocess cannot change its parent's cwd (Unix process isolation). The `--script` flag outputs a path to an activation script that can be sourced.
 
 ---
 

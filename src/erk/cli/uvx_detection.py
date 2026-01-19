@@ -49,11 +49,9 @@ def get_uvx_warning_message(command_name: str) -> str:
     Returns:
         Multi-line warning message explaining the issue and fix
     """
-    return f"""Running 'erk {command_name}' via uvx - this command requires shell integration
+    return f"""Running 'erk {command_name}' via uvx - this command needs persistent installation
 
-Shell integration commands need to change your shell's directory, which doesn't work
-when running in uvx's isolated subprocess.
+Commands that change directories need to run from a persistent installation, not uvx's
+isolated subprocess.
 
-To fix this:
-  1. Install erk in uv's tools: uv tool install erk
-  2. Set up shell integration: erk init --shell"""
+To fix this, install erk in uv's tools: uv tool install erk"""

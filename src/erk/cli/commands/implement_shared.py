@@ -680,10 +680,6 @@ def output_activation_instructions(
         else:
             claude_cmd = build_claude_command("/erk:system:impl-execute", dangerous, model)
             user_output(f"  2. Run implementation:  {claude_cmd}")
-        user_output("\n" + click.style("Shell integration not detected.", fg="yellow"))
-        user_output("To activate environment and run commands, use:")
-        script_flag = "--submit --script" if submit else "--script"
-        user_output(f"  source <(erk implement {target_description} {script_flag})")
 
 
 @dataclass(frozen=True)

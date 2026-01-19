@@ -61,5 +61,4 @@ Scripts include `__erk_log()` helpers respecting:
 
 ## Related Topics
 
-- [Shell Integration Architecture](../architecture/shell-integration-architecture.md) - Full shell integration design
 - [Template Variables](template-variables.md) - .env template substitution

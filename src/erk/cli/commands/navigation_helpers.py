@@ -397,12 +397,6 @@ def activate_target(
                 mode="activate_only",
                 copy=True,
             )
-        else:
-            user_output(
-                "Shell integration not detected. "
-                "Run 'erk init --shell' to set up automatic activation."
-            )
-            user_output(f"\nOr use: source <(erk {command_name} --script)")
     raise SystemExit(0)
 
 
@@ -830,12 +824,6 @@ def _activate_with_deferred_deletion(
         )
         machine_output(str(result.path), nl=False)
     else:
-        user_output(
-            "Shell integration not detected. Run 'erk init --shell' to set up automatic activation."
-        )
-        user_output(f"\nOr use: source <(erk {command_name} --script)")
-
-        # Print activation instructions for opt-in workflow
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
                 worktree_path=target_path,
