@@ -1,24 +1,16 @@
 """Parsing and validation for review definition files.
 
 Review definitions are markdown files with YAML frontmatter that define
-code review behavior. This module handles parsing and validation.
+code review behavior. This module handles parsing and validation using Pydantic.
 """
 
 import re
-from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
 import frontmatter
 import pathspec
-
-from erk.review.models import (
-    DiscoveryResult,
-    ParsedReview,
-    ReviewFrontmatter,
-    ReviewValidationResult,
-)
-
-MARKER_PATTERN = re.compile(r"^<!--\s+.+\s+-->$")
+from pydantic import BaseModel, ConfigDict, field_validator
 
 # Default values for optional frontmatter fields
 DEFAULT_MODEL = "claude-sonnet-4-5"
@@ -26,8 +18,116 @@ DEFAULT_TIMEOUT_MINUTES = 30
 DEFAULT_ALLOWED_TOOLS = "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
 DEFAULT_ENABLED = True
 
+MARKER_PATTERN = re.compile(r"^<!--\s+.+\s+-->$")
 
-def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None, str]:
+
+class ReviewFrontmatter(BaseModel):
+    """Parsed frontmatter from a review definition file.
+
+    Required fields:
+        name: Human-readable review name (e.g., "Tripwires Review")
+        paths: Glob patterns for files to review (e.g., ["**/*.py"])
+        marker: HTML comment marker for summary updates (e.g., "<!-- tripwires-review -->")
+
+    Optional fields with defaults:
+        model: Claude model to use (default: "claude-sonnet-4-5")
+        timeout_minutes: Workflow timeout (default: 30)
+        allowed_tools: Claude Code allowed tools pattern
+        enabled: Whether this review is active (default: True)
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    name: str
+    paths: tuple[str, ...]
+    marker: str
+    model: str = DEFAULT_MODEL
+    timeout_minutes: int = DEFAULT_TIMEOUT_MINUTES
+    allowed_tools: str = DEFAULT_ALLOWED_TOOLS
+    enabled: bool = DEFAULT_ENABLED
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not v:
+            raise ValueError("must not be empty")
+        return v
+
+    @field_validator("paths", mode="before")
+    @classmethod
+    def validate_paths(cls, v: object) -> tuple[str, ...]:
+        if not isinstance(v, list):
+            raise ValueError("must be a list")
+        if len(v) == 0:
+            raise ValueError("must not be empty")
+        validated: list[str] = []
+        for i, item in enumerate(v):
+            if not isinstance(item, str):
+                raise ValueError(f"paths[{i}] must be a string")
+            if not item:
+                raise ValueError(f"paths[{i}] must not be empty")
+            validated.append(item)
+        return tuple(validated)
+
+    @field_validator("marker")
+    @classmethod
+    def validate_marker(cls, v: str) -> str:
+        if not v:
+            raise ValueError("must not be empty")
+        if not MARKER_PATTERN.match(v):
+            raise ValueError(f"must be an HTML comment (<!-- ... -->), got: {v}")
+        return v
+
+
+@dataclass(frozen=True)
+class ParsedReview:
+    """A fully parsed review definition.
+
+    Combines the frontmatter metadata with the markdown body that contains
+    the review instructions.
+    """
+
+    frontmatter: ReviewFrontmatter
+    body: str
+    filename: str
+
+
+@dataclass(frozen=True)
+class ReviewValidationResult:
+    """Result of validating a review definition file.
+
+    If is_valid is True, parsed_review contains the parsed review.
+    If is_valid is False, errors contains the validation failures.
+    """
+
+    filename: str
+    parsed_review: ParsedReview | None
+    errors: tuple[str, ...]
+
+    @property
+    def is_valid(self) -> bool:
+        """Return True if validation passed."""
+        return len(self.errors) == 0
+
+
+@dataclass(frozen=True)
+class DiscoveryResult:
+    """Result of discovering reviews matching a PR's changed files.
+
+    Contains:
+        reviews: Reviews that match at least one changed file
+        skipped: Review filenames that matched no files
+        disabled: Review filenames with enabled: false
+        errors: Validation errors keyed by filename
+    """
+
+    reviews: tuple[ParsedReview, ...]
+    skipped: tuple[str, ...]
+    disabled: tuple[str, ...]
+    errors: dict[str, tuple[str, ...]]
+
+
+def _parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None, str]:
     """Parse YAML frontmatter from markdown content.
 
     Args:
@@ -38,7 +138,6 @@ def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | Non
         If parsing fails, parsed_dict is None and error_message describes the issue.
         body_text is the content after the frontmatter.
     """
-    # Check if content has frontmatter delimiters before parsing
     has_frontmatter_delimiters = content.startswith("---")
 
     try:
@@ -46,159 +145,15 @@ def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | Non
     except Exception as e:
         return None, f"Invalid YAML: {e}", content
 
-    # Check if metadata is a dict (frontmatter library stores non-dict YAML differently)
     if not isinstance(post.metadata, dict):
         return None, "Frontmatter is not a valid YAML mapping", post.content
 
-    # Distinguish between "no frontmatter" vs "frontmatter was non-dict YAML"
-    # When frontmatter library encounters non-dict YAML, it returns empty metadata
     if not post.metadata:
         if has_frontmatter_delimiters:
             return None, "Frontmatter is not a valid YAML mapping", post.content
         return None, "No frontmatter found", content
 
     return dict(post.metadata), None, post.content
-
-
-def _validate_paths(paths_data: object) -> tuple[tuple[str, ...], list[str]]:
-    """Validate the paths field from frontmatter.
-
-    Args:
-        paths_data: Raw paths data from YAML.
-
-    Returns:
-        Tuple of (paths, errors).
-    """
-    errors: list[str] = []
-    paths: list[str] = []
-
-    if not isinstance(paths_data, list):
-        errors.append("Field 'paths' must be a list")
-        return (), errors
-
-    if len(paths_data) == 0:
-        errors.append("Field 'paths' must not be empty")
-        return (), errors
-
-    for i, item in enumerate(paths_data):
-        if not isinstance(item, str):
-            errors.append(f"Field 'paths[{i}]' must be a string")
-            continue
-        if not item:
-            errors.append(f"Field 'paths[{i}]' must not be empty")
-            continue
-        paths.append(item)
-
-    return tuple(paths), errors
-
-
-def _validate_marker(marker: object) -> tuple[str | None, list[str]]:
-    """Validate the marker field.
-
-    Markers must be HTML comments of the form <!-- ... -->.
-
-    Args:
-        marker: Raw marker data from YAML.
-
-    Returns:
-        Tuple of (validated_marker, errors).
-    """
-    errors: list[str] = []
-
-    if not isinstance(marker, str):
-        errors.append("Field 'marker' must be a string")
-        return None, errors
-
-    if not marker:
-        errors.append("Field 'marker' must not be empty")
-        return None, errors
-
-    if not MARKER_PATTERN.match(marker):
-        errors.append(f"Field 'marker' must be an HTML comment (<!-- ... -->), got: {marker}")
-        return None, errors
-
-    return marker, errors
-
-
-def validate_review_frontmatter(
-    data: Mapping[str, object],
-) -> tuple[ReviewFrontmatter | None, list[str]]:
-    """Validate parsed frontmatter against the review schema.
-
-    Args:
-        data: Parsed YAML dictionary.
-
-    Returns:
-        Tuple of (frontmatter, errors). If validation succeeds,
-        errors is empty. If validation fails, frontmatter is None.
-    """
-    errors: list[str] = []
-
-    # Required: name
-    name = data.get("name")
-    if not name:
-        errors.append("Missing required field: name")
-    elif not isinstance(name, str):
-        errors.append("Field 'name' must be a string")
-
-    # Required: paths
-    paths_data = data.get("paths")
-    if paths_data is None:
-        errors.append("Missing required field: paths")
-        paths: tuple[str, ...] = ()
-    else:
-        paths, path_errors = _validate_paths(paths_data)
-        errors.extend(path_errors)
-
-    # Required: marker
-    marker_data = data.get("marker")
-    if marker_data is None:
-        errors.append("Missing required field: marker")
-        marker: str | None = None
-    else:
-        marker, marker_errors = _validate_marker(marker_data)
-        errors.extend(marker_errors)
-
-    # Optional: model (default: claude-sonnet-4-5)
-    model = data.get("model", DEFAULT_MODEL)
-    if not isinstance(model, str):
-        errors.append("Field 'model' must be a string")
-        model = DEFAULT_MODEL
-
-    # Optional: timeout_minutes (default: 30)
-    timeout_minutes = data.get("timeout_minutes", DEFAULT_TIMEOUT_MINUTES)
-    if not isinstance(timeout_minutes, int):
-        errors.append("Field 'timeout_minutes' must be an integer")
-        timeout_minutes = DEFAULT_TIMEOUT_MINUTES
-
-    # Optional: allowed_tools (default: standard set)
-    allowed_tools = data.get("allowed_tools", DEFAULT_ALLOWED_TOOLS)
-    if not isinstance(allowed_tools, str):
-        errors.append("Field 'allowed_tools' must be a string")
-        allowed_tools = DEFAULT_ALLOWED_TOOLS
-
-    # Optional: enabled (default: true)
-    enabled = data.get("enabled", DEFAULT_ENABLED)
-    if not isinstance(enabled, bool):
-        errors.append("Field 'enabled' must be a boolean")
-        enabled = DEFAULT_ENABLED
-
-    if errors:
-        return None, errors
-
-    # Type narrowing: at this point all required fields are valid
-    assert isinstance(name, str)
-    assert marker is not None
-
-    return ReviewFrontmatter(
-        name=name,
-        paths=paths,
-        marker=marker,
-        model=model,
-        timeout_minutes=timeout_minutes,
-        allowed_tools=allowed_tools,
-        enabled=enabled,
-    ), []
 
 
 def parse_review_file(file_path: Path) -> ReviewValidationResult:
@@ -228,7 +183,7 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
             errors=(f"Cannot read file: {e}",),
         )
 
-    parsed, parse_error, body = parse_frontmatter(content)
+    parsed, parse_error, body = _parse_frontmatter(content)
     if parse_error is not None:
         return ReviewValidationResult(
             filename=filename,
@@ -237,25 +192,52 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
         )
 
     assert parsed is not None
-    frontmatter, validation_errors = validate_review_frontmatter(parsed)
 
-    if validation_errors:
+    # Validate using Pydantic
+    try:
+        fm = ReviewFrontmatter.model_validate(parsed)
+    except Exception as e:
+        # Extract validation errors from Pydantic
+        errors = _extract_pydantic_errors(e)
         return ReviewValidationResult(
             filename=filename,
             parsed_review=None,
-            errors=tuple(validation_errors),
+            errors=tuple(errors),
         )
 
-    assert frontmatter is not None
     return ReviewValidationResult(
         filename=filename,
         parsed_review=ParsedReview(
-            frontmatter=frontmatter,
+            frontmatter=fm,
             body=body.strip(),
             filename=filename,
         ),
         errors=(),
     )
+
+
+def _extract_pydantic_errors(exc: Exception) -> list[str]:
+    """Extract human-readable error messages from Pydantic validation exception."""
+    from pydantic import ValidationError
+
+    if not isinstance(exc, ValidationError):
+        return [str(exc)]
+
+    errors: list[str] = []
+    for error in exc.errors():
+        loc = error.get("loc", ())
+        msg = error.get("msg", "validation error")
+        # Build field path
+        field_path = ".".join(str(part) for part in loc)
+        if field_path:
+            # Handle missing field vs validation error
+            if error.get("type") == "missing":
+                errors.append(f"Missing required field: {field_path}")
+            else:
+                errors.append(f"Field '{field_path}' {msg}")
+        else:
+            errors.append(msg)
+    return errors
 
 
 def discover_review_files(reviews_dir: Path) -> list[Path]:

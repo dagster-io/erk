@@ -34,8 +34,7 @@ from dataclasses import dataclass
 
 import click
 
-from erk.review.models import ParsedReview
-from erk.review.parsing import discover_matching_reviews
+from erk.review.parsing import ParsedReview, discover_matching_reviews
 from erk_shared.context.helpers import require_cwd
 from erk_shared.subprocess_utils import run_subprocess_with_context
 

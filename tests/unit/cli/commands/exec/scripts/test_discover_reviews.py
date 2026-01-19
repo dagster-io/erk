@@ -9,7 +9,7 @@ from erk.cli.commands.exec.scripts.discover_reviews import (
     _create_matrix,
     _review_to_dict,
 )
-from erk.review.models import ParsedReview, ReviewFrontmatter
+from erk.review.parsing import ParsedReview, ReviewFrontmatter
 
 
 def _make_review(
@@ -22,12 +22,9 @@ def _make_review(
     return ParsedReview(
         frontmatter=ReviewFrontmatter(
             name=name,
-            paths=("**/*.py",),
+            paths=["**/*.py"],
             marker=marker,
-            model="claude-sonnet-4-5",
-            timeout_minutes=30,
             allowed_tools="Read(*)",
-            enabled=True,
         ),
         body="Review body.",
         filename=filename,
