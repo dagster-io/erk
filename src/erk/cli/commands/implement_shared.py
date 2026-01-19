@@ -37,6 +37,9 @@ _VALID_MODELS = {"haiku", "sonnet", "opus"}
 
 F = TypeVar("F", bound=Callable[..., object])
 
+# Default Docker image for isolated implementation
+DEFAULT_DOCKER_IMAGE = "erk-local:latest"
+
 
 def implement_common_options(fn: F) -> F:
     """Decorator that applies common options shared between implement commands.
@@ -50,6 +53,8 @@ def implement_common_options(fn: F) -> F:
     - --yolo: Equivalent to --dangerous --submit --no-interactive
     - --verbose: Show full Claude Code output
     - -m/--model: Model to use for Claude
+    - --docker: Run Claude inside Docker container for filesystem isolation
+    - --docker-image: Docker image to use (default: erk-local:latest)
 
     Example:
         @click.command("implement", cls=CommandWithHiddenOptions)
@@ -61,6 +66,18 @@ def implement_common_options(fn: F) -> F:
     """
     # Apply options in reverse order (Click decorators are applied bottom-up)
     # This results in options appearing in this order in --help
+    fn = click.option(
+        "--docker-image",
+        type=str,
+        default=DEFAULT_DOCKER_IMAGE,
+        help=f"Docker image to use (default: {DEFAULT_DOCKER_IMAGE})",
+    )(fn)
+    fn = click.option(
+        "--docker",
+        is_flag=True,
+        default=False,
+        help="Run Claude inside Docker container for filesystem isolation",
+    )(fn)
     fn = click.option(
         "-m",
         "--model",

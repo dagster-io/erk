@@ -43,6 +43,11 @@ from erk_shared.output.output import user_output
     is_flag=True,
     help="Include --dangerous flag to skip permission prompts during implementation",
 )
+@click.option(
+    "--docker",
+    is_flag=True,
+    help="Include --docker flag for filesystem-isolated implementation",
+)
 @click.pass_obj
 def branch_create(
     ctx: ErkContext,
@@ -53,6 +58,7 @@ def branch_create(
     *,
     create_only: bool,
     dangerous: bool,
+    docker: bool,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -182,6 +188,10 @@ def branch_create(
         # Determine activation mode from CLI flags
         if create_only:
             mode: ActivationMode = "activate_only"
+        elif docker and dangerous:
+            mode = "implement_docker_dangerous"
+        elif docker:
+            mode = "implement_docker"
         elif dangerous:
             mode = "implement_dangerous"
         else:

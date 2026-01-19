@@ -423,3 +423,56 @@ def test_prepare_behaves_same_as_br_create_for_plan() -> None:
     assert "P300" in result2.output
     assert "Created .impl/ folder from issue #300" in result1.output
     assert "Created .impl/ folder from issue #300" in result2.output
+
+
+def test_prepare_with_docker_flag_shows_docker_command() -> None:
+    """Test that erk prepare --docker shows erk implement --docker in activation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="400",
+            title="Docker feature",
+            body="# Plan\nDocker isolated implementation",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/400",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"400": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["prepare", "--docker", "400"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch:" in result.output
+        assert "P400" in result.output
+        # Check that --docker flag is in the activation command
+        assert "--docker" in result.output
+        assert "Docker isolation" in result.output
