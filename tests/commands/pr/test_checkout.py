@@ -843,10 +843,10 @@ def test_pr_checkout_prints_activation_instructions() -> None:
             result = runner.invoke(pr_group, ["checkout", "2001"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify activation instructions are printed
+        # Verify activation instructions use canonical PR checkout pattern
         assert "To activate the worktree environment:" in result.output
-        assert "source" in result.output
-        assert ".erk/bin/activate.sh" in result.output
+        assert "erk pr checkout 2001 --script" in result.output
+        assert "erk pr sync --dangerous" in result.output
         # Should NOT contain implement hint (only shown for up/down navigation)
         assert "erk implement --here" not in result.output
 
@@ -889,10 +889,10 @@ def test_pr_checkout_existing_worktree_prints_activation_instructions() -> None:
 
         assert result.exit_code == 0
         assert "already checked out" in result.output
-        # Still should print activation instructions for existing worktrees
+        # Still should print activation instructions with canonical pattern
         assert "To activate the worktree environment:" in result.output
-        assert "source" in result.output
-        assert ".erk/bin/activate.sh" in result.output
+        assert "erk pr checkout 2002 --script" in result.output
+        assert "erk pr sync --dangerous" in result.output
         # Should NOT contain implement hint (only shown for up/down navigation)
         assert "erk implement --here" not in result.output
 
