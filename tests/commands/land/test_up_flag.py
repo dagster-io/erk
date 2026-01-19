@@ -19,11 +19,10 @@ from tests.test_utils.env_helpers import erk_inmem_env
 
 
 def test_land_with_up_navigates_to_child_branch() -> None:
-    """Test --up navigates to child branch after landing."""
+    """Test --up generates script that navigates to child branch after landing."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
         feature_2_path = repo_dir / "worktrees" / "feature-2"
 
         git_ops = FakeGit(
@@ -106,19 +105,16 @@ def test_land_with_up_navigates_to_child_branch() -> None:
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 123 not in github_ops.merged_prs
 
-        # Verify worktree of feature-1 was NOT removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
-
-        # Verify branch feature-1 was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
-
-        # Verify activation script points to feature-2 worktree (the child)
+        # Verify script was generated with --up flag info
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-target-child=feature-2" in script_content
+        # Script should cd to child worktree after execution
         assert str(feature_2_path) in script_content
 
 
@@ -411,26 +407,14 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 123 not in github_ops.merged_prs
 
-        # Verify worktree of feature-1 was NOT removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
-
-        # Verify branch feature-1 was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
-
-        # Verify activation script points to feature-2 worktree (the child)
+        # Verify script was generated with correct parameters
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-target-child=feature-2" in script_content
+        # Script should cd to child worktree after execution
         assert str(feature_2_path) in script_content
-
-        # CRITICAL: Verify no new worktree was created for feature-2
-        # The bug was that find_worktree_for_branch couldn't find the existing
-        # worktree, causing it to unnecessarily create a new one.
-        # With the fix, the existing worktree should be found directly.
-        assert len(git_ops.added_worktrees) == 0, (
-            "Should find existing worktree, not create a new one. "
-            f"Added worktrees: {git_ops.added_worktrees}"
-        )

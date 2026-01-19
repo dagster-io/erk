@@ -187,6 +187,27 @@ class FakeScriptWriter(ScriptWriter):
         self.written_scripts.append(result)
         return result
 
+    def write_worktree_script(
+        self,
+        content: str,
+        *,
+        worktree_path: Path,
+        script_name: str,
+        command_name: str,
+        comment: str,
+    ) -> ScriptResult:
+        """Write script to a worktree location (fake version).
+
+        Uses the real target path as sentinel for testing.
+        """
+        script_path = worktree_path / ".erk" / "bin" / f"{script_name}.sh"
+        result = ScriptResult(
+            path=script_path,
+            content=f"# {comment}\n{content}",
+        )
+        self.written_scripts.append(result)
+        return result
+
 
 @dataclass
 class FakePlannerRegistry(PlannerRegistry):

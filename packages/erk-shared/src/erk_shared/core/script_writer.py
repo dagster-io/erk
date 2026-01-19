@@ -141,3 +141,30 @@ class ScriptWriter(ABC):
         Returns:
             ScriptResult with path to script and full content
         """
+
+    @abstractmethod
+    def write_worktree_script(
+        self,
+        content: str,
+        *,
+        worktree_path: Path,
+        script_name: str,
+        command_name: str,
+        comment: str,
+    ) -> ScriptResult:
+        """Write script to a worktree's .erk/bin/ directory.
+
+        Unlike write_activation_script() which writes to a temp file,
+        this writes to a well-known location within a worktree. Use this
+        for scripts that should persist in the worktree (like land.sh).
+
+        Args:
+            content: The shell script content (without metadata header)
+            worktree_path: Path to the worktree directory
+            script_name: Name of the script file (e.g., 'land' -> land.sh)
+            command_name: Command generating the script (e.g., 'land')
+            comment: Description for the script header
+
+        Returns:
+            ScriptResult with path to script and full content
+        """

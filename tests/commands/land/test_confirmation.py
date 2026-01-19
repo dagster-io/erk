@@ -20,8 +20,17 @@ from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_land_cleanup_confirmation_decline() -> None:
-    """Test that declining cleanup confirmation preserves worktree and does not navigate."""
+def test_land_execute_always_deletes_branch() -> None:
+    """Test that execute mode always deletes branch (no confirmations).
+
+    With deferred execution, the execute phase uses force=True internally
+    because all user confirmations happen during the validation phase.
+    The activation script is only generated if the user approved all prompts
+    during validation.
+
+    This test verifies execute mode behavior: branch is always deleted
+    without prompting, since confirmation happened during validation.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -29,10 +38,13 @@ def test_land_cleanup_confirmation_decline() -> None:
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -88,26 +100,31 @@ def test_land_cleanup_confirmation_decline() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # User declines cleanup confirmation
-        from erk_shared.gateway.console.fake import FakeConsole
-
-        console = FakeConsole(
-            is_interactive=True,
-            is_stdout_tty=None,
-            is_stderr_tty=None,
-            confirm_responses=[False],  # Decline branch deletion
-        )
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            console=console,
             issues=issues_ops,
         )
 
-        result = runner.invoke(cli, ["land", "--script"], obj=test_ctx, catch_exceptions=False)
+        # Execute mode: branch is always deleted (no confirmation in execute phase)
+        result = runner.invoke(
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
 
         assert result.exit_code == 0
 
@@ -117,18 +134,19 @@ def test_land_cleanup_confirmation_decline() -> None:
         # Verify worktree was NOT removed (worktrees are always preserved)
         assert feature_1_path not in git_ops.removed_worktrees
 
-        # Verify message about preserved branch (user declined)
-        assert "Branch preserved" in result.output
+        # Verify branch was deleted (execute mode uses force=True, no confirmation)
+        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
 
-        # Verify confirmation prompt mentions branch and worktree preservation
-        assert "Delete branch 'feature-1'? (worktree preserved)" in console.confirm_prompts
-
-        # Verify NO navigation script was written (user stays in current worktree)
-        assert env.script_writer.last_script is None
+        # Verify the "Deleted branch" message
+        assert "Deleted branch (worktree 'feature-1' detached at 'main')" in result.output
 
 
 def test_land_force_skips_cleanup_confirmation() -> None:
-    """Test that --force skips the cleanup confirmation prompt."""
+    """Test that --force skips the cleanup confirmation prompt.
+
+    With deferred execution, this test verifies the execute phase behavior
+    when --force is passed through to skip cleanup confirmation.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -136,10 +154,13 @@ def test_land_force_skips_cleanup_confirmation() -> None:
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -204,9 +225,22 @@ def test_land_force_skips_cleanup_confirmation() -> None:
             issues=issues_ops,
         )
 
-        # Use --force to skip confirmation (no input needed)
+        # Execute mode with --force to skip confirmation
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+                "--force",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -305,7 +339,11 @@ def test_land_up_rejected_with_pr_argument() -> None:
 
 
 def test_land_from_different_worktree() -> None:
-    """Test landing a PR from a different worktree than the PR's branch."""
+    """Test landing a PR from a different worktree than the PR's branch.
+
+    With deferred execution, this test verifies the execute phase behavior
+    when landing a PR from a different worktree (--exec-is-current-branch is NOT set).
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -314,10 +352,13 @@ def test_land_from_different_worktree() -> None:
         # We're on main, landing feature-1's PR
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},  # On main
+            current_branches={
+                env.cwd: "main",  # On main
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -382,8 +423,22 @@ def test_land_from_different_worktree() -> None:
             issues=issues_ops,
         )
 
+        # Execute mode without --exec-is-current-branch (landing from different worktree)
         result = runner.invoke(
-            cli, ["land", "123", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                # Note: NOT passing --exec-is-current-branch
+                "--exec-use-graphite",
+                "--script",
+                "--force",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -396,7 +451,3 @@ def test_land_from_different_worktree() -> None:
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
-
-        # Since we weren't in the target worktree, no navigation should happen
-        # (we stay on main). The test completes without the activation script
-        # containing our current location.

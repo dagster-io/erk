@@ -152,6 +152,47 @@ def write_script_to_temp(
     return temp_file
 
 
+def write_script_to_path(
+    script_content: str,
+    script_path: Path,
+    *,
+    command_name: str,
+    comment: str | None,
+) -> None:
+    """Write shell script to a specific path with metadata header.
+
+    Args:
+        script_content: The shell script to write
+        script_path: Path to write the script to
+        command_name: Command that generated this (e.g., 'land')
+        comment: Optional comment to include in script header
+    """
+    unique_id = uuid.uuid4().hex[:8]
+
+    # Add metadata header
+    header = [
+        "#!/bin/bash",
+        f"# erk {command_name}",
+        f"# Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"# UUID: {unique_id}",
+        f"# User: {os.getenv('USER', 'unknown')}",
+        f"# Working dir: {Path.cwd()}",
+    ]
+
+    if comment:
+        header.append(f"# {comment}")
+
+    header.append("")  # Blank line before script
+
+    full_content = "\n".join(header) + "\n" + script_content
+    script_path.write_text(full_content, encoding="utf-8")
+
+    # Make executable
+    script_path.chmod(0o755)
+
+    debug_log(f"write_script_to_path: Created {script_path}")
+
+
 def cleanup_stale_scripts(*, max_age_seconds: int = STALE_SCRIPT_MAX_AGE_SECONDS) -> None:
     """Remove erk temp scripts older than max_age_seconds.
 

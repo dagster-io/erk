@@ -33,6 +33,8 @@ def test_land_skips_learn_prompt_for_remote_pr(
 
     This is a regression test for issue #4871 where `erk land <remote-url>` was
     incorrectly prompting "Warning: Plan #X has not been learned from."
+
+    With deferred execution, this test verifies the execute phase behavior.
     """
     from erk_shared.gateway.console.fake import FakeConsole
 
@@ -107,8 +109,6 @@ def test_land_skips_learn_prompt_for_remote_pr(
         )
 
         # Use FakeConsole with confirm_responses to auto-confirm any prompts
-        # We do NOT use --force because that skips the learn check entirely
-        # (we want to test that the worktree_path check prevents the call)
         fake_console = FakeConsole(
             is_interactive=True,
             is_stdout_tty=True,
@@ -139,11 +139,19 @@ def test_land_skips_learn_prompt_for_remote_pr(
         # Patch the function in the land_cmd module
         monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-        # Land by URL - this is a remote PR with no local worktree
-        # Don't use --force since that skips the learn check entirely
+        # Execute mode: test PR merge with no local worktree
+        # Note: worktree_path is None because there's no local checkout
         result = runner.invoke(
             cli,
-            ["land", "https://github.com/owner/repo/pull/100", "--script"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=100",
+                f"--exec-branch={plan_branch}",
+                # Note: NOT passing --exec-worktree-path (no local worktree)
+                "--exec-use-graphite",
+                "--script",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -164,12 +172,15 @@ def test_land_skips_learn_prompt_for_remote_pr(
 def test_land_shows_learn_prompt_for_local_plan_branch(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Test that learn prompt IS shown when landing a PR with a local worktree.
+    """Test that learn status check IS performed when landing from a local worktree.
 
     When running `erk land` on a plan branch that HAS a local worktree, the learn
     status check should run because there may be local Claude sessions to learn from.
 
     This is the complementary test to ensure we didn't break the normal case.
+
+    With deferred execution, this test verifies the VALIDATION phase behavior.
+    The learn status check happens during validation, not execution.
     """
     from erk_shared.gateway.console.fake import FakeConsole
 
@@ -179,14 +190,18 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
 
         # Branch name follows plan pattern (starts with issue number)
         plan_branch = "4867-fix-something"
+        plan_worktree_path = repo_dir / "worktrees" / plan_branch
 
         # Setup: worktree EXISTS for the plan branch
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", [plan_branch], repo_dir=repo_dir),
-            current_branches={env.cwd: plan_branch},  # Currently on plan branch
+            current_branches={
+                env.cwd: plan_branch,  # Currently on plan branch
+                plan_worktree_path: plan_branch,  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, plan_worktree_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, plan_worktree_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -243,7 +258,6 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
         )
 
         # Use FakeConsole with confirm_responses to auto-confirm any prompts
-        # We do NOT use --force because that skips the learn check entirely
         fake_console = FakeConsole(
             is_interactive=True,
             is_stdout_tty=True,
@@ -279,8 +293,9 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
         # Patch the function in the land_cmd module
         monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-        # Land from current branch (local worktree exists)
-        # Don't use --force since that skips the learn check
+        # Validation phase: test learn status check for local plan branch
+        # Don't use --force because that skips the learn check!
+        # FakeConsole with confirm_responses handles any prompts
         result = runner.invoke(
             cli,
             ["land", "--script"],
@@ -290,10 +305,7 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 100 in github_ops.merged_prs
-
-        # CRITICAL: Verify find_sessions_for_plan WAS called
+        # CRITICAL: Verify find_sessions_for_plan WAS called during validation
         # because there's a local worktree that could have sessions
         assert len(find_sessions_called) == 1, (
             "find_sessions_for_plan should be called for local plan branches "
@@ -302,3 +314,6 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
         assert find_sessions_called[0] == 4867, (
             f"Expected plan_issue_number=4867, got {find_sessions_called[0]}"
         )
+
+        # Verify output shows learn check passed
+        assert "Learn completed" in result.output
