@@ -8,9 +8,10 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-import frontmatter
 import pathspec
 from pydantic import BaseModel, ConfigDict, field_validator
+
+from erk.core.frontmatter import parse_markdown_frontmatter
 
 # Default values for optional frontmatter fields
 DEFAULT_MODEL = "claude-sonnet-4-5"
@@ -127,35 +128,6 @@ class DiscoveryResult:
     errors: dict[str, tuple[str, ...]]
 
 
-def _parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None, str]:
-    """Parse YAML frontmatter from markdown content.
-
-    Args:
-        content: The markdown file content.
-
-    Returns:
-        Tuple of (parsed_dict, error_message, body_text).
-        If parsing fails, parsed_dict is None and error_message describes the issue.
-        body_text is the content after the frontmatter.
-    """
-    has_frontmatter_delimiters = content.startswith("---")
-
-    try:
-        post = frontmatter.loads(content)
-    except Exception as e:
-        return None, f"Invalid YAML: {e}", content
-
-    if not isinstance(post.metadata, dict):
-        return None, "Frontmatter is not a valid YAML mapping", post.content
-
-    if not post.metadata:
-        if has_frontmatter_delimiters:
-            return None, "Frontmatter is not a valid YAML mapping", post.content
-        return None, "No frontmatter found", content
-
-    return dict(post.metadata), None, post.content
-
-
 def parse_review_file(file_path: Path) -> ReviewValidationResult:
     """Parse and validate a single review definition file.
 
@@ -183,14 +155,17 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
             errors=(f"Cannot read file: {e}",),
         )
 
-    parsed, parse_error, body = _parse_frontmatter(content)
-    if parse_error is not None:
+    fm_result = parse_markdown_frontmatter(content)
+    if not fm_result.is_valid:
+        assert fm_result.error is not None
         return ReviewValidationResult(
             filename=filename,
             parsed_review=None,
-            errors=(parse_error,),
+            errors=(fm_result.error,),
         )
 
+    parsed = fm_result.metadata
+    body = fm_result.body
     assert parsed is not None
 
     # Validate using Pydantic
