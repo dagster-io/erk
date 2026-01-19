@@ -70,13 +70,13 @@ Git's built-in `git worktree` command is barebones—it creates a directory and 
 | Aspect           | Git Worktree          | Erk Worktree                           |
 | ---------------- | --------------------- | -------------------------------------- |
 | Directory        | Any path (you choose) | Organized under `~/.erk/repos/`        |
-| Navigation       | Manual `cd`           | Shell integration switches directories |
+| Navigation       | Manual `cd`           | Automatic directory switching          |
 | Environment      | None                  | Runs scripts on switch (e.g., uv sync) |
 | Plan association | None                  | Linked to GitHub issue via `.impl/`    |
 
-**Shell integration is key.** With vanilla git worktrees, you manually `cd` between directories and devise your own storage scheme. With erk's [shell integration](../tutorials/shell-integration.md), `erk wt checkout` changes your shell's working directory automatically. You can also configure scripts to run on each switch—for example, syncing a Python virtual environment with `uv sync` whenever you navigate to a worktree.
+With vanilla git worktrees, you manually `cd` between directories and devise your own storage scheme. With erk, `erk wt checkout` changes your shell's working directory automatically. You can also configure scripts to run on each switch—for example, syncing a Python virtual environment with `uv sync` whenever you navigate to a worktree.
 
-Note that `erk implement` automatically navigates to a new worktree when starting implementation. The shell integration makes this seamless.
+Note that `erk implement` automatically navigates to a new worktree when starting implementation.
 
 ## Common Operations
 
@@ -84,11 +84,11 @@ Erk provides commands for worktree lifecycle management:
 
 - **Create**: `erk wt create` - Creates a new worktree with branch and optional virtual environment
 - **List**: `erk wt list` - Shows all worktrees with status (branch, plan, etc.)
-- **Switch**: `erk wt checkout` or `erk br co` - Navigate to a worktree (requires [shell integration](../tutorials/shell-integration.md)). Since erk manages the mapping between branches and worktrees, checking out a branch automatically switches to its associated worktree.
+- **Switch**: `erk wt checkout` or `erk br co` - Navigate to a worktree. Since erk manages the mapping between branches and worktrees, checking out a branch automatically switches to its associated worktree.
 - **Delete**: `erk wt delete` - Removes worktree and cleans up branch
 - **Status**: `erk wt status` - Shows current worktree details
 
-To get the full benefit of worktrees, [set up shell integration](../tutorials/shell-integration.md). Without it, navigation commands can't change your shell's working directory.
+Navigation commands like `erk wt checkout` and `erk br co` automatically change your shell's working directory to the target worktree.
 
 ## Slots: Reusing Worktrees in Large Codebases
 
@@ -122,6 +122,5 @@ The bottom line: worktrees give you isolated working directories with shared git
 
 ## See Also
 
-- [Shell Integration](../tutorials/shell-integration.md) - Enable fast worktree switching
 - [The Workflow](the-workflow.md) - How worktrees fit into plan-oriented development
 - [Why GitHub Issues](why-github-issues.md) - How plans connect to worktrees

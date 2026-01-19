@@ -28,7 +28,6 @@ Step-by-step lessons to get you started.
 - [Prerequisites](tutorials/prerequisites.md) - Required tools and versions
 - [Installation](tutorials/installation.md) - Installing and initializing erk
 - [Your First Plan](tutorials/first-plan.md) - End-to-end tutorial
-- [Shell Integration](tutorials/shell-integration.md) - Terminal setup for directory switching
 
 ### [Topics](topics/index.md)
 
@@ -64,10 +63,6 @@ Complete technical reference.
 ### [FAQ](faq/index.md)
 
 Common questions and solutions.
-
-- [Shell Integration](faq/shell-integration.md) - Directory switching problems
-- [Graphite Issues](faq/graphite-issues.md) - Stack and sync problems
-- [General](faq/general.md) - Frequently asked questions
 
 ## Common User Journeys
 

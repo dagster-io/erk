@@ -2,12 +2,6 @@
 
 Answers to common questions and solutions to frequent problems.
 
-## Contents
-
-- [General](general.md) - Frequently asked questions about erk
-- [Shell Integration](shell-integration.md) - Directory switching not working
-- [Graphite Issues](graphite-issues.md) - Stack and sync problems
-
 ## Getting Help
 
 If your issue isn't covered here:
@@ -18,5 +12,4 @@ If your issue isn't covered here:
 
 ## See Also
 
-- [Shell Integration Setup](../tutorials/shell-integration.md) - Proper shell configuration
 - [Prerequisites](../tutorials/prerequisites.md) - Required tools and versions

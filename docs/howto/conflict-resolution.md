@@ -31,4 +31,3 @@ Handle merge conflicts with AI assistance.
 ## See Also
 
 - [Graphite Integration](../tutorials/graphite-integration.md) - Understanding stacks
-- [Graphite Issues](../faq/graphite-issues.md) - Troubleshooting

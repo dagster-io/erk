@@ -122,19 +122,16 @@ Created branch: P1-quit-command
 ✓ Assigned P1-quit-command to slot-1
 Created .impl/ folder from issue #1
 
-To activate the worktree environment:
-  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh
-
 To activate and start implementation:
-  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/activate.sh && erk implement --copy
+  source /Users/you/.erk/repos/say/worktrees/slot-1/.erk/bin/activate.sh && erk implement  (copied to clipboard)
 ```
 
 ### Activate and Implement
 
-Copy the second command and run it:
+The activation command is automatically copied to your clipboard. Just paste and run it:
 
 ```bash
-source /path/to/slot-1/.erk/activate.sh && erk implement --copy
+source /path/to/slot-1/.erk/bin/activate.sh && erk implement
 ```
 
 This does two things:
@@ -205,16 +202,16 @@ You've completed the full erk workflow:
 
 ## Quick Reference
 
-| Task                 | Command                                           |
-| -------------------- | ------------------------------------------------- |
-| Start Claude         | `claude`                                          |
-| Save plan            | `/erk:plan-save`                                  |
-| Exit Claude          | `/exit`                                           |
-| Prepare worktree     | `erk prepare <issue>`                             |
-| Activate + implement | `source .erk/activate.sh && erk implement --copy` |
-| Monitor plans        | `erk dash`                                        |
-| Submit PR            | `erk pr submit`                                   |
-| Land PR              | `erk pr land`                                     |
+| Task                 | Command                                        |
+| -------------------- | ---------------------------------------------- |
+| Start Claude         | `claude`                                       |
+| Save plan            | `/erk:plan-save`                               |
+| Exit Claude          | `/exit`                                        |
+| Prepare worktree     | `erk prepare <issue>`                          |
+| Activate + implement | `source .erk/bin/activate.sh && erk implement` |
+| Monitor plans        | `erk dash`                                     |
+| Submit PR            | `erk pr submit`                                |
+| Land PR              | `erk pr land`                                  |
 
 ## Next Steps
 

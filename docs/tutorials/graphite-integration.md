@@ -149,5 +149,4 @@ master
 
 ## Next Steps
 
-- [Shell Integration](shell-integration.md) - Seamless `cd` when navigating worktrees
 - [The Workflow](../topics/the-workflow.md) - Full plan-implement-ship cycle

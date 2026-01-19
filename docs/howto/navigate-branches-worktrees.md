@@ -1,12 +1,10 @@
 # Navigate Branches and Worktrees
 
-Switch between branches and navigate stacks with shell integration.
+Switch between branches and navigate stacks seamlessly.
 
 ## Overview
 
 Navigation commands let you move between branches and worktrees without manually `cd`-ing to directories. They automatically allocate worktrees when needed—either creating a new one or using an available [slot](../topics/worktrees.md#slots-reusing-worktrees-in-large-codebases)—so you can focus on the code rather than filesystem management.
-
-**Prerequisite**: [Shell integration](../tutorials/shell-integration.md) enables these commands to change your current directory. Without it, commands spawn subshells instead.
 
 ## Navigate by Branch Name
 
@@ -100,4 +98,3 @@ This allocates a new worktree for your current branch and switches to it. The or
 ## See Also
 
 - [Worktrees](../topics/worktrees.md) - How worktrees work and why erk uses them
-- [Shell Integration](../tutorials/shell-integration.md) - Enable directory-changing navigation

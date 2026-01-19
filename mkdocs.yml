@@ -31,7 +31,6 @@ nav:
       - tutorials/prerequisites.md
       - tutorials/installation.md
       - tutorials/first-plan.md
-      - tutorials/shell-integration.md
       - tutorials/graphite-integration.md
   - Topics:
       - topics/index.md
@@ -58,9 +57,6 @@ nav:
       - ref/file-locations.md
   - FAQ:
       - faq/index.md
-      - faq/general.md
-      - faq/shell-integration.md
-      - faq/graphite-issues.md
   - Contributing:
       - contributing/writing-documentation.md
 
