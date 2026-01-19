@@ -397,7 +397,7 @@ def test_print_activation_instructions_with_source_branch_and_force(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with source_branch and force=True shows delete hint."""
+    """print_activation_instructions with source_branch and force=True shows only delete command."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
@@ -411,10 +411,11 @@ def test_print_activation_instructions_with_source_branch_and_force(
     )
 
     captured = capsys.readouterr()
-    assert "To activate the worktree environment:" in captured.err
-    assert f"source {script_path}" in captured.err
+    # Should show only the delete instruction (not the basic activation message)
     assert "To activate and delete branch feature-branch:" in captured.err
-    assert "erk br delete feature-branch" in captured.err
+    assert f"source {script_path} && erk br delete feature-branch" in captured.err
+    # Should NOT show the separate activation message
+    assert "To activate the worktree environment:" not in captured.err
 
 
 def test_print_activation_instructions_with_source_branch_no_force(

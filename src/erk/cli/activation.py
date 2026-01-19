@@ -263,8 +263,11 @@ def print_activation_instructions(
     """
     source_cmd = f"source {script_path}"
 
-    # Determine the command to show and copy based on mode
-    if mode == "activate_only":
+    # If deleting current branch, make the delete command the primary command
+    if source_branch is not None and force:
+        primary_cmd = f"{source_cmd} && erk br delete {source_branch}"
+        instruction = f"To activate and delete branch {source_branch}:"
+    elif mode == "activate_only":
         primary_cmd = source_cmd
         instruction = "To activate the worktree environment:"
     elif mode == "implement_dangerous":
@@ -288,10 +291,6 @@ def print_activation_instructions(
         user_output(copy_to_clipboard_osc52(primary_cmd), nl=False)
     else:
         user_output(f"  {primary_cmd}")
-
-    if source_branch is not None and force:
-        user_output(f"\nTo activate and delete branch {source_branch}:")
-        user_output(f"  {source_cmd} && erk br delete {source_branch}")
 
 
 def render_land_script() -> str:
