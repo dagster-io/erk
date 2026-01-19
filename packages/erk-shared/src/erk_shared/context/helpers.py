@@ -13,11 +13,11 @@ This eliminates code duplication across kit CLI commands.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 import click
 
 from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, NoRepoSentinel
 from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.time.abc import Time
@@ -27,9 +27,6 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.prompt_executor.abc import PromptExecutor
-
-if TYPE_CHECKING:
-    from erk_shared.context.context import ErkContext
 
 
 def require_context(ctx: click.Context) -> ErkContext:
@@ -54,8 +51,6 @@ def require_context(ctx: click.Context) -> ErkContext:
         ...     erk_ctx = require_context(ctx)
         ...     # Access any attribute from erk_ctx
     """
-    from erk_shared.context.context import ErkContext
-
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
@@ -89,8 +84,6 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
         ...     issues = require_issues(ctx)
         ...     issues.add_comment(repo_root, issue_number, body)
     """
-    from erk_shared.context.context import ErkContext
-
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
@@ -124,8 +117,6 @@ def require_repo_root(ctx: click.Context) -> Path:
         ...     issues = require_issues(ctx)
         ...     issues.create_issue(repo_root, title, body, labels)
     """
-    from erk_shared.context.context import ErkContext
-
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
