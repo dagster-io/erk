@@ -72,7 +72,6 @@ def build_activation_command(config: ActivationConfig, script_path: Path) -> str
     return " ".join(parts)
 
 
-
 def _render_logging_helper() -> str:
     """Return shell helper functions for transparency logging.
 
