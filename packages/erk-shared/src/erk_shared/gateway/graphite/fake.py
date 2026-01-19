@@ -71,6 +71,8 @@ class FakeGraphite(Graphite):
         self._submit_stack_calls: list[tuple[Path, bool, bool, bool, bool]] = []
         self._continue_restack_calls: list[tuple[Path, bool]] = []
         self._delete_branch_calls: list[tuple[Path, str]] = []
+        # Ordered log of all mutation operations for testing operation ordering
+        self._operation_log: list[tuple[str, ...]] = []
         self._pr_info = pr_info if pr_info is not None else {}
         self._branches = branches if branches is not None else {}
         self._stacks = stacks if stacks is not None else {}
@@ -163,6 +165,7 @@ class FakeGraphite(Graphite):
         get_child_branches() work.
         """
         self._track_branch_calls.append((cwd, branch_name, parent_branch))
+        self._operation_log.append(("track_branch", branch_name, parent_branch))
 
         # Also update branch metadata so get_parent_branch() can find the parent
         from erk_shared.gateway.graphite.types import BranchMetadata
@@ -342,3 +345,14 @@ class FakeGraphite(Graphite):
         Returns list of (repo_root, branch) tuples.
         """
         return self._delete_branch_calls
+
+    @property
+    def operation_log(self) -> list[tuple[str, ...]]:
+        """Get the ordered log of all mutation operations.
+
+        Used for testing operation ordering between multiple operations.
+        Currently only includes track_branch operations.
+
+        Returns list of tuples where first element is operation name.
+        """
+        return self._operation_log

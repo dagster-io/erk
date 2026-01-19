@@ -9,6 +9,7 @@ This script safely lands a single PR from a worktree stack by:
 from collections.abc import Generator
 from pathlib import Path
 
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
@@ -175,6 +176,22 @@ def execute_land_pr(
             child_pr = ops.github.get_pr_for_branch(repo_root, child_branch)
             if not isinstance(child_pr, PRNotFound) and child_pr.state == "OPEN":
                 ops.github.update_pr_base_branch(repo_root, child_pr.number, trunk)
+
+    # Re-parent children in Graphite's local tracking BEFORE merging
+    # Skip if Graphite is disabled (track_branch would raise GraphiteDisabledError)
+    if all_children and not isinstance(ops.graphite, GraphiteDisabled):
+        yield ProgressEvent("Updating Graphite tracking for child branches...")
+        for child_branch in all_children:
+            try:
+                ops.graphite.track_branch(repo_root, child_branch, trunk)
+            except Exception:
+                # Continue on failure - Graphite tracking is not critical
+                # Emit warning with remediation suggestion
+                yield ProgressEvent(
+                    f"Warning: Failed to update Graphite tracking for '{child_branch}'. "
+                    f"To fix manually, run: gt track --branch {child_branch} --parent {trunk}",
+                    style="warning",
+                )
 
     # Step 6: Get PR title and body for merge commit message (use same PRDetails object)
     yield ProgressEvent("Getting PR metadata...")
