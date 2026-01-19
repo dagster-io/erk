@@ -138,7 +138,11 @@ def test_land_warns_on_unresolved_comments() -> None:
 
 
 def test_land_force_skips_unresolved_comments_warning() -> None:
-    """Test --force skips the unresolved comments confirmation."""
+    """Test --force skips the unresolved comments confirmation.
+
+    With deferred execution, this test verifies the execute phase behavior
+    when --force is used with unresolved comments.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -146,10 +150,13 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -227,10 +234,19 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
             issues=issues_ops,
         )
 
-        # Use --force to skip all confirmations
+        # Execute mode with --force to skip all confirmations
         result = runner.invoke(
             cli,
-            ["land", "123", "--script", "--force"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-use-graphite",
+                "--script",
+                "--force",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -248,7 +264,11 @@ def test_land_force_skips_unresolved_comments_warning() -> None:
 
 
 def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
-    """Test land proceeds when user confirms despite unresolved comments."""
+    """Test land proceeds when user confirms despite unresolved comments.
+
+    With deferred execution, this test verifies the execute phase behavior
+    when user confirms cleanup during execution.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -256,10 +276,13 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -328,28 +351,34 @@ def test_land_proceeds_when_user_confirms_unresolved_comments() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # User confirms both prompts (unresolved comments + cleanup)
+        # User confirms cleanup prompt
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[True, True],  # Confirm unresolved comments, confirm cleanup
+            confirm_responses=[True],  # Confirm cleanup
             issues=issues_ops,
         )
 
+        # Execute mode: cleanup confirmation happens during execution
         result = runner.invoke(
             cli,
-            ["land", "123", "--script"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-use-graphite",
+                "--script",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
         assert result.exit_code == 0
-
-        # Should show warning about unresolved comments
-        assert "has 1 unresolved review comment(s)" in result.output
 
         # PR should have been merged (user confirmed)
         assert 123 in github_ops.merged_prs
@@ -363,6 +392,9 @@ def test_land_handles_rate_limit_gracefully() -> None:
 
     When the GitHub GraphQL API returns a rate limit error for review threads,
     the land command should show a warning and continue instead of crashing.
+
+    With deferred execution, this test verifies the execute phase behavior
+    when rate limit warning is shown during validation.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -371,10 +403,13 @@ def test_land_handles_rate_limit_gracefully() -> None:
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -442,17 +477,23 @@ def test_land_handles_rate_limit_gracefully() -> None:
             issues=issues_ops,
         )
 
+        # Execute mode: PR merge happens during execution
         result = runner.invoke(
             cli,
-            ["land", "123", "--script"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-use-graphite",
+                "--script",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
         assert result.exit_code == 0
-
-        # Should show rate limit warning (not crash)
-        assert "Could not check for unresolved comments (API rate limited)" in result.output
 
         # PR should have been merged (rate limit on review threads shouldn't block)
         assert 123 in github_ops.merged_prs

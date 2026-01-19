@@ -28,12 +28,16 @@ from tests.test_utils.cli_helpers import assert_cli_error
 from tests.test_utils.env_helpers import erk_inmem_env
 
 
-def test_land_merges_and_deletes_worktree() -> None:
-    """Test land merges PR and deletes worktree."""
+def test_land_outputs_deferred_execution_script() -> None:
+    """Test land validation phase outputs script with deferred execution.
+
+    The land command now uses a two-phase approach:
+    1. Validation phase: validates preconditions, prompts user, outputs script
+    2. Execution phase: script calls `erk land --execute` to merge and cleanup
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -105,9 +109,126 @@ def test_land_merges_and_deletes_worktree() -> None:
             issues=issues_ops,
         )
 
-        # Use --force to skip cleanup confirmation
+        # Phase 1: Validation - outputs script, does NOT merge
         result = runner.invoke(
             cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 123 not in github_ops.merged_prs
+
+        # Verify branch was NOT deleted yet
+        assert not any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
+
+        # Verify script was written with execution command
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-pr-number=123" in script_content
+        assert "--exec-branch=feature-1" in script_content
+        assert "--exec-use-graphite" in script_content
+        # Script should cd to trunk after execution
+        assert str(repo.root) in script_content
+
+
+def test_land_execute_merges_and_cleans_up() -> None:
+    """Test land --execute mode performs merge and cleanup."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+
+        # Execute mode: called by the activation script with pre-validated params
+        result = runner.invoke(
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -120,12 +241,6 @@ def test_land_merges_and_deletes_worktree() -> None:
 
         # Verify branch was deleted (via Graphite gateway since use_graphite=True)
         assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
-
-        # Verify activation script points to root repo (trunk)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
-        assert str(repo.root) in script_content
 
         # Verify "Deleted branch (worktree detached)" message
         assert "Deleted branch (worktree 'feature-1' detached at 'main')" in result.output
@@ -460,10 +575,13 @@ def test_land_updates_upstack_pr_base_branches() -> None:
         # Setup: main -> feature-1 (landing) -> feature-2 (upstack with open PR)
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -557,9 +675,21 @@ def test_land_updates_upstack_pr_base_branches() -> None:
             issues=issues_ops,
         )
 
-        # Use --force to skip cleanup confirmation
+        # Execute mode to test the actual merge behavior
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -593,15 +723,19 @@ def test_land_updates_github_only_child_pr_base() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
 
         # Setup: main -> feature-1 (landing)
         # feature-2 exists with PR targeting feature-1 but NOT in Graphite's cache
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -699,8 +833,21 @@ def test_land_updates_github_only_child_pr_base() -> None:
             issues=issues_ops,
         )
 
+        # Execute mode to test the actual merge behavior
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -730,14 +877,18 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
 
         # Setup: main -> feature-1 (landing) -> feature-2 (upstack with open PR)
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -831,8 +982,21 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
             issues=issues_ops,
         )
 
+        # Execute mode to test the actual merge behavior and operation ordering
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0

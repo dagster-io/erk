@@ -23,17 +23,21 @@ from tests.test_utils.env_helpers import erk_inmem_env
 
 
 def test_land_default_calls_git_pull_in_python() -> None:
-    """Test default land (no --no-pull) calls git pull in Python, not in activation script."""
+    """Test default land (no --no-pull) calls git pull during execute phase."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -98,22 +102,27 @@ def test_land_default_calls_git_pull_in_python() -> None:
             issues=issues_ops,
         )
 
-        # Default (no --no-pull flag), use --force to skip confirmation
+        # Execute mode: test git pull behavior during execution phase
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
 
         # Verify git pull was called in Python (via the Git gateway)
         assert ("origin", "main", True) in git_ops.pulled_branches
-
-        # Verify activation script does NOT contain git pull (it's done in Python now)
-        script_path = Path(result.stdout.strip())
-        script_content = env.script_writer.get_script_content(script_path)
-        assert script_content is not None
-        assert "git pull" not in script_content
-        assert "# Post-activation commands" not in script_content
 
 
 def test_land_no_pull_flag_skips_git_pull() -> None:
@@ -322,13 +331,17 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
         import subprocess
 
         repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
-            current_branches={env.cwd: "feature-1"},
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
             # Simulate git pull failure
             pull_branch_raises=subprocess.CalledProcessError(1, "git pull"),
@@ -395,9 +408,21 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
             issues=issues_ops,
         )
 
-        # Default (no --no-pull flag), use --force to skip confirmation
+        # Execute mode: test git pull failure behavior during execution phase
         result = runner.invoke(
-            cli, ["land", "--script", "--force"], obj=test_ctx, catch_exceptions=False
+            cli,
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                "--exec-branch=feature-1",
+                f"--exec-worktree-path={feature_1_path}",
+                "--exec-is-current-branch",
+                "--exec-use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         # Command should still succeed (exit 0) despite git pull failure

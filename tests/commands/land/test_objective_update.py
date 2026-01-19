@@ -47,18 +47,25 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
 
 
 def test_land_force_runs_objective_update_without_prompt() -> None:
-    """Test that --force flag runs objective update without prompting."""
+    """Test that --force flag runs objective update without prompting.
+
+    With deferred execution, this test verifies the execute phase behavior.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
         feature_branch = "P42-test-feature"
+        feature_worktree_path = repo_dir / "worktrees" / feature_branch
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", [feature_branch], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_worktree_path: feature_branch,  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_worktree_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_worktree_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -121,21 +128,30 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
         )
 
         # With --force, objective update runs automatically
-        # Decline closing plan issue (missing closing ref prompt)
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[False],  # Decline closing plan issue prompt
             issues=issues_ops,
             claude_executor=executor,
         )
 
+        # Execute mode with --force and objective number
         result = runner.invoke(
             cli,
-            ["land", "123", "--script", "--force"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                f"--exec-branch={feature_branch}",
+                f"--exec-worktree-path={feature_worktree_path}",
+                "--exec-objective-number=100",
+                "--exec-use-graphite",
+                "--script",
+                "--force",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -158,19 +174,33 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
         assert dangerous is True
 
 
-def test_land_user_declines_objective_update_shows_command() -> None:
-    """Test that user declining prompt skips update and shows command."""
+def test_land_execute_always_runs_objective_update() -> None:
+    """Test that execute mode always runs objective update (no confirmation).
+
+    With deferred execution, the execute phase uses force=True internally
+    because all user confirmations happen during the validation phase.
+    If an objective number is provided to execute mode, the objective
+    update always runs without prompting.
+
+    This test verifies execute mode behavior: objective update always runs
+    when objective_number is provided, since confirmation would have
+    happened during validation.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
         feature_branch = "P42-test-feature"
+        feature_worktree_path = repo_dir / "worktrees" / feature_branch
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", [feature_branch], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_worktree_path: feature_branch,  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_worktree_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_worktree_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -231,57 +261,62 @@ def test_land_user_declines_objective_update_shows_command() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # User says:
-        # "y" to learn check (continue without learning)
-        # "n" to close plan issue
-        # "n" to objective update
-        # "y" to worktree cleanup
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
             github=github_ops,
             repo=repo,
             use_graphite=True,
-            confirm_responses=[
-                True,  # Continue without learning
-                False,  # Decline close plan issue
-                False,  # Decline objective update
-                True,  # Confirm cleanup
-            ],
             issues=issues_ops,
             claude_executor=executor,
         )
 
+        # Execute mode with objective number - always runs update
         result = runner.invoke(
             cli,
-            ["land", "123", "--script"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                f"--exec-branch={feature_branch}",
+                f"--exec-worktree-path={feature_worktree_path}",
+                "--exec-objective-number=100",
+                "--exec-use-graphite",
+                "--script",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
         assert result.exit_code == 0
 
-        # Should show skip message with command
-        assert "Skipped" in result.output
-        assert "/erk:objective-update-with-landed-pr" in result.output
+        # Execute mode always runs objective update (no confirmation)
+        assert "Objective updated successfully" in result.output
 
-        # Should NOT have called claude executor
-        assert len(executor.executed_commands) == 0
+        # Should have called claude executor
+        assert len(executor.executed_commands) == 1
 
 
 def test_land_user_confirms_objective_update_runs_claude() -> None:
-    """Test that user confirming prompt runs Claude streaming and succeeds."""
+    """Test that user confirming prompt runs Claude streaming and succeeds.
+
+    With deferred execution, this test verifies the execute phase behavior.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
         feature_branch = "P42-test-feature"
+        feature_worktree_path = repo_dir / "worktrees" / feature_branch
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", [feature_branch], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_worktree_path: feature_branch,  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_worktree_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_worktree_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -344,8 +379,6 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         )
 
         # User says:
-        # "y" to learn check (continue without learning)
-        # "n" to close plan issue
         # "y" to objective update
         # "y" to worktree cleanup
         test_ctx = env.build_context(
@@ -355,8 +388,6 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[
-                True,  # Continue without learning
-                False,  # Decline close plan issue
                 True,  # Confirm objective update
                 True,  # Confirm cleanup
             ],
@@ -364,9 +395,19 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
             claude_executor=executor,
         )
 
+        # Execute mode with objective number
         result = runner.invoke(
             cli,
-            ["land", "123", "--script"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                f"--exec-branch={feature_branch}",
+                f"--exec-worktree-path={feature_worktree_path}",
+                "--exec-objective-number=100",
+                "--exec-use-graphite",
+                "--script",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )
@@ -389,18 +430,25 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
 
 
 def test_land_claude_failure_shows_retry_command() -> None:
-    """Test that Claude streaming failure shows warning and manual command."""
+    """Test that Claude streaming failure shows warning and manual command.
+
+    With deferred execution, this test verifies the execute phase behavior.
+    """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
         feature_branch = "P42-test-feature"
+        feature_worktree_path = repo_dir / "worktrees" / feature_branch
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", [feature_branch], repo_dir=repo_dir),
-            current_branches={env.cwd: "main"},
+            current_branches={
+                env.cwd: "main",
+                feature_worktree_path: feature_branch,  # Set current branch for worktree
+            },
             default_branches={env.cwd: "main"},
-            git_common_dirs={env.cwd: env.git_dir},
-            repository_roots={env.cwd: env.cwd},
+            git_common_dirs={env.cwd: env.git_dir, feature_worktree_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_worktree_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
         )
 
@@ -463,8 +511,6 @@ def test_land_claude_failure_shows_retry_command() -> None:
         )
 
         # User says:
-        # "y" to learn check (continue without learning)
-        # "n" to close plan issue
         # "y" to objective update
         # "y" to worktree cleanup
         test_ctx = env.build_context(
@@ -474,8 +520,6 @@ def test_land_claude_failure_shows_retry_command() -> None:
             repo=repo,
             use_graphite=True,
             confirm_responses=[
-                True,  # Continue without learning
-                False,  # Decline close plan issue
                 True,  # Confirm objective update
                 True,  # Confirm cleanup
             ],
@@ -483,9 +527,19 @@ def test_land_claude_failure_shows_retry_command() -> None:
             claude_executor=executor,
         )
 
+        # Execute mode with objective number
         result = runner.invoke(
             cli,
-            ["land", "123", "--script"],
+            [
+                "land",
+                "--execute",
+                "--exec-pr-number=123",
+                f"--exec-branch={feature_branch}",
+                f"--exec-worktree-path={feature_worktree_path}",
+                "--exec-objective-number=100",
+                "--exec-use-graphite",
+                "--script",
+            ],
             obj=test_ctx,
             catch_exceptions=False,
         )

@@ -25,7 +25,6 @@ from erk.cli.commands.navigation_helpers import (
     check_clean_working_tree,
 )
 from erk.cli.commands.objective_helpers import (
-    check_and_display_plan_issue_closure,
     get_objective_for_branch,
     prompt_objective_update,
 )
@@ -50,7 +49,7 @@ from erk.core.worktree_pool import (
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
-from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
+from erk_shared.gateway.gt.types import LandPrError
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
@@ -595,6 +594,177 @@ def _navigate_after_land(
         # activate_root_repo raises SystemExit(0)
 
 
+def render_land_execution_script(
+    *,
+    pr_number: int,
+    branch: str,
+    worktree_path: Path | None,
+    is_current_branch: bool,
+    target_child_branch: str | None,
+    objective_number: int | None,
+    use_graphite: bool,
+    pull_flag: bool,
+    no_delete: bool,
+    target_path: Path,
+) -> str:
+    """Generate shell script that executes land and navigates.
+
+    This script is generated after validation passes. When sourced, it:
+    1. Calls `erk land --execute` with pre-validated state
+    2. Navigates to the target location (trunk or child branch)
+
+    Args:
+        pr_number: PR number to merge
+        branch: Branch name being landed
+        worktree_path: Path to worktree being cleaned up (if any)
+        is_current_branch: Whether landing from the branch's own worktree
+        target_child_branch: Target child branch for --up navigation
+        objective_number: Linked objective issue number (if any)
+        use_graphite: Whether to use Graphite for merge
+        pull_flag: Whether to pull after landing
+        no_delete: Whether to preserve branch and slot
+        target_path: Where to cd after land completes
+
+    Returns:
+        Shell script content as string
+    """
+    # Build erk land --execute command with all state parameters
+    cmd_parts = ["erk land --execute"]
+    cmd_parts.append(f"--exec-pr-number={pr_number}")
+    cmd_parts.append(f"--exec-branch={branch}")
+    if worktree_path is not None:
+        cmd_parts.append(f"--exec-worktree-path={worktree_path}")
+    if is_current_branch:
+        cmd_parts.append("--exec-is-current-branch")
+    if target_child_branch is not None:
+        cmd_parts.append(f"--exec-target-child={target_child_branch}")
+    if objective_number is not None:
+        cmd_parts.append(f"--exec-objective-number={objective_number}")
+    if use_graphite:
+        cmd_parts.append("--exec-use-graphite")
+    if not pull_flag:
+        cmd_parts.append("--no-pull")
+    if no_delete:
+        cmd_parts.append("--no-delete")
+
+    erk_cmd = " ".join(cmd_parts)
+    target_path_str = str(target_path)
+
+    return f"""# erk land deferred execution
+{erk_cmd}
+cd {target_path_str}
+"""
+
+
+def _execute_land(
+    ctx: ErkContext,
+    *,
+    pr_number: int | None,
+    branch: str | None,
+    worktree_path: Path | None,
+    is_current_branch: bool,
+    target_child_branch: str | None,
+    objective_number: int | None,
+    use_graphite: bool,
+    pull_flag: bool,
+    no_delete: bool,
+    script: bool,
+) -> None:
+    """Execute deferred land operations from activation script.
+
+    This function is called when `erk land --execute` is invoked by the
+    activation script. All validation has already been done - this just
+    performs the destructive operations.
+
+    Args:
+        ctx: ErkContext
+        pr_number: PR number to merge
+        branch: Branch name being landed
+        worktree_path: Path to worktree being cleaned up (if any)
+        is_current_branch: Whether landing from the branch's own worktree
+        target_child_branch: Target child branch for --up navigation
+        objective_number: Linked objective issue number (if any)
+        use_graphite: Whether to use Graphite for merge
+        pull_flag: Whether to pull after landing
+        no_delete: Whether to preserve branch and slot
+        script: Whether running in script mode
+    """
+    # Validate required parameters
+    Ensure.invariant(pr_number is not None, "Missing --exec-pr-number in execute mode")
+    Ensure.invariant(branch is not None, "Missing --exec-branch in execute mode")
+    # Type narrowing for the type checker (invariants don't narrow types)
+    assert pr_number is not None
+    assert branch is not None
+
+    repo = discover_repo_context(ctx, ctx.cwd)
+    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    # Step 1: Merge the PR
+    # Use Graphite path only if:
+    # 1. use_graphite is True, AND
+    # 2. We have a worktree_path (i.e., there's a local checkout for this branch)
+    #
+    # For remote PRs (no local worktree), we use the simple GitHub merge path
+    # because execute_land_pr requires being in the branch's worktree to get
+    # the current branch and its parent.
+    if use_graphite and worktree_path is not None:
+        # Full Graphite-aware path - run from the branch's worktree
+        result = render_events(execute_land_pr(ctx, worktree_path))
+
+        if isinstance(result, LandPrError):
+            user_output(click.style("Error: ", fg="red") + result.message)
+            raise SystemExit(1)
+
+        merged_pr_number = result.pr_number
+    else:
+        # Simple GitHub-only merge (no worktree or Graphite disabled)
+        pr_details = Ensure.unwrap_pr(
+            ctx.github.get_pr(main_repo_root, pr_number),
+            f"Pull request #{pr_number} not found.",
+        )
+
+        user_output(f"Merging PR #{pr_number}...")
+        subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
+        body = pr_details.body or None
+        merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
+
+        error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
+        Ensure.invariant(
+            merge_result is True,
+            f"Failed to merge PR #{pr_number}\n\n{error_detail}",
+        )
+        merged_pr_number = pr_number
+
+    user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{branch}]")
+
+    # Step 2: Handle objective update (non-interactive since user already approved)
+    if objective_number is not None:
+        prompt_objective_update(
+            ctx,
+            repo_root=main_repo_root,
+            objective_number=objective_number,
+            pr_number=merged_pr_number,
+            branch=branch,
+            force=True,  # Skip confirmation in execute mode
+        )
+
+    # Step 3: Cleanup (delete branch, unassign slot)
+    # Note: Navigation is handled by the activation script's cd command
+    _cleanup_and_navigate(
+        ctx,
+        repo=repo,
+        branch=branch,
+        worktree_path=worktree_path,
+        script=script,
+        pull_flag=pull_flag,
+        force=True,  # Skip confirmation in execute mode
+        is_current_branch=is_current_branch,
+        target_child_branch=target_child_branch,
+        objective_number=objective_number,
+        no_delete=no_delete,
+    )
+
+
 @click.command("land", cls=CommandWithHiddenOptions)
 @script_option
 @click.argument("target", required=False)
@@ -627,6 +797,15 @@ def _navigate_after_land(
     is_flag=True,
     help="Preserve the local branch and its slot assignment after landing.",
 )
+# Hidden options for deferred execution (used by activation script)
+@click.option("--execute", is_flag=True, hidden=True)
+@click.option("--exec-pr-number", type=int, hidden=True)
+@click.option("--exec-branch", hidden=True)
+@click.option("--exec-worktree-path", type=click.Path(), hidden=True)
+@click.option("--exec-is-current-branch", is_flag=True, hidden=True)
+@click.option("--exec-target-child", hidden=True)
+@click.option("--exec-objective-number", type=int, hidden=True)
+@click.option("--exec-use-graphite", is_flag=True, hidden=True)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -638,6 +817,14 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
+    execute: bool,
+    exec_pr_number: int | None,
+    exec_branch: str | None,
+    exec_worktree_path: str | None,
+    exec_is_current_branch: bool,
+    exec_target_child: str | None,
+    exec_objective_number: int | None,
+    exec_use_graphite: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -657,6 +844,23 @@ def land(
 
     Note: The --up flag requires Graphite for child branch tracking.
     """
+    # Execute mode: skip validation and perform deferred operations from activation script
+    if execute:
+        _execute_land(
+            ctx,
+            pr_number=exec_pr_number,
+            branch=exec_branch,
+            worktree_path=Path(exec_worktree_path) if exec_worktree_path else None,
+            is_current_branch=exec_is_current_branch,
+            target_child_branch=exec_target_child,
+            objective_number=exec_objective_number,
+            use_graphite=exec_use_graphite,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            script=script,
+        )
+        return
+
     # Replace context with appropriate wrappers based on flags.
     #
     # Note: Other commands (consolidate, branch checkout) handle --script by skipping
@@ -772,6 +976,18 @@ def _land_current_branch(
         )
         target_child_branch = children[0]
 
+    # Validate branch is landable via Graphite stack (if Graphite managed)
+    if ctx.branch_manager.is_graphite_managed():
+        parent = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
+        trunk = ctx.git.detect_trunk_branch(repo.root)
+        Ensure.invariant(
+            parent == trunk,
+            f"Branch must be exactly one level up from {trunk}\n"
+            f"Current branch: {current_branch}\n"
+            f"Parent branch: {parent or 'unknown'} (expected: {trunk})\n\n"
+            f"Please navigate to a branch that branches directly from {trunk}.",
+        )
+
     # Look up PR for current branch to check unresolved comments BEFORE merge
     pr_details = ctx.github.get_pr_for_branch(repo.root, current_branch)
     if not isinstance(pr_details, PRNotFound):
@@ -789,63 +1005,85 @@ def _land_current_branch(
             script=script,
         )
 
-    # Step 1: Execute land (merges the PR)
-    if not ctx.branch_manager.is_graphite_managed():
-        # Simple GitHub-only merge path (no stack validation)
-        unwrapped_pr = Ensure.unwrap_pr(
-            pr_details, f"No pull request found for branch '{current_branch}'."
-        )
-        merged_pr_number = _execute_simple_land(
-            ctx, repo_root=repo.root, branch=current_branch, pr_details=unwrapped_pr
-        )
-        pr_body = unwrapped_pr.body or ""
-    else:
-        # Full Graphite-aware path with stack validation
-        # render_events() uses click.echo() + sys.stderr.flush() for immediate unbuffered output
-        result = render_events(execute_land_pr(ctx, ctx.cwd))
-
-        if isinstance(result, LandPrError):
-            user_output(click.style("Error: ", fg="red") + result.message)
-            raise SystemExit(1)
-
-        # Success - PR was merged
-        success_result: LandPrSuccess = result
-        merged_pr_number = success_result.pr_number
-        # For Graphite path, we need to fetch PR details to get body
-        pr_body = pr_details.body if not isinstance(pr_details, PRNotFound) else ""
-
-    user_output(click.style("✓", fg="green") + f" Merged PR #{merged_pr_number} [{current_branch}]")
-
-    # Check and display plan issue closure
+    # Validate PR exists and is landable
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-    check_and_display_plan_issue_closure(ctx, main_repo_root, current_branch, pr_body=pr_body)
+    unwrapped_pr = Ensure.unwrap_pr(
+        pr_details, f"No pull request found for branch '{current_branch}'."
+    )
+    pr_number = unwrapped_pr.number
 
-    # Check for linked objective and offer to update
+    # Validate PR is open (not already merged or closed)
+    Ensure.invariant(
+        unwrapped_pr.state == "OPEN",
+        f"Pull request is not open (state: {unwrapped_pr.state}).\n"
+        f"PR #{pr_number} has already been {unwrapped_pr.state.lower()}.",
+    )
+
+    # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
-    if objective_number is not None:
-        prompt_objective_update(
-            ctx,
-            repo_root=main_repo_root,
-            objective_number=objective_number,
-            pr_number=merged_pr_number,
-            branch=current_branch,
-            force=force,
-        )
 
-    # Step 2: Cleanup and navigate
-    _cleanup_and_navigate(
-        ctx,
-        repo=repo,
+    # Prompt for slot unassign confirmation (prompts happen during validation phase)
+    # This is handled in _cleanup_and_navigate, but we need to prompt here before
+    # generating the script. Check if worktree is a slot worktree and prompt.
+    state = load_pool_state(repo.pool_json_path)
+    slot_assignment: SlotAssignment | None = None
+    if state is not None:
+        slot_assignment = find_branch_assignment(state, current_branch)
+
+    if slot_assignment is not None and not force and not ctx.dry_run and not no_delete:
+        if not ctx.console.confirm(
+            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{current_branch}'?",
+            default=True,
+        ):
+            user_output("Slot preserved. Branch still exists locally.")
+            raise SystemExit(0)
+
+    # Determine target path for navigation after landing
+    if target_child_branch is not None:
+        # --up mode: navigate to child branch worktree
+        target_path = ctx.git.find_worktree_for_branch(main_repo_root, target_child_branch)
+        if target_path is None:
+            # Will auto-create worktree in execute phase
+            if repo.worktrees_dir:
+                target_path = repo.worktrees_dir / target_child_branch
+            else:
+                target_path = main_repo_root
+    else:
+        # Navigate to trunk/root
+        target_path = main_repo_root
+
+    # Handle dry-run mode: show what would happen without generating script
+    if ctx.dry_run:
+        user_output(f"Would merge PR #{pr_number} for branch '{current_branch}'")
+        if slot_assignment is not None:
+            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+        user_output(f"Would delete branch '{current_branch}'")
+        user_output(f"Would navigate to {target_path}")
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
+
+    # Generate activation script with all pre-validated state
+    script_content = render_land_execution_script(
+        pr_number=pr_number,
         branch=current_branch,
         worktree_path=current_worktree_path,
-        script=script,
-        pull_flag=pull_flag,
-        force=force,
         is_current_branch=True,
         target_child_branch=target_child_branch,
         objective_number=objective_number,
+        use_graphite=ctx.branch_manager.is_graphite_managed(),
+        pull_flag=pull_flag,
         no_delete=no_delete,
+        target_path=target_path,
     )
+
+    # Write and output script path
+    result = ctx.script_writer.write_activation_script(
+        script_content,
+        command_name="land",
+        comment=f"land {current_branch}",
+    )
+    machine_output(str(result.path), nl=False)
+    raise SystemExit(0)
 
 
 def _land_specific_pr(
@@ -920,49 +1158,59 @@ def _land_specific_pr(
             script=script,
         )
 
-    # Merge the PR via GitHub API
-    user_output(f"Merging PR #{pr_number}...")
-    subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
-    body = pr_details.body or None
-    merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
-
-    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-    Ensure.invariant(
-        merge_result is True,
-        f"Failed to merge PR #{pr_number}\n\n{error_detail}",
-    )
-
-    user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch}]")
-
-    # Check and display plan issue closure
-    check_and_display_plan_issue_closure(ctx, main_repo_root, branch, pr_body=pr_details.body or "")
-
-    # Check for linked objective and offer to update
+    # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
-    if objective_number is not None:
-        prompt_objective_update(
-            ctx,
-            repo_root=main_repo_root,
-            objective_number=objective_number,
-            pr_number=pr_number,
-            branch=branch,
-            force=force,
-        )
 
-    # Cleanup and navigate
-    _cleanup_and_navigate(
-        ctx,
-        repo=repo,
+    # Prompt for slot unassign confirmation if applicable
+    state = load_pool_state(repo.pool_json_path)
+    slot_assignment: SlotAssignment | None = None
+    if state is not None:
+        slot_assignment = find_branch_assignment(state, branch)
+
+    if slot_assignment is not None and not force and not ctx.dry_run and not no_delete:
+        if not ctx.console.confirm(
+            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{branch}'?",
+            default=True,
+        ):
+            user_output("Slot preserved. Branch still exists locally.")
+            raise SystemExit(0)
+
+    # Determine target path for navigation (no --up for specific PR, always trunk)
+    target_path = main_repo_root
+
+    # Handle dry-run mode
+    if ctx.dry_run:
+        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+        if slot_assignment is not None:
+            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+        user_output(f"Would delete branch '{branch}'")
+        user_output(f"Would navigate to {target_path}")
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
+
+    # Generate activation script with pre-validated state
+    # Note: specific PR landing doesn't support Graphite path (no stack validation)
+    script_content = render_land_execution_script(
+        pr_number=pr_number,
         branch=branch,
         worktree_path=worktree_path,
-        script=script,
-        pull_flag=pull_flag,
-        force=force,
         is_current_branch=is_current_branch,
         target_child_branch=None,
         objective_number=objective_number,
+        use_graphite=False,  # Specific PR landing uses GitHub API directly
+        pull_flag=pull_flag,
         no_delete=no_delete,
+        target_path=target_path,
     )
+
+    # Write and output script path
+    result = ctx.script_writer.write_activation_script(
+        script_content,
+        command_name="land",
+        comment=f"land PR #{pr_number}",
+    )
+    machine_output(str(result.path), nl=False)
+    raise SystemExit(0)
 
 
 def _land_by_branch(
@@ -1029,48 +1277,56 @@ def _land_by_branch(
             script=script,
         )
 
-    # Merge the PR via GitHub API
-    user_output(f"Merging PR #{pr_number} for branch '{branch_name}'...")
-    subject = f"{pr_details.title} (#{pr_number})" if pr_details.title else None
-    body = pr_details.body or None
-    merge_result = ctx.github.merge_pr(main_repo_root, pr_number, subject=subject, body=body)
-
-    error_detail = merge_result if isinstance(merge_result, str) else "Unknown error"
-    Ensure.invariant(
-        merge_result is True,
-        f"Failed to merge PR #{pr_number}\n\n{error_detail}",
-    )
-
-    user_output(click.style("✓", fg="green") + f" Merged PR #{pr_number} [{branch_name}]")
-
-    # Check and display plan issue closure
-    check_and_display_plan_issue_closure(
-        ctx, main_repo_root, branch_name, pr_body=pr_details.body or ""
-    )
-
-    # Check for linked objective and offer to update
+    # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
-    if objective_number is not None:
-        prompt_objective_update(
-            ctx,
-            repo_root=main_repo_root,
-            objective_number=objective_number,
-            pr_number=pr_number,
-            branch=branch_name,
-            force=force,
-        )
 
-    # Cleanup and navigate
-    _cleanup_and_navigate(
-        ctx,
-        repo=repo,
+    # Prompt for slot unassign confirmation if applicable
+    state = load_pool_state(repo.pool_json_path)
+    slot_assignment: SlotAssignment | None = None
+    if state is not None:
+        slot_assignment = find_branch_assignment(state, branch_name)
+
+    if slot_assignment is not None and not force and not ctx.dry_run and not no_delete:
+        if not ctx.console.confirm(
+            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{branch_name}'?",
+            default=True,
+        ):
+            user_output("Slot preserved. Branch still exists locally.")
+            raise SystemExit(0)
+
+    # Determine target path for navigation (no --up for branch landing, always trunk)
+    target_path = main_repo_root
+
+    # Handle dry-run mode
+    if ctx.dry_run:
+        user_output(f"Would merge PR #{pr_number} for branch '{branch_name}'")
+        if slot_assignment is not None:
+            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+        user_output(f"Would delete branch '{branch_name}'")
+        user_output(f"Would navigate to {target_path}")
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
+
+    # Generate activation script with pre-validated state
+    # Note: branch landing doesn't support Graphite path (no stack validation)
+    script_content = render_land_execution_script(
+        pr_number=pr_number,
         branch=branch_name,
         worktree_path=worktree_path,
-        script=script,
-        pull_flag=pull_flag,
-        force=force,
         is_current_branch=is_current_branch,
         target_child_branch=None,
         objective_number=objective_number,
+        use_graphite=False,  # Branch landing uses GitHub API directly
+        pull_flag=pull_flag,
         no_delete=no_delete,
+        target_path=target_path,
     )
+
+    # Write and output script path
+    result = ctx.script_writer.write_activation_script(
+        script_content,
+        command_name="land",
+        comment=f"land {branch_name}",
+    )
+    machine_output(str(result.path), nl=False)
+    raise SystemExit(0)

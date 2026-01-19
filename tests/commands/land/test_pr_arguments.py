@@ -20,11 +20,11 @@ from tests.test_utils.env_helpers import erk_inmem_env
 
 
 def test_land_by_number() -> None:
-    """Test erk land 123 lands the specified PR by number."""
+    """Test erk land 123 outputs deferred execution script for PR by number."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -103,22 +103,24 @@ def test_land_by_number() -> None:
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 123 not in github_ops.merged_prs
 
-        # Verify worktree was NOT removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
-
-        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
+        # Verify script was generated with correct parameters
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-pr-number=123" in script_content
+        assert "--exec-branch=feature-1" in script_content
 
 
 def test_land_by_url() -> None:
-    """Test erk land <url> lands the specified PR by URL."""
+    """Test erk land <url> outputs deferred execution script for PR by URL."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -200,19 +202,23 @@ def test_land_by_url() -> None:
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 456 in github_ops.merged_prs
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 456 not in github_ops.merged_prs
 
-        # Verify worktree was NOT removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
+        # Verify script was generated with correct parameters
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-pr-number=456" in script_content
 
 
 def test_land_by_branch_name() -> None:
-    """Test erk land <branch> lands the branch's PR."""
+    """Test erk land <branch> outputs deferred execution script for branch's PR."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
-        feature_1_path = repo_dir / "worktrees" / "feature-1"
+        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
@@ -293,21 +299,24 @@ def test_land_by_branch_name() -> None:
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 123 in github_ops.merged_prs
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 123 not in github_ops.merged_prs
 
-        # Verify worktree was NOT removed (worktrees are always preserved)
-        assert feature_1_path not in git_ops.removed_worktrees
-
-        # Verify branch was deleted (via Graphite gateway since use_graphite=True)
-        assert any(branch == "feature-1" for _path, branch in graphite_ops.delete_branch_calls)
+        # Verify script was generated with correct parameters
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-pr-number=123" in script_content
+        assert "--exec-branch=feature-1" in script_content
 
 
 def test_land_fork_pr() -> None:
-    """Test landing a fork PR uses pr/{number} branch naming."""
+    """Test landing a fork PR outputs deferred script with pr/{number} branch naming."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
+        from pathlib import Path
 
         git_ops = FakeGit(
             worktrees=env.build_worktrees("main", repo_dir=repo_dir),
@@ -372,13 +381,14 @@ def test_land_fork_pr() -> None:
 
         assert result.exit_code == 0
 
-        # Verify PR was merged
-        assert 789 in github_ops.merged_prs
+        # Verify PR was NOT merged yet (deferred to script execution)
+        assert 789 not in github_ops.merged_prs
 
-        # For fork PRs, we expect "pr/789" branch naming convention
-        assert "Merged PR #789 [pr/789]" in result.output
-
-        # The fork PR's branch doesn't exist locally (never checked out),
-        # so we skip deletion silently (no confusing message)
-        assert "Branch 'pr/789' not found locally" not in result.output
-        assert not any(branch == "pr/789" for _path, branch in graphite_ops.delete_branch_calls)
+        # Verify script was generated with correct parameters
+        # For fork PRs, the branch name is "pr/{number}"
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert "erk land --execute" in script_content
+        assert "--exec-pr-number=789" in script_content
+        assert "--exec-branch=pr/789" in script_content
