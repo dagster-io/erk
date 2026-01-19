@@ -1,27 +1,9 @@
 import click
 
-from erk.cli.activation import (
-    ENABLE_ACTIVATION_SCRIPTS,
-    ensure_worktree_activate_script,
-    print_activation_instructions,
-    render_activation_script,
-)
-from erk.cli.commands.navigation_helpers import (
-    activate_worktree,
-    check_clean_working_tree,
-    check_pending_learn_marker,
-    get_slot_name_for_worktree,
-    render_deferred_deletion_commands,
-    resolve_up_navigation,
-    verify_pr_closed_or_merged,
-)
-from erk.cli.core import discover_repo_context
-from erk.cli.ensure import Ensure
+from erk.cli.commands.navigation_helpers import execute_stack_navigation
 from erk.cli.graphite_command import GraphiteCommandWithHiddenOptions
 from erk.cli.help_formatter import script_option
 from erk.core.context import ErkContext
-from erk.core.worktree_utils import compute_relative_path_in_worktree
-from erk_shared.output.output import machine_output, user_output
 
 
 @click.command("up", cls=GraphiteCommandWithHiddenOptions)
@@ -55,137 +37,10 @@ def up_cmd(ctx: ErkContext, script: bool, delete_current: bool, force: bool) -> 
 
     Requires Graphite to be enabled: 'erk config set use_graphite true'
     """
-    # Validate preconditions upfront (LBYL)
-    Ensure.gh_authenticated(ctx)
-
-    repo = discover_repo_context(ctx, ctx.cwd)
-
-    # Get current branch
-    current_branch = Ensure.not_none(
-        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+    execute_stack_navigation(
+        ctx=ctx,
+        direction="up",
+        script=script,
+        delete_current=delete_current,
+        force=force,
     )
-
-    # Get all worktrees for checking if target has a worktree
-    worktrees = ctx.git.list_worktrees(repo.root)
-
-    # Get child branches for ambiguity checks
-    children = ctx.branch_manager.get_child_branches(repo.root, current_branch)
-
-    # Check for navigation ambiguity when --delete-current is set
-    Ensure.invariant(
-        not (delete_current and len(children) == 0),
-        "Cannot navigate up: already at top of stack. Use 'gt branch delete' to delete this branch",
-    )
-
-    Ensure.invariant(
-        not (delete_current and len(children) > 1),
-        "Cannot navigate up: multiple child branches exist. "
-        "Use 'gt up' to interactively select a branch",
-    )
-
-    # Safety checks before navigation (if --delete-current flag is set)
-    current_worktree_path = None
-    if delete_current:
-        # Store current worktree path for later deletion
-        current_worktree_path = Ensure.not_none(
-            ctx.git.find_worktree_for_branch(repo.root, current_branch),
-            f"Could not find worktree for branch '{current_branch}'",
-        )
-
-        # Validate clean working tree (no uncommitted changes)
-        check_clean_working_tree(ctx)
-
-        # Validate PR is closed or merged on GitHub
-        verify_pr_closed_or_merged(ctx, repo.root, current_branch, force)
-
-        # Check for pending learn marker
-        check_pending_learn_marker(current_worktree_path, force)
-
-    # Resolve navigation to get target branch (may auto-create worktree)
-    target_name, was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)
-
-    # Show creation message if worktree was just created
-    if was_created and not script:
-        user_output(
-            click.style("✓", fg="green")
-            + f" Created worktree for {click.style(target_name, fg='yellow')} and moved to it"
-        )
-
-    # Prepare deferred deletion commands if --delete-current is set
-    deletion_commands: list[str] | None = None
-    if delete_current and current_worktree_path is not None:
-        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
-        slot_name = get_slot_name_for_worktree(repo.pool_json_path, current_worktree_path)
-        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
-        deletion_commands = render_deferred_deletion_commands(
-            worktree_path=current_worktree_path,
-            branch=current_branch,
-            slot_name=slot_name,
-            is_graphite_managed=use_graphite,
-            main_repo_root=main_repo_root,
-        )
-
-    # Resolve target branch to actual worktree path
-    target_wt_path = Ensure.not_none(
-        ctx.git.find_worktree_for_branch(repo.root, target_name),
-        f"Branch '{target_name}' has no worktree. This should not happen.",
-    )
-
-    if delete_current and current_worktree_path is not None:
-        # Handle activation inline with deferred deletion
-        Ensure.path_exists(ctx, target_wt_path, f"Worktree not found: {target_wt_path}")
-
-        if script:
-            # Generate activation script for shell integration with deferred deletion
-            activation_script = render_activation_script(
-                worktree_path=target_wt_path,
-                target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
-                post_cd_commands=deletion_commands,
-                final_message='echo "Activated worktree: $(pwd)"',
-                comment="work activate-script",
-            )
-            result = ctx.script_writer.write_activation_script(
-                activation_script,
-                command_name="up",
-                comment=f"activate {target_wt_path.name}",
-            )
-            machine_output(str(result.path), nl=False)
-        else:
-            # Show user message for manual navigation
-            user_output(
-                "Shell integration not detected. "
-                "Run 'erk init --shell' to set up automatic activation."
-            )
-            user_output("\nOr use: source <(erk up --script)")
-
-            # Print activation instructions for opt-in workflow
-            # SPECULATIVE: activation-scripts (objective #4954)
-            if ENABLE_ACTIVATION_SCRIPTS:
-                script_path = ensure_worktree_activate_script(
-                    worktree_path=target_wt_path,
-                    post_create_commands=None,
-                )
-                print_activation_instructions(
-                    script_path,
-                    source_branch=current_branch,
-                    force=force,
-                    mode="activate_only",
-                    copy=True,
-                )
-
-        # Deletion is deferred to script sourcing - no immediate cleanup
-        raise SystemExit(0)
-    else:
-        # No cleanup needed, use standard activation
-        activate_worktree(
-            ctx=ctx,
-            repo=repo,
-            target_path=target_wt_path,
-            script=script,
-            command_name="up",
-            preserve_relative_path=True,
-            post_cd_commands=None,
-            source_branch=current_branch,
-            force=force,
-        )
-        # activate_worktree raises SystemExit(0), code below is unreachable

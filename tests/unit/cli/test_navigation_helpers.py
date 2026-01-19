@@ -13,6 +13,7 @@ from erk.cli.commands.navigation_helpers import (
     delete_branch_and_worktree,
     get_slot_name_for_worktree,
     render_deferred_deletion_commands,
+    validate_for_deletion,
 )
 from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
@@ -900,3 +901,105 @@ def test_get_slot_name_for_worktree_returns_none_without_pool_file(tmp_path: Pat
     result = get_slot_name_for_worktree(pool_json_path, worktree_path)
 
     assert result is None
+
+
+# Tests for validate_for_deletion helper
+
+
+def test_validate_for_deletion_passes_when_all_checks_pass(tmp_path: Path) -> None:
+    """Test validate_for_deletion passes when working tree is clean and PR is merged."""
+    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.github.types import PullRequestInfo
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        # No uncommitted changes
+        file_statuses={repo_root: ([], [], [])},
+    )
+
+    # PR is merged
+    github = FakeGitHub(
+        prs={
+            "feature": PullRequestInfo(
+                number=123,
+                state="MERGED",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Feature",
+                checks_passing=None,
+                owner="owner",
+                repo="repo",
+                has_conflicts=None,
+            ),
+        }
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+    )
+
+    ctx = context_for_test(git=git, github=github, cwd=repo_root, global_config=global_config)
+
+    # Should not raise
+    validate_for_deletion(
+        ctx=ctx,
+        repo_root=repo_root,
+        current_branch="feature",
+        worktree_path=worktree_path,
+        force=False,
+    )
+
+
+def test_validate_for_deletion_blocks_with_uncommitted_changes(tmp_path: Path) -> None:
+    """Test validate_for_deletion blocks when uncommitted changes exist."""
+    from erk_shared.github.fake import FakeGitHub
+
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    git_dir = repo_root / ".git"
+    git_dir.mkdir()
+    erk_root = tmp_path / "erks"
+    erk_root.mkdir()
+    worktree_path = tmp_path / "worktrees" / "feature"
+    worktree_path.mkdir(parents=True)
+
+    git = FakeGit(
+        local_branches={repo_root: ["main", "feature"]},
+        remote_branches={repo_root: []},
+        git_common_dirs={repo_root: git_dir},
+        # HAS uncommitted changes
+        file_statuses={repo_root: ([], ["modified.py"], [])},
+    )
+
+    global_config = GlobalConfig.test(
+        erk_root,
+        use_graphite=False,
+        shell_setup_complete=False,
+    )
+
+    ctx = context_for_test(git=git, github=FakeGitHub(), cwd=repo_root, global_config=global_config)
+
+    # Should raise SystemExit
+    with pytest.raises(SystemExit) as exc_info:
+        validate_for_deletion(
+            ctx=ctx,
+            repo_root=repo_root,
+            current_branch="feature",
+            worktree_path=worktree_path,
+            force=False,
+        )
+
+    assert exc_info.value.code == 1

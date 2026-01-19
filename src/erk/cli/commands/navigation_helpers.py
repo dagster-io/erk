@@ -1,7 +1,9 @@
 import os
 import shlex
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal, NoReturn
 
 import click
 
@@ -116,6 +118,34 @@ def verify_pr_closed_or_merged(ctx: ErkContext, repo_root: Path, branch: str, fo
             + "Use -f/--force to delete anyway."
         )
         raise SystemExit(1)
+
+
+def validate_for_deletion(
+    *,
+    ctx: ErkContext,
+    repo_root: Path,
+    current_branch: str,
+    worktree_path: Path,
+    force: bool,
+) -> None:
+    """Run all safety checks before deletion.
+
+    This consolidates the validation logic shared by up.py and down.py
+    when using --delete-current flag.
+
+    Args:
+        ctx: Erk context
+        repo_root: Path to the repository root
+        current_branch: Name of the branch being deleted
+        worktree_path: Path to the worktree being deleted
+        force: If True, prompts instead of blocking on open PRs
+
+    Raises:
+        SystemExit: If any validation check fails
+    """
+    check_clean_working_tree(ctx)
+    verify_pr_closed_or_merged(ctx, repo_root, current_branch, force)
+    check_pending_learn_marker(worktree_path, force)
 
 
 def delete_branch_and_worktree(
@@ -280,77 +310,7 @@ def unallocate_worktree_and_branch(
         user_output(click.style("✓", fg="green") + " Removed worktree and deleted branch")
 
 
-def activate_root_repo(
-    ctx: ErkContext,
-    *,
-    repo: RepoContext,
-    script: bool,
-    command_name: str,
-    post_cd_commands: Sequence[str] | None,
-    source_branch: str | None,
-    force: bool,
-) -> None:
-    """Activate the root repository and exit.
-
-    Args:
-        ctx: Erk context (for script_writer)
-        repo: Repository context
-        script: Whether to output script path or user message
-        command_name: Name of the command (for script generation)
-        post_cd_commands: Optional shell commands to run after cd (e.g., git pull)
-        source_branch: Branch being navigated away from. If provided and force is True,
-            shows delete hint in activation instructions.
-        force: If True and source_branch is provided, shows the delete hint.
-
-    Raises:
-        SystemExit: Always (successful exit after activation)
-    """
-    # Use main_repo_root (not repo.root) to ensure we reference a directory that
-    # still exists after worktree removal. repo.root equals the worktree path when
-    # running from inside a worktree.
-    root_path = repo.main_repo_root if repo.main_repo_root else repo.root
-
-    # Compute relative path to preserve user's position within worktree
-    worktrees = ctx.git.list_worktrees(repo.root)
-    relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
-
-    if script:
-        script_content = render_activation_script(
-            worktree_path=root_path,
-            target_subpath=relative_path,
-            post_cd_commands=post_cd_commands,
-            final_message='echo "Went to root repo: $(pwd)"',
-            comment="work activate-script (root repo)",
-        )
-        result = ctx.script_writer.write_activation_script(
-            script_content,
-            command_name=command_name,
-            comment="activate root",
-        )
-        machine_output(str(result.path), nl=False)
-    else:
-        if ENABLE_ACTIVATION_SCRIPTS:
-            script_path = ensure_worktree_activate_script(
-                worktree_path=root_path,
-                post_create_commands=None,
-            )
-            print_activation_instructions(
-                script_path,
-                source_branch=source_branch,
-                force=force,
-                mode="activate_only",
-                copy=True,
-            )
-        else:
-            user_output(
-                "\nShell integration not detected. "
-                "Run 'erk init --shell' to set up automatic activation."
-            )
-            user_output(f"Or use: source <(erk {command_name} --script)")
-    raise SystemExit(0)
-
-
-def activate_worktree(
+def activate_target(
     *,
     ctx: ErkContext,
     repo: RepoContext,
@@ -361,49 +321,62 @@ def activate_worktree(
     post_cd_commands: Sequence[str] | None,
     source_branch: str | None,
     force: bool,
-) -> None:
-    """Activate a worktree and exit.
+    is_root: bool,
+) -> NoReturn:
+    """Activate a worktree or root repository and exit.
+
+    This is the unified activation function for both worktrees and root repos.
+    The is_root parameter determines the messaging.
 
     Args:
         ctx: Erk context (for script_writer)
         repo: Repository context
-        target_path: Path to the target worktree directory
+        target_path: Path to the target worktree/root directory
         script: Whether to output script path or user message
         command_name: Name of the command (for script generation and debug logging)
-        preserve_relative_path: If True (default), compute and preserve the user's
+        preserve_relative_path: If True, compute and preserve the user's
             relative directory position from the current worktree
         post_cd_commands: Optional shell commands to run after activation (e.g., entry scripts)
         source_branch: Branch being navigated away from. If provided and force is True,
             shows delete hint in activation instructions.
         force: If True and source_branch is provided, shows the delete hint.
+        is_root: If True, uses root repo messaging; otherwise uses worktree messaging
 
     Raises:
-        SystemExit: If worktree not found, or after successful activation
+        SystemExit: Always raises (either success or error)
     """
-    wt_path = target_path
+    Ensure.path_exists(ctx, target_path, f"Target not found: {target_path}")
 
-    Ensure.path_exists(ctx, wt_path, f"Worktree not found: {wt_path}")
+    target_name = target_path.name
 
-    worktree_name = wt_path.name
-
-    # Auto-compute relative path if requested
+    # Compute relative path to preserve user's position within worktree
     relative_path: Path | None = None
     if preserve_relative_path:
         worktrees = ctx.git.list_worktrees(repo.root)
         relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd)
 
+    # Determine messaging based on whether this is root or a worktree
+    if is_root:
+        final_message = 'echo "Went to root repo: $(pwd)"'
+        script_comment = "work activate-script (root repo)"
+        activate_comment = "activate root"
+    else:
+        final_message = 'echo "Activated worktree: $(pwd)"'
+        script_comment = "work activate-script"
+        activate_comment = f"activate {target_name}"
+
     if script:
         activation_script = render_activation_script(
-            worktree_path=wt_path,
+            worktree_path=target_path,
             target_subpath=relative_path,
             post_cd_commands=post_cd_commands,
-            final_message='echo "Activated worktree: $(pwd)"',
-            comment="work activate-script",
+            final_message=final_message,
+            comment=script_comment,
         )
         result = ctx.script_writer.write_activation_script(
             activation_script,
             command_name=command_name,
-            comment=f"activate {worktree_name}",
+            comment=activate_comment,
         )
 
         debug_log(f"{command_name.capitalize()}: Generated script at {result.path}")
@@ -414,7 +387,7 @@ def activate_worktree(
     else:
         if ENABLE_ACTIVATION_SCRIPTS:
             script_path = ensure_worktree_activate_script(
-                worktree_path=wt_path,
+                worktree_path=target_path,
                 post_create_commands=None,
             )
             print_activation_instructions(
@@ -431,6 +404,98 @@ def activate_worktree(
             )
             user_output(f"\nOr use: source <(erk {command_name} --script)")
     raise SystemExit(0)
+
+
+def activate_worktree(
+    *,
+    ctx: ErkContext,
+    repo: RepoContext,
+    target_path: Path,
+    script: bool,
+    command_name: str,
+    preserve_relative_path: bool,
+    post_cd_commands: Sequence[str] | None,
+    source_branch: str | None,
+    force: bool,
+) -> NoReturn:
+    """Activate a worktree and exit.
+
+    This is a convenience wrapper around activate_target() for worktrees.
+
+    Args:
+        ctx: Erk context (for script_writer)
+        repo: Repository context
+        target_path: Path to the target worktree directory
+        script: Whether to output script path or user message
+        command_name: Name of the command (for script generation and debug logging)
+        preserve_relative_path: If True (default), compute and preserve the user's
+            relative directory position from the current worktree
+        post_cd_commands: Optional shell commands to run after activation (e.g., entry scripts)
+        source_branch: Branch being navigated away from. If provided and force is True,
+            shows delete hint in activation instructions.
+        force: If True and source_branch is provided, shows the delete hint.
+
+    Raises:
+        SystemExit: Always raises (either success or error)
+    """
+    activate_target(
+        ctx=ctx,
+        repo=repo,
+        target_path=target_path,
+        script=script,
+        command_name=command_name,
+        preserve_relative_path=preserve_relative_path,
+        post_cd_commands=post_cd_commands,
+        source_branch=source_branch,
+        force=force,
+        is_root=False,
+    )
+
+
+def activate_root_repo(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    script: bool,
+    command_name: str,
+    post_cd_commands: Sequence[str] | None,
+    source_branch: str | None,
+    force: bool,
+) -> NoReturn:
+    """Activate the root repository and exit.
+
+    This is a convenience wrapper around activate_target() for root repos.
+
+    Args:
+        ctx: Erk context (for script_writer)
+        repo: Repository context
+        script: Whether to output script path or user message
+        command_name: Name of the command (for script generation)
+        post_cd_commands: Optional shell commands to run after cd (e.g., git pull)
+        source_branch: Branch being navigated away from. If provided and force is True,
+            shows delete hint in activation instructions.
+        force: If True and source_branch is provided, shows the delete hint.
+
+    Raises:
+        SystemExit: Always raises (either success or error)
+    """
+    # Use main_repo_root (not repo.root) to ensure we reference a directory that
+    # still exists after worktree removal. repo.root equals the worktree path when
+    # running from inside a worktree.
+    root_path = repo.main_repo_root if repo.main_repo_root else repo.root
+
+    activate_target(
+        ctx=ctx,
+        repo=repo,
+        target_path=root_path,
+        script=script,
+        command_name=command_name,
+        preserve_relative_path=True,
+        post_cd_commands=post_cd_commands,
+        source_branch=source_branch,
+        force=force,
+        is_root=True,
+    )
 
 
 def resolve_up_navigation(
@@ -543,3 +608,246 @@ def resolve_down_navigation(
             _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)
             return parent_branch, was_created
         return parent_branch, False
+
+
+@dataclass(frozen=True)
+class NavigationResult:
+    """Result of navigation resolution."""
+
+    target_path: Path
+    target_name: str
+    was_created: bool
+    is_root: bool
+
+
+def execute_stack_navigation(
+    *,
+    ctx: ErkContext,
+    direction: Literal["up", "down"],
+    script: bool,
+    delete_current: bool,
+    force: bool,
+) -> NoReturn:
+    """Unified navigation for up/down commands with --delete-current support.
+
+    This is the main orchestrator for stack navigation that consolidates
+    the logic from up.py and down.py into a single function.
+
+    Phases:
+    1. Validate preconditions (gh authenticated)
+    2. Resolve navigation target (direction-specific)
+    3. If delete_current: validate + prepare deferred deletion commands
+    4. Activate target (script or interactive mode)
+
+    Args:
+        ctx: Erk context
+        direction: Navigation direction ("up" or "down")
+        script: Whether to output script path for shell integration
+        delete_current: If True, delete current branch/worktree after navigation
+        force: If True, prompts instead of blocking on validation failures
+
+    Raises:
+        SystemExit: Always exits with 0 on success or 1 on error
+    """
+    from erk.cli.core import discover_repo_context
+
+    # Validate preconditions upfront (LBYL)
+    Ensure.gh_authenticated(ctx)
+
+    repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Get current branch
+    current_branch = Ensure.not_none(
+        ctx.git.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+    )
+
+    # Get all worktrees
+    worktrees = ctx.git.list_worktrees(repo.root)
+
+    # Direction-specific validation for --delete-current
+    if direction == "up" and delete_current:
+        children = ctx.branch_manager.get_child_branches(repo.root, current_branch)
+        Ensure.invariant(
+            len(children) > 0,
+            "Cannot navigate up: already at top of stack. "
+            "Use 'gt branch delete' to delete this branch",
+        )
+        Ensure.invariant(
+            len(children) <= 1,
+            "Cannot navigate up: multiple child branches exist. "
+            "Use 'gt up' to interactively select a branch",
+        )
+
+    # Store current worktree path for deletion (before navigation)
+    current_worktree_path: Path | None = None
+    if delete_current:
+        current_worktree_path = Ensure.not_none(
+            ctx.git.find_worktree_for_branch(repo.root, current_branch),
+            f"Could not find worktree for branch '{current_branch}'",
+        )
+
+        # Run all safety checks
+        validate_for_deletion(
+            ctx=ctx,
+            repo_root=repo.root,
+            current_branch=current_branch,
+            worktree_path=current_worktree_path,
+            force=force,
+        )
+
+    # Resolve navigation target (direction-specific)
+    if direction == "up":
+        target_name, was_created = resolve_up_navigation(ctx, repo, current_branch, worktrees)
+        is_root = False
+    else:  # direction == "down"
+        target_name, was_created = resolve_down_navigation(
+            ctx,
+            repo=repo,
+            current_branch=current_branch,
+            worktrees=worktrees,
+            trunk_branch=ctx.trunk_branch,
+        )
+        is_root = target_name == "root"
+
+    # Show creation message if worktree was just created
+    if was_created and not script:
+        user_output(
+            click.style("✓", fg="green")
+            + f" Created worktree for {click.style(target_name, fg='yellow')} and moved to it"
+        )
+
+    # Prepare deferred deletion commands if --delete-current is set
+    deletion_commands: list[str] | None = None
+    if delete_current and current_worktree_path is not None:
+        main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+        slot_name = get_slot_name_for_worktree(repo.pool_json_path, current_worktree_path)
+        use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        deletion_commands = render_deferred_deletion_commands(
+            worktree_path=current_worktree_path,
+            branch=current_branch,
+            slot_name=slot_name,
+            is_graphite_managed=use_graphite,
+            main_repo_root=main_repo_root,
+        )
+
+    # Resolve target path
+    if is_root:
+        target_path = repo.main_repo_root if repo.main_repo_root else repo.root
+    else:
+        target_path = Ensure.not_none(
+            ctx.git.find_worktree_for_branch(repo.root, target_name),
+            f"Branch '{target_name}' has no worktree. This should not happen.",
+        )
+
+    # Handle activation
+    if delete_current and current_worktree_path is not None:
+        # Handle activation inline with deferred deletion
+        _activate_with_deferred_deletion(
+            ctx=ctx,
+            repo=repo,
+            target_path=target_path,
+            worktrees=worktrees,
+            deletion_commands=deletion_commands,
+            script=script,
+            command_name=direction,
+            current_branch=current_branch,
+            force=force,
+            is_root=is_root,
+        )
+    else:
+        # No cleanup needed, use standard activation
+        activate_target(
+            ctx=ctx,
+            repo=repo,
+            target_path=target_path,
+            script=script,
+            command_name=direction,
+            preserve_relative_path=True,
+            post_cd_commands=None,
+            source_branch=current_branch,
+            force=force,
+            is_root=is_root,
+        )
+
+
+def _activate_with_deferred_deletion(
+    *,
+    ctx: ErkContext,
+    repo: RepoContext,
+    target_path: Path,
+    worktrees: list[WorktreeInfo],
+    deletion_commands: list[str] | None,
+    script: bool,
+    command_name: str,
+    current_branch: str,
+    force: bool,
+    is_root: bool,
+) -> NoReturn:
+    """Handle activation with deferred deletion commands embedded in script.
+
+    This is an internal helper for execute_stack_navigation() that handles
+    the --delete-current path where deletion is deferred to script sourcing.
+
+    Args:
+        ctx: Erk context
+        repo: Repository context
+        target_path: Path to the target worktree/root
+        worktrees: List of worktrees for relative path computation
+        deletion_commands: Shell commands to run after activation for deferred deletion
+        script: Whether to output script path for shell integration
+        command_name: Name of the command (for script generation)
+        current_branch: Branch being navigated away from
+        force: If True and current_branch is provided, shows delete hint
+        is_root: If True, uses root repo messaging
+
+    Raises:
+        SystemExit: Always exits with 0 on success
+    """
+    Ensure.path_exists(ctx, target_path, f"Target not found: {target_path}")
+
+    # Determine messaging
+    if is_root:
+        final_message = 'echo "Went to root repo: $(pwd)"'
+        script_comment = "work activate-script (root repo)"
+        activate_comment = "activate root"
+    else:
+        final_message = 'echo "Activated worktree: $(pwd)"'
+        script_comment = "work activate-script"
+        activate_comment = f"activate {target_path.name}"
+
+    if script:
+        activation_script = render_activation_script(
+            worktree_path=target_path,
+            target_subpath=compute_relative_path_in_worktree(worktrees, ctx.cwd),
+            post_cd_commands=deletion_commands,
+            final_message=final_message,
+            comment=script_comment,
+        )
+        result = ctx.script_writer.write_activation_script(
+            activation_script,
+            command_name=command_name,
+            comment=activate_comment,
+        )
+        machine_output(str(result.path), nl=False)
+    else:
+        user_output(
+            "Shell integration not detected. Run 'erk init --shell' to set up automatic activation."
+        )
+        user_output(f"\nOr use: source <(erk {command_name} --script)")
+
+        # Print activation instructions for opt-in workflow
+        if ENABLE_ACTIVATION_SCRIPTS:
+            script_path = ensure_worktree_activate_script(
+                worktree_path=target_path,
+                post_create_commands=None,
+            )
+            print_activation_instructions(
+                script_path,
+                source_branch=current_branch,
+                force=force,
+                mode="activate_only",
+                copy=True,
+            )
+
+    # Deletion is deferred to script sourcing - no immediate cleanup
+    raise SystemExit(0)
