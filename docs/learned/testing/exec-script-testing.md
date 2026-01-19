@@ -110,6 +110,84 @@ From `erk_shared.context.helpers`:
 - **Integration tests**: `tests/integration/cli/commands/exec/scripts/`
 - **Unit tests**: `tests/unit/cli/commands/exec/scripts/`
 
+## Pattern: Parameterizing Path.home() for Testability
+
+When functions need home directory paths (for `~/.claude/`, `~/.ssh/`, etc.), use this pattern to maintain testability.
+
+### The Problem
+
+```python
+# BAD - Not testable, triggers tripwire
+def build_docker_run_args(worktree_path: Path) -> list[str]:
+    claude_dir = Path.home() / ".claude"  # Hardcoded!
+    ...
+```
+
+### The Solution
+
+Make `home_dir` a **required parameter** with no default/fallback:
+
+```python
+# GOOD - Testable function
+def build_docker_run_args(
+    *,
+    worktree_path: Path,
+    image_name: str,
+    interactive: bool,
+    home_dir: Path,  # Required, no fallback
+) -> list[str]:
+    claude_dir = home_dir / ".claude"
+    ssh_dir = home_dir / ".ssh"
+    ...
+```
+
+### CLI Boundary
+
+Call `Path.home()` only in CLI-layer functions that can't be unit tested anyway (e.g., functions using `os.execvp` or subprocess):
+
+```python
+# CLI-layer function - acceptable to use Path.home() here
+def execute_docker_interactive(...) -> None:
+    docker_args = build_docker_run_args(
+        worktree_path=worktree_path,
+        image_name=image_name,
+        interactive=True,
+        home_dir=Path.home(),  # At CLI boundary
+    )
+    os.execvp("docker", docker_args)  # Can't unit test anyway
+```
+
+### Testing
+
+Tests pass `tmp_path` for the home directory:
+
+```python
+def test_build_docker_run_args_mounts_claude_dir(tmp_path: Path) -> None:
+    # Create fake home structure
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+
+    args = build_docker_run_args(
+        worktree_path=Path("/path/to/worktree"),
+        image_name="erk-local:latest",
+        interactive=True,
+        home_dir=tmp_path,  # Test with tmp_path
+    )
+
+    # Verify mount includes fake home path
+    assert any(str(claude_dir) in arg for arg in args)
+```
+
+### Why No Default?
+
+Using `home_dir: Path | None = None` with fallback `Path.home()` still triggers the tripwire because the fallback executes in the function body. Making the parameter required:
+
+1. Forces CLI code to explicitly provide `Path.home()`
+2. Makes the testability boundary clear
+3. Prevents accidental use of real home in tests
+
+**Source example**: `src/erk/cli/commands/docker_executor.py:build_docker_run_args()`
+
 ## Related Documentation
 
 - [CLI Testing Patterns](cli-testing.md) - General CLI testing patterns
