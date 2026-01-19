@@ -21,9 +21,17 @@ from erk_shared.output.output import user_output
 
 # Mode for activation instructions output
 # - "activate_only": Show only `source <path>` (for navigation commands)
-# - "implement": Show `source <path> && erk implement --copy` (default for prepare)
-# - "implement_dangerous": Show `source <path> && erk implement --copy --dangerous`
-ActivationMode = Literal["activate_only", "implement", "implement_dangerous"]
+# - "implement": Show `source <path> && erk implement` (default for prepare)
+# - "implement_dangerous": Show `source <path> && erk implement --dangerous`
+# - "implement_docker": Show `source <path> && erk implement --docker` (Docker isolation)
+# - "implement_docker_dangerous": Show Docker mode with --dangerous (redundant but explicit)
+ActivationMode = Literal[
+    "activate_only",
+    "implement",
+    "implement_dangerous",
+    "implement_docker",
+    "implement_docker_dangerous",
+]
 
 # SPECULATIVE: activation-scripts - set to False to disable this feature
 ENABLE_ACTIVATION_SCRIPTS = True
@@ -247,8 +255,10 @@ def print_activation_instructions(
         force: If True and source_branch is provided, shows the delete hint.
         mode: What command to show and copy:
             - "activate_only": Just `source <path>` (for navigation commands)
-            - "implement": `source <path> && erk implement --here` (default for prepare)
+            - "implement": `source <path> && erk implement` (default for prepare)
             - "implement_dangerous": Include --dangerous flag
+            - "implement_docker": Include --docker flag (Docker isolation)
+            - "implement_docker_dangerous": Include both flags
         copy: If True, copy the primary command to clipboard via OSC 52 and show hint.
     """
     source_cmd = f"source {script_path}"
@@ -260,6 +270,12 @@ def print_activation_instructions(
     elif mode == "implement_dangerous":
         primary_cmd = f"{source_cmd} && erk implement --dangerous"
         instruction = "To activate and start implementation (skip permissions):"
+    elif mode == "implement_docker":
+        primary_cmd = f"{source_cmd} && erk implement --docker"
+        instruction = "To activate and start implementation (Docker isolation):"
+    elif mode == "implement_docker_dangerous":
+        primary_cmd = f"{source_cmd} && erk implement --docker --dangerous"
+        instruction = "To activate and start implementation (Docker isolation):"
     else:  # mode == "implement"
         primary_cmd = f"{source_cmd} && erk implement"
         instruction = "To activate and start implementation:"

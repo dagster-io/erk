@@ -20,6 +20,11 @@ from erk.cli.commands.branch.create_cmd import branch_create
     is_flag=True,
     help="Include --dangerous flag to skip permission prompts during implementation",
 )
+@click.option(
+    "--docker",
+    is_flag=True,
+    help="Include --docker flag for filesystem-isolated implementation",
+)
 @click.pass_context
 def prepare(
     ctx: click.Context,
@@ -28,6 +33,7 @@ def prepare(
     force: bool,
     create_only: bool,
     dangerous: bool,
+    docker: bool,
 ) -> None:
     """Prepare a plan for execution by creating a worktree.
 
@@ -43,4 +49,5 @@ def prepare(
         force=force,
         create_only=create_only,
         dangerous=dangerous,
+        docker=docker,
     )

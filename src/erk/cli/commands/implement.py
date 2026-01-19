@@ -15,6 +15,10 @@ import click
 
 from erk.cli.alias import alias
 from erk.cli.commands.completions import complete_plan_files
+from erk.cli.commands.docker_executor import (
+    execute_docker_interactive,
+    execute_docker_non_interactive,
+)
 from erk.cli.commands.implement_shared import (
     PlanSource,
     build_claude_args,
@@ -78,6 +82,8 @@ def _implement_from_issue(
     verbose: bool,
     model: str | None,
     executor: ClaudeExecutor,
+    docker: bool,
+    docker_image: str,
 ) -> None:
     """Implement feature from GitHub issue in current directory.
 
@@ -92,6 +98,8 @@ def _implement_from_issue(
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for command execution
+        docker: Whether to run in Docker container
+        docker_image: Docker image to use
     """
     # Discover repo context for issue fetch
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -168,6 +176,28 @@ def _implement_from_issue(
             model=model,
             target_description=target_description,
         )
+    elif docker:
+        # Docker mode - run Claude inside container
+        if no_interactive:
+            commands = build_command_sequence(submit)
+            exit_code = execute_docker_non_interactive(
+                repo_root=repo.root,
+                worktree_path=ctx.cwd,
+                image_name=docker_image,
+                model=model,
+                commands=commands,
+                verbose=verbose,
+            )
+            if exit_code != 0:
+                raise SystemExit(exit_code)
+        else:
+            # Docker interactive mode - replaces process
+            execute_docker_interactive(
+                repo_root=repo.root,
+                worktree_path=ctx.cwd,
+                image_name=docker_image,
+                model=model,
+            )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -203,6 +233,8 @@ def _implement_from_file(
     verbose: bool,
     model: str | None,
     executor: ClaudeExecutor,
+    docker: bool,
+    docker_image: str,
 ) -> None:
     """Implement feature from plan file in current directory.
 
@@ -219,6 +251,8 @@ def _implement_from_file(
         verbose: Whether to show raw output or filtered output
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         executor: Claude CLI executor for command execution
+        docker: Whether to run in Docker container
+        docker_image: Docker image to use
     """
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -267,6 +301,28 @@ def _implement_from_file(
             model=model,
             target_description=target_description,
         )
+    elif docker:
+        # Docker mode - run Claude inside container
+        if no_interactive:
+            commands = build_command_sequence(submit)
+            exit_code = execute_docker_non_interactive(
+                repo_root=repo.root,
+                worktree_path=ctx.cwd,
+                image_name=docker_image,
+                model=model,
+                commands=commands,
+                verbose=verbose,
+            )
+            if exit_code != 0:
+                raise SystemExit(exit_code)
+        else:
+            # Docker interactive mode - replaces process
+            execute_docker_interactive(
+                repo_root=repo.root,
+                worktree_path=ctx.cwd,
+                image_name=docker_image,
+                model=model,
+            )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -307,6 +363,8 @@ def implement(
     yolo: bool,
     verbose: bool,
     model: str | None,
+    docker: bool,
+    docker_image: str,
 ) -> None:
     """Create .impl/ folder from GitHub issue or plan file and execute implementation.
 
@@ -353,6 +411,10 @@ def implement(
     \b
       # From plan file
       erk implement ./my-feature-plan.md
+
+    \b
+      # Docker isolation mode (filesystem-isolated, safe to skip permissions)
+      erk implement 123 --docker
     """
     # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
     if yolo:
@@ -412,6 +474,8 @@ def implement(
             verbose=verbose,
             model=model,
             executor=ctx.claude_executor,
+            docker=docker,
+            docker_image=docker_image,
         )
     else:
         plan_file = Path(target)
@@ -426,4 +490,6 @@ def implement(
             verbose=verbose,
             model=model,
             executor=ctx.claude_executor,
+            docker=docker,
+            docker_image=docker_image,
         )
