@@ -130,14 +130,13 @@ def ensure_worktree_for_branch(
         remote_branches = ctx.git.list_remote_branches(repo.root)
         remote_ref = f"origin/{branch}"
 
-        if remote_ref not in remote_branches:
-            # Branch doesn't exist locally or on origin
-            user_output(
-                f"Error: Branch '{branch}' does not exist.\n"
-                f"To create a new branch and worktree, run:\n"
-                f"  erk wt create --branch {branch}"
-            )
-            raise SystemExit(1) from None
+        # Branch doesn't exist locally or on origin
+        Ensure.invariant(
+            remote_ref in remote_branches or branch in local_branches,
+            f"Branch '{branch}' does not exist.\n"
+            f"To create a new branch and worktree, run:\n"
+            f"  erk wt create --branch {branch}",
+        )
 
         # Remote branch exists - create local tracking branch
         user_output(f"Branch '{branch}' exists on origin, creating local tracking branch...")
@@ -260,16 +259,15 @@ def add_worktree(
     if branch and use_existing_branch:
         # Validate branch is not already checked out
         existing_path = ctx.git.is_branch_checked_out(repo_root, branch)
-        if existing_path:
-            user_output(
-                f"Error: Branch '{branch}' is already checked out at {existing_path}\n"
-                f"Git doesn't allow the same branch to be checked out in multiple worktrees.\n\n"
-                f"Options:\n"
-                f"  • Use a different branch name\n"
-                f"  • Create a new branch instead: erk create {path.name}\n"
-                f"  • Switch to that worktree: erk br co {branch}",
-            )
-            raise SystemExit(1) from None
+        Ensure.invariant(
+            not existing_path,
+            f"Branch '{branch}' is already checked out at {existing_path}\n"
+            f"Git doesn't allow the same branch to be checked out in multiple worktrees.\n\n"
+            f"Options:\n"
+            f"  • Use a different branch name\n"
+            f"  • Create a new branch instead: erk create {path.name}\n"
+            f"  • Switch to that worktree: erk br co {branch}",
+        )
 
         ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
 
@@ -283,14 +281,12 @@ def add_worktree(
                 remote_branches = ctx.git.list_remote_branches(repo_root)
                 remote_ref = f"origin/{branch}"
 
-                if remote_ref in remote_branches:
-                    user_output(
-                        click.style("Error: ", fg="red")
-                        + f"Branch '{branch}' already exists on remote 'origin'\n\n"
-                        + "A branch with this name is already pushed to the remote repository.\n"
-                        + "Please choose a different name for your new branch."
-                    )
-                    raise SystemExit(1) from None
+                Ensure.invariant(
+                    remote_ref not in remote_branches,
+                    f"Branch '{branch}' already exists on remote 'origin'\n\n"
+                    "A branch with this name is already pushed to the remote repository.\n"
+                    "Please choose a different name for your new branch.",
+                )
             except Exception as e:
                 # Remote unavailable or other error - proceed with warning
                 user_output(
@@ -304,19 +300,18 @@ def add_worktree(
             original_branch = ctx.git.get_current_branch(cwd)
             if original_branch is None:
                 raise ValueError("Cannot create graphite branch from detached HEAD")
-            if ctx.git.has_staged_changes(repo_root):
-                user_output(
-                    "Error: Staged changes detected. "
-                    "Graphite cannot create a branch while staged changes are present.\n"
-                    "`gt create --no-interactive` attempts to commit staged files but fails when "
-                    "no commit message is provided.\n\n"
-                    "Resolve the staged changes before running `erk create`:\n"
-                    '  • Commit them: git commit -m "message"\n'
-                    "  • Unstage them: git reset\n"
-                    "  • Stash them: git stash\n"
-                    "  • Disable Graphite: erk config set use_graphite false",
-                )
-                raise SystemExit(1) from None
+            Ensure.invariant(
+                not ctx.git.has_staged_changes(repo_root),
+                "Staged changes detected. "
+                "Graphite cannot create a branch while staged changes are present.\n"
+                "`gt create --no-interactive` attempts to commit staged files but fails when "
+                "no commit message is provided.\n\n"
+                "Resolve the staged changes before running `erk create`:\n"
+                '  • Commit them: git commit -m "message"\n'
+                "  • Unstage them: git reset\n"
+                "  • Stash them: git stash\n"
+                "  • Disable Graphite: erk config set use_graphite false",
+            )
             run_with_error_reporting(
                 ["gt", "create", "--no-interactive", branch],
                 cwd=cwd,
@@ -625,12 +620,12 @@ def create_wt(
         # Allow --branch alone to derive name from branch
         if not name and branch:
             name = sanitize_worktree_name(branch)
-        elif not name:
-            user_output(
+        else:
+            name = Ensure.truthy(
+                name,
                 "Must provide NAME or --from-plan-file or --from-branch "
-                "or --from-current-branch or --from-plan or --branch option."
+                "or --from-current-branch or --from-plan or --branch option.",
             )
-            raise SystemExit(1) from None
 
     # Track if name came from plan file (will need unique naming with date suffix)
     is_plan_derived = from_plan_file is not None
@@ -718,13 +713,12 @@ def create_wt(
     trunk_branch = ctx.git.detect_trunk_branch(repo.root)
 
     # Validate that name is not trunk branch (should use root worktree)
-    if name == trunk_branch:
-        user_output(
-            f'Error: "{name}" cannot be used as a worktree name.\n'
-            f"To switch to the {name} branch in the root repository, use:\n"
-            f"  erk br co root",
-        )
-        raise SystemExit(1) from None
+    Ensure.invariant(
+        name != trunk_branch,
+        f'"{name}" cannot be used as a worktree name.\n'
+        f"To switch to the {name} branch in the root repository, use:\n"
+        f"  erk br co root",
+    )
 
     # Apply date prefix and uniqueness for plan-derived names
     if is_plan_derived:
@@ -746,9 +740,7 @@ def create_wt(
             )
             user_output(json_response)
             raise SystemExit(1) from None
-        else:
-            user_output(f"Worktree path already exists: {wt_path}")
-            raise SystemExit(1) from None
+        Ensure.invariant(False, f"Worktree path already exists: {wt_path}")
 
     # Handle from-current-branch logic: switch current worktree first
     to_branch = None
@@ -807,14 +799,13 @@ def create_wt(
         )
     elif from_branch:
         # Validate that we're not trying to create worktree for trunk branch
-        if branch == trunk_branch:
-            user_output(
-                f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
-                f"The trunk branch should be checked out in the root worktree.\n"
-                f"To switch to {trunk_branch}, use:\n"
-                f"  erk br co root"
-            )
-            raise SystemExit(1) from None
+        Ensure.invariant(
+            branch != trunk_branch,
+            f'Cannot create worktree for trunk branch "{trunk_branch}".\n'
+            f"The trunk branch should be checked out in the root worktree.\n"
+            f"To switch to {trunk_branch}, use:\n"
+            f"  erk br co root",
+        )
 
         # Create worktree with existing branch
         add_worktree(
