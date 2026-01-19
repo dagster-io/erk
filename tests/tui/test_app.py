@@ -1,5 +1,6 @@
 """Tests for ErkDashApp using Textual Pilot."""
 
+from collections.abc import Callable
 from pathlib import Path
 
 import pytest
@@ -901,6 +902,7 @@ class TestExecutePaletteCommandLandPR:
             title: str,
             *,
             timeout: float = 30.0,
+            on_success: Callable[[], None] | None = None,
         ) -> None:
             nonlocal captured_command
             captured_command = command
@@ -987,6 +989,7 @@ class TestExecutePaletteCommandFixConflictsRemote:
             title: str,
             *,
             timeout: float = 30.0,
+            on_success: Callable[[], None] | None = None,
         ) -> None:
             nonlocal captured_command
             captured_command = command

@@ -111,8 +111,12 @@ def test_land_by_number() -> None:
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
         assert "erk exec land-execute" in script_content
-        assert "--pr-number=123" in script_content
-        assert "--branch=feature-1" in script_content
+        # Script uses shell variables (passed as arguments to source command)
+        assert '--pr-number="$PR_NUMBER"' in script_content
+        assert '--branch="$BRANCH"' in script_content
+        # Verify shell variable definitions
+        assert 'PR_NUMBER="${1:?Error: PR number required}"' in script_content
+        assert 'BRANCH="${2:?Error: Branch name required}"' in script_content
 
 
 def test_land_by_url() -> None:
@@ -210,7 +214,12 @@ def test_land_by_url() -> None:
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
         assert "erk exec land-execute" in script_content
-        assert "--pr-number=456" in script_content
+        # Script uses shell variables (passed as arguments to source command)
+        assert '--pr-number="$PR_NUMBER"' in script_content
+        assert '--branch="$BRANCH"' in script_content
+        # Verify shell variable definitions
+        assert 'PR_NUMBER="${1:?Error: PR number required}"' in script_content
+        assert 'BRANCH="${2:?Error: Branch name required}"' in script_content
 
 
 def test_land_by_branch_name() -> None:
@@ -307,8 +316,12 @@ def test_land_by_branch_name() -> None:
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
         assert "erk exec land-execute" in script_content
-        assert "--pr-number=123" in script_content
-        assert "--branch=feature-1" in script_content
+        # Script uses shell variables (passed as arguments to source command)
+        assert '--pr-number="$PR_NUMBER"' in script_content
+        assert '--branch="$BRANCH"' in script_content
+        # Verify shell variable definitions
+        assert 'PR_NUMBER="${1:?Error: PR number required}"' in script_content
+        assert 'BRANCH="${2:?Error: Branch name required}"' in script_content
 
 
 def test_land_fork_pr() -> None:
@@ -390,5 +403,9 @@ def test_land_fork_pr() -> None:
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
         assert "erk exec land-execute" in script_content
-        assert "--pr-number=789" in script_content
-        assert "--branch=pr/789" in script_content
+        # Script uses shell variables (passed as arguments to source command)
+        assert '--pr-number="$PR_NUMBER"' in script_content
+        assert '--branch="$BRANCH"' in script_content
+        # Verify shell variable definitions
+        assert 'PR_NUMBER="${1:?Error: PR number required}"' in script_content
+        assert 'BRANCH="${2:?Error: Branch name required}"' in script_content

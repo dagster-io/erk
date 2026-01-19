@@ -127,8 +127,12 @@ def test_land_outputs_deferred_execution_script() -> None:
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
         assert "erk exec land-execute" in script_content
-        assert "--pr-number=123" in script_content
-        assert "--branch=feature-1" in script_content
+        # Script uses shell variables for pr-number and branch (passed as arguments)
+        assert '--pr-number="$PR_NUMBER"' in script_content
+        assert '--branch="$BRANCH"' in script_content
+        # Verify shell variable definitions
+        assert 'PR_NUMBER="${1:?Error: PR number required}"' in script_content
+        assert 'BRANCH="${2:?Error: Branch name required}"' in script_content
         assert "--use-graphite" in script_content
         # Script should cd to trunk after execution
         assert str(repo.root) in script_content

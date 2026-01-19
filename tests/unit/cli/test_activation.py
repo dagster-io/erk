@@ -14,6 +14,7 @@ from erk.cli.activation import (
     ensure_land_script,
     ensure_worktree_activate_script,
     print_activation_instructions,
+    print_temp_script_instructions,
     render_activation_script,
     render_land_script,
     write_worktree_activate_script,
@@ -853,3 +854,123 @@ def test_ensure_land_script_returns_existing(tmp_path: Path) -> None:
 
     assert result == script_path
     assert script_path.read_text(encoding="utf-8") == "existing land script"
+
+
+# print_temp_script_instructions tests
+
+
+def test_print_temp_script_instructions_without_args(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions with args=None shows plain source command."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=False,
+        args=None,
+    )
+
+    captured = capsys.readouterr()
+    assert "To land the PR:" in captured.err
+    assert f"source {script_path}" in captured.err
+    # Should NOT have any extra arguments
+    assert str(script_path) in captured.err
+
+
+def test_print_temp_script_instructions_with_args(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions with args includes quoted arguments."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=False,
+        args=[123, "feature-branch"],
+    )
+
+    captured = capsys.readouterr()
+    assert "To land the PR:" in captured.err
+    # Should include arguments in the source command
+    assert f"source {script_path} 123 feature-branch" in captured.err
+
+
+def test_print_temp_script_instructions_with_args_quotes_special_chars(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions properly quotes arguments with special characters."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=False,
+        args=[456, "branch with spaces"],
+    )
+
+    captured = capsys.readouterr()
+    # shlex.quote wraps strings with spaces in quotes
+    assert "456" in captured.err
+    assert "'branch with spaces'" in captured.err
+
+
+def test_print_temp_script_instructions_with_args_copies_full_command(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions with copy=True and args copies full command."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=True,
+        args=[789, "my-branch"],
+    )
+
+    captured = capsys.readouterr()
+
+    # Should contain OSC 52 escape sequence for clipboard
+    assert "\033]52;c;" in captured.err, "Expected OSC 52 clipboard sequence"
+    assert "\033\\" in captured.err, "Expected OSC 52 terminator"
+
+    # Verify the base64-encoded content includes the arguments
+    osc52_start = captured.err.index("\033]52;c;") + 7
+    osc52_end = captured.err.index("\033\\", osc52_start)
+    encoded_content = captured.err[osc52_start:osc52_end]
+    decoded_content = base64.b64decode(encoded_content).decode("utf-8")
+    assert decoded_content == f"source {script_path} 789 my-branch"
+
+
+def test_print_temp_script_instructions_shows_clipboard_hint_with_args(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions shows '(copied to clipboard)' hint with args."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=True,
+        args=[123, "feature"],
+    )
+
+    captured = capsys.readouterr()
+    assert "(copied to clipboard)" in captured.err
