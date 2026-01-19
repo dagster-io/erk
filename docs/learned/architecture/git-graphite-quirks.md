@@ -7,6 +7,9 @@ read_when:
   - "troubleshooting detached HEAD states"
   - "handling concurrent worktree operations"
   - "understanding worktree lock files"
+tripwires:
+  - action: "calling gt commands without --no-interactive flag"
+    warning: "Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -153,6 +156,38 @@ This handles all cases:
 **When to Use**: Apply lock-waiting to operations that modify the index (`checkout`, `add`, `commit`, `reset`, etc.) when running concurrent git commands in the same worktree or when updating shared refs across worktrees.
 
 **Implementation Reference**: `packages/erk-shared/src/erk_shared/git/lock.py`
+
+## Graphite Interactive Mode Hangs
+
+**Surprising Behavior**: Running `gt sync`, `gt submit`, `gt restack`, or other gt commands without the `--no-interactive` flag can cause the command to hang indefinitely when run from Claude Code sessions or other non-interactive contexts.
+
+**Why It's Surprising**: The command appears to be doing nothing - no output, no error, just silence. The underlying cause is that gt is waiting for user input at a prompt that isn't visible.
+
+**Solution**: Always use `--no-interactive` flag with gt commands:
+
+```bash
+# WRONG - may hang waiting for user input
+gt sync
+gt submit
+gt submit --force  # --force does NOT prevent prompts!
+
+# CORRECT - never prompts, fails fast if interaction needed
+gt sync --no-interactive
+gt submit --no-interactive
+gt submit --force --no-interactive
+gt restack --no-interactive
+```
+
+**Important**: The `--force` flag does NOT prevent interactive prompts. You must use `--no-interactive` separately. The `--force` flag only skips confirmation for destructive operations, but gt may still prompt for other decisions (like whether to include upstack branches).
+
+**Common Scenarios Where gt Prompts**:
+
+- `gt sync` prompts to delete merged branches
+- `gt submit` prompts to confirm PR creation/update
+- `gt restack` prompts during conflict resolution
+- Various commands prompt when state is ambiguous
+
+**Implementation Reference**: This pattern is used throughout the Graphite gateway in `packages/erk-shared/src/erk_shared/gateway/graphite/real.py`.
 
 ## Adding New Quirks
 
