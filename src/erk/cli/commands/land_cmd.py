@@ -626,16 +626,23 @@ def render_land_execution_script(
     """Generate shell script that executes land and navigates.
 
     This script is generated after validation passes. When sourced, it:
-    1. Calls `erk exec land-execute` with pre-validated state
-    2. Navigates to the target location (trunk or child branch)
+    1. Validates required arguments (PR number and branch)
+    2. Calls `erk exec land-execute` with pre-validated state
+    3. Navigates to the target location (trunk or child branch)
 
     Note: The execute phase always skips confirmation prompts because the user
     already approved by sourcing the script. --force is not passed because
     _execute_land handles this internally.
 
+    The script requires two positional arguments:
+    - $1: PR number to merge
+    - $2: Branch name being landed
+
+    This makes the PR number and branch visible in the source command.
+
     Args:
-        pr_number: PR number to merge
-        branch: Branch name being landed
+        pr_number: PR number to merge (not used directly, passed as arg)
+        branch: Branch name being landed (not used directly, passed as arg)
         worktree_path: Path to worktree being cleaned up (if any)
         is_current_branch: Whether landing from the branch's own worktree
         target_child_branch: Target child branch for --up navigation
@@ -648,10 +655,14 @@ def render_land_execution_script(
     Returns:
         Shell script content as string
     """
-    # Build erk exec land-execute command with clean parameter names
+    # Silence unused parameter warnings - these are still needed for the function
+    # signature to document what values the script will receive at runtime
+    _ = pr_number, branch
+
+    # Build erk exec land-execute command using shell variables for pr/branch
     cmd_parts = ["erk exec land-execute"]
-    cmd_parts.append(f"--pr-number={pr_number}")
-    cmd_parts.append(f"--branch={branch}")
+    cmd_parts.append('--pr-number="$PR_NUMBER"')
+    cmd_parts.append('--branch="$BRANCH"')
     if worktree_path is not None:
         cmd_parts.append(f"--worktree-path={worktree_path}")
     if is_current_branch:
@@ -671,6 +682,10 @@ def render_land_execution_script(
     target_path_str = str(target_path)
 
     return f"""# erk land deferred execution
+# Usage: source land.sh <pr_number> <branch>
+PR_NUMBER="${{1:?Error: PR number required}}"
+BRANCH="${{2:?Error: Branch name required}}"
+
 {erk_cmd}
 cd {target_path_str}
 """
@@ -1078,6 +1093,7 @@ def _land_current_branch(
             result.path,
             instruction="To land the PR:",
             copy=True,
+            args=[pr_number, current_branch],
         )
     raise SystemExit(0)
 
@@ -1211,6 +1227,7 @@ def _land_specific_pr(
             result.path,
             instruction=f"To land PR #{pr_number}:",
             copy=True,
+            args=[pr_number, branch],
         )
     raise SystemExit(0)
 
@@ -1336,5 +1353,6 @@ def _land_by_branch(
             result.path,
             instruction=f"To land branch '{branch_name}':",
             copy=True,
+            args=[pr_number, branch_name],
         )
     raise SystemExit(0)

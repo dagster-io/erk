@@ -366,6 +366,7 @@ def print_temp_script_instructions(
     *,
     instruction: str,
     copy: bool,
+    args: Sequence[str | int] | None,
 ) -> None:
     """Print instructions for sourcing a temporary execution script.
 
@@ -380,8 +381,14 @@ def print_temp_script_instructions(
         script_path: Path to the temporary script to source
         instruction: Message to show before the command (e.g., "To land the PR:")
         copy: If True, copy the source command to clipboard via OSC 52
+        args: Optional arguments to include in the source command. If provided,
+            these are properly quoted and appended to the source command.
     """
-    source_cmd = f"source {script_path}"
+    if args:
+        quoted_args = " ".join(shlex.quote(str(a)) for a in args)
+        source_cmd = f"source {script_path} {quoted_args}"
+    else:
+        source_cmd = f"source {script_path}"
 
     user_output(f"\n{instruction}")
     if copy:
