@@ -42,6 +42,7 @@ The `ManagedArtifactType` literal defines valid artifact types:
 | `action`   | `setup-claude-code`, `setup-claude-erk`   |
 | `hook`     | `user-prompt-hook`, `exit-plan-mode-hook` |
 | `prompt`   | `.github/prompts/` files                  |
+| `review`   | `.github/reviews/` files                  |
 
 ### Example: SkillCapability
 

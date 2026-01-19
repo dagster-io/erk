@@ -140,8 +140,7 @@ Required for non-interactive CI execution. Unlike the container approach, this w
 
 ## Workflows Using This Pattern
 
-- `.github/workflows/tripwires-review.yml`
-- `.github/workflows/dignified-python-review.yml`
+- `.github/workflows/code-reviews.yml` - Convention-based code review system (see [convention-based-reviews.md](convention-based-reviews.md))
 
 ## Troubleshooting
 

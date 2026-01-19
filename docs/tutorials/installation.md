@@ -133,7 +133,7 @@ erk init capability list
 | `devrun-reminder`           | Remind agent to use devrun for CI tool commands     |
 | `dignified-python`          | Python coding standards (LBYL, modern types, ABCs)  |
 | `dignified-python-reminder` | Remind agent to follow dignified-python standards   |
-| `dignified-review`          | GitHub Action for Python code review                |
+| `dignified-review`          | Python code review (via convention-based system)    |
 | `erk-bash-permissions`      | Allow `Bash(erk:*)` commands in Claude Code         |
 | `erk-hooks`                 | Configure Claude Code hooks for session management  |
 | `erk-impl-workflow`         | GitHub Action for automated implementation          |
@@ -142,7 +142,7 @@ erk init capability list
 | `learned-docs`              | Autolearning documentation system                   |
 | `ruff-format`               | Auto-format Python files with ruff after Write/Edit |
 | `tripwires-reminder`        | Remind agent to check tripwires.md                  |
-| `tripwires-review`          | GitHub Action for tripwire code review              |
+| `tripwires-review`          | Tripwire code review (via convention-based system)  |
 
 **User capabilities** (local to each developer):
 

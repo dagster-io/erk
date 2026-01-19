@@ -120,8 +120,8 @@ prompt="${prompt//\$VARIABLE_NAME/$value}"
 
 ## Existing Prompts
 
-| Prompt                    | Purpose                                                   |
-| ------------------------- | --------------------------------------------------------- |
-| `ci-autofix`              | Fix auto-fixable CI errors (format, lint, prettier, docs) |
-| `dignified-python-review` | Review Python code against dignified-python standards     |
-| `tripwires-review`        | Review changes against tripwire rules                     |
+| Prompt       | Purpose                                                   |
+| ------------ | --------------------------------------------------------- |
+| `ci-autofix` | Fix auto-fixable CI errors (format, lint, prettier, docs) |
+
+**Note:** Code review prompts (`dignified-python-review`, `tripwires-review`) have been migrated to the [convention-based code review system](convention-based-reviews.md). See `.github/reviews/` for review definitions.
