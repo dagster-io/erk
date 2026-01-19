@@ -110,9 +110,9 @@ def test_land_by_number() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-pr-number=123" in script_content
-        assert "--exec-branch=feature-1" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--pr-number=123" in script_content
+        assert "--branch=feature-1" in script_content
 
 
 def test_land_by_url() -> None:
@@ -209,8 +209,8 @@ def test_land_by_url() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-pr-number=456" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--pr-number=456" in script_content
 
 
 def test_land_by_branch_name() -> None:
@@ -306,9 +306,9 @@ def test_land_by_branch_name() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-pr-number=123" in script_content
-        assert "--exec-branch=feature-1" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--pr-number=123" in script_content
+        assert "--branch=feature-1" in script_content
 
 
 def test_land_fork_pr() -> None:
@@ -389,6 +389,6 @@ def test_land_fork_pr() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-pr-number=789" in script_content
-        assert "--exec-branch=pr/789" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--pr-number=789" in script_content
+        assert "--branch=pr/789" in script_content

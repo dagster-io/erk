@@ -113,13 +113,13 @@ def test_land_execute_always_deletes_branch() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-is-current-branch",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -142,10 +142,11 @@ def test_land_execute_always_deletes_branch() -> None:
 
 
 def test_land_force_skips_cleanup_confirmation() -> None:
-    """Test that --force skips the cleanup confirmation prompt.
+    """Test that execute mode always runs cleanup (no confirmations needed).
 
-    With deferred execution, this test verifies the execute phase behavior
-    when --force is passed through to skip cleanup confirmation.
+    With deferred execution, the execute phase uses force=True internally
+    because all user confirmations happen during the validation phase.
+    This test verifies that execute phase runs cleanup without prompting.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -225,19 +226,18 @@ def test_land_force_skips_cleanup_confirmation() -> None:
             issues=issues_ops,
         )
 
-        # Execute mode with --force to skip confirmation
+        # Execute mode: no --force needed, execute phase always runs without prompts
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-is-current-branch",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
                 "--script",
-                "--force",
             ],
             obj=test_ctx,
             catch_exceptions=False,
@@ -342,7 +342,7 @@ def test_land_from_different_worktree() -> None:
     """Test landing a PR from a different worktree than the PR's branch.
 
     With deferred execution, this test verifies the execute phase behavior
-    when landing a PR from a different worktree (--exec-is-current-branch is NOT set).
+    when landing a PR from a different worktree (--is-current-branch is NOT set).
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -423,19 +423,19 @@ def test_land_from_different_worktree() -> None:
             issues=issues_ops,
         )
 
-        # Execute mode without --exec-is-current-branch (landing from different worktree)
+        # Execute mode without --is-current-branch (landing from different worktree)
+        # No --force needed: execute phase always runs without prompts
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                # Note: NOT passing --exec-is-current-branch
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                # Note: NOT passing --is-current-branch
+                "--use-graphite",
                 "--script",
-                "--force",
             ],
             obj=test_ctx,
             catch_exceptions=False,

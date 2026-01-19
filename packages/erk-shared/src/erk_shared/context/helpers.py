@@ -17,6 +17,7 @@ from pathlib import Path
 import click
 
 from erk_shared.branch_manager.abc import BranchManager
+from erk_shared.context.context import ErkContext
 from erk_shared.context.types import LoadedConfig, NoRepoSentinel
 from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.time.abc import Time
@@ -26,6 +27,39 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.prompt_executor.abc import PromptExecutor
+
+
+def require_context(ctx: click.Context) -> ErkContext:
+    """Get the full ErkContext, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing. If context is not
+    initialized (ctx.obj is None), prints error to stderr and exits with code 1.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        ErkContext instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     erk_ctx = require_context(ctx)
+        ...     # Access any attribute from erk_ctx
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    if not isinstance(ctx.obj, ErkContext):
+        click.echo("Error: Context must be ErkContext", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj
 
 
 def require_issues(ctx: click.Context) -> GitHubIssues:
@@ -50,8 +84,6 @@ def require_issues(ctx: click.Context) -> GitHubIssues:
         ...     issues = require_issues(ctx)
         ...     issues.add_comment(repo_root, issue_number, body)
     """
-    from erk_shared.context.context import ErkContext
-
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)
@@ -85,8 +117,6 @@ def require_repo_root(ctx: click.Context) -> Path:
         ...     issues = require_issues(ctx)
         ...     issues.create_issue(repo_root, title, body, labels)
     """
-    from erk_shared.context.context import ErkContext
-
     if ctx.obj is None:
         click.echo("Error: Context not initialized", err=True)
         raise SystemExit(1)

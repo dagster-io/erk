@@ -45,6 +45,7 @@ Quick reference for all `erk exec` subcommands.
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
 | `impl-verify`                     | Verify .impl/ folder still exists after implementation.                   |
 | `issue-title-to-filename`         | Convert plan title to filename.                                           |
+| `land-execute`                    | Execute deferred land operations.                                         |
 | `list-sessions`                   | List Claude Code sessions with metadata for the current project.          |
 | `mark-impl-ended`                 | Update implementation ended event in GitHub issue and local state file.   |
 | `mark-impl-started`               | Update implementation started event in GitHub issue and local state file. |
@@ -426,6 +427,27 @@ Convert plan title to filename.
 | Name    | Required | Description |
 | ------- | -------- | ----------- |
 | `TITLE` | Yes      | -           |
+
+### land-execute
+
+Execute deferred land operations.
+
+**Usage:** `erk exec land-execute`
+
+**Options:**
+
+| Flag                  | Type    | Required | Default        | Description                                                     |
+| --------------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
+| `--pr-number`         | INTEGER | Yes      | Sentinel.UNSET | PR number to merge                                              |
+| `--branch`            | TEXT    | Yes      | Sentinel.UNSET | Branch name being landed                                        |
+| `--worktree-path`     | PATH    | No       | Sentinel.UNSET | Path to worktree being cleaned up                               |
+| `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                  |
+| `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                         |
+| `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                   |
+| `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                          |
+| `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)             |
+| `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing |
+| `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)           |
 
 ### list-sessions
 

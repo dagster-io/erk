@@ -1,8 +1,7 @@
 """Tests for objective update prompt in erk land command.
 
 Tests the behavior when landing a PR linked to an objective:
-- --force skips the prompt and prints command for later
-- User declining prompt skips update and shows command
+- Execute mode always runs objective update without prompting
 - User confirming prompt runs Claude streaming
 - Claude execution failure shows warning with retry command
 """
@@ -47,9 +46,10 @@ def _create_plan_issue_with_objective(objective_number: int) -> IssueInfo:
 
 
 def test_land_force_runs_objective_update_without_prompt() -> None:
-    """Test that --force flag runs objective update without prompting.
+    """Test that execute mode always runs objective update without prompting.
 
-    With deferred execution, this test verifies the execute phase behavior.
+    With deferred execution, the execute phase uses force=True internally
+    because all user confirmations happen during the validation phase.
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -127,7 +127,7 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
             pool_json_path=repo_dir / "pool.json",
         )
 
-        # With --force, objective update runs automatically
+        # Execute mode: objective update runs automatically without prompting
         test_ctx = env.build_context(
             git=git_ops,
             graphite=graphite_ops,
@@ -138,19 +138,18 @@ def test_land_force_runs_objective_update_without_prompt() -> None:
             claude_executor=executor,
         )
 
-        # Execute mode with --force and objective number
+        # Execute mode with objective number - no --force needed
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                f"--exec-branch={feature_branch}",
-                f"--exec-worktree-path={feature_worktree_path}",
-                "--exec-objective-number=100",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                f"--branch={feature_branch}",
+                f"--worktree-path={feature_worktree_path}",
+                "--objective-number=100",
+                "--use-graphite",
                 "--script",
-                "--force",
             ],
             obj=test_ctx,
             catch_exceptions=False,
@@ -275,13 +274,13 @@ def test_land_execute_always_runs_objective_update() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                f"--exec-branch={feature_branch}",
-                f"--exec-worktree-path={feature_worktree_path}",
-                "--exec-objective-number=100",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                f"--branch={feature_branch}",
+                f"--worktree-path={feature_worktree_path}",
+                "--objective-number=100",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -399,13 +398,13 @@ def test_land_user_confirms_objective_update_runs_claude() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                f"--exec-branch={feature_branch}",
-                f"--exec-worktree-path={feature_worktree_path}",
-                "--exec-objective-number=100",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                f"--branch={feature_branch}",
+                f"--worktree-path={feature_worktree_path}",
+                "--objective-number=100",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -531,13 +530,13 @@ def test_land_claude_failure_shows_retry_command() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                f"--exec-branch={feature_branch}",
-                f"--exec-worktree-path={feature_worktree_path}",
-                "--exec-objective-number=100",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                f"--branch={feature_branch}",
+                f"--worktree-path={feature_worktree_path}",
+                "--objective-number=100",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,

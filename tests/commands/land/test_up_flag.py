@@ -112,8 +112,8 @@ def test_land_with_up_navigates_to_child_branch() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-target-child=feature-2" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--target-child=feature-2" in script_content
         # Script should cd to child worktree after execution
         assert str(feature_2_path) in script_content
 
@@ -414,7 +414,7 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-target-child=feature-2" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--target-child=feature-2" in script_content
         # Script should cd to child worktree after execution
         assert str(feature_2_path) in script_content

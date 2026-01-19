@@ -33,7 +33,7 @@ def test_land_outputs_deferred_execution_script() -> None:
 
     The land command now uses a two-phase approach:
     1. Validation phase: validates preconditions, prompts user, outputs script
-    2. Execution phase: script calls `erk land --execute` to merge and cleanup
+    2. Execution phase: script calls `erk exec land-execute` to merge and cleanup
     """
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
@@ -126,16 +126,16 @@ def test_land_outputs_deferred_execution_script() -> None:
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk land --execute" in script_content
-        assert "--exec-pr-number=123" in script_content
-        assert "--exec-branch=feature-1" in script_content
-        assert "--exec-use-graphite" in script_content
+        assert "erk exec land-execute" in script_content
+        assert "--pr-number=123" in script_content
+        assert "--branch=feature-1" in script_content
+        assert "--use-graphite" in script_content
         # Script should cd to trunk after execution
         assert str(repo.root) in script_content
 
 
 def test_land_execute_merges_and_cleans_up() -> None:
-    """Test land --execute mode performs merge and cleanup."""
+    """Test erk exec land-execute performs merge and cleanup."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -218,13 +218,13 @@ def test_land_execute_merges_and_cleans_up() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-is-current-branch",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -679,13 +679,13 @@ def test_land_updates_upstack_pr_base_branches() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-is-current-branch",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -837,13 +837,13 @@ def test_land_updates_github_only_child_pr_base() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-is-current-branch",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
@@ -986,13 +986,13 @@ def test_land_updates_upstack_pr_base_before_merge() -> None:
         result = runner.invoke(
             cli,
             [
-                "land",
-                "--execute",
-                "--exec-pr-number=123",
-                "--exec-branch=feature-1",
-                f"--exec-worktree-path={feature_1_path}",
-                "--exec-is-current-branch",
-                "--exec-use-graphite",
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
                 "--script",
             ],
             obj=test_ctx,
