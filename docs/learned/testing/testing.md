@@ -336,6 +336,64 @@ with erk_isolated_fs_env(runner) as env:
     cwd=env.cwd
 ```
 
+## Testing Notes
+
+### shlex.quote() Behavior
+
+When testing code that uses `shlex.quote()` for path quoting:
+
+- `shlex.quote()` only adds quotes for paths containing special characters (spaces, `$`, etc.)
+- Simple paths like `/tmp/foo` remain unquoted
+- Tests should not hardcode quoted paths like `'{path}'`
+
+**Wrong:**
+
+```python
+# Assumes quotes are always present
+assert f"git worktree remove '{worktree_path}'" in script
+```
+
+**Correct:**
+
+```python
+# Use shlex.quote() in assertions to match actual behavior
+assert f"git worktree remove {shlex.quote(str(worktree_path))}" in script
+
+# Or check for command presence without quote assumptions
+assert "git worktree remove" in script
+assert str(worktree_path) in script
+```
+
+### Script Writer Fixture Selection
+
+Different test fixtures use different script writer implementations:
+
+| Fixture               | Script Writer       | How to Read Scripts                    |
+| --------------------- | ------------------- | -------------------------------------- |
+| `erk_inmem_env`       | `InMemScriptWriter` | `script_writer.get_script_content(id)` |
+| `erk_isolated_fs_env` | `RealScriptWriter`  | `script_path.read_text()`              |
+
+**Pattern for `erk_inmem_env` tests:**
+
+```python
+with erk_inmem_env() as env:
+    script_writer = InMemScriptWriter()
+    # ... invoke command that writes script ...
+    script = script_writer.get_script_content(script_id)
+    assert "expected content" in script
+```
+
+**Pattern for `erk_isolated_fs_env` tests:**
+
+```python
+with erk_isolated_fs_env(runner) as env:
+    # ... invoke command that writes script to filesystem ...
+    script = script_path.read_text()
+    assert "expected content" in script
+```
+
+Choose the fixture based on what you're testing - use `erk_inmem_env` for pure logic with fakes, use `erk_isolated_fs_env` when scripts are written to the real filesystem.
+
 ## Related
 
 - **Testing philosophy**: Load `fake-driven-testing` skill
