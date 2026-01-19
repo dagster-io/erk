@@ -17,7 +17,6 @@ Complete these in order:
 After completing your first plan, you may want to:
 
 - **[Advanced Configuration](advanced-configuration.md)** - Capabilities, init flags, and troubleshooting
-- **[Shell Integration](shell-integration.md)** - Seamless `cd` instead of subshells (power users)
 - **[Graphite Integration](graphite-integration.md)** - Stacked PR workflows with Graphite
 
 ## What You'll Learn

@@ -87,7 +87,7 @@ Erk initialization has two phases:
 
 1. **Project setup** (one-time per repository) — Creates configuration files and Claude Code artifacts that are committed to the repo. Once done, other team members get erk support automatically.
 
-2. **User setup** (one-time per developer) — Creates local configuration on each developer's machine. This includes the global config file and optional shell integration.
+2. **User setup** (one-time per developer) — Creates local configuration on each developer's machine. This includes the global config file.
 
 Run init from your project's root directory:
 
