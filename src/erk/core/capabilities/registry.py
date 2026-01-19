@@ -5,6 +5,7 @@ from functools import cache
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import Capability
 from erk.core.capabilities.dignified_review import DignifiedReviewCapability
+from erk.core.capabilities.direnv import DirenvCapability
 from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
@@ -36,6 +37,7 @@ def _all_capabilities() -> tuple[Capability, ...]:
         StatuslineCapability(claude_installation=None),
         HooksCapability(),
         RuffFormatCapability(),
+        DirenvCapability(shell=None),
         # Reminder capabilities - opt-in context injection (required=False)
         DevrunReminderCapability(),
         DignifiedPythonReminderCapability(),
