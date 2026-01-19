@@ -12,9 +12,9 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.create_learn_branch import (
     create_learn_branch,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)

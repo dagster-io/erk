@@ -10,7 +10,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_closing_text import get_closing_text
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 
 

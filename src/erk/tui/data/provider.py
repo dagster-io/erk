@@ -20,7 +20,7 @@ from erk_shared.gateway.browser.abc import BrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.http.abc import HttpClient
 from erk_shared.github.emoji import format_checks_cell, get_pr_status_emoji
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,

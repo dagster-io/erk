@@ -13,7 +13,7 @@ from erk.cli.cli import cli
 from erk_shared.git.abc import WorktreeInfo
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.commands.dash.conftest import plan_to_issue
 from tests.test_utils.context_builders import build_workspace_test_context

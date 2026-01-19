@@ -71,15 +71,15 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     """
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
-    from erk_shared.gateway.completion import FakeCompletion
+    from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
     from erk_shared.gateway.graphite.fake import FakeGraphite
-    from erk_shared.gateway.shell import FakeShell
+    from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
     from erk_shared.git.real import RealGit
-    from erk_shared.github.issues import RealGitHubIssues
+    from erk_shared.github.issues.real import RealGitHubIssues
     from erk_shared.github.real import RealGitHub
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation

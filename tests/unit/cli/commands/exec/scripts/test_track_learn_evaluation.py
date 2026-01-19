@@ -10,9 +10,9 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.track_learn_evaluation import track_learn_evaluation
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.metadata.core import find_metadata_block
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test

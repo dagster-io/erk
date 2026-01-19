@@ -12,12 +12,12 @@ from erk.core.context import (
     context_for_test,
 )
 from erk.core.script_writer import ScriptWriter
-from erk_shared.gateway.completion import FakeCompletion
+from erk_shared.gateway.completion.fake import FakeCompletion
 from erk_shared.gateway.graphite.fake import FakeGraphite
-from erk_shared.gateway.shell import FakeShell
+from erk_shared.gateway.shell.fake import FakeShell
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 
 
 def create_test_context(

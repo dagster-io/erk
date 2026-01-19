@@ -17,7 +17,7 @@ from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
 from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment as post_workflow_started_comment_command,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 

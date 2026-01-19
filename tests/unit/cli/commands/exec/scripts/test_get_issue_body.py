@@ -6,8 +6,8 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.get_issue_body import get_issue_body
-from erk_shared.context import ErkContext
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.context.context import ErkContext
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 
 

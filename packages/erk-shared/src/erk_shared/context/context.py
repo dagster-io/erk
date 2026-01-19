@@ -26,22 +26,22 @@ from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
-from erk_shared.gateway.completion import Completion
+from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
-from erk_shared.gateway.shell import Shell
+from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
-from erk_shared.github.issues import GitHubIssues
+from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.types import RepoInfo
 from erk_shared.github_admin.abc import GitHubAdmin
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.store import PlanStore
-from erk_shared.prompt_executor import PromptExecutor
+from erk_shared.prompt_executor.abc import PromptExecutor
 
 
 @dataclass(frozen=True)

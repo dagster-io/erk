@@ -19,7 +19,7 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import (
 from erk.cli.commands.exec.scripts.ci_update_pr_body import (
     ci_update_pr_body as ci_update_pr_body_command,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.types import PRDetails, PullRequestInfo

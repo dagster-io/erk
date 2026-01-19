@@ -21,7 +21,7 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL
-from erk_shared.github.issues import IssueInfo
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,

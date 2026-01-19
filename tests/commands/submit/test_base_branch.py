@@ -10,7 +10,8 @@ from erk.core.context import context_for_test
 from erk.core.repo_discovery import RepoContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
-from erk_shared.github.issues import FakeGitHubIssues, IssueInfo
+from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from tests.commands.submit.conftest import create_plan, make_plan_body
 
 

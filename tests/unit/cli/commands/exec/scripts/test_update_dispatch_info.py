@@ -13,8 +13,8 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.update_dispatch_info import (
     update_dispatch_info,
 )
-from erk_shared.context import ErkContext
-from erk_shared.github.issues import FakeGitHubIssues
+from erk_shared.context.context import ErkContext
+from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.core import find_metadata_block
 

@@ -1,4 +1,6 @@
-"""Display abstractions for live terminal updates."""
+"""Display abstractions for live terminal updates.
 
-from erk.core.display.abc import LiveDisplay as LiveDisplay
-from erk.core.display.real import RealLiveDisplay as RealLiveDisplay
+Import from submodules:
+- erk.core.display.abc: LiveDisplay
+- erk.core.display.real: RealLiveDisplay
+"""

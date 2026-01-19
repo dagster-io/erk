@@ -16,7 +16,7 @@ from erk.cli.commands.exec.scripts.user_prompt_hook import (
     build_tripwires_reminder,
     user_prompt_hook,
 )
-from erk_shared.context import ErkContext
+from erk_shared.context.context import ErkContext
 
 # ============================================================================
 # Pure Logic Tests for build_session_context() - NO MOCKING REQUIRED
