@@ -8,12 +8,13 @@ from erk.cli.commands.docker_executor import (
 )
 
 
-def test_build_docker_run_args_interactive() -> None:
+def test_build_docker_run_args_interactive(tmp_path: Path) -> None:
     """Test Docker run args for interactive mode."""
     args = build_docker_run_args(
         worktree_path=Path("/path/to/worktree"),
         image_name="erk-local:latest",
         interactive=True,
+        home_dir=tmp_path,  # Use fake home for testability
     )
 
     assert "docker" in args
@@ -25,12 +26,13 @@ def test_build_docker_run_args_interactive() -> None:
     assert "erk-local:latest" in args
 
 
-def test_build_docker_run_args_non_interactive() -> None:
+def test_build_docker_run_args_non_interactive(tmp_path: Path) -> None:
     """Test Docker run args for non-interactive mode."""
     args = build_docker_run_args(
         worktree_path=Path("/path/to/worktree"),
         image_name="erk-local:latest",
         interactive=False,
+        home_dir=tmp_path,
     )
 
     assert "docker" in args
@@ -39,12 +41,13 @@ def test_build_docker_run_args_non_interactive() -> None:
     assert "-it" not in args  # No TTY in non-interactive mode
 
 
-def test_build_docker_run_args_includes_user_mapping() -> None:
+def test_build_docker_run_args_includes_user_mapping(tmp_path: Path) -> None:
     """Test Docker run args include user UID/GID mapping."""
     args = build_docker_run_args(
         worktree_path=Path("/path/to/worktree"),
         image_name="erk-local:latest",
         interactive=True,
+        home_dir=tmp_path,
     )
 
     assert "--user" in args
@@ -55,13 +58,14 @@ def test_build_docker_run_args_includes_user_mapping() -> None:
     assert ":" in user_value
 
 
-def test_build_docker_run_args_mounts_worktree() -> None:
+def test_build_docker_run_args_mounts_worktree(tmp_path: Path) -> None:
     """Test Docker run args mount the worktree to /workspace."""
     worktree = Path("/path/to/worktree")
     args = build_docker_run_args(
         worktree_path=worktree,
         image_name="erk-local:latest",
         interactive=True,
+        home_dir=tmp_path,
     )
 
     assert "-v" in args
@@ -74,6 +78,47 @@ def test_build_docker_run_args_mounts_worktree() -> None:
                 mount_found = True
                 break
     assert mount_found, "Worktree volume mount not found"
+
+
+def test_build_docker_run_args_mounts_claude_dir_when_exists(tmp_path: Path) -> None:
+    """Test Docker run args mount ~/.claude/ when it exists."""
+    # Create .claude directory in fake home
+    claude_dir = tmp_path / ".claude"
+    claude_dir.mkdir()
+
+    args = build_docker_run_args(
+        worktree_path=Path("/path/to/worktree"),
+        image_name="erk-local:latest",
+        interactive=True,
+        home_dir=tmp_path,
+    )
+
+    # Should have volume mount for .claude
+    claude_mount_found = False
+    for i, arg in enumerate(args):
+        if arg == "-v" and i + 1 < len(args):
+            mount = args[i + 1]
+            if str(claude_dir) in mount and "/home/ci-user/.claude" in mount:
+                claude_mount_found = True
+                break
+    assert claude_mount_found, "Claude dir volume mount not found"
+
+
+def test_build_docker_run_args_skips_claude_dir_when_missing(tmp_path: Path) -> None:
+    """Test Docker run args skip ~/.claude/ mount when it doesn't exist."""
+    # Don't create .claude directory
+    args = build_docker_run_args(
+        worktree_path=Path("/path/to/worktree"),
+        image_name="erk-local:latest",
+        interactive=True,
+        home_dir=tmp_path,
+    )
+
+    # Should NOT have volume mount for .claude
+    for i, arg in enumerate(args):
+        if arg == "-v" and i + 1 < len(args):
+            mount = args[i + 1]
+            assert "/home/ci-user/.claude" not in mount, "Claude dir should not be mounted"
 
 
 def test_build_claude_command_args_interactive() -> None:
