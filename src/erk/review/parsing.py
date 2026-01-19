@@ -27,6 +27,7 @@ DEFAULT_ALLOWED_TOOLS = "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
 DEFAULT_ENABLED = True
 
 
+
 def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None, str]:
     """Parse YAML frontmatter from markdown content.
 
