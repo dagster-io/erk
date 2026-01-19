@@ -11,27 +11,71 @@ related code.
 
 import shlex
 from collections.abc import Sequence
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
 
 import click
 
 from erk.core.display_utils import copy_to_clipboard_osc52
 from erk_shared.output.output import user_output
 
-# Mode for activation instructions output
-# - "activate_only": Show only `source <path>` (for navigation commands)
-# - "implement": Show `source <path> && erk implement` (default for prepare)
-# - "implement_dangerous": Show `source <path> && erk implement --dangerous`
-# - "implement_docker": Show `source <path> && erk implement --docker` (Docker isolation)
-# - "implement_docker_dangerous": Show Docker mode with --dangerous (redundant but explicit)
-ActivationMode = Literal[
-    "activate_only",
-    "implement",
-    "implement_dangerous",
-    "implement_docker",
-    "implement_docker_dangerous",
-]
+
+@dataclass(frozen=True)
+class ActivationConfig:
+    """Configuration for activation instructions.
+
+    Replaces the combinatorial ActivationMode Literal with composable flags.
+    All fields required - use factory functions for convenience.
+
+    Attributes:
+        implement: If True, append `erk implement` to the source command.
+            False means activate-only mode (just source the script).
+        dangerous: If True, include --dangerous flag (skip permission prompts).
+        docker: If True, include --docker flag (filesystem isolation).
+    """
+
+    implement: bool
+    dangerous: bool
+    docker: bool
+
+
+def activation_config_activate_only() -> ActivationConfig:
+    """Create config for activate-only mode (no implement command)."""
+    return ActivationConfig(implement=False, dangerous=False, docker=False)
+
+
+def activation_config_for_implement(
+    *,
+    dangerous: bool,
+    docker: bool,
+) -> ActivationConfig:
+    """Create config for implement mode with specified flags."""
+    return ActivationConfig(implement=True, dangerous=dangerous, docker=docker)
+
+
+def build_activation_command(config: ActivationConfig, script_path: Path) -> str:
+    """Build the activation command string from config.
+
+    Args:
+        config: The activation configuration specifying which flags to include.
+        script_path: Path to the activation script.
+
+    Returns:
+        The shell command string to display/copy.
+    """
+    source_cmd = f"source {script_path}"
+
+    if not config.implement:
+        return source_cmd
+
+    parts = [source_cmd, "&&", "erk", "implement"]
+    if config.docker:
+        parts.append("--docker")
+    if config.dangerous:
+        parts.append("--dangerous")
+
+    return " ".join(parts)
+
 
 # SPECULATIVE: activation-scripts - set to False to disable this feature
 ENABLE_ACTIVATION_SCRIPTS = True
@@ -228,12 +272,23 @@ def ensure_worktree_activate_script(
     return script_path
 
 
+def _get_activation_instruction(config: ActivationConfig) -> str:
+    """Get the instruction message for the activation config."""
+    if not config.implement:
+        return "To activate the worktree environment:"
+    if config.docker:
+        return "To activate and start implementation (Docker isolation):"
+    if config.dangerous:
+        return "To activate and start implementation (skip permissions):"
+    return "To activate and start implementation:"
+
+
 def print_activation_instructions(
     script_path: Path,
     *,
     source_branch: str | None,
     force: bool,
-    mode: ActivationMode,
+    config: ActivationConfig,
     copy: bool,
 ) -> None:
     """Print activation script instructions.
@@ -253,12 +308,9 @@ def print_activation_instructions(
         script_path: Path to the activation script (.erk/bin/activate.sh)
         source_branch: If provided and force is True, shows delete command for this branch.
         force: If True and source_branch is provided, shows the delete hint.
-        mode: What command to show and copy:
-            - "activate_only": Just `source <path>` (for navigation commands)
-            - "implement": `source <path> && erk implement` (default for prepare)
-            - "implement_dangerous": Include --dangerous flag
-            - "implement_docker": Include --docker flag (Docker isolation)
-            - "implement_docker_dangerous": Include both flags
+        config: Configuration specifying what command to show and copy.
+            Uses composable flags (implement, dangerous, docker) instead of
+            the old combinatorial ActivationMode literal.
         copy: If True, copy the primary command to clipboard via OSC 52 and show hint.
     """
     source_cmd = f"source {script_path}"
@@ -267,21 +319,9 @@ def print_activation_instructions(
     if source_branch is not None and force:
         primary_cmd = f"{source_cmd} && erk br delete {source_branch}"
         instruction = f"To activate and delete branch {source_branch}:"
-    elif mode == "activate_only":
-        primary_cmd = source_cmd
-        instruction = "To activate the worktree environment:"
-    elif mode == "implement_dangerous":
-        primary_cmd = f"{source_cmd} && erk implement --dangerous"
-        instruction = "To activate and start implementation (skip permissions):"
-    elif mode == "implement_docker":
-        primary_cmd = f"{source_cmd} && erk implement --docker"
-        instruction = "To activate and start implementation (Docker isolation):"
-    elif mode == "implement_docker_dangerous":
-        primary_cmd = f"{source_cmd} && erk implement --docker --dangerous"
-        instruction = "To activate and start implementation (Docker isolation):"
-    else:  # mode == "implement"
-        primary_cmd = f"{source_cmd} && erk implement"
-        instruction = "To activate and start implementation:"
+    else:
+        primary_cmd = build_activation_command(config, script_path)
+        instruction = _get_activation_instruction(config)
 
     user_output(f"\n{instruction}")
     if copy:

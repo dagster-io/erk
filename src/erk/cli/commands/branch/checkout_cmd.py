@@ -6,6 +6,7 @@ import click
 
 from erk.cli.activation import (
     ENABLE_ACTIVATION_SCRIPTS,
+    activation_config_activate_only,
     ensure_worktree_activate_script,
     print_activation_instructions,
 )
@@ -235,7 +236,7 @@ def _perform_checkout(
                 activation_script_path,
                 source_branch=None,
                 force=False,
-                mode="activate_only",
+                config=activation_config_activate_only(),
                 copy=True,
             )
 

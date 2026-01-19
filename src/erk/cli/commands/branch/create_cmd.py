@@ -3,7 +3,8 @@
 import click
 
 from erk.cli.activation import (
-    ActivationMode,
+    activation_config_activate_only,
+    activation_config_for_implement,
     print_activation_instructions,
     write_worktree_activate_script,
 )
@@ -185,22 +186,16 @@ def branch_create(
         )
 
         # Print single activation command based on flags
-        # Determine activation mode from CLI flags
+        # Determine activation config from CLI flags
         if create_only:
-            mode: ActivationMode = "activate_only"
-        elif docker and dangerous:
-            mode = "implement_docker_dangerous"
-        elif docker:
-            mode = "implement_docker"
-        elif dangerous:
-            mode = "implement_dangerous"
+            config = activation_config_activate_only()
         else:
-            mode = "implement"
+            config = activation_config_for_implement(docker=docker, dangerous=dangerous)
 
         print_activation_instructions(
             script_path,
             source_branch=None,
             force=False,
-            mode=mode,
+            config=config,
             copy=True,
         )

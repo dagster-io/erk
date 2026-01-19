@@ -9,6 +9,7 @@ import click
 
 from erk.cli.activation import (
     ENABLE_ACTIVATION_SCRIPTS,
+    activation_config_activate_only,
     ensure_worktree_activate_script,
     print_activation_instructions,
     render_activation_script,
@@ -394,7 +395,7 @@ def activate_target(
                 script_path,
                 source_branch=source_branch,
                 force=force,
-                mode="activate_only",
+                config=activation_config_activate_only(),
                 copy=True,
             )
     raise SystemExit(0)
@@ -833,7 +834,7 @@ def _activate_with_deferred_deletion(
                 script_path,
                 source_branch=current_branch,
                 force=force,
-                mode="activate_only",
+                config=activation_config_activate_only(),
                 copy=True,
             )
 

@@ -6,7 +6,11 @@ from pathlib import Path
 import pytest
 
 from erk.cli.activation import (
+    ActivationConfig,
     _render_logging_helper,
+    activation_config_activate_only,
+    activation_config_for_implement,
+    build_activation_command,
     ensure_land_script,
     ensure_worktree_activate_script,
     print_activation_instructions,
@@ -14,6 +18,97 @@ from erk.cli.activation import (
     render_land_script,
     write_worktree_activate_script,
 )
+
+# ActivationConfig tests
+
+
+def test_activation_config_frozen() -> None:
+    """ActivationConfig is frozen and cannot be mutated."""
+    config = ActivationConfig(implement=True, dangerous=False, docker=False)
+    with pytest.raises(AttributeError):
+        config.implement = False  # type: ignore[misc]
+
+
+def test_activation_config_activate_only() -> None:
+    """activation_config_activate_only creates config with implement=False."""
+    config = activation_config_activate_only()
+    assert config.implement is False
+    assert config.dangerous is False
+    assert config.docker is False
+
+
+def test_activation_config_for_implement_no_flags() -> None:
+    """activation_config_for_implement with no flags creates basic implement config."""
+    config = activation_config_for_implement(dangerous=False, docker=False)
+    assert config.implement is True
+    assert config.dangerous is False
+    assert config.docker is False
+
+
+def test_activation_config_for_implement_dangerous() -> None:
+    """activation_config_for_implement with dangerous=True sets dangerous flag."""
+    config = activation_config_for_implement(dangerous=True, docker=False)
+    assert config.implement is True
+    assert config.dangerous is True
+    assert config.docker is False
+
+
+def test_activation_config_for_implement_docker() -> None:
+    """activation_config_for_implement with docker=True sets docker flag."""
+    config = activation_config_for_implement(dangerous=False, docker=True)
+    assert config.implement is True
+    assert config.dangerous is False
+    assert config.docker is True
+
+
+def test_activation_config_for_implement_both_flags() -> None:
+    """activation_config_for_implement with both flags sets both."""
+    config = activation_config_for_implement(dangerous=True, docker=True)
+    assert config.implement is True
+    assert config.dangerous is True
+    assert config.docker is True
+
+
+# build_activation_command tests
+
+
+def test_build_activation_command_activate_only() -> None:
+    """build_activation_command with activate_only config returns just source command."""
+    config = activation_config_activate_only()
+    result = build_activation_command(config, Path("/path/to/script.sh"))
+    assert result == "source /path/to/script.sh"
+
+
+def test_build_activation_command_implement() -> None:
+    """build_activation_command with implement config includes erk implement."""
+    config = activation_config_for_implement(dangerous=False, docker=False)
+    result = build_activation_command(config, Path("/path/to/script.sh"))
+    assert result == "source /path/to/script.sh && erk implement"
+
+
+def test_build_activation_command_implement_dangerous() -> None:
+    """build_activation_command with dangerous flag includes --dangerous."""
+    config = activation_config_for_implement(dangerous=True, docker=False)
+    result = build_activation_command(config, Path("/path/to/script.sh"))
+    assert result == "source /path/to/script.sh && erk implement --dangerous"
+
+
+def test_build_activation_command_implement_docker() -> None:
+    """build_activation_command with docker flag includes --docker."""
+    config = activation_config_for_implement(dangerous=False, docker=True)
+    result = build_activation_command(config, Path("/path/to/script.sh"))
+    assert result == "source /path/to/script.sh && erk implement --docker"
+
+
+def test_build_activation_command_implement_docker_dangerous() -> None:
+    """build_activation_command with both flags includes both in correct order."""
+    config = activation_config_for_implement(dangerous=True, docker=True)
+    result = build_activation_command(config, Path("/path/to/script.sh"))
+    # docker comes before dangerous due to append order
+    assert result == "source /path/to/script.sh && erk implement --docker --dangerous"
+
+
+# render_activation_script tests
 
 
 def test_render_activation_script_without_subpath() -> None:
@@ -406,7 +501,7 @@ def test_print_activation_instructions_with_source_branch_and_force(
         script_path,
         source_branch="feature-branch",
         force=True,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=True,
     )
 
@@ -431,7 +526,7 @@ def test_print_activation_instructions_with_source_branch_no_force(
         script_path,
         source_branch="feature-branch",
         force=False,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=False,
     )
 
@@ -456,7 +551,7 @@ def test_print_activation_instructions_without_source_branch(
         script_path,
         source_branch=None,
         force=False,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=False,
     )
 
@@ -481,7 +576,7 @@ def test_print_activation_instructions_emits_osc52_clipboard_sequence(
         script_path,
         source_branch=None,
         force=False,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=True,
     )
 
@@ -513,7 +608,7 @@ def test_print_activation_instructions_shows_clipboard_hint(
         script_path,
         source_branch=None,
         force=False,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=True,
     )
 
@@ -521,11 +616,11 @@ def test_print_activation_instructions_shows_clipboard_hint(
     assert "(copied to clipboard)" in captured.err
 
 
-def test_print_activation_instructions_implement_mode_shows_implement_command(
+def test_print_activation_instructions_implement_config_shows_implement_command(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with mode='implement' shows implement command."""
+    """print_activation_instructions with implement config shows implement command."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
@@ -534,7 +629,7 @@ def test_print_activation_instructions_implement_mode_shows_implement_command(
         script_path,
         source_branch=None,
         force=False,
-        mode="implement",
+        config=activation_config_for_implement(dangerous=False, docker=False),
         copy=True,
     )
 
@@ -545,11 +640,11 @@ def test_print_activation_instructions_implement_mode_shows_implement_command(
     assert "--dangerous" not in captured.err
 
 
-def test_print_activation_instructions_implement_dangerous_mode_shows_dangerous_flag(
+def test_print_activation_instructions_implement_dangerous_config_shows_dangerous_flag(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with mode='implement_dangerous' shows --dangerous flag."""
+    """print_activation_instructions with dangerous config shows --dangerous flag."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
@@ -558,7 +653,7 @@ def test_print_activation_instructions_implement_dangerous_mode_shows_dangerous_
         script_path,
         source_branch=None,
         force=False,
-        mode="implement_dangerous",
+        config=activation_config_for_implement(dangerous=True, docker=False),
         copy=True,
     )
 
@@ -571,7 +666,7 @@ def test_print_activation_instructions_implement_dangerous_copies_dangerous_comm
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with mode='implement_dangerous' copies dangerous command."""
+    """print_activation_instructions with dangerous config copies dangerous command."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
@@ -580,7 +675,7 @@ def test_print_activation_instructions_implement_dangerous_copies_dangerous_comm
         script_path,
         source_branch=None,
         force=False,
-        mode="implement_dangerous",
+        config=activation_config_for_implement(dangerous=True, docker=False),
         copy=True,
     )
 
@@ -594,11 +689,11 @@ def test_print_activation_instructions_implement_dangerous_copies_dangerous_comm
     assert decoded_content == f"source {script_path} && erk implement --dangerous"
 
 
-def test_print_activation_instructions_implement_mode_copies_implement_command(
+def test_print_activation_instructions_implement_config_copies_implement_command(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """print_activation_instructions with mode='implement' copies implement command to clipboard."""
+    """print_activation_instructions with implement config copies implement command to clipboard."""
     script_path = tmp_path / ".erk" / "bin" / "activate.sh"
     script_path.parent.mkdir(parents=True)
     script_path.touch()
@@ -607,7 +702,7 @@ def test_print_activation_instructions_implement_mode_copies_implement_command(
         script_path,
         source_branch=None,
         force=False,
-        mode="implement",
+        config=activation_config_for_implement(dangerous=False, docker=False),
         copy=True,
     )
 
@@ -634,7 +729,7 @@ def test_print_activation_instructions_copy_false_no_osc52(
         script_path,
         source_branch=None,
         force=False,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=False,
     )
 
@@ -660,7 +755,7 @@ def test_print_activation_instructions_copy_true_emits_osc52(
         script_path,
         source_branch=None,
         force=False,
-        mode="activate_only",
+        config=activation_config_activate_only(),
         copy=True,
     )
 
@@ -668,6 +763,51 @@ def test_print_activation_instructions_copy_true_emits_osc52(
     # Should contain OSC 52 escape sequence
     assert "\033]52;c;" in captured.err
     assert "(copied to clipboard)" in captured.err
+
+
+def test_print_activation_instructions_docker_config_shows_docker_flag(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with docker config shows --docker flag."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        config=activation_config_for_implement(dangerous=False, docker=True),
+        copy=True,
+    )
+
+    captured = capsys.readouterr()
+    assert "To activate and start implementation (Docker isolation):" in captured.err
+    assert f"source {script_path} && erk implement --docker" in captured.err
+
+
+def test_print_activation_instructions_docker_dangerous_config_shows_both_flags(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with docker+dangerous config shows both flags."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        config=activation_config_for_implement(dangerous=True, docker=True),
+        copy=True,
+    )
+
+    captured = capsys.readouterr()
+    assert "To activate and start implementation (Docker isolation):" in captured.err
+    # docker comes before dangerous
+    assert f"source {script_path} && erk implement --docker --dangerous" in captured.err
 
 
 # land.sh script tests

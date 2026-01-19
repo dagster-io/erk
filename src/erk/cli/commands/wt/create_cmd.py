@@ -8,6 +8,7 @@ import click
 
 from erk.cli.activation import (
     ENABLE_ACTIVATION_SCRIPTS,
+    activation_config_activate_only,
     print_activation_instructions,
     write_worktree_activate_script,
 )
@@ -971,7 +972,7 @@ def create_wt(
                 activation_script_path,
                 source_branch=None,
                 force=False,
-                mode="activate_only",
+                config=activation_config_activate_only(),
                 copy=True,
             )
     else:
@@ -981,7 +982,7 @@ def create_wt(
                 activation_script_path,
                 source_branch=None,
                 force=False,
-                mode="activate_only",
+                config=activation_config_activate_only(),
                 copy=True,
             )
 
