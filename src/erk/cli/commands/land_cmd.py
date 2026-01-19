@@ -552,6 +552,9 @@ def _navigate_after_land(
     post_deletion_repo = replace(repo, root=main_repo_root)
 
     if target_child_branch is not None:
+        # Skip activation output in execute mode (script's cd command handles navigation)
+        if skip_activation_output:
+            raise SystemExit(0)
         target_path = ctx.git.find_worktree_for_branch(main_repo_root, target_child_branch)
         if target_path is None:
             # Auto-create worktree for child

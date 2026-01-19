@@ -885,3 +885,82 @@ def test_cleanup_and_navigate_outputs_noop_script_when_not_current_branch(
     assert "land complete" in script_content.lower(), (
         f"Expected 'land complete' in script content, got: {script_content[:200]}"
     )
+
+
+def test_cleanup_and_navigate_skip_activation_output_with_up_flag(
+    tmp_path: Path,
+) -> None:
+    """Test that skip_activation_output=True skips activation in --up mode.
+
+    Regression test for bug where duplicate activation messages appeared when
+    using `erk land --up` in execute mode. The bug was that the skip_activation_output
+    check was only in the else branch (non-up mode) but not in the if branch (--up mode).
+
+    The fix adds skip_activation_output check at the start of the --up branch.
+    """
+    worktree_path = tmp_path / "worktrees" / "feature-branch"
+    worktree_path.mkdir(parents=True)
+    child_worktree_path = tmp_path / "worktrees" / "child-branch"
+    child_worktree_path.mkdir(parents=True)
+    main_repo_root = tmp_path
+    (main_repo_root / ".git").mkdir()
+
+    fake_git = FakeGit(
+        worktrees={
+            main_repo_root: [
+                WorktreeInfo(path=worktree_path, branch="feature-branch"),
+                WorktreeInfo(path=child_worktree_path, branch="child-branch"),
+            ]
+        },
+        git_common_dirs={main_repo_root: main_repo_root / ".git"},
+        default_branches={main_repo_root: "main"},
+        local_branches={main_repo_root: ["main", "feature-branch", "child-branch"]},
+        existing_paths={
+            worktree_path,
+            child_worktree_path,
+            main_repo_root,
+            main_repo_root / ".git",
+        },
+    )
+
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED),
+        cwd=worktree_path,
+    )
+
+    repo = RepoContext(
+        root=main_repo_root,
+        repo_name="test-repo",
+        repo_dir=main_repo_root,
+        worktrees_dir=tmp_path / "worktrees",
+        pool_json_path=main_repo_root / "pool.json",
+        github=GitHubRepoId(owner="owner", repo="repo"),
+    )
+
+    # Call _cleanup_and_navigate with skip_activation_output=True and target_child_branch
+    # This simulates the execute mode (from sourcing land.sh) with --up flag
+    try:
+        _cleanup_and_navigate(
+            ctx=ctx,
+            repo=repo,
+            branch="feature-branch",
+            worktree_path=None,  # No worktree to clean up
+            script=False,
+            pull_flag=False,
+            force=True,
+            is_current_branch=False,
+            target_child_branch="child-branch",  # --up mode
+            objective_number=None,
+            no_delete=False,
+            skip_activation_output=True,  # Execute mode - should skip activation
+        )
+    except SystemExit as e:
+        assert e.code == 0  # Expected - exits cleanly without activation output
+
+    # Verify that no worktree activation happened (no checkouts to child branch worktree)
+    # The key assertion: with skip_activation_output=True, we should exit immediately
+    # without calling find_worktree_for_branch or activate_worktree
+    assert len(fake_git.checked_out_branches) == 0, (
+        "Should not have checked out any branches when skip_activation_output=True"
+    )
