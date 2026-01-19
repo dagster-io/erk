@@ -385,3 +385,44 @@ class ClaudeExecutor(ABC):
             ...     print(result.output)
         """
         ...
+
+    @abstractmethod
+    def execute_prompt_passthrough(
+        self,
+        prompt: str,
+        *,
+        model: str,
+        tools: list[str] | None,
+        cwd: Path,
+        dangerous: bool,
+    ) -> int:
+        """Execute prompt with output streaming directly to terminal.
+
+        This method is for non-interactive execution where Claude's output
+        should stream directly to stdout/stderr (passthrough mode). Unlike
+        execute_prompt(), this does not capture output - it's designed for
+        use cases like code review where Claude's output should be visible
+        immediately.
+
+        Args:
+            prompt: The prompt text to send to Claude
+            model: Model to use (e.g., "sonnet", "opus")
+            tools: List of allowed tools or None for default
+            cwd: Working directory for execution
+            dangerous: If True, use --dangerously-skip-permissions
+
+        Returns:
+            Exit code from Claude CLI
+
+        Example:
+            >>> executor = RealClaudeExecutor()
+            >>> exit_code = executor.execute_prompt_passthrough(
+            ...     "Review this PR",
+            ...     model="sonnet",
+            ...     tools=["Read", "Bash"],
+            ...     cwd=Path("/repos/my-project"),
+            ...     dangerous=True,
+            ... )
+            >>> raise SystemExit(exit_code)
+        """
+        ...

@@ -18,6 +18,7 @@ import click
 
 from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.context.types import LoadedConfig, NoRepoSentinel
+from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -446,3 +447,31 @@ def require_branch_manager(ctx: click.Context) -> BranchManager:
         raise SystemExit(1)
 
     return ctx.obj.branch_manager
+
+
+def require_claude_executor(ctx: click.Context) -> ClaudeExecutor:
+    """Get ClaudeExecutor from context, exiting with error if not initialized.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+
+    Returns:
+        ClaudeExecutor instance from context
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     executor = require_claude_executor(ctx)
+        ...     exit_code = executor.execute_prompt_passthrough(...)
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    return ctx.obj.claude_executor
