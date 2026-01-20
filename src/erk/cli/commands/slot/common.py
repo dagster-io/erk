@@ -7,6 +7,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.activation import ensure_worktree_activate_script
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
@@ -458,6 +459,12 @@ def allocate_slot_for_branch(
                 ref=None,
                 create_branch=False,
             )
+
+    # Ensure activation script exists with latest template
+    ensure_worktree_activate_script(
+        worktree_path=worktree_path,
+        post_create_commands=None,
+    )
 
     # Create new assignment
     now = ctx.time.now().isoformat()
