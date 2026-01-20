@@ -16,6 +16,7 @@ from erk_shared.core.claude_executor import (
     ClaudeExecutor,
     PromptResult,
 )
+from erk_shared.core.codespace_registry import CodespaceRegistry, RegisteredCodespace
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry, RegisteredPlanner
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
@@ -277,6 +278,48 @@ class FakePlannerRegistry(PlannerRegistry):
             registered_at=planner.registered_at,
             last_connected_at=timestamp,
         )
+
+
+@dataclass
+class FakeCodespaceRegistry(CodespaceRegistry):
+    """Fake CodespaceRegistry for testing.
+
+    Stores codespaces in memory.
+    """
+
+    codespaces: dict[str, RegisteredCodespace] = field(default_factory=dict)
+    default_name: str | None = None
+
+    def list_codespaces(self) -> list[RegisteredCodespace]:
+        return list(self.codespaces.values())
+
+    def get(self, name: str) -> RegisteredCodespace | None:
+        return self.codespaces.get(name)
+
+    def get_default(self) -> RegisteredCodespace | None:
+        if self.default_name is None:
+            return None
+        return self.codespaces.get(self.default_name)
+
+    def get_default_name(self) -> str | None:
+        return self.default_name
+
+    def set_default(self, name: str) -> None:
+        if name not in self.codespaces:
+            raise ValueError(f"No codespace with name '{name}' exists")
+        self.default_name = name
+
+    def register(self, codespace: RegisteredCodespace) -> None:
+        if codespace.name in self.codespaces:
+            raise ValueError(f"Codespace with name '{codespace.name}' already exists")
+        self.codespaces[codespace.name] = codespace
+
+    def unregister(self, name: str) -> None:
+        if name not in self.codespaces:
+            raise ValueError(f"No codespace with name '{name}' exists")
+        del self.codespaces[name]
+        if self.default_name == name:
+            self.default_name = None
 
 
 class FakePlanListService(PlanListService):

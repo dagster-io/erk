@@ -206,6 +206,16 @@ class RealErkInstallation(ErkInstallation):
         """
         return _installation_path() / "planners.toml"
 
+    # --- Codespace registry operations ---
+
+    def get_codespaces_config_path(self) -> Path:
+        """Get path to codespaces configuration file.
+
+        Returns:
+            Path to ~/.erk/codespaces.toml
+        """
+        return _installation_path() / "codespaces.toml"
+
     # --- Root path access ---
 
     def root(self) -> Path:

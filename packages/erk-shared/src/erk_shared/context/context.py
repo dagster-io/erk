@@ -23,6 +23,7 @@ from erk_shared.context.types import (
     RepoContext,
 )
 from erk_shared.core.claude_executor import ClaudeExecutor
+from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
@@ -84,6 +85,7 @@ class ErkContext:
     erk_installation: ErkInstallation
     script_writer: ScriptWriter
     planner_registry: PlannerRegistry
+    codespace_registry: CodespaceRegistry
     plan_list_service: PlanListService
 
     # Paths
