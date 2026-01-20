@@ -17,7 +17,7 @@ from erk.artifacts.models import (
     InstalledArtifact,
     OrphanCheckResult,
 )
-from erk.artifacts.sync import get_bundled_claude_dir, get_bundled_github_dir
+from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_github_dir
 from erk.core.capabilities.registry import (
     get_capability,
     get_managed_artifacts,
