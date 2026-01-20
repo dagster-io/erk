@@ -26,6 +26,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.          |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                          |
+| `download-remote-session`         | Download a session artifact from a GitHub Actions workflow run.           |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                        |
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                 |
@@ -199,6 +200,19 @@ Discover code reviews matching PR changed files.
 | --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
 | `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to analyze                                               |
 | `--reviews-dir` | TEXT    | No       | '.claude/reviews' | Directory containing review definitions (default: .claude/reviews) |
+
+### download-remote-session
+
+Download a session artifact from a GitHub Actions workflow run.
+
+**Usage:** `erk exec download-remote-session`
+
+**Options:**
+
+| Flag           | Type | Required | Default        | Description                                 |
+| -------------- | ---- | -------- | -------------- | ------------------------------------------- |
+| `--run-id`     | TEXT | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID              |
+| `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate artifact) |
 
 ### exit-plan-mode-hook
 

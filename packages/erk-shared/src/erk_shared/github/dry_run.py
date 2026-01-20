@@ -301,3 +301,13 @@ class DryRunGitHub(GitHub):
     ) -> list[PullRequestInfo]:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_open_prs_with_base_branch(repo_root, base_branch)
+
+    def download_run_artifact(
+        self,
+        repo_root: Path,
+        run_id: str,
+        artifact_name: str,
+        destination: Path,
+    ) -> bool:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.download_run_artifact(repo_root, run_id, artifact_name, destination)

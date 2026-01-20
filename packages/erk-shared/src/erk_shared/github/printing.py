@@ -318,3 +318,13 @@ class PrintingGitHub(PrintingBase, GitHub):
     ) -> list[PullRequestInfo]:
         """Get open PRs with base branch (read-only, no printing)."""
         return self._wrapped.get_open_prs_with_base_branch(repo_root, base_branch)
+
+    def download_run_artifact(
+        self,
+        repo_root: Path,
+        run_id: str,
+        artifact_name: str,
+        destination: Path,
+    ) -> bool:
+        """Download artifact (read-only, no printing)."""
+        return self._wrapped.download_run_artifact(repo_root, run_id, artifact_name, destination)
