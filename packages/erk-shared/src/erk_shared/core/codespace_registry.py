@@ -6,6 +6,9 @@ and the RegisteredCodespace type.
 A codespace is a registered GitHub Codespace that can be used for running
 Claude Code remotely. Unlike planners, codespaces have a simpler structure
 with just name, gh_name, and created_at fields.
+
+The ABC is read-only. Mutation operations are standalone functions in the
+real implementation module (registry_real.py).
 """
 
 from abc import ABC, abstractmethod
@@ -29,10 +32,12 @@ class RegisteredCodespace:
 
 
 class CodespaceRegistry(ABC):
-    """Abstract interface for codespace registry operations.
+    """Abstract interface for codespace registry read operations.
 
-    Manages registration and lookup of codespaces
-    (GitHub Codespaces for remote Claude execution).
+    Manages lookup of codespaces (GitHub Codespaces for remote Claude execution).
+
+    This is a read-only interface. Mutation operations (register, unregister,
+    set_default) are standalone functions in the real implementation module.
     """
 
     @abstractmethod
@@ -71,41 +76,5 @@ class CodespaceRegistry(ABC):
 
         Returns:
             The default codespace name if set, None otherwise
-        """
-        ...
-
-    @abstractmethod
-    def set_default(self, name: str) -> None:
-        """Set the default codespace.
-
-        Args:
-            name: Name of the codespace to set as default
-
-        Raises:
-            ValueError: If no codespace with that name exists
-        """
-        ...
-
-    @abstractmethod
-    def register(self, codespace: RegisteredCodespace) -> None:
-        """Register a new codespace.
-
-        Args:
-            codespace: The codespace to register
-
-        Raises:
-            ValueError: If a codespace with that name already exists
-        """
-        ...
-
-    @abstractmethod
-    def unregister(self, name: str) -> None:
-        """Remove a codespace from the registry.
-
-        Args:
-            name: Name of the codespace to remove
-
-        Raises:
-            ValueError: If no codespace with that name exists
         """
         ...

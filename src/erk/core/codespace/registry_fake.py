@@ -10,7 +10,9 @@ from erk.core.codespace.types import RegisteredCodespace
 class FakeCodespaceRegistry(CodespaceRegistry):
     """In-memory implementation for testing.
 
-    Provides mutation tracking via read-only properties for assertions.
+    Implements the read-only ABC and provides additional mutation methods
+    for test setup convenience. Mutation tracking via read-only properties
+    enables assertions in tests.
     """
 
     def __init__(
@@ -37,6 +39,8 @@ class FakeCodespaceRegistry(CodespaceRegistry):
             for codespace in codespaces:
                 self._codespaces[codespace.name] = codespace
 
+    # ABC read-only methods
+
     def list_codespaces(self) -> list[RegisteredCodespace]:
         """List all registered codespaces."""
         return list(self._codespaces.values())
@@ -55,22 +59,17 @@ class FakeCodespaceRegistry(CodespaceRegistry):
         """Get the name of the default codespace."""
         return self._default_codespace
 
-    def set_default(self, name: str) -> None:
-        """Set the default codespace."""
-        if name not in self._codespaces:
-            raise ValueError(f"No codespace named '{name}' exists")
-        self._default_codespace = name
-        self._set_defaults.append(name)
+    # Test helper methods (not part of ABC)
 
     def register(self, codespace: RegisteredCodespace) -> None:
-        """Register a new codespace."""
+        """Register a new codespace (test helper, not ABC method)."""
         if codespace.name in self._codespaces:
             raise ValueError(f"Codespace '{codespace.name}' already exists")
         self._codespaces[codespace.name] = codespace
         self._registered.append(codespace)
 
     def unregister(self, name: str) -> None:
-        """Remove a codespace from the registry."""
+        """Remove a codespace from the registry (test helper, not ABC method)."""
         if name not in self._codespaces:
             raise ValueError(f"No codespace named '{name}' exists")
         del self._codespaces[name]
@@ -80,6 +79,13 @@ class FakeCodespaceRegistry(CodespaceRegistry):
             self._default_codespace = None
 
         self._unregistered.append(name)
+
+    def set_default(self, name: str) -> None:
+        """Set the default codespace (test helper, not ABC method)."""
+        if name not in self._codespaces:
+            raise ValueError(f"No codespace named '{name}' exists")
+        self._default_codespace = name
+        self._set_defaults.append(name)
 
     # Read-only mutation tracking properties for test assertions
 

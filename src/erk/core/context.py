@@ -569,7 +569,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         script_writer=RealScriptWriter(),
         plan_list_service=plan_list_service,
         planner_registry=RealPlannerRegistry(erk_installation.get_planners_config_path()),
-        codespace_registry=RealCodespaceRegistry(erk_installation.get_codespaces_config_path()),
+        codespace_registry=RealCodespaceRegistry.from_config_path(
+            erk_installation.get_codespaces_config_path()
+        ),
         claude_installation=real_claude_installation,
         prompt_executor=prompt_executor,
         cwd=cwd,

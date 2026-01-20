@@ -5,6 +5,7 @@ import subprocess
 
 import click
 
+from erk.core.codespace.registry_real import register_codespace, set_default_codespace
 from erk.core.codespace.types import RegisteredCodespace
 from erk.core.context import ErkContext
 
@@ -120,11 +121,12 @@ def setup_codespace(
         gh_name=gh_name,
         created_at=ctx.time.now(),
     )
-    ctx.codespace_registry.register(registered)
+    config_path = ctx.erk_installation.get_codespaces_config_path()
+    new_registry = register_codespace(config_path, registered)
 
     # Set as default if first codespace
-    if len(ctx.codespace_registry.list_codespaces()) == 1:
-        ctx.codespace_registry.set_default(name)
+    if len(new_registry.list_codespaces()) == 1:
+        set_default_codespace(config_path, name)
         click.echo(f"Registered codespace '{name}' (set as default)", err=True)
     else:
         click.echo(f"Registered codespace '{name}'", err=True)
