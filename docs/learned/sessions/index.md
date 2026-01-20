@@ -12,4 +12,5 @@
 - **[preprocessing.md](preprocessing.md)** — preprocessing Claude Code session logs for analysis
 - **[raw-session-processing.md](raw-session-processing.md)** — processing issues with erk-raw-session label, extracting documentation from landed PR sessions, understanding raw session issue format
 - **[session-hierarchy.md](session-hierarchy.md)** — understanding Claude Code session structure, working with parent and agent sessions, finding session files on disk, correlating agent logs to parent sessions, implementing session-scoped file discovery
+- **[session-sources.md](session-sources.md)** — working with learn workflow session handling, understanding local vs remote session origins, implementing session source processing, extending learn to handle remote artifacts
 - **[tools.md](tools.md)** — finding session logs, inspecting agent execution, debugging session issues

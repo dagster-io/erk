@@ -46,6 +46,9 @@ last_local_impl_user: null
 last_remote_impl_at: null
 last_remote_impl_run_id: null
 last_remote_impl_session_id: null
+last_learn_session: null
+last_learn_at: null
+learn_status: null
 ```
 
 ### plan-header Fields
@@ -76,9 +79,12 @@ last_remote_impl_session_id: null
 
 **Session tracking fields:**
 
-| Field                  | Type         | Description                                         |
-| ---------------------- | ------------ | --------------------------------------------------- |
-| `created_from_session` | string\|null | Session ID that created this plan (for `erk learn`) |
+| Field                  | Type         | Description                                                                       |
+| ---------------------- | ------------ | --------------------------------------------------------------------------------- |
+| `created_from_session` | string\|null | Session ID that created this plan (for `erk learn`)                               |
+| `last_learn_session`   | string\|null | Session ID that last invoked `erk learn` on this plan                             |
+| `last_learn_at`        | string\|null | ISO 8601 timestamp of last `erk learn` invocation                                 |
+| `learn_status`         | string\|null | Learning workflow status: "pending" (async learn triggered), "completed", or null |
 
 ## First Comment: plan-body Block
 
