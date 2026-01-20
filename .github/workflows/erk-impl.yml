@@ -212,6 +212,21 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
 
+      - name: Validate implementation produced changes
+        if: steps.implement.outputs.implementation_success == 'true'
+        run: |
+          # Check for changes excluding .worker-impl/ and .impl/
+          CHANGES=$(git status --porcelain | grep -v '^\s*D.*\.worker-impl/' | grep -v '\.impl/' || true)
+
+          if [ -z "$CHANGES" ]; then
+            echo "::error::Implementation completed but produced no code changes."
+            echo "This usually means the implementation command failed silently or couldn't find the plan."
+            exit 1
+          fi
+
+          echo "Implementation produced changes:"
+          echo "$CHANGES"
+
       - name: Submit branch with proper commit message
         id: submit
         continue-on-error: true
