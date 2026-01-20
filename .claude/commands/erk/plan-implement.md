@@ -1,15 +1,15 @@
 ---
-description: Implement a plan from GitHub issue or current .impl folder
-argument-hint: "[<issue-number-or-url>]"
+description: Implement a plan from GitHub issue, file path, or current .impl folder
+argument-hint: "[<issue-number-or-url-or-path>]"
 ---
 
 # /erk:plan-implement
 
-Implement a plan - either from a GitHub issue, an existing `.impl/` folder, or by saving the current plan first.
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
 
 This is the primary implementation workflow - it orchestrates:
 
-1. Setting up the `.impl/` folder (from issue, existing folder, or fresh plan)
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
 2. Executing the implementation
 3. Running CI and submitting the PR
 
@@ -18,7 +18,7 @@ This is the primary implementation workflow - it orchestrates:
 - Must be in a git repository managed by erk
 - GitHub CLI (`gh`) must be authenticated
 - One of:
-  - An issue number or URL argument
+  - An issue number, URL, or file path argument
   - An existing `.impl/` folder
   - A plan in `~/.claude/plans/` (from plan mode)
 
@@ -28,6 +28,7 @@ This is the primary implementation workflow - it orchestrates:
 /erk:plan-implement                    # Use .impl/ or save current plan
 /erk:plan-implement 2521               # Fetch and implement issue #2521
 /erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
 ```
 
 ---
@@ -36,13 +37,14 @@ This is the primary implementation workflow - it orchestrates:
 
 ### Step 0: Parse Arguments
 
-Extract optional issue argument from `$ARGUMENTS`:
+Extract optional argument from `$ARGUMENTS`:
 
-- **If numeric** (e.g., `2521`): Use as issue number
-- **If URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path (the last numeric segment)
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
 - **If empty**: Proceed to check `.impl/` folder
 
-Store the result as `ISSUE_ARG` (either the issue number or empty).
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
 
 ### Step 1: Determine Implementation Source
 
@@ -71,6 +73,32 @@ Then run impl-init:
 erk exec impl-init --json
 ```
 
+#### 1a-file. If FILE_ARG is provided
+
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create <branch-name>
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl && cp <FILE_ARG> .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
 #### 1b. If .impl/ already exists
 
 Check if implementation is already set up:
@@ -79,7 +107,9 @@ Check if implementation is already set up:
 erk exec impl-init --json
 ```
 
-If this succeeds with `"valid": true` and `"has_issue_tracking": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+If this succeeds with `"valid": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+
+Note: `has_issue_tracking` may be `true` (issue-based) or `false` (file-based).
 
 If it fails or returns `"valid": false`, continue to Step 2.
 
