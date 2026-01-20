@@ -108,16 +108,8 @@ class LocalSessionSource(SessionSource):
     _path: str | None
 
     def __init__(self, *, session_id: str, path: str | None = None) -> None:
-        object.__setattr__(self, "_session_id", session_id)
-        object.__setattr__(self, "_path", path)
-
-    def __setattr__(self, name: str, value: object) -> None:
-        msg = "LocalSessionSource is immutable"
-        raise AttributeError(msg)
-
-    def __delattr__(self, name: str) -> None:
-        msg = "LocalSessionSource is immutable"
-        raise AttributeError(msg)
+        self._session_id = session_id
+        self._path = path
 
     @property
     def source_type(self) -> Literal["local"]:
@@ -163,17 +155,9 @@ class RemoteSessionSource(SessionSource):
     def __init__(
         self, *, session_id: str, run_id: str, path: str | None = None
     ) -> None:
-        object.__setattr__(self, "_session_id", session_id)
-        object.__setattr__(self, "_run_id", run_id)
-        object.__setattr__(self, "_path", path)
-
-    def __setattr__(self, name: str, value: object) -> None:
-        msg = "RemoteSessionSource is immutable"
-        raise AttributeError(msg)
-
-    def __delattr__(self, name: str) -> None:
-        msg = "RemoteSessionSource is immutable"
-        raise AttributeError(msg)
+        self._session_id = session_id
+        self._run_id = run_id
+        self._path = path
 
     @property
     def source_type(self) -> Literal["remote"]:

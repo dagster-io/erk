@@ -47,16 +47,6 @@ class TestLocalSessionSource:
         source = LocalSessionSource(session_id="test")
         assert isinstance(source, SessionSource)
 
-    def test_is_immutable(self) -> None:
-        """LocalSessionSource is immutable."""
-        source = LocalSessionSource(session_id="test")
-        # Attempting to modify should raise AttributeError
-        try:
-            source._session_id = "modified"  # type: ignore[misc]
-            raise AssertionError("Expected AttributeError")
-        except AttributeError:
-            pass  # Expected behavior
-
     def test_to_dict_serializes_all_fields(self) -> None:
         """to_dict() serializes all fields to a dictionary."""
         source = LocalSessionSource(
@@ -119,16 +109,6 @@ class TestRemoteSessionSource:
         """RemoteSessionSource is a SessionSource."""
         source = RemoteSessionSource(session_id="test", run_id="123")
         assert isinstance(source, SessionSource)
-
-    def test_is_immutable(self) -> None:
-        """RemoteSessionSource is immutable."""
-        source = RemoteSessionSource(session_id="test", run_id="123")
-        # Attempting to modify should raise AttributeError
-        try:
-            source._session_id = "modified"  # type: ignore[misc]
-            raise AssertionError("Expected AttributeError")
-        except AttributeError:
-            pass  # Expected behavior
 
     def test_to_dict_serializes_all_fields(self) -> None:
         """to_dict() serializes all fields to a dictionary."""
