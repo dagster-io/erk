@@ -808,6 +808,21 @@ class DryRunGit(Git):
 
 ## Command-Specific Terms
 
+### --codespace
+
+Flag for `erk implement` that runs Claude in a registered GitHub Codespace instead of locally.
+
+**Usage**:
+
+- `--codespace` - Use default codespace
+- `--codespace <name>` - Use named codespace
+
+**Behavior**: Mutually exclusive with `--docker`. The codespace provides filesystem isolation, making `--dangerously-skip-permissions` safe to use automatically.
+
+**Related Commands**: `erk codespace setup`, `erk codespace list`, `erk codespace set-default`
+
+**Implementation Pattern**: Uses Click's `flag_value` pattern for optional-value flags. See [Click Patterns](cli/click-patterns.md).
+
 ### Plan Folder
 
 A `.impl/` folder containing implementation plans and progress tracking for a feature.
