@@ -7,6 +7,7 @@ operations while delegating read-only operations to the wrapped implementation.
 from pathlib import Path
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.worktree.abc import Worktree
 from erk_shared.output.output import user_output
 
 # ============================================================================
@@ -36,6 +37,11 @@ class DryRunGit(Git):
             wrapped: The Git implementation to wrap (usually RealGit or FakeGit)
         """
         self._wrapped = wrapped
+
+    @property
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway (delegates to wrapped)."""
+        return self._wrapped.worktree
 
     # Read-only operations: delegate to wrapped implementation
 

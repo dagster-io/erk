@@ -7,6 +7,7 @@ before delegating to the wrapped implementation.
 from pathlib import Path
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.worktree.abc import Worktree
 from erk_shared.printing.base import PrintingBase
 
 # ============================================================================
@@ -30,6 +31,11 @@ class PrintingGit(PrintingBase, Git):
     """
 
     # Inherits __init__, _emit, and _format_command from PrintingBase
+
+    @property
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway (delegates to wrapped)."""
+        return self._wrapped.worktree
 
     # Read-only operations: delegate without printing
 

@@ -207,7 +207,7 @@ def _list_worktrees(ctx: ErkContext, *, show_last_commit: bool, show_all: bool) 
     current_dir = ctx.cwd
 
     # Get worktree info
-    worktrees = ctx.git.list_worktrees(repo.root)
+    worktrees = ctx.git.worktree.list_worktrees(repo.root)
 
     # Filter out empty slots (placeholder branches) unless --all is specified
     if not show_all:

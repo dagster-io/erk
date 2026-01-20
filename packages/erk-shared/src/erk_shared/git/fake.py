@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.worktree.abc import Worktree
+from erk_shared.git.worktree.fake import FakeWorktree
 
 
 class PushedBranch(NamedTuple):
@@ -243,6 +245,18 @@ class FakeGit(Git):
         self._rebase_onto_calls: list[tuple[Path, str]] = []  # (cwd, target_ref)
         self._rebase_abort_calls: list[Path] = []
         self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
+
+        # Worktree subgateway
+        self._worktree_gateway = FakeWorktree(
+            worktrees=self._worktrees,
+            existing_paths=self._existing_paths,
+            dirty_worktrees=self._dirty_worktrees,
+        )
+
+    @property
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway."""
+        return self._worktree_gateway
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository.

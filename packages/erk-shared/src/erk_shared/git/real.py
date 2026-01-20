@@ -14,6 +14,8 @@ from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
 from erk_shared.git.lock import wait_for_index_lock
+from erk_shared.git.worktree.abc import Worktree
+from erk_shared.git.worktree.real import RealWorktree
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -30,6 +32,12 @@ class RealGit(Git):
             time: Time provider for lock waiting. Defaults to RealTime().
         """
         self._time = time if time is not None else RealTime()
+        self._worktree = RealWorktree()
+
+    @property
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway."""
+        return self._worktree
 
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository."""

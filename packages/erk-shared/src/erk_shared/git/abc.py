@@ -9,10 +9,15 @@ Architecture:
 - Standalone functions: Convenience wrappers delegating to module singleton
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
+
+if TYPE_CHECKING:
+    from erk_shared.git.worktree.abc import Worktree
 
 
 class BranchDivergence(NamedTuple):
@@ -89,6 +94,12 @@ class Git(ABC):
     All implementations (real and fake) must implement this interface.
     This interface contains ONLY runtime operations - no test setup methods.
     """
+
+    @property
+    @abstractmethod
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway."""
+        ...
 
     @abstractmethod
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
