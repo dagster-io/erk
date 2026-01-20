@@ -292,6 +292,13 @@ def get_artifact_health(
         installed_hash = _compute_path_hash(path, is_directory=True)
         artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
 
+    # Check reviews (always file-based, in .claude/reviews/)
+    for name in _get_bundled_by_type("review", installed_capabilities=installed_capabilities):
+        key = f"reviews/{name}.md"
+        path = project_claude_dir / "reviews" / f"{name}.md"
+        installed_hash = _compute_path_hash(path, is_directory=False)
+        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
+
     # Check hooks
     settings_path = project_claude_dir / "settings.json"
     if settings_path.exists():
@@ -582,6 +589,40 @@ def _find_missing_actions(
     return missing
 
 
+def _find_missing_reviews(
+    project_reviews_dir: Path,
+    bundled_reviews_dir: Path,
+) -> dict[str, list[str]]:
+    """Find erk-managed reviews that exist in bundle but missing locally.
+
+    Args:
+        project_reviews_dir: Path to project's .claude/reviews/ directory
+        bundled_reviews_dir: Path to bundled .github/reviews/ in erk package
+
+    Returns:
+        Dict mapping ".claude/reviews" to list of missing review filenames
+    """
+    if not bundled_reviews_dir.exists():
+        return {}
+
+    missing: dict[str, list[str]] = {}
+
+    # Note: use installed_capabilities=None to check ALL managed reviews
+    for review_name in _get_bundled_by_type("review", installed_capabilities=None):
+        review_filename = f"{review_name}.md"
+        bundled_review = bundled_reviews_dir / review_filename
+        local_review = project_reviews_dir / review_filename
+
+        # If bundled but not local, it's missing
+        if bundled_review.exists() and not local_review.exists():
+            folder_key = ".claude/reviews"
+            if folder_key not in missing:
+                missing[folder_key] = []
+            missing[folder_key].append(review_filename)
+
+    return missing
+
+
 def _find_missing_hooks(project_claude_dir: Path) -> dict[str, list[str]]:
     """Find erk-managed hooks that are missing from settings.json.
 
@@ -661,6 +702,11 @@ def find_missing_artifacts(project_dir: Path) -> CompletenessCheckResult:
     project_actions_dir = project_dir / ".github" / "actions"
     bundled_actions_dir = bundled_github_dir / "actions"
     missing.update(_find_missing_actions(project_actions_dir, bundled_actions_dir))
+
+    # Check reviews (in .claude/reviews/, bundled from .github/reviews/)
+    project_reviews_dir = project_claude_dir / "reviews"
+    bundled_reviews_dir = bundled_github_dir / "reviews"
+    missing.update(_find_missing_reviews(project_reviews_dir, bundled_reviews_dir))
 
     # Check hooks in settings.json
     missing.update(_find_missing_hooks(project_claude_dir))

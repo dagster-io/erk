@@ -19,7 +19,6 @@ from erk.core.capabilities.base import (
     CapabilityScope,
 )
 from erk.core.capabilities.detection import is_reminder_installed
-from erk.core.capabilities.dignified_review import DignifiedReviewCapability
 from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
@@ -36,7 +35,6 @@ from erk.core.capabilities.skills import (
     FakeDrivenTestingCapability,
 )
 from erk.core.capabilities.statusline import StatuslineCapability
-from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
 from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
@@ -758,126 +756,6 @@ def test_preflight_called_before_install_pattern() -> None:
     # Default preflight always succeeds
     preflight_result = cap.preflight(None)
     assert preflight_result.success is True
-
-
-# =============================================================================
-# Tests for DignifiedReviewCapability
-# =============================================================================
-
-
-def test_dignified_review_capability_properties() -> None:
-    """Test DignifiedReviewCapability has correct properties."""
-    cap = DignifiedReviewCapability()
-    assert cap.name == "dignified-review"
-    assert cap.scope == "project"
-    assert "GitHub Action" in cap.description or "code review" in cap.description
-    assert "dignified-python-review.yml" in cap.installation_check_description
-
-
-def test_dignified_review_artifacts() -> None:
-    """Test DignifiedReviewCapability lists correct artifacts."""
-    cap = DignifiedReviewCapability()
-    artifacts = cap.artifacts
-
-    assert len(artifacts) == 2
-    paths = [a.path for a in artifacts]
-    assert ".github/workflows/dignified-python-review.yml" in paths
-    assert ".github/prompts/dignified-python-review.md" in paths
-
-
-def test_dignified_review_is_installed_false_when_missing(tmp_path: Path) -> None:
-    """Test is_installed returns False when workflow file doesn't exist."""
-    cap = DignifiedReviewCapability()
-    assert cap.is_installed(tmp_path) is False
-
-
-def test_dignified_review_is_installed_true_when_exists(tmp_path: Path) -> None:
-    """Test is_installed returns True when workflow file exists."""
-    (tmp_path / ".github" / "workflows").mkdir(parents=True)
-    (tmp_path / ".github" / "workflows" / "dignified-python-review.yml").write_text(
-        "", encoding="utf-8"
-    )
-    cap = DignifiedReviewCapability()
-    assert cap.is_installed(tmp_path) is True
-
-
-def test_dignified_review_preflight_fails_when_skill_missing(tmp_path: Path) -> None:
-    """Test preflight fails when dignified-python skill is not installed."""
-    cap = DignifiedReviewCapability()
-    result = cap.preflight(tmp_path)
-
-    assert result.success is False
-    assert "dignified-python" in result.message
-
-
-def test_dignified_review_preflight_succeeds_when_skill_present(tmp_path: Path) -> None:
-    """Test preflight succeeds when dignified-python skill is installed."""
-    # Create the skill directory
-    (tmp_path / ".claude" / "skills" / "dignified-python").mkdir(parents=True)
-
-    cap = DignifiedReviewCapability()
-    result = cap.preflight(tmp_path)
-
-    assert result.success is True
-
-
-def test_dignified_review_capability_registered() -> None:
-    """Test that dignified-review capability is registered."""
-    cap = get_capability("dignified-review")
-    assert cap is not None
-    assert cap.name == "dignified-review"
-
-
-# =============================================================================
-# Tests for TripwiresReviewCapability
-# =============================================================================
-
-
-def test_tripwires_review_capability_properties() -> None:
-    """Test TripwiresReviewCapability has correct properties."""
-    cap = TripwiresReviewCapability()
-    assert cap.name == "tripwires-review"
-    assert cap.scope == "project"
-    assert "tripwire" in cap.description.lower() or "code review" in cap.description.lower()
-    assert "tripwires-review.yml" in cap.installation_check_description
-
-
-def test_tripwires_review_artifacts() -> None:
-    """Test TripwiresReviewCapability lists correct artifacts."""
-    cap = TripwiresReviewCapability()
-    artifacts = cap.artifacts
-
-    assert len(artifacts) == 2
-    paths = [a.path for a in artifacts]
-    assert ".github/workflows/tripwires-review.yml" in paths
-    assert ".github/prompts/tripwires-review.md" in paths
-
-
-def test_tripwires_review_is_installed_false_when_missing(tmp_path: Path) -> None:
-    """Test is_installed returns False when workflow file doesn't exist."""
-    cap = TripwiresReviewCapability()
-    assert cap.is_installed(tmp_path) is False
-
-
-def test_tripwires_review_is_installed_true_when_exists(tmp_path: Path) -> None:
-    """Test is_installed returns True when workflow file exists."""
-    (tmp_path / ".github" / "workflows").mkdir(parents=True)
-    (tmp_path / ".github" / "workflows" / "tripwires-review.yml").write_text("", encoding="utf-8")
-    cap = TripwiresReviewCapability()
-    assert cap.is_installed(tmp_path) is True
-
-
-def test_tripwires_review_capability_registered() -> None:
-    """Test that tripwires-review capability is registered."""
-    cap = get_capability("tripwires-review")
-    assert cap is not None
-    assert cap.name == "tripwires-review"
-
-
-def test_tripwires_review_is_not_required() -> None:
-    """Test that TripwiresReviewCapability is not required."""
-    cap = TripwiresReviewCapability()
-    assert cap.required is False
 
 
 # =============================================================================
@@ -1727,28 +1605,6 @@ def test_ruff_format_capability_managed_artifacts() -> None:
     assert managed[0].artifact_type == "hook"
 
 
-def test_dignified_review_capability_managed_artifacts() -> None:
-    """Test that DignifiedReviewCapability declares its managed artifacts."""
-    cap = DignifiedReviewCapability()
-    managed = cap.managed_artifacts
-
-    assert len(managed) == 2
-    names = {(a.name, a.artifact_type) for a in managed}
-    assert ("dignified-python-review", "workflow") in names
-    assert ("dignified-python-review", "prompt") in names
-
-
-def test_tripwires_review_capability_managed_artifacts() -> None:
-    """Test that TripwiresReviewCapability declares its managed artifacts."""
-    cap = TripwiresReviewCapability()
-    managed = cap.managed_artifacts
-
-    assert len(managed) == 2
-    names = {(a.name, a.artifact_type) for a in managed}
-    assert ("tripwires-review", "workflow") in names
-    assert ("tripwires-review", "prompt") in names
-
-
 def test_learned_docs_capability_managed_artifacts() -> None:
     """Test that LearnedDocsCapability declares its managed artifacts."""
     cap = LearnedDocsCapability()
@@ -1794,7 +1650,7 @@ def test_get_managed_artifacts_contains_all_artifact_types() -> None:
     assert "workflow" in artifact_types
     assert "action" in artifact_types
     assert "hook" in artifact_types
-    assert "prompt" in artifact_types
+    assert "review" in artifact_types
 
 
 def test_get_managed_artifacts_maps_to_capability_name() -> None:
@@ -1814,7 +1670,7 @@ def test_is_capability_managed_returns_true_for_known_artifacts() -> None:
     assert is_capability_managed("erk-impl", "workflow") is True
     assert is_capability_managed("user-prompt-hook", "hook") is True
     assert is_capability_managed("ruff-format-hook", "hook") is True
-    assert is_capability_managed("dignified-python-review", "prompt") is True
+    assert is_capability_managed("tripwires", "review") is True
 
 
 def test_is_capability_managed_returns_false_for_unknown_artifacts() -> None:
