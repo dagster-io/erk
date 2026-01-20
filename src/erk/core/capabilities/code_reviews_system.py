@@ -66,12 +66,11 @@ _INSTALLABLE_ITEMS: tuple[InstallableItem, ...] = (
     ),
 )
 
+
 @cache
 def _get_uninstallable_items() -> tuple[InstallableItem, ...]:
     """Items to remove on uninstall (excludes .claude/reviews/ which may have user content)."""
-    return tuple(
-        item for item in _INSTALLABLE_ITEMS if item.item_type != "create_directory"
-    )
+    return tuple(item for item in _INSTALLABLE_ITEMS if item.item_type != "create_directory")
 
 
 class CodeReviewsSystemCapability(Capability):
