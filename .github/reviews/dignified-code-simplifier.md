@@ -9,50 +9,24 @@ allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
 enabled: true
 ---
 
-## Step 1: Load the Skill Files
+## Step 1: Load the Skill
 
-Read these skill files from the repository:
+Read the skill file: `.claude/skills/dignified-code-simplifier/SKILL.md`
 
-1. .claude/skills/dignified-code-simplifier/SKILL.md (main skill definition)
-2. .claude/skills/dignified-python/SKILL.md (referenced dignified-python standards)
-3. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+This skill references `@.claude/skills/dignified-python/` which you should also load.
 
-## Step 2: Identify Changed Python Code
+## Step 2: Apply in Review Mode
 
-For each Python file in the PR diff, determine which lines were actually modified:
+Apply the skill's refinement process to the PR diff, but instead of making changes:
 
-- Lines starting with `+` in the diff are additions/modifications
-- Lines starting with ` ` (space) are unchanged context
+- Post inline comments with format: `**Code Simplification**: [suggestion]`
+- Focus only on lines starting with `+` in the diff (new/modified code)
 
-Focus only on changed code, not context lines.
-
-## Step 3: Analyze for Simplification Opportunities
-
-Apply the criteria from the skill files loaded in Step 1. The dignified-code-simplifier skill defines what to look for (code clarity, dignified-python standards, balance checks).
-
-## Step 4: Inline Comment Format
-
-When posting inline comments for simplification suggestions, use this format:
-
-```
-**Code Simplification**: [opportunity type] - [specific suggestion]
-```
-
-Examples: "Reduce nesting - extract helper", "Consolidate logic - combine checks", "Remove redundancy - variable used once"
-
-## Step 5: Summary Comment Format
-
-Summary format (preserve existing Activity Log entries and prepend new entry):
+## Step 3: Summary Comment
 
 ```
 ### Files Reviewed
 - `file.py`: N suggestions
 ```
 
-Activity log entry examples:
-
-- "Found 2 opportunities (reduce nesting in x.py, consolidate logic in y.py)"
-- "No simplification opportunities found"
-- "Suggestion dismissed: abstraction provides value for testability"
-
-Keep the last 10 log entries maximum.
+Activity log: Keep last 10 entries. Examples: "Found 2 opportunities", "No suggestions", "Dismissed: abstraction provides testability value"
