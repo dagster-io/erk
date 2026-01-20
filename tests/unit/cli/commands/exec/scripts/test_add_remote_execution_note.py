@@ -13,6 +13,27 @@ from erk.cli.commands.exec.scripts.add_remote_execution_note import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import PRDetails
+
+
+def _make_pr_details(pr_number: int, body: str) -> PRDetails:
+    """Create PRDetails with specified body for testing."""
+    return PRDetails(
+        number=pr_number,
+        url=f"https://github.com/owner/repo/pull/{pr_number}",
+        title=f"PR #{pr_number}",
+        body=body,
+        state="OPEN",
+        is_draft=False,
+        base_ref_name="main",
+        head_ref_name=f"feature-{pr_number}",
+        is_cross_repository=False,
+        mergeable="MERGEABLE",
+        merge_state_status="CLEAN",
+        owner="owner",
+        repo="repo",
+    )
+
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
@@ -22,7 +43,7 @@ from erk_shared.github.fake import FakeGitHub
 def test_add_remote_execution_note_success(tmp_path: Path) -> None:
     """Test successfully adding a remote execution note to a PR."""
     fake_github = FakeGitHub(
-        pr_bodies_by_number={100: "Initial PR body"},
+        pr_details={100: _make_pr_details(100, "Initial PR body")},
     )
     runner = CliRunner()
 
@@ -57,7 +78,7 @@ def test_add_remote_execution_note_success(tmp_path: Path) -> None:
 def test_add_remote_execution_note_to_empty_body(tmp_path: Path) -> None:
     """Test adding note to PR with no existing body."""
     fake_github = FakeGitHub(
-        pr_bodies_by_number={200: ""},
+        pr_details={200: _make_pr_details(200, "")},
     )
     runner = CliRunner()
 
@@ -96,7 +117,7 @@ This PR implements feature X.
 - [x] Unit tests pass
 """
     fake_github = FakeGitHub(
-        pr_bodies_by_number={300: existing_body},
+        pr_details={300: _make_pr_details(300, existing_body)},
     )
     runner = CliRunner()
 

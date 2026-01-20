@@ -43,10 +43,6 @@ class DryRunGitHub(GitHub):
         """Access to issue operations (wrapped with dry-run behavior)."""
         return self._dry_run_issues
 
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_base_branch(repo_root, pr_number)
-
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
         """No-op for updating PR base branch in dry-run mode."""
         # Do nothing - prevents actual PR base update
@@ -197,14 +193,6 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.list_prs(repo_root, state=state)
 
-    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_title(repo_root, pr_number)
-
-    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_body(repo_root, pr_number)
-
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
@@ -218,10 +206,6 @@ class DryRunGitHub(GitHub):
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_pr_diff(repo_root, pr_number)
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Delegate read operation to wrapped implementation."""
-        return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """No-op for adding label to PR in dry-run mode."""

@@ -155,13 +155,6 @@ class FakeGitHub(GitHub):
         """Read-only access to tracked PR closures for test assertions."""
         return self._closed_prs
 
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get current base branch of a PR from configured state.
-
-        Returns None if PR number not found.
-        """
-        return self._pr_bases.get(pr_number)
-
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
         """Record PR base branch update in mutation tracking list."""
         self._updated_pr_bases.append((pr_number, new_base))
@@ -596,30 +589,6 @@ class FakeGitHub(GitHub):
         target_state = state.upper()
         return {branch: pr for branch, pr in self._prs.items() if pr.state == target_state}
 
-    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR title by number from configured state.
-
-        First checks explicit pr_titles storage, then searches through
-        configured PRs. Returns None if PR not found.
-        """
-        # Check explicit title storage first
-        if pr_number in self._pr_titles:
-            return self._pr_titles[pr_number]
-
-        # Fall back to searching through PRs
-        for pr in self._prs.values():
-            if pr.number == pr_number:
-                return pr.title
-        return None
-
-    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR body by number from configured state.
-
-        Checks explicit pr_bodies_by_number storage.
-        Returns None if PR body not configured.
-        """
-        return self._pr_bodies_by_number.get(pr_number)
-
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
@@ -658,17 +627,6 @@ class FakeGitHub(GitHub):
             "-old\n"
             "+new"
         )
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from configured state.
-
-        Returns configured values from pr_details if available,
-        otherwise defaults to ("MERGEABLE", "CLEAN").
-        """
-        if pr_number in self._pr_details:
-            details = self._pr_details[pr_number]
-            return (details.mergeable, details.merge_state_status)
-        return ("MERGEABLE", "CLEAN")
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Record label addition in mutation tracking list and update internal state."""
