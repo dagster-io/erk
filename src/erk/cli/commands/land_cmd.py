@@ -616,18 +616,15 @@ def render_land_execution_script(
     branch: str,
     worktree_path: Path | None,
     is_current_branch: bool,
-    target_child_branch: str | None,
     objective_number: int | None,
     use_graphite: bool,
-    pull_flag: bool,
-    no_delete: bool,
     target_path: Path,
 ) -> str:
     """Generate shell script that executes land and navigates.
 
     This script is generated after validation passes. When sourced, it:
     1. Validates required arguments (PR number and branch)
-    2. Calls `erk exec land-execute` with pre-validated state
+    2. Calls `erk exec land-execute` with pre-validated state plus user flags
     3. Navigates to the target location (trunk or child branch)
 
     Note: The execute phase always skips confirmation prompts because the user
@@ -638,18 +635,28 @@ def render_land_execution_script(
     - $1: PR number to merge
     - $2: Branch name being landed
 
-    This makes the PR number and branch visible in the source command.
+    Additional flags after the positional args (e.g., -f --up --no-pull --no-delete)
+    are passed through to `erk exec land-execute` via "$@".
+
+    **Baked-in (static, determined at script generation time):**
+    - --worktree-path: worktree location
+    - --is-current-branch: whether landing from that worktree
+    - --objective-number: linked objective
+    - --use-graphite: whether Graphite is enabled
+
+    **Passed via "$@" (user-controllable flags):**
+    - --up: navigate upstack (resolved at execution time)
+    - --no-pull: skip pull after landing
+    - --no-delete: preserve branch/slot
+    - -f: passed for documentation (execute mode is already non-interactive)
 
     Args:
         pr_number: PR number to merge (not used directly, passed as arg)
         branch: Branch name being landed (not used directly, passed as arg)
         worktree_path: Path to worktree being cleaned up (if any)
         is_current_branch: Whether landing from the branch's own worktree
-        target_child_branch: Target child branch for --up navigation
         objective_number: Linked objective issue number (if any)
         use_graphite: Whether to use Graphite for merge
-        pull_flag: Whether to pull after landing
-        no_delete: Whether to preserve branch and slot
         target_path: Where to cd after land completes
 
     Returns:
@@ -660,6 +667,7 @@ def render_land_execution_script(
     _ = pr_number, branch
 
     # Build erk exec land-execute command using shell variables for pr/branch
+    # Static flags are baked in; user flags come from "$@"
     cmd_parts = ["erk exec land-execute"]
     cmd_parts.append('--pr-number="$PR_NUMBER"')
     cmd_parts.append('--branch="$BRANCH"')
@@ -667,24 +675,21 @@ def render_land_execution_script(
         cmd_parts.append(f"--worktree-path={worktree_path}")
     if is_current_branch:
         cmd_parts.append("--is-current-branch")
-    if target_child_branch is not None:
-        cmd_parts.append(f"--target-child={target_child_branch}")
     if objective_number is not None:
         cmd_parts.append(f"--objective-number={objective_number}")
     if use_graphite:
         cmd_parts.append("--use-graphite")
-    if not pull_flag:
-        cmd_parts.append("--no-pull")
-    if no_delete:
-        cmd_parts.append("--no-delete")
+    # User-controllable flags passed through "$@"
+    cmd_parts.append('"$@"')
 
     erk_cmd = " ".join(cmd_parts)
     target_path_str = str(target_path)
 
     return f"""# erk land deferred execution
-# Usage: source land.sh <pr_number> <branch>
+# Usage: source land.sh <pr_number> <branch> [flags...]
 PR_NUMBER="${{1:?Error: PR number required}}"
 BRANCH="${{2:?Error: Branch name required}}"
+shift 2
 
 {erk_cmd}
 cd {target_path_str}
@@ -1067,11 +1072,8 @@ def _land_current_branch(
         branch=current_branch,
         worktree_path=current_worktree_path,
         is_current_branch=True,
-        target_child_branch=target_child_branch,
         objective_number=objective_number,
         use_graphite=ctx.branch_manager.is_graphite_managed(),
-        pull_flag=pull_flag,
-        no_delete=no_delete,
         target_path=target_path,
     )
 
@@ -1084,6 +1086,17 @@ def _land_current_branch(
         comment=f"land {current_branch}",
     )
 
+    # Build extra flags to display in the source command
+    display_flags: list[str] = []
+    if force:
+        display_flags.append("-f")
+    if up_flag:
+        display_flags.append("--up")
+    if not pull_flag:
+        display_flags.append("--no-pull")
+    if no_delete:
+        display_flags.append("--no-delete")
+
     if script:
         # Shell integration mode: output just the path
         machine_output(str(result.path), nl=False)
@@ -1094,6 +1107,7 @@ def _land_current_branch(
             instruction="To land the PR:",
             copy=True,
             args=[pr_number, current_branch],
+            extra_flags=display_flags if display_flags else None,
         )
     raise SystemExit(0)
 
@@ -1200,11 +1214,8 @@ def _land_specific_pr(
         branch=branch,
         worktree_path=worktree_path,
         is_current_branch=is_current_branch,
-        target_child_branch=None,
         objective_number=objective_number,
         use_graphite=False,  # Specific PR landing uses GitHub API directly
-        pull_flag=pull_flag,
-        no_delete=no_delete,
         target_path=target_path,
     )
 
@@ -1218,6 +1229,15 @@ def _land_specific_pr(
         comment=f"land PR #{pr_number}",
     )
 
+    # Build extra flags to display in the source command
+    display_flags: list[str] = []
+    if force:
+        display_flags.append("-f")
+    if not pull_flag:
+        display_flags.append("--no-pull")
+    if no_delete:
+        display_flags.append("--no-delete")
+
     if script:
         # Shell integration mode: output just the path
         machine_output(str(result.path), nl=False)
@@ -1228,6 +1248,7 @@ def _land_specific_pr(
             instruction=f"To land PR #{pr_number}:",
             copy=True,
             args=[pr_number, branch],
+            extra_flags=display_flags if display_flags else None,
         )
     raise SystemExit(0)
 
@@ -1326,11 +1347,8 @@ def _land_by_branch(
         branch=branch_name,
         worktree_path=worktree_path,
         is_current_branch=is_current_branch,
-        target_child_branch=None,
         objective_number=objective_number,
         use_graphite=False,  # Branch landing uses GitHub API directly
-        pull_flag=pull_flag,
-        no_delete=no_delete,
         target_path=target_path,
     )
 
@@ -1344,6 +1362,15 @@ def _land_by_branch(
         comment=f"land {branch_name}",
     )
 
+    # Build extra flags to display in the source command
+    display_flags: list[str] = []
+    if force:
+        display_flags.append("-f")
+    if not pull_flag:
+        display_flags.append("--no-pull")
+    if no_delete:
+        display_flags.append("--no-delete")
+
     if script:
         # Shell integration mode: output just the path
         machine_output(str(result.path), nl=False)
@@ -1354,5 +1381,6 @@ def _land_by_branch(
             instruction=f"To land branch '{branch_name}':",
             copy=True,
             args=[pr_number, branch_name],
+            extra_flags=display_flags if display_flags else None,
         )
     raise SystemExit(0)

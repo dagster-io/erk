@@ -12,11 +12,8 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
         branch="feature-branch",
         worktree_path=None,
         is_current_branch=False,
-        target_child_branch=None,
         objective_number=None,
         use_graphite=False,
-        pull_flag=True,
-        no_delete=False,
         target_path=Path("/repo"),
     )
 
@@ -34,70 +31,97 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
 
 
 def test_render_land_execution_script_includes_usage_comment() -> None:
-    """The script includes a usage comment."""
+    """The script includes a usage comment with flags notation."""
     script = render_land_execution_script(
         pr_number=456,
         branch="my-branch",
         worktree_path=None,
         is_current_branch=False,
-        target_child_branch=None,
         objective_number=None,
         use_graphite=False,
-        pull_flag=True,
-        no_delete=False,
         target_path=Path("/repo"),
     )
 
-    assert "# Usage: source land.sh <pr_number> <branch>" in script
+    assert "# Usage: source land.sh <pr_number> <branch> [flags...]" in script
 
 
-def test_render_land_execution_script_includes_optional_flags() -> None:
-    """Optional flags are still hardcoded (not parameterized)."""
-    script = render_land_execution_script(
-        pr_number=123,
-        branch="feature-branch",
-        worktree_path=Path("/worktrees/feature"),
-        is_current_branch=True,
-        target_child_branch="child-branch",
-        objective_number=42,
-        use_graphite=True,
-        pull_flag=False,
-        no_delete=True,
-        target_path=Path("/repo"),
-    )
-
-    # Optional flags should be hardcoded
-    assert "--worktree-path=/worktrees/feature" in script
-    assert "--is-current-branch" in script
-    assert "--target-child=child-branch" in script
-    assert "--objective-number=42" in script
-    assert "--use-graphite" in script
-    assert "--no-pull" in script
-    assert "--no-delete" in script
-
-
-def test_render_land_execution_script_without_optional_flags() -> None:
-    """Script omits optional flags when not needed."""
+def test_render_land_execution_script_includes_shift_and_passthrough() -> None:
+    """Script shifts positional args and passes remaining flags via $@."""
     script = render_land_execution_script(
         pr_number=123,
         branch="feature-branch",
         worktree_path=None,
         is_current_branch=False,
-        target_child_branch=None,
         objective_number=None,
         use_graphite=False,
-        pull_flag=True,  # True means omit --no-pull
-        no_delete=False,
+        target_path=Path("/repo"),
+    )
+
+    # Should shift past PR number and branch
+    assert "shift 2" in script
+
+    # Should pass remaining flags to land-execute
+    assert '"$@"' in script
+
+
+def test_render_land_execution_script_bakes_in_static_flags() -> None:
+    """Static flags are baked into the script at generation time."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=Path("/worktrees/feature"),
+        is_current_branch=True,
+        objective_number=42,
+        use_graphite=True,
+        target_path=Path("/repo"),
+    )
+
+    # These should be hardcoded in the script
+    assert "--worktree-path=/worktrees/feature" in script
+    assert "--is-current-branch" in script
+    assert "--objective-number=42" in script
+    assert "--use-graphite" in script
+
+
+def test_render_land_execution_script_without_static_flags() -> None:
+    """Script omits static flags when not needed."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
         target_path=Path("/repo"),
     )
 
     assert "--worktree-path" not in script
     assert "--is-current-branch" not in script
-    assert "--target-child" not in script
     assert "--objective-number" not in script
     assert "--use-graphite" not in script
+
+
+def test_render_land_execution_script_does_not_bake_user_flags() -> None:
+    """User-controllable flags (--up, --no-pull, --no-delete) are NOT baked in.
+
+    These flags are passed through via "$@" at execution time, not baked
+    into the script at generation time.
+    """
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        target_path=Path("/repo"),
+    )
+
+    # User flags should NOT be hardcoded - they come from "$@"
     assert "--no-pull" not in script
     assert "--no-delete" not in script
+    assert "--up" not in script
+    assert "--target-child" not in script
 
 
 def test_render_land_execution_script_includes_cd_command() -> None:
@@ -107,11 +131,8 @@ def test_render_land_execution_script_includes_cd_command() -> None:
         branch="feature-branch",
         worktree_path=None,
         is_current_branch=False,
-        target_child_branch=None,
         objective_number=None,
         use_graphite=False,
-        pull_flag=True,
-        no_delete=False,
         target_path=Path("/path/to/target"),
     )
 
@@ -125,11 +146,8 @@ def test_render_land_execution_script_has_header_comment() -> None:
         branch="feature-branch",
         worktree_path=None,
         is_current_branch=False,
-        target_child_branch=None,
         objective_number=None,
         use_graphite=False,
-        pull_flag=True,
-        no_delete=False,
         target_path=Path("/repo"),
     )
 
