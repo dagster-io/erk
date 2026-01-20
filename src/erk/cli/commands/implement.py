@@ -14,12 +14,6 @@ from pathlib import Path
 import click
 
 from erk.cli.alias import alias
-from erk.cli.commands.codespace_executor import (
-    CodespaceNotFoundError,
-    execute_codespace_interactive,
-    execute_codespace_non_interactive,
-    resolve_codespace,
-)
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.docker_executor import (
     execute_docker_interactive,
@@ -30,6 +24,7 @@ from erk.cli.commands.implement_shared import (
     build_claude_args,
     build_command_sequence,
     detect_target_type,
+    execute_codespace_mode,
     execute_interactive_mode,
     execute_non_interactive_mode,
     extract_plan_from_current_branch,
@@ -209,32 +204,16 @@ def _implement_from_issue(
             )
     elif codespace is not None:
         # Codespace mode - run Claude in registered codespace
-        try:
-            # Resolve codespace (empty string means use default)
-            codespace_name = codespace if codespace else None
-            resolved_codespace = resolve_codespace(
-                ctx.codespace_registry,
-                name=codespace_name,
-            )
-        except CodespaceNotFoundError as e:
-            raise click.ClickException(str(e)) from e
-
-        if no_interactive:
-            commands = build_command_sequence(submit)
-            exit_code = execute_codespace_non_interactive(
-                codespace=resolved_codespace,
-                model=model,
-                commands=commands,
-                verbose=verbose,
-            )
-            if exit_code != 0:
-                raise SystemExit(exit_code)
-        else:
-            # Codespace interactive mode - replaces process
-            execute_codespace_interactive(
-                codespace=resolved_codespace,
-                model=model,
-            )
+        # Empty string means use default codespace
+        codespace_name = codespace if codespace else None
+        execute_codespace_mode(
+            ctx,
+            codespace_name=codespace_name,
+            model=model,
+            no_interactive=no_interactive,
+            submit=submit,
+            verbose=verbose,
+        )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -365,32 +344,16 @@ def _implement_from_file(
             )
     elif codespace is not None:
         # Codespace mode - run Claude in registered codespace
-        try:
-            # Resolve codespace (empty string means use default)
-            codespace_name = codespace if codespace else None
-            resolved_codespace = resolve_codespace(
-                ctx.codespace_registry,
-                name=codespace_name,
-            )
-        except CodespaceNotFoundError as e:
-            raise click.ClickException(str(e)) from e
-
-        if no_interactive:
-            commands = build_command_sequence(submit)
-            exit_code = execute_codespace_non_interactive(
-                codespace=resolved_codespace,
-                model=model,
-                commands=commands,
-                verbose=verbose,
-            )
-            if exit_code != 0:
-                raise SystemExit(exit_code)
-        else:
-            # Codespace interactive mode - replaces process
-            execute_codespace_interactive(
-                codespace=resolved_codespace,
-                model=model,
-            )
+        # Empty string means use default codespace
+        codespace_name = codespace if codespace else None
+        execute_codespace_mode(
+            ctx,
+            codespace_name=codespace_name,
+            model=model,
+            no_interactive=no_interactive,
+            submit=submit,
+            verbose=verbose,
+        )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)

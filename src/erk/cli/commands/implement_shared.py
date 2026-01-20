@@ -714,3 +714,67 @@ class WorktreeCreationResult:
 
     worktree_path: Path
     impl_dir: Path
+
+
+def execute_codespace_mode(
+    ctx: ErkContext,
+    *,
+    codespace_name: str | None,
+    model: str | None,
+    no_interactive: bool,
+    submit: bool,
+    verbose: bool,
+) -> None:
+    """Execute Claude in codespace mode (interactive or non-interactive).
+
+    This is a consolidated helper that handles codespace execution for both
+    _implement_from_issue and _implement_from_file.
+
+    Args:
+        ctx: Erk context with codespace gateway and registry
+        codespace_name: Codespace name to use, or None for default
+        model: Optional model name
+        no_interactive: Whether to execute non-interactively
+        submit: Whether to auto-submit PR after implementation
+        verbose: Whether to show verbose output
+
+    Raises:
+        click.ClickException: If codespace not found
+        SystemExit: On non-interactive failure with non-zero exit code
+    """
+    from erk.cli.commands.codespace_executor import (
+        CodespaceNotFoundError,
+        execute_codespace_interactive,
+        execute_codespace_non_interactive,
+        resolve_codespace,
+    )
+
+    # Resolve codespace (None means use default)
+    # Note: resolve_codespace raises CodespaceNotFoundError on failure, which is
+    # a third-party/external API boundary where try-except is appropriate per LBYL
+    try:
+        resolved_codespace = resolve_codespace(
+            ctx.codespace_registry,
+            name=codespace_name,
+        )
+    except CodespaceNotFoundError as e:
+        raise click.ClickException(str(e)) from e
+
+    if no_interactive:
+        commands = build_command_sequence(submit)
+        exit_code = execute_codespace_non_interactive(
+            codespace_gateway=ctx.codespace,
+            codespace=resolved_codespace,
+            model=model,
+            commands=commands,
+            verbose=verbose,
+        )
+        if exit_code != 0:
+            raise SystemExit(exit_code)
+    else:
+        # Interactive mode - replaces process
+        execute_codespace_interactive(
+            codespace_gateway=ctx.codespace,
+            codespace=resolved_codespace,
+            model=model,
+        )

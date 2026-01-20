@@ -6,17 +6,17 @@ that makes --dangerously-skip-permissions safe to use.
 
 Key design:
 - Resolves codespace from registry (by name or default)
-- Uses gh codespace ssh for remote execution
+- Uses Codespace gateway for SSH execution (testable)
 - Always uses --dangerously-skip-permissions (isolation provides safety)
 - Follows the docker_executor.py pattern for consistency
 """
 
-import os
-import subprocess
+from typing import NoReturn
 
 import click
 
 from erk_shared.core.codespace_registry import CodespaceRegistry, RegisteredCodespace
+from erk_shared.gateway.codespace.abc import Codespace
 
 
 class CodespaceNotFoundError(Exception):
@@ -107,12 +107,14 @@ def build_remote_command(
 
 def execute_codespace_interactive(
     *,
+    codespace_gateway: Codespace,
     codespace: RegisteredCodespace,
     model: str | None,
-) -> None:
+) -> NoReturn:
     """Execute Claude in codespace interactively, replacing current process.
 
     Args:
+        codespace_gateway: Codespace gateway for SSH execution
         codespace: The registered codespace to use
         model: Optional model name
 
@@ -127,26 +129,12 @@ def execute_codespace_interactive(
 
     click.echo(f"Launching Claude in codespace '{codespace.name}'...", err=True)
 
-    # GH-API-AUDIT: REST - codespace SSH connection
-    # -t: Force pseudo-terminal allocation (required for interactive TUI)
-    os.execvp(
-        "gh",
-        [
-            "gh",
-            "codespace",
-            "ssh",
-            "-c",
-            codespace.gh_name,
-            "--",
-            "-t",
-            remote_command,
-        ],
-    )
-    # Never returns
+    codespace_gateway.exec_ssh_interactive(codespace.gh_name, remote_command)
 
 
 def execute_codespace_non_interactive(
     *,
+    codespace_gateway: Codespace,
     codespace: RegisteredCodespace,
     model: str | None,
     commands: list[str],
@@ -155,6 +143,7 @@ def execute_codespace_non_interactive(
     """Execute Claude commands in codespace non-interactively.
 
     Args:
+        codespace_gateway: Codespace gateway for SSH execution
         codespace: The registered codespace to use
         model: Optional model name
         commands: List of slash commands to execute
@@ -173,26 +162,13 @@ def execute_codespace_non_interactive(
         if verbose:
             click.echo(f"Running {command} in codespace '{codespace.name}'...", err=True)
 
-        # GH-API-AUDIT: REST - codespace SSH connection
-        # Note: No -t flag for non-interactive (no TTY allocation)
-        result = subprocess.run(
-            [
-                "gh",
-                "codespace",
-                "ssh",
-                "-c",
-                codespace.gh_name,
-                "--",
-                remote_command,
-            ],
-            check=False,
-        )
+        exit_code = codespace_gateway.run_ssh_command(codespace.gh_name, remote_command)
 
-        if result.returncode != 0:
+        if exit_code != 0:
             click.echo(
-                f"Command {command} failed with exit code {result.returncode}",
+                f"Command {command} failed with exit code {exit_code}",
                 err=True,
             )
-            return result.returncode
+            return exit_code
 
     return 0

@@ -72,6 +72,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     """
     from erk_shared.context.context import ErkContext
     from erk_shared.context.types import LoadedConfig, NoRepoSentinel, RepoContext
+    from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.real import ScriptConsole
     from erk_shared.gateway.erk_installation.real import RealErkInstallation
@@ -136,6 +137,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         plan_store=GitHubPlanStore(github_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
+        codespace=FakeCodespace(),
         claude_executor=FakeClaudeExecutor(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
