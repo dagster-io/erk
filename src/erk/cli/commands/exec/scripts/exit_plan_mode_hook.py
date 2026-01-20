@@ -359,7 +359,7 @@ def build_blocking_message(
             f"     erk exec marker create --session-id {session_id} \\",
             "       exit-plan-mode-hook.implement-now",
             "  3. Call ExitPlanMode",
-            "  4. After exiting plan mode, run /erk:system:impl-execute to execute implementation",
+            "  4. After exiting plan mode, run /erk:plan-implement to execute implementation",
         ]
     )
 

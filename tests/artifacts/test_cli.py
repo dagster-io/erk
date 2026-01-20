@@ -79,7 +79,7 @@ class TestListCommand:
             result = runner.invoke(list_cmd, color=True)
 
         assert result.exit_code == 0
-        assert "erk:system:impl-execute" in result.output
+        assert "erk:plan-implement" in result.output
         assert "[erk]" in result.output
 
     def test_list_shows_erk_indicator_for_bundled_skill(self, tmp_path: Path) -> None:
@@ -141,7 +141,7 @@ class TestIsErkManaged:
     def test_erk_command_is_managed(self) -> None:
         """Commands with erk: prefix are erk-managed."""
         artifact = InstalledArtifact(
-            name="erk:system:impl-execute",
+            name="erk:plan-implement",
             artifact_type="command",
             path=Path(".claude/commands/erk/plan-implement.md"),
             content_hash=None,

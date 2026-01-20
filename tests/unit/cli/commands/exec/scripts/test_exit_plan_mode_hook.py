@@ -381,7 +381,7 @@ class TestBuildBlockingMessage:
         assert "exit-plan-mode-hook.implement-now" in message
         # Verify the "Save plan and implement here" option runs plan-save first, then creates marker
         assert "If user chooses 'Save plan and implement here':" in message
-        assert "/erk:system:impl-execute" in message
+        assert "/erk:plan-implement" in message
 
     def test_includes_header_instruction(self) -> None:
         """Message includes header instruction for AskUserQuestion."""

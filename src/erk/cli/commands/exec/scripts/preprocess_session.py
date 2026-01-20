@@ -134,7 +134,7 @@ def deduplicate_documentation_blocks(entries: list[dict]) -> list[dict]:
                 marker in content_str
                 for marker in [
                     "/erk:plan-save-issue",
-                    "/erk:system:impl-execute",
+                    "/erk:plan-implement",
                     "/gt:submit-branch",
                     "/gt:pr-update",
                     "command-message>",

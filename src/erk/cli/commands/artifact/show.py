@@ -28,7 +28,7 @@ def show_cmd(name: str, artifact_type: str | None) -> None:
 
     \b
       # Show a command (use colon for namespaced commands)
-      erk artifact show erk:system:impl-execute
+      erk artifact show erk:plan-implement
 
     \b
       # Disambiguate by type

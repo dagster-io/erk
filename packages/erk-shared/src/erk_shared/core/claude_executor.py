@@ -189,7 +189,7 @@ class ClaudeExecutor(ABC):
         """Execute Claude CLI command and yield typed events in real-time.
 
         Args:
-            command: The slash command to execute (e.g., "/erk:system:impl-execute")
+            command: The slash command to execute (e.g., "/erk:plan-implement")
             worktree_path: Path to worktree directory to run command in
             dangerous: Whether to skip permission prompts
             verbose: Whether to show raw output (True) or filtered output (False)
@@ -202,7 +202,7 @@ class ClaudeExecutor(ABC):
         Example:
             >>> executor = RealClaudeExecutor()
             >>> for event in executor.execute_command_streaming(
-            ...     "/erk:system:impl-execute",
+            ...     "/erk:plan-implement",
             ...     Path("/repos/my-project"),
             ...     dangerous=False
             ... ):
@@ -228,7 +228,7 @@ class ClaudeExecutor(ABC):
         for real-time updates.
 
         Args:
-            command: The slash command to execute (e.g., "/erk:system:impl-execute")
+            command: The slash command to execute (e.g., "/erk:plan-implement")
             worktree_path: Path to worktree directory to run command in
             dangerous: Whether to skip permission prompts
             verbose: Whether to show raw output (True) or filtered output (False)
@@ -240,7 +240,7 @@ class ClaudeExecutor(ABC):
         Example:
             >>> executor = RealClaudeExecutor()
             >>> result = executor.execute_command(
-            ...     "/erk:system:impl-execute",
+            ...     "/erk:plan-implement",
             ...     Path("/repos/my-project"),
             ...     dangerous=False
             ... )
@@ -319,7 +319,7 @@ class ClaudeExecutor(ABC):
         Args:
             worktree_path: Path to worktree directory to run in
             dangerous: Whether to skip permission prompts
-            command: The slash command to execute (default: /erk:system:impl-execute)
+            command: The slash command to execute (default: /erk:plan-implement)
             target_subpath: Optional subdirectory within worktree to start in.
                 If provided and exists, Claude will start in that subdirectory
                 instead of the worktree root. This preserves the user's relative

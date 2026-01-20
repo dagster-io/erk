@@ -55,7 +55,7 @@ Run: pre-commit install
 
 ### `post-plan-implement-ci.md` — CI Workflow After Implementation
 
-**When:** After `/erk:system:impl-execute` completes implementation
+**When:** After `/erk:plan-implement` completes implementation
 
 **Purpose:** Define CI validation and iteration strategy.
 

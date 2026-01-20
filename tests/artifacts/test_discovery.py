@@ -196,7 +196,7 @@ def test_discover_top_level_commands(tmp_path: Path) -> None:
 
 
 def test_discover_nested_namespaced_commands(tmp_path: Path) -> None:
-    """Discovers commands with nested namespaces (e.g., erk:system:impl-execute)."""
+    """Discovers commands with nested namespaces (e.g., erk:plan-implement)."""
     cmd_dir = tmp_path / ".claude" / "commands" / "erk" / "system"
     cmd_dir.mkdir(parents=True)
     cmd_file = cmd_dir / "impl-execute.md"
@@ -205,7 +205,7 @@ def test_discover_nested_namespaced_commands(tmp_path: Path) -> None:
     result = discover_artifacts(tmp_path)
 
     assert len(result) == 1
-    assert result[0].name == "erk:system:impl-execute"
+    assert result[0].name == "erk:plan-implement"
     assert result[0].artifact_type == "command"
     assert result[0].path == cmd_file
 
