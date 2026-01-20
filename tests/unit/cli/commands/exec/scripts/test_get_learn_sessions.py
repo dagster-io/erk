@@ -13,7 +13,11 @@ from erk.cli.commands.exec.scripts.get_learn_sessions import get_learn_sessions
 from erk_shared.context.context import ErkContext
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
+from erk_shared.learn.extraction.claude_installation.fake import (
+    FakeClaudeInstallation,
+    FakeProject,
+    FakeSessionData,
+)
 from tests.test_utils.github_helpers import create_test_issue
 
 # ============================================================================
@@ -211,9 +215,76 @@ def test_json_output_structure(tmp_path: Path) -> None:
     assert "session_paths" in output
     assert "local_session_ids" in output
     assert "last_remote_impl_at" in output
+    assert "session_sources" in output
 
     # Verify types
     assert isinstance(output["success"], bool)
     assert isinstance(output["issue_number"], int)
     assert isinstance(output["implementation_session_ids"], list)
     assert isinstance(output["session_paths"], list)
+    assert isinstance(output["session_sources"], list)
+
+
+def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
+    """Test session_sources includes properly structured LocalSessionSource data."""
+    fake_git = FakeGit()
+    test_issue = create_test_issue(200, "Test Plan #200", "Plan body")
+    fake_issues = FakeGitHubIssues(issues={200: test_issue})
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        # Set up fake claude installation with sessions that will be returned
+        # via the local session fallback path (when no readable_session_ids from GitHub)
+        fake_claude = FakeClaudeInstallation.for_test(
+            projects={
+                cwd: FakeProject(
+                    sessions={
+                        "session-abc-123": FakeSessionData(
+                            content='{"type": "user"}\n',
+                            size_bytes=1024,
+                            modified_at=1000.0,
+                        ),
+                        "session-def-456": FakeSessionData(
+                            content='{"type": "user"}\n',
+                            size_bytes=2048,
+                            modified_at=2000.0,
+                        ),
+                    }
+                )
+            },
+        )
+
+        result = runner.invoke(
+            get_learn_sessions,
+            ["200"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github_issues=fake_issues,
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+
+    # Verify session_sources contains LocalSessionSource data
+    assert len(output["session_sources"]) == 2
+
+    # Verify structure of each session source
+    for source in output["session_sources"]:
+        assert "source_type" in source
+        assert "session_id" in source
+        assert "run_id" in source
+        assert "path" in source
+        assert source["source_type"] == "local"
+        assert source["run_id"] is None
+        assert source["path"] is not None  # Local sessions have paths
+
+    # Verify session IDs are present (sorted by mtime, newest first)
+    session_ids = [s["session_id"] for s in output["session_sources"]]
+    assert "session-def-456" in session_ids
+    assert "session-abc-123" in session_ids
