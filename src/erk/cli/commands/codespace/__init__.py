@@ -3,6 +3,9 @@
 import click
 
 from erk.cli.commands.codespace.connect_cmd import connect_codespace
+from erk.cli.commands.codespace.list_cmd import list_codespaces
+from erk.cli.commands.codespace.remove_cmd import remove_codespace
+from erk.cli.commands.codespace.set_default_cmd import set_default_codespace_cmd
 from erk.cli.commands.codespace.setup_cmd import setup_codespace
 from erk.cli.help_formatter import ErkCommandGroup
 
@@ -21,4 +24,7 @@ def codespace_group() -> None:
 
 # Register subcommands
 codespace_group.add_command(connect_codespace)
+codespace_group.add_command(list_codespaces)
+codespace_group.add_command(remove_codespace)
+codespace_group.add_command(set_default_codespace_cmd)
 codespace_group.add_command(setup_codespace)
