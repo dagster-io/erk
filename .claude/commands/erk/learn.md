@@ -38,17 +38,21 @@ erk exec get-learn-sessions <issue-number>
 
 Parse the JSON output to get:
 
-- `session_paths`: Paths to readable session files
-- `planning_session_id`: Session that created the plan
-- `implementation_session_ids`: Sessions that executed the plan
-- `local_session_ids`: Fallback sessions found locally
+- `session_sources`: List of session source objects, each containing:
+  - `source_type`: Either "local" (from ~/.claude) or "remote" (from GitHub Actions)
+  - `session_id`: The Claude Code session ID
+  - `run_id`: GitHub Actions run ID (for remote sessions only)
+  - `path`: File path to the session (for local sessions only)
+- `planning_session_id`: Session ID that created the plan
+- `implementation_session_ids`: Session IDs that executed the plan
+- `local_session_ids`: Fallback sessions found locally (when no tracked sessions exist)
 - `last_remote_impl_at`: Timestamp if implemented via GitHub Actions (remote)
 - `last_remote_impl_run_id`: GitHub Actions run ID for remote implementation
 - `last_remote_impl_session_id`: Claude Code session ID from remote implementation
 
 If no sessions are found, inform the user and stop.
 
-**Note on remote implementations:** If `last_remote_impl_at` is set but `session_paths` is empty, the plan was implemented remotely (via GitHub Actions). In Phase 1, remote sessions are not yet downloadable - inform the user that the plan was implemented remotely but session logs are not available locally.
+**Note on remote implementations:** If `last_remote_impl_at` is set but no `session_sources` have `source_type: "local"` with a valid `path`, the plan was implemented remotely (via GitHub Actions). In Phase 1, remote sessions are not yet downloadable - inform the user that the plan was implemented remotely but session logs are not available locally.
 
 ### Step 2: Analyze Implementation
 
@@ -127,19 +131,27 @@ These insights are often the most valuable because they represent real friction 
 
 #### Preprocess Sessions
 
-For each session path from Step 1, preprocess to compressed XML format:
+For each session source from Step 1, preprocess to compressed XML format:
+
+**IMPORTANT:** Check `source_type` before processing:
+
+- If `source_type == "local"` and `path` is set: Process the session using the path
+- If `source_type == "remote"`: Skip for now (remote session download not yet implemented). Inform the user that this session originated from a remote implementation and cannot be analyzed locally yet.
 
 ```bash
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
 
-# For the planning session:
-erk exec preprocess-session "<planning-session-path>" \
+# For each local session source with a valid path:
+# Compare source.session_id to planning_session_id to determine prefix
+
+# For the planning session (source.session_id == planning_session_id):
+erk exec preprocess-session "<source.path>" \
     --max-tokens 20000 \
     --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
     --prefix planning
 
-# For each implementation session:
-erk exec preprocess-session "<impl-session-path>" \
+# For implementation sessions (source.session_id in implementation_session_ids):
+erk exec preprocess-session "<source.path>" \
     --max-tokens 20000 \
     --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
     --prefix impl
