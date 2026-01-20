@@ -80,6 +80,13 @@ from erk_shared.context.helpers import require_context
     is_flag=True,
     help="Navigate upstack to child branch after landing (resolves child at execution time)",
 )
+@click.option(
+    "-f",
+    "--force",
+    "force_flag",
+    is_flag=True,
+    help="Accept flag for compatibility (execute mode always skips confirmations)",
+)
 @click.pass_context
 def land_execute(
     ctx: click.Context,
@@ -95,6 +102,7 @@ def land_execute(
     no_delete: bool,
     script: bool,
     up_flag: bool,
+    force_flag: bool,
 ) -> None:
     """Execute deferred land operations.
 
