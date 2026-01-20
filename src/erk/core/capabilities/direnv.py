@@ -26,9 +26,8 @@ class DirenvCapability(Capability):
     This capability creates .envrc and .envrc.example files for automatic
     shell environment setup when entering the project directory.
 
-    This capability is marked as required=True, meaning it will be
-    automatically installed during `erk init` without prompting.
-    However, installation gracefully skips if direnv is not installed.
+    This is an optional capability that users can install via:
+        erk init capability add direnv
     """
 
     @property
@@ -42,11 +41,6 @@ class DirenvCapability(Capability):
     @property
     def scope(self) -> CapabilityScope:
         return "project"
-
-    @property
-    def required(self) -> bool:
-        """Auto-install during erk init."""
-        return True
 
     @property
     def artifacts(self) -> list[CapabilityArtifact]:
@@ -87,22 +81,12 @@ class DirenvCapability(Capability):
         3. Creates .envrc (shell-specific)
         4. Runs `direnv allow` to authorize the .envrc
 
-        Note: .envrc should be added to .gitignore via the init command's
-        gitignore prompts, not automatically by this capability.
-
-        Gracefully skips if direnv is not installed (for erk init auto-install).
+        Note: Users should add .envrc to .gitignore manually if desired.
         """
         if repo_root is None:
             return CapabilityResult(
                 success=False,
                 message="DirenvCapability requires repo_root",
-            )
-
-        # Graceful skip if direnv not installed (for erk init auto-install)
-        if shutil.which("direnv") is None:
-            return CapabilityResult(
-                success=True,
-                message="Skipped: direnv not installed",
             )
 
         envrc_path = repo_root / ".envrc"
@@ -129,10 +113,32 @@ class DirenvCapability(Capability):
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Uninstall is blocked for required capabilities."""
+        """Remove .envrc and .envrc.example files."""
+        if repo_root is None:
+            return CapabilityResult(
+                success=False,
+                message="DirenvCapability requires repo_root",
+            )
+
+        envrc_path = repo_root / ".envrc"
+        example_path = repo_root / ".envrc.example"
+
+        removed_files: list[str] = []
+
+        if envrc_path.exists():
+            envrc_path.unlink()
+            removed_files.append(".envrc")
+
+        if example_path.exists():
+            example_path.unlink()
+            removed_files.append(".envrc.example")
+
+        if not removed_files:
+            return CapabilityResult(success=True, message="No direnv files to remove")
+
         return CapabilityResult(
-            success=False,
-            message="Cannot uninstall required capability 'direnv'",
+            success=True,
+            message=f"Removed {', '.join(removed_files)}",
         )
 
 

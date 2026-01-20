@@ -145,24 +145,6 @@ def test_install_uses_correct_shell_completion_for_zsh(tmp_path: Path) -> None:
     assert "erk completion zsh" in envrc_content
 
 
-def test_install_returns_skip_message_when_direnv_not_installed(tmp_path: Path) -> None:
-    """Test install returns success with skip message when direnv not installed.
-
-    This is graceful degradation for erk init auto-install.
-    """
-    capability = DirenvCapability()
-
-    with patch("shutil.which", return_value=None):
-        result = capability.install(repo_root=tmp_path)
-
-    assert result.success is True
-    assert "Skipped: direnv not installed" in result.message
-
-    # Verify no files were created
-    assert not (tmp_path / ".envrc").exists()
-    assert not (tmp_path / ".envrc.example").exists()
-
-
 def test_install_is_idempotent(tmp_path: Path) -> None:
     """Test install succeeds without changes when .envrc already exists."""
     # Create existing .envrc
@@ -191,13 +173,40 @@ def test_install_fails_without_repo_root() -> None:
     assert "requires repo_root" in result.message
 
 
-def test_uninstall_returns_error_for_required_capability() -> None:
-    """Test uninstall returns error because direnv is a required capability."""
+def test_uninstall_removes_envrc_files(tmp_path: Path) -> None:
+    """Test uninstall removes .envrc and .envrc.example files."""
+    # Create the files first
+    envrc_path = tmp_path / ".envrc"
+    example_path = tmp_path / ".envrc.example"
+    envrc_path.write_text("# test envrc\n", encoding="utf-8")
+    example_path.write_text("# test example\n", encoding="utf-8")
+
     capability = DirenvCapability()
-    result = capability.uninstall(repo_root=Path("/tmp"))
+    result = capability.uninstall(repo_root=tmp_path)
+
+    assert result.success is True
+    assert ".envrc" in result.message
+    assert ".envrc.example" in result.message
+    assert not envrc_path.exists()
+    assert not example_path.exists()
+
+
+def test_uninstall_succeeds_when_no_files_exist(tmp_path: Path) -> None:
+    """Test uninstall succeeds gracefully when no direnv files exist."""
+    capability = DirenvCapability()
+    result = capability.uninstall(repo_root=tmp_path)
+
+    assert result.success is True
+    assert "No direnv files to remove" in result.message
+
+
+def test_uninstall_fails_without_repo_root() -> None:
+    """Test uninstall returns failure when repo_root is None."""
+    capability = DirenvCapability()
+    result = capability.uninstall(repo_root=None)
 
     assert result.success is False
-    assert "Cannot uninstall required capability" in result.message
+    assert "requires repo_root" in result.message
 
 
 def test_capability_properties() -> None:
@@ -207,7 +216,7 @@ def test_capability_properties() -> None:
     assert capability.name == "direnv"
     assert "direnv" in capability.description.lower()
     assert capability.scope == "project"
-    assert capability.required is True
+    assert capability.required is False
     assert capability.installation_check_description == ".envrc file exists in repo root"
 
 
