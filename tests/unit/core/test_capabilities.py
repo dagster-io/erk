@@ -36,6 +36,10 @@ from erk.core.capabilities.skills import (
 )
 from erk.core.capabilities.statusline import StatuslineCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
+from erk.core.claude_settings import (
+    ERK_EXIT_PLAN_HOOK_COMMAND,
+    ERK_USER_PROMPT_HOOK_COMMAND,
+)
 from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
 
 # =============================================================================
@@ -854,7 +858,7 @@ def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None
                     "hooks": [
                         {
                             "type": "command",
-                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                            "command": ERK_USER_PROMPT_HOOK_COMMAND,
                         }
                     ],
                 }
@@ -865,9 +869,7 @@ def test_hooks_is_installed_true_when_both_hooks_present(tmp_path: Path) -> None
                     "hooks": [
                         {
                             "type": "command",
-                            "command": (
-                                "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
-                            ),
+                            "command": ERK_EXIT_PLAN_HOOK_COMMAND,
                         }
                     ],
                 }
@@ -939,7 +941,7 @@ def test_hooks_install_idempotent(tmp_path: Path) -> None:
                     "hooks": [
                         {
                             "type": "command",
-                            "command": "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook",
+                            "command": ERK_USER_PROMPT_HOOK_COMMAND,
                         }
                     ],
                 }
@@ -950,9 +952,7 @@ def test_hooks_install_idempotent(tmp_path: Path) -> None:
                     "hooks": [
                         {
                             "type": "command",
-                            "command": (
-                                "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
-                            ),
+                            "command": ERK_EXIT_PLAN_HOOK_COMMAND,
                         }
                     ],
                 }
