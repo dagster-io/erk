@@ -88,11 +88,14 @@ def format_plan_header_body_for_test(
     last_local_impl_session: str | None = None,
     last_local_impl_user: str | None = None,
     last_remote_impl_at: str | None = None,
+    last_remote_impl_run_id: str | None = None,
+    last_remote_impl_session_id: str | None = None,
     source_repo: str | None = None,
     objective_issue: int | None = None,
     created_from_session: str | None = None,
     last_learn_session: str | None = None,
     last_learn_at: str | None = None,
+    learn_status: str | None = None,
 ) -> str:
     """Create plan header body for testing with sensible defaults."""
     return format_plan_header_body(
@@ -109,9 +112,12 @@ def format_plan_header_body_for_test(
         last_local_impl_session=last_local_impl_session,
         last_local_impl_user=last_local_impl_user,
         last_remote_impl_at=last_remote_impl_at,
+        last_remote_impl_run_id=last_remote_impl_run_id,
+        last_remote_impl_session_id=last_remote_impl_session_id,
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
         last_learn_session=last_learn_session,
         last_learn_at=last_learn_at,
+        learn_status=learn_status,
     )

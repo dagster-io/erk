@@ -37,11 +37,15 @@ from erk_shared.github.metadata.schemas import (
     LAST_LOCAL_IMPL_SESSION,
     LAST_LOCAL_IMPL_USER,
     LAST_REMOTE_IMPL_AT,
+    LAST_REMOTE_IMPL_RUN_ID,
+    LAST_REMOTE_IMPL_SESSION_ID,
+    LEARN_STATUS,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     SCHEMA_VERSION,
     SOURCE_REPO,
     WORKTREE_NAME,
+    LearnStatusValue,
     PlanHeaderSchema,
 )
 from erk_shared.github.metadata.types import MetadataBlock
@@ -62,11 +66,14 @@ def create_plan_header_block(
     last_local_impl_session: str | None,
     last_local_impl_user: str | None,
     last_remote_impl_at: str | None,
+    last_remote_impl_run_id: str | None,
+    last_remote_impl_session_id: str | None,
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
     last_learn_session: str | None,
     last_learn_at: str | None,
+    learn_status: LearnStatusValue | None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -84,11 +91,14 @@ def create_plan_header_block(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp (set by GitHub Actions)
+        last_remote_impl_run_id: Optional GitHub Actions run ID for remote implementation
+        last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
+        learn_status: Optional learning workflow status ("pending" or "completed")
 
     Returns:
         MetadataBlock with plan-header schema
@@ -108,6 +118,8 @@ def create_plan_header_block(
         LAST_LOCAL_IMPL_SESSION: last_local_impl_session,
         LAST_LOCAL_IMPL_USER: last_local_impl_user,
         LAST_REMOTE_IMPL_AT: last_remote_impl_at,
+        LAST_REMOTE_IMPL_RUN_ID: last_remote_impl_run_id,
+        LAST_REMOTE_IMPL_SESSION_ID: last_remote_impl_session_id,
     }
     # Only include worktree_name if provided
     if worktree_name is not None:
@@ -137,6 +149,10 @@ def create_plan_header_block(
     if last_learn_at is not None:
         data[LAST_LEARN_AT] = last_learn_at
 
+    # Include learn_status if provided
+    if learn_status is not None:
+        data[LEARN_STATUS] = learn_status
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -159,11 +175,14 @@ def format_plan_header_body(
     last_local_impl_session: str | None,
     last_local_impl_user: str | None,
     last_remote_impl_at: str | None,
+    last_remote_impl_run_id: str | None,
+    last_remote_impl_session_id: str | None,
     source_repo: str | None,
     objective_issue: int | None,
     created_from_session: str | None,
     last_learn_session: str | None,
     last_learn_at: str | None,
+    learn_status: LearnStatusValue | None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -184,11 +203,14 @@ def format_plan_header_body(
         last_local_impl_session: Optional Claude Code session ID
         last_local_impl_user: Optional user who ran implementation
         last_remote_impl_at: Optional remote implementation timestamp
+        last_remote_impl_run_id: Optional GitHub Actions run ID for remote implementation
+        last_remote_impl_session_id: Optional Claude Code session ID for remote implementation
         source_repo: For cross-repo plans, the repo where implementation happens
         objective_issue: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
+        learn_status: Optional learning workflow status ("pending" or "completed")
 
     Returns:
         Issue body string with metadata block only
@@ -207,11 +229,14 @@ def format_plan_header_body(
         last_local_impl_session=last_local_impl_session,
         last_local_impl_user=last_local_impl_user,
         last_remote_impl_at=last_remote_impl_at,
+        last_remote_impl_run_id=last_remote_impl_run_id,
+        last_remote_impl_session_id=last_remote_impl_session_id,
         source_repo=source_repo,
         objective_issue=objective_issue,
         created_from_session=created_from_session,
         last_learn_session=last_learn_session,
         last_learn_at=last_learn_at,
+        learn_status=learn_status,
     )
 
     return render_metadata_block(block)
@@ -831,3 +856,142 @@ def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
         return None
 
     return block.data.get(LAST_LEARN_AT)
+
+
+def extract_plan_header_remote_impl_run_id(issue_body: str) -> str | None:
+    """Extract last_remote_impl_run_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        GitHub Actions run ID if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_REMOTE_IMPL_RUN_ID)
+
+
+def extract_plan_header_remote_impl_session_id(issue_body: str) -> str | None:
+    """Extract last_remote_impl_session_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Claude Code session ID for remote implementation if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_REMOTE_IMPL_SESSION_ID)
+
+
+def update_plan_header_remote_impl_event(
+    *,
+    issue_body: str,
+    run_id: str,
+    session_id: str | None,
+    remote_impl_at: str,
+) -> str:
+    """Update remote implementation event fields in plan-header metadata block.
+
+    Updates all 3 remote implementation fields atomically:
+    - last_remote_impl_at (timestamp)
+    - last_remote_impl_run_id (GitHub Actions run ID)
+    - last_remote_impl_session_id (Claude Code session ID)
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        run_id: GitHub Actions run ID
+        session_id: Claude Code session ID (optional)
+        remote_impl_at: ISO 8601 timestamp of remote implementation
+
+    Returns:
+        Updated issue body with new remote implementation event fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update all remote impl fields atomically
+    updated_data = dict(block.data)
+    updated_data[LAST_REMOTE_IMPL_AT] = remote_impl_at
+    updated_data[LAST_REMOTE_IMPL_RUN_ID] = run_id
+    updated_data[LAST_REMOTE_IMPL_SESSION_ID] = session_id
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def extract_plan_header_learn_status(issue_body: str) -> LearnStatusValue | None:
+    """Extract learn_status from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        learn_status ("pending" or "completed") if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    # Type narrowing: validation ensures this is a valid LearnStatusValue
+    value = block.data.get(LEARN_STATUS)
+    if value is None:
+        return None
+    return value
+
+
+def update_plan_header_learn_status(
+    *,
+    issue_body: str,
+    learn_status: LearnStatusValue,
+) -> str:
+    """Update learn_status field in plan-header metadata block.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        learn_status: Learning workflow status ("pending" or "completed")
+
+    Returns:
+        Updated issue body with new learn_status field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update learn_status field
+    updated_data = dict(block.data)
+    updated_data[LEARN_STATUS] = learn_status
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)

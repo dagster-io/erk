@@ -325,11 +325,14 @@ PlanHeaderFieldName = Literal[
     "last_local_impl_session",
     "last_local_impl_user",
     "last_remote_impl_at",
+    "last_remote_impl_run_id",
+    "last_remote_impl_session_id",
     "source_repo",
     "objective_issue",
     "created_from_session",
     "last_learn_session",
     "last_learn_at",
+    "learn_status",
 ]
 """Union type of all valid plan-header field names."""
 
@@ -350,11 +353,18 @@ LAST_LOCAL_IMPL_EVENT: Literal["last_local_impl_event"] = "last_local_impl_event
 LAST_LOCAL_IMPL_SESSION: Literal["last_local_impl_session"] = "last_local_impl_session"
 LAST_LOCAL_IMPL_USER: Literal["last_local_impl_user"] = "last_local_impl_user"
 LAST_REMOTE_IMPL_AT: Literal["last_remote_impl_at"] = "last_remote_impl_at"
+LAST_REMOTE_IMPL_RUN_ID: Literal["last_remote_impl_run_id"] = "last_remote_impl_run_id"
+LAST_REMOTE_IMPL_SESSION_ID: Literal["last_remote_impl_session_id"] = "last_remote_impl_session_id"
 SOURCE_REPO: Literal["source_repo"] = "source_repo"
 OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
 CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
 LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
 LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
+LEARN_STATUS: Literal["learn_status"] = "learn_status"
+
+# Valid values for learn_status field
+LearnStatusValue = Literal["pending", "completed"]
+"""Valid values for the learn_status plan header field."""
 
 
 @dataclass(frozen=True)
@@ -375,11 +385,14 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_local_impl_session: Claude Code session ID from environment (nullable)
         last_local_impl_user: User who ran the implementation (nullable)
         last_remote_impl_at: Updated by GitHub Actions, tracks last remote run (nullable)
+        last_remote_impl_run_id: GitHub Actions run ID for remote implementation (nullable)
+        last_remote_impl_session_id: Claude Code session ID for remote implementation (nullable)
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
         last_learn_session: Session ID that last invoked learn (nullable)
         last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
+        learn_status: Learning workflow status - "pending" or "completed" (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -401,11 +414,14 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_LOCAL_IMPL_SESSION,
             LAST_LOCAL_IMPL_USER,
             LAST_REMOTE_IMPL_AT,
+            LAST_REMOTE_IMPL_RUN_ID,
+            LAST_REMOTE_IMPL_SESSION_ID,
             SOURCE_REPO,
             OBJECTIVE_ISSUE,
             CREATED_FROM_SESSION,
             LAST_LEARN_SESSION,
             LAST_LEARN_AT,
+            LEARN_STATUS,
         }
 
         # Check required fields exist
@@ -471,6 +487,18 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 if not isinstance(data[LAST_REMOTE_IMPL_AT], str):
                     raise ValueError("last_remote_impl_at must be a string or null")
 
+        # Validate last_remote_impl_run_id
+        if LAST_REMOTE_IMPL_RUN_ID in data:
+            if data[LAST_REMOTE_IMPL_RUN_ID] is not None:
+                if not isinstance(data[LAST_REMOTE_IMPL_RUN_ID], str):
+                    raise ValueError("last_remote_impl_run_id must be a string or null")
+
+        # Validate last_remote_impl_session_id
+        if LAST_REMOTE_IMPL_SESSION_ID in data:
+            if data[LAST_REMOTE_IMPL_SESSION_ID] is not None:
+                if not isinstance(data[LAST_REMOTE_IMPL_SESSION_ID], str):
+                    raise ValueError("last_remote_impl_session_id must be a string or null")
+
         # Validate last_local_impl_event
         if LAST_LOCAL_IMPL_EVENT in data:
             if data[LAST_LOCAL_IMPL_EVENT] is not None:
@@ -532,6 +560,17 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("last_learn_at must be a string or null")
             if len(data[LAST_LEARN_AT]) == 0:
                 raise ValueError("last_learn_at must not be empty when provided")
+
+        # Validate optional learn_status field
+        if LEARN_STATUS in data and data[LEARN_STATUS] is not None:
+            if not isinstance(data[LEARN_STATUS], str):
+                raise ValueError("learn_status must be a string or null")
+            valid_statuses = {"pending", "completed"}
+            if data[LEARN_STATUS] not in valid_statuses:
+                status_value = data[LEARN_STATUS]
+                raise ValueError(
+                    f"learn_status must be 'pending' or 'completed', got '{status_value}'"
+                )
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

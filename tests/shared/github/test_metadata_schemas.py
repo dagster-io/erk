@@ -20,6 +20,8 @@ from erk_shared.github.metadata.schemas import (
     LAST_LOCAL_IMPL_SESSION,
     LAST_LOCAL_IMPL_USER,
     LAST_REMOTE_IMPL_AT,
+    LAST_REMOTE_IMPL_RUN_ID,
+    LAST_REMOTE_IMPL_SESSION_ID,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     SCHEMA_VERSION,
@@ -448,6 +450,76 @@ class TestPlanHeaderSchema:
         with pytest.raises(ValueError, match="last_remote_impl_at must be a string or null"):
             schema.validate(data)
 
+    def test_valid_with_remote_impl_run_id(self) -> None:
+        """Valid plan-header with last_remote_impl_run_id field."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_run_id": "12345678",
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_null_remote_impl_run_id_is_valid(self) -> None:
+        """Null last_remote_impl_run_id is valid (not set yet)."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_run_id": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_non_string_remote_impl_run_id_raises(self) -> None:
+        """Non-string last_remote_impl_run_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_run_id": 12345,
+        }
+        with pytest.raises(ValueError, match="last_remote_impl_run_id must be a string or null"):
+            schema.validate(data)
+
+    def test_valid_with_remote_impl_session_id(self) -> None:
+        """Valid plan-header with last_remote_impl_session_id field."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_session_id": "abc-123-session",
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_null_remote_impl_session_id_is_valid(self) -> None:
+        """Null last_remote_impl_session_id is valid (not set yet)."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_session_id": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_non_string_remote_impl_session_id_raises(self) -> None:
+        """Non-string last_remote_impl_session_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "last_remote_impl_session_id": 12345,
+        }
+        with pytest.raises(
+            ValueError, match="last_remote_impl_session_id must be a string or null"
+        ):
+            schema.validate(data)
+
     def test_missing_required_field(self) -> None:
         """Missing required field raises ValueError."""
         schema = PlanHeaderSchema()
@@ -602,6 +674,8 @@ class TestPlanHeaderFieldConstants:
         assert LAST_LOCAL_IMPL_SESSION == "last_local_impl_session"
         assert LAST_LOCAL_IMPL_USER == "last_local_impl_user"
         assert LAST_REMOTE_IMPL_AT == "last_remote_impl_at"
+        assert LAST_REMOTE_IMPL_RUN_ID == "last_remote_impl_run_id"
+        assert LAST_REMOTE_IMPL_SESSION_ID == "last_remote_impl_session_id"
         assert SOURCE_REPO == "source_repo"
         assert OBJECTIVE_ISSUE == "objective_issue"
         assert CREATED_FROM_SESSION == "created_from_session"
