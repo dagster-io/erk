@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of 0f51810cb -->
+
+### Added
+
+- Add GitHub Codespaces integration for remote Claude execution with `erk codespace` commands (setup, connect, list, remove, set-default) and `--codespace` flag for `erk implement` (afcdf8b4d)
+- Add `erk objective close` command to close completed objective issues (7bd5a32bd)
+- Add `--allow-dangerously-skip-permissions` flag support for interactive Claude config (fd443b05b)
+- Add direnv configuration for automatic virtual environment setup (69e3995fe)
+
+### Changed
+
+- Make erk hooks resilient to erk unavailability by gracefully exiting if erk is not in PATH (159ee8079)
+- Fix TUI land command to execute PR merge instead of just generating script (e167fcf57)
+
 ## [0.6.0] - 2026-01-20 07:57 PT
 
 ### Major Changes
