@@ -70,9 +70,9 @@ def list_capabilities() -> list[Capability]:
     """Get all registered capabilities.
 
     Returns:
-        List of all registered capabilities
+        List of all registered capabilities, sorted alphabetically by name
     """
-    return list(_all_capabilities())
+    return sorted(_all_capabilities(), key=lambda c: c.name)
 
 
 def list_required_capabilities() -> list[Capability]:
