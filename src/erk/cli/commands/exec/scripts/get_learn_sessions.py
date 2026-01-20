@@ -166,7 +166,7 @@ def _discover_sessions(
 
     # Build session sources from readable sessions
     session_sources: list[LocalSessionSource] = [
-        LocalSessionSource(_session_id=sid, _path=str(path)) for sid, path in readable_sessions
+        LocalSessionSource(session_id=sid, path=str(path)) for sid, path in readable_sessions
     ]
 
     # Local session fallback: when GitHub has no tracked sessions, scan local sessions
@@ -182,7 +182,7 @@ def _discover_sessions(
             path = claude_installation.get_session_path(cwd, sid)
             if path is not None:
                 session_paths.append(str(path))
-                session_sources.append(LocalSessionSource(_session_id=sid, _path=str(path)))
+                session_sources.append(LocalSessionSource(session_id=sid, path=str(path)))
 
     return _build_result(
         issue_number=issue_number,

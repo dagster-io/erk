@@ -83,15 +83,11 @@ class PRNotFoundError:
 class GitHubAPIFailed:
     """GitHub API call failed with an error."""
 
-    _message: str
+    message: str
 
     @property
     def error_type(self) -> str:
         return "github-api-failed"
-
-    @property
-    def message(self) -> str:
-        return self._message
 
 
 @dataclass(frozen=True)
