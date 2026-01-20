@@ -25,11 +25,11 @@ Examples:
 
 import json
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC
 
 import click
 
-from erk_shared.context.helpers import require_issues, require_repo_root
+from erk_shared.context.helpers import require_issues, require_repo_root, require_time
 from erk_shared.github.metadata.plan_header import (
     update_plan_header_remote_impl_event,
 )
@@ -103,6 +103,7 @@ def update_plan_remote_session(
     """
     # Get dependencies from context
     repo_root = require_repo_root(ctx)
+    time = require_time(ctx)
 
     # Get GitHub Issues from context
     github_issues = require_issues(ctx)
@@ -115,7 +116,7 @@ def update_plan_remote_session(
         return  # Never reached, but helps type checker
 
     # Generate timestamp
-    timestamp = datetime.now(UTC).isoformat()
+    timestamp = time.now().replace(tzinfo=UTC).isoformat()
 
     # Update plan header with remote session info (ValueError if block not found)
     try:
