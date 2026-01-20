@@ -13,6 +13,9 @@ from erk.cli.commands.exec.scripts.add_reaction_to_comment import (
 from erk.cli.commands.exec.scripts.add_remote_execution_note import (
     add_remote_execution_note,
 )
+from erk.cli.commands.exec.scripts.capture_session_info import (
+    capture_session_info,
+)
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
@@ -128,6 +131,7 @@ def exec_group() -> None:
 # Register all commands
 exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
+exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(check_impl, name="check-impl")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_learn_branch, name="create-learn-branch")

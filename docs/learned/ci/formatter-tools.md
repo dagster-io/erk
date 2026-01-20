@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "running prettier on Python files"
     warning: "Prettier cannot format Python. Use `ruff format` or `make format` for Python. Prettier only handles Markdown in this project."
+  - action: "running prettier programmatically on content containing underscore emphasis"
+    warning: "Prettier converts `__text__` to `**text**` on first pass, then escapes asterisks on second pass. If programmatically applying prettier, run twice to reach stable output."
 ---
 
 # Formatter Tools

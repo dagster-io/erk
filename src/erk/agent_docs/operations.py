@@ -502,6 +502,11 @@ def generate_category_index(category: CategoryInfo) -> str:
 def _format_with_prettier(content: str, file_path: Path) -> str:
     """Format markdown content with prettier.
 
+    Runs prettier twice to ensure idempotent output. Prettier converts
+    underscore emphasis (__text__) to asterisk emphasis on first pass,
+    then escapes asterisks on second pass. A single pass causes cycling
+    between `erk docs sync` and `make prettier --write`.
+
     Args:
         content: The markdown content to format.
         file_path: Path to use for prettier's parser detection.
@@ -509,10 +514,17 @@ def _format_with_prettier(content: str, file_path: Path) -> str:
     Returns:
         Formatted content.
     """
+    # First pass: normalize emphasis markers and basic formatting
     result = run_subprocess_with_context(
         cmd=["prettier", "--stdin-filepath", str(file_path)],
-        operation_context="format markdown with prettier",
+        operation_context="format markdown with prettier (pass 1)",
         input=content,
+    )
+    # Second pass: escape any asterisks that would be re-interpreted
+    result = run_subprocess_with_context(
+        cmd=["prettier", "--stdin-filepath", str(file_path)],
+        operation_context="format markdown with prettier (pass 2)",
+        input=result.stdout,
     )
     return result.stdout
 
