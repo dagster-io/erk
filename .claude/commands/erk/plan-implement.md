@@ -1,49 +1,121 @@
 ---
-description: Save plan to GitHub and execute implementation in current worktree
+description: Implement a plan from GitHub issue, file path, or current .impl folder
+argument-hint: "[<issue-number-or-url-or-path>]"
 ---
 
-# /erk:system:impl-execute
+# /erk:plan-implement
 
-User-facing command to save a plan to GitHub and immediately implement it.
+Implement a plan - either from a GitHub issue, a markdown file, an existing `.impl/` folder, or by saving the current plan first.
 
 This is the primary implementation workflow - it orchestrates:
 
-1. Saving the plan to GitHub as an issue
-2. Setting up the `.impl/` folder
-3. Executing the implementation
+1. Setting up the `.impl/` folder (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
 
 ## Prerequisites
 
 - Must be in a git repository managed by erk
-- Must have a plan in `~/.claude/plans/` (from plan mode)
 - GitHub CLI (`gh`) must be authenticated
+- One of:
+  - An issue number, URL, or file path argument
+  - An existing `.impl/` folder
+  - A plan in `~/.claude/plans/` (from plan mode)
 
-## When NOT to Use This Command
+## Usage
 
-❌ **After `/erk:plan-save`** - The plan is already saved to GitHub. Use:
-
-- `erk implement <issue-number>` - CLI command to fetch and implement
-- `/erk:plan-implement-here <issue-number>` - Slash command alternative
-
-❌ **When implementing an existing GitHub issue** - Use the commands above instead.
-
-✅ **Use this command when**: You just finished planning in plan mode and want to immediately implement (save + implement in one step).
+```bash
+/erk:plan-implement                    # Use .impl/ or save current plan
+/erk:plan-implement 2521               # Fetch and implement issue #2521
+/erk:plan-implement https://github.com/owner/repo/issues/2521  # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
 
 ---
 
 ## Agent Instructions
 
-### Step 1: Check if .impl/ Already Set Up
+### Step 0: Parse Arguments
 
-First, check if implementation is already set up (e.g., from `erk implement <issue>`):
+Extract optional argument from `$ARGUMENTS`:
+
+- **If numeric** (e.g., `2521`): Store as `ISSUE_ARG`
+- **If GitHub URL** (e.g., `https://github.com/owner/repo/issues/2521`): Extract number from path, store as `ISSUE_ARG`
+- **If path to file** (anything else non-empty): Store as `FILE_ARG`
+- **If empty**: Proceed to check `.impl/` folder
+
+Store either `ISSUE_ARG` (issue number) or `FILE_ARG` (file path), or neither if empty.
+
+### Step 1: Determine Implementation Source
+
+Follow this priority order:
+
+#### 1a. If ISSUE_ARG is provided
+
+Set up from the specified issue:
+
+```bash
+erk exec setup-impl-from-issue <ISSUE_ARG>
+```
+
+This command:
+
+- Creates a feature branch from current branch (stacked) or trunk
+- Checks out the new branch in the current worktree
+- Creates `.impl/` folder with the plan content
+- Saves issue reference for PR linking
+
+If this fails, display the error and stop.
+
+Then run impl-init:
 
 ```bash
 erk exec impl-init --json
 ```
 
-If this succeeds with `"valid": true` and `"has_issue_tracking": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+#### 1a-file. If FILE_ARG is provided
 
-If it fails or returns `"valid": false`, continue to Step 2 to save the plan.
+Set up from the specified markdown file:
+
+1. **Verify the file exists** using the Read tool
+2. **Extract the title** from the first `# ` heading in the file
+3. **Generate branch name** from the title (slugify: lowercase, replace spaces with hyphens, remove special chars)
+4. **Create a feature branch** (use devrun agent for gt commands):
+   ```bash
+   gt create <branch-name>
+   ```
+5. **Create `.impl/` folder** and copy the plan:
+   ```bash
+   mkdir -p .impl && cp <FILE_ARG> .impl/plan.md
+   ```
+
+This is a local-only plan (no GitHub issue tracking).
+
+Then run impl-init:
+
+```bash
+erk exec impl-init --json
+```
+
+Note: `has_issue_tracking` will be `false` for file-based plans.
+
+#### 1b. If .impl/ already exists
+
+Check if implementation is already set up:
+
+```bash
+erk exec impl-init --json
+```
+
+If this succeeds with `"valid": true`, the `.impl/` folder is already configured. **Skip directly to Step 3** (Read Plan and Load Context).
+
+Note: `has_issue_tracking` may be `true` (issue-based) or `false` (file-based).
+
+If it fails or returns `"valid": false`, continue to Step 2.
+
+#### 1c. Fall back to saving current plan
+
+If neither argument nor valid `.impl/` exists, save the current plan from plan mode (Step 2).
 
 ### Step 2: Save Plan to GitHub
 
@@ -192,8 +264,8 @@ If checks fail, display output and warn user.
 
 ### Step 14: Output Format
 
-- **Start**: "Saving plan and setting up implementation..."
-- **After save**: "Plan saved as issue #X, setting up .impl/ folder..."
+- **Start**: "Setting up implementation..." or "Fetching plan from issue #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
 - **Each phase**: "Phase X: [brief description]" with code changes
 - **End**: "Plan execution complete. [Summary]"
 
@@ -212,4 +284,4 @@ This delegates to `erk pr submit` which handles commit message generation, Graph
 ## Related Commands
 
 - `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
-- `/erk:plan-implement-here` - Implement from existing GitHub issue (skips save step)
+- `/erk:replan` - Re-plan an existing issue with current codebase state
