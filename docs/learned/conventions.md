@@ -6,6 +6,8 @@ read_when:
   - "naming Claude artifacts"
   - "moving code between packages"
   - "creating imports"
+  - "creating immutable classes or frozen dataclasses"
+  - "implementing an ABC with abstract properties"
 tripwires:
   - action: "writing `__all__` to a Python file"
     warning: "Re-export modules are forbidden. Import directly from where code is defined."
@@ -150,3 +152,77 @@ Grep for "SPECULATIVE: feature-name" to find all related code.
 | **To disable**       | Set constant to `False`                    |
 | **To find all code** | `grep -r "SPECULATIVE: feature-name" src/` |
 | **To remove**        | Delete the module and guarded blocks       |
+
+## Immutable Classes
+
+### Frozen Dataclasses (Default)
+
+For simple immutable data, use frozen dataclasses with plain field names:
+
+```python
+@dataclass(frozen=True)
+class PRNotFound:
+    pr_number: int
+    branch: str | None = None
+```
+
+**Never use underscore-prefixed fields** like `_message` with pass-through properties. If a Protocol requires a `message` property, a frozen dataclass field named `message` satisfies it:
+
+```python
+# ❌ WRONG: Unnecessary underscore pattern
+@dataclass(frozen=True)
+class GitHubAPIFailed:
+    _message: str
+
+    @property
+    def message(self) -> str:
+        return self._message
+
+# ✅ CORRECT: Plain field satisfies Protocol
+@dataclass(frozen=True)
+class GitHubAPIFailed:
+    message: str
+```
+
+### Slots-Based Immutability (For ABC with Abstract Properties)
+
+When implementing an ABC that defines abstract **properties** (not methods), frozen dataclasses create a conflict: you can't have both a dataclass field and a property with the same name.
+
+In this case, use manual slots-based immutability:
+
+```python
+class LocalSessionSource(SessionSource):
+    """Implements SessionSource ABC which has abstract properties."""
+
+    __slots__ = ("_session_id", "_path")
+
+    _session_id: str
+    _path: str | None
+
+    def __init__(self, *, session_id: str, path: str | None = None) -> None:
+        object.__setattr__(self, "_session_id", session_id)
+        object.__setattr__(self, "_path", path)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        msg = "LocalSessionSource is immutable"
+        raise AttributeError(msg)
+
+    def __delattr__(self, name: str) -> None:
+        msg = "LocalSessionSource is immutable"
+        raise AttributeError(msg)
+
+    @property
+    def session_id(self) -> str:
+        return self._session_id
+
+    @property
+    def path(self) -> str | None:
+        return self._path
+```
+
+**Key points:**
+
+- Constructor uses clean names (`session_id=`), not underscore-prefixed (`_session_id=`)
+- Internal slots use underscores (`_session_id`) to avoid shadowing properties
+- `object.__setattr__` bypasses the immutability guard during `__init__`
+- See `WorkflowRun` in `github/types.py` for another example

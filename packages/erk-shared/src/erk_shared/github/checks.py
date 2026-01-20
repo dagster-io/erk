@@ -107,7 +107,7 @@ class GitHubChecks:
             github_issues.add_reaction_to_comment(repo_root, comment_id, reaction)
             return None
         except RuntimeError as e:
-            return GitHubAPIFailed(_message=str(e))
+            return GitHubAPIFailed(message=str(e))
 
     @staticmethod
     def issue_comments(
@@ -128,4 +128,4 @@ class GitHubChecks:
         try:
             return github_issues.get_issue_comments_with_urls(repo_root, issue_number)
         except RuntimeError as e:
-            return GitHubAPIFailed(_message=str(e))
+            return GitHubAPIFailed(message=str(e))

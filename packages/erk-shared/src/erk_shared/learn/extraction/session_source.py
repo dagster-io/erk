@@ -10,7 +10,6 @@ came from for proper attribution and filtering.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from typing import Literal, TypedDict
 
 
@@ -92,7 +91,6 @@ class SessionSource(ABC):
 SessionSourceType = Literal["local", "remote"]
 
 
-@dataclass(frozen=True)
 class LocalSessionSource(SessionSource):
     """Session source for locally-available sessions.
 
@@ -100,12 +98,26 @@ class LocalSessionSource(SessionSource):
     where learn is running. They have no associated GitHub Actions run.
 
     Attributes:
-        _session_id: The Claude Code session ID
-        _path: Optional file path where the session is located
+        session_id: The Claude Code session ID
+        path: Optional file path where the session is located
     """
 
+    __slots__ = ("_session_id", "_path")
+
     _session_id: str
-    _path: str | None = None
+    _path: str | None
+
+    def __init__(self, *, session_id: str, path: str | None = None) -> None:
+        object.__setattr__(self, "_session_id", session_id)
+        object.__setattr__(self, "_path", path)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        msg = "LocalSessionSource is immutable"
+        raise AttributeError(msg)
+
+    def __delattr__(self, name: str) -> None:
+        msg = "LocalSessionSource is immutable"
+        raise AttributeError(msg)
 
     @property
     def source_type(self) -> Literal["local"]:
@@ -128,7 +140,6 @@ class LocalSessionSource(SessionSource):
         return self._path
 
 
-@dataclass(frozen=True)
 class RemoteSessionSource(SessionSource):
     """Session source for sessions downloaded from GitHub Actions artifacts.
 
@@ -137,15 +148,32 @@ class RemoteSessionSource(SessionSource):
     details or link back to the original run.
 
     Attributes:
-        _session_id: The Claude Code session ID
-        _run_id: The GitHub Actions run ID that produced this session
-        _path: Optional file path, populated after the session artifact is downloaded.
-               None when remote session is discovered but not yet downloaded.
+        session_id: The Claude Code session ID
+        run_id: The GitHub Actions run ID that produced this session
+        path: Optional file path, populated after the session artifact is downloaded.
+              None when remote session is discovered but not yet downloaded.
     """
+
+    __slots__ = ("_session_id", "_run_id", "_path")
 
     _session_id: str
     _run_id: str
-    _path: str | None = None
+    _path: str | None
+
+    def __init__(
+        self, *, session_id: str, run_id: str, path: str | None = None
+    ) -> None:
+        object.__setattr__(self, "_session_id", session_id)
+        object.__setattr__(self, "_run_id", run_id)
+        object.__setattr__(self, "_path", path)
+
+    def __setattr__(self, name: str, value: object) -> None:
+        msg = "RemoteSessionSource is immutable"
+        raise AttributeError(msg)
+
+    def __delattr__(self, name: str) -> None:
+        msg = "RemoteSessionSource is immutable"
+        raise AttributeError(msg)
 
     @property
     def source_type(self) -> Literal["remote"]:
