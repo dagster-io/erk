@@ -42,7 +42,10 @@ from erk_shared.context.helpers import (
     require_issues,
     require_repo_root,
 )
-from erk_shared.learn.extraction.session_source import LocalSessionSource
+from erk_shared.learn.extraction.session_source import (
+    LocalSessionSource,
+    SessionSourceDict,
+)
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.sessions.discovery import (
     SessionsForPlan,
@@ -67,7 +70,7 @@ class GetLearnSessionsResult:
     last_remote_impl_at: str | None
     last_remote_impl_run_id: str | None
     last_remote_impl_session_id: str | None
-    session_sources: list[dict[str, str | None]]
+    session_sources: list[SessionSourceDict]
 
 
 @dataclass(frozen=True)

@@ -11,7 +11,16 @@ came from for proper attribution and filtering.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, TypedDict
+
+
+class SessionSourceDict(TypedDict):
+    """TypedDict for serialized SessionSource data."""
+
+    source_type: str
+    session_id: str
+    run_id: str | None
+    path: str | None
 
 
 class SessionSource(ABC):
@@ -66,18 +75,18 @@ class SessionSource(ABC):
             For remote sessions, this is None until the session is downloaded.
         """
 
-    def to_dict(self) -> dict[str, str | None]:
+    def to_dict(self) -> SessionSourceDict:
         """Serialize to a dictionary for JSON output.
 
         Returns:
             Dictionary with source_type, session_id, run_id, and path.
         """
-        return {
-            "source_type": self.source_type,
-            "session_id": self.session_id,
-            "run_id": self.run_id,
-            "path": self.path,
-        }
+        return SessionSourceDict(
+            source_type=self.source_type,
+            session_id=self.session_id,
+            run_id=self.run_id,
+            path=self.path,
+        )
 
 
 SessionSourceType = Literal["local", "remote"]
