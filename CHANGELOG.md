@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of f11db3414 -->
+<!-- As of f5a216245 -->
 
 ### Major Changes
 
@@ -50,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update PR checkout instructions to use shell script pattern for proper worktree activation (8cefccb57)
 - Rewrite first-plan.md tutorial clarifying two-step workflow: `erk prepare` then `erk implement --here` (eabc128e0)
 - Branch delete hint now only shown when `--force` flag is provided (95bce0f08)
+- Land command now displays PR number and branch name in source command for transparency (140674bf7)
 
 ### Fixed
 
