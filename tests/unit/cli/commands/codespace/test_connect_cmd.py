@@ -125,3 +125,37 @@ def test_connect_with_explicit_name(monkeypatch) -> None:
     assert len(execvp_calls) == 1
     _, args = execvp_calls[0]
     assert "user-box2-def" in args  # box2's gh_name, not box1's
+
+
+def test_connect_with_shell_flag_drops_to_shell(monkeypatch) -> None:
+    """connect --shell drops into shell instead of launching Claude."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    ctx = context_for_test(codespace_registry=codespace_registry)
+
+    execvp_calls: list[tuple[str, list[str]]] = []
+
+    def mock_execvp(file: str, args: list[str]) -> None:
+        execvp_calls.append((file, args))
+
+    monkeypatch.setattr("os.execvp", mock_execvp)
+
+    result = runner.invoke(
+        cli, ["codespace", "connect", "--shell"], obj=ctx, catch_exceptions=False
+    )
+
+    assert result.exit_code == 0
+    assert len(execvp_calls) == 1
+    _, args = execvp_calls[0]
+
+    # Find the remote command argument (after -t)
+    t_index = args.index("-t")
+    remote_command = args[t_index + 1]
+
+    # Should use exec bash, not claude
+    assert "exec bash" in remote_command
+    assert "claude" not in remote_command
