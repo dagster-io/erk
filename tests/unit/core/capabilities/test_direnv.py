@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from erk.core.capabilities.direnv import DirenvCapability, _detect_shell
-from erk.core.init_utils import build_envrc_content, build_envrc_example_content
+from erk.core.init_utils import build_envrc_content
 
 
 def test_is_installed_returns_false_when_no_repo_root() -> None:
@@ -53,8 +53,8 @@ def test_preflight_returns_error_when_direnv_not_installed() -> None:
     assert "https://direnv.net" in result.message
 
 
-def test_install_creates_envrc_files_when_direnv_available(tmp_path: Path) -> None:
-    """Test install creates .envrc and .envrc.example when direnv is available."""
+def test_install_creates_envrc_file_when_direnv_available(tmp_path: Path) -> None:
+    """Test install creates .envrc with examples as comments when direnv is available."""
     capability = DirenvCapability()
 
     with (
@@ -65,20 +65,17 @@ def test_install_creates_envrc_files_when_direnv_available(tmp_path: Path) -> No
         result = capability.install(repo_root=tmp_path)
 
     assert result.success is True
-    assert "Created .envrc and .envrc.example" in result.message
+    assert "Created .envrc" in result.message
     assert ".envrc" in result.created_files
-    assert ".envrc.example" in result.created_files
 
-    # Verify files were created
+    # Verify file was created
     assert (tmp_path / ".envrc").exists()
-    assert (tmp_path / ".envrc.example").exists()
 
-    # Verify content
+    # Verify content includes examples as comments
     envrc_content = (tmp_path / ".envrc").read_text(encoding="utf-8")
     assert "erk completion zsh" in envrc_content
-
-    example_content = (tmp_path / ".envrc.example").read_text(encoding="utf-8")
-    assert "# source <(erk completion bash)" in example_content
+    assert "Example configurations" in envrc_content
+    assert "#   source <(erk completion bash)" in envrc_content
 
     # Verify direnv allow was called
     mock_run.assert_called_once_with(["direnv", "allow"], cwd=tmp_path, check=False)
@@ -173,22 +170,18 @@ def test_install_fails_without_repo_root() -> None:
     assert "requires repo_root" in result.message
 
 
-def test_uninstall_removes_envrc_files(tmp_path: Path) -> None:
-    """Test uninstall removes .envrc and .envrc.example files."""
-    # Create the files first
+def test_uninstall_removes_envrc_file(tmp_path: Path) -> None:
+    """Test uninstall removes .envrc file."""
+    # Create the file first
     envrc_path = tmp_path / ".envrc"
-    example_path = tmp_path / ".envrc.example"
     envrc_path.write_text("# test envrc\n", encoding="utf-8")
-    example_path.write_text("# test example\n", encoding="utf-8")
 
     capability = DirenvCapability()
     result = capability.uninstall(repo_root=tmp_path)
 
     assert result.success is True
     assert ".envrc" in result.message
-    assert ".envrc.example" in result.message
     assert not envrc_path.exists()
-    assert not example_path.exists()
 
 
 def test_uninstall_succeeds_when_no_files_exist(tmp_path: Path) -> None:
@@ -225,10 +218,8 @@ def test_capability_artifacts() -> None:
     capability = DirenvCapability()
     artifacts = capability.artifacts
 
-    assert len(artifacts) == 2
-    paths = [a.path for a in artifacts]
-    assert ".envrc" in paths
-    assert ".envrc.example" in paths
+    assert len(artifacts) == 1
+    assert artifacts[0].path == ".envrc"
 
 
 def test_detect_shell_returns_zsh_for_zsh_path() -> None:
@@ -255,23 +246,15 @@ def test_detect_shell_defaults_to_bash_when_shell_not_set() -> None:
         assert _detect_shell() == "bash"
 
 
-def test_build_envrc_example_content() -> None:
-    """Test build_envrc_example_content returns correct template."""
-    content = build_envrc_example_content()
-
-    assert ".envrc.example" in content
-    assert "source .venv/bin/activate" in content
-    assert "# source <(erk completion bash)" in content
-    assert "# source <(erk completion zsh)" in content
-
-
 def test_build_envrc_content_for_bash() -> None:
     """Test build_envrc_content returns correct content for bash."""
     content = build_envrc_content("bash")
 
     assert "source .venv/bin/activate" in content
     assert "source <(erk completion bash)" in content
-    assert "(bash)" in content
+    # Examples as comments
+    assert "Example configurations" in content
+    assert "#   source <(erk completion zsh)" in content
 
 
 def test_build_envrc_content_for_zsh() -> None:
@@ -280,4 +263,6 @@ def test_build_envrc_content_for_zsh() -> None:
 
     assert "source .venv/bin/activate" in content
     assert "source <(erk completion zsh)" in content
-    assert "(zsh)" in content
+    # Examples as comments
+    assert "Example configurations" in content
+    assert "#   source <(erk completion bash)" in content
