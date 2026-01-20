@@ -476,3 +476,160 @@ def test_prepare_with_docker_flag_shows_docker_command() -> None:
         # Check that --docker flag is in the activation command
         assert "--docker" in result.output
         assert "Docker isolation" in result.output
+
+
+def test_prepare_with_codespace_flag_shows_codespace_command() -> None:
+    """Test that erk prepare --codespace shows erk implement --codespace in activation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="500",
+            title="Codespace feature",
+            body="# Plan\nCodespace isolated implementation",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/500",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"500": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["prepare", "500", "--codespace", "--"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch:" in result.output
+        assert "P500" in result.output
+        # Check that --codespace flag is in the activation command
+        assert "--codespace" in result.output
+        assert "codespace isolation" in result.output
+
+
+def test_prepare_with_codespace_named_shows_codespace_name() -> None:
+    """Test that erk prepare --codespace mybox shows named codespace in activation."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="501",
+            title="Named codespace feature",
+            body="# Plan\nNamed codespace implementation",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/501",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"501": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli, ["prepare", "501", "--codespace", "mybox"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+        assert "Created branch:" in result.output
+        assert "P501" in result.output
+        # Check that --codespace mybox is in the activation command
+        assert "--codespace mybox" in result.output
+
+
+def test_prepare_with_docker_and_codespace_fails() -> None:
+    """Test that erk prepare --docker --codespace fails with mutual exclusivity error."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="502",
+            title="Mutual exclusivity test",
+            body="# Plan\nTest mutual exclusivity",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/502",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"502": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli,
+            ["prepare", "502", "--docker", "--codespace", "--"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "--docker and --codespace cannot be used together" in result.output
