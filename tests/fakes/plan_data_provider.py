@@ -163,6 +163,7 @@ def make_plan_row(
     pr_url: str | None = None,
     pr_title: str | None = None,
     pr_state: str | None = None,
+    pr_head_branch: str | None = None,
     pr_display: str | None = None,
     worktree_name: str = "",
     worktree_branch: str | None = None,
@@ -184,6 +185,7 @@ def make_plan_row(
         pr_url: URL to PR
         pr_title: PR title
         pr_state: PR state (e.g., "OPEN", "MERGED")
+        pr_head_branch: Head branch from PR metadata (for landing)
         pr_display: Custom PR display string (overrides default "#N" format)
         worktree_name: Local worktree name
         worktree_branch: Branch name in worktree
@@ -239,6 +241,7 @@ def make_plan_row(
         issue_body=issue_body,
         pr_title=pr_title,
         pr_state=pr_state,
+        pr_head_branch=pr_head_branch,
         worktree_branch=worktree_branch,
         last_local_impl_at=None,
         last_remote_impl_at=None,

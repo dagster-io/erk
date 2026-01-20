@@ -665,9 +665,9 @@ class PlanDetailScreen(ModalScreen):
                 # Don't dismiss - user must press Esc after completion
 
         elif command_id == "land_pr":
-            if row.pr_number and row.worktree_branch and self._repo_root is not None:
+            if row.pr_number and row.pr_head_branch and self._repo_root is not None:
                 pr_num = row.pr_number
-                branch = row.worktree_branch
+                branch = row.pr_head_branch
 
                 # Call erk exec land-execute directly instead of erk land --script.
                 # erk land --script only generates a script but doesn't execute it.

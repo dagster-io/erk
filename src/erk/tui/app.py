@@ -629,9 +629,9 @@ class ErkDashApp(App):
                 )
 
         elif command_id == "land_pr":
-            if row.pr_number and row.worktree_branch:
+            if row.pr_number and row.pr_head_branch:
                 pr_num = row.pr_number
-                branch = row.worktree_branch
+                branch = row.pr_head_branch
                 executor = RealCommandExecutor(
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,

@@ -62,6 +62,7 @@ ISSUE_PR_LINKAGE_FRAGMENT = """fragment IssuePRLinkageFields on CrossReferencedE
       url
       isDraft
       createdAt
+      headRefName
       statusCheckRollup {
         state
         contexts(last: 1) {
@@ -133,6 +134,7 @@ GET_ISSUES_WITH_PR_LINKAGES_QUERY = """query(
                   url
                   isDraft
                   createdAt
+                  headRefName
                   statusCheckRollup {
                     state
                     contexts(last: 1) {

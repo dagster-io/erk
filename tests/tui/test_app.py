@@ -886,7 +886,7 @@ class TestExecutePaletteCommandLandPR:
     ) -> None:
         """Execute palette command land_pr calls erk exec land-execute with -f flag."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456, worktree_branch="test-branch")],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -945,9 +945,9 @@ class TestExecutePaletteCommandLandPR:
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_land_pr_with_no_branch(self) -> None:
-        """Execute palette command land_pr does nothing if no worktree_branch."""
+        """Execute palette command land_pr does nothing if no pr_head_branch."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)]  # Has PR but no worktree_branch
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)]  # Has PR but no pr_head_branch
         )
         filters = PlanFilters.default()
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)

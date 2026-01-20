@@ -32,6 +32,7 @@ class PlanRowData:
         issue_body: Raw issue body text (markdown)
         pr_title: PR title if linked
         pr_state: PR state (e.g., "OPEN", "MERGED", "CLOSED")
+        pr_head_branch: Head branch from PR metadata (source branch for landing)
         worktree_branch: Branch name in the worktree (if exists locally)
         last_local_impl_at: Raw timestamp for local impl
         last_remote_impl_at: Raw timestamp for remote impl
@@ -62,6 +63,7 @@ class PlanRowData:
     issue_body: str
     pr_title: str | None
     pr_state: str | None
+    pr_head_branch: str | None
     worktree_branch: str | None
     last_local_impl_at: datetime | None
     last_remote_impl_at: datetime | None
