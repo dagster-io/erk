@@ -136,16 +136,16 @@ class RemoteSessionSource(SessionSource):
     run. They have an associated run ID that can be used to fetch additional
     details or link back to the original run.
 
-    This implementation is a forward-looking stub - the actual remote session
-    download functionality will be implemented in a future phase.
-
     Attributes:
         _session_id: The Claude Code session ID
         _run_id: The GitHub Actions run ID that produced this session
+        _path: Optional file path, populated after the session artifact is downloaded.
+               None when remote session is discovered but not yet downloaded.
     """
 
     _session_id: str
     _run_id: str
+    _path: str | None = None
 
     @property
     def source_type(self) -> Literal["remote"]:
@@ -163,6 +163,11 @@ class RemoteSessionSource(SessionSource):
         return self._run_id
 
     @property
-    def path(self) -> None:
-        """Return None - remote sessions don't have a local path until downloaded."""
-        return None
+    def path(self) -> str | None:
+        """Return the file path where the session is located.
+
+        Returns:
+            File path string after the session artifact is downloaded,
+            None if the session has not been downloaded yet.
+        """
+        return self._path

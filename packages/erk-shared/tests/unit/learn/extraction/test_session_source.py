@@ -101,10 +101,19 @@ class TestRemoteSessionSource:
         source = RemoteSessionSource(_session_id="test", _run_id="run-98765")
         assert source.run_id == "run-98765"
 
-    def test_path_is_none(self) -> None:
-        """path returns None for remote sessions (until downloaded)."""
+    def test_path_returns_none_by_default(self) -> None:
+        """path returns None when not provided."""
         source = RemoteSessionSource(_session_id="test", _run_id="123")
         assert source.path is None
+
+    def test_path_returns_provided_value(self) -> None:
+        """path returns the provided path after download."""
+        source = RemoteSessionSource(
+            _session_id="test",
+            _run_id="123",
+            _path="/Users/test/.erk/scratch/session-123/session.jsonl",
+        )
+        assert source.path == "/Users/test/.erk/scratch/session-123/session.jsonl"
 
     def test_is_session_source_subclass(self) -> None:
         """RemoteSessionSource is a SessionSource."""
@@ -130,6 +139,21 @@ class TestRemoteSessionSource:
             "session_id": "abc-123",
             "run_id": "run-456",
             "path": None,
+        }
+
+    def test_to_dict_with_path(self) -> None:
+        """to_dict() includes path when provided."""
+        source = RemoteSessionSource(
+            _session_id="abc-123",
+            _run_id="run-456",
+            _path="/path/to/downloaded/session.jsonl",
+        )
+        result = source.to_dict()
+        assert result == {
+            "source_type": "remote",
+            "session_id": "abc-123",
+            "run_id": "run-456",
+            "path": "/path/to/downloaded/session.jsonl",
         }
 
 
