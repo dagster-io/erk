@@ -64,5 +64,5 @@ RUN uv --version && python3.11 --version && claude --version && prettier --versi
 WORKDIR /workspace
 
 # Default command - interactive shell for debugging
-# Real usage: docker run ... claude --dangerously-skip-permissions /erk:system:impl-execute
+# Real usage: docker run ... claude --dangerously-skip-permissions /erk:plan-implement
 CMD ["/bin/bash"]

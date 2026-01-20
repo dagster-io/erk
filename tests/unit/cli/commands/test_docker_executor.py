@@ -127,12 +127,12 @@ def test_build_claude_command_args_interactive() -> None:
         interactive=True,
         dangerous=True,
         model=None,
-        command="/erk:system:impl-execute",
+        command="/erk:plan-implement",
     )
 
     assert "claude" in args
     assert "--dangerously-skip-permissions" in args
-    assert "/erk:system:impl-execute" in args
+    assert "/erk:plan-implement" in args
     # Interactive mode should NOT have print/verbose flags
     assert "--print" not in args
     assert "--output-format" not in args
@@ -144,7 +144,7 @@ def test_build_claude_command_args_non_interactive() -> None:
         interactive=False,
         dangerous=True,
         model=None,
-        command="/erk:system:impl-execute",
+        command="/erk:plan-implement",
     )
 
     assert "claude" in args
@@ -153,7 +153,7 @@ def test_build_claude_command_args_non_interactive() -> None:
     assert "--verbose" in args
     assert "--output-format" in args
     assert "stream-json" in args
-    assert "/erk:system:impl-execute" in args
+    assert "/erk:plan-implement" in args
 
 
 def test_build_claude_command_args_with_model() -> None:
@@ -162,7 +162,7 @@ def test_build_claude_command_args_with_model() -> None:
         interactive=True,
         dangerous=True,
         model="sonnet",
-        command="/erk:system:impl-execute",
+        command="/erk:plan-implement",
     )
 
     assert "--model" in args
@@ -176,7 +176,7 @@ def test_build_claude_command_args_always_skips_permissions() -> None:
         interactive=True,
         dangerous=False,  # This parameter is ignored in Docker mode
         model=None,
-        command="/erk:system:impl-execute",
+        command="/erk:plan-implement",
     )
 
     # The implementation always adds --dangerously-skip-permissions

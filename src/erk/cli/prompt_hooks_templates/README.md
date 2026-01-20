@@ -13,10 +13,10 @@ Unlike Claude Code hooks (which execute shell commands at lifecycle events), pro
 
 ## Available Hooks
 
-| Hook File                   | Fires When                                                | Purpose                                   |
-| --------------------------- | --------------------------------------------------------- | ----------------------------------------- |
-| `post-init.md`              | After `erk init` completes (auto-executed by Claude)      | Project-specific setup for new developers |
-| `post-plan-implement-ci.md` | After `/erk:system:impl-execute` completes implementation | Define CI workflow and iteration strategy |
+| Hook File                   | Fires When                                           | Purpose                                   |
+| --------------------------- | ---------------------------------------------------- | ----------------------------------------- |
+| `post-init.md`              | After `erk init` completes (auto-executed by Claude) | Project-specific setup for new developers |
+| `post-plan-implement-ci.md` | After `/erk:plan-implement` completes implementation | Define CI workflow and iteration strategy |
 
 ## Creating a Prompt Hook
 

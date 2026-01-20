@@ -243,7 +243,7 @@ def execute_docker_interactive(
         interactive=True,
         dangerous=True,  # Always skip permissions in Docker
         model=model,
-        command="/erk:system:impl-execute",
+        command="/erk:plan-implement",
     )
 
     full_args = docker_args + claude_args

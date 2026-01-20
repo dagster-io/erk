@@ -62,7 +62,7 @@ This returns JSON with `{success, issue_number, title, body, labels, url}`.
 **Validate this is an objective:**
 
 1. Check for `erk-objective` label in the `labels` array
-2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:system:impl-execute` instead."
+2. If label is `erk-plan` instead: report error "This is an erk-plan issue, not an objective. Use `/erk:plan-implement` instead."
 3. If neither label: warn but proceed
 
 ### Step 2.5: Create Objective Context Marker
@@ -236,7 +236,7 @@ Check the `body` field in the JSON response contains `objective_issue`.
 | Scenario                                | Action                                                           |
 | --------------------------------------- | ---------------------------------------------------------------- |
 | Issue not found                         | Report error and exit                                            |
-| Issue is erk-plan                       | Redirect to `/erk:system:impl-execute`                           |
+| Issue is erk-plan                       | Redirect to `/erk:plan-implement`                                |
 | No pending steps                        | Report all steps complete, suggest closing                       |
 | Invalid argument format                 | Prompt for valid issue number                                    |
 | Roadmap not parseable                   | Ask user to specify which step to plan                           |

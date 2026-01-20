@@ -379,12 +379,12 @@ def add_worktree_creation_comment(
     # Format instructions for implementation
     instructions = f"""The worktree is ready for implementation. You can navigate to it using:
 ```bash
-erk br co {branch_name}
+ erk br co {branch_name}
 ```
 
 To implement the plan:
 ```bash
-claude --permission-mode acceptEdits "/erk:system:impl-execute"
+claude --permission-mode acceptEdits "/erk:plan-implement"
 ```"""
 
     # Create comment with consistent format

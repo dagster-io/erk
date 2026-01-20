@@ -284,7 +284,7 @@ This ensures only one implementation runs per issue at a time.
 
 - Copy `.worker-impl/` to `.impl/` (Claude reads `.impl/`)
 - Create `.impl/run-info.json` with workflow run details
-- Execute `/erk:system:impl-execute` with Claude
+- Execute `/erk:plan-implement` with Claude
 
 #### Phase 5: Submission
 
@@ -321,7 +321,7 @@ Created in GitHub Actions to track the workflow run:
 }
 ```
 
-### `/erk:system:impl-execute` Command
+### `/erk:plan-implement` Command
 
 The implementation command:
 
