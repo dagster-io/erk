@@ -23,6 +23,7 @@ from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.prompt_executor.abc import PromptExecutor
+from erk_shared.review_executor.abc import ReviewExecutor
 
 
 def context_for_test(
@@ -35,6 +36,8 @@ def context_for_test(
     prompt_executor: PromptExecutor | None = None,
     claude_executor: ClaudeExecutor | None = None,
     codespace: Codespace | None = None,
+    claude_review_executor: ReviewExecutor | None = None,
+    codex_review_executor: ReviewExecutor | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -55,6 +58,8 @@ def context_for_test(
         claude_installation: Optional ClaudeInstallation. If None, creates FakeClaudeInstallation.
         prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
         claude_executor: Optional ClaudeExecutor. If None, creates FakeClaudeExecutor.
+        claude_review_executor: Optional ReviewExecutor for Claude. Defaults to FakeReviewExecutor.
+        codex_review_executor: Optional ReviewExecutor for Codex. Defaults to FakeReviewExecutor.
         debug: Whether to enable debug mode (default False).
         repo_root: Repository root path (defaults to Path("/fake/repo"))
         cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -83,6 +88,7 @@ def context_for_test(
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.fake import FakePromptExecutor
+    from erk_shared.review_executor.fake import FakeReviewExecutor
 
     # Resolve defaults - create issues first since it's composed into github
     # Track whether issues was explicitly passed (for composition logic below)
@@ -118,6 +124,12 @@ def context_for_test(
         claude_executor if claude_executor is not None else FakeClaudeExecutor()
     )
     resolved_codespace: Codespace = codespace if codespace is not None else FakeCodespace()
+    resolved_claude_review_executor: ReviewExecutor = (
+        claude_review_executor if claude_review_executor is not None else FakeReviewExecutor()
+    )
+    resolved_codex_review_executor: ReviewExecutor = (
+        codex_review_executor if codex_review_executor is not None else FakeReviewExecutor()
+    )
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
@@ -152,6 +164,8 @@ def context_for_test(
         completion=FakeCompletion(),
         codespace=resolved_codespace,
         claude_executor=resolved_claude_executor,
+        claude_review_executor=resolved_claude_review_executor,
+        codex_review_executor=resolved_codex_review_executor,
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
         codespace_registry=FakeCodespaceRegistry(),

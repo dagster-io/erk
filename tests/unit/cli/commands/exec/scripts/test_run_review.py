@@ -10,8 +10,8 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.run_review import run_review
 from erk_shared.context.context import ErkContext
-from erk_shared.core.fakes import FakeClaudeExecutor
 from erk_shared.git.fake import FakeGit
+from erk_shared.review_executor.fake import FakeReviewExecutor
 
 
 def _create_review_file(
@@ -165,9 +165,9 @@ Custom body.
 class TestRunReviewExecution:
     """Tests for run-review execution mode (non-dry-run)."""
 
-    def test_executes_claude_via_gateway(self, tmp_path: Path) -> None:
-        """Non-dry-run mode executes Claude via ClaudeExecutor gateway."""
-        reviews_dir = tmp_path / ".claude" / "reviews"
+    def test_executes_via_review_executor_gateway(self, tmp_path: Path) -> None:
+        """Non-dry-run mode executes via ReviewExecutor gateway."""
+        reviews_dir = tmp_path / ".github" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "test.md").write_text(
@@ -186,27 +186,26 @@ Check for issues in the code.
             encoding="utf-8",
         )
 
-        fake_executor = FakeClaudeExecutor(passthrough_exit_code=0)
+        fake_executor = FakeReviewExecutor(exit_code=0)
 
         runner = CliRunner()
         result = runner.invoke(
             run_review,
             ["--name", "test", "--pr-number", "123"],
-            obj=ErkContext.for_test(cwd=tmp_path, claude_executor=fake_executor),
+            obj=ErkContext.for_test(cwd=tmp_path, claude_review_executor=fake_executor),
         )
 
         assert result.exit_code == 0
-        assert len(fake_executor.passthrough_calls) == 1
-        call = fake_executor.passthrough_calls[0]
+        assert len(fake_executor.review_calls) == 1
+        call = fake_executor.review_calls[0]
         assert "PR NUMBER: 123" in call.prompt
         assert call.model == "sonnet"
-        assert call.tools == ["Read", "Bash", "Grep"]
+        assert call.tools == ("Read", "Bash", "Grep")
         assert call.cwd == tmp_path
-        assert call.dangerous is True
 
-    def test_propagates_claude_exit_code(self, tmp_path: Path) -> None:
-        """Exit code from Claude is propagated."""
-        reviews_dir = tmp_path / ".claude" / "reviews"
+    def test_propagates_exit_code(self, tmp_path: Path) -> None:
+        """Exit code from provider is propagated."""
+        reviews_dir = tmp_path / ".github" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "test.md").write_text(
@@ -223,13 +222,13 @@ Check for issues.
             encoding="utf-8",
         )
 
-        fake_executor = FakeClaudeExecutor(passthrough_exit_code=42)
+        fake_executor = FakeReviewExecutor(exit_code=42)
 
         runner = CliRunner()
         result = runner.invoke(
             run_review,
             ["--name", "test", "--pr-number", "123"],
-            obj=ErkContext.for_test(cwd=tmp_path, claude_executor=fake_executor),
+            obj=ErkContext.for_test(cwd=tmp_path, claude_review_executor=fake_executor),
         )
 
         assert result.exit_code == 42
@@ -253,22 +252,64 @@ Simple check.
             encoding="utf-8",
         )
 
-        fake_executor = FakeClaudeExecutor()
+        fake_executor = FakeReviewExecutor()
 
         runner = CliRunner()
         result = runner.invoke(
             run_review,
             ["--name", "test", "--pr-number", "456"],
-            obj=ErkContext.for_test(cwd=tmp_path, claude_executor=fake_executor),
+            obj=ErkContext.for_test(cwd=tmp_path, claude_review_executor=fake_executor),
         )
 
         assert result.exit_code == 0
-        assert len(fake_executor.passthrough_calls) == 1
-        call = fake_executor.passthrough_calls[0]
+        assert len(fake_executor.review_calls) == 1
+        call = fake_executor.review_calls[0]
         # Default allowed_tools is parsed from DEFAULT_ALLOWED_TOOLS constant
         assert call.tools is not None
         assert "Bash(gh:*)" in call.tools
         assert "Read(*)" in call.tools
+
+    def test_uses_codex_executor_for_codex_provider(self, tmp_path: Path) -> None:
+        """Uses codex executor when provider is codex."""
+        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir.mkdir(parents=True)
+
+        (reviews_dir / "test.md").write_text(
+            """\
+---
+name: Codex Review
+paths:
+  - "**/*.py"
+marker: "<!-- codex-review -->"
+provider: codex
+model: gpt-5-codex
+---
+
+Check for issues.
+""",
+            encoding="utf-8",
+        )
+
+        claude_executor = FakeReviewExecutor()
+        codex_executor = FakeReviewExecutor(exit_code=0)
+
+        runner = CliRunner()
+        result = runner.invoke(
+            run_review,
+            ["--name", "test", "--pr-number", "123"],
+            obj=ErkContext.for_test(
+                cwd=tmp_path,
+                claude_review_executor=claude_executor,
+                codex_review_executor=codex_executor,
+            ),
+        )
+
+        assert result.exit_code == 0
+        # Should use codex executor, not claude
+        assert len(claude_executor.review_calls) == 0
+        assert len(codex_executor.review_calls) == 1
+        call = codex_executor.review_calls[0]
+        assert call.model == "gpt-5-codex"
 
 
 class TestRunReviewLocalMode:

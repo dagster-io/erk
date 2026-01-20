@@ -49,9 +49,9 @@ from erk.review.parsing import parse_review_file
 from erk.review.prompt_assembly import assemble_review_prompt
 from erk_shared.context.helpers import (
     get_repo_identifier,
-    require_claude_executor,
     require_cwd,
     require_git,
+    require_review_executor,
 )
 
 
@@ -177,20 +177,19 @@ def run_review(
         click.echo(prompt)
         return
 
-    # Use ClaudeExecutor gateway for execution
-    executor = require_claude_executor(ctx)
+    # Use ReviewExecutor gateway for execution based on provider
+    executor = require_review_executor(ctx, review.frontmatter.provider)
 
     # Parse allowed_tools from comma-separated string
     tools: list[str] | None = None
     if review.frontmatter.allowed_tools:
         tools = [t.strip() for t in review.frontmatter.allowed_tools.split(",")]
 
-    exit_code = executor.execute_prompt_passthrough(
+    exit_code = executor.execute_review(
         prompt,
         model=review.frontmatter.model,
         tools=tools,
         cwd=cwd,
-        dangerous=True,
     )
 
     raise SystemExit(exit_code)

@@ -18,6 +18,7 @@ def _make_review(
             name=name,
             paths=("**/*.py",),
             marker=marker,
+            provider="claude",
             model="claude-sonnet-4-5",
             timeout_minutes=30,
             allowed_tools="Read(*)",

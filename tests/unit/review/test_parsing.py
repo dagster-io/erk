@@ -97,6 +97,7 @@ class TestValidateReviewFrontmatter:
         assert frontmatter.paths == ("**/*.py",)
         assert frontmatter.marker == "<!-- test -->"
         # Check defaults
+        assert frontmatter.provider == "claude"
         assert frontmatter.model == "claude-sonnet-4-5"
         assert frontmatter.timeout_minutes == 30
         assert frontmatter.enabled is True
@@ -107,7 +108,8 @@ class TestValidateReviewFrontmatter:
             "name": "Custom Review",
             "paths": ["**/*.py", "**/*.sh"],
             "marker": "<!-- custom-review -->",
-            "model": "claude-haiku-3",
+            "provider": "codex",
+            "model": "gpt-5-codex",
             "timeout_minutes": 15,
             "allowed_tools": "Bash(git:*)",
             "enabled": False,
@@ -120,7 +122,8 @@ class TestValidateReviewFrontmatter:
         assert frontmatter.name == "Custom Review"
         assert frontmatter.paths == ("**/*.py", "**/*.sh")
         assert frontmatter.marker == "<!-- custom-review -->"
-        assert frontmatter.model == "claude-haiku-3"
+        assert frontmatter.provider == "codex"
+        assert frontmatter.model == "gpt-5-codex"
         assert frontmatter.timeout_minutes == 15
         assert frontmatter.allowed_tools == "Bash(git:*)"
         assert frontmatter.enabled is False
@@ -199,6 +202,21 @@ class TestValidateReviewFrontmatter:
 
         assert frontmatter is None
         assert any("must be a list" in e for e in errors)
+
+    def test_invalid_provider(self) -> None:
+        """Return error when provider is not valid."""
+        data = {
+            "name": "Test",
+            "paths": ["**/*.py"],
+            "marker": "<!-- test -->",
+            "provider": "invalid-provider",
+        }
+
+        frontmatter, errors = validate_review_frontmatter(data)
+
+        assert frontmatter is None
+        assert any("Invalid provider" in e for e in errors)
+        assert any("invalid-provider" in e for e in errors)
 
 
 class TestParseReviewFile:
@@ -304,6 +322,7 @@ class TestCheckDuplicateMarkers:
                     name="A",
                     paths=("**/*.py",),
                     marker="<!-- a -->",
+                    provider="claude",
                     model="claude-sonnet-4-5",
                     timeout_minutes=30,
                     allowed_tools="Read(*)",
@@ -317,6 +336,7 @@ class TestCheckDuplicateMarkers:
                     name="B",
                     paths=("**/*.py",),
                     marker="<!-- b -->",
+                    provider="claude",
                     model="claude-sonnet-4-5",
                     timeout_minutes=30,
                     allowed_tools="Read(*)",
@@ -339,6 +359,7 @@ class TestCheckDuplicateMarkers:
                     name="A",
                     paths=("**/*.py",),
                     marker="<!-- same -->",
+                    provider="claude",
                     model="claude-sonnet-4-5",
                     timeout_minutes=30,
                     allowed_tools="Read(*)",
@@ -352,6 +373,7 @@ class TestCheckDuplicateMarkers:
                     name="B",
                     paths=("**/*.py",),
                     marker="<!-- same -->",
+                    provider="claude",
                     model="claude-sonnet-4-5",
                     timeout_minutes=30,
                     allowed_tools="Read(*)",

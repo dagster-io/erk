@@ -21,6 +21,8 @@ from erk.review.models import (
 MARKER_PATTERN = re.compile(r"^<!--\s+.+\s+-->$")
 
 # Default values for optional frontmatter fields
+DEFAULT_PROVIDER = "claude"
+VALID_PROVIDERS = frozenset({"claude", "codex"})
 DEFAULT_MODEL = "claude-sonnet-4-5"
 DEFAULT_TIMEOUT_MINUTES = 30
 DEFAULT_ALLOWED_TOOLS = "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
@@ -159,6 +161,16 @@ def validate_review_frontmatter(
         marker, marker_errors = _validate_marker(marker_data)
         errors.extend(marker_errors)
 
+    # Optional: provider (default: claude)
+    provider = data.get("provider", DEFAULT_PROVIDER)
+    if not isinstance(provider, str):
+        errors.append("Field 'provider' must be a string")
+        provider = DEFAULT_PROVIDER
+    elif provider not in VALID_PROVIDERS:
+        errors.append(
+            f"Invalid provider: {provider}. Must be one of: {', '.join(sorted(VALID_PROVIDERS))}"
+        )
+
     # Optional: model (default: claude-sonnet-4-5)
     model = data.get("model", DEFAULT_MODEL)
     if not isinstance(model, str):
@@ -194,6 +206,7 @@ def validate_review_frontmatter(
         name=name,
         paths=paths,
         marker=marker,
+        provider=provider,
         model=model,
         timeout_minutes=timeout_minutes,
         allowed_tools=allowed_tools,

@@ -44,6 +44,7 @@ from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallati
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.prompt_executor.abc import PromptExecutor
+from erk_shared.review_executor.abc import ReviewExecutor
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,10 @@ class ErkContext:
     planner_registry: PlannerRegistry
     codespace_registry: CodespaceRegistry
     plan_list_service: PlanListService
+
+    # Review executors (provider-specific implementations)
+    claude_review_executor: ReviewExecutor
+    codex_review_executor: ReviewExecutor
 
     # Paths
     cwd: Path  # Current working directory at CLI invocation
@@ -183,6 +188,8 @@ class ErkContext:
         claude_installation: ClaudeInstallation | None = None,
         prompt_executor: PromptExecutor | None = None,
         claude_executor: ClaudeExecutor | None = None,
+        claude_review_executor: ReviewExecutor | None = None,
+        codex_review_executor: ReviewExecutor | None = None,
         debug: bool = False,
         repo_root: Path | None = None,
         cwd: Path | None = None,
@@ -199,6 +206,8 @@ class ErkContext:
             claude_installation: ClaudeInstallation or None. Creates FakeClaudeInstallation if None.
             prompt_executor: Optional PromptExecutor. If None, creates FakePromptExecutor.
             claude_executor: Optional ClaudeExecutor. If None, creates FakeClaudeExecutor.
+            claude_review_executor: ReviewExecutor for Claude. Defaults to FakeReviewExecutor.
+            codex_review_executor: ReviewExecutor for Codex. Defaults to FakeReviewExecutor.
             debug: Whether to enable debug mode (default False).
             repo_root: Repository root path (defaults to Path("/fake/repo"))
             cwd: Current working directory (defaults to Path("/fake/worktree"))
@@ -222,6 +231,8 @@ class ErkContext:
             claude_installation=claude_installation,
             prompt_executor=prompt_executor,
             claude_executor=claude_executor,
+            claude_review_executor=claude_review_executor,
+            codex_review_executor=codex_review_executor,
             debug=debug,
             repo_root=repo_root,
             cwd=cwd,

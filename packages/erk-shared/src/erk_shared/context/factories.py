@@ -87,6 +87,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.learn.extraction.claude_installation.real import RealClaudeInstallation
     from erk_shared.plan_store.github import GitHubPlanStore
     from erk_shared.prompt_executor.real import RealPromptExecutor
+    from erk_shared.review_executor.fake import FakeReviewExecutor
 
     resolved_cwd = cwd if cwd is not None else Path.cwd()
 
@@ -139,6 +140,8 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         completion=FakeCompletion(),
         codespace=FakeCodespace(),
         claude_executor=FakeClaudeExecutor(),
+        claude_review_executor=FakeReviewExecutor(),
+        codex_review_executor=FakeReviewExecutor(),
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
         codespace_registry=FakeCodespaceRegistry(),

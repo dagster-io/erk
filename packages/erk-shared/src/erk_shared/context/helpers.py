@@ -27,6 +27,7 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.prompt_executor.abc import PromptExecutor
+from erk_shared.review_executor.abc import ReviewExecutor
 
 
 def require_context(ctx: click.Context) -> ErkContext:
@@ -505,3 +506,38 @@ def require_claude_executor(ctx: click.Context) -> ClaudeExecutor:
         raise SystemExit(1)
 
     return ctx.obj.claude_executor
+
+
+def require_review_executor(ctx: click.Context, provider: str) -> ReviewExecutor:
+    """Get the ReviewExecutor for the specified provider.
+
+    Uses LBYL pattern to check context before accessing.
+
+    Args:
+        ctx: Click context (must have ErkContext in ctx.obj)
+        provider: The provider name ("claude" or "codex")
+
+    Returns:
+        ReviewExecutor instance for the specified provider
+
+    Raises:
+        SystemExit: If context not initialized (exits with code 1)
+        ValueError: If provider is not recognized
+
+    Example:
+        >>> @click.command()
+        >>> @click.pass_context
+        >>> def my_command(ctx: click.Context) -> None:
+        ...     executor = require_review_executor(ctx, "claude")
+        ...     exit_code = executor.execute_review(...)
+    """
+    if ctx.obj is None:
+        click.echo("Error: Context not initialized", err=True)
+        raise SystemExit(1)
+
+    if provider == "claude":
+        return ctx.obj.claude_review_executor
+    elif provider == "codex":
+        return ctx.obj.codex_review_executor
+    else:
+        raise ValueError(f"Unknown provider: {provider}")

@@ -75,6 +75,9 @@ from erk_shared.plan_store.github import GitHubPlanStore
 from erk_shared.plan_store.store import PlanStore
 from erk_shared.prompt_executor.abc import PromptExecutor
 from erk_shared.prompt_executor.real import RealPromptExecutor
+from erk_shared.review_executor.abc import ReviewExecutor
+from erk_shared.review_executor.claude import RealClaudeReviewExecutor
+from erk_shared.review_executor.codex import RealCodexReviewExecutor
 
 
 def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
@@ -112,6 +115,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
+    from erk_shared.review_executor.fake import FakeReviewExecutor
 
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
@@ -134,6 +138,8 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         shell=FakeShell(),
         codespace=fake_codespace,
         claude_executor=FakeClaudeExecutor(),
+        claude_review_executor=FakeReviewExecutor(),
+        codex_review_executor=FakeReviewExecutor(),
         completion=FakeCompletion(),
         time=fake_time,
         erk_installation=FakeErkInstallation(),
@@ -235,6 +241,7 @@ def context_for_test(
     from erk_shared.github_admin.fake import FakeGitHubAdmin
     from erk_shared.learn.extraction.claude_installation.fake import FakeClaudeInstallation
     from erk_shared.prompt_executor.fake import FakePromptExecutor
+    from erk_shared.review_executor.fake import FakeReviewExecutor
 
     if git is None:
         git = FakeGit()
@@ -355,6 +362,8 @@ def context_for_test(
         shell=shell,
         codespace=codespace,
         claude_executor=claude_executor,
+        claude_review_executor=FakeReviewExecutor(),
+        codex_review_executor=FakeReviewExecutor(),
         completion=completion,
         time=time,
         erk_installation=erk_installation,
@@ -564,7 +573,11 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
     prompt_executor: PromptExecutor = RealPromptExecutor(time)
 
-    # 11. Create context with all values
+    # 11. Create review executors
+    claude_review_executor: ReviewExecutor = RealClaudeReviewExecutor()
+    codex_review_executor: ReviewExecutor = RealCodexReviewExecutor()
+
+    # 12. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -575,6 +588,8 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         shell=RealShell(),
         codespace=RealCodespace(),
         claude_executor=RealClaudeExecutor(console=console),
+        claude_review_executor=claude_review_executor,
+        codex_review_executor=codex_review_executor,
         completion=RealCompletion(),
         time=time,
         erk_installation=erk_installation,

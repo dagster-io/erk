@@ -17,7 +17,8 @@ class ReviewFrontmatter:
         marker: HTML comment marker for summary updates (e.g., "<!-- tripwires-review -->")
 
     Optional fields with defaults:
-        model: Claude model to use (default: "claude-sonnet-4-5")
+        provider: AI provider to use for review (default: "claude")
+        model: Model to use (default: "claude-sonnet-4-5")
         timeout_minutes: Workflow timeout (default: 30)
         allowed_tools: Claude Code allowed tools pattern
         enabled: Whether this review is active (default: True)
@@ -26,6 +27,7 @@ class ReviewFrontmatter:
     name: str
     paths: tuple[str, ...]
     marker: str
+    provider: str
     model: str
     timeout_minutes: int
     allowed_tools: str
