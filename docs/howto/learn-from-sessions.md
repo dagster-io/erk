@@ -96,6 +96,32 @@ erk land -f
 erk config set prompt_learn_on_land false
 ```
 
+## Where Learn Documentation Lives
+
+Learn creates documentation in `docs/learned/`, a directory designed for AI agents rather than human users. The structure helps agents discover relevant documentation through:
+
+- **Category directories** - Organized by topic (architecture, cli, testing, planning, sessions, etc.)
+- **YAML frontmatter** - Each doc has `title` and `read_when` fields that describe when an agent should read it
+- **Auto-generated indexes** - Category and root indexes are generated from frontmatter
+
+Example frontmatter:
+
+```yaml
+---
+title: Gateway ABC Implementation
+read_when:
+  - "adding a method to Git, GitHub, or Graphite ABC"
+  - "implementing gateway interfaces"
+---
+```
+
+When implementing documentation from a learn plan, agents load the `learned-docs` skill which provides:
+
+- Category placement guidelines
+- Frontmatter requirements
+- Code-in-documentation rules (no embedded Python functions)
+- Validation via `make fast-ci`
+
 ## See Also
 
 - [Use the Local Workflow](local-workflow.md) - The standard development cycle
