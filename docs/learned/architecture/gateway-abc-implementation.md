@@ -37,11 +37,30 @@ All gateway ABCs (Git, GitHub, Graphite) follow the same 5-file pattern. When ad
 
 ## Gateway Locations
 
-| Gateway  | Location                                               |
-| -------- | ------------------------------------------------------ |
-| Git      | `packages/erk-shared/src/erk_shared/git/`              |
-| GitHub   | `packages/erk-shared/src/erk_shared/github/`           |
-| Graphite | `packages/erk-shared/src/erk_shared/gateway/graphite/` |
+| Gateway   | Location                                                |
+| --------- | ------------------------------------------------------- |
+| Git       | `packages/erk-shared/src/erk_shared/git/`               |
+| GitHub    | `packages/erk-shared/src/erk_shared/github/`            |
+| Graphite  | `packages/erk-shared/src/erk_shared/gateway/graphite/`  |
+| Codespace | `packages/erk-shared/src/erk_shared/gateway/codespace/` |
+
+## Simplified Gateway Pattern (3 Files)
+
+Some gateways don't benefit from dry-run or printing wrappers. The Codespace gateway uses a simplified 3-file pattern:
+
+| Implementation | Purpose                    |
+| -------------- | -------------------------- |
+| `abc.py`       | Abstract method definition |
+| `real.py`      | Production implementation  |
+| `fake.py`      | Test double                |
+
+**When to use 3-file pattern:**
+
+- Process replacement operations (`os.execvp`) where dry-run doesn't apply
+- External SSH/remote execution where "printing" the command isn't useful
+- Operations that are inherently all-or-nothing
+
+**Example:** Codespace SSH execution replaces the current process, so there's no meaningful "dry-run" - you either exec into the codespace or you don't.
 
 ## Checklist for New Gateway Methods
 
