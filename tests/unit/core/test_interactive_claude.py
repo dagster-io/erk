@@ -20,6 +20,7 @@ def test_build_claude_args_with_model() -> None:
         verbose=False,
         permission_mode="acceptEdits",
         dangerous=False,
+        allow_dangerous=False,
     )
 
     args = build_claude_args(config, command="/test-cmd")
@@ -41,6 +42,7 @@ def test_build_claude_args_with_dangerous() -> None:
         verbose=False,
         permission_mode="acceptEdits",
         dangerous=True,
+        allow_dangerous=False,
     )
 
     args = build_claude_args(config, command="/test-cmd")
@@ -55,11 +57,28 @@ def test_build_claude_args_plan_mode() -> None:
         verbose=False,
         permission_mode="plan",
         dangerous=False,
+        allow_dangerous=False,
     )
 
     args = build_claude_args(config, command="/test-cmd")
 
     assert args == ["claude", "--permission-mode", "plan", "/test-cmd"]
+
+
+def test_build_claude_args_with_allow_dangerous() -> None:
+    """build_claude_args includes --allow-dangerously-skip-permissions when allow_dangerous=True."""
+    config = InteractiveClaudeConfig(
+        model=None,
+        verbose=False,
+        permission_mode="acceptEdits",
+        dangerous=False,
+        allow_dangerous=True,
+    )
+
+    args = build_claude_args(config, command="/test-cmd")
+
+    assert "--allow-dangerously-skip-permissions" in args
+    assert "--dangerously-skip-permissions" not in args
 
 
 def test_build_claude_args_empty_command() -> None:
@@ -79,6 +98,7 @@ def test_build_claude_args_all_options() -> None:
         verbose=True,
         permission_mode="plan",
         dangerous=True,
+        allow_dangerous=True,
     )
 
     args = build_claude_args(config, command="/erk:objective-next-plan 123")
@@ -88,6 +108,7 @@ def test_build_claude_args_all_options() -> None:
         "--permission-mode",
         "plan",
         "--dangerously-skip-permissions",
+        "--allow-dangerously-skip-permissions",
         "--model",
         "claude-opus-4-5",
         "/erk:objective-next-plan 123",
@@ -110,6 +131,7 @@ def test_build_claude_command_string_plan_mode() -> None:
         verbose=False,
         permission_mode="plan",
         dangerous=False,
+        allow_dangerous=False,
     )
 
     cmd = build_claude_command_string(config, command="/test-cmd")
@@ -124,12 +146,14 @@ def test_build_claude_command_string_all_options() -> None:
         verbose=True,
         permission_mode="plan",
         dangerous=True,
+        allow_dangerous=True,
     )
 
     cmd = build_claude_command_string(config, command="/test-cmd")
 
     expected = (
-        'claude --permission-mode plan --dangerously-skip-permissions --model opus "/test-cmd"'
+        "claude --permission-mode plan --dangerously-skip-permissions "
+        '--allow-dangerously-skip-permissions --model opus "/test-cmd"'
     )
     assert cmd == expected
 

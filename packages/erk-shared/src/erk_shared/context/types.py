@@ -82,12 +82,15 @@ class InteractiveClaudeConfig:
         verbose: Whether to show verbose output
         permission_mode: Claude CLI permission mode. See ClaudePermissionMode for options.
         dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
+        allow_dangerous: Whether to enable --allow-dangerously-skip-permissions flag,
+            which lets the user opt into skipping prompts during a session
     """
 
     model: str | None
     verbose: bool
     permission_mode: ClaudePermissionMode
     dangerous: bool
+    allow_dangerous: bool
 
     @staticmethod
     def default() -> InteractiveClaudeConfig:
@@ -97,6 +100,7 @@ class InteractiveClaudeConfig:
             verbose=False,
             permission_mode="acceptEdits",
             dangerous=False,
+            allow_dangerous=False,
         )
 
     def with_overrides(
@@ -105,6 +109,7 @@ class InteractiveClaudeConfig:
         permission_mode_override: ClaudePermissionMode | None,
         model_override: str | None,
         dangerous_override: bool | None,
+        allow_dangerous_override: bool | None,
     ) -> InteractiveClaudeConfig:
         """Create a new config with CLI overrides applied.
 
@@ -114,6 +119,7 @@ class InteractiveClaudeConfig:
             permission_mode_override: Override permission_mode if not None
             model_override: Override model if not None
             dangerous_override: Override dangerous if not None
+            allow_dangerous_override: Override allow_dangerous if not None
 
         Returns:
             New InteractiveClaudeConfig with overrides applied
@@ -128,6 +134,11 @@ class InteractiveClaudeConfig:
             verbose=self.verbose,
             permission_mode=new_permission_mode,
             dangerous=dangerous_override if dangerous_override is not None else self.dangerous,
+            allow_dangerous=(
+                allow_dangerous_override
+                if allow_dangerous_override is not None
+                else self.allow_dangerous
+            ),
         )
 
 

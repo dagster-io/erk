@@ -66,6 +66,7 @@ class RealErkInstallation(ErkInstallation):
             verbose=bool(ic_data.get("verbose", False)),
             permission_mode=ic_data.get("permission_mode", "acceptEdits"),
             dangerous=bool(ic_data.get("dangerous", False)),
+            allow_dangerous=bool(ic_data.get("allow_dangerous", False)),
         )
 
         return GlobalConfig(
@@ -156,6 +157,9 @@ class RealErkInstallation(ErkInstallation):
             has_ic_values = True
         if ic.dangerous != ic_default.dangerous:
             ic_table["dangerous"] = ic.dangerous
+            has_ic_values = True
+        if ic.allow_dangerous != ic_default.allow_dangerous:
+            ic_table["allow_dangerous"] = ic.allow_dangerous
             has_ic_values = True
 
         if has_ic_values:

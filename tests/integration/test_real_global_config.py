@@ -262,6 +262,7 @@ model = "claude-opus-4-5"
 verbose = true
 permission_mode = "plan"
 dangerous = true
+allow_dangerous = true
 """.strip(),
         encoding="utf-8",
     )
@@ -273,6 +274,7 @@ dangerous = true
     assert loaded.interactive_claude.verbose is True
     assert loaded.interactive_claude.permission_mode == "plan"
     assert loaded.interactive_claude.dangerous is True
+    assert loaded.interactive_claude.allow_dangerous is True
 
 
 def test_load_config_interactive_claude_defaults(
@@ -300,6 +302,7 @@ shell_setup_complete = true
     assert loaded.interactive_claude.verbose is False
     assert loaded.interactive_claude.permission_mode == "acceptEdits"
     assert loaded.interactive_claude.dangerous is False
+    assert loaded.interactive_claude.allow_dangerous is False
 
 
 def test_load_config_interactive_claude_partial(
@@ -330,6 +333,7 @@ model = "opus"
     assert loaded.interactive_claude.verbose is False
     assert loaded.interactive_claude.permission_mode == "acceptEdits"
     assert loaded.interactive_claude.dangerous is False
+    assert loaded.interactive_claude.allow_dangerous is False
 
 
 def test_save_config_with_interactive_claude(
@@ -354,6 +358,7 @@ def test_save_config_with_interactive_claude(
             verbose=True,
             permission_mode="plan",
             dangerous=True,
+            allow_dangerous=True,
         ),
     )
     installation.save_config(config)
@@ -365,6 +370,7 @@ def test_save_config_with_interactive_claude(
     assert "verbose = true" in content
     assert 'permission_mode = "plan"' in content
     assert "dangerous = true" in content
+    assert "allow_dangerous = true" in content
 
 
 def test_save_config_interactive_claude_defaults_not_written(
@@ -415,6 +421,7 @@ def test_save_config_interactive_claude_partial_non_defaults(
             verbose=False,  # default
             permission_mode="acceptEdits",  # default
             dangerous=False,  # default
+            allow_dangerous=False,  # default
         ),
     )
     installation.save_config(config)
@@ -429,6 +436,7 @@ def test_save_config_interactive_claude_partial_non_defaults(
     # Check that "dangerous =" is not in [interactive-claude] section
     # (note: "requires_dangerous_flag" is a different field that exists elsewhere)
     assert "\ndangerous =" not in content
+    assert "allow_dangerous =" not in content
 
 
 def test_roundtrip_interactive_claude_config(
@@ -453,6 +461,7 @@ def test_roundtrip_interactive_claude_config(
             verbose=True,
             permission_mode="plan",
             dangerous=True,
+            allow_dangerous=True,
         ),
     )
     installation.save_config(original)
@@ -463,3 +472,4 @@ def test_roundtrip_interactive_claude_config(
     assert loaded.interactive_claude.verbose is True
     assert loaded.interactive_claude.permission_mode == "plan"
     assert loaded.interactive_claude.dangerous is True
+    assert loaded.interactive_claude.allow_dangerous is True

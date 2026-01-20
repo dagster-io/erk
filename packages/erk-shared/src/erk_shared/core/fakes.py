@@ -95,6 +95,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
+        permission_mode: ClaudePermissionMode = "acceptEdits",
+        allow_dangerous: bool = False,
     ) -> Iterator[ClaudeEvent]:
         yield from self.streaming_events
 

@@ -185,16 +185,20 @@ class ClaudeExecutor(ABC):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
+        permission_mode: ClaudePermissionMode = "acceptEdits",
+        allow_dangerous: bool = False,
     ) -> Iterator[ClaudeEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
 
         Args:
             command: The slash command to execute (e.g., "/erk:system:impl-execute")
             worktree_path: Path to worktree directory to run command in
-            dangerous: Whether to skip permission prompts
+            dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
             verbose: Whether to show raw output (True) or filtered output (False)
             debug: Whether to emit debug output for stream parsing
             model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+            permission_mode: Claude CLI permission mode (default: "acceptEdits")
+            allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
         Yields:
             ClaudeEvent objects as they occur during execution
@@ -220,6 +224,8 @@ class ClaudeExecutor(ABC):
         dangerous: bool,
         verbose: bool = False,
         model: str | None = None,
+        permission_mode: ClaudePermissionMode = "acceptEdits",
+        allow_dangerous: bool = False,
     ) -> CommandResult:
         """Execute Claude CLI command and return final result (non-streaming).
 
@@ -230,9 +236,11 @@ class ClaudeExecutor(ABC):
         Args:
             command: The slash command to execute (e.g., "/erk:system:impl-execute")
             worktree_path: Path to worktree directory to run command in
-            dangerous: Whether to skip permission prompts
+            dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
             verbose: Whether to show raw output (True) or filtered output (False)
             model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+            permission_mode: Claude CLI permission mode (default: "acceptEdits")
+            allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
         Returns:
             CommandResult containing success status, PR URL, duration, and messages
@@ -262,6 +270,8 @@ class ClaudeExecutor(ABC):
             dangerous=dangerous,
             verbose=verbose,
             model=model,
+            permission_mode=permission_mode,
+            allow_dangerous=allow_dangerous,
         ):
             match event:
                 case TextEvent(content=text):

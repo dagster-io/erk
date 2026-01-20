@@ -4,14 +4,20 @@ For user_output, machine_output, format_duration - import from erk_shared.output
 This module provides format_implement_summary and stream_command_with_feedback.
 """
 
+from __future__ import annotations
+
 import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 from rich.panel import Panel
 from rich.text import Text
+
+if TYPE_CHECKING:
+    from erk_shared.context.types import ClaudePermissionMode
 
 from erk.core.claude_executor import (
     ClaudeExecutor,
@@ -126,6 +132,8 @@ def stream_command_with_feedback(
     dangerous: bool,
     model: str | None = None,
     debug: bool = False,
+    permission_mode: ClaudePermissionMode = "acceptEdits",
+    allow_dangerous: bool = False,
 ) -> CommandResult:
     """Stream Claude command execution with live print-based feedback.
 
@@ -145,9 +153,11 @@ def stream_command_with_feedback(
         executor: Claude CLI executor for command execution
         command: The slash command to execute (e.g., "/gt:pr-submit")
         worktree_path: Path to worktree directory to run command in
-        dangerous: Whether to skip permission prompts
+        dangerous: Whether to skip permission prompts (--dangerously-skip-permissions)
         model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
         debug: Whether to show debug output for stream parsing
+        permission_mode: Claude CLI permission mode (default: "acceptEdits")
+        allow_dangerous: Whether to pass --allow-dangerously-skip-permissions
 
     Returns:
         CommandResult with success status, PR URL, duration, and messages
@@ -179,6 +189,8 @@ def stream_command_with_feedback(
         verbose=False,
         debug=debug,
         model=model,
+        permission_mode=permission_mode,
+        allow_dangerous=allow_dangerous,
     )
     if debug:
         click.echo(click.style("[DEBUG] Starting event stream...", fg="yellow"), err=True)

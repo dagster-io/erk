@@ -142,6 +142,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
+        permission_mode: ClaudePermissionMode = "acceptEdits",
+        allow_dangerous: bool = False,
     ) -> Iterator[ClaudeEvent]:
         """Track command execution and yield simulated typed events.
 
@@ -155,6 +157,8 @@ class FakeClaudeExecutor(ClaudeExecutor):
             verbose: Whether to show raw output or filtered output
             debug: Whether to emit debug output for stream parsing
             model: Optional model name (haiku, sonnet, opus) - recorded but not used
+            permission_mode: Claude CLI permission mode - recorded but not used
+            allow_dangerous: Whether --allow-dangerously-skip-permissions - recorded but not used
 
         Yields:
             ClaudeEvent objects simulating command execution
