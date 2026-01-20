@@ -30,8 +30,7 @@ from pathlib import Path
 
 import click
 
-from erk_shared.context.helpers import require_repo_root
-from erk_shared.subprocess_utils import run_subprocess_with_context
+from erk_shared.context.helpers import require_github, require_repo_root
 
 
 def _get_remote_sessions_dir(repo_root: Path, session_id: str) -> Path:
@@ -95,6 +94,7 @@ def download_remote_session(
     4. Returns path to the session file
     """
     repo_root = require_repo_root(ctx)
+    github = require_github(ctx)
     artifact_name = f"session-{session_id}"
 
     # Get or create the remote sessions directory
@@ -108,29 +108,15 @@ def download_remote_session(
             elif item.is_dir():
                 shutil.rmtree(item)
 
-    # Download the artifact using gh run download
-    try:
-        run_subprocess_with_context(
-            cmd=[
-                "gh",
-                "run",
-                "download",
-                run_id,
-                "--name",
-                artifact_name,
-                "--dir",
-                str(session_dir),
-            ],
-            operation_context=f"download artifact '{artifact_name}' from run {run_id}",
-            cwd=repo_root,
-        )
-    except RuntimeError as e:
+    # Download the artifact using the GitHub gateway
+    success = github.download_run_artifact(repo_root, run_id, artifact_name, session_dir)
+    if not success:
         error_output = {
             "success": False,
-            "error": f"Failed to download artifact '{artifact_name}' from run {run_id}: {e}",
+            "error": f"Failed to download artifact '{artifact_name}' from run {run_id}",
         }
         click.echo(json.dumps(error_output))
-        raise SystemExit(1) from None
+        raise SystemExit(1)
 
     # Find the .jsonl file in the downloaded artifact
     jsonl_file = _find_jsonl_file(session_dir)

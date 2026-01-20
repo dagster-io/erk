@@ -1,13 +1,11 @@
 """Unit tests for download-remote-session exec script.
 
 Tests downloading session artifacts from GitHub Actions workflow runs.
-Uses monkeypatch for subprocess mocking and tmp_path for filesystem isolation.
+Uses FakeGitHub with artifact_download_callback for test isolation.
 """
 
 import json
-import subprocess
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from click.testing import CliRunner
 
@@ -19,6 +17,7 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session as download_remote_session_command,
 )
 from erk_shared.context.context import ErkContext
+from erk_shared.github.fake import FakeGitHub
 
 # ============================================================================
 # 1. Helper Function Tests (4 tests)
@@ -100,45 +99,20 @@ def test_cli_missing_session_id() -> None:
     assert "session-id" in result.output.lower() or "missing" in result.output.lower()
 
 
-def test_cli_success_with_mocked_subprocess(
-    tmp_path: Path,
-    monkeypatch: MagicMock,
-) -> None:
-    """Test successful download with mocked subprocess."""
+def test_cli_success_with_fake_github(tmp_path: Path) -> None:
+    """Test successful download using FakeGitHub with callback."""
     session_id = "abc-123"
     run_id = "12345678"
 
-    # Mock subprocess to simulate successful gh run download
-    def mock_run(
-        cmd: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        # When gh run download is called, create a .jsonl file in the target dir
-        if "gh" in cmd and "run" in cmd and "download" in cmd:
-            # Find the --dir argument
-            dir_index = cmd.index("--dir") + 1
-            target_dir = Path(cmd[dir_index])
-            target_dir.mkdir(parents=True, exist_ok=True)
-            # Create the session file
-            session_file = target_dir / "uploaded-session.jsonl"
-            session_file.write_text('{"test": true}\n', encoding="utf-8")
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=0,
-                stdout="",
-                stderr="",
-            )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout="",
-            stderr="",
-        )
+    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
+        """Simulate artifact download by creating a session file."""
+        session_file = destination / "uploaded-session.jsonl"
+        session_file.write_text('{"test": true}\n', encoding="utf-8")
+        return True
 
-    monkeypatch.setattr(subprocess, "run", mock_run)
-
+    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
 
     result = runner.invoke(
         download_remote_session_command,
@@ -154,41 +128,24 @@ def test_cli_success_with_mocked_subprocess(
     assert output["artifact_name"] == f"session-{session_id}"
     assert "session.jsonl" in output["path"]
 
+    # Verify the fake tracked the download
+    assert len(fake_github.downloaded_artifacts) == 1
+    assert fake_github.downloaded_artifacts[0][0] == run_id
+    assert fake_github.downloaded_artifacts[0][1] == f"session-{session_id}"
 
-def test_cli_error_artifact_not_found(
-    tmp_path: Path,
-    monkeypatch: MagicMock,
-) -> None:
+
+def test_cli_error_artifact_not_found(tmp_path: Path) -> None:
     """Test error when artifact download fails."""
     session_id = "nonexistent-session"
     run_id = "12345678"
 
-    # Mock subprocess to simulate failed gh run download
-    # We need to raise CalledProcessError when check=True is passed
-    def mock_run(
-        cmd: list[str],
-        *,
-        check: bool = False,
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        if check:
-            raise subprocess.CalledProcessError(
-                returncode=1,
-                cmd=cmd,
-                output="",  # CalledProcessError uses 'output' not 'stdout'
-                stderr="no artifact found",
-            )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=1,
-            stdout="",
-            stderr="no artifact found",
-        )
+    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
+        """Simulate download failure."""
+        return False
 
-    monkeypatch.setattr(subprocess, "run", mock_run)
-
+    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
 
     result = runner.invoke(
         download_remote_session_command,
@@ -202,44 +159,20 @@ def test_cli_error_artifact_not_found(
     assert "Failed to download" in output["error"]
 
 
-def test_cli_error_no_jsonl_in_artifact(
-    tmp_path: Path,
-    monkeypatch: MagicMock,
-) -> None:
+def test_cli_error_no_jsonl_in_artifact(tmp_path: Path) -> None:
     """Test error when downloaded artifact has no .jsonl file."""
     session_id = "no-jsonl-session"
     run_id = "12345678"
 
-    # Mock subprocess to simulate successful download but no .jsonl file
-    def mock_run(
-        cmd: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        if "gh" in cmd and "run" in cmd and "download" in cmd:
-            # Find the --dir argument and create directory but no .jsonl file
-            dir_index = cmd.index("--dir") + 1
-            target_dir = Path(cmd[dir_index])
-            target_dir.mkdir(parents=True, exist_ok=True)
-            # Create a non-jsonl file
-            other_file = target_dir / "other.txt"
-            other_file.write_text("not a session file", encoding="utf-8")
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=0,
-                stdout="",
-                stderr="",
-            )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout="",
-            stderr="",
-        )
+    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
+        """Simulate download with no .jsonl file."""
+        other_file = destination / "other.txt"
+        other_file.write_text("not a session file", encoding="utf-8")
+        return True
 
-    monkeypatch.setattr(subprocess, "run", mock_run)
-
+    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
 
     result = runner.invoke(
         download_remote_session_command,
@@ -253,10 +186,7 @@ def test_cli_error_no_jsonl_in_artifact(
     assert "No .jsonl file found" in output["error"]
 
 
-def test_cli_cleanup_existing_directory_on_redownload(
-    tmp_path: Path,
-    monkeypatch: MagicMock,
-) -> None:
+def test_cli_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     """Test that existing directory contents are cleaned up on re-download."""
     session_id = "redownload-session"
     run_id = "12345678"
@@ -267,35 +197,15 @@ def test_cli_cleanup_existing_directory_on_redownload(
     old_file = session_dir / "old-session.jsonl"
     old_file.write_text('{"old": true}\n', encoding="utf-8")
 
-    # Mock subprocess to simulate successful download with new content
-    def mock_run(
-        cmd: list[str],
-        **kwargs: object,
-    ) -> subprocess.CompletedProcess[str]:
-        if "gh" in cmd and "run" in cmd and "download" in cmd:
-            dir_index = cmd.index("--dir") + 1
-            target_dir = Path(cmd[dir_index])
-            target_dir.mkdir(parents=True, exist_ok=True)
-            # Create new session file
-            new_file = target_dir / "new-session.jsonl"
-            new_file.write_text('{"new": true}\n', encoding="utf-8")
-            return subprocess.CompletedProcess(
-                args=cmd,
-                returncode=0,
-                stdout="",
-                stderr="",
-            )
-        return subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout="",
-            stderr="",
-        )
+    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
+        """Simulate download with new content."""
+        new_file = destination / "new-session.jsonl"
+        new_file.write_text('{"new": true}\n', encoding="utf-8")
+        return True
 
-    monkeypatch.setattr(subprocess, "run", mock_run)
-
+    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path)
+    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
 
     result = runner.invoke(
         download_remote_session_command,

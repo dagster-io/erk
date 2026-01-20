@@ -653,3 +653,27 @@ class GitHub(ABC):
             Empty list if no PRs match or on API failure.
         """
         ...
+
+    @abstractmethod
+    def download_run_artifact(
+        self,
+        repo_root: Path,
+        run_id: str,
+        artifact_name: str,
+        destination: Path,
+    ) -> bool:
+        """Download an artifact from a GitHub Actions workflow run.
+
+        Downloads the named artifact from the specified workflow run
+        to the given destination directory.
+
+        Args:
+            repo_root: Repository root directory (for gh CLI context)
+            run_id: GitHub Actions run ID
+            artifact_name: Name of the artifact to download
+            destination: Directory path to download artifact to
+
+        Returns:
+            True if the artifact was downloaded successfully, False otherwise
+        """
+        ...

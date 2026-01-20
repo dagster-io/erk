@@ -1987,3 +1987,35 @@ query {{
             )
 
         return result
+
+    def download_run_artifact(
+        self,
+        repo_root: Path,
+        run_id: str,
+        artifact_name: str,
+        destination: Path,
+    ) -> bool:
+        """Download an artifact from a GitHub Actions workflow run.
+
+        Uses gh run download to fetch the artifact.
+        """
+        cmd = [
+            "gh",
+            "run",
+            "download",
+            run_id,
+            "--name",
+            artifact_name,
+            "--dir",
+            str(destination),
+        ]
+
+        try:
+            run_subprocess_with_context(
+                cmd=cmd,
+                operation_context=f"download artifact '{artifact_name}' from run {run_id}",
+                cwd=repo_root,
+            )
+            return True
+        except RuntimeError:
+            return False

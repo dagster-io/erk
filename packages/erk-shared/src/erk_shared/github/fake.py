@@ -4,6 +4,7 @@ FakeGitHub is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +56,7 @@ class FakeGitHub(GitHub):
         review_threads_rate_limited: bool = False,
         pr_diff_error: str | None = None,
         workflow_runs_error: str | None = None,
+        artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -87,6 +89,10 @@ class FakeGitHub(GitHub):
                 Use to simulate HTTP 406 "diff too large" errors.
             workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
                 RuntimeError with this message. Use to simulate API failures.
+            artifact_download_callback: Optional callback invoked when download_run_artifact()
+                is called. Callback receives (run_id, artifact_name, destination) and can create
+                files in destination to simulate artifact content. Return True for success,
+                False or raise to simulate failure.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -118,6 +124,8 @@ class FakeGitHub(GitHub):
         self._review_threads_rate_limited = review_threads_rate_limited
         self._pr_diff_error = pr_diff_error
         self._workflow_runs_error = workflow_runs_error
+        self._artifact_download_callback = artifact_download_callback
+        self._downloaded_artifacts: list[tuple[str, str, Path]] = []
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -887,3 +895,28 @@ class FakeGitHub(GitHub):
                 )
 
         return result
+
+    def download_run_artifact(
+        self,
+        repo_root: Path,
+        run_id: str,
+        artifact_name: str,
+        destination: Path,
+    ) -> bool:
+        """Download artifact - invokes callback if configured, otherwise succeeds.
+
+        The callback can create files in destination to simulate artifact content.
+        """
+        self._downloaded_artifacts.append((run_id, artifact_name, destination))
+
+        if self._artifact_download_callback is not None:
+            return self._artifact_download_callback(run_id, artifact_name, destination)
+        return True
+
+    @property
+    def downloaded_artifacts(self) -> list[tuple[str, str, Path]]:
+        """Read-only access to downloaded artifacts for test assertions.
+
+        Returns list of (run_id, artifact_name, destination) tuples.
+        """
+        return self._downloaded_artifacts
