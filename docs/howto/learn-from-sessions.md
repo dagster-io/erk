@@ -12,7 +12,7 @@ Documentation created by learn is a "token cache" for future agents. Instead of 
 
 Run learn in these situations:
 
-- **After landing a PR** - `erk pr land` prompts you if learn hasn't been run
+- **After landing a PR** - `erk land` prompts you if learn hasn't been run
 - **Before abandoning a worktree** - Capture insights before context is lost
 - **After discovering non-obvious patterns** - Document what surprised you
 - **After resolving tricky errors** - Save the solution for next time
@@ -33,6 +33,13 @@ Or specify an issue number explicitly:
 
 ```
 /erk:learn 4655
+```
+
+You can also run learn from the CLI:
+
+```bash
+erk learn
+erk learn 4655  # With explicit issue number
 ```
 
 ### Step 2: Review Findings
@@ -80,7 +87,7 @@ If you don't want to be prompted about learn when landing PRs:
 **Per-PR:** Use the force flag to skip the prompt:
 
 ```bash
-erk pr land -f
+erk land -f
 ```
 
 **Globally:** Disable the prompt in erk configuration:
