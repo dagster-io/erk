@@ -7,78 +7,78 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 6da4658ec -->
+## [0.6.0] - 2026-01-20 07:57 PT
 
 ### Major Changes
 
-- **Convention-based code review system**: Introduces automatic code review discovery and execution based on conventions. Capabilities can define review workflows that run automatically on PRs. Users benefit from consistent, automated review checks without manual configuration. (692c980ce)
+- **Convention-based code review system**: Introduces automatic code review discovery and execution based on conventions. Capabilities can define review workflows that run automatically on PRs. Users benefit from consistent, automated review checks without manual configuration.
 
-- **Clickable activation commands with clipboard support**: Activation commands now display as clickable OSC 8 hyperlinks and automatically copy to clipboard via OSC 52. `erk implement` now defaults to `--here` mode (in-place implementation) removing pool slot management. Users can click activation commands directly or paste from clipboard instead of manual copy-paste. (76b08fc00, 462351575)
+- **Clickable activation commands with clipboard support**: Activation commands now display as clickable OSC 8 hyperlinks and automatically copy to clipboard via OSC 52. `erk implement` now defaults to `--here` mode (in-place implementation) removing pool slot management. Users can click activation commands directly or paste from clipboard instead of manual copy-paste.
 
-- **Shell integration removed**: The shell integration system (shell wrappers, automatic directory switching, ERK_SHELL env var) has been completely eliminated. Navigation commands now print activation script instructions instead of automatically switching directories. Users source activation scripts manually or use `cd`. This simplifies the architecture while keeping core erk functionality intact. (9e972e801)
+- **Shell integration removed**: The shell integration system (shell wrappers, automatic directory switching, ERK_SHELL env var) has been completely eliminated. Navigation commands now print activation script instructions instead of automatically switching directories. Users source activation scripts manually or use `cd`. This simplifies the architecture while keeping core erk functionality intact.
 
-- **Remote conflict resolution workflow**: Added `erk pr fix-conflicts-remote` command to trigger AI-powered conflict resolution on GitHub Actions without checking out branches locally. Squashes commits, rebases onto base branch, and uses Claude to resolve conflicts. Available in TUI via "5" key. (251f67273)
+- **Remote conflict resolution workflow**: Added `erk pr fix-conflicts-remote` command to trigger AI-powered conflict resolution on GitHub Actions without checking out branches locally. Squashes commits, rebases onto base branch, and uses Claude to resolve conflicts. Available in TUI via "5" key.
 
 ### Added
 
-- Add activation script generation when allocating worktree slots (6da4658ec)
-- Add shell completion (bash/zsh) to worktree activation script (3b21c7a76)
-- Add `--local` mode to code review for pre-PR review execution (5617ddf51)
-- Add Docker isolated implementation mode with filesystem isolation (c191754c2)
-- Add `-d` short flag alias to all `--dangerous` flags (782ae4dbb)
-- Add post-init prompt hook support for new developer setup (ebb8b16e2)
-- Add clipboard copy support for shell integration message in land command (9af02aeee)
-- Add `erk plan co` command for checking out plan branches with flexible identifier formats (plain numbers, P-prefixed, or URLs) and automatic worktree creation (663ceee32)
-- Add unresolved PR comment count column to `erk dash` TUI (f676cd4d3)
-- Add git index lock retry logic to prevent conflicts during concurrent worktree operations (be578b881)
-- Add navigation guide for branches and worktrees documentation (490f346ca)
-- Add `erk prepare` command as shorthand for `erk br create --for-plan PLAN` (c60e625cc)
-- Auto-detect plan number from branch name with `erk implement --here` (e1cbbfbf6)
-- Add `--for-plan` option to `erk br create` for creating branches directly from GitHub issues (42ea3ab0a)
-- Add `objective_id` field to Plan dataclass for direct access to parent objectives (83c53770b)
-- Add "Fix Conflicts Remote" action to TUI dashboard with keyboard shortcut "5" (d3f66952b)
+- Add activation script generation when allocating worktree slots
+- Add shell completion (bash/zsh) to worktree activation script
+- Add `--local` mode to code review for pre-PR review execution
+- Add Docker isolated implementation mode with filesystem isolation
+- Add `-d` short flag alias to all `--dangerous` flags
+- Add post-init prompt hook support for new developer setup
+- Add clipboard copy support for shell integration message in land command
+- Add `erk plan co` command for checking out plan branches with flexible identifier formats (plain numbers, P-prefixed, or URLs) and automatic worktree creation
+- Add unresolved PR comment count column to `erk dash` TUI
+- Add git index lock retry logic to prevent conflicts during concurrent worktree operations
+- Add navigation guide for branches and worktrees documentation
+- Add `erk prepare` command as shorthand for `erk br create --for-plan PLAN`
+- Auto-detect plan number from branch name with `erk implement --here`
+- Add `--for-plan` option to `erk br create` for creating branches directly from GitHub issues
+- Add `objective_id` field to Plan dataclass for direct access to parent objectives
+- Add "Fix Conflicts Remote" action to TUI dashboard with keyboard shortcut "5"
 
 ### Changed
 
-- Sort capabilities list alphabetically by name (1d1fdf986)
-- Rename `/erk:system:impl-execute` command to `/erk:plan-implement` (805519a6b)
-- Simplify activation output when deleting branch with force flag (29ac03cbc)
-- Remove shell integration requirement from land command (b683a75ef)
-- Always copy activation commands to clipboard (dd781f946)
-- Increase land action timeout to 10 minutes in TUI (01691c4ad)
-- Show branch name in `erk plan view` output when implementation is active (138a62cbb)
-- Expand implementation plan details blocks by default in GitHub issues (92eac2403)
-- Enable CI autofix agent to automatically fix type errors (51cfa0e68)
-- Remove `erk-plan` label from objectives, keeping only `erk-objective` for clearer distinction (718393f3b)
-- Simplify plan workflow to use `erk prepare` instead of three-mode `erk implement` (8846105f4)
-- Update PR checkout instructions to use shell script pattern for proper worktree activation (8cefccb57)
-- Rewrite first-plan.md tutorial clarifying two-step workflow: `erk prepare` then `erk implement --here` (eabc128e0)
-- Branch delete hint now only shown when `--force` flag is provided (95bce0f08)
-- Land command now displays PR number and branch name in source command for transparency (140674bf7)
+- Sort capabilities list alphabetically by name
+- Rename `/erk:system:impl-execute` command to `/erk:plan-implement`
+- Simplify activation output when deleting branch with force flag
+- Remove shell integration requirement from land command
+- Always copy activation commands to clipboard
+- Increase land action timeout to 10 minutes in TUI
+- Show branch name in `erk plan view` output when implementation is active
+- Expand implementation plan details blocks by default in GitHub issues
+- Enable CI autofix agent to automatically fix type errors
+- Remove `erk-plan` label from objectives, keeping only `erk-objective` for clearer distinction
+- Simplify plan workflow to use `erk prepare` instead of three-mode `erk implement`
+- Update PR checkout instructions to use shell script pattern for proper worktree activation
+- Rewrite first-plan.md tutorial clarifying two-step workflow: `erk prepare` then `erk implement --here`
+- Branch delete hint now only shown when `--force` flag is provided
+- Land command now displays PR number and branch name in source command for transparency
 
 ### Fixed
 
-- Fix duplicate activation output in `erk land --up` execute mode (c860548c8)
-- Fix land command confirmation prompts moved to execute phase (3119632a7)
-- Fix Graphite branch deletion to handle diverged branches correctly (79370edd2)
-- Fix child branch tracking in land operation by re-parenting in Graphite before merge (653f418f6)
-- Fix activation script output when landing without learning (2917fedf9)
-- Fix learn prompt to require explicit confirmation before landing without learning (30e838162)
-- Fix PR landing action to execute post-land callback in TUI (e9a822315)
-- Fix land command to output script path when landing from different directory (666690315)
-- Fix `erk-bootstrap` to distinguish between "not in project" and "erk not installed" with targeted error messages (5fdc5f0e4)
-- Fix artifact sync to respect installed capabilities when syncing workflows and actions (6b09cd84a)
-- Fix `--local` config to write to repo root instead of worktree, so config is shared across worktrees (dc5d24a0a)
-- Fix `erk land` hanging on confirmation prompts in script mode (42aa00837)
-- Fix `--here` mode to use process replacement instead of subshell fallback (9d402cca2)
-- Fix `land.sh` script sourcing with process substitution for reliable temp file handling (f6aad2774)
-- Fix `land.sh` to use `source` instead of `eval` (5e8a6508f)
-- Remove redundant "Error: " prefix from `erk land` shell integration message (e56c06b01)
-- Fix session preprocessing to correctly handle embedded `tool_result` blocks (47a4c4631)
+- Fix duplicate activation output in `erk land --up` execute mode
+- Fix land command confirmation prompts moved to execute phase
+- Fix Graphite branch deletion to handle diverged branches correctly
+- Fix child branch tracking in land operation by re-parenting in Graphite before merge
+- Fix activation script output when landing without learning
+- Fix learn prompt to require explicit confirmation before landing without learning
+- Fix PR landing action to execute post-land callback in TUI
+- Fix land command to output script path when landing from different directory
+- Fix `erk-bootstrap` to distinguish between "not in project" and "erk not installed" with targeted error messages
+- Fix artifact sync to respect installed capabilities when syncing workflows and actions
+- Fix `--local` config to write to repo root instead of worktree, so config is shared across worktrees
+- Fix `erk land` hanging on confirmation prompts in script mode
+- Fix `--here` mode to use process replacement instead of subshell fallback
+- Fix `land.sh` script sourcing with process substitution for reliable temp file handling
+- Fix `land.sh` to use `source` instead of `eval`
+- Remove redundant "Error: " prefix from `erk land` shell integration message
+- Fix session preprocessing to correctly handle embedded `tool_result` blocks
 
 ### Removed
 
-- Delete `erk-sh-bootstrap` package and related documentation (e21f4836c)
+- Delete `erk-sh-bootstrap` package and related documentation
 
 ## [0.5.5] - 2026-01-15 06:53 PT
 
