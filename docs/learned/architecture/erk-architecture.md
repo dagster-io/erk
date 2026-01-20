@@ -26,6 +26,8 @@ tripwires:
     warning: "Erk code NEVER has access to this environment variable. Session IDs must be passed via --session-id CLI flags. Hooks receive session ID via stdin JSON, not environment variables."
   - action: "injecting Time dependency into gateway real.py for lock-waiting or retry logic"
     warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
+  - action: "adding file I/O, network calls, or subprocess invocations to a class __init__"
+    warning: "Load `dignified-python` skill first. Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
 ---
 
 # Erk Architecture Patterns

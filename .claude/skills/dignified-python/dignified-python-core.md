@@ -309,6 +309,53 @@ def process_children(children):
 
 ---
 
+## Lightweight `__init__` Pattern
+
+Class `__init__` methods should be lightweight and cheap - just data assignment. Heavy I/O operations belong in static factory methods.
+
+### Why
+
+- **Testability**: Tests can construct objects directly without I/O setup
+- **Predictability**: Instantiation has no side effects
+- **Explicit dependencies**: Heavy operations are visible at call sites
+- **Flexibility**: Multiple construction paths (from file, from dict, for testing)
+
+### Correct Pattern
+
+```python
+class Registry:
+    def __init__(self, items: list[Item], default: str | None) -> None:
+        """Lightweight - just assigns data."""
+        self._items = {item.name: item for item in items}
+        self._default = default
+
+    @classmethod
+    def from_config_path(cls, path: Path) -> "Registry":
+        """Heavy I/O happens here, not in __init__."""
+        data = tomllib.loads(path.read_text())
+        items = [Item.from_dict(d) for d in data.get("items", [])]
+        return cls(items=items, default=data.get("default"))
+```
+
+### Anti-pattern
+
+```python
+# WRONG: __init__ does heavy I/O
+class Registry:
+    def __init__(self, config_path: Path) -> None:
+        data = tomllib.loads(config_path.read_text())  # Heavy I/O
+        self._items = ...
+```
+
+### When This Applies
+
+- Any class backed by file storage (TOML, JSON, etc.)
+- Any class that calls subprocess on construction
+- Any class that makes network requests on construction
+- Any class where tests need to verify behavior without I/O
+
+---
+
 ## Backwards Compatibility Philosophy
 
 **Default stance: NO backwards compatibility preservation**
