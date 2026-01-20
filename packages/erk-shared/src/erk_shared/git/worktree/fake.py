@@ -87,9 +87,9 @@ class FakeWorktree(Worktree):
         repo_root: Path,
         path: Path,
         *,
-        branch: str | None = None,
-        ref: str | None = None,
-        create_branch: bool = False,
+        branch: str | None,
+        ref: str | None,
+        create_branch: bool,
     ) -> None:
         """Add a new worktree (mutates internal state and creates directory)."""
         if repo_root not in self._worktrees:
@@ -117,7 +117,7 @@ class FakeWorktree(Worktree):
             self._existing_paths.discard(old_path)
             self._existing_paths.add(new_path)
 
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool = False) -> None:
+    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Remove a worktree (mutates internal state)."""
         if repo_root in self._worktrees:
             self._worktrees[repo_root] = [
