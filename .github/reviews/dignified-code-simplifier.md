@@ -28,34 +28,7 @@ Focus only on changed code, not context lines.
 
 ## Step 3: Analyze for Simplification Opportunities
 
-Check each modified section against the dignified-code-simplifier criteria:
-
-**Code Clarity:**
-
-- Unnecessary complexity and nesting (max 4 levels indentation)
-- Redundant code and abstractions
-- Variable/function names that could be clearer
-- Related logic that could be consolidated
-- Unnecessary comments describing obvious code
-- Nested ternary operators (prefer if/else or switch for multiple conditions)
-- Overly compact code that sacrifices clarity
-
-**Dignified Python Standards:**
-
-- LBYL over EAFP (check conditions proactively)
-- Pathlib usage (not os.path)
-- Absolute imports only (no relative imports, no re-exports)
-- O(1) properties/magic methods (no I/O or iteration)
-- Variables declared close to use
-
-**Balance Check:**
-Avoid suggesting over-simplification that would:
-
-- Reduce clarity or maintainability
-- Create overly clever solutions
-- Combine too many concerns
-- Remove helpful abstractions
-- Make code harder to debug or extend
+Apply the criteria from the skill files loaded in Step 1. The dignified-code-simplifier skill defines what to look for (code clarity, dignified-python standards, balance checks).
 
 ## Step 4: Inline Comment Format
 
@@ -65,12 +38,7 @@ When posting inline comments for simplification suggestions, use this format:
 **Code Simplification**: [opportunity type] - [specific suggestion]
 ```
 
-Example opportunities:
-
-- "Reduce nesting - extract helper function for inner logic"
-- "Consolidate logic - these three checks can be combined"
-- "Simplify expression - avoid nested ternary, use if/else"
-- "Remove redundancy - this variable is used only once"
+Examples: "Reduce nesting - extract helper", "Consolidate logic - combine checks", "Remove redundancy - variable used once"
 
 ## Step 5: Summary Comment Format
 
