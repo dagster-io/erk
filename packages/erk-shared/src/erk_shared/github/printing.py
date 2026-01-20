@@ -43,10 +43,6 @@ class PrintingGitHub(PrintingBase, GitHub):
 
     # Read-only operations: delegate without printing
 
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR base branch (read-only, no printing)."""
-        return self._wrapped.get_pr_base_branch(repo_root, pr_number)
-
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
     ) -> list[WorkflowRun]:
@@ -204,14 +200,6 @@ class PrintingGitHub(PrintingBase, GitHub):
         """List PRs for the repository (read-only, no printing)."""
         return self._wrapped.list_prs(repo_root, state=state)
 
-    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR title (read-only, no printing)."""
-        return self._wrapped.get_pr_title(repo_root, pr_number)
-
-    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR body (read-only, no printing)."""
-        return self._wrapped.get_pr_body(repo_root, pr_number)
-
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
@@ -229,10 +217,6 @@ class PrintingGitHub(PrintingBase, GitHub):
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get PR diff (read-only, no printing)."""
         return self._wrapped.get_pr_diff(repo_root, pr_number)
-
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status (read-only, no printing)."""
-        return self._wrapped.get_pr_mergeability_status(repo_root, pr_number)
 
     def get_issues_with_pr_linkages(
         self,

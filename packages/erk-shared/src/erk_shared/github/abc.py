@@ -38,19 +38,6 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr_base_branch(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get current base branch of a PR from GitHub.
-
-        Args:
-            repo_root: Repository root directory
-            pr_number: PR number to query
-
-        Returns:
-            Name of the base branch, or None if PR not found
-        """
-        ...
-
-    @abstractmethod
     def update_pr_base_branch(self, repo_root: Path, pr_number: int, new_base: str) -> None:
         """Update base branch of a PR on GitHub.
 
@@ -413,32 +400,6 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
-    def get_pr_title(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR title by number.
-
-        Args:
-            repo_root: Repository root directory
-            pr_number: PR number
-
-        Returns:
-            PR title string, or None if PR not found
-        """
-        ...
-
-    @abstractmethod
-    def get_pr_body(self, repo_root: Path, pr_number: int) -> str | None:
-        """Get PR body by number.
-
-        Args:
-            repo_root: Repository root directory
-            pr_number: PR number
-
-        Returns:
-            PR body string, or None if PR not found
-        """
-        ...
-
-    @abstractmethod
     def update_pr_title_and_body(
         self, *, repo_root: Path, pr_number: int, title: str, body: str
     ) -> None:
@@ -481,21 +442,6 @@ class GitHub(ABC):
 
         Raises:
             RuntimeError: If gh command fails
-        """
-        ...
-
-    @abstractmethod
-    def get_pr_mergeability_status(self, repo_root: Path, pr_number: int) -> tuple[str, str]:
-        """Get PR mergeability status from GitHub API.
-
-        Args:
-            repo_root: Repository root directory
-            pr_number: PR number to check
-
-        Returns:
-            Tuple of (mergeable, merge_state_status):
-            - mergeable: "MERGEABLE", "CONFLICTING", or "UNKNOWN"
-            - merge_state_status: "CLEAN", "DIRTY", "UNSTABLE", etc.
         """
         ...
 

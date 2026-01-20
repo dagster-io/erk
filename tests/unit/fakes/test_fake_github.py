@@ -22,37 +22,6 @@ from tests.test_utils.paths import sentinel_path
 TEST_LOCATION = GitHubRepoLocation(root=sentinel_path(), repo_id=GitHubRepoId("owner", "repo"))
 
 
-def test_fake_github_ops_get_pr_base_branch_existing() -> None:
-    """Test get_pr_base_branch returns configured base for existing PR."""
-    pr_bases = {
-        123: "main",
-        456: "develop",
-    }
-    ops = FakeGitHub(pr_bases=pr_bases)
-
-    result = ops.get_pr_base_branch(sentinel_path(), 123)
-
-    assert result == "main"
-
-
-def test_fake_github_ops_get_pr_base_branch_missing() -> None:
-    """Test get_pr_base_branch returns None for missing PR."""
-    ops = FakeGitHub()
-
-    result = ops.get_pr_base_branch(sentinel_path(), 999)
-
-    assert result is None, "Expected None when PR base branch not configured"
-
-
-def test_fake_github_ops_get_pr_base_branch_empty_dict() -> None:
-    """Test get_pr_base_branch returns None with empty pr_bases dict."""
-    ops = FakeGitHub(pr_bases={})
-
-    result = ops.get_pr_base_branch(sentinel_path(), 123)
-
-    assert result is None, "Expected None when pr_bases is empty"
-
-
 def test_fake_github_ops_update_pr_base_branch_single() -> None:
     """Test update_pr_base_branch tracks single update."""
     ops = FakeGitHub()
@@ -107,20 +76,6 @@ def test_fake_github_ops_updated_pr_bases_read_only() -> None:
     updates = ops.updated_pr_bases
     assert len(updates) == 1
     assert updates[0] == (123, "main")
-
-
-def test_fake_github_ops_update_does_not_affect_get() -> None:
-    """Test update_pr_base_branch does not modify configured pr_bases."""
-    pr_bases = {123: "original-base"}
-    ops = FakeGitHub(pr_bases=pr_bases)
-
-    # Update should only track mutation, not modify configured state
-    ops.update_pr_base_branch(Path("/repo"), 123, "new-base")
-
-    # get_pr_base_branch should still return original configured value
-    assert ops.get_pr_base_branch(sentinel_path(), 123) == "original-base"
-    # But update should be tracked
-    assert ops.updated_pr_bases == [(123, "new-base")]
 
 
 def test_fake_github_ops_full_workflow() -> None:
@@ -191,8 +146,10 @@ def test_fake_github_ops_full_workflow() -> None:
     assert pr is not None
     assert pr.number == 123
 
-    base = ops.get_pr_base_branch(sentinel_path(), 123)
-    assert base == "main"
+    # Query PR details and check base branch
+    pr_123 = ops.get_pr(sentinel_path(), 123)
+    assert not isinstance(pr_123, PRNotFound)
+    assert pr_123.base_ref_name == "main"
 
     # Mutation tracking
     ops.update_pr_base_branch(Path("/repo"), 456, "main")
@@ -201,9 +158,13 @@ def test_fake_github_ops_full_workflow() -> None:
     # Verify mutations tracked
     assert ops.updated_pr_bases == [(456, "main"), (123, "develop")]
 
-    # Verify configured state unchanged
-    assert ops.get_pr_base_branch(sentinel_path(), 123) == "main"
-    assert ops.get_pr_base_branch(sentinel_path(), 456) == "feature-1"
+    # Verify configured state unchanged (get_pr returns pr_details which is unchanged)
+    pr_123_again = ops.get_pr(sentinel_path(), 123)
+    pr_456 = ops.get_pr(sentinel_path(), 456)
+    assert not isinstance(pr_123_again, PRNotFound)
+    assert not isinstance(pr_456, PRNotFound)
+    assert pr_123_again.base_ref_name == "main"
+    assert pr_456.base_ref_name == "feature-1"
 
 
 def test_fake_github_ops_merge_pr_single() -> None:

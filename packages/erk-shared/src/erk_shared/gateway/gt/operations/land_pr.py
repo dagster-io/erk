@@ -113,8 +113,8 @@ def execute_land_pr(
     # Step 4.5: Validate PR base branch matches trunk
     # GitHub PR base may diverge from local Graphite metadata (e.g., after landing parent)
     yield ProgressEvent("Validating PR base branch...")
-    pr_base = ops.github.get_pr_base_branch(repo_root, pr_number)
-    if pr_base is None:
+    pr_details = ops.github.get_pr(repo_root, pr_number)
+    if isinstance(pr_details, PRNotFound):
         # gh CLI failed unexpectedly (we just successfully queried the PR above)
         yield CompletionEvent(
             LandPrError(
@@ -130,6 +130,7 @@ def execute_land_pr(
             )
         )
         return
+    pr_base = pr_details.base_ref_name
     if pr_base != trunk:
         yield CompletionEvent(
             LandPrError(

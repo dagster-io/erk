@@ -26,6 +26,7 @@ import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
 from erk_shared.github.pr_footer import build_remote_execution_note
+from erk_shared.github.types import PRNotFound
 
 
 @click.command(name="add-remote-execution-note")
@@ -52,9 +53,11 @@ def add_remote_execution_note(
     repo_root = require_repo_root(ctx)
 
     # Get current PR body
-    current_body = github.get_pr_body(repo_root, pr_number)
-    if current_body is None:
+    pr_details = github.get_pr(repo_root, pr_number)
+    if isinstance(pr_details, PRNotFound):
         current_body = ""
+    else:
+        current_body = pr_details.body
 
     # Build the remote execution note
     remote_note = build_remote_execution_note(run_id, run_url)

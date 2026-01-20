@@ -372,9 +372,11 @@ def execute_core_submit(
             plans_repo=plans_repo,
         )
         # Get current body and update if needed
-        current_body = ctx.github.get_pr_body(repo_root, pr_number)
-        if current_body is None:
+        pr_details = ctx.github.get_pr(repo_root, pr_number)
+        if isinstance(pr_details, PRNotFound):
             current_body = ""
+        else:
+            current_body = pr_details.body
 
         # Check if footer already present
         if not has_body_footer(current_body):
