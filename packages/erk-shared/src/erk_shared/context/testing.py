@@ -16,6 +16,7 @@ from erk_shared.core.fakes import (
     FakePlannerRegistry,
     FakeScriptWriter,
 )
+from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
 from erk_shared.github.abc import GitHub
@@ -33,6 +34,7 @@ def context_for_test(
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
     claude_executor: ClaudeExecutor | None = None,
+    codespace: Codespace | None = None,
     debug: bool = False,
     repo_root: Path | None = None,
     cwd: Path | None = None,
@@ -67,6 +69,7 @@ def context_for_test(
         >>> git_ops = FakeGit()
         >>> ctx = context_for_test(github_issues=github, git=git_ops, debug=True)
     """
+    from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -114,6 +117,7 @@ def context_for_test(
     resolved_claude_executor: ClaudeExecutor = (
         claude_executor if claude_executor is not None else FakeClaudeExecutor()
     )
+    resolved_codespace: Codespace = codespace if codespace is not None else FakeCodespace()
     resolved_cwd: Path = cwd if cwd is not None else Path("/fake/worktree")
 
     # Create repo context
@@ -146,6 +150,7 @@ def context_for_test(
         plan_store=GitHubPlanStore(resolved_issues, fake_time),
         shell=FakeShell(),
         completion=FakeCompletion(),
+        codespace=resolved_codespace,
         claude_executor=resolved_claude_executor,
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),

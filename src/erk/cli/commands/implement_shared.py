@@ -55,6 +55,7 @@ def implement_common_options(fn: F) -> F:
     - -m/--model: Model to use for Claude
     - --docker: Run Claude inside Docker container for filesystem isolation
     - --docker-image: Docker image to use (default: erk-local:latest)
+    - --codespace: Run Claude in registered codespace (uses default if name not provided)
 
     Example:
         @click.command("implement", cls=CommandWithHiddenOptions)
@@ -66,6 +67,14 @@ def implement_common_options(fn: F) -> F:
     """
     # Apply options in reverse order (Click decorators are applied bottom-up)
     # This results in options appearing in this order in --help
+    fn = click.option(
+        "--codespace",
+        type=str,
+        default=None,
+        is_flag=False,
+        flag_value="",  # Empty string means "use default"
+        help="Run Claude in registered codespace (uses default if name not provided)",
+    )(fn)
     fn = click.option(
         "--docker-image",
         type=str,
@@ -176,9 +185,12 @@ def determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
 
 
 def validate_flags(
+    *,
     submit: bool,
     no_interactive: bool,
     script: bool,
+    docker: bool,
+    codespace: str | None,
 ) -> None:
     """Validate flag combinations and raise ClickException if invalid.
 
@@ -186,6 +198,8 @@ def validate_flags(
         submit: Whether to auto-submit PR after implementation
         no_interactive: Whether to execute non-interactively
         script: Whether to output shell integration script
+        docker: Whether to run in Docker container
+        codespace: Optional codespace name (None if not using codespace mode)
 
     Raises:
         click.ClickException: If flag combination is invalid
@@ -204,6 +218,13 @@ def validate_flags(
             "--no-interactive and --script are mutually exclusive\n"
             "--script generates shell integration code for manual execution\n"
             "--no-interactive executes commands programmatically"
+        )
+
+    # --docker and --codespace are mutually exclusive
+    if docker and codespace is not None:
+        raise click.ClickException(
+            "--docker and --codespace are mutually exclusive\n"
+            "Choose either Docker container or codespace execution"
         )
 
 
@@ -693,3 +714,67 @@ class WorktreeCreationResult:
 
     worktree_path: Path
     impl_dir: Path
+
+
+def execute_codespace_mode(
+    ctx: ErkContext,
+    *,
+    codespace_name: str | None,
+    model: str | None,
+    no_interactive: bool,
+    submit: bool,
+    verbose: bool,
+) -> None:
+    """Execute Claude in codespace mode (interactive or non-interactive).
+
+    This is a consolidated helper that handles codespace execution for both
+    _implement_from_issue and _implement_from_file.
+
+    Args:
+        ctx: Erk context with codespace gateway and registry
+        codespace_name: Codespace name to use, or None for default
+        model: Optional model name
+        no_interactive: Whether to execute non-interactively
+        submit: Whether to auto-submit PR after implementation
+        verbose: Whether to show verbose output
+
+    Raises:
+        click.ClickException: If codespace not found
+        SystemExit: On non-interactive failure with non-zero exit code
+    """
+    from erk.cli.commands.codespace_executor import (
+        CodespaceNotFoundError,
+        execute_codespace_interactive,
+        execute_codespace_non_interactive,
+        resolve_codespace,
+    )
+
+    # Resolve codespace (None means use default)
+    # Note: resolve_codespace raises CodespaceNotFoundError on failure, which is
+    # a third-party/external API boundary where try-except is appropriate per LBYL
+    try:
+        resolved_codespace = resolve_codespace(
+            ctx.codespace_registry,
+            name=codespace_name,
+        )
+    except CodespaceNotFoundError as e:
+        raise click.ClickException(str(e)) from e
+
+    if no_interactive:
+        commands = build_command_sequence(submit)
+        exit_code = execute_codespace_non_interactive(
+            codespace_gateway=ctx.codespace,
+            codespace=resolved_codespace,
+            model=model,
+            commands=commands,
+            verbose=verbose,
+        )
+        if exit_code != 0:
+            raise SystemExit(exit_code)
+    else:
+        # Interactive mode - replaces process
+        execute_codespace_interactive(
+            codespace_gateway=ctx.codespace,
+            codespace=resolved_codespace,
+            model=model,
+        )

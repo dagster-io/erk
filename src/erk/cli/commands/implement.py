@@ -24,6 +24,7 @@ from erk.cli.commands.implement_shared import (
     build_claude_args,
     build_command_sequence,
     detect_target_type,
+    execute_codespace_mode,
     execute_interactive_mode,
     execute_non_interactive_mode,
     extract_plan_from_current_branch,
@@ -84,6 +85,7 @@ def _implement_from_issue(
     executor: ClaudeExecutor,
     docker: bool,
     docker_image: str,
+    codespace: str | None,
 ) -> None:
     """Implement feature from GitHub issue in current directory.
 
@@ -100,6 +102,8 @@ def _implement_from_issue(
         executor: Claude CLI executor for command execution
         docker: Whether to run in Docker container
         docker_image: Docker image to use
+        codespace: Optional codespace name (None if not using codespace mode,
+            empty string means use default codespace)
     """
     # Discover repo context for issue fetch
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -198,6 +202,18 @@ def _implement_from_issue(
                 image_name=docker_image,
                 model=model,
             )
+    elif codespace is not None:
+        # Codespace mode - run Claude in registered codespace
+        # Empty string means use default codespace
+        codespace_name = codespace if codespace else None
+        execute_codespace_mode(
+            ctx,
+            codespace_name=codespace_name,
+            model=model,
+            no_interactive=no_interactive,
+            submit=submit,
+            verbose=verbose,
+        )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -235,6 +251,7 @@ def _implement_from_file(
     executor: ClaudeExecutor,
     docker: bool,
     docker_image: str,
+    codespace: str | None,
 ) -> None:
     """Implement feature from plan file in current directory.
 
@@ -253,6 +270,8 @@ def _implement_from_file(
         executor: Claude CLI executor for command execution
         docker: Whether to run in Docker container
         docker_image: Docker image to use
+        codespace: Optional codespace name (None if not using codespace mode,
+            empty string means use default codespace)
     """
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -323,6 +342,18 @@ def _implement_from_file(
                 image_name=docker_image,
                 model=model,
             )
+    elif codespace is not None:
+        # Codespace mode - run Claude in registered codespace
+        # Empty string means use default codespace
+        codespace_name = codespace if codespace else None
+        execute_codespace_mode(
+            ctx,
+            codespace_name=codespace_name,
+            model=model,
+            no_interactive=no_interactive,
+            submit=submit,
+            verbose=verbose,
+        )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -365,6 +396,7 @@ def implement(
     model: str | None,
     docker: bool,
     docker_image: str,
+    codespace: str | None,
 ) -> None:
     """Create .impl/ folder from GitHub issue or plan file and execute implementation.
 
@@ -415,6 +447,14 @@ def implement(
     \b
       # Docker isolation mode (filesystem-isolated, safe to skip permissions)
       erk implement 123 --docker
+
+    \b
+      # Codespace isolation mode (remote execution in registered codespace)
+      erk implement 123 --codespace
+
+    \b
+      # Codespace with named codespace
+      erk implement 123 --codespace mybox
     """
     # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
     if yolo:
@@ -426,7 +466,13 @@ def implement(
     model = normalize_model_name(model)
 
     # Validate flag combinations
-    validate_flags(submit, no_interactive, script)
+    validate_flags(
+        submit=submit,
+        no_interactive=no_interactive,
+        script=script,
+        docker=docker,
+        codespace=codespace,
+    )
 
     # Auto-detect plan number from branch name when TARGET is omitted
     if target is None:
@@ -476,6 +522,7 @@ def implement(
             executor=ctx.claude_executor,
             docker=docker,
             docker_image=docker_image,
+            codespace=codespace,
         )
     else:
         plan_file = Path(target)
@@ -492,4 +539,5 @@ def implement(
             executor=ctx.claude_executor,
             docker=docker,
             docker_image=docker_image,
+            codespace=codespace,
         )

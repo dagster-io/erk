@@ -41,6 +41,8 @@ from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.codespace.abc import Codespace
+from erk_shared.gateway.codespace.real import RealCodespace
 from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.console.real import InteractiveConsole, ScriptConsole
@@ -98,6 +100,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 
     from erk.core.codespace.registry_fake import FakeCodespaceRegistry
     from erk.core.planner.registry_fake import FakePlannerRegistry
+    from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -113,6 +116,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     fake_graphite = FakeGraphite()
+    fake_codespace = FakeCodespace()
     fake_console = FakeConsole(
         is_interactive=True,
         is_stdout_tty=None,
@@ -128,6 +132,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         graphite=fake_graphite,
         console=fake_console,
         shell=FakeShell(),
+        codespace=fake_codespace,
         claude_executor=FakeClaudeExecutor(),
         completion=FakeCompletion(),
         time=fake_time,
@@ -158,6 +163,7 @@ def context_for_test(
     graphite: Graphite | None = None,
     console: Console | None = None,
     shell: Shell | None = None,
+    codespace: Codespace | None = None,
     claude_executor: ClaudeExecutor | None = None,
     completion: Completion | None = None,
     time: Time | None = None,
@@ -215,6 +221,7 @@ def context_for_test(
 
     from erk.core.codespace.registry_fake import FakeCodespaceRegistry
     from erk.core.planner.registry_fake import FakePlannerRegistry
+    from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
@@ -282,6 +289,9 @@ def context_for_test(
     if shell is None:
         shell = FakeShell()
 
+    if codespace is None:
+        codespace = FakeCodespace()
+
     if claude_executor is None:
         claude_executor = FakeClaudeExecutor()
 
@@ -343,6 +353,7 @@ def context_for_test(
         graphite=graphite,
         console=console,
         shell=shell,
+        codespace=codespace,
         claude_executor=claude_executor,
         completion=completion,
         time=time,
@@ -562,6 +573,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         graphite=graphite,
         console=console,
         shell=RealShell(),
+        codespace=RealCodespace(),
         claude_executor=RealClaudeExecutor(console=console),
         completion=RealCompletion(),
         time=time,

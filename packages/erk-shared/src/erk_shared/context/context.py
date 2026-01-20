@@ -27,6 +27,7 @@ from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
+from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.completion.abc import Completion
 from erk_shared.gateway.console.abc import Console
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
@@ -79,6 +80,7 @@ class ErkContext:
     # Shell/CLI integrations (moved to erk_shared)
     shell: Shell
     completion: Completion
+    codespace: Codespace
 
     # Erk-specific services (ABCs now in erk_shared.core for proper type hints)
     claude_executor: ClaudeExecutor
