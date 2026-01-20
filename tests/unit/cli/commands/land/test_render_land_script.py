@@ -15,6 +15,9 @@ def test_render_land_execution_script_uses_shell_variables_for_pr_and_branch() -
         objective_number=None,
         use_graphite=False,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     # Should contain shell variable definitions
@@ -40,6 +43,9 @@ def test_render_land_execution_script_includes_usage_comment() -> None:
         objective_number=None,
         use_graphite=False,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     assert "# Usage: source land.sh <pr_number> <branch> [flags...]" in script
@@ -55,6 +61,9 @@ def test_render_land_execution_script_includes_shift_and_passthrough() -> None:
         objective_number=None,
         use_graphite=False,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     # Should shift past PR number and branch
@@ -74,6 +83,9 @@ def test_render_land_execution_script_bakes_in_static_flags() -> None:
         objective_number=42,
         use_graphite=True,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     # These should be hardcoded in the script
@@ -93,6 +105,9 @@ def test_render_land_execution_script_without_static_flags() -> None:
         objective_number=None,
         use_graphite=False,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     assert "--worktree-path" not in script
@@ -115,6 +130,9 @@ def test_render_land_execution_script_does_not_bake_user_flags() -> None:
         objective_number=None,
         use_graphite=False,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     # User flags should NOT be hardcoded - they come from "$@"
@@ -134,6 +152,9 @@ def test_render_land_execution_script_includes_cd_command() -> None:
         objective_number=None,
         use_graphite=False,
         target_path=Path("/path/to/target"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     assert "cd /path/to/target" in script
@@ -149,6 +170,49 @@ def test_render_land_execution_script_has_header_comment() -> None:
         objective_number=None,
         use_graphite=False,
         target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
     )
 
     assert script.startswith("# erk land deferred execution\n")
+
+
+def test_render_land_execution_script_with_learn_flags() -> None:
+    """Script includes learn flags when provided."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        target_path=Path("/repo"),
+        learn_plan_issue=456,
+        learn_gist_url="https://gist.github.com/abc123",
+        learn_implement=True,
+    )
+
+    assert "--learn-plan-issue=456" in script
+    assert '--learn-gist-url="https://gist.github.com/abc123"' in script
+    assert "--learn-implement" in script
+
+
+def test_render_land_execution_script_without_learn_flags() -> None:
+    """Script omits learn flags when not provided."""
+    script = render_land_execution_script(
+        pr_number=123,
+        branch="feature-branch",
+        worktree_path=None,
+        is_current_branch=False,
+        objective_number=None,
+        use_graphite=False,
+        target_path=Path("/repo"),
+        learn_plan_issue=None,
+        learn_gist_url=None,
+        learn_implement=False,
+    )
+
+    assert "--learn-plan-issue" not in script
+    assert "--learn-gist-url" not in script
+    assert "--learn-implement" not in script

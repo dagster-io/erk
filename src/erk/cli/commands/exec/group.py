@@ -29,6 +29,12 @@ from erk.cli.commands.exec.scripts.create_worker_impl_from_issue import (
 )
 from erk.cli.commands.exec.scripts.detect_trunk_branch import detect_trunk_branch
 from erk.cli.commands.exec.scripts.discover_reviews import discover_reviews
+from erk.cli.commands.exec.scripts.dispatch_learn_workflow import (
+    dispatch_learn_workflow,
+)
+from erk.cli.commands.exec.scripts.download_gist_sessions import (
+    download_gist_sessions,
+)
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
 from erk.cli.commands.exec.scripts.find_project_dir import find_project_dir
@@ -104,6 +110,9 @@ from erk.cli.commands.exec.scripts.tripwires_reminder_hook import (
 )
 from erk.cli.commands.exec.scripts.update_dispatch_info import update_dispatch_info
 from erk.cli.commands.exec.scripts.update_issue_body import update_issue_body
+from erk.cli.commands.exec.scripts.upload_learn_sessions import (
+    upload_learn_sessions,
+)
 from erk.cli.commands.exec.scripts.user_prompt_hook import user_prompt_hook
 from erk.cli.commands.exec.scripts.validate_claude_credentials import (
     validate_claude_credentials,
@@ -132,6 +141,8 @@ exec_group.add_command(create_plan_from_context, name="create-plan-from-context"
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")
 exec_group.add_command(discover_reviews, name="discover-reviews")
+exec_group.add_command(dispatch_learn_workflow, name="dispatch-learn-workflow")
+exec_group.add_command(download_gist_sessions, name="download-gist-sessions")
 exec_group.add_command(exit_plan_mode_hook, name="exit-plan-mode-hook")
 exec_group.add_command(extract_latest_plan, name="extract-latest-plan")
 exec_group.add_command(find_project_dir, name="find-project-dir")
@@ -175,6 +186,7 @@ exec_group.add_command(track_learn_evaluation, name="track-learn-evaluation")
 exec_group.add_command(tripwires_reminder_hook, name="tripwires-reminder-hook")
 exec_group.add_command(update_dispatch_info, name="update-dispatch-info")
 exec_group.add_command(update_issue_body, name="update-issue-body")
+exec_group.add_command(upload_learn_sessions, name="upload-learn-sessions")
 exec_group.add_command(ci_update_pr_body)
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")

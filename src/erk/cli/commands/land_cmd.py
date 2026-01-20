@@ -10,6 +10,7 @@ Usage:
     erk land <branch>     # Land PR for branch
 """
 
+import json
 import re
 import subprocess
 from dataclasses import replace
@@ -53,7 +54,75 @@ from erk_shared.gateway.gt.types import LandPrError
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
-from erk_shared.sessions.discovery import find_sessions_for_plan
+from erk_shared.sessions.discovery import find_sessions_for_plan, get_readable_sessions
+
+
+def _upload_learn_sessions(
+    ctx: ErkContext,
+    repo_root: Path,
+    plan_issue_number: int,
+) -> str | None:
+    """Upload preprocessed sessions to a gist for remote learn workflow.
+
+    Finds sessions associated with the plan, preprocesses them to XML,
+    and uploads to a secret GitHub gist.
+
+    Args:
+        ctx: ErkContext with access to GitHub and Claude installation
+        repo_root: Repository root path
+        plan_issue_number: Plan issue number
+
+    Returns:
+        Gist URL if upload successful, None otherwise
+    """
+    # Find sessions for the plan
+    sessions_for_plan = find_sessions_for_plan(
+        ctx.issues,
+        repo_root,
+        plan_issue_number,
+    )
+
+    # Get readable sessions
+    readable_sessions = get_readable_sessions(
+        sessions_for_plan,
+        ctx.claude_installation,
+    )
+
+    if not readable_sessions:
+        user_output("No local sessions found for learn workflow")
+        return None
+
+    # Use subprocess to call the upload script
+    # This keeps the logic in one place (upload_learn_sessions.py)
+    result = subprocess.run(
+        [
+            "erk",
+            "exec",
+            "upload-learn-sessions",
+            "--plan-issue",
+            str(plan_issue_number),
+            "--session-id",
+            "land-upload",  # Placeholder session ID for output directory
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        user_output("Failed to upload sessions for learn workflow")
+        return None
+
+    # Parse JSON output to get gist URL
+    try:
+        output = json.loads(result.stdout)
+        if output.get("success") and output.get("gist_url"):
+            user_output(f"Uploaded {output.get('session_count', 0)} sessions to gist")
+            return output["gist_url"]
+    except json.JSONDecodeError:
+        pass
+
+    return None
 
 
 def _check_learn_status_and_prompt(
@@ -619,6 +688,9 @@ def render_land_execution_script(
     objective_number: int | None,
     use_graphite: bool,
     target_path: Path,
+    learn_plan_issue: int | None,
+    learn_gist_url: str | None,
+    learn_implement: bool,
 ) -> str:
     """Generate shell script that executes land and navigates.
 
@@ -643,6 +715,9 @@ def render_land_execution_script(
     - --is-current-branch: whether landing from that worktree
     - --objective-number: linked objective
     - --use-graphite: whether Graphite is enabled
+    - --learn-plan-issue: plan issue number for learn workflow
+    - --learn-gist-url: gist URL with preprocessed sessions
+    - --learn-implement: auto-implement resulting docs plan
 
     **Passed via "$@" (user-controllable flags):**
     - --up: navigate upstack (resolved at execution time)
@@ -658,6 +733,9 @@ def render_land_execution_script(
         objective_number: Linked objective issue number (if any)
         use_graphite: Whether to use Graphite for merge
         target_path: Where to cd after land completes
+        learn_plan_issue: Plan issue number for learn workflow (if any)
+        learn_gist_url: Gist URL with preprocessed sessions (if any)
+        learn_implement: Whether to auto-implement resulting docs plan
 
     Returns:
         Shell script content as string
@@ -679,6 +757,13 @@ def render_land_execution_script(
         cmd_parts.append(f"--objective-number={objective_number}")
     if use_graphite:
         cmd_parts.append("--use-graphite")
+    # Learn workflow flags (baked in from validation phase)
+    if learn_plan_issue is not None:
+        cmd_parts.append(f"--learn-plan-issue={learn_plan_issue}")
+    if learn_gist_url is not None:
+        cmd_parts.append(f'--learn-gist-url="{learn_gist_url}"')
+    if learn_implement:
+        cmd_parts.append("--learn-implement")
     # User-controllable flags passed through "$@"
     cmd_parts.append('"$@"')
 
@@ -844,6 +929,18 @@ def _execute_land(
     is_flag=True,
     help="Preserve the local branch and its slot assignment after landing.",
 )
+@click.option(
+    "--learn",
+    "learn_flag",
+    is_flag=True,
+    help="Trigger remote learning workflow after landing",
+)
+@click.option(
+    "--learn-implement",
+    "learn_implement_flag",
+    is_flag=True,
+    help="Auto-implement resulting docs plan (implies --learn)",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -855,6 +952,8 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
+    learn_flag: bool,
+    learn_implement_flag: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -896,6 +995,9 @@ def land(
 
     repo = discover_repo_context(ctx, ctx.cwd)
 
+    # --learn-implement implies --learn
+    effective_learn = learn_flag or learn_implement_flag
+
     # Determine if landing current branch or a specific target
     if target is None:
         # Landing current branch's PR (original behavior)
@@ -907,6 +1009,8 @@ def land(
             force=force,
             pull_flag=pull_flag,
             no_delete=no_delete,
+            learn_flag=effective_learn,
+            learn_implement_flag=learn_implement_flag,
         )
     else:
         # Parse the target argument
@@ -922,6 +1026,8 @@ def land(
                 pull_flag=pull_flag,
                 branch_name=target,
                 no_delete=no_delete,
+                learn_flag=effective_learn,
+                learn_implement_flag=learn_implement_flag,
             )
         else:
             # Landing a specific PR by number or URL
@@ -938,6 +1044,8 @@ def land(
                 pull_flag=pull_flag,
                 pr_number=pr_number,
                 no_delete=no_delete,
+                learn_flag=effective_learn,
+                learn_implement_flag=learn_implement_flag,
             )
 
 
@@ -950,6 +1058,8 @@ def _land_current_branch(
     force: bool,
     pull_flag: bool,
     no_delete: bool,
+    learn_flag: bool,
+    learn_implement_flag: bool,
 ) -> None:
     """Land the current branch's PR (original behavior)."""
     check_clean_working_tree(ctx)
@@ -1063,8 +1173,17 @@ def _land_current_branch(
             user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
         user_output(f"Would delete branch '{current_branch}'")
         user_output(f"Would navigate to {target_path}")
+        if learn_flag:
+            user_output("Would trigger learn workflow after landing")
+            if learn_implement_flag:
+                user_output("Would auto-implement resulting docs plan")
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
+
+    # Upload sessions to gist if --learn is enabled
+    learn_gist_url: str | None = None
+    if learn_flag and plan_issue_number is not None:
+        learn_gist_url = _upload_learn_sessions(ctx, main_repo_root, plan_issue_number)
 
     # Generate execution script with all pre-validated state
     script_content = render_land_execution_script(
@@ -1075,6 +1194,9 @@ def _land_current_branch(
         objective_number=objective_number,
         use_graphite=ctx.branch_manager.is_graphite_managed(),
         target_path=target_path,
+        learn_plan_issue=plan_issue_number if learn_flag else None,
+        learn_gist_url=learn_gist_url,
+        learn_implement=learn_implement_flag,
     )
 
     # Write script to .erk/bin/land.sh
@@ -1096,6 +1218,11 @@ def _land_current_branch(
         display_flags.append("--no-pull")
     if no_delete:
         display_flags.append("--no-delete")
+    if learn_flag:
+        if learn_implement_flag:
+            display_flags.append("--learn-implement")
+        else:
+            display_flags.append("--learn")
 
     if script:
         # Shell integration mode: output just the path
@@ -1122,6 +1249,8 @@ def _land_specific_pr(
     pull_flag: bool,
     pr_number: int,
     no_delete: bool,
+    learn_flag: bool,
+    learn_implement_flag: bool,
 ) -> None:
     """Land a specific PR by number."""
     # Validate --up is not used with PR argument
@@ -1204,8 +1333,17 @@ def _land_specific_pr(
             user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
         user_output(f"Would delete branch '{branch}'")
         user_output(f"Would navigate to {target_path}")
+        if learn_flag:
+            user_output("Would trigger learn workflow after landing")
+            if learn_implement_flag:
+                user_output("Would auto-implement resulting docs plan")
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
+
+    # Upload sessions to gist if --learn is enabled
+    learn_gist_url: str | None = None
+    if learn_flag and plan_issue_number is not None:
+        learn_gist_url = _upload_learn_sessions(ctx, main_repo_root, plan_issue_number)
 
     # Generate execution script with pre-validated state
     # Note: specific PR landing doesn't support Graphite path (no stack validation)
@@ -1217,6 +1355,9 @@ def _land_specific_pr(
         objective_number=objective_number,
         use_graphite=False,  # Specific PR landing uses GitHub API directly
         target_path=target_path,
+        learn_plan_issue=plan_issue_number if learn_flag else None,
+        learn_gist_url=learn_gist_url,
+        learn_implement=learn_implement_flag,
     )
 
     # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
@@ -1262,6 +1403,8 @@ def _land_by_branch(
     pull_flag: bool,
     branch_name: str,
     no_delete: bool,
+    learn_flag: bool,
+    learn_implement_flag: bool,
 ) -> None:
     """Land a PR for a specific branch."""
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
@@ -1337,8 +1480,17 @@ def _land_by_branch(
             user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
         user_output(f"Would delete branch '{branch_name}'")
         user_output(f"Would navigate to {target_path}")
+        if learn_flag:
+            user_output("Would trigger learn workflow after landing")
+            if learn_implement_flag:
+                user_output("Would auto-implement resulting docs plan")
         user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
         raise SystemExit(0)
+
+    # Upload sessions to gist if --learn is enabled
+    learn_gist_url: str | None = None
+    if learn_flag and plan_issue_number is not None:
+        learn_gist_url = _upload_learn_sessions(ctx, main_repo_root, plan_issue_number)
 
     # Generate execution script with pre-validated state
     # Note: branch landing doesn't support Graphite path (no stack validation)
@@ -1350,6 +1502,9 @@ def _land_by_branch(
         objective_number=objective_number,
         use_graphite=False,  # Branch landing uses GitHub API directly
         target_path=target_path,
+        learn_plan_issue=plan_issue_number if learn_flag else None,
+        learn_gist_url=learn_gist_url,
+        learn_implement=learn_implement_flag,
     )
 
     # Write script to .erk/bin/land.sh (use worktree if available, else repo root)

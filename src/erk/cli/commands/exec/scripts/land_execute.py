@@ -87,6 +87,26 @@ from erk_shared.context.helpers import require_context
     is_flag=True,
     help="Accept flag for compatibility (execute mode always skips confirmations)",
 )
+@click.option(
+    "--learn-plan-issue",
+    "learn_plan_issue",
+    type=int,
+    default=None,
+    help="Plan issue number for learn workflow dispatch",
+)
+@click.option(
+    "--learn-gist-url",
+    "learn_gist_url",
+    type=str,
+    default=None,
+    help="Gist URL with preprocessed sessions for learn workflow",
+)
+@click.option(
+    "--learn-implement",
+    "learn_implement",
+    is_flag=True,
+    help="Auto-implement resulting docs plan from learn workflow",
+)
 @click.pass_context
 def land_execute(
     ctx: click.Context,
@@ -103,6 +123,9 @@ def land_execute(
     script: bool,
     up_flag: bool,
     force_flag: bool,
+    learn_plan_issue: int | None,
+    learn_gist_url: str | None,
+    learn_implement: bool,
 ) -> None:
     """Execute deferred land operations.
 
@@ -146,3 +169,57 @@ def land_execute(
         no_delete=no_delete,
         script=script,
     )
+
+    # Dispatch learn workflow if requested
+    if learn_plan_issue is not None:
+        _dispatch_learn_workflow(
+            plan_issue=learn_plan_issue,
+            pr_number=pr_number,
+            gist_url=learn_gist_url,
+            auto_implement=learn_implement,
+        )
+
+
+def _dispatch_learn_workflow(
+    *,
+    plan_issue: int,
+    pr_number: int,
+    gist_url: str | None,
+    auto_implement: bool,
+) -> None:
+    """Dispatch the learn-extract-dispatch workflow.
+
+    Args:
+        plan_issue: Plan issue number
+        pr_number: Merged PR number
+        gist_url: Gist URL with preprocessed sessions (if any)
+        auto_implement: Whether to auto-implement resulting docs plan
+    """
+    import subprocess
+
+    from erk_shared.output.output import user_output
+
+    user_output("Dispatching learn workflow...")
+
+    cmd = [
+        "erk",
+        "exec",
+        "dispatch-learn-workflow",
+        "--plan-issue",
+        str(plan_issue),
+        "--pr-number",
+        str(pr_number),
+    ]
+
+    if gist_url is not None:
+        cmd.extend(["--gist-url", gist_url])
+
+    if auto_implement:
+        cmd.append("--auto-implement")
+
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+
+    if result.returncode == 0:
+        user_output("Learn workflow dispatched successfully")
+    else:
+        user_output(f"Warning: Failed to dispatch learn workflow: {result.stderr.strip()}")

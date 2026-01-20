@@ -1,6 +1,6 @@
 ---
 description: Extract insights from plan-associated sessions
-argument-hint: "[issue-number]"
+argument-hint: "[issue-number] [--gist-url <url>]"
 ---
 
 # /erk:learn
@@ -12,7 +12,13 @@ Create a documentation plan from Claude Code sessions associated with a plan imp
 ```
 /erk:learn           # Infers issue from current branch (P{issue}-...)
 /erk:learn 4655      # Explicit issue number
+/erk:learn 4655 --gist-url https://gist.github.com/...  # Use pre-uploaded sessions from gist
 ```
+
+## Arguments
+
+- `issue-number`: Plan issue number (optional if on a P{issue}-... branch)
+- `--gist-url <url>`: URL of a gist containing preprocessed session files (for remote execution)
 
 ## Purpose
 
@@ -120,7 +126,21 @@ Before preprocessing session files, analyze the current conversation context:
 
 These insights are often the most valuable because they represent real friction encountered during implementation.
 
-#### Preprocess Sessions
+#### Get Session Files
+
+**If `--gist-url` was provided:** Download preprocessed sessions from gist (for remote execution)
+
+```bash
+mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
+
+# Download preprocessed sessions from gist
+erk exec download-gist-sessions --gist-url <gist-url> \
+    --output-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
+```
+
+Then skip to "Deep Analysis" below (sessions are already preprocessed).
+
+**Otherwise:** Preprocess local sessions
 
 For each session path from Step 1, preprocess to compressed XML format:
 
@@ -154,9 +174,9 @@ erk exec get-pr-discussion-comments --pr <pr-number> \
     > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/pr-discussion-comments.json
 ```
 
-#### Upload to Gist
+#### Upload to Gist (Local Execution Only)
 
-Upload preprocessed session files and PR comments to a secret gist:
+If NOT using `--gist-url`, upload preprocessed session files and PR comments to a secret gist:
 
 ```bash
 gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*
