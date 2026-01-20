@@ -766,6 +766,9 @@ query {{
                 elif mergeable == "MERGEABLE":
                     has_conflicts = False
 
+                # Extract head branch (source branch) for landing
+                head_ref_name = source.get("headRefName")
+
                 # Note: title and labels not fetched (not needed for dash)
                 pr_info = PullRequestInfo(
                     number=pr_number,
@@ -778,6 +781,7 @@ query {{
                     repo=repo_id.repo,
                     has_conflicts=has_conflicts,
                     checks_counts=checks_counts,
+                    head_branch=head_ref_name,
                 )
 
                 # Store with timestamp for sorting
@@ -1237,6 +1241,7 @@ query {{
         has_conflicts = self._parse_mergeable_status(source.get("mergeable"))
         will_close_target = event.get("willCloseTarget", False)
         review_thread_counts = self._parse_review_thread_counts(source.get("reviewThreads"))
+        head_ref_name = source.get("headRefName")
 
         pr_info = PullRequestInfo(
             number=pr_number,
@@ -1251,6 +1256,7 @@ query {{
             checks_counts=checks_counts,
             will_close_target=will_close_target,
             review_thread_counts=review_thread_counts,
+            head_branch=head_ref_name,
         )
         return (pr_info, created_at_pr)
 

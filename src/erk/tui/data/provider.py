@@ -490,6 +490,7 @@ class RealPlanDataProvider(PlanDataProvider):
         pr_url: str | None = None
         pr_title: str | None = None
         pr_state: str | None = None
+        pr_head_branch: str | None = None
         pr_display = "-"
         checks_display = "-"
 
@@ -505,6 +506,7 @@ class RealPlanDataProvider(PlanDataProvider):
                 pr_number = selected_pr.number
                 pr_title = selected_pr.title
                 pr_state = selected_pr.state
+                pr_head_branch = selected_pr.head_branch
                 graphite_url = self._ctx.graphite.get_graphite_url(
                     GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
                 )
@@ -567,6 +569,7 @@ class RealPlanDataProvider(PlanDataProvider):
             issue_body=plan.body or "",
             pr_title=pr_title,
             pr_state=pr_state,
+            pr_head_branch=pr_head_branch,
             worktree_branch=worktree_branch,
             last_local_impl_at=last_local_impl_at,
             last_remote_impl_at=last_remote_impl_at,

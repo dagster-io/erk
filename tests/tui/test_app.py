@@ -884,9 +884,9 @@ class TestExecutePaletteCommandLandPR:
     async def test_execute_palette_command_land_pr_includes_force_flag(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """Execute palette command land_pr includes -f (force) flag in command."""
+        """Execute palette command land_pr calls erk exec land-execute with -f flag."""
         provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
             repo_root=tmp_path,
         )
         filters = PlanFilters.default()
@@ -930,10 +930,39 @@ class TestExecutePaletteCommandLandPR:
             app.execute_palette_command("land_pr")
             await pilot.pause()
 
-            # Verify command includes -f flag
+            # Verify command calls erk exec land-execute with -f flag
             assert captured_command is not None
-            assert captured_command == ["erk", "land", "456", "-f", "--script"]
+            assert captured_command == [
+                "erk",
+                "exec",
+                "land-execute",
+                "--pr-number=456",
+                "--branch=test-branch",
+                "-f",
+            ]
             assert "-f" in captured_command
+
+    @pytest.mark.asyncio
+    async def test_execute_palette_command_land_pr_with_no_branch(self) -> None:
+        """Execute palette command land_pr does nothing if no pr_head_branch."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)]  # Has PR but no pr_head_branch
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            # Execute land_pr command - should do nothing since no worktree_branch
+            app.execute_palette_command("land_pr")
+            await pilot.pause()
+
+            # Should not have pushed a new screen
+            assert len(app.screen_stack) == initial_stack_len
 
 
 class TestExecutePaletteCommandFixConflictsRemote:
