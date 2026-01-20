@@ -6,7 +6,7 @@ read_when:
   - modifying code review behavior
 tripwires:
   - action: "using fnmatch for gitignore-style glob patterns"
-    warning: "Use pathspec library instead. fnmatch doesn't support ** recursive globs. Example: pathspec.PathSpec.from_lines('gitwildmatch', patterns)"
+    warning: "Use pathspec library instead. fnmatch doesn't support ** recursive globs. Example: pathspec.PathSpec.from_lines('gitignore', patterns)"
 ---
 
 # Convention-Based Code Reviews
