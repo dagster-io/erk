@@ -12,9 +12,19 @@ How to publish a new erk release.
 
 ### 1. Create a Release Branch
 
+**Option A - Manual:**
+
 ```bash
 git checkout -b release-X.Y.Z
 ```
+
+**Option B - Via plan workflow:**
+
+```bash
+erk prepare -d <plan-issue>
+```
+
+This creates a branch named `P{issue}-{slug}-{date}`.
 
 Release work happens on a dedicated branch, not directly on master.
 
@@ -104,11 +114,17 @@ This builds and publishes all packages to PyPI in dependency order.
 
 ### 10. Merge to Master
 
-After confirming the publish succeeded:
+After confirming the publish succeeded, merge from the release branch:
 
 ```bash
-erk br co master && git merge release-X.Y.Z && git push origin master --tags
+# From the release branch, capture name then merge
+RELEASE_BRANCH=$(git branch --show-current)
+git checkout master
+git merge "$RELEASE_BRANCH"
+git push origin master --tags
 ```
+
+> **Note:** If using `erk prepare`, the branch name will be `P{issue}-{slug}-{date}` instead of `release-X.Y.Z`.
 
 Only merge to master after verifying the release works correctly.
 
