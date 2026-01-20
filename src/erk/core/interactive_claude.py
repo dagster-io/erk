@@ -29,6 +29,9 @@ def build_claude_args(
     if config.dangerous:
         args.append("--dangerously-skip-permissions")
 
+    if config.allow_dangerous:
+        args.append("--allow-dangerously-skip-permissions")
+
     if config.model is not None:
         args.extend(["--model", config.model])
 
@@ -60,6 +63,9 @@ def build_claude_command_string(
 
     if config.dangerous:
         cmd += " --dangerously-skip-permissions"
+
+    if config.allow_dangerous:
+        cmd += " --allow-dangerously-skip-permissions"
 
     if config.model is not None:
         cmd += f" --model {config.model}"

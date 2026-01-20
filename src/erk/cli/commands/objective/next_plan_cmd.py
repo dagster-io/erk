@@ -43,6 +43,7 @@ def next_plan(ctx: ErkContext, issue_ref: str) -> None:
         permission_mode_override="plan",
         model_override=None,
         dangerous_override=None,
+        allow_dangerous_override=None,
     )
 
     # Build Claude CLI arguments

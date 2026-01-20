@@ -71,13 +71,16 @@ class RealClaudeExecutor(ClaudeExecutor):
         verbose: bool = False,
         debug: bool = False,
         model: str | None = None,
+        permission_mode: ClaudePermissionMode = "acceptEdits",
+        allow_dangerous: bool = False,
     ) -> Iterator[ClaudeEvent]:
         """Execute Claude CLI command and yield typed events in real-time.
 
         Implementation details:
         - Uses subprocess.Popen() for streaming stdout line-by-line
-        - Passes --permission-mode acceptEdits, --output-format stream-json
+        - Passes --permission-mode with the provided mode, --output-format stream-json
         - Optionally passes --dangerously-skip-permissions when dangerous=True
+        - Optionally passes --allow-dangerously-skip-permissions when allow_dangerous=True
         - Optionally passes --model when model is specified
         - In verbose mode: streams output to terminal (no parsing, no events yielded)
         - In filtered mode: parses stream-json and yields events in real-time
@@ -88,12 +91,14 @@ class RealClaudeExecutor(ClaudeExecutor):
             "--print",
             "--verbose",
             "--permission-mode",
-            "acceptEdits",
+            permission_mode,
             "--output-format",
             "stream-json",
         ]
         if dangerous:
             cmd_args.append("--dangerously-skip-permissions")
+        if allow_dangerous:
+            cmd_args.append("--allow-dangerously-skip-permissions")
         if model is not None:
             cmd_args.extend(["--model", model])
         cmd_args.append(command)
