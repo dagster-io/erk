@@ -36,7 +36,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # Run discovery and capture output
-          OUTPUT=$(erk exec discover-reviews --pr-number ${{ github.event.pull_request.number }})
+          OUTPUT=$(erk exec discover-reviews --pr-number ${{ github.event.pull_request.number }} --reviews-dir .github/reviews)
           echo "Discovery output:"
           echo "$OUTPUT"
 
