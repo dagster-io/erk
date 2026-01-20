@@ -9,10 +9,15 @@ Architecture:
 - Standalone functions: Convenience wrappers delegating to module singleton
 """
 
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
+
+if TYPE_CHECKING:
+    from erk_shared.git.worktree.abc import Worktree
 
 
 class BranchDivergence(NamedTuple):
@@ -90,10 +95,15 @@ class Git(ABC):
     This interface contains ONLY runtime operations - no test setup methods.
     """
 
+    @property
     @abstractmethod
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway."""
+        ...
+
     def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
         """List all worktrees in the repository."""
-        ...
+        return self.worktree.list_worktrees(repo_root)
 
     @abstractmethod
     def get_current_branch(self, cwd: Path) -> str | None:
@@ -198,7 +208,6 @@ class Git(ABC):
         """
         ...
 
-    @abstractmethod
     def is_worktree_clean(self, worktree_path: Path) -> bool:
         """Check if worktree has no uncommitted changes, staged changes, or untracked files.
 
@@ -208,9 +217,8 @@ class Git(ABC):
         Returns:
             True if worktree is clean (no uncommitted, staged, or untracked files)
         """
-        ...
+        return self.worktree.is_worktree_clean(worktree_path)
 
-    @abstractmethod
     def add_worktree(
         self,
         repo_root: Path,
@@ -229,14 +237,14 @@ class Git(ABC):
             ref: Git ref to base worktree on (None defaults to HEAD when creating branches)
             create_branch: True to create new branch, False to checkout existing
         """
-        ...
+        self.worktree.add_worktree(
+            repo_root, path, branch=branch, ref=ref, create_branch=create_branch
+        )
 
-    @abstractmethod
     def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
         """Move a worktree to a new location."""
-        ...
+        self.worktree.move_worktree(repo_root, old_path, new_path)
 
-    @abstractmethod
     def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
         """Remove a worktree.
 
@@ -245,7 +253,7 @@ class Git(ABC):
             path: Path to the worktree to remove
             force: True to force removal even if worktree has uncommitted changes
         """
-        ...
+        self.worktree.remove_worktree(repo_root, path, force=force)
 
     @abstractmethod
     def checkout_branch(self, cwd: Path, branch: str) -> None:
@@ -279,12 +287,10 @@ class Git(ABC):
         """
         ...
 
-    @abstractmethod
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata."""
-        ...
+        self.worktree.prune_worktrees(repo_root)
 
-    @abstractmethod
     def path_exists(self, path: Path) -> bool:
         """Check if a path exists on the filesystem.
 
@@ -299,9 +305,8 @@ class Git(ABC):
         Returns:
             True if path exists, False otherwise
         """
-        ...
+        return self.worktree.path_exists(path)
 
-    @abstractmethod
     def is_dir(self, path: Path) -> bool:
         """Check if a path is a directory.
 
@@ -316,9 +321,8 @@ class Git(ABC):
         Returns:
             True if path is a directory, False otherwise
         """
-        ...
+        return self.worktree.is_dir(path)
 
-    @abstractmethod
     def safe_chdir(self, path: Path) -> bool:
         """Change current directory if path exists on real filesystem.
 
@@ -333,9 +337,8 @@ class Git(ABC):
         Returns:
             True if directory change succeeded, False otherwise
         """
-        ...
+        return self.worktree.safe_chdir(path)
 
-    @abstractmethod
     def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
         """Check if a branch is already checked out in any worktree.
 
@@ -346,9 +349,8 @@ class Git(ABC):
         Returns:
             Path to the worktree where branch is checked out, or None if not checked out.
         """
-        ...
+        return self.worktree.is_branch_checked_out(repo_root, branch)
 
-    @abstractmethod
     def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
         """Find worktree path for given branch name.
 
@@ -359,7 +361,7 @@ class Git(ABC):
         Returns:
             Path to worktree if branch is checked out, None otherwise
         """
-        ...
+        return self.worktree.find_worktree_for_branch(repo_root, branch)
 
     @abstractmethod
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:

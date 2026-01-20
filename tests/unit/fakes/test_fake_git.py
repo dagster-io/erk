@@ -40,7 +40,7 @@ def test_fake_gitops_add_worktree(tmp_path: Path) -> None:
     git_ops = FakeGit()
 
     new_wt = repo_root / "new-wt"
-    git_ops.add_worktree(repo_root, new_wt, branch="new-branch")
+    git_ops.add_worktree(repo_root, new_wt, branch="new-branch", ref=None, create_branch=True)
 
     worktrees = git_ops.list_worktrees(repo_root)
     assert len(worktrees) == 1
@@ -62,7 +62,7 @@ def test_fake_gitops_remove_worktree() -> None:
         }
     )
 
-    git_ops.remove_worktree(repo_root, wt1)
+    git_ops.remove_worktree(repo_root, wt1, force=False)
 
     worktrees = git_ops.list_worktrees(repo_root)
     assert len(worktrees) == 0
@@ -376,8 +376,8 @@ def test_fake_gitops_removed_worktrees_tracking() -> None:
         }
     )
 
-    git_ops.remove_worktree(repo_root, wt1)
-    git_ops.remove_worktree(repo_root, wt2)
+    git_ops.remove_worktree(repo_root, wt1, force=False)
+    git_ops.remove_worktree(repo_root, wt2, force=False)
 
     assert wt1 in git_ops.removed_worktrees
     assert wt2 in git_ops.removed_worktrees

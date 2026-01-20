@@ -515,8 +515,9 @@ def test_find_main_git_dir_from_worktree(
     git_ops = RealGit()
 
     # Act: Find main git dir from both locations
-    main_from_repo = git_ops._find_main_git_dir(repo)
-    main_from_wt = git_ops._find_main_git_dir(wt)
+    # _find_main_git_dir is on the worktree subgateway
+    main_from_repo = git_ops.worktree._find_main_git_dir(repo)
+    main_from_wt = git_ops.worktree._find_main_git_dir(wt)
 
     # Assert: Both should resolve to the main repo root
     assert main_from_repo == repo
@@ -538,7 +539,8 @@ def test_find_main_git_dir_from_main_repo(
     git_ops = RealGit()
 
     # Act
-    main_dir = git_ops._find_main_git_dir(repo)
+    # _find_main_git_dir is on the worktree subgateway
+    main_dir = git_ops.worktree._find_main_git_dir(repo)
 
     # Assert
     assert main_dir == repo

@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import NamedTuple
 
 from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.worktree.abc import Worktree
+from erk_shared.git.worktree.fake import FakeWorktree
 
 
 class PushedBranch(NamedTuple):
@@ -224,13 +226,10 @@ class FakeGit(Git):
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
-        self._added_worktrees: list[tuple[Path, str | None]] = []
-        self._removed_worktrees: list[Path] = []
         self._checked_out_branches: list[tuple[Path, str]] = []
         self._detached_checkouts: list[tuple[Path, str]] = []
         self._fetched_branches: list[tuple[str, str]] = []
         self._pulled_branches: list[tuple[str, str, bool]] = []
-        self._chdir_history: list[Path] = []
         self._created_tracking_branches: list[tuple[str, str]] = []
         self._staged_files: list[str] = []
         self._commits: list[tuple[Path, str, list[str]]] = []
@@ -244,28 +243,17 @@ class FakeGit(Git):
         self._rebase_abort_calls: list[Path] = []
         self._pull_rebase_calls: list[tuple[Path, str, str]] = []  # (cwd, remote, branch)
 
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        """List all worktrees in the repository.
+        # Worktree subgateway
+        self._worktree_gateway = FakeWorktree(
+            worktrees=self._worktrees,
+            existing_paths=self._existing_paths,
+            dirty_worktrees=self._dirty_worktrees,
+        )
 
-        Mimics `git worktree list` behavior:
-        - Can be called from any worktree path or the main repo root
-        - Returns the same worktree list regardless of which path is used
-        - Handles symlink resolution differences (e.g., /var vs /private/var on macOS)
-        """
-        resolved_root = repo_root.resolve()
-
-        # Check exact match first (with symlink resolution)
-        for key, worktree_list in self._worktrees.items():
-            if key.resolve() == resolved_root:
-                return worktree_list
-
-        # Check if repo_root is one of the worktree paths in any list
-        for worktree_list in self._worktrees.values():
-            for wt_info in worktree_list:
-                if wt_info.path.resolve() == resolved_root:
-                    return worktree_list
-
-        return []
+    @property
+    def worktree(self) -> Worktree:
+        """Access worktree operations subgateway."""
+        return self._worktree_gateway
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get the currently checked-out branch."""
@@ -352,64 +340,6 @@ class FakeGit(Git):
         staged, modified, untracked = self._file_statuses.get(cwd, ([], [], []))
         return bool(staged or modified or untracked)
 
-    def is_worktree_clean(self, worktree_path: Path) -> bool:
-        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
-        # Check if path exists (LBYL pattern)
-        if worktree_path not in self._existing_paths:
-            return False
-
-        # Check if worktree is marked as dirty
-        if worktree_path in self._dirty_worktrees:
-            return False
-
-        return True
-
-    def add_worktree(
-        self,
-        repo_root: Path,
-        path: Path,
-        *,
-        branch: str | None = None,
-        ref: str | None = None,
-        create_branch: bool = False,
-    ) -> None:
-        """Add a new worktree (mutates internal state and creates directory)."""
-        if repo_root not in self._worktrees:
-            self._worktrees[repo_root] = []
-        # New worktrees are never the root worktree
-        self._worktrees[repo_root].append(WorktreeInfo(path=path, branch=branch, is_root=False))
-        # Create the worktree directory to simulate git worktree add behavior
-        path.mkdir(parents=True, exist_ok=True)
-        # Add to existing paths for pure mode tests
-        self._existing_paths.add(path)
-        # Track the addition
-        self._added_worktrees.append((path, branch))
-
-    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
-        """Move a worktree (mutates internal state and simulates filesystem move)."""
-        if repo_root in self._worktrees:
-            for i, wt in enumerate(self._worktrees[repo_root]):
-                if wt.path == old_path:
-                    self._worktrees[repo_root][i] = WorktreeInfo(
-                        path=new_path, branch=wt.branch, is_root=wt.is_root
-                    )
-                    break
-        # Update existing_paths for pure test mode
-        if old_path in self._existing_paths:
-            self._existing_paths.discard(old_path)
-            self._existing_paths.add(new_path)
-
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool = False) -> None:
-        """Remove a worktree (mutates internal state)."""
-        if repo_root in self._worktrees:
-            self._worktrees[repo_root] = [
-                wt for wt in self._worktrees[repo_root] if wt.path != path
-            ]
-        # Track the removal
-        self._removed_worktrees.append(path)
-        # Remove from existing_paths so path_exists() returns False after deletion
-        self._existing_paths.discard(path)
-
     def checkout_branch(self, cwd: Path, branch: str) -> None:
         """Checkout a branch (mutates internal state).
 
@@ -472,26 +402,6 @@ class FakeGit(Git):
             raise exc
 
         self._deleted_branches.append(branch_name)
-
-    def prune_worktrees(self, repo_root: Path) -> None:
-        """Prune stale worktree metadata (no-op for in-memory fake)."""
-        pass
-
-    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
-        """Check if a branch is already checked out in any worktree."""
-        worktrees = self.list_worktrees(repo_root)
-        for wt in worktrees:
-            if wt.branch == branch:
-                return wt.path
-        return None
-
-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
-        """Find worktree path for given branch name in fake data."""
-        worktrees = self.list_worktrees(repo_root)
-        for wt in worktrees:
-            if wt.branch == branch:
-                return wt.path
-        return None
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get the commit SHA at the head of a branch."""
@@ -566,7 +476,7 @@ class FakeGit(Git):
         Returns list of (path, branch) tuples.
         This property is for test assertions only.
         """
-        return self._added_worktrees.copy()
+        return self._worktree_gateway.added_worktrees
 
     @property
     def removed_worktrees(self) -> list[Path]:
@@ -574,7 +484,7 @@ class FakeGit(Git):
 
         This property is for test assertions only.
         """
-        return self._removed_worktrees.copy()
+        return self._worktree_gateway.removed_worktrees
 
     @property
     def checked_out_branches(self) -> list[tuple[Path, str]]:
@@ -619,7 +529,7 @@ class FakeGit(Git):
         Returns list of Path objects passed to safe_chdir().
         This property is for test assertions only.
         """
-        return self._chdir_history.copy()
+        return self._worktree_gateway.chdir_history
 
     @property
     def created_tracking_branches(self) -> list[tuple[str, str]]:
@@ -629,115 +539,6 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return self._created_tracking_branches.copy()
-
-    def _is_parent(self, parent: Path, child: Path) -> bool:
-        """Check if parent is an ancestor of child."""
-        try:
-            child.relative_to(parent)
-            return True
-        except ValueError:
-            return False
-
-    def path_exists(self, path: Path) -> bool:
-        """Check if path should be treated as existing.
-
-        Used in erk_inmem_env to simulate filesystem checks without
-        actual filesystem I/O. Paths in existing_paths are treated as
-        existing even though they're sentinel paths.
-
-        For erk_isolated_fs_env (real directories), falls back to
-        checking the real filesystem for paths within known worktrees.
-        """
-        # First check if path is explicitly marked as existing
-        if path in self._existing_paths:
-            return True
-
-        # Try to import SentinelPath - it may not be available in all packages
-        try:
-            from tests.test_utils.paths import SentinelPath
-
-            # Don't check real filesystem for sentinel paths (pure test mode)
-            if isinstance(path, SentinelPath):
-                return False
-        except ImportError:
-            # SentinelPath not available (e.g., when used from erk-kits)
-            pass
-
-        # For real filesystem tests, check if path is under any existing path
-        for existing_path in self._existing_paths:
-            try:
-                # Check if path is relative to existing_path
-                path.relative_to(existing_path)
-                # If we get here, path is under existing_path
-                # Check if it actually exists on real filesystem
-                return path.exists()
-            except (ValueError, OSError, RuntimeError):
-                # Not relative to this existing_path or error checking, continue
-                continue
-
-        # Fallback: if no existing_paths configured and path is not under any known path,
-        # check real filesystem. This handles tests that create real files but don't
-        # set up existing_paths (like some unit tests).
-        # This fallback won't interfere with tests that explicitly set existing_paths
-        # (like the init test) because those will either find the path in existing_paths
-        # or not find it as a child of any existing_path.
-        if not self._existing_paths or not any(
-            self._is_parent(ep, path) for ep in self._existing_paths
-        ):
-            try:
-                return path.exists()
-            except (OSError, RuntimeError):
-                return False
-
-        return False
-
-    def is_dir(self, path: Path) -> bool:
-        """Check if path should be treated as a directory.
-
-        For testing purposes, paths in existing_paths that represent
-        git directories (.git) or worktree directories are treated as
-        directories. This is used primarily for distinguishing .git
-        directories (normal repos) from .git files (worktrees).
-
-        Returns True if path exists and is likely a directory.
-        """
-        if path not in self._existing_paths:
-            return False
-        # If it's a .git path, treat it as a directory
-        # (worktrees would have .git as a file, which wouldn't be in existing_paths)
-        return True
-
-    def safe_chdir(self, path: Path) -> bool:
-        """Change directory if path exists, handling sentinel paths.
-
-        For sentinel paths (pure test mode), returns False without changing directory.
-        For real filesystem paths, changes directory if path exists and returns True.
-
-        Tracks successful directory changes in chdir_history for test assertions.
-        """
-        import os
-
-        # Check if path should be treated as existing
-        if not self.path_exists(path):
-            return False
-
-        # Try to import SentinelPath - it may not be available in all packages
-        try:
-            from tests.test_utils.paths import SentinelPath
-
-            # Don't try to chdir to sentinel paths - they're not real filesystem paths
-            if isinstance(path, SentinelPath):
-                # Track the attempt even for sentinel paths (tests need to verify intent)
-                self._chdir_history.append(path)
-                return False
-        except ImportError:
-            # SentinelPath not available (e.g., when used from erk-kits)
-            pass
-
-        # For real filesystem paths, change directory
-        os.chdir(path)
-        self._chdir_history.append(path)
-        return True
 
     def read_file(self, path: Path) -> str:
         """Read file content from in-memory store.
