@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of 0f3f5cdfb -->
+<!-- As of 6da4658ec -->
 
 ### Major Changes
 
@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add activation script generation when allocating worktree slots (6da4658ec)
+- Add shell completion (bash/zsh) to worktree activation script (3b21c7a76)
 - Add `--local` mode to code review for pre-PR review execution (5617ddf51)
 - Add Docker isolated implementation mode with filesystem isolation (c191754c2)
 - Add `-d` short flag alias to all `--dangerous` flags (782ae4dbb)
@@ -38,6 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Sort capabilities list alphabetically by name (1d1fdf986)
+- Rename `/erk:system:impl-execute` command to `/erk:plan-implement` (805519a6b)
 - Simplify activation output when deleting branch with force flag (29ac03cbc)
 - Remove shell integration requirement from land command (b683a75ef)
 - Always copy activation commands to clipboard (dd781f946)
