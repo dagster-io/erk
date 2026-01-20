@@ -436,18 +436,19 @@ Execute deferred land operations.
 
 **Options:**
 
-| Flag                  | Type    | Required | Default        | Description                                                     |
-| --------------------- | ------- | -------- | -------------- | --------------------------------------------------------------- |
-| `--pr-number`         | INTEGER | Yes      | Sentinel.UNSET | PR number to merge                                              |
-| `--branch`            | TEXT    | Yes      | Sentinel.UNSET | Branch name being landed                                        |
-| `--worktree-path`     | PATH    | No       | Sentinel.UNSET | Path to worktree being cleaned up                               |
-| `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                  |
-| `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                         |
-| `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                   |
-| `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                          |
-| `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)             |
-| `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing |
-| `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)           |
+| Flag                  | Type    | Required | Default        | Description                                                                       |
+| --------------------- | ------- | -------- | -------------- | --------------------------------------------------------------------------------- |
+| `--pr-number`         | INTEGER | Yes      | Sentinel.UNSET | PR number to merge                                                                |
+| `--branch`            | TEXT    | Yes      | Sentinel.UNSET | Branch name being landed                                                          |
+| `--worktree-path`     | PATH    | No       | Sentinel.UNSET | Path to worktree being cleaned up                                                 |
+| `--is-current-branch` | FLAG    | No       | -              | Whether landing from the branch's own worktree                                    |
+| `--target-child`      | TEXT    | No       | Sentinel.UNSET | Target child branch for --up navigation                                           |
+| `--objective-number`  | INTEGER | No       | Sentinel.UNSET | Linked objective issue number                                                     |
+| `--use-graphite`      | FLAG    | No       | -              | Use Graphite for merge                                                            |
+| `--pull`              | FLAG    | No       | -              | Pull latest changes after landing (default: --pull)                               |
+| `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                   |
+| `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)                             |
+| `--up`                | FLAG    | No       | -              | Navigate upstack to child branch after landing (resolves child at execution time) |
 
 ### list-sessions
 

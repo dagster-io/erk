@@ -873,6 +873,7 @@ def test_print_temp_script_instructions_without_args(
         instruction="To land the PR:",
         copy=False,
         args=None,
+        extra_flags=None,
     )
 
     captured = capsys.readouterr()
@@ -896,6 +897,7 @@ def test_print_temp_script_instructions_with_args(
         instruction="To land the PR:",
         copy=False,
         args=[123, "feature-branch"],
+        extra_flags=None,
     )
 
     captured = capsys.readouterr()
@@ -918,6 +920,7 @@ def test_print_temp_script_instructions_with_args_quotes_special_chars(
         instruction="To land the PR:",
         copy=False,
         args=[456, "branch with spaces"],
+        extra_flags=None,
     )
 
     captured = capsys.readouterr()
@@ -940,6 +943,7 @@ def test_print_temp_script_instructions_with_args_copies_full_command(
         instruction="To land the PR:",
         copy=True,
         args=[789, "my-branch"],
+        extra_flags=None,
     )
 
     captured = capsys.readouterr()
@@ -970,7 +974,79 @@ def test_print_temp_script_instructions_shows_clipboard_hint_with_args(
         instruction="To land the PR:",
         copy=True,
         args=[123, "feature"],
+        extra_flags=None,
     )
 
     captured = capsys.readouterr()
     assert "(copied to clipboard)" in captured.err
+
+
+def test_print_temp_script_instructions_with_extra_flags(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions includes extra_flags in the command."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=False,
+        args=[123, "feature-branch"],
+        extra_flags=["-f", "--up"],
+    )
+
+    captured = capsys.readouterr()
+    assert "To land the PR:" in captured.err
+    # Should include arguments and extra flags in the source command
+    assert f"source {script_path} 123 feature-branch -f --up" in captured.err
+
+
+def test_print_temp_script_instructions_with_extra_flags_no_args(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions appends extra_flags even without args."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=False,
+        args=None,
+        extra_flags=["--no-pull", "--no-delete"],
+    )
+
+    captured = capsys.readouterr()
+    assert f"source {script_path} --no-pull --no-delete" in captured.err
+
+
+def test_print_temp_script_instructions_copies_command_with_extra_flags(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_temp_script_instructions with copy=True includes extra_flags in clipboard."""
+    script_path = tmp_path / ".erk" / "bin" / "land.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_temp_script_instructions(
+        script_path,
+        instruction="To land the PR:",
+        copy=True,
+        args=[789, "my-branch"],
+        extra_flags=["-f", "--up"],
+    )
+
+    captured = capsys.readouterr()
+
+    # Verify the base64-encoded content includes args and extra_flags
+    osc52_start = captured.err.index("\033]52;c;") + 7
+    osc52_end = captured.err.index("\033\\", osc52_start)
+    encoded_content = captured.err[osc52_start:osc52_end]
+    decoded_content = base64.b64decode(encoded_content).decode("utf-8")
+    assert decoded_content == f"source {script_path} 789 my-branch -f --up"

@@ -74,6 +74,19 @@ from erk_shared.context.helpers import require_context
     is_flag=True,
     help="Output activation script path (for shell integration)",
 )
+@click.option(
+    "--up",
+    "up_flag",
+    is_flag=True,
+    help="Navigate upstack to child branch after landing (resolves child at execution time)",
+)
+@click.option(
+    "-f",
+    "--force",
+    "force_flag",
+    is_flag=True,
+    help="Accept flag for compatibility (execute mode always skips confirmations)",
+)
 @click.pass_context
 def land_execute(
     ctx: click.Context,
@@ -88,6 +101,8 @@ def land_execute(
     pull_flag: bool,
     no_delete: bool,
     script: bool,
+    up_flag: bool,
+    force_flag: bool,
 ) -> None:
     """Execute deferred land operations.
 
@@ -97,8 +112,26 @@ def land_execute(
 
     Confirmations are skipped because the user already approved by sourcing
     the activation script.
+
+    The --up flag resolves the target child branch at execution time (rather than
+    baking it into the script at validation time). This allows the user to change
+    their stack between validation and execution.
     """
     erk_ctx = require_context(ctx)
+
+    # Resolve --up to target child branch at execution time
+    resolved_target_child = target_child
+    if up_flag and target_child is None:
+        repo_root = erk_ctx.git.get_repository_root(erk_ctx.cwd)
+        children = erk_ctx.branch_manager.get_child_branches(repo_root, branch)
+        if not children:
+            raise click.ClickException(f"Cannot use --up: branch '{branch}' has no children")
+        if len(children) > 1:
+            children_str = ", ".join(f"'{c}'" for c in children)
+            raise click.ClickException(
+                f"Cannot use --up: branch '{branch}' has multiple children: {children_str}"
+            )
+        resolved_target_child = children[0]
 
     _execute_land(
         erk_ctx,
@@ -106,7 +139,7 @@ def land_execute(
         branch=branch,
         worktree_path=Path(worktree_path) if worktree_path else None,
         is_current_branch=is_current_branch,
-        target_child_branch=target_child,
+        target_child_branch=resolved_target_child,
         objective_number=objective_number,
         use_graphite=use_graphite,
         pull_flag=pull_flag,

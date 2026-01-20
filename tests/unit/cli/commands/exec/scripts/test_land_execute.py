@@ -49,3 +49,21 @@ def test_land_execute_command_registered() -> None:
 
     command_names = [cmd.name for cmd in exec_group.commands.values()]
     assert "land-execute" in command_names
+
+
+def test_land_execute_accepts_up_flag() -> None:
+    """Test that --up flag is accepted."""
+    runner = CliRunner()
+    ctx = ErkContext.for_test()
+
+    # Command should accept --up flag (it will fail for other reasons,
+    # but should not fail due to missing --up option)
+    result = runner.invoke(
+        land_execute,
+        ["--pr-number=123", "--branch=feature-1", "--up"],
+        obj=ctx,
+    )
+
+    # Should fail because branch_manager.get_child_branches will fail on FakeGit
+    # but NOT because --up is unrecognized
+    assert "no such option: --up" not in result.output.lower()
