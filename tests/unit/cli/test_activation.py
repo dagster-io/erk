@@ -303,6 +303,25 @@ def test_render_activation_script_logs_env_loading() -> None:
     assert '__erk_log "->" "Loading .env"' in script
 
 
+def test_render_activation_script_contains_completion_setup() -> None:
+    """Activation script sets up shell completion for bash and zsh."""
+    script = render_activation_script(
+        worktree_path=Path("/path/to/worktree"),
+        target_subpath=None,
+        post_cd_commands=None,
+        final_message='echo "Activated worktree: $(pwd)"',
+        comment="work activate-script",
+    )
+    # Should contain shell completion section
+    assert "# Shell completion" in script
+    # Should detect bash and eval completion
+    assert 'if [ -n "$BASH_VERSION" ]' in script
+    assert 'eval "$(erk completion bash)"' in script
+    # Should detect zsh and eval completion
+    assert 'elif [ -n "$ZSH_VERSION" ]' in script
+    assert 'eval "$(erk completion zsh)"' in script
+
+
 def test_render_activation_script_shows_full_paths_in_normal_mode() -> None:
     """Activation script shows full paths in normal (non-verbose) mode."""
     script = render_activation_script(
