@@ -629,8 +629,9 @@ class ErkDashApp(App):
                 )
 
         elif command_id == "land_pr":
-            if row.pr_number:
+            if row.pr_number and row.worktree_branch:
                 pr_num = row.pr_number
+                branch = row.worktree_branch
                 executor = RealCommandExecutor(
                     browser_launch=self._provider.browser.launch,
                     clipboard_copy=self._provider.clipboard.copy,
@@ -648,17 +649,21 @@ class ErkDashApp(App):
                 )
                 self.push_screen(detail_screen)
 
-                def on_land_success() -> None:
-                    cmd = f"source .erk/bin/land.sh {pr_num} -f"
-                    executor.copy_to_clipboard(cmd)
-                    self.notify(f"Landed! Run: {cmd}")
-
+                # Call erk exec land-execute directly instead of erk land --script.
+                # erk land --script only generates a script but doesn't execute it.
+                # We need to actually merge the PR.
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "land", str(pr_num), "-f", "--script"],
+                        [
+                            "erk",
+                            "exec",
+                            "land-execute",
+                            f"--pr-number={pr_num}",
+                            f"--branch={branch}",
+                            "-f",
+                        ],
                         cwd=self._provider.repo_root,
                         title=f"Landing PR #{pr_num}",
-                        on_success=on_land_success,
                     )
                 )
 

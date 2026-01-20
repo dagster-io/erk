@@ -665,21 +665,25 @@ class PlanDetailScreen(ModalScreen):
                 # Don't dismiss - user must press Esc after completion
 
         elif command_id == "land_pr":
-            if row.pr_number and self._repo_root is not None:
+            if row.pr_number and row.worktree_branch and self._repo_root is not None:
                 pr_num = row.pr_number
+                branch = row.worktree_branch
 
-                def on_land_success() -> None:
-                    cmd = f"source .erk/bin/land.sh {pr_num} -f"
-                    if self._executor:
-                        self._executor.copy_to_clipboard(cmd)
-                        self._executor.notify(f"Landed! Run: {cmd}")
-
+                # Call erk exec land-execute directly instead of erk land --script.
+                # erk land --script only generates a script but doesn't execute it.
+                # We need to actually merge the PR.
                 self.run_streaming_command(
-                    ["erk", "land", str(pr_num), "-f", "--script"],
+                    [
+                        "erk",
+                        "exec",
+                        "land-execute",
+                        f"--pr-number={pr_num}",
+                        f"--branch={branch}",
+                        "-f",
+                    ],
                     cwd=self._repo_root,
                     title=f"Landing PR #{pr_num}",
                     timeout=600.0,
-                    on_success=on_land_success,
                 )
 
     def compose(self) -> ComposeResult:
