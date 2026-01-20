@@ -198,7 +198,7 @@ Discover code reviews matching PR changed files.
 | Flag            | Type    | Required | Default           | Description                                                        |
 | --------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------ |
 | `--pr-number`   | INTEGER | Yes      | Sentinel.UNSET    | PR number to analyze                                               |
-| `--reviews-dir` | TEXT    | No       | '.github/reviews' | Directory containing review definitions (default: .github/reviews) |
+| `--reviews-dir` | TEXT    | No       | '.claude/reviews' | Directory containing review definitions (default: .claude/reviews) |
 
 ### exit-plan-mode-hook
 
@@ -744,7 +744,7 @@ Run a code review using Claude.
 | `--pr-number`   | INTEGER | No       | Sentinel.UNSET    | PR number to review (PR mode)                                      |
 | `--local`       | FLAG    | No       | -                 | Review local changes (local mode)                                  |
 | `--base`        | TEXT    | No       | Sentinel.UNSET    | Base branch for local mode (default: auto-detect)                  |
-| `--reviews-dir` | TEXT    | No       | '.github/reviews' | Directory containing review definitions (default: .github/reviews) |
+| `--reviews-dir` | TEXT    | No       | '.claude/reviews' | Directory containing review definitions (default: .claude/reviews) |
 | `--dry-run`     | FLAG    | No       | -                 | Print assembled prompt without running Claude                      |
 
 ### session-id-injector-hook

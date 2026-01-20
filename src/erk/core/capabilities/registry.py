@@ -4,7 +4,7 @@ from functools import cache
 
 from erk.core.capabilities.agents import DevrunAgentCapability
 from erk.core.capabilities.base import Capability
-from erk.core.capabilities.dignified_review import DignifiedReviewCapability
+from erk.core.capabilities.code_reviews_system import CodeReviewsSystemCapability
 from erk.core.capabilities.hooks import HooksCapability
 from erk.core.capabilities.learned_docs import LearnedDocsCapability
 from erk.core.capabilities.permissions import ErkBashPermissionsCapability
@@ -13,10 +13,14 @@ from erk.core.capabilities.reminders import (
     DignifiedPythonReminderCapability,
     TripwiresReminderCapability,
 )
+from erk.core.capabilities.reviews import (
+    DignifiedCodeSimplifierReviewDefCapability,
+    DignifiedPythonReviewDefCapability,
+    TripwiresReviewDefCapability,
+)
 from erk.core.capabilities.ruff_format import RuffFormatCapability
 from erk.core.capabilities.skills import DignifiedPythonCapability, FakeDrivenTestingCapability
 from erk.core.capabilities.statusline import StatuslineCapability
-from erk.core.capabilities.tripwires_review import TripwiresReviewCapability
 from erk.core.capabilities.workflows import ErkImplWorkflowCapability, LearnWorkflowCapability
 
 
@@ -27,8 +31,12 @@ def _all_capabilities() -> tuple[Capability, ...]:
         LearnedDocsCapability(),
         DignifiedPythonCapability(),
         FakeDrivenTestingCapability(),
-        DignifiedReviewCapability(),
-        TripwiresReviewCapability(),
+        # Code reviews system and individual review definitions
+        CodeReviewsSystemCapability(),
+        TripwiresReviewDefCapability(),
+        DignifiedPythonReviewDefCapability(),
+        DignifiedCodeSimplifierReviewDefCapability(),
+        # Workflows
         ErkImplWorkflowCapability(),
         LearnWorkflowCapability(),
         DevrunAgentCapability(),

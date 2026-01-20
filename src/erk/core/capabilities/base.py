@@ -13,7 +13,9 @@ from typing import Literal
 CapabilityScope = Literal["project", "user"]
 
 # Artifact types that capabilities can declare they manage
-ManagedArtifactType = Literal["skill", "command", "agent", "workflow", "action", "hook", "prompt"]
+ManagedArtifactType = Literal[
+    "skill", "command", "agent", "workflow", "action", "hook", "prompt", "review"
+]
 
 
 @dataclass(frozen=True)

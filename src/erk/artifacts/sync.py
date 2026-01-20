@@ -328,6 +328,47 @@ def _sync_actions(
     return count, synced
 
 
+def _sync_reviews(
+    bundled_github_dir: Path,
+    target_reviews_dir: Path,
+    *,
+    installed_capabilities: frozenset[str],
+) -> tuple[int, list[SyncedArtifact]]:
+    """Sync erk-managed reviews to project's .claude/reviews/ directory.
+
+    Reviews are bundled in .github/reviews/ but installed to .claude/reviews/.
+    Only syncs files listed in managed artifacts registry.
+    Returns tuple of (file_count, synced_artifacts).
+    """
+    # Inline import: artifact_health.py imports get_bundled_*_dir from this module
+    from erk.artifacts.artifact_health import _get_bundled_by_type
+
+    source_reviews_dir = bundled_github_dir / "reviews"
+    if not source_reviews_dir.exists():
+        return 0, []
+
+    count = 0
+    synced: list[SyncedArtifact] = []
+    for review_name in sorted(
+        _get_bundled_by_type("review", installed_capabilities=installed_capabilities)
+    ):
+        review_filename = f"{review_name}.md"
+        source_path = source_reviews_dir / review_filename
+        if source_path.exists() and source_path.is_file():
+            target_reviews_dir.mkdir(parents=True, exist_ok=True)
+            target_path = target_reviews_dir / review_filename
+            shutil.copy2(source_path, target_path)
+            count += 1
+            synced.append(
+                SyncedArtifact(
+                    key=f"reviews/{review_filename}",
+                    hash=_compute_file_hash(target_path),
+                    file_count=1,
+                )
+            )
+    return count, synced
+
+
 def _hash_directory_artifacts(
     parent_dir: Path, names: frozenset[str], key_prefix: str
 ) -> list[SyncedArtifact]:
@@ -438,6 +479,21 @@ def _compute_source_artifact_state(project_dir: Path) -> list[SyncedArtifact]:
     actions_dir = bundled_github_dir / "actions"
     action_names = _get_bundled_by_type("action", installed_capabilities=None)
     artifacts.extend(_hash_directory_artifacts(actions_dir, action_names, "actions"))
+
+    # Hash reviews from source (bundled in .github/reviews/, installed to .claude/reviews/)
+    reviews_dir = bundled_github_dir / "reviews"
+    if reviews_dir.exists():
+        for review_name in sorted(_get_bundled_by_type("review", installed_capabilities=None)):
+            review_filename = f"{review_name}.md"
+            review_file = reviews_dir / review_filename
+            if review_file.exists():
+                artifacts.append(
+                    SyncedArtifact(
+                        key=f"reviews/{review_filename}",
+                        hash=_compute_file_hash(review_file),
+                        file_count=1,
+                    )
+                )
 
     # Hash hooks (check if installed in settings.json)
     settings_path = project_dir / ".claude" / "settings.json"
@@ -655,6 +711,16 @@ def sync_artifacts(
         count, synced = _sync_actions(
             config.bundled_github_dir,
             target_actions_dir,
+            installed_capabilities=config.installed_capabilities,
+        )
+        total_copied += count
+        all_synced.extend(synced)
+
+        # Sync reviews (from .github/reviews/ to .claude/reviews/)
+        target_reviews_dir = project_dir / ".claude" / "reviews"
+        count, synced = _sync_reviews(
+            config.bundled_github_dir,
+            target_reviews_dir,
             installed_capabilities=config.installed_capabilities,
         )
         total_copied += count

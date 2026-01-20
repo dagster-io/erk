@@ -117,8 +117,8 @@ def _create_matrix(reviews: list[ParsedReview]) -> dict[str, list[dict[str, str]
 @click.option("--pr-number", required=True, type=int, help="PR number to analyze")
 @click.option(
     "--reviews-dir",
-    default=".github/reviews",
-    help="Directory containing review definitions (default: .github/reviews)",
+    default=".claude/reviews",
+    help="Directory containing review definitions (default: .claude/reviews)",
 )
 @click.pass_context
 def discover_reviews(

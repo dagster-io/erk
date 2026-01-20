@@ -45,7 +45,7 @@ class TestRunReviewPrMode:
     def test_dry_run_outputs_prompt(self, tmp_path: Path) -> None:
         """Dry run mode outputs assembled prompt without running Claude."""
         # Create review file
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "test.md").write_text(
@@ -79,7 +79,7 @@ Check for issues in the code.
 
     def test_dry_run_nonexistent_review(self, tmp_path: Path) -> None:
         """Error when review file doesn't exist."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         runner = CliRunner()
@@ -96,7 +96,7 @@ Check for issues in the code.
 
     def test_dry_run_invalid_review(self, tmp_path: Path) -> None:
         """Error when review file has invalid frontmatter."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "invalid.md").write_text(
@@ -167,7 +167,7 @@ class TestRunReviewExecution:
 
     def test_executes_claude_via_gateway(self, tmp_path: Path) -> None:
         """Non-dry-run mode executes Claude via ClaudeExecutor gateway."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "test.md").write_text(
@@ -206,7 +206,7 @@ Check for issues in the code.
 
     def test_propagates_claude_exit_code(self, tmp_path: Path) -> None:
         """Exit code from Claude is propagated."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "test.md").write_text(
@@ -236,7 +236,7 @@ Check for issues.
 
     def test_uses_default_allowed_tools(self, tmp_path: Path) -> None:
         """Uses default allowed_tools when not explicitly specified."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         reviews_dir.mkdir(parents=True)
 
         (reviews_dir / "test.md").write_text(
@@ -276,7 +276,7 @@ class TestRunReviewLocalMode:
 
     def test_local_mode_outputs_prompt(self, tmp_path: Path) -> None:
         """Local mode outputs prompt with git diff commands."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         _create_review_file(
             reviews_dir,
             name="test",
@@ -307,7 +307,7 @@ class TestRunReviewLocalMode:
 
     def test_local_mode_with_base_branch(self, tmp_path: Path) -> None:
         """Local mode uses specified base branch."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         _create_review_file(
             reviews_dir,
             name="test",
@@ -333,7 +333,7 @@ class TestRunReviewFlagValidation:
 
     def test_mutual_exclusion_pr_and_local(self, tmp_path: Path) -> None:
         """Error when both --pr-number and --local specified."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         _create_review_file(
             reviews_dir,
             name="test",
@@ -357,7 +357,7 @@ class TestRunReviewFlagValidation:
 
     def test_requires_mode_flag(self, tmp_path: Path) -> None:
         """Error when neither --pr-number nor --local specified."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         _create_review_file(
             reviews_dir,
             name="test",
@@ -381,7 +381,7 @@ class TestRunReviewFlagValidation:
 
     def test_base_requires_local(self, tmp_path: Path) -> None:
         """Error when --base used without --local."""
-        reviews_dir = tmp_path / ".github" / "reviews"
+        reviews_dir = tmp_path / ".claude" / "reviews"
         _create_review_file(
             reviews_dir,
             name="test",
