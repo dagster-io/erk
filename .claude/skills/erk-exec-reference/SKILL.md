@@ -18,6 +18,7 @@ Quick reference for all `erk exec` subcommands.
 | --------------------------------- | ------------------------------------------------------------------------- |
 | `add-reaction-to-comment`         | Add a reaction to a PR/issue comment.                                     |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                            |
+| `capture-session-info`            | Capture Claude Code session info for CI workflows.                        |
 | `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                 |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                      |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                 |
@@ -106,6 +107,18 @@ Add remote execution tracking note to PR body.
 | `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to update      |
 | `--run-id`    | TEXT    | Yes      | Sentinel.UNSET | Workflow run ID          |
 | `--run-url`   | TEXT    | Yes      | Sentinel.UNSET | Full URL to workflow run |
+
+### capture-session-info
+
+Capture Claude Code session info for CI workflows.
+
+**Usage:** `erk exec capture-session-info`
+
+**Options:**
+
+| Flag     | Type | Required | Default        | Description                                              |
+| -------- | ---- | -------- | -------------- | -------------------------------------------------------- |
+| `--path` | PATH | No       | Sentinel.UNSET | Path to find session for (defaults to current directory) |
 
 ### check-impl
 
