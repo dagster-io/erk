@@ -226,8 +226,15 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         "Add .erk/config.local.toml to .gitignore (per-user local config)?",
     )
 
+    # Add .erk/bin/
+    gitignore_content, bin_added = _add_gitignore_entry_with_prompt(
+        gitignore_content,
+        ".erk/bin/",
+        "Add .erk/bin/ to .gitignore (compiled CLI binaries)?",
+    )
+
     # Write if any entry was modified
-    if env_added or scratch_added or impl_added or local_added:
+    if env_added or scratch_added or impl_added or local_added or bin_added:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
         user_output(f"Updated {gitignore_path}")
 

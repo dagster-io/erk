@@ -670,7 +670,7 @@ def check_gitignore_entries(repo_root: Path) -> CheckResult:
     Returns:
         CheckResult indicating whether required entries are present
     """
-    required_entries = [".erk/scratch/", ".impl/", ".erk/config.local.toml"]
+    required_entries = [".erk/scratch/", ".impl/", ".erk/config.local.toml", ".erk/bin/"]
     gitignore_path = repo_root / ".gitignore"
 
     # No gitignore file - pass (user may not have one yet)
