@@ -6,7 +6,7 @@ before delegating to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.git.worktree.abc import Worktree
 from erk_shared.printing.base import PrintingBase
 
@@ -38,10 +38,6 @@ class PrintingGit(PrintingBase, Git):
         return self._wrapped.worktree
 
     # Read-only operations: delegate without printing
-
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        """List all worktrees (read-only, no printing)."""
-        return self._wrapped.list_worktrees(repo_root)
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get current branch (read-only, no printing)."""
@@ -78,14 +74,6 @@ class PrintingGit(PrintingBase, Git):
     def has_uncommitted_changes(self, cwd: Path) -> bool:
         """Check for uncommitted changes (read-only, no printing)."""
         return self._wrapped.has_uncommitted_changes(cwd)
-
-    def is_worktree_clean(self, worktree_path: Path) -> bool:
-        """Check if worktree is clean (read-only, no printing)."""
-        return self._wrapped.is_worktree_clean(worktree_path)
-
-    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
-        """Check if branch is checked out (read-only, no printing)."""
-        return self._wrapped.is_branch_checked_out(repo_root, branch)
 
     def get_ahead_behind(self, cwd: Path, branch: str) -> tuple[int, int]:
         """Get ahead/behind counts (read-only, no printing)."""
@@ -125,31 +113,6 @@ class PrintingGit(PrintingBase, Git):
         # Not used in land-stack
         self._wrapped.delete_branch(cwd, branch_name, force=force)
 
-    def add_worktree(
-        self,
-        repo_root: Path,
-        path: Path,
-        *,
-        branch: str | None,
-        ref: str | None,
-        create_branch: bool,
-    ) -> None:
-        """Add worktree (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.add_worktree(
-            repo_root, path, branch=branch, ref=ref, create_branch=create_branch
-        )
-
-    def move_worktree(self, repo_root: Path, old_path: Path, new_path: Path) -> None:
-        """Move worktree (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.move_worktree(repo_root, old_path, new_path)
-
-    def remove_worktree(self, repo_root: Path, path: Path, *, force: bool) -> None:
-        """Remove worktree (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.remove_worktree(repo_root, path, force=force)
-
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch branch with printed output."""
         self._emit(self._format_command(f"git fetch {remote} {branch}"))
@@ -165,27 +128,6 @@ class PrintingGit(PrintingBase, Git):
         """Check if branch exists on remote (delegates to wrapped implementation)."""
         # Read-only operation, no output needed
         return self._wrapped.branch_exists_on_remote(repo_root, remote, branch)
-
-    def prune_worktrees(self, repo_root: Path) -> None:
-        """Prune worktrees (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.prune_worktrees(repo_root)
-
-    def path_exists(self, path: Path) -> bool:
-        """Check if path exists (read-only, no printing)."""
-        return self._wrapped.path_exists(path)
-
-    def is_dir(self, path: Path) -> bool:
-        """Check if path is directory (read-only, no printing)."""
-        return self._wrapped.is_dir(path)
-
-    def safe_chdir(self, path: Path) -> bool:
-        """Change directory (delegates to wrapped)."""
-        return self._wrapped.safe_chdir(path)
-
-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
-        """Find worktree for branch (read-only, no printing)."""
-        return self._wrapped.find_worktree_for_branch(repo_root, branch)
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get branch head (read-only, no printing)."""

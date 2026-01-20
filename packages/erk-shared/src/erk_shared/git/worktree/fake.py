@@ -48,9 +48,11 @@ class FakeWorktree(Worktree):
             existing_paths: Set of paths that should be treated as existing (for pure mode)
             dirty_worktrees: Set of worktree paths that have uncommitted/staged/untracked changes
         """
-        self._worktrees = worktrees or {}
-        self._existing_paths = existing_paths or set()
-        self._dirty_worktrees = dirty_worktrees or set()
+        # Use `is None` checks instead of `or` to preserve empty collections
+        # Empty set is falsy, so `set() or set()` creates a new set!
+        self._worktrees = worktrees if worktrees is not None else {}
+        self._existing_paths = existing_paths if existing_paths is not None else set()
+        self._dirty_worktrees = dirty_worktrees if dirty_worktrees is not None else set()
 
         # Mutation tracking
         self._added_worktrees: list[tuple[Path, str | None]] = []

@@ -6,7 +6,7 @@ operations while delegating read-only operations to the wrapped implementation.
 
 from pathlib import Path
 
-from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult, WorktreeInfo
+from erk_shared.git.abc import BranchDivergence, BranchSyncInfo, Git, RebaseResult
 from erk_shared.git.worktree.abc import Worktree
 from erk_shared.output.output import user_output
 
@@ -44,10 +44,6 @@ class DryRunGit(Git):
         return self._wrapped.worktree
 
     # Read-only operations: delegate to wrapped implementation
-
-    def list_worktrees(self, repo_root: Path) -> list[WorktreeInfo]:
-        """List all worktrees (read-only, delegates to wrapped)."""
-        return self._wrapped.list_worktrees(repo_root)
 
     def get_current_branch(self, cwd: Path) -> str | None:
         """Get current branch (read-only, delegates to wrapped)."""
@@ -107,10 +103,6 @@ class DryRunGit(Git):
         """Check for uncommitted changes (read-only, delegates to wrapped)."""
         return self._wrapped.has_uncommitted_changes(cwd)
 
-    def is_worktree_clean(self, worktree_path: Path) -> bool:
-        """Check if worktree is clean (read-only, delegates to wrapped)."""
-        return self._wrapped.is_worktree_clean(worktree_path)
-
     def add_worktree(
         self,
         repo_root: Path,
@@ -143,28 +135,12 @@ class DryRunGit(Git):
         """Print dry-run message instead of pruning worktrees."""
         user_output("[DRY RUN] Would run: git worktree prune")
 
-    def path_exists(self, path: Path) -> bool:
-        """Check if path exists (read-only, delegates to wrapped)."""
-        return self._wrapped.path_exists(path)
-
-    def is_dir(self, path: Path) -> bool:
-        """Check if path is directory (read-only, delegates to wrapped)."""
-        return self._wrapped.is_dir(path)
-
     def safe_chdir(self, path: Path) -> bool:
         """Print dry-run message instead of changing directory."""
-        would_succeed = self._wrapped.path_exists(path)
+        would_succeed = self.path_exists(path)
         if would_succeed:
             user_output(f"[DRY RUN] Would run: cd {path}")
         return False  # Never actually change directory in dry-run
-
-    def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
-        """Check if branch is checked out (read-only, delegates to wrapped)."""
-        return self._wrapped.is_branch_checked_out(repo_root, branch)
-
-    def find_worktree_for_branch(self, repo_root: Path, branch: str) -> Path | None:
-        """Find worktree path for branch (read-only, delegates to wrapped)."""
-        return self._wrapped.find_worktree_for_branch(repo_root, branch)
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get branch head commit SHA (read-only, delegates to wrapped)."""
