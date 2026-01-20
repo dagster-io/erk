@@ -449,6 +449,7 @@ Execute deferred land operations.
 | `--no-delete`         | FLAG    | No       | -              | Preserve the local branch and its slot assignment after landing                   |
 | `--script`            | FLAG    | No       | -              | Output activation script path (for shell integration)                             |
 | `--up`                | FLAG    | No       | -              | Navigate upstack to child branch after landing (resolves child at execution time) |
+| `-f`, `--force`       | FLAG    | No       | -              | Accept flag for compatibility (execute mode always skips confirmations)           |
 
 ### list-sessions
 

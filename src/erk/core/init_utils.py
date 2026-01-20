@@ -59,3 +59,44 @@ def add_gitignore_entry(content: str, entry: str) -> str:
 
     content += f"{entry}\n"
     return content
+
+
+def build_envrc_example_content() -> str:
+    """Build .envrc.example template content (committed to git).
+
+    This template shows users the structure without shell-specific completions.
+    Users copy this to .envrc and customize for their shell.
+
+    Returns:
+        Content for .envrc.example file
+    """
+    return """\
+# .envrc.example - Copy to .envrc and customize
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+fi
+
+# Load erk completions (uncomment for your shell)
+# source <(erk completion bash)
+# source <(erk completion zsh)
+"""
+
+
+def build_envrc_content(shell: str) -> str:
+    """Build .envrc content with shell-specific completions.
+
+    Args:
+        shell: Shell type ("bash" or "zsh")
+
+    Returns:
+        Content for .envrc file with appropriate completion command
+    """
+    return f"""\
+# .envrc - Local direnv configuration
+if [ -d ".venv" ]; then
+    source .venv/bin/activate
+fi
+
+# Load erk completions ({shell})
+source <(erk completion {shell})
+"""

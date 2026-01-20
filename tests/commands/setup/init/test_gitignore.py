@@ -52,8 +52,8 @@ def test_init_adds_env_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Accept prompt for .env, decline .erk/scratch/, .impl/, hooks, and statusline
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
+        # Accept prompt for .env, decline .envrc, .erk/scratch/, .impl/, hooks, and statusline
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -80,8 +80,8 @@ def test_init_skips_gitignore_entries_if_declined() -> None:
             global_config=global_config,
         )
 
-        # Decline all prompts (.env, .erk/scratch/, .impl/, hooks, statusline)
-        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\nn\n")
+        # Decline all prompts (.env, .envrc, .erk/scratch/, .impl/, hooks, statusline)
+        result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -110,9 +110,9 @@ def test_init_adds_erk_scratch_and_impl_to_gitignore() -> None:
             global_config=global_config,
         )
 
-        # Decline .env, accept .erk/scratch/ and .impl/, decline config.local.toml, decline hooks
+        # Decline .env/.envrc, accept .erk/scratch/ and .impl/, decline config.local.toml/hooks
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\ny\ny\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input="n\nn\ny\ny\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")
@@ -166,9 +166,9 @@ def test_init_preserves_gitignore_formatting() -> None:
             global_config=global_config,
         )
 
-        # Accept .env, decline .erk/scratch/, .impl/, .erk/config.local.toml, and hooks
+        # Accept .env, decline .envrc, .erk/scratch/, .impl/, .erk/config.local.toml, and hooks
         with mock.patch.dict(os.environ, {"HOME": str(env.cwd)}):
-            result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\n")
+            result = runner.invoke(cli, ["init"], obj=test_ctx, input="y\nn\nn\nn\nn\nn\n")
 
         assert result.exit_code == 0, result.output
         gitignore_content = gitignore.read_text(encoding="utf-8")

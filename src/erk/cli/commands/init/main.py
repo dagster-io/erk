@@ -187,7 +187,7 @@ def _create_prompt_hooks_directory(repo_root: Path) -> None:
 def _run_gitignore_prompts(repo_root: Path) -> None:
     """Run interactive prompts for .gitignore entries.
 
-    Offers to add .env, .erk/scratch/, .impl/, and .erk/local.toml to .gitignore.
+    Offers to add .env, .envrc, .erk/scratch/, .impl/, and .erk/local.toml to .gitignore.
 
     Args:
         repo_root: Path to the repository root
@@ -203,6 +203,13 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
         gitignore_content,
         ".env",
         "Add .env to .gitignore?",
+    )
+
+    # Add .envrc (direnv local configuration)
+    gitignore_content, envrc_added = _add_gitignore_entry_with_prompt(
+        gitignore_content,
+        ".envrc",
+        "Add .envrc to .gitignore (direnv local configuration)?",
     )
 
     # Add .erk/scratch/
@@ -227,7 +234,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
     )
 
     # Write if any entry was modified
-    if env_added or scratch_added or impl_added or local_added:
+    if env_added or envrc_added or scratch_added or impl_added or local_added:
         gitignore_path.write_text(gitignore_content, encoding="utf-8")
         user_output(f"Updated {gitignore_path}")
 
