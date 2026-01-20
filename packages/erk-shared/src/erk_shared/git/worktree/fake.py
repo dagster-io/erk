@@ -142,11 +142,7 @@ class FakeWorktree(Worktree):
 
     def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
         """Check if a branch is already checked out in any worktree."""
-        worktrees = self.list_worktrees(repo_root)
-        for wt in worktrees:
-            if wt.branch == branch:
-                return wt.path
-        return None
+        return self.find_worktree_for_branch(repo_root, branch)
 
     def is_worktree_clean(self, worktree_path: Path) -> bool:
         """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
@@ -162,10 +158,19 @@ class FakeWorktree(Worktree):
 
     def _is_parent(self, parent: Path, child: Path) -> bool:
         """Check if parent is an ancestor of child."""
+        return child.is_relative_to(parent)
+
+    def _is_sentinel_path(self, path: Path) -> bool:
+        """Check if path is a SentinelPath (pure test mode).
+
+        SentinelPath is only available in the tests package. Returns False
+        if SentinelPath is not available (e.g., when used from erk-kits).
+        """
         try:
-            child.relative_to(parent)
-            return True
-        except ValueError:
+            from tests.test_utils.paths import SentinelPath
+
+            return isinstance(path, SentinelPath)
+        except ImportError:
             return False
 
     def path_exists(self, path: Path) -> bool:
@@ -182,16 +187,9 @@ class FakeWorktree(Worktree):
         if path in self._existing_paths:
             return True
 
-        # Try to import SentinelPath - it may not be available in all packages
-        try:
-            from tests.test_utils.paths import SentinelPath
-
-            # Don't check real filesystem for sentinel paths (pure test mode)
-            if isinstance(path, SentinelPath):
-                return False
-        except ImportError:
-            # SentinelPath not available (e.g., when used from erk-kits)
-            pass
+        # Don't check real filesystem for sentinel paths (pure test mode)
+        if self._is_sentinel_path(path):
+            return False
 
         # For real filesystem tests, check if path is under any existing path
         for existing_path in self._existing_paths:
@@ -245,18 +243,11 @@ class FakeWorktree(Worktree):
         if not self.path_exists(path):
             return False
 
-        # Try to import SentinelPath - it may not be available in all packages
-        try:
-            from tests.test_utils.paths import SentinelPath
-
-            # Don't try to chdir to sentinel paths - they're not real filesystem paths
-            if isinstance(path, SentinelPath):
-                # Track the attempt even for sentinel paths (tests need to verify intent)
-                self._chdir_history.append(path)
-                return False
-        except ImportError:
-            # SentinelPath not available (e.g., when used from erk-kits)
-            pass
+        # Don't try to chdir to sentinel paths - they're not real filesystem paths
+        if self._is_sentinel_path(path):
+            # Track the attempt even for sentinel paths (tests need to verify intent)
+            self._chdir_history.append(path)
+            return False
 
         # For real filesystem paths, change directory
         os.chdir(path)
