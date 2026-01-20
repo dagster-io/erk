@@ -4,6 +4,9 @@ read_when:
   - "creating a plan"
   - "closing a plan"
   - "understanding plan states"
+tripwires:
+  - action: "manually creating an erk-plan issue with gh issue create"
+    warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
 ---
 
 # Plan Lifecycle
