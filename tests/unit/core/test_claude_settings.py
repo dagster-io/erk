@@ -370,11 +370,17 @@ def test_read_raises_on_invalid_json(tmp_path: Path) -> None:
 
 
 def test_hook_command_constants() -> None:
-    """Test that hook command constants have expected values."""
+    """Test that hook command constants have expected values.
+
+    Hook commands include a resilience check (command -v erk) that gracefully
+    exits 0 if erk is not available, preventing "command not found" errors.
+    """
     assert ERK_USER_PROMPT_HOOK_COMMAND == (
+        "command -v erk >/dev/null 2>&1 || exit 0; "
         "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
     )
     assert ERK_EXIT_PLAN_HOOK_COMMAND == (
+        "command -v erk >/dev/null 2>&1 || exit 0; "
         "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
     )
 

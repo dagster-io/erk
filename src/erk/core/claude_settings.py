@@ -16,8 +16,16 @@ from typing import Any
 ERK_PERMISSION = "Bash(erk:*)"
 
 # Hook commands for erk integration
-ERK_USER_PROMPT_HOOK_COMMAND = "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
-ERK_EXIT_PLAN_HOOK_COMMAND = "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+# These commands check if erk is available before running, gracefully exiting 0 if not.
+# This prevents "command not found" errors when erk is uninstalled or not in PATH.
+ERK_USER_PROMPT_HOOK_COMMAND = (
+    "command -v erk >/dev/null 2>&1 || exit 0; "
+    "ERK_HOOK_ID=user-prompt-hook erk exec user-prompt-hook"
+)
+ERK_EXIT_PLAN_HOOK_COMMAND = (
+    "command -v erk >/dev/null 2>&1 || exit 0; "
+    "ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+)
 
 # Statusline command - can be overridden via ERK_STATUSLINE_COMMAND env var for dev mode
 ERK_STATUSLINE_COMMAND = "uvx erk-statusline"

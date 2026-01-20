@@ -7,6 +7,7 @@ Uses tmp_path to test with real filesystem I/O since the check reads settings.js
 import json
 from pathlib import Path
 
+from erk.core.claude_settings import ERK_EXIT_PLAN_HOOK_COMMAND
 from erk.core.health_checks import check_exit_plan_hook
 
 
@@ -33,10 +34,7 @@ def test_check_passes_when_hook_configured(tmp_path: Path) -> None:
                             "hooks": [
                                 {
                                     "type": "command",
-                                    "command": (
-                                        "ERK_HOOK_ID=exit-plan-mode-hook "
-                                        "erk exec exit-plan-mode-hook"
-                                    ),
+                                    "command": ERK_EXIT_PLAN_HOOK_COMMAND,
                                 }
                             ],
                         }
