@@ -291,7 +291,7 @@ def _matches_any_path(
     Returns:
         True if the file matches at least one pattern.
     """
-    spec = pathspec.PathSpec.from_lines("gitwildmatch", review_paths)
+    spec = pathspec.PathSpec.from_lines("gitignore", review_paths)
     return spec.match_file(filename)
 
 
