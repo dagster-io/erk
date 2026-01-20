@@ -76,6 +76,13 @@ def test_list_capabilities_returns_all_registered() -> None:
     assert "learned-docs" in names
 
 
+def test_list_capabilities_returns_sorted_alphabetically() -> None:
+    """Test that list_capabilities returns capabilities sorted alphabetically by name."""
+    caps = list_capabilities()
+    names = [cap.name for cap in caps]
+    assert names == sorted(names)
+
+
 # =============================================================================
 # Tests for LearnedDocsCapability
 # =============================================================================
