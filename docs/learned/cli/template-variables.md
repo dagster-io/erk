@@ -3,6 +3,8 @@ title: Template Variables Reference
 read_when:
   - "configuring .env templates"
   - "using substitution variables in config.toml"
+  - "setting environment variables per worktree"
+  - "updating environment when switching worktrees"
 ---
 
 # Template Variables Reference
@@ -31,7 +33,7 @@ These are always added to `.env` regardless of config:
 
 ## Example Configuration
 
-**Repo-level** (`~/.erk/repos/my-repo/config.toml`):
+**Repo-level** (`.erk/config.toml`):
 
 ```toml
 [env]
@@ -53,6 +55,36 @@ WORKTREE_NAME="my-feature"
 
 **File**: `src/erk/cli/commands/wt/create_cmd.py` (see `make_env_content()`)
 
+## When Environment Variables Are Loaded
+
+Environment variables are loaded in two phases:
+
+1. **Worktree creation**: Erk generates `.env` with substituted template values
+2. **Worktree activation**: The activation script sources `.env` using `set -a` (allexport mode)
+
+The relevant shell snippet from `activate.sh`:
+
+```bash
+# Load .env into the environment (allexport)
+set -a
+if [ -f ./.env ]; then
+  . ./.env
+fi
+set +a
+```
+
+This means environment variables are automatically updated when you switch worktrees via `erk wt checkout` or shell integration.
+
+## Common Use Cases
+
+| Variable               | Purpose                   | Example Value                   |
+| ---------------------- | ------------------------- | ------------------------------- |
+| `DAGSTER_GIT_REPO_DIR` | Point Dagster to worktree | `{worktree_path}`               |
+| `DATABASE_URL`         | Per-worktree database     | `postgresql://localhost/{name}` |
+| `LOG_FILE`             | Separate log files        | `{worktree_path}/logs/app.log`  |
+| `CONFIG_PATH`          | Worktree-specific config  | `{worktree_path}/.local-config` |
+
 ## Related Topics
 
 - [Worktree Metadata](../architecture/worktree-metadata.md) - Per-worktree storage
+- [Configuration Layers](../configuration/config-layers.md) - How repo and local configs merge

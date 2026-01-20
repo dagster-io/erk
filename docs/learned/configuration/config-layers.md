@@ -42,7 +42,7 @@ Team-shared settings for the repository. Checked into git.
 
 **Contains:**
 
-- `[env]` - Environment variables for worktrees
+- `[env]` - Environment variables for worktrees (see [Template Variables Reference](../cli/template-variables.md))
 - `[post_create]` - Commands to run after worktree creation
 - `[pool]` - Worktree pool settings (max_slots)
 - `[pool.checkout]` - Commands to run on pool checkout
