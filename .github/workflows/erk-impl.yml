@@ -216,23 +216,14 @@ jobs:
         id: session
         if: always()
         run: |
-          RESULT=$(erk exec find-project-dir --path "$GITHUB_WORKSPACE" 2>/dev/null || echo '{"success": false}')
-
-          if echo "$RESULT" | jq -e '.success' > /dev/null 2>&1; then
-            SESSION_ID=$(echo "$RESULT" | jq -r '.latest_session_id // empty')
-            PROJECT_DIR=$(echo "$RESULT" | jq -r '.project_dir')
-
-            if [ -n "$SESSION_ID" ]; then
-              SESSION_FILE="$PROJECT_DIR/$SESSION_ID.jsonl"
-              echo "session_id=$SESSION_ID" >> "$GITHUB_OUTPUT"
-              echo "session_file=$SESSION_FILE" >> "$GITHUB_OUTPUT"
-              echo "Captured session ID: $SESSION_ID"
-              echo "Session file: $SESSION_FILE"
-            else
-              echo "No session file found in project directory"
-            fi
+          if OUTPUT=$(erk exec capture-session-info --path "$GITHUB_WORKSPACE" 2>/dev/null); then
+            eval "$OUTPUT"
+            echo "session_id=$SESSION_ID" >> "$GITHUB_OUTPUT"
+            echo "session_file=$SESSION_FILE" >> "$GITHUB_OUTPUT"
+            echo "Captured session ID: $SESSION_ID"
+            echo "Session file: $SESSION_FILE"
           else
-            echo "Project directory not found for: $GITHUB_WORKSPACE"
+            echo "No session found for: $GITHUB_WORKSPACE"
           fi
 
       - name: Upload session artifact
