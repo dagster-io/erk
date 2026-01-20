@@ -38,39 +38,43 @@ class InstallableItem:
     display_name: str
 
 
-# Declarative list of items to install/uninstall
-_INSTALLABLE_ITEMS: tuple[InstallableItem, ...] = (
-    InstallableItem(
-        source_path="workflows/code-reviews.yml",
-        target_path=".github/workflows/code-reviews.yml",
-        item_type="file",
-        display_name="code-reviews.yml",
-    ),
-    InstallableItem(
-        source_path="actions/setup-claude-code",
-        target_path=".github/actions/setup-claude-code",
-        item_type="directory",
-        display_name="setup-claude-code/",
-    ),
-    InstallableItem(
-        source_path="actions/setup-claude-erk",
-        target_path=".github/actions/setup-claude-erk",
-        item_type="directory",
-        display_name="setup-claude-erk/",
-    ),
-    InstallableItem(
-        source_path="",
-        target_path=".claude/reviews",
-        item_type="create_directory",
-        display_name=".claude/reviews/",
-    ),
-)
+@cache
+def _get_installable_items() -> tuple[InstallableItem, ...]:
+    """Declarative list of items to install."""
+    return (
+        InstallableItem(
+            source_path="workflows/code-reviews.yml",
+            target_path=".github/workflows/code-reviews.yml",
+            item_type="file",
+            display_name="code-reviews.yml",
+        ),
+        InstallableItem(
+            source_path="actions/setup-claude-code",
+            target_path=".github/actions/setup-claude-code",
+            item_type="directory",
+            display_name="setup-claude-code/",
+        ),
+        InstallableItem(
+            source_path="actions/setup-claude-erk",
+            target_path=".github/actions/setup-claude-erk",
+            item_type="directory",
+            display_name="setup-claude-erk/",
+        ),
+        InstallableItem(
+            source_path="",
+            target_path=".claude/reviews",
+            item_type="create_directory",
+            display_name=".claude/reviews/",
+        ),
+    )
 
 
 @cache
 def _get_uninstallable_items() -> tuple[InstallableItem, ...]:
     """Items to remove on uninstall (excludes .claude/reviews/ which may have user content)."""
-    return tuple(item for item in _INSTALLABLE_ITEMS if item.item_type != "create_directory")
+    return tuple(
+        item for item in _get_installable_items() if item.item_type != "create_directory"
+    )
 
 
 class CodeReviewsSystemCapability(Capability):
@@ -156,7 +160,7 @@ class CodeReviewsSystemCapability(Capability):
 
         installed_items: list[str] = []
 
-        for item in _INSTALLABLE_ITEMS:
+        for item in _get_installable_items():
             target = repo_root / item.target_path
 
             if item.item_type == "file":
