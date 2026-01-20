@@ -10,6 +10,7 @@ from erk.cli.commands.admin import admin_group
 from erk.cli.commands.artifact.group import artifact_group
 from erk.cli.commands.branch import branch_group
 from erk.cli.commands.cc import cc_group
+from erk.cli.commands.codespace import codespace_group
 from erk.cli.commands.completion import completion_group
 from erk.cli.commands.config import config_group
 from erk.cli.commands.docs.group import docs_group
@@ -183,6 +184,7 @@ cli.add_command(admin_group)
 cli.add_command(artifact_group)
 register_with_aliases(cli, branch_group)  # Has @alias("br")
 cli.add_command(cc_group)
+cli.add_command(codespace_group)
 cli.add_command(completion_group)
 cli.add_command(config_group)
 cli.add_command(doctor_cmd)

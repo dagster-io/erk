@@ -11,6 +11,7 @@ from erk_shared.context.types import LoadedConfig, RepoContext
 from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.fakes import (
     FakeClaudeExecutor,
+    FakeCodespaceRegistry,
     FakePlanListService,
     FakePlannerRegistry,
     FakeScriptWriter,
@@ -148,6 +149,7 @@ def context_for_test(
         claude_executor=resolved_claude_executor,
         script_writer=FakeScriptWriter(),
         planner_registry=FakePlannerRegistry(),
+        codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),
         cwd=resolved_cwd,
         repo=repo,

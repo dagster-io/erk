@@ -85,6 +85,17 @@ class ErkInstallation(ABC):
         """
         ...
 
+    # --- Codespace registry operations ---
+
+    @abstractmethod
+    def get_codespaces_config_path(self) -> Path:
+        """Get path to codespaces configuration file.
+
+        Returns:
+            Path to ~/.erk/codespaces.toml
+        """
+        ...
+
     # --- Root path access ---
 
     @abstractmethod

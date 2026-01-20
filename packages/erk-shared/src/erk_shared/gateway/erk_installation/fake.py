@@ -140,6 +140,16 @@ class FakeErkInstallation(ErkInstallation):
         """
         return self._root_path / "planners.toml"
 
+    # --- Codespace registry operations ---
+
+    def get_codespaces_config_path(self) -> Path:
+        """Get path to codespaces configuration file.
+
+        Returns:
+            Path to fake codespaces.toml location
+        """
+        return self._root_path / "codespaces.toml"
+
     # --- Command history operations ---
 
     def get_command_log_path(self) -> Path:
