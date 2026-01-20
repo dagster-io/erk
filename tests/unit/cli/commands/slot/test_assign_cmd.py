@@ -444,3 +444,41 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
         # Verify artifacts were cleaned up
         assert not impl_folder.exists(), ".impl/ folder should be removed"
         assert not scratch_folder.exists(), ".erk/scratch/ folder should be removed"
+
+
+def test_slot_assign_creates_activation_script() -> None:
+    """Test that slot assign creates .erk/bin/activate.sh in the worktree."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-test"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli, ["slot", "assign", "feature-test"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Verify activation script was created
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        activate_script = worktree_path / ".erk" / "bin" / "activate.sh"
+        assert activate_script.exists(), "Activation script should be created"
+        content = activate_script.read_text(encoding="utf-8")
+        assert "# erk worktree activation script" in content
