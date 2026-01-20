@@ -169,6 +169,7 @@ def create_plan_issue(
         created_from_session=created_from_session,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     # Create issue

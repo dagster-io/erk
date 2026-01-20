@@ -517,11 +517,14 @@ def test_fix_conflicts_remote_updates_dispatch_metadata_for_plan_branch(tmp_path
             last_local_impl_session=None,
             last_local_impl_user=None,
             last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
             source_repo=None,
             objective_issue=None,
             created_from_session=None,
             last_learn_session=None,
             last_learn_at=None,
+            learn_status=None,
         )
         plan_issue = _make_issue_info(123, plan_body, title="Fix auth bug", state="OPEN")
         issues_gateway = FakeGitHubIssues(issues={123: plan_issue})

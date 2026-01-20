@@ -3,8 +3,8 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from erk_shared.github.issues import IssueInfo
 from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.core import render_metadata_block
 from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.github.metadata.types import MetadataBlock
@@ -132,10 +132,11 @@ def _make_plan_body(
         last_remote_impl_run_id=None,
         last_remote_impl_session_id=None,
         source_repo=None,
-        objective_id=None,
+        objective_issue=None,
         created_from_session=created_from_session,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
 
@@ -288,6 +289,7 @@ def _make_plan_body_with_remote_impl(
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
 

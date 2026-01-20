@@ -12,11 +12,13 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
+    extract_plan_header_learn_status,
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
     format_plan_header_body,
     update_plan_header_learn_event,
+    update_plan_header_learn_status,
     update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
 )
@@ -163,6 +165,7 @@ def test_create_plan_header_block_minimal() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     assert block.key == "plan-header"
@@ -194,6 +197,7 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         created_from_session="session-abc",
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     assert block.key == "plan-header"
@@ -227,6 +231,7 @@ def test_create_plan_header_block_omits_none_values() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     assert block.key == "plan-header"
@@ -262,6 +267,7 @@ def test_format_plan_header_body_minimal() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     # Verify the block can be parsed back
@@ -295,6 +301,7 @@ def test_format_plan_header_body_with_optional_fields() -> None:
         created_from_session="session-abc",
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     # Verify the block can be parsed back
@@ -329,6 +336,7 @@ def test_render_and_extract_round_trip() -> None:
         created_from_session="session-xyz",
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     rendered = render_metadata_block(block)
@@ -414,6 +422,7 @@ def test_create_plan_header_block_with_learn_fields() -> None:
         created_from_session=None,
         last_learn_session="learn-session-abc",
         last_learn_at="2024-01-16T14:00:00Z",
+        learn_status=None,
     )
 
     assert block.key == "plan-header"
@@ -444,6 +453,7 @@ def test_format_plan_header_body_with_learn_fields() -> None:
         created_from_session=None,
         last_learn_session="learn-session-xyz",
         last_learn_at="2024-01-16T15:00:00Z",
+        learn_status=None,
     )
 
     # Verify the block can be parsed back
@@ -477,6 +487,7 @@ def test_update_plan_header_learn_event() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     # Update with learn event
@@ -519,6 +530,7 @@ def test_update_plan_header_learn_event_with_none_session() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     updated_body = update_plan_header_learn_event(
@@ -568,6 +580,7 @@ def test_extract_plan_header_last_learn_session() -> None:
         created_from_session=None,
         last_learn_session="learn-session-extract",
         last_learn_at=None,
+        learn_status=None,
     )
 
     session_id = extract_plan_header_last_learn_session(body)
@@ -597,6 +610,7 @@ def test_extract_plan_header_last_learn_session_returns_none_when_missing() -> N
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     session_id = extract_plan_header_last_learn_session(body)
@@ -634,6 +648,7 @@ def test_extract_plan_header_last_learn_at() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at="2024-01-16T14:00:00Z",
+        learn_status=None,
     )
 
     timestamp = extract_plan_header_last_learn_at(body)
@@ -663,6 +678,7 @@ def test_extract_plan_header_last_learn_at_returns_none_when_missing() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     timestamp = extract_plan_header_last_learn_at(body)
@@ -723,6 +739,7 @@ def test_extract_plan_header_branch_name() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     branch = extract_plan_header_branch_name(body)
@@ -752,6 +769,7 @@ def test_extract_plan_header_branch_name_returns_none_when_missing() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     branch = extract_plan_header_branch_name(body)
@@ -790,6 +808,7 @@ def test_update_plan_header_worktree_and_branch() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     # Update with worktree and branch
@@ -847,6 +866,7 @@ def test_extract_plan_header_objective_issue() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     result = extract_plan_header_objective_issue(body)
@@ -876,6 +896,7 @@ def test_extract_plan_header_objective_issue_returns_none_when_missing() -> None
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     result = extract_plan_header_objective_issue(body)
@@ -944,6 +965,7 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     assert block.key == "plan-header"
@@ -975,6 +997,7 @@ def test_extract_plan_header_remote_impl_run_id() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     run_id = extract_plan_header_remote_impl_run_id(body)
@@ -1004,6 +1027,7 @@ def test_extract_plan_header_remote_impl_run_id_returns_none_when_missing() -> N
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     run_id = extract_plan_header_remote_impl_run_id(body)
@@ -1041,6 +1065,7 @@ def test_extract_plan_header_remote_impl_session_id() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     session_id = extract_plan_header_remote_impl_session_id(body)
@@ -1070,6 +1095,7 @@ def test_extract_plan_header_remote_impl_session_id_returns_none_when_missing() 
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     session_id = extract_plan_header_remote_impl_session_id(body)
@@ -1100,6 +1126,7 @@ def test_update_plan_header_remote_impl_event() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     # Update with remote impl event
@@ -1144,6 +1171,7 @@ def test_update_plan_header_remote_impl_event_with_none_session() -> None:
         created_from_session=None,
         last_learn_session=None,
         last_learn_at=None,
+        learn_status=None,
     )
 
     updated_body = update_plan_header_remote_impl_event(
@@ -1170,4 +1198,222 @@ def test_update_plan_header_remote_impl_event_raises_for_missing_block() -> None
             run_id="remote-run-123",
             session_id="session-123",
             remote_impl_at="2024-01-16T14:00:00Z",
+        )
+
+
+# === Learn Status Tests ===
+
+
+def test_plan_header_schema_accepts_learn_status_pending() -> None:
+    """Schema accepts learn_status with value 'pending'."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learn_status": "pending",
+    }
+
+    # Should not raise
+    schema.validate(data)
+
+
+def test_plan_header_schema_accepts_learn_status_completed() -> None:
+    """Schema accepts learn_status with value 'completed'."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learn_status": "completed",
+    }
+
+    # Should not raise
+    schema.validate(data)
+
+
+def test_plan_header_schema_accepts_learn_status_null() -> None:
+    """Schema accepts learn_status with value null."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learn_status": None,
+    }
+
+    # Should not raise
+    schema.validate(data)
+
+
+def test_plan_header_schema_rejects_invalid_learn_status() -> None:
+    """Schema rejects learn_status with invalid value."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learn_status": "invalid",
+    }
+
+    with pytest.raises(ValueError, match="learn_status must be 'pending' or 'completed'"):
+        schema.validate(data)
+
+
+def test_extract_plan_header_learn_status() -> None:
+    """extract_plan_header_learn_status extracts status from body."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status="pending",
+    )
+
+    status = extract_plan_header_learn_status(body)
+    assert status == "pending"
+
+
+def test_extract_plan_header_learn_status_returns_none_when_missing() -> None:
+    """extract_plan_header_learn_status returns None when field is absent."""
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status=None,
+    )
+
+    status = extract_plan_header_learn_status(body)
+    assert status is None
+
+
+def test_extract_plan_header_learn_status_returns_none_for_invalid_body() -> None:
+    """extract_plan_header_learn_status returns None for invalid body."""
+    body = "No metadata block here"
+
+    status = extract_plan_header_learn_status(body)
+    assert status is None
+
+
+def test_update_plan_header_learn_status() -> None:
+    """update_plan_header_learn_status updates learn_status field."""
+    # Create initial body without learn_status
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status=None,
+    )
+
+    # Update with learn_status
+    updated_body = update_plan_header_learn_status(
+        issue_body=body,
+        learn_status="pending",
+    )
+
+    # Verify the block was updated
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["learn_status"] == "pending"
+    # Original fields preserved
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "user123"
+
+
+def test_update_plan_header_learn_status_to_completed() -> None:
+    """update_plan_header_learn_status can update from pending to completed."""
+    # Create initial body with pending status
+    body = format_plan_header_body(
+        created_at="2024-01-15T10:30:00Z",
+        created_by="user123",
+        worktree_name=None,
+        branch_name=None,
+        plan_comment_id=None,
+        last_dispatched_run_id=None,
+        last_dispatched_node_id=None,
+        last_dispatched_at=None,
+        last_local_impl_at=None,
+        last_local_impl_event=None,
+        last_local_impl_session=None,
+        last_local_impl_user=None,
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        source_repo=None,
+        objective_issue=None,
+        created_from_session=None,
+        last_learn_session=None,
+        last_learn_at=None,
+        learn_status="pending",
+    )
+
+    # Update to completed
+    updated_body = update_plan_header_learn_status(
+        issue_body=body,
+        learn_status="completed",
+    )
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["learn_status"] == "completed"
+
+
+def test_update_plan_header_learn_status_raises_for_missing_block() -> None:
+    """update_plan_header_learn_status raises ValueError if no plan-header block."""
+    body = "Some other content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_learn_status(
+            issue_body=body,
+            learn_status="pending",
         )

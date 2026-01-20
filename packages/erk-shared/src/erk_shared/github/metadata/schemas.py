@@ -332,6 +332,7 @@ PlanHeaderFieldName = Literal[
     "created_from_session",
     "last_learn_session",
     "last_learn_at",
+    "learn_status",
 ]
 """Union type of all valid plan-header field names."""
 
@@ -359,6 +360,11 @@ OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
 CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
 LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
 LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
+LEARN_STATUS: Literal["learn_status"] = "learn_status"
+
+# Valid values for learn_status field
+LearnStatusValue = Literal["pending", "completed"]
+"""Valid values for the learn_status plan header field."""
 
 
 @dataclass(frozen=True)
@@ -386,6 +392,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         created_from_session: Session ID that created this plan (nullable)
         last_learn_session: Session ID that last invoked learn (nullable)
         last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
+        learn_status: Learning workflow status - "pending" or "completed" (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -414,6 +421,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             CREATED_FROM_SESSION,
             LAST_LEARN_SESSION,
             LAST_LEARN_AT,
+            LEARN_STATUS,
         }
 
         # Check required fields exist
@@ -552,6 +560,17 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("last_learn_at must be a string or null")
             if len(data[LAST_LEARN_AT]) == 0:
                 raise ValueError("last_learn_at must not be empty when provided")
+
+        # Validate optional learn_status field
+        if LEARN_STATUS in data and data[LEARN_STATUS] is not None:
+            if not isinstance(data[LEARN_STATUS], str):
+                raise ValueError("learn_status must be a string or null")
+            valid_statuses = {"pending", "completed"}
+            if data[LEARN_STATUS] not in valid_statuses:
+                status_value = data[LEARN_STATUS]
+                raise ValueError(
+                    f"learn_status must be 'pending' or 'completed', got '{status_value}'"
+                )
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields
