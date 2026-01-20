@@ -12,7 +12,10 @@ Installs:
 """
 
 import shutil
+from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
+from typing import Literal
 
 from erk.core.capabilities.base import (
     Capability,
@@ -21,6 +24,54 @@ from erk.core.capabilities.base import (
     CapabilityScope,
     ManagedArtifact,
 )
+
+InstallableItemType = Literal["file", "directory", "create_directory"]
+
+
+@dataclass(frozen=True)
+class InstallableItem:
+    """Declarative definition of an installable artifact."""
+
+    source_path: str  # Relative to bundled .github/ dir (empty for create_directory)
+    target_path: str  # Relative to repo root
+    item_type: InstallableItemType
+    display_name: str
+
+
+# Declarative list of items to install/uninstall
+_INSTALLABLE_ITEMS: tuple[InstallableItem, ...] = (
+    InstallableItem(
+        source_path="workflows/code-reviews.yml",
+        target_path=".github/workflows/code-reviews.yml",
+        item_type="file",
+        display_name="code-reviews.yml",
+    ),
+    InstallableItem(
+        source_path="actions/setup-claude-code",
+        target_path=".github/actions/setup-claude-code",
+        item_type="directory",
+        display_name="setup-claude-code/",
+    ),
+    InstallableItem(
+        source_path="actions/setup-claude-erk",
+        target_path=".github/actions/setup-claude-erk",
+        item_type="directory",
+        display_name="setup-claude-erk/",
+    ),
+    InstallableItem(
+        source_path="",
+        target_path=".claude/reviews",
+        item_type="create_directory",
+        display_name=".claude/reviews/",
+    ),
+)
+
+@cache
+def _get_uninstallable_items() -> tuple[InstallableItem, ...]:
+    """Items to remove on uninstall (excludes .claude/reviews/ which may have user content)."""
+    return tuple(
+        item for item in _INSTALLABLE_ITEMS if item.item_type != "create_directory"
+    )
 
 
 class CodeReviewsSystemCapability(Capability):
@@ -106,32 +157,25 @@ class CodeReviewsSystemCapability(Capability):
 
         installed_items: list[str] = []
 
-        # 1. Install code-reviews.yml workflow
-        workflow_src = bundled_github_dir / "workflows" / "code-reviews.yml"
-        if workflow_src.exists():
-            workflow_dst = repo_root / ".github" / "workflows" / "code-reviews.yml"
-            workflow_dst.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(workflow_src, workflow_dst)
-            installed_items.append("code-reviews.yml")
+        for item in _INSTALLABLE_ITEMS:
+            target = repo_root / item.target_path
 
-        # 2. Install setup-claude-code action
-        action_src = bundled_github_dir / "actions" / "setup-claude-code"
-        if action_src.exists():
-            action_dst = repo_root / ".github" / "actions" / "setup-claude-code"
-            self._copy_directory(action_src, action_dst)
-            installed_items.append("setup-claude-code/")
+            if item.item_type == "file":
+                source = bundled_github_dir / item.source_path
+                if source.exists():
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(source, target)
+                    installed_items.append(item.display_name)
 
-        # 3. Install setup-claude-erk action
-        action_src = bundled_github_dir / "actions" / "setup-claude-erk"
-        if action_src.exists():
-            action_dst = repo_root / ".github" / "actions" / "setup-claude-erk"
-            self._copy_directory(action_src, action_dst)
-            installed_items.append("setup-claude-erk/")
+            elif item.item_type == "directory":
+                source = bundled_github_dir / item.source_path
+                if source.exists():
+                    self._copy_directory(source, target)
+                    installed_items.append(item.display_name)
 
-        # 4. Create empty .claude/reviews/ directory
-        reviews_dir = repo_root / ".claude" / "reviews"
-        reviews_dir.mkdir(parents=True, exist_ok=True)
-        installed_items.append(".claude/reviews/")
+            elif item.item_type == "create_directory":
+                target.mkdir(parents=True, exist_ok=True)
+                installed_items.append(item.display_name)
 
         if not installed_items:
             return CapabilityResult(
@@ -149,7 +193,10 @@ class CodeReviewsSystemCapability(Capability):
         )
 
     def uninstall(self, repo_root: Path | None) -> CapabilityResult:
-        """Remove the code-reviews-system workflow and actions."""
+        """Remove the code-reviews-system workflow and actions.
+
+        Note: .claude/reviews/ is not removed as it may contain user-installed reviews.
+        """
         if repo_root is None:
             return CapabilityResult(
                 success=False,
@@ -159,25 +206,16 @@ class CodeReviewsSystemCapability(Capability):
 
         removed: list[str] = []
 
-        # Remove workflow
-        workflow_file = repo_root / ".github" / "workflows" / "code-reviews.yml"
-        if workflow_file.exists():
-            workflow_file.unlink()
-            removed.append("code-reviews.yml")
+        for item in _get_uninstallable_items():
+            target = repo_root / item.target_path
 
-        # Remove setup-claude-code action
-        action_dir = repo_root / ".github" / "actions" / "setup-claude-code"
-        if action_dir.exists():
-            shutil.rmtree(action_dir)
-            removed.append("setup-claude-code/")
+            if item.item_type == "file" and target.exists():
+                target.unlink()
+                removed.append(item.display_name)
 
-        # Remove setup-claude-erk action
-        action_dir = repo_root / ".github" / "actions" / "setup-claude-erk"
-        if action_dir.exists():
-            shutil.rmtree(action_dir)
-            removed.append("setup-claude-erk/")
-
-        # Note: We don't remove .claude/reviews/ as it may contain user-installed reviews
+            elif item.item_type == "directory" and target.exists():
+                shutil.rmtree(target)
+                removed.append(item.display_name)
 
         remove_installed_capability(repo_root, self.name)
 
