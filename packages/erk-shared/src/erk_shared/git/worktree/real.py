@@ -155,11 +155,7 @@ class RealWorktree(Worktree):
 
     def is_branch_checked_out(self, repo_root: Path, branch: str) -> Path | None:
         """Check if a branch is already checked out in any worktree."""
-        worktrees = self.list_worktrees(repo_root)
-        for wt in worktrees:
-            if wt.branch == branch:
-                return wt.path
-        return None
+        return self.find_worktree_for_branch(repo_root, branch)
 
     def is_worktree_clean(self, worktree_path: Path) -> bool:
         """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
@@ -174,10 +170,8 @@ class RealWorktree(Worktree):
             text=True,
             check=False,
         )
-        # Exit code 0 means no changes, 1 means changes exist
-        if result.returncode not in (0, 1):
-            return False
-        if result.returncode == 1:
+        # Exit code 0 means no changes, non-zero means changes exist or error
+        if result.returncode != 0:
             return False
 
         # Check for untracked files
