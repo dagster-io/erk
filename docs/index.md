@@ -47,7 +47,7 @@ Task-focused recipes for specific goals.
 - [Use the Local Workflow](howto/local-workflow.md) - Plan, implement, and ship locally
 - [Run Remote Execution](howto/remote-execution.md) - Run implementations in GitHub Actions
 - [Checkout and Sync PRs](howto/pr-checkout-sync.md) - Review and iterate on PRs
-- [Resolve Merge Conflicts](howto/conflict-resolution.md) - Handle merge conflicts with AI assistance
+- [Automatic Merge Conflict Resolution](howto/conflict-resolution.md) - Handle merge conflicts with AI assistance
 - [Work Without Plans](howto/planless-workflow.md) - Quick changes without formal plans
 - [Extract Documentation](howto/documentation-extraction.md) - Capture patterns for future agents
 
@@ -76,7 +76,7 @@ Common questions and solutions.
 → [Checkout and Sync PRs](howto/pr-checkout-sync.md)
 
 **"My rebase has conflicts"**
-→ [Resolve Merge Conflicts](howto/conflict-resolution.md)
+→ [Automatic Merge Conflict Resolution](howto/conflict-resolution.md)
 
 **"I need quick iteration without planning"**
 → [Work Without Plans](howto/planless-workflow.md)

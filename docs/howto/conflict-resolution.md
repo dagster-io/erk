@@ -1,4 +1,4 @@
-# Resolve Merge Conflicts
+# Automatic Merge Conflict Resolution
 
 Handle merge conflicts with AI assistance.
 

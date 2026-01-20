@@ -13,7 +13,7 @@ How-to guides are **goal-oriented**. They provide practical steps to solve real-
 ## PR Operations
 
 - **[Checkout and Sync PRs](pr-checkout-sync.md)** - Review and iterate on existing PRs
-- **[Resolve Merge Conflicts](conflict-resolution.md)** - Handle merge conflicts with AI assistance
+- **[Automatic Merge Conflict Resolution](conflict-resolution.md)** - Handle merge conflicts with AI assistance
 
 ## Advanced
 
