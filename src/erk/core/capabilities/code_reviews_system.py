@@ -17,6 +17,8 @@ from functools import cache
 from pathlib import Path
 from typing import Literal
 
+from erk.artifacts.paths import get_bundled_github_dir
+from erk.artifacts.state import add_installed_capability, remove_installed_capability
 from erk.core.capabilities.base import (
     Capability,
     CapabilityArtifact,
@@ -144,10 +146,6 @@ class CodeReviewsSystemCapability(Capability):
                 success=False,
                 message="CodeReviewsSystemCapability requires repo_root",
             )
-        # Inline import: avoids circular dependency with artifacts module
-        from erk.artifacts.state import add_installed_capability
-        from erk.artifacts.sync import get_bundled_github_dir
-
         bundled_github_dir = get_bundled_github_dir()
 
         if not bundled_github_dir.exists():
@@ -203,8 +201,6 @@ class CodeReviewsSystemCapability(Capability):
                 success=False,
                 message="CodeReviewsSystemCapability requires repo_root",
             )
-        from erk.artifacts.state import remove_installed_capability
-
         removed: list[str] = []
 
         for item in _get_uninstallable_items():
