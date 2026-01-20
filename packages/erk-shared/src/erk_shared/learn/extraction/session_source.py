@@ -21,6 +21,7 @@ class SessionSource(ABC):
     - source_type: Identifier for the source (e.g., "local", "remote")
     - session_id: The Claude Code session ID
     - run_id: Optional GitHub Actions run ID (for remote sessions)
+    - path: Optional file path where the session is located
 
     Design note: Sessions are always processed locally (files on disk).
     This abstraction tracks the *origin* of those files, not where they
@@ -54,6 +55,30 @@ class SessionSource(ABC):
             Run ID string for remote sessions, None for local sessions
         """
 
+    @property
+    @abstractmethod
+    def path(self) -> str | None:
+        """Return the file path where the session is located.
+
+        Returns:
+            File path string for sessions with known locations, None otherwise.
+            For local sessions, this is populated when the session is discovered.
+            For remote sessions, this is None until the session is downloaded.
+        """
+
+    def to_dict(self) -> dict[str, str | None]:
+        """Serialize to a dictionary for JSON output.
+
+        Returns:
+            Dictionary with source_type, session_id, run_id, and path.
+        """
+        return {
+            "source_type": self.source_type,
+            "session_id": self.session_id,
+            "run_id": self.run_id,
+            "path": self.path,
+        }
+
 
 SessionSourceType = Literal["local", "remote"]
 
@@ -67,9 +92,11 @@ class LocalSessionSource(SessionSource):
 
     Attributes:
         _session_id: The Claude Code session ID
+        _path: Optional file path where the session is located
     """
 
     _session_id: str
+    _path: str | None = None
 
     @property
     def source_type(self) -> Literal["local"]:
@@ -85,6 +112,11 @@ class LocalSessionSource(SessionSource):
     def run_id(self) -> None:
         """Return None - local sessions have no run ID."""
         return None
+
+    @property
+    def path(self) -> str | None:
+        """Return the file path where the session is located."""
+        return self._path
 
 
 @dataclass(frozen=True)
@@ -120,3 +152,8 @@ class RemoteSessionSource(SessionSource):
     def run_id(self) -> str:
         """Return the GitHub Actions run ID."""
         return self._run_id
+
+    @property
+    def path(self) -> None:
+        """Return None - remote sessions don't have a local path until downloaded."""
+        return None

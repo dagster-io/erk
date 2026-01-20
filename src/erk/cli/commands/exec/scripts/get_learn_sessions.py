@@ -42,6 +42,7 @@ from erk_shared.context.helpers import (
     require_issues,
     require_repo_root,
 )
+from erk_shared.learn.extraction.session_source import LocalSessionSource
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.sessions.discovery import (
     SessionsForPlan,
@@ -66,6 +67,7 @@ class GetLearnSessionsResult:
     last_remote_impl_at: str | None
     last_remote_impl_run_id: str | None
     last_remote_impl_session_id: str | None
+    session_sources: list[dict[str, str | None]]
 
 
 @dataclass(frozen=True)
@@ -105,6 +107,7 @@ def _build_result(
     readable_session_ids: list[str],
     session_paths: list[str],
     local_session_ids: list[str],
+    session_sources: list[LocalSessionSource],
 ) -> GetLearnSessionsResult:
     """Build the result dataclass from session data."""
     return GetLearnSessionsResult(
@@ -119,6 +122,7 @@ def _build_result(
         last_remote_impl_at=sessions_for_plan.last_remote_impl_at,
         last_remote_impl_run_id=sessions_for_plan.last_remote_impl_run_id,
         last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
+        session_sources=[source.to_dict() for source in session_sources],
     )
 
 
@@ -157,6 +161,11 @@ def _discover_sessions(
     readable_session_ids = [sid for sid, _ in readable_sessions]
     session_paths = [str(path) for _, path in readable_sessions]
 
+    # Build session sources from readable sessions
+    session_sources: list[LocalSessionSource] = [
+        LocalSessionSource(_session_id=sid, _path=str(path)) for sid, path in readable_sessions
+    ]
+
     # Local session fallback: when GitHub has no tracked sessions, scan local sessions
     local_session_ids: list[str] = []
     if not readable_session_ids:
@@ -165,11 +174,12 @@ def _discover_sessions(
             cwd,
             limit=10,
         )
-        # Get paths for local sessions
+        # Get paths for local sessions and build session sources
         for sid in local_session_ids:
             path = claude_installation.get_session_path(cwd, sid)
             if path is not None:
                 session_paths.append(str(path))
+                session_sources.append(LocalSessionSource(_session_id=sid, _path=str(path)))
 
     return _build_result(
         issue_number=issue_number,
@@ -177,6 +187,7 @@ def _discover_sessions(
         readable_session_ids=readable_session_ids,
         session_paths=session_paths,
         local_session_ids=local_session_ids,
+        session_sources=session_sources,
     )
 
 

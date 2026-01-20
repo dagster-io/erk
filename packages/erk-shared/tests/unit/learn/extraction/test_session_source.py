@@ -29,6 +29,19 @@ class TestLocalSessionSource:
         source = LocalSessionSource(_session_id="test-session")
         assert source.run_id is None
 
+    def test_path_returns_none_by_default(self) -> None:
+        """path returns None when not provided."""
+        source = LocalSessionSource(_session_id="test-session")
+        assert source.path is None
+
+    def test_path_returns_provided_value(self) -> None:
+        """path returns the provided path."""
+        source = LocalSessionSource(
+            _session_id="test-session",
+            _path="/Users/test/.claude/sessions/test-session.jsonl",
+        )
+        assert source.path == "/Users/test/.claude/sessions/test-session.jsonl"
+
     def test_is_session_source_subclass(self) -> None:
         """LocalSessionSource is a SessionSource."""
         source = LocalSessionSource(_session_id="test")
@@ -43,6 +56,31 @@ class TestLocalSessionSource:
             raise AssertionError("Expected FrozenInstanceError")
         except AttributeError:
             pass  # Expected behavior
+
+    def test_to_dict_serializes_all_fields(self) -> None:
+        """to_dict() serializes all fields to a dictionary."""
+        source = LocalSessionSource(
+            _session_id="abc-123",
+            _path="/path/to/session.jsonl",
+        )
+        result = source.to_dict()
+        assert result == {
+            "source_type": "local",
+            "session_id": "abc-123",
+            "run_id": None,
+            "path": "/path/to/session.jsonl",
+        }
+
+    def test_to_dict_with_none_path(self) -> None:
+        """to_dict() works when path is None."""
+        source = LocalSessionSource(_session_id="abc-123")
+        result = source.to_dict()
+        assert result == {
+            "source_type": "local",
+            "session_id": "abc-123",
+            "run_id": None,
+            "path": None,
+        }
 
 
 class TestRemoteSessionSource:
@@ -63,6 +101,11 @@ class TestRemoteSessionSource:
         source = RemoteSessionSource(_session_id="test", _run_id="run-98765")
         assert source.run_id == "run-98765"
 
+    def test_path_is_none(self) -> None:
+        """path returns None for remote sessions (until downloaded)."""
+        source = RemoteSessionSource(_session_id="test", _run_id="123")
+        assert source.path is None
+
     def test_is_session_source_subclass(self) -> None:
         """RemoteSessionSource is a SessionSource."""
         source = RemoteSessionSource(_session_id="test", _run_id="123")
@@ -77,6 +120,17 @@ class TestRemoteSessionSource:
             raise AssertionError("Expected FrozenInstanceError")
         except AttributeError:
             pass  # Expected behavior
+
+    def test_to_dict_serializes_all_fields(self) -> None:
+        """to_dict() serializes all fields to a dictionary."""
+        source = RemoteSessionSource(_session_id="abc-123", _run_id="run-456")
+        result = source.to_dict()
+        assert result == {
+            "source_type": "remote",
+            "session_id": "abc-123",
+            "run_id": "run-456",
+            "path": None,
+        }
 
 
 class TestSessionSourcePolymorphism:
