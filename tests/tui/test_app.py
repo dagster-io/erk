@@ -942,7 +942,6 @@ class TestExecutePaletteCommandLandPR:
             ]
             assert "-f" in captured_command
 
-
     @pytest.mark.asyncio
     async def test_execute_palette_command_land_pr_with_no_branch(self) -> None:
         """Execute palette command land_pr does nothing if no pr_head_branch."""
