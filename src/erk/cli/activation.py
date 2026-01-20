@@ -190,6 +190,12 @@ if [ -f ./.env ]; then
   . ./.env
 fi
 set +a
+# Shell completion
+if [ -n "$BASH_VERSION" ]; then
+  eval "$(erk completion bash)"
+elif [ -n "$ZSH_VERSION" ]; then
+  eval "$(erk completion zsh)"
+fi
 {post_activation_section}# Optional: show where we are
 {final_message}
 """
