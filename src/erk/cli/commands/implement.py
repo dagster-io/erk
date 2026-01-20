@@ -14,6 +14,12 @@ from pathlib import Path
 import click
 
 from erk.cli.alias import alias
+from erk.cli.commands.codespace_executor import (
+    CodespaceNotFoundError,
+    execute_codespace_interactive,
+    execute_codespace_non_interactive,
+    resolve_codespace,
+)
 from erk.cli.commands.completions import complete_plan_files
 from erk.cli.commands.docker_executor import (
     execute_docker_interactive,
@@ -84,6 +90,7 @@ def _implement_from_issue(
     executor: ClaudeExecutor,
     docker: bool,
     docker_image: str,
+    codespace: str | None,
 ) -> None:
     """Implement feature from GitHub issue in current directory.
 
@@ -100,6 +107,8 @@ def _implement_from_issue(
         executor: Claude CLI executor for command execution
         docker: Whether to run in Docker container
         docker_image: Docker image to use
+        codespace: Optional codespace name (None if not using codespace mode,
+            empty string means use default codespace)
     """
     # Discover repo context for issue fetch
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -198,6 +207,34 @@ def _implement_from_issue(
                 image_name=docker_image,
                 model=model,
             )
+    elif codespace is not None:
+        # Codespace mode - run Claude in registered codespace
+        try:
+            # Resolve codespace (empty string means use default)
+            codespace_name = codespace if codespace else None
+            resolved_codespace = resolve_codespace(
+                ctx.codespace_registry,
+                name=codespace_name,
+            )
+        except CodespaceNotFoundError as e:
+            raise click.ClickException(str(e)) from e
+
+        if no_interactive:
+            commands = build_command_sequence(submit)
+            exit_code = execute_codespace_non_interactive(
+                codespace=resolved_codespace,
+                model=model,
+                commands=commands,
+                verbose=verbose,
+            )
+            if exit_code != 0:
+                raise SystemExit(exit_code)
+        else:
+            # Codespace interactive mode - replaces process
+            execute_codespace_interactive(
+                codespace=resolved_codespace,
+                model=model,
+            )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -235,6 +272,7 @@ def _implement_from_file(
     executor: ClaudeExecutor,
     docker: bool,
     docker_image: str,
+    codespace: str | None,
 ) -> None:
     """Implement feature from plan file in current directory.
 
@@ -253,6 +291,8 @@ def _implement_from_file(
         executor: Claude CLI executor for command execution
         docker: Whether to run in Docker container
         docker_image: Docker image to use
+        codespace: Optional codespace name (None if not using codespace mode,
+            empty string means use default codespace)
     """
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -323,6 +363,34 @@ def _implement_from_file(
                 image_name=docker_image,
                 model=model,
             )
+    elif codespace is not None:
+        # Codespace mode - run Claude in registered codespace
+        try:
+            # Resolve codespace (empty string means use default)
+            codespace_name = codespace if codespace else None
+            resolved_codespace = resolve_codespace(
+                ctx.codespace_registry,
+                name=codespace_name,
+            )
+        except CodespaceNotFoundError as e:
+            raise click.ClickException(str(e)) from e
+
+        if no_interactive:
+            commands = build_command_sequence(submit)
+            exit_code = execute_codespace_non_interactive(
+                codespace=resolved_codespace,
+                model=model,
+                commands=commands,
+                verbose=verbose,
+            )
+            if exit_code != 0:
+                raise SystemExit(exit_code)
+        else:
+            # Codespace interactive mode - replaces process
+            execute_codespace_interactive(
+                codespace=resolved_codespace,
+                model=model,
+            )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -365,6 +433,7 @@ def implement(
     model: str | None,
     docker: bool,
     docker_image: str,
+    codespace: str | None,
 ) -> None:
     """Create .impl/ folder from GitHub issue or plan file and execute implementation.
 
@@ -415,6 +484,14 @@ def implement(
     \b
       # Docker isolation mode (filesystem-isolated, safe to skip permissions)
       erk implement 123 --docker
+
+    \b
+      # Codespace isolation mode (remote execution in registered codespace)
+      erk implement 123 --codespace
+
+    \b
+      # Codespace with named codespace
+      erk implement 123 --codespace mybox
     """
     # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
     if yolo:
@@ -426,7 +503,13 @@ def implement(
     model = normalize_model_name(model)
 
     # Validate flag combinations
-    validate_flags(submit, no_interactive, script)
+    validate_flags(
+        submit=submit,
+        no_interactive=no_interactive,
+        script=script,
+        docker=docker,
+        codespace=codespace,
+    )
 
     # Auto-detect plan number from branch name when TARGET is omitted
     if target is None:
@@ -476,6 +559,7 @@ def implement(
             executor=ctx.claude_executor,
             docker=docker,
             docker_image=docker_image,
+            codespace=codespace,
         )
     else:
         plan_file = Path(target)
@@ -492,4 +576,5 @@ def implement(
             executor=ctx.claude_executor,
             docker=docker,
             docker_image=docker_image,
+            codespace=codespace,
         )

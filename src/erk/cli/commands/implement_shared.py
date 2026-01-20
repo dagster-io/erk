@@ -55,6 +55,7 @@ def implement_common_options(fn: F) -> F:
     - -m/--model: Model to use for Claude
     - --docker: Run Claude inside Docker container for filesystem isolation
     - --docker-image: Docker image to use (default: erk-local:latest)
+    - --codespace: Run Claude in registered codespace (uses default if name not provided)
 
     Example:
         @click.command("implement", cls=CommandWithHiddenOptions)
@@ -66,6 +67,14 @@ def implement_common_options(fn: F) -> F:
     """
     # Apply options in reverse order (Click decorators are applied bottom-up)
     # This results in options appearing in this order in --help
+    fn = click.option(
+        "--codespace",
+        type=str,
+        default=None,
+        is_flag=False,
+        flag_value="",  # Empty string means "use default"
+        help="Run Claude in registered codespace (uses default if name not provided)",
+    )(fn)
     fn = click.option(
         "--docker-image",
         type=str,
@@ -176,9 +185,12 @@ def determine_base_branch(ctx: ErkContext, repo_root: Path) -> str:
 
 
 def validate_flags(
+    *,
     submit: bool,
     no_interactive: bool,
     script: bool,
+    docker: bool,
+    codespace: str | None,
 ) -> None:
     """Validate flag combinations and raise ClickException if invalid.
 
@@ -186,6 +198,8 @@ def validate_flags(
         submit: Whether to auto-submit PR after implementation
         no_interactive: Whether to execute non-interactively
         script: Whether to output shell integration script
+        docker: Whether to run in Docker container
+        codespace: Optional codespace name (None if not using codespace mode)
 
     Raises:
         click.ClickException: If flag combination is invalid
@@ -204,6 +218,13 @@ def validate_flags(
             "--no-interactive and --script are mutually exclusive\n"
             "--script generates shell integration code for manual execution\n"
             "--no-interactive executes commands programmatically"
+        )
+
+    # --docker and --codespace are mutually exclusive
+    if docker and codespace is not None:
+        raise click.ClickException(
+            "--docker and --codespace are mutually exclusive\n"
+            "Choose either Docker container or codespace execution"
         )
 
 
