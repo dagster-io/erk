@@ -7,7 +7,6 @@ read_when:
   - "detecting root worktree"
   - "detecting worktree location"
   - "adding composing template methods to ABC"
-  - "implementing class __init__ with I/O operations"
 tripwires:
   - action: "passing dry_run boolean flags through business logic function parameters"
     warning: "Use dependency injection with DryRunGit/DryRunGitHub wrappers for multi-step workflows. Simple CLI preview flags at the command level are acceptable for single-action commands."
@@ -28,7 +27,7 @@ tripwires:
   - action: "injecting Time dependency into gateway real.py for lock-waiting or retry logic"
     warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
   - action: "adding file I/O, network calls, or subprocess invocations to a class __init__"
-    warning: "Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
+    warning: "Load `dignified-python` skill first. Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
 ---
 
 # Erk Architecture Patterns
@@ -134,68 +133,6 @@ if removed_current_worktree:
 - After `os.chdir()`, `ctx.cwd` becomes stale
 - Stale `ctx.cwd` causes `FileNotFoundError` in operations that use it
 - Regeneration creates NEW context with fresh `cwd` and `trunk_branch`
-
-## Lightweight **init** Pattern
-
-Class `__init__` methods should be lightweight and cheap - just data assignment. Heavy I/O operations belong in static factory methods.
-
-### Why
-
-- **Testability**: Tests can construct objects directly without I/O setup
-- **Predictability**: Instantiation has no side effects
-- **Explicit dependencies**: Heavy operations are visible at call sites
-- **Flexibility**: Multiple construction paths (from file, from dict, for testing)
-
-### Pattern
-
-```python
-class Registry:
-    def __init__(self, items: list[Item], default: str | None) -> None:
-        """Lightweight - just assigns data."""
-        self._items = {item.name: item for item in items}
-        self._default = default
-
-    @classmethod
-    def from_config_path(cls, path: Path) -> "Registry":
-        """Heavy I/O happens here, not in __init__."""
-        data = tomllib.loads(path.read_text())
-        items = [Item.from_dict(d) for d in data.get("items", [])]
-        return cls(items=items, default=data.get("default"))
-```
-
-### Anti-pattern
-
-```python
-# WRONG: __init__ does heavy I/O
-class Registry:
-    def __init__(self, config_path: Path) -> None:
-        data = tomllib.loads(config_path.read_text())  # Heavy I/O
-        self._items = ...
-```
-
-### When This Applies
-
-- Any class backed by file storage (TOML, JSON, etc.)
-- Any class that calls subprocess on construction
-- Any class that makes network requests on construction
-- Any class where tests need to verify behavior without I/O
-
-### Exceptions
-
-- Gateway `real.py` implementations may do I/O in methods (that's their purpose)
-- CLI commands that are thin wrappers around operations
-
-### Examples in Codebase
-
-**Correct** (follows pattern):
-
-- `ErkContext` dataclass - pure data, factories do the work
-- Gateway ABCs - implementations are lightweight, subprocess calls are in methods not init
-
-**Violations** (to be addressed separately):
-
-- `RealCodespaceRegistry` - loads from file in constructor
-- `RealPlannerRegistry` - similar pattern
 
 ## Subprocess Execution Wrappers
 
