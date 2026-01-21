@@ -15,19 +15,19 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 /erk:pr-address --all    # Include resolved threads (for reference)
 ```
 
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
 ## Agent Instructions
 
 > **CRITICAL: Use ONLY `erk exec` Commands**
 >
-> - ❌ DO NOT use raw `gh api` calls
-> - ❌ DO NOT use `gh pr` commands directly
-> - ✅ ONLY use `erk exec get-pr-review-comments`, `erk exec resolve-review-thread`, etc.
->
-> The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+> See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
 
 ### Phase 1: Fetch & Analyze
 
-#### Step 1.1: Fetch All Comments
+#### Step 1: Fetch All Comments
 
 Run both CLI commands to get review comments AND discussion comments:
 
@@ -36,56 +36,11 @@ erk exec get-pr-review-comments
 erk exec get-pr-discussion-comments
 ```
 
-**Review Comments JSON:**
-
-```json
-{
-  "success": true,
-  "pr_number": 123,
-  "pr_url": "https://github.com/owner/repo/pull/123",
-  "pr_title": "Feature: Add new capability",
-  "threads": [
-    {
-      "id": "PRRT_abc123",
-      "path": "src/foo.py",
-      "line": 42,
-      "is_outdated": false,
-      "comments": [
-        {
-          "author": "reviewer",
-          "body": "This should use LBYL pattern instead of try/except",
-          "created_at": "2024-01-01T10:00:00Z"
-        }
-      ]
-    }
-  ]
-}
-```
-
-**Discussion Comments JSON:**
-
-```json
-{
-  "success": true,
-  "pr_number": 123,
-  "pr_url": "https://github.com/owner/repo/pull/123",
-  "pr_title": "Feature: Add new capability",
-  "comments": [
-    {
-      "id": 12345,
-      "author": "reviewer",
-      "body": "Please also update the docs",
-      "url": "https://github.com/owner/repo/pull/123#issuecomment-12345"
-    }
-  ]
-}
-```
-
-#### Step 1.2: Handle No Comments Case
+#### Step 2: Handle No Comments Case
 
 If both `threads` is empty AND `comments` is empty, display: "No unresolved review comments or discussion comments on PR #123."
 
-#### Step 1.3: Holistic Analysis
+#### Step 3: Holistic Analysis
 
 Analyze ALL comments together to understand relationships and complexity. Classify each comment:
 
@@ -94,7 +49,7 @@ Analyze ALL comments together to understand relationships and complexity. Classi
 - **Cross-cutting**: Single comment → changes across multiple files
 - **Related comments**: Multiple comments that inform a single unified change (e.g., two comments about the same refactor)
 
-#### Step 1.4: Batch and Prioritize
+#### Step 4: Batch and Prioritize
 
 Group comments into batches ordered by complexity (simplest first):
 
@@ -148,7 +103,7 @@ Show the user the batched execution plan:
 
 For each batch, execute this workflow:
 
-#### Step 3.1: Address All Comments in the Batch
+#### Step 1: Address All Comments in the Batch
 
 For each comment in the batch:
 
@@ -187,12 +142,6 @@ Automated review bots (like `dignified-python-review`, linters, or security scan
    - Reference specific line numbers where the correct pattern already exists
    - Resolve the thread
 
-**Example reply for a false positive:**
-
-```bash
-erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "False positive: The LBYL check the bot is requesting already exists on line 344 where we check \`.exists()\` before the operation on line 353. No code change needed."
-```
-
 **For Outdated Review Threads** (`is_outdated: true`):
 
 Outdated threads have `line: null` because the code has changed since the comment was made.
@@ -200,13 +149,13 @@ Outdated threads have `line: null` because the code has changed since the commen
 1. **Read the file** at the path (ignore line number - search for relevant code)
 2. **Check if the issue is already fixed** in the current code
 3. **Take action:**
-   - If already fixed → Proceed directly to Step 3.4 to resolve the thread
-   - If not fixed → Apply the fix, then proceed to Step 3.4
+   - If already fixed → Proceed directly to Step 4 to resolve the thread
+   - If not fixed → Apply the fix, then proceed to Step 4
 
 **IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
 Do not skip resolution just because no code change was needed.
 
-#### Step 3.2: Run CI Checks
+#### Step 2: Run CI Checks
 
 After making all changes in the batch:
 
@@ -217,7 +166,7 @@ After making all changes in the batch:
 
 If CI fails, fix the issues before proceeding.
 
-#### Step 3.3: Commit the Batch
+#### Step 3: Commit the Batch
 
 Create a single commit for all changes in the batch:
 
@@ -230,65 +179,17 @@ git commit -m "Address PR review comments (batch N/M)
 ..."
 ```
 
-#### Step 3.4: Resolve All Threads in the Batch (MANDATORY)
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
 
 **This step is NOT optional.** Every thread must be resolved using `erk exec resolve-review-thread`.
 
-> **IMPORTANT: Replying ≠ Resolving**
->
-> - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
-> - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
->
-> Always use `erk exec resolve-review-thread` - it does both in one operation.
+After committing, resolve each review thread and mark each discussion comment.
 
-After committing, resolve each review thread and mark each discussion comment:
+**For Review Threads** - use `erk exec resolve-review-thread` (see `pr-operations` skill for examples).
 
-**For Review Threads:**
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with a substantive reply that quotes the original comment and explains what action was taken.
 
-```bash
-erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Resolved via /erk:pr-address at $(date '+%Y-%m-%d %I:%M %p %Z')"
-```
-
-**Resolving already-fixed outdated threads:**
-
-```bash
-erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Already addressed in current code - this outdated thread can be resolved."
-```
-
-**For Discussion Comments:**
-
-Post a substantive reply that quotes the original comment and explains what action was taken:
-
-```bash
-erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** <substantive summary>"
-```
-
-**Writing substantive replies:**
-
-The `--reply` argument should include meaningful findings, not just generic acknowledgments:
-
-❌ **Bad (too generic):**
-
-```bash
---reply "**Action taken:** Noted for future consideration."
---reply "**Action taken:** Added to backlog."
-```
-
-✅ **Good (includes investigation findings):**
-
-```bash
---reply "**Action taken:** Investigated the gateway pattern suggestion. The current artifact sync implementation uses direct function calls rather than a gateway ABC pattern. This is intentional - artifact operations are file-based and don't require the testability benefits of gateway injection that external APIs need. Filed as backlog consideration for if we add remote artifact fetching."
-```
-
-✅ **Good (explains why no code change):**
-
-```bash
---reply "**Action taken:** Reviewed the suggestion to add caching here. After checking the call sites, this function is only called once per CLI invocation (in main.py:45), so caching wouldn't provide measurable benefit. The perceived slowness is actually from the subprocess call inside, not repeated invocations."
-```
-
-The reply becomes a permanent record in the PR - make it useful for future readers who wonder "what happened with this feedback?"
-
-#### Step 3.5: Report Progress
+#### Step 5: Report Progress
 
 After completing the batch, report:
 
@@ -311,7 +212,7 @@ Then proceed to the next batch.
 
 After all batches complete:
 
-#### Step 4.1: Verify All Threads Resolved
+#### Step 1: Verify All Threads Resolved
 
 Re-fetch comments to confirm nothing was missed:
 
@@ -322,7 +223,7 @@ erk exec get-pr-discussion-comments
 
 If any unresolved threads remain, report them.
 
-#### Step 4.2: Report Summary
+#### Step 2: Report Summary
 
 ```
 ## All PR Comments Addressed
@@ -340,7 +241,7 @@ Next steps:
 3. Request re-review if needed
 ```
 
-#### Step 4.3: Handle Any Skipped Comments
+#### Step 3: Handle Any Skipped Comments
 
 If the user explicitly skipped any comments during the process, list them:
 
@@ -349,14 +250,9 @@ If the user explicitly skipped any comments during the process, list them:
 - #5: src/legacy.py:100 - "Refactor this module" (user deferred)
 ```
 
-### Common Mistakes to Avoid
+### Common Mistakes
 
-| Mistake                                        | Why It's Wrong                    | Correct Approach                      |
-| ---------------------------------------------- | --------------------------------- | ------------------------------------- |
-| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve     | Use `erk exec resolve-review-thread`  |
-| Using `gh pr comment`                          | Doesn't resolve threads           | Use `erk exec resolve-review-thread`  |
-| Skipping resolution for outdated threads       | Threads stay open in PR           | Always resolve, even if already fixed |
-| Not re-fetching after resolution               | Can't verify all threads resolved | Always run Step 4.1 verification      |
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
 
 ### Error Handling
 
