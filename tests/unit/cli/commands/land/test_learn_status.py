@@ -101,8 +101,6 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
 
     When user chooses option 2 (continue without learning), the function returns normally.
     """
-    import click
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
@@ -218,8 +216,6 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
     no-op activation script path before exiting.
     This prevents 'cat: : No such file or directory' errors in land.sh.
     """
-    import click
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
