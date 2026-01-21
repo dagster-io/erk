@@ -18,7 +18,7 @@ from typing import Literal, NamedTuple
 
 import click
 
-from erk.cli.activation import print_temp_script_instructions, render_activation_script
+from erk.cli.activation import render_activation_script
 from erk.cli.commands.navigation_helpers import (
     activate_root_repo,
     activate_worktree,
