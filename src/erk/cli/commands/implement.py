@@ -146,7 +146,7 @@ def _implement_from_issue(
             no_interactive=no_interactive,
             submit=submit,
             verbose=verbose,
-            issue_number=issue_number,
+            command_arg=issue_number,
         )
         return
 
