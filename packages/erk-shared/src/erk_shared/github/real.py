@@ -13,6 +13,7 @@ Error Handling Philosophy:
 import json
 import secrets
 import string
+import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -2032,8 +2033,6 @@ query {{
 
         Uses `gh gist create` command.
         """
-        import tempfile
-
         # Write content to a temp file (gh gist create reads from files)
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=f"_{filename}", delete=False, encoding="utf-8"
