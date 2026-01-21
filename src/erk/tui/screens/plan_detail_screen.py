@@ -327,13 +327,13 @@ class PlanDetailScreen(ModalScreen):
             self._copy_and_notify(cmd)
 
     def action_copy_prepare(self) -> None:
-        """Copy basic prepare command to clipboard."""
-        cmd = f"erk prepare {self._row.issue_number}"
+        """Copy prepare command with shell integration to clipboard."""
+        cmd = f"source <(erk prepare {self._row.issue_number} --script)"
         self._copy_and_notify(cmd)
 
     def action_copy_prepare_dangerous(self) -> None:
-        """Copy prepare --dangerous command to clipboard."""
-        cmd = f"erk prepare {self._row.issue_number} --dangerous"
+        """Copy prepare --dangerous command with shell integration to clipboard."""
+        cmd = f"source <(erk prepare {self._row.issue_number} --dangerous --script)"
         self._copy_and_notify(cmd)
 
     def action_copy_prepare_activate(self) -> None:
@@ -621,12 +621,12 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_prepare":
-            cmd = f"erk prepare {row.issue_number}"
+            cmd = f"source <(erk prepare {row.issue_number} --script)"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_prepare_dangerous":
-            cmd = f"erk prepare {row.issue_number} --dangerous"
+            cmd = f"source <(erk prepare {row.issue_number} --dangerous --script)"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
@@ -772,12 +772,12 @@ class PlanDetailScreen(ModalScreen):
                     yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
             # Prepare commands
-            prepare_cmd = f"erk prepare {self._row.issue_number}"
+            prepare_cmd = f"source <(erk prepare {self._row.issue_number} --script)"
             with Container(classes="command-row"):
                 yield Label("[1]", classes="command-key")
                 yield CopyableLabel(prepare_cmd, prepare_cmd)
 
-            dangerous_cmd = f"erk prepare {self._row.issue_number} --dangerous"
+            dangerous_cmd = f"source <(erk prepare {self._row.issue_number} --dangerous --script)"
             with Container(classes="command-row"):
                 yield Label("[2]", classes="command-key")
                 yield CopyableLabel(dangerous_cmd, dangerous_cmd)

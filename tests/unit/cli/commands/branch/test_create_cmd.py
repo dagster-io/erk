@@ -770,3 +770,68 @@ def test_branch_create_uses_trunk_when_on_trunk() -> None:
         cwd, branch, parent = graphite_ops.track_branch_calls[0]
         assert branch == "new-feature"
         assert parent == "main"
+
+
+def test_branch_create_for_plan_with_script_outputs_temp_file_path(tmp_path) -> None:
+    """Test that --for-plan --script outputs temp script path for shell integration."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Create a plan with erk-plan label
+        now = TEST_PLAN_TIMESTAMP
+        plan = Plan(
+            plan_identifier="321",
+            title="Script test feature",
+            body="# Plan\nTest script mode",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/321",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            metadata={},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"321": plan})
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
+        )
+
+        result = runner.invoke(
+            cli,
+            ["br", "create", "--for-plan", "321", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        # Script mode outputs ONLY the temp file path (for `source <(...)` usage)
+        # Should NOT have "To activate" instructions
+        assert "To activate" not in result.output
+        # Output should end with a temp file path
+        output_lines = result.output.strip().split("\n")
+        # The script path should be somewhere in the output
+        assert any("/tmp/" in line or ".sh" in line for line in output_lines)
+
+        # Verify .impl/ folder was still created
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        impl_folder = worktree_path / ".impl"
+        assert impl_folder.exists()
+        assert (impl_folder / "plan.md").exists()

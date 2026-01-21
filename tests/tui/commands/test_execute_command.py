@@ -96,22 +96,22 @@ class TestExecuteCommandCopyCommands:
         assert "Copied: erk pr co 456" in executor.notifications
 
     def test_copy_prepare_copies_command(self) -> None:
-        """copy_prepare copies the prepare command."""
+        """copy_prepare copies the prepare command with shell integration."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_prepare")
-        assert executor.copied_texts == ["erk prepare 123"]
-        assert "Copied: erk prepare 123" in executor.notifications
+        assert executor.copied_texts == ["source <(erk prepare 123 --script)"]
+        assert "Copied: source <(erk prepare 123 --script)" in executor.notifications
 
     def test_copy_prepare_dangerous_copies_command(self) -> None:
-        """copy_prepare_dangerous copies the dangerous prepare command."""
+        """copy_prepare_dangerous copies the dangerous prepare command with shell integration."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
         screen.execute_command("copy_prepare_dangerous")
-        assert executor.copied_texts == ["erk prepare 123 --dangerous"]
-        assert "Copied: erk prepare 123 --dangerous" in executor.notifications
+        assert executor.copied_texts == ["source <(erk prepare 123 --dangerous --script)"]
+        assert "Copied: source <(erk prepare 123 --dangerous --script)" in executor.notifications
 
     def test_copy_submit_copies_command(self) -> None:
         """copy_submit copies the submit command."""
