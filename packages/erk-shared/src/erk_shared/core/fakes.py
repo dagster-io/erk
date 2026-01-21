@@ -6,7 +6,6 @@ don't need the real erk implementations.
 
 from collections.abc import Iterator
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
 from typing import NamedTuple
 
@@ -18,7 +17,6 @@ from erk_shared.core.claude_executor import (
 )
 from erk_shared.core.codespace_registry import CodespaceRegistry, RegisteredCodespace
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
-from erk_shared.core.planner_registry import PlannerRegistry, RegisteredPlanner
 from erk_shared.core.script_writer import ScriptResult, ScriptWriter
 from erk_shared.github.types import GitHubRepoLocation
 
@@ -210,74 +208,6 @@ class FakeScriptWriter(ScriptWriter):
         )
         self.written_scripts.append(result)
         return result
-
-
-@dataclass
-class FakePlannerRegistry(PlannerRegistry):
-    """Fake PlannerRegistry for testing.
-
-    Stores planners in memory.
-    """
-
-    planners: dict[str, RegisteredPlanner] = field(default_factory=dict)
-    default_name: str | None = None
-
-    def list_planners(self) -> list[RegisteredPlanner]:
-        return list(self.planners.values())
-
-    def get(self, name: str) -> RegisteredPlanner | None:
-        return self.planners.get(name)
-
-    def get_default(self) -> RegisteredPlanner | None:
-        if self.default_name is None:
-            return None
-        return self.planners.get(self.default_name)
-
-    def get_default_name(self) -> str | None:
-        return self.default_name
-
-    def set_default(self, name: str) -> None:
-        if name not in self.planners:
-            raise ValueError(f"No planner with name '{name}' exists")
-        self.default_name = name
-
-    def register(self, planner: RegisteredPlanner) -> None:
-        if planner.name in self.planners:
-            raise ValueError(f"Planner with name '{planner.name}' already exists")
-        self.planners[planner.name] = planner
-
-    def unregister(self, name: str) -> None:
-        if name not in self.planners:
-            raise ValueError(f"No planner with name '{name}' exists")
-        del self.planners[name]
-        if self.default_name == name:
-            self.default_name = None
-
-    def mark_configured(self, name: str) -> None:
-        if name not in self.planners:
-            raise ValueError(f"No planner with name '{name}' exists")
-        planner = self.planners[name]
-        self.planners[name] = RegisteredPlanner(
-            name=planner.name,
-            gh_name=planner.gh_name,
-            repository=planner.repository,
-            configured=True,
-            registered_at=planner.registered_at,
-            last_connected_at=planner.last_connected_at,
-        )
-
-    def update_last_connected(self, name: str, timestamp: datetime) -> None:
-        if name not in self.planners:
-            raise ValueError(f"No planner with name '{name}' exists")
-        planner = self.planners[name]
-        self.planners[name] = RegisteredPlanner(
-            name=planner.name,
-            gh_name=planner.gh_name,
-            repository=planner.repository,
-            configured=planner.configured,
-            registered_at=planner.registered_at,
-            last_connected_at=timestamp,
-        )
 
 
 @dataclass

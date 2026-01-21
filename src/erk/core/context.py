@@ -18,7 +18,6 @@ from erk.core.claude_executor import RealClaudeExecutor
 from erk.core.codespace.registry_real import RealCodespaceRegistry
 from erk.core.completion import RealCompletion
 from erk.core.implementation_queue.github.real import RealGitHubAdmin
-from erk.core.planner.registry_real import RealPlannerRegistry
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.plan_list_service import RealPlanListService
@@ -39,7 +38,6 @@ from erk_shared.core.claude_executor import ClaudeExecutor
 from erk_shared.core.codespace_registry import CodespaceRegistry
 from erk_shared.core.fakes import FakePlanListService
 from erk_shared.core.plan_list_service import PlanListService
-from erk_shared.core.planner_registry import PlannerRegistry
 from erk_shared.core.script_writer import ScriptWriter
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.codespace.real import RealCodespace
@@ -99,7 +97,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from tests.fakes.script_writer import FakeScriptWriter
 
     from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-    from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -139,7 +136,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         erk_installation=FakeErkInstallation(),
         script_writer=FakeScriptWriter(),
         plan_list_service=FakePlanListService(),
-        planner_registry=FakePlannerRegistry(),
         codespace_registry=FakeCodespaceRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
         prompt_executor=FakePromptExecutor(),
@@ -170,7 +166,6 @@ def context_for_test(
     erk_installation: ErkInstallation | None = None,
     script_writer: ScriptWriter | None = None,
     plan_list_service: PlanListService | None = None,
-    planner_registry: PlannerRegistry | None = None,
     codespace_registry: CodespaceRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
@@ -220,7 +215,6 @@ def context_for_test(
     from tests.test_utils.paths import sentinel_path
 
     from erk.core.codespace.registry_fake import FakeCodespaceRegistry
-    from erk.core.planner.registry_fake import FakePlannerRegistry
     from erk_shared.gateway.codespace.fake import FakeCodespace
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
@@ -309,9 +303,6 @@ def context_for_test(
         # so that tests get realistic behavior when testing plan list functionality
         plan_list_service = RealPlanListService(github, issues)
 
-    if planner_registry is None:
-        planner_registry = FakePlannerRegistry()
-
     if codespace_registry is None:
         codespace_registry = FakeCodespaceRegistry()
 
@@ -360,7 +351,6 @@ def context_for_test(
         erk_installation=erk_installation,
         script_writer=script_writer,
         plan_list_service=plan_list_service,
-        planner_registry=planner_registry,
         codespace_registry=codespace_registry,
         claude_installation=claude_installation,
         prompt_executor=prompt_executor,
@@ -580,7 +570,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         erk_installation=erk_installation,
         script_writer=RealScriptWriter(),
         plan_list_service=plan_list_service,
-        planner_registry=RealPlannerRegistry(erk_installation.get_planners_config_path()),
         codespace_registry=RealCodespaceRegistry.from_config_path(
             erk_installation.get_codespaces_config_path()
         ),
