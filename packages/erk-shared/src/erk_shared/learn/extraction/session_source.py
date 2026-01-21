@@ -118,7 +118,7 @@ class LocalSessionSource(SessionSource):
     _session_id: str
     _path: str | None
 
-    def __init__(self, *, session_id: str, path: str | None = None) -> None:
+    def __init__(self, *, session_id: str, path: str | None) -> None:
         self._session_id = session_id
         self._path = path
 
@@ -175,8 +175,8 @@ class RemoteSessionSource(SessionSource):
         self,
         *,
         session_id: str,
-        run_id: str | None = None,
-        path: str | None = None,
+        run_id: str | None,
+        path: str | None,
         gist_url: str | None,
     ) -> None:
         self._session_id = session_id
