@@ -6,7 +6,7 @@
 # "GitHub Actions is not permitted to create or approve pull requests"
 
 name: learn-dispatch
-run-name: "Learn: #${{ github.event_name == 'workflow_dispatch' && inputs.issue_number || github.event.issue.number }}"
+run-name: "${{ github.event_name == 'workflow_dispatch' && format('{0}:{1}', inputs.issue_number, inputs.distinct_id) || format('Learn: #{0}', github.event.issue.number) }}"
 
 on:
   issues:
@@ -15,6 +15,10 @@ on:
     inputs:
       issue_number:
         description: "Issue number to process"
+        required: true
+        type: string
+      distinct_id:
+        description: "Unique identifier for run discovery (base36)"
         required: true
         type: string
       model_name:
