@@ -71,6 +71,7 @@ Quick reference for all `erk exec` subcommands.
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
 | `slot-objective`                  | Get the last objective issue for the current slot.                        |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
+| `trigger-async-learn`             | Trigger async learn workflow for a plan issue.                            |
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                      |
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
@@ -824,6 +825,18 @@ Track learn evaluation completion on a plan issue.
 | Flag           | Type | Required | Default | Description                                                  |
 | -------------- | ---- | -------- | ------- | ------------------------------------------------------------ |
 | `--session-id` | TEXT | No       | -       | Session ID for tracking (passed from Claude session context) |
+
+### trigger-async-learn
+
+Trigger async learn workflow for a plan issue.
+
+**Usage:** `erk exec trigger-async-learn` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
 
 ### tripwires-reminder-hook
 
