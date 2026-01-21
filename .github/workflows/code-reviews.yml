@@ -103,4 +103,5 @@ jobs:
           echo "Running review: $REVIEW_NAME"
           erk exec run-review \
             --name "$REVIEW_NAME" \
-            --pr-number ${{ github.event.pull_request.number }}
+            --pr-number ${{ github.event.pull_request.number }} \
+            --reviews-dir .github/reviews

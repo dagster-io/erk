@@ -235,6 +235,19 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
 
+      - name: Update plan header with session artifact location
+        if: always() && steps.session.outputs.session_id
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          RUN_ID: ${{ github.run_id }}
+          SESSION_ID: ${{ steps.session.outputs.session_id }}
+        run: |
+          erk exec update-plan-remote-session \
+            --issue-number "$ISSUE_NUMBER" \
+            --run-id "$RUN_ID" \
+            --session-id "$SESSION_ID"
+
       - name: Validate implementation produced changes
         if: steps.implement.outputs.implementation_success == 'true'
         run: |
