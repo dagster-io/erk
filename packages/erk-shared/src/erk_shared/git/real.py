@@ -588,9 +588,15 @@ class RealGit(Git):
         return Path(result.stdout.strip())
 
     def get_diff_to_branch(self, cwd: Path, branch: str) -> str:
-        """Get diff between branch and HEAD."""
+        """Get diff between branch and HEAD.
+
+        Uses two-dot syntax (branch..HEAD) to compare the actual tree states,
+        not the merge-base. This is correct for PR diffs because it shows
+        "what will change when merged" rather than "all changes since the
+        merge-base" which can include rebased commits with different SHAs.
+        """
         result = run_subprocess_with_context(
-            cmd=["git", "diff", f"{branch}...HEAD"],
+            cmd=["git", "diff", f"{branch}..HEAD"],
             operation_context=f"get diff to branch '{branch}'",
             cwd=cwd,
         )
