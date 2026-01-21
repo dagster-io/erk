@@ -418,14 +418,14 @@ def test_check_learn_status_completed_shows_success(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Test that learn_status='completed' in plan header shows success message."""
+    """Test that completed learn_status in plan header shows success message."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
     issue_number = 123
 
-    # Create issue with learn_status=completed in plan header
-    issue_body = format_plan_header_body_for_test(learn_status="completed")
+    # Create issue with learn_status=completed_no_plan in plan header
+    issue_body = format_plan_header_body_for_test(learn_status="completed_no_plan")
     issue = create_test_issue(
         number=issue_number,
         title="Test plan",
@@ -435,12 +435,14 @@ def test_check_learn_status_completed_shows_success(
 
     fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
-    # Mock find_sessions_for_plan - should NOT be called when learn_status=completed
+    # Mock find_sessions_for_plan - should NOT be called when learn_status is completed
     find_sessions_called = []
 
     def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
         find_sessions_called.append(True)
-        raise AssertionError("Should not call find_sessions_for_plan when learn_status=completed")
+        raise AssertionError(
+            "Should not call find_sessions_for_plan when learn_status is completed"
+        )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 

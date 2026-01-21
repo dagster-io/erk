@@ -104,6 +104,27 @@ class RealGitHubIssues(GitHubIssues):
             url=url,
         )
 
+    def issue_exists(self, repo_root: Path, number: int) -> bool:
+        """Check if an issue exists using gh CLI REST API.
+
+        Uses REST API HEAD request to check existence without fetching full data.
+        Returns False for 404, True for 200.
+        """
+        # GH-API-AUDIT: REST - GET issues/{number} (existence check)
+        base_cmd = [
+            "gh",
+            "api",
+            f"repos/{{owner}}/{{repo}}/issues/{number}",
+            "--silent",
+        ]
+        cmd = self._build_gh_command(base_cmd)
+        try:
+            execute_gh_command(cmd, repo_root)
+            return True
+        except RuntimeError:
+            # Issue not found (404) or other error
+            return False
+
     def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
         """Fetch issue data using gh CLI REST API.
 

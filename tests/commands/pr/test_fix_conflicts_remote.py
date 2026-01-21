@@ -11,10 +11,10 @@ from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import format_plan_header_body
 from erk_shared.github.types import PRDetails, PullRequestInfo
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_pr_info(
@@ -503,28 +503,9 @@ def test_fix_conflicts_remote_updates_dispatch_metadata_for_plan_branch(tmp_path
         branch_name = "P123-fix-auth-bug-01-15-1430"
 
         # Create plan issue with plan-header block
-        plan_body = format_plan_header_body(
+        plan_body = format_plan_header_body_for_test(
             created_at="2024-01-15T14:30:00Z",
             created_by="testuser",
-            worktree_name=None,
-            branch_name=None,
-            plan_comment_id=None,
-            last_dispatched_run_id=None,
-            last_dispatched_node_id=None,
-            last_dispatched_at=None,
-            last_local_impl_at=None,
-            last_local_impl_event=None,
-            last_local_impl_session=None,
-            last_local_impl_user=None,
-            last_remote_impl_at=None,
-            last_remote_impl_run_id=None,
-            last_remote_impl_session_id=None,
-            source_repo=None,
-            objective_issue=None,
-            created_from_session=None,
-            last_learn_session=None,
-            last_learn_at=None,
-            learn_status=None,
         )
         plan_issue = _make_issue_info(123, plan_body, title="Fix auth bug", state="OPEN")
         issues_gateway = FakeGitHubIssues(issues={123: plan_issue})

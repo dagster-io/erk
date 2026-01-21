@@ -12,10 +12,8 @@ from erk.cli.commands.exec.scripts.update_plan_remote_session import (
 from erk_shared.context.context import ErkContext
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
-from erk_shared.github.metadata.plan_header import (
-    find_metadata_block,
-    format_plan_header_body,
-)
+from erk_shared.github.metadata.core import find_metadata_block
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_plan_issue(
@@ -24,28 +22,10 @@ def _make_plan_issue(
 ) -> IssueInfo:
     """Create a test IssueInfo with plan-header metadata."""
     now = datetime.now(UTC)
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at=now.isoformat(),
         created_by="testuser",
-        worktree_name=None,
         branch_name="test-branch",
-        plan_comment_id=None,
-        last_dispatched_run_id=None,
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
-        last_local_impl_at=None,
-        last_local_impl_event=None,
-        last_local_impl_session=None,
-        last_local_impl_user=None,
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
-        source_repo=None,
-        objective_issue=None,
-        created_from_session=None,
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
     )
     return IssueInfo(
         number=number,
@@ -173,28 +153,19 @@ def test_update_plan_remote_session_missing_plan_header(tmp_path: Path) -> None:
 def test_update_plan_remote_session_preserves_existing_fields(tmp_path: Path) -> None:
     """Test that updating remote session preserves other plan-header fields."""
     now = datetime.now(UTC)
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at=now.isoformat(),
         created_by="original-user",
         worktree_name="my-worktree",
         branch_name="feature-branch",
-        plan_comment_id=None,
         last_dispatched_run_id="old-dispatch-123",
-        last_dispatched_node_id=None,
-        last_dispatched_at=None,
         last_local_impl_at="2024-01-15T10:00:00Z",
         last_local_impl_event="ended",
         last_local_impl_session="local-session-xyz",
         last_local_impl_user="localuser",
-        last_remote_impl_at=None,
-        last_remote_impl_run_id=None,
-        last_remote_impl_session_id=None,
         source_repo="owner/repo",
         objective_issue=100,
         created_from_session="create-session-123",
-        last_learn_session=None,
-        last_learn_at=None,
-        learn_status=None,
     )
     issue = IssueInfo(
         number=42,

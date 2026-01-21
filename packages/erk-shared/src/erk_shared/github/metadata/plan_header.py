@@ -44,7 +44,10 @@ from erk_shared.github.metadata.schemas import (
     LAST_SESSION_GIST_URL,
     LAST_SESSION_ID,
     LAST_SESSION_SOURCE,
+    LEARN_PLAN_ISSUE,
+    LEARN_PLAN_PR,
     LEARN_STATUS,
+    LEARNED_FROM_ISSUE,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
     SCHEMA_VERSION,
@@ -80,6 +83,9 @@ def create_plan_header_block(
     last_learn_session: str | None,
     last_learn_at: str | None,
     learn_status: LearnStatusValue | None,
+    learn_plan_issue: int | None,
+    learn_plan_pr: int | None,
+    learned_from_issue: int | None,
 ) -> MetadataBlock:
     """Create a plan-header metadata block with validation.
 
@@ -104,7 +110,10 @@ def create_plan_header_block(
         created_from_session: Optional session ID that created this plan (for learn discovery)
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
-        learn_status: Optional learning workflow status ("pending" or "completed")
+        learn_status: Optional learning workflow status
+        learn_plan_issue: Optional issue number of generated learn plan
+        learn_plan_pr: Optional PR number that implemented the learn plan
+        learned_from_issue: Optional parent plan issue number (for learn plans)
 
     Returns:
         MetadataBlock with plan-header schema
@@ -159,6 +168,18 @@ def create_plan_header_block(
     if learn_status is not None:
         data[LEARN_STATUS] = learn_status
 
+    # Include learn_plan_issue if provided
+    if learn_plan_issue is not None:
+        data[LEARN_PLAN_ISSUE] = learn_plan_issue
+
+    # Include learn_plan_pr if provided
+    if learn_plan_pr is not None:
+        data[LEARN_PLAN_PR] = learn_plan_pr
+
+    # Include learned_from_issue if provided
+    if learned_from_issue is not None:
+        data[LEARNED_FROM_ISSUE] = learned_from_issue
+
     return create_metadata_block(
         key=schema.get_key(),
         data=data,
@@ -189,6 +210,9 @@ def format_plan_header_body(
     last_learn_session: str | None,
     last_learn_at: str | None,
     learn_status: LearnStatusValue | None,
+    learn_plan_issue: int | None,
+    learn_plan_pr: int | None,
+    learned_from_issue: int | None,
 ) -> str:
     """Format issue body with only metadata (schema version 2).
 
@@ -216,7 +240,10 @@ def format_plan_header_body(
         created_from_session: Optional session ID that created this plan (for learn discovery)
         last_learn_session: Optional session ID that last invoked learn
         last_learn_at: Optional ISO 8601 timestamp of last learn invocation
-        learn_status: Optional learning workflow status ("pending" or "completed")
+        learn_status: Optional learning workflow status
+        learn_plan_issue: Optional issue number of generated learn plan
+        learn_plan_pr: Optional PR number that implemented the learn plan
+        learned_from_issue: Optional parent plan issue number (for learn plans)
 
     Returns:
         Issue body string with metadata block only
@@ -243,6 +270,9 @@ def format_plan_header_body(
         last_learn_session=last_learn_session,
         last_learn_at=last_learn_at,
         learn_status=learn_status,
+        learn_plan_issue=learn_plan_issue,
+        learn_plan_pr=learn_plan_pr,
+        learned_from_issue=learned_from_issue,
     )
 
     return render_metadata_block(block)
@@ -974,7 +1004,7 @@ def update_plan_header_learn_status(
 
     Args:
         issue_body: Current issue body containing plan-header block
-        learn_status: Learning workflow status ("pending" or "completed")
+        learn_status: Learning workflow status (see LearnStatusValue for valid values)
 
     Returns:
         Updated issue body with new learn_status field
@@ -1126,3 +1156,142 @@ def extract_plan_header_last_session_source(issue_body: str) -> SessionSourceVal
     if value is None:
         return None
     return value
+
+
+def extract_plan_header_learn_plan_issue(issue_body: str) -> int | None:
+    """Extract learn_plan_issue from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Issue number of generated learn plan if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LEARN_PLAN_ISSUE)
+
+
+def extract_plan_header_learn_plan_pr(issue_body: str) -> int | None:
+    """Extract learn_plan_pr from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        PR number that implemented the learn plan if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LEARN_PLAN_PR)
+
+
+def extract_plan_header_learned_from_issue(issue_body: str) -> int | None:
+    """Extract learned_from_issue from plan-header block.
+
+    This field is set on learn plans to indicate which parent plan issue
+    they were generated from.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Parent plan issue number if this is a learn plan, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LEARNED_FROM_ISSUE)
+
+
+def update_plan_header_learn_result(
+    *,
+    issue_body: str,
+    learn_status: LearnStatusValue,
+    learn_plan_issue: int | None,
+) -> str:
+    """Update learn_status and optionally learn_plan_issue atomically.
+
+    This is called when learn workflow completes to record the result:
+    - "completed_no_plan": Learn completed but no plan was needed
+    - "completed_with_plan": Learn completed and created a plan (learn_plan_issue set)
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        learn_status: New learn status value
+        learn_plan_issue: Issue number of created plan (for completed_with_plan)
+
+    Returns:
+        Updated issue body with new fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update fields atomically
+    updated_data = dict(block.data)
+    updated_data[LEARN_STATUS] = learn_status
+    if learn_plan_issue is not None:
+        updated_data[LEARN_PLAN_ISSUE] = learn_plan_issue
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def update_plan_header_learn_plan_completed(
+    *,
+    issue_body: str,
+    learn_plan_pr: int,
+) -> str:
+    """Set learn_status to plan_completed and record the PR number.
+
+    This is called when a learn plan PR is landed to update the parent
+    plan issue that generated it.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        learn_plan_pr: PR number that implemented the learn plan
+
+    Returns:
+        Updated issue body with status set to plan_completed
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update fields atomically
+    updated_data = dict(block.data)
+    updated_data[LEARN_STATUS] = "plan_completed"
+    updated_data[LEARN_PLAN_PR] = learn_plan_pr
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)

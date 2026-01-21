@@ -94,6 +94,10 @@ class StatefulFakeGitHubIssues(GitHubIssues):
 
         return self._issues[number]
 
+    def issue_exists(self, repo_root: Path, number: int) -> bool:
+        """Check if issue exists."""
+        return number in self._issues
+
     # Stub out other required methods (not used by check_and_display_plan_issue_closure)
     def create_issue(self, *, repo_root: Path, title: str, body: str, labels: list[str]):
         raise NotImplementedError

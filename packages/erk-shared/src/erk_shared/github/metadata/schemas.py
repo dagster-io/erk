@@ -338,6 +338,9 @@ PlanHeaderFieldName = Literal[
     "last_session_id",
     "last_session_at",
     "last_session_source",
+    "learn_plan_issue",
+    "learn_plan_pr",
+    "learned_from_issue",
 ]
 """Union type of all valid plan-header field names."""
 
@@ -374,9 +377,28 @@ LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"
 LAST_SESSION_AT: Literal["last_session_at"] = "last_session_at"
 LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
 
+# Learn plan tracking fields
+LEARN_PLAN_ISSUE: Literal["learn_plan_issue"] = "learn_plan_issue"
+LEARN_PLAN_PR: Literal["learn_plan_pr"] = "learn_plan_pr"
+LEARNED_FROM_ISSUE: Literal["learned_from_issue"] = "learned_from_issue"
+
 # Valid values for learn_status field
-LearnStatusValue = Literal["pending", "completed"]
-"""Valid values for the learn_status plan header field."""
+LearnStatusValue = Literal[
+    "not_started",
+    "pending",
+    "completed_no_plan",
+    "completed_with_plan",
+    "plan_completed",
+]
+"""Valid values for the learn_status plan header field.
+
+Status progression:
+- not_started: No learn workflow has been run yet
+- pending: Learn workflow is in progress
+- completed_no_plan: Learn completed, no plan was needed/created
+- completed_with_plan: Learn completed and created a plan issue
+- plan_completed: The learn plan was implemented and landed
+"""
 
 # Valid values for last_session_source field
 SessionSourceValue = Literal["local", "remote"]
@@ -408,7 +430,10 @@ class PlanHeaderSchema(MetadataBlockSchema):
         created_from_session: Session ID that created this plan (nullable)
         last_learn_session: Session ID that last invoked learn (nullable)
         last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
-        learn_status: Learning workflow status - "pending" or "completed" (nullable)
+        learn_status: Learning workflow status (nullable)
+        learn_plan_issue: Issue number of generated learn plan (nullable)
+        learn_plan_pr: PR number that implemented the learn plan (nullable)
+        learned_from_issue: Parent plan issue number (for learn plans only) (nullable)
         last_session_gist_url: URL of gist containing session JSONL (nullable)
         last_session_gist_id: ID of gist containing session JSONL (nullable)
         last_session_id: Claude Code session ID of uploaded session (nullable)
@@ -448,6 +473,9 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_SESSION_ID,
             LAST_SESSION_AT,
             LAST_SESSION_SOURCE,
+            LEARN_PLAN_ISSUE,
+            LEARN_PLAN_PR,
+            LEARNED_FROM_ISSUE,
         }
 
         # Check required fields exist
@@ -591,12 +619,17 @@ class PlanHeaderSchema(MetadataBlockSchema):
         if LEARN_STATUS in data and data[LEARN_STATUS] is not None:
             if not isinstance(data[LEARN_STATUS], str):
                 raise ValueError("learn_status must be a string or null")
-            valid_statuses = {"pending", "completed"}
+            valid_statuses = {
+                "not_started",
+                "pending",
+                "completed_no_plan",
+                "completed_with_plan",
+                "plan_completed",
+            }
             if data[LEARN_STATUS] not in valid_statuses:
                 status_value = data[LEARN_STATUS]
-                raise ValueError(
-                    f"learn_status must be 'pending' or 'completed', got '{status_value}'"
-                )
+                valid_list = ", ".join(sorted(valid_statuses))
+                raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
 
         # Validate optional last_session_gist_url field
         if LAST_SESSION_GIST_URL in data and data[LAST_SESSION_GIST_URL] is not None:
@@ -636,6 +669,27 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError(
                     f"last_session_source must be 'local' or 'remote', got '{source_value}'"
                 )
+
+        # Validate optional learn_plan_issue field
+        if LEARN_PLAN_ISSUE in data and data[LEARN_PLAN_ISSUE] is not None:
+            if not isinstance(data[LEARN_PLAN_ISSUE], int):
+                raise ValueError("learn_plan_issue must be an integer or null")
+            if data[LEARN_PLAN_ISSUE] <= 0:
+                raise ValueError("learn_plan_issue must be positive when provided")
+
+        # Validate optional learn_plan_pr field
+        if LEARN_PLAN_PR in data and data[LEARN_PLAN_PR] is not None:
+            if not isinstance(data[LEARN_PLAN_PR], int):
+                raise ValueError("learn_plan_pr must be an integer or null")
+            if data[LEARN_PLAN_PR] <= 0:
+                raise ValueError("learn_plan_pr must be positive when provided")
+
+        # Validate optional learned_from_issue field
+        if LEARNED_FROM_ISSUE in data and data[LEARNED_FROM_ISSUE] is not None:
+            if not isinstance(data[LEARNED_FROM_ISSUE], int):
+                raise ValueError("learned_from_issue must be an integer or null")
+            if data[LEARNED_FROM_ISSUE] <= 0:
+                raise ValueError("learned_from_issue must be positive when provided")
 
         # Check for unexpected fields
         known_fields = required_fields | optional_fields

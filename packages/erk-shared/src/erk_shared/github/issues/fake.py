@@ -169,6 +169,10 @@ class FakeGitHubIssues(GitHubIssues):
 
         return CreateIssueResult(number=issue_number, url=url)
 
+    def issue_exists(self, repo_root: Path, number: int) -> bool:
+        """Check if issue exists in fake storage."""
+        return number in self._issues
+
     def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
         """Get issue from fake storage.
 

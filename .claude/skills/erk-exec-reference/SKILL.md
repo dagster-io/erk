@@ -70,6 +70,7 @@ Quick reference for all `erk exec` subcommands.
 | `setup-impl-from-issue`           | Set up .impl/ folder from GitHub issue in current worktree.               |
 | `slot-objective`                  | Get the last objective issue for the current slot.                        |
 | `track-learn-evaluation`          | Track learn evaluation completion on a plan issue.                        |
+| `track-learn-result`              | Track learn workflow result on a plan issue.                              |
 | `trigger-async-learn`             | Trigger async learn workflow for a plan issue.                            |
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                      |
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
@@ -813,6 +814,20 @@ Track learn evaluation completion on a plan issue.
 | Flag           | Type | Required | Default | Description                                                  |
 | -------------- | ---- | -------- | ------- | ------------------------------------------------------------ |
 | `--session-id` | TEXT | No       | -       | Session ID for tracking (passed from Claude session context) |
+
+### track-learn-result
+
+Track learn workflow result on a plan issue.
+
+**Usage:** `erk exec track-learn-result`
+
+**Options:**
+
+| Flag           | Type    | Required | Default        | Description                                                         |
+| -------------- | ------- | -------- | -------------- | ------------------------------------------------------------------- |
+| `--issue`      | INTEGER | Yes      | Sentinel.UNSET | Parent plan issue number                                            |
+| `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                        |
+| `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan issue number (required if status is completed_with_plan) |
 
 ### trigger-async-learn
 

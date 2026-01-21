@@ -38,6 +38,10 @@ class DryRunGitHubIssues(GitHubIssues):
         """
         return CreateIssueResult(number=1, url="https://github.com/dry-run/dry-run/issues/1")
 
+    def issue_exists(self, repo_root: Path, number: int) -> bool:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.issue_exists(repo_root, number)
+
     def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_issue(repo_root, number)

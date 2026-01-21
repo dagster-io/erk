@@ -12,17 +12,22 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_branch_name,
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
+    extract_plan_header_learn_plan_issue,
+    extract_plan_header_learn_plan_pr,
     extract_plan_header_learn_status,
+    extract_plan_header_learned_from_issue,
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
-    format_plan_header_body,
     update_plan_header_learn_event,
+    update_plan_header_learn_plan_completed,
+    update_plan_header_learn_result,
     update_plan_header_learn_status,
     update_plan_header_remote_impl_event,
     update_plan_header_worktree_and_branch,
 )
 from erk_shared.github.metadata.schemas import PlanHeaderSchema
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # === Schema Validation Tests ===
 
@@ -166,6 +171,9 @@ def test_create_plan_header_block_minimal() -> None:
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -198,6 +206,9 @@ def test_create_plan_header_block_with_optional_fields() -> None:
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -232,6 +243,9 @@ def test_create_plan_header_block_omits_none_values() -> None:
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -246,7 +260,7 @@ def test_create_plan_header_block_omits_none_values() -> None:
 
 def test_format_plan_header_body_minimal() -> None:
     """format_plan_header_body creates valid body with minimal fields."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -280,7 +294,7 @@ def test_format_plan_header_body_minimal() -> None:
 
 def test_format_plan_header_body_with_optional_fields() -> None:
     """format_plan_header_body includes optional fields in rendered output."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -337,6 +351,9 @@ def test_render_and_extract_round_trip() -> None:
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
     rendered = render_metadata_block(block)
@@ -423,6 +440,9 @@ def test_create_plan_header_block_with_learn_fields() -> None:
         last_learn_session="learn-session-abc",
         last_learn_at="2024-01-16T14:00:00Z",
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -432,7 +452,7 @@ def test_create_plan_header_block_with_learn_fields() -> None:
 
 def test_format_plan_header_body_with_learn_fields() -> None:
     """format_plan_header_body includes learn fields in rendered output."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -466,7 +486,7 @@ def test_format_plan_header_body_with_learn_fields() -> None:
 def test_update_plan_header_learn_event() -> None:
     """update_plan_header_learn_event updates learn fields atomically."""
     # Create initial body
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -509,7 +529,7 @@ def test_update_plan_header_learn_event() -> None:
 
 def test_update_plan_header_learn_event_with_none_session() -> None:
     """update_plan_header_learn_event handles None session_id."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -559,7 +579,7 @@ def test_update_plan_header_learn_event_raises_for_missing_block() -> None:
 
 def test_extract_plan_header_last_learn_session() -> None:
     """extract_plan_header_last_learn_session extracts session from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -589,7 +609,7 @@ def test_extract_plan_header_last_learn_session() -> None:
 
 def test_extract_plan_header_last_learn_session_returns_none_when_missing() -> None:
     """extract_plan_header_last_learn_session returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -627,7 +647,7 @@ def test_extract_plan_header_last_learn_session_returns_none_for_invalid_body() 
 
 def test_extract_plan_header_last_learn_at() -> None:
     """extract_plan_header_last_learn_at extracts timestamp from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -657,7 +677,7 @@ def test_extract_plan_header_last_learn_at() -> None:
 
 def test_extract_plan_header_last_learn_at_returns_none_when_missing() -> None:
     """extract_plan_header_last_learn_at returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -718,7 +738,7 @@ def test_plan_header_schema_rejects_empty_branch_name() -> None:
 
 def test_extract_plan_header_branch_name() -> None:
     """extract_plan_header_branch_name extracts branch from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -748,7 +768,7 @@ def test_extract_plan_header_branch_name() -> None:
 
 def test_extract_plan_header_branch_name_returns_none_when_missing() -> None:
     """extract_plan_header_branch_name returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -787,7 +807,7 @@ def test_extract_plan_header_branch_name_returns_none_for_invalid_body() -> None
 def test_update_plan_header_worktree_and_branch() -> None:
     """update_plan_header_worktree_and_branch updates both fields atomically."""
     # Create initial body without worktree or branch
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -845,7 +865,7 @@ def test_update_plan_header_worktree_and_branch_raises_for_missing_block() -> No
 
 def test_extract_plan_header_objective_issue() -> None:
     """extract_plan_header_objective_issue extracts objective from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -875,7 +895,7 @@ def test_extract_plan_header_objective_issue() -> None:
 
 def test_extract_plan_header_objective_issue_returns_none_when_missing() -> None:
     """extract_plan_header_objective_issue returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -966,6 +986,9 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
     assert block.key == "plan-header"
@@ -976,7 +999,7 @@ def test_create_plan_header_block_with_remote_impl_fields() -> None:
 
 def test_extract_plan_header_remote_impl_run_id() -> None:
     """extract_plan_header_remote_impl_run_id extracts run ID from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1006,7 +1029,7 @@ def test_extract_plan_header_remote_impl_run_id() -> None:
 
 def test_extract_plan_header_remote_impl_run_id_returns_none_when_missing() -> None:
     """extract_plan_header_remote_impl_run_id returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1044,7 +1067,7 @@ def test_extract_plan_header_remote_impl_run_id_returns_none_for_invalid_body() 
 
 def test_extract_plan_header_remote_impl_session_id() -> None:
     """extract_plan_header_remote_impl_session_id extracts session ID from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1074,7 +1097,7 @@ def test_extract_plan_header_remote_impl_session_id() -> None:
 
 def test_extract_plan_header_remote_impl_session_id_returns_none_when_missing() -> None:
     """extract_plan_header_remote_impl_session_id returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1105,7 +1128,7 @@ def test_extract_plan_header_remote_impl_session_id_returns_none_when_missing() 
 def test_update_plan_header_remote_impl_event() -> None:
     """update_plan_header_remote_impl_event updates all remote impl fields atomically."""
     # Create initial body
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1150,7 +1173,7 @@ def test_update_plan_header_remote_impl_event() -> None:
 
 def test_update_plan_header_remote_impl_event_with_none_session() -> None:
     """update_plan_header_remote_impl_event handles None session_id."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1218,20 +1241,6 @@ def test_plan_header_schema_accepts_learn_status_pending() -> None:
     schema.validate(data)
 
 
-def test_plan_header_schema_accepts_learn_status_completed() -> None:
-    """Schema accepts learn_status with value 'completed'."""
-    schema = PlanHeaderSchema()
-    data = {
-        "schema_version": "2",
-        "created_at": "2024-01-15T10:30:00Z",
-        "created_by": "user123",
-        "learn_status": "completed",
-    }
-
-    # Should not raise
-    schema.validate(data)
-
-
 def test_plan_header_schema_accepts_learn_status_null() -> None:
     """Schema accepts learn_status with value null."""
     schema = PlanHeaderSchema()
@@ -1256,13 +1265,13 @@ def test_plan_header_schema_rejects_invalid_learn_status() -> None:
         "learn_status": "invalid",
     }
 
-    with pytest.raises(ValueError, match="learn_status must be 'pending' or 'completed'"):
+    with pytest.raises(ValueError, match="learn_status must be one of"):
         schema.validate(data)
 
 
 def test_extract_plan_header_learn_status() -> None:
     """extract_plan_header_learn_status extracts status from body."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1292,7 +1301,7 @@ def test_extract_plan_header_learn_status() -> None:
 
 def test_extract_plan_header_learn_status_returns_none_when_missing() -> None:
     """extract_plan_header_learn_status returns None when field is absent."""
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1331,7 +1340,7 @@ def test_extract_plan_header_learn_status_returns_none_for_invalid_body() -> Non
 def test_update_plan_header_learn_status() -> None:
     """update_plan_header_learn_status updates learn_status field."""
     # Create initial body without learn_status
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1370,10 +1379,10 @@ def test_update_plan_header_learn_status() -> None:
     assert block.data["created_by"] == "user123"
 
 
-def test_update_plan_header_learn_status_to_completed() -> None:
-    """update_plan_header_learn_status can update from pending to completed."""
+def test_update_plan_header_learn_status_to_not_started() -> None:
+    """update_plan_header_learn_status can update from pending to not_started."""
     # Create initial body with pending status
-    body = format_plan_header_body(
+    body = format_plan_header_body_for_test(
         created_at="2024-01-15T10:30:00Z",
         created_by="user123",
         worktree_name=None,
@@ -1397,15 +1406,15 @@ def test_update_plan_header_learn_status_to_completed() -> None:
         learn_status="pending",
     )
 
-    # Update to completed
+    # Update to not_started (testing status update mechanism works)
     updated_body = update_plan_header_learn_status(
         issue_body=body,
-        learn_status="completed",
+        learn_status="not_started",
     )
 
     block = find_metadata_block(updated_body, "plan-header")
     assert block is not None
-    assert block.data["learn_status"] == "completed"
+    assert block.data["learn_status"] == "not_started"
 
 
 def test_update_plan_header_learn_status_raises_for_missing_block() -> None:
@@ -1416,4 +1425,214 @@ def test_update_plan_header_learn_status_raises_for_missing_block() -> None:
         update_plan_header_learn_status(
             issue_body=body,
             learn_status="pending",
+        )
+
+
+# === New Learn Status Infrastructure Tests ===
+
+
+def test_plan_header_schema_accepts_new_learn_status_values() -> None:
+    """Schema accepts all new learn_status values."""
+    schema = PlanHeaderSchema()
+    base_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+    }
+
+    # All valid status values
+    valid_statuses = [
+        "not_started",
+        "pending",
+        "completed_no_plan",
+        "completed_with_plan",
+        "plan_completed",
+    ]
+
+    for status in valid_statuses:
+        data = {**base_data, "learn_status": status}
+        schema.validate(data)  # Should not raise
+
+
+def test_plan_header_schema_accepts_learn_plan_issue() -> None:
+    """Schema accepts learn_plan_issue field."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learn_plan_issue": 456,
+    }
+
+    schema.validate(data)  # Should not raise
+
+
+def test_plan_header_schema_accepts_learn_plan_pr() -> None:
+    """Schema accepts learn_plan_pr field."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learn_plan_pr": 789,
+    }
+
+    schema.validate(data)  # Should not raise
+
+
+def test_plan_header_schema_accepts_learned_from_issue() -> None:
+    """Schema accepts learned_from_issue field."""
+    schema = PlanHeaderSchema()
+    data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+        "learned_from_issue": 123,
+    }
+
+    schema.validate(data)  # Should not raise
+
+
+def test_plan_header_schema_rejects_invalid_int_fields() -> None:
+    """Schema rejects non-positive integers for new fields."""
+    schema = PlanHeaderSchema()
+    base_data = {
+        "schema_version": "2",
+        "created_at": "2024-01-15T10:30:00Z",
+        "created_by": "user123",
+    }
+
+    # Test each field with invalid values
+    for field, msg in [
+        ("learn_plan_issue", "learn_plan_issue must be positive"),
+        ("learn_plan_pr", "learn_plan_pr must be positive"),
+        ("learned_from_issue", "learned_from_issue must be positive"),
+    ]:
+        data = {**base_data, field: 0}
+        with pytest.raises(ValueError, match=msg):
+            schema.validate(data)
+
+        data = {**base_data, field: -1}
+        with pytest.raises(ValueError, match=msg):
+            schema.validate(data)
+
+
+def test_extract_plan_header_learn_plan_issue() -> None:
+    """extract_plan_header_learn_plan_issue returns the value."""
+    body = format_plan_header_body_for_test(learn_plan_issue=456)
+
+    result = extract_plan_header_learn_plan_issue(body)
+    assert result == 456
+
+
+def test_extract_plan_header_learn_plan_issue_returns_none_if_missing() -> None:
+    """extract_plan_header_learn_plan_issue returns None when field not set."""
+    body = format_plan_header_body_for_test()
+
+    result = extract_plan_header_learn_plan_issue(body)
+    assert result is None
+
+
+def test_extract_plan_header_learn_plan_pr() -> None:
+    """extract_plan_header_learn_plan_pr returns the value."""
+    body = format_plan_header_body_for_test(learn_plan_pr=789)
+
+    result = extract_plan_header_learn_plan_pr(body)
+    assert result == 789
+
+
+def test_extract_plan_header_learn_plan_pr_returns_none_if_missing() -> None:
+    """extract_plan_header_learn_plan_pr returns None when field not set."""
+    body = format_plan_header_body_for_test()
+
+    result = extract_plan_header_learn_plan_pr(body)
+    assert result is None
+
+
+def test_extract_plan_header_learned_from_issue() -> None:
+    """extract_plan_header_learned_from_issue returns the value."""
+    body = format_plan_header_body_for_test(learned_from_issue=123)
+
+    result = extract_plan_header_learned_from_issue(body)
+    assert result == 123
+
+
+def test_extract_plan_header_learned_from_issue_returns_none_if_missing() -> None:
+    """extract_plan_header_learned_from_issue returns None when field not set."""
+    body = format_plan_header_body_for_test()
+
+    result = extract_plan_header_learned_from_issue(body)
+    assert result is None
+
+
+def test_update_plan_header_learn_result_completed_no_plan() -> None:
+    """update_plan_header_learn_result sets status to completed_no_plan."""
+    body = format_plan_header_body_for_test(learn_status="pending")
+
+    updated_body = update_plan_header_learn_result(
+        issue_body=body,
+        learn_status="completed_no_plan",
+        learn_plan_issue=None,
+    )
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["learn_status"] == "completed_no_plan"
+    assert "learn_plan_issue" not in block.data or block.data.get("learn_plan_issue") is None
+
+
+def test_update_plan_header_learn_result_completed_with_plan() -> None:
+    """update_plan_header_learn_result sets status and learn_plan_issue."""
+    body = format_plan_header_body_for_test(learn_status="pending")
+
+    updated_body = update_plan_header_learn_result(
+        issue_body=body,
+        learn_status="completed_with_plan",
+        learn_plan_issue=456,
+    )
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["learn_status"] == "completed_with_plan"
+    assert block.data["learn_plan_issue"] == 456
+
+
+def test_update_plan_header_learn_result_raises_for_missing_block() -> None:
+    """update_plan_header_learn_result raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_learn_result(
+            issue_body=body,
+            learn_status="completed_no_plan",
+            learn_plan_issue=None,
+        )
+
+
+def test_update_plan_header_learn_plan_completed() -> None:
+    """update_plan_header_learn_plan_completed sets status and PR number."""
+    body = format_plan_header_body_for_test(
+        learn_status="completed_with_plan",
+        learn_plan_issue=456,
+    )
+
+    updated_body = update_plan_header_learn_plan_completed(
+        issue_body=body,
+        learn_plan_pr=789,
+    )
+
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["learn_status"] == "plan_completed"
+    assert block.data["learn_plan_pr"] == 789
+
+
+def test_update_plan_header_learn_plan_completed_raises_for_missing_block() -> None:
+    """update_plan_header_learn_plan_completed raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_learn_plan_completed(
+            issue_body=body,
+            learn_plan_pr=789,
         )
