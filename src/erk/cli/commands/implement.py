@@ -85,7 +85,8 @@ def _implement_from_issue(
     executor: ClaudeExecutor,
     docker: bool,
     docker_image: str,
-    codespace: str | None,
+    codespace: bool,
+    codespace_name: str | None,
 ) -> None:
     """Implement feature from GitHub issue in current directory.
 
@@ -102,8 +103,8 @@ def _implement_from_issue(
         executor: Claude CLI executor for command execution
         docker: Whether to run in Docker container
         docker_image: Docker image to use
-        codespace: Optional codespace name (None if not using codespace mode,
-            empty string means use default codespace)
+        codespace: Whether to use default codespace
+        codespace_name: Named codespace (None if not using named codespace)
     """
     # Discover repo context for issue fetch
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -130,7 +131,7 @@ def _implement_from_issue(
 
     # Handle codespace mode early - skip local .impl/ creation
     # The codespace will fetch the plan from GitHub directly
-    if codespace is not None:
+    if codespace or codespace_name is not None:
         if dry_run:
             dry_run_header = click.style("Dry-run mode:", fg="cyan", bold=True)
             user_output(dry_run_header + " No changes will be made\n")
@@ -138,7 +139,7 @@ def _implement_from_issue(
             return
 
         # Codespace mode - pass issue number so codespace fetches plan directly
-        codespace_name = codespace if codespace else None
+        # codespace_name=None means use default codespace
         execute_codespace_mode(
             ctx,
             codespace_name=codespace_name,
@@ -261,7 +262,8 @@ def _implement_from_file(
     executor: ClaudeExecutor,
     docker: bool,
     docker_image: str,
-    codespace: str | None,
+    codespace: bool,
+    codespace_name: str | None,
 ) -> None:
     """Implement feature from plan file in current directory.
 
@@ -280,8 +282,8 @@ def _implement_from_file(
         executor: Claude CLI executor for command execution
         docker: Whether to run in Docker container
         docker_image: Docker image to use
-        codespace: Optional codespace name (None if not using codespace mode,
-            empty string means use default codespace)
+        codespace: Whether to use default codespace
+        codespace_name: Named codespace (None if not using named codespace)
     """
     # Discover repo context
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -352,10 +354,9 @@ def _implement_from_file(
                 image_name=docker_image,
                 model=model,
             )
-    elif codespace is not None:
+    elif codespace or codespace_name is not None:
         # Codespace mode - run Claude in registered codespace
-        # Empty string means use default codespace
-        codespace_name = codespace if codespace else None
+        # codespace_name=None means use default codespace
         execute_codespace_mode(
             ctx,
             codespace_name=codespace_name,
@@ -407,7 +408,8 @@ def implement(
     model: str | None,
     docker: bool,
     docker_image: str,
-    codespace: str | None,
+    codespace: bool,
+    codespace_name: str | None,
 ) -> None:
     """Create .impl/ folder from GitHub issue or plan file and execute implementation.
 
@@ -465,7 +467,7 @@ def implement(
 
     \b
       # Codespace with named codespace
-      erk implement 123 --codespace mybox
+      erk implement 123 --codespace-name mybox
     """
     # Handle --yolo flag (shorthand for dangerous + submit + no-interactive)
     if yolo:
@@ -483,6 +485,7 @@ def implement(
         script=script,
         docker=docker,
         codespace=codespace,
+        codespace_name=codespace_name,
     )
 
     # Auto-detect plan number from branch name when TARGET is omitted
@@ -534,6 +537,7 @@ def implement(
             docker=docker,
             docker_image=docker_image,
             codespace=codespace,
+            codespace_name=codespace_name,
         )
     else:
         plan_file = Path(target)
@@ -551,4 +555,5 @@ def implement(
             docker=docker,
             docker_image=docker_image,
             codespace=codespace,
+            codespace_name=codespace_name,
         )

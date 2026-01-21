@@ -51,10 +51,13 @@ from erk_shared.output.output import user_output
 )
 @click.option(
     "--codespace",
+    is_flag=True,
+    help="Include --codespace flag for codespace-isolated implementation (uses default)",
+)
+@click.option(
+    "--codespace-name",
     default=None,
-    is_flag=False,
-    flag_value="",
-    help="Include --codespace flag for codespace-isolated implementation",
+    help="Use named codespace for isolated implementation",
 )
 @click.pass_obj
 def branch_create(
@@ -67,7 +70,8 @@ def branch_create(
     create_only: bool,
     dangerous: bool,
     docker: bool,
-    codespace: str | None,
+    codespace: bool,
+    codespace_name: str | None,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -96,8 +100,12 @@ def branch_create(
         user_output("Error: Must provide BRANCH argument or --for-plan option.")
         raise SystemExit(1) from None
 
-    if docker and codespace is not None:
-        user_output("Error: --docker and --codespace cannot be used together.")
+    if codespace and codespace_name is not None:
+        user_output("Error: --codespace and --codespace-name cannot be used together.")
+        raise SystemExit(1) from None
+
+    if docker and (codespace or codespace_name is not None):
+        user_output("Error: --docker and --codespace/--codespace-name cannot be used together.")
         raise SystemExit(1) from None
 
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -202,8 +210,18 @@ def branch_create(
         if create_only:
             config = activation_config_activate_only()
         else:
+            # Convert codespace flag/name to ActivationConfig format:
+            # --codespace (flag only) → "" (empty string = default)
+            # --codespace-name NAME → "NAME" (named)
+            # neither → None (not using codespace)
+            codespace_value: str | None = None
+            if codespace:
+                codespace_value = ""  # Use default codespace
+            elif codespace_name is not None:
+                codespace_value = codespace_name
+
             config = activation_config_for_implement(
-                docker=docker, dangerous=dangerous, codespace=codespace
+                docker=docker, dangerous=dangerous, codespace=codespace_value
             )
 
         print_activation_instructions(

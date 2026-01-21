@@ -278,7 +278,9 @@ def test_implement_codespace_mode_skips_local_impl_creation() -> None:
         )
 
         # Run in dry-run mode with named codespace
-        result = runner.invoke(implement, ["123", "--dry-run", "--codespace", "mybox"], obj=ctx)
+        result = runner.invoke(
+            implement, ["123", "--dry-run", "--codespace-name", "mybox"], obj=ctx
+        )
 
         assert result.exit_code == 0
         assert "Would execute /erk:plan-implement 123 in codespace" in result.output
@@ -324,7 +326,7 @@ def test_implement_codespace_mode_passes_issue_number_to_remote() -> None:
 
         # Run interactive mode with named codespace
         # FakeCodespace's exec_ssh_interactive raises SystemExit(0)
-        result = runner.invoke(implement, ["456", "--codespace", "mybox"], obj=ctx)
+        result = runner.invoke(implement, ["456", "--codespace-name", "mybox"], obj=ctx)
 
         # FakeCodespace's exec_ssh_interactive raises SystemExit(0)
         assert result.exit_code == 0

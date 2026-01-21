@@ -519,8 +519,9 @@ def test_prepare_with_codespace_flag_shows_codespace_command() -> None:
             git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
         )
 
+        # --codespace is now a boolean flag, no need for --
         result = runner.invoke(
-            cli, ["prepare", "500", "--codespace", "--"], obj=test_ctx, catch_exceptions=False
+            cli, ["prepare", "500", "--codespace"], obj=test_ctx, catch_exceptions=False
         )
 
         assert result.exit_code == 0
@@ -532,7 +533,7 @@ def test_prepare_with_codespace_flag_shows_codespace_command() -> None:
 
 
 def test_prepare_with_codespace_named_shows_codespace_name() -> None:
-    """Test that erk prepare --codespace mybox shows named codespace in activation."""
+    """Test that erk prepare --codespace-name mybox shows named codespace in activation."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         repo_dir = env.setup_repo_structure()
@@ -572,8 +573,12 @@ def test_prepare_with_codespace_named_shows_codespace_name() -> None:
             git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
         )
 
+        # Use --codespace-name for named codespace
         result = runner.invoke(
-            cli, ["prepare", "501", "--codespace", "mybox"], obj=test_ctx, catch_exceptions=False
+            cli,
+            ["prepare", "501", "--codespace-name", "mybox"],
+            obj=test_ctx,
+            catch_exceptions=False,
         )
 
         assert result.exit_code == 0
@@ -624,12 +629,14 @@ def test_prepare_with_docker_and_codespace_fails() -> None:
             git=git_ops, repo=repo, use_graphite=True, plan_store=plan_store
         )
 
+        # --codespace is now a boolean flag, no need for --
         result = runner.invoke(
             cli,
-            ["prepare", "502", "--docker", "--codespace", "--"],
+            ["prepare", "502", "--docker", "--codespace"],
             obj=test_ctx,
             catch_exceptions=False,
         )
 
         assert result.exit_code == 1
-        assert "--docker and --codespace cannot be used together" in result.output
+        assert "--docker and --codespace" in result.output
+        assert "cannot be used together" in result.output

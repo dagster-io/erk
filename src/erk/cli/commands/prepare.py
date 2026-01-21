@@ -27,10 +27,13 @@ from erk.cli.commands.branch.create_cmd import branch_create
 )
 @click.option(
     "--codespace",
+    is_flag=True,
+    help="Include --codespace flag for codespace-isolated implementation (uses default)",
+)
+@click.option(
+    "--codespace-name",
     default=None,
-    is_flag=False,
-    flag_value="",
-    help="Include --codespace flag for codespace-isolated implementation",
+    help="Use named codespace for isolated implementation",
 )
 @click.pass_context
 def prepare(
@@ -41,7 +44,8 @@ def prepare(
     create_only: bool,
     dangerous: bool,
     docker: bool,
-    codespace: str | None,
+    codespace: bool,
+    codespace_name: str | None,
 ) -> None:
     """Prepare a plan for execution by creating a worktree.
 
@@ -59,4 +63,5 @@ def prepare(
         dangerous=dangerous,
         docker=docker,
         codespace=codespace,
+        codespace_name=codespace_name,
     )
