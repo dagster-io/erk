@@ -72,6 +72,7 @@ def build_remote_command(
     interactive: bool,
     model: str | None,
     command: str,
+    issue_number: str | None,
 ) -> str:
     """Build the remote command to execute in the codespace.
 
@@ -79,13 +80,14 @@ def build_remote_command(
         interactive: Whether running in interactive mode
         model: Optional model name (haiku, sonnet, opus)
         command: Slash command to execute
+        issue_number: Optional issue number to pass as argument to slash command
 
     Returns:
         The complete remote command string
     """
-    # Setup: activate virtualenv before running claude
+    # Setup: pull latest code and activate virtualenv before running claude
     # (assumes codespace has been set up with uv sync)
-    setup_commands = "source .venv/bin/activate 2>/dev/null || true"
+    setup_commands = "git pull && source .venv/bin/activate 2>/dev/null || true"
 
     # Build claude command - always use --dangerously-skip-permissions
     # since codespace provides isolation
@@ -97,7 +99,11 @@ def build_remote_command(
     if model is not None:
         claude_args.extend(["--model", model])
 
-    claude_args.append(f'"{command}"')
+    # Build the command with optional issue number argument
+    full_command = command
+    if issue_number is not None:
+        full_command = f"{command} {issue_number}"
+    claude_args.append(f'"{full_command}"')
 
     claude_cmd = " ".join(claude_args)
 
@@ -110,6 +116,7 @@ def execute_codespace_interactive(
     codespace_gateway: Codespace,
     codespace: RegisteredCodespace,
     model: str | None,
+    issue_number: str | None,
 ) -> NoReturn:
     """Execute Claude in codespace interactively, replacing current process.
 
@@ -117,6 +124,7 @@ def execute_codespace_interactive(
         codespace_gateway: Codespace gateway for SSH execution
         codespace: The registered codespace to use
         model: Optional model name
+        issue_number: Optional issue number to pass to /erk:plan-implement
 
     Note:
         This function never returns - process is replaced.
@@ -125,6 +133,7 @@ def execute_codespace_interactive(
         interactive=True,
         model=model,
         command="/erk:plan-implement",
+        issue_number=issue_number,
     )
 
     click.echo(f"Launching Claude in codespace '{codespace.name}'...", err=True)
@@ -139,6 +148,7 @@ def execute_codespace_non_interactive(
     model: str | None,
     commands: list[str],
     verbose: bool,
+    issue_number: str | None,
 ) -> int:
     """Execute Claude commands in codespace non-interactively.
 
@@ -148,15 +158,19 @@ def execute_codespace_non_interactive(
         model: Optional model name
         commands: List of slash commands to execute
         verbose: Whether to show verbose output
+        issue_number: Optional issue number to pass to /erk:plan-implement command
 
     Returns:
         Exit code (0 for success, non-zero for failure)
     """
     for command in commands:
+        # Only pass issue_number to /erk:plan-implement command
+        cmd_issue_number = issue_number if command == "/erk:plan-implement" else None
         remote_command = build_remote_command(
             interactive=False,
             model=model,
             command=command,
+            issue_number=cmd_issue_number,
         )
 
         if verbose:

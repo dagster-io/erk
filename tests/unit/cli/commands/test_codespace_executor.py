@@ -83,10 +83,13 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/erk:plan-implement",
+            issue_number=None,
         )
 
         # Should wrap in bash -l -c for login shell
         assert "bash -l -c" in result
+        # Should include git pull before venv activation
+        assert "git pull" in result
         # Should include venv activation
         assert "source .venv/bin/activate" in result
         # Should include dangerous skip permissions
@@ -102,6 +105,7 @@ class TestBuildRemoteCommand:
             interactive=False,
             model=None,
             command="/erk:plan-implement",
+            issue_number=None,
         )
 
         # Should include print mode and output format for non-interactive
@@ -117,6 +121,7 @@ class TestBuildRemoteCommand:
             interactive=True,
             model="haiku",
             command="/erk:plan-implement",
+            issue_number=None,
         )
 
         assert "--model haiku" in result
@@ -127,6 +132,7 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/erk:plan-implement",
+            issue_number=None,
         )
 
         assert "--model" not in result
@@ -137,6 +143,45 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/fast-ci",
+            issue_number=None,
         )
 
         assert '"/fast-ci"' in result
+
+    def test_with_issue_number(self) -> None:
+        """Test building remote command with issue_number generates correct command."""
+        result = build_remote_command(
+            interactive=True,
+            model=None,
+            command="/erk:plan-implement",
+            issue_number="123",
+        )
+
+        # Should include the command with issue number argument
+        assert '"/erk:plan-implement 123"' in result
+
+    def test_without_issue_number(self) -> None:
+        """Test building remote command without issue_number has no argument."""
+        result = build_remote_command(
+            interactive=True,
+            model=None,
+            command="/erk:plan-implement",
+            issue_number=None,
+        )
+
+        # Should include just the command without trailing argument
+        assert '"/erk:plan-implement"' in result
+        # Make sure we don't have a space after (no trailing argument)
+        assert '"/erk:plan-implement "' not in result
+
+    def test_git_pull_included_in_setup(self) -> None:
+        """Test that git pull is included in setup commands."""
+        result = build_remote_command(
+            interactive=True,
+            model=None,
+            command="/erk:plan-implement",
+            issue_number=None,
+        )
+
+        # Should include git pull before source .venv
+        assert "git pull && source .venv/bin/activate" in result

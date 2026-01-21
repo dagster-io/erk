@@ -128,6 +128,28 @@ def _implement_from_issue(
 
     ctx.console.info(f"Issue: {plan.title}")
 
+    # Handle codespace mode early - skip local .impl/ creation
+    # The codespace will fetch the plan from GitHub directly
+    if codespace is not None:
+        if dry_run:
+            dry_run_header = click.style("Dry-run mode:", fg="cyan", bold=True)
+            user_output(dry_run_header + " No changes will be made\n")
+            user_output(f"Would execute /erk:plan-implement {issue_number} in codespace")
+            return
+
+        # Codespace mode - pass issue number so codespace fetches plan directly
+        codespace_name = codespace if codespace else None
+        execute_codespace_mode(
+            ctx,
+            codespace_name=codespace_name,
+            model=model,
+            no_interactive=no_interactive,
+            submit=submit,
+            verbose=verbose,
+            issue_number=issue_number,
+        )
+        return
+
     # Create dry-run description
     dry_run_desc = f"Would create .impl/ from issue #{issue_number}\n  Title: {plan.title}"
     plan_source = PlanSource(
@@ -202,18 +224,6 @@ def _implement_from_issue(
                 image_name=docker_image,
                 model=model,
             )
-    elif codespace is not None:
-        # Codespace mode - run Claude in registered codespace
-        # Empty string means use default codespace
-        codespace_name = codespace if codespace else None
-        execute_codespace_mode(
-            ctx,
-            codespace_name=codespace_name,
-            model=model,
-            no_interactive=no_interactive,
-            submit=submit,
-            verbose=verbose,
-        )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
         commands = build_command_sequence(submit)
@@ -345,6 +355,7 @@ def _implement_from_file(
     elif codespace is not None:
         # Codespace mode - run Claude in registered codespace
         # Empty string means use default codespace
+        # Note: file-based plans don't have issue numbers
         codespace_name = codespace if codespace else None
         execute_codespace_mode(
             ctx,
@@ -353,6 +364,7 @@ def _implement_from_file(
             no_interactive=no_interactive,
             submit=submit,
             verbose=verbose,
+            issue_number=None,
         )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess
