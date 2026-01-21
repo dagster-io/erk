@@ -44,16 +44,30 @@ Check each Python file against dignified-python rules:
 - Dependency injection with ABC
 - Frozen dataclasses
 - Keyword-only arguments for 5+ parameter functions
-  **Detection for keyword-only arguments:** When checking multi-line function signatures, look for a standalone `*` or `*,` on its own line between parameters. This is the keyword-only separator. Example of COMPLIANT code:
+  **Detection for keyword-only arguments:** When checking multi-line function signatures, look for a standalone `*` or `*,` on its own line. This is the keyword-only separator. There are two valid patterns:
+
+  **Pattern A: All parameters keyword-only** (separator is first):
+
+  ```python
+  def validate_flags(
+      *,                    # ← First thing - ALL params are keyword-only
+      submit: bool,
+      no_interactive: bool,
+  ) -> None:
+  ```
+
+  **Pattern B: Mixed positional and keyword-only** (separator between):
+
   ```python
   def func(
-      ctx: Context,
-      *,                    # ← This line IS the separator
-      param1: str,          # ← These are keyword-only
+      ctx: Context,         # ← Positional
+      *,                    # ← Separator
+      param1: str,          # ← Keyword-only
       param2: int,
   ) -> None:
   ```
-  Only flag as violation if there are 5+ parameters AND no `*` or `*,` line exists between them.
+
+  Only flag as violation if there are 5+ parameters AND no `*` or `*,` line exists in the signature.
 
 **CRITICAL: Check for exceptions before flagging violations.**
 
