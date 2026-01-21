@@ -30,4 +30,4 @@ def create_branch_manager(
     """
     if isinstance(graphite, GraphiteDisabled):
         return GitBranchManager(git=git, github=github)
-    return GraphiteBranchManager(git=git, graphite=graphite)
+    return GraphiteBranchManager(git=git, graphite=graphite, github=github)
