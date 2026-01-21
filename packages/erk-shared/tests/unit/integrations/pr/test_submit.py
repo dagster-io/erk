@@ -179,7 +179,13 @@ class TestExecuteCoreSubmit:
 
         events = list(
             execute_core_submit(
-                ctx, tmp_path, "New Title", "New Body", force=False, plans_repo=None
+                ctx,
+                tmp_path,
+                "New Title",
+                "New Body",
+                force=False,
+                plans_repo=None,
+                skip_push=False,
             )
         )
 

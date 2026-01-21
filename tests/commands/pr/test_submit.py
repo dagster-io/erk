@@ -199,7 +199,9 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
             claude_executor=claude_executor,
         )
 
-        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+        # Use --no-graphite to test standard flow error handling
+        # (Graphite-first flow would fail differently)
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code != 0
         assert "No commits ahead" in result.output
@@ -703,8 +705,9 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             claude_executor=claude_executor,
         )
 
-        # Run with --force flag
-        result = runner.invoke(pr_group, ["submit", "--force"], obj=ctx)
+        # Run with --force flag and --no-graphite to test git push force path
+        # (With Graphite enabled, the push is handled by gt submit, not git push)
+        result = runner.invoke(pr_group, ["submit", "--force", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
         # Verify force was passed to push_to_remote
@@ -799,8 +802,9 @@ def test_pr_submit_short_force_flag() -> None:
             claude_executor=claude_executor,
         )
 
-        # Run with -f short flag
-        result = runner.invoke(pr_group, ["submit", "-f"], obj=ctx)
+        # Run with -f short flag and --no-graphite to test git push force path
+        # (With Graphite enabled, the push is handled by gt submit, not git push)
+        result = runner.invoke(pr_group, ["submit", "-f", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
         # Verify force was passed to push_to_remote
@@ -978,7 +982,8 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
             claude_executor=claude_executor,
         )
 
-        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+        # Use --no-graphite to test standard flow output messaging
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
         # Should show "created" message for new PR
@@ -1061,7 +1066,9 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
             claude_executor=claude_executor,
         )
 
-        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+        # Use --no-graphite to test standard flow error handling
+        # (Graphite-first flow would handle this differently via gt submit)
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         # Should fail with helpful error message
         assert result.exit_code != 0
@@ -1153,7 +1160,8 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
             claude_executor=claude_executor,
         )
 
-        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+        # Use --no-graphite to test standard flow output messaging
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
         # Should show "found" message for existing PR
