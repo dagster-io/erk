@@ -16,11 +16,11 @@ erk exec get-pr-review-comments --pr 123 # Specific PR number
 
 ### Options
 
-| Option              | Description                                    |
-| ------------------- | ---------------------------------------------- |
-| `--all`             | Include resolved threads                       |
-| `--pr INTEGER`      | PR number (defaults to current branch's PR)    |
-| `--include-resolved`| Alias for `--all`                              |
+| Option               | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `--all`              | Include resolved threads                    |
+| `--pr INTEGER`       | PR number (defaults to current branch's PR) |
+| `--include-resolved` | Alias for `--all`                           |
 
 ### JSON Output Format
 
@@ -80,9 +80,9 @@ erk exec get-pr-discussion-comments --pr 123 # Specific PR number
 
 ### Options
 
-| Option         | Description                                    |
-| -------------- | ---------------------------------------------- |
-| `--pr INTEGER` | PR number (defaults to current branch's PR)    |
+| Option         | Description                                 |
+| -------------- | ------------------------------------------- |
+| `--pr INTEGER` | PR number (defaults to current branch's PR) |
 
 ### JSON Output Format
 
@@ -216,13 +216,13 @@ erk exec post-pr-inline-comment --pr-number 123 --path "src/foo.py" --line 42 --
 
 ### Options
 
-| Option         | Required | Description                                        |
-| -------------- | -------- | -------------------------------------------------- |
-| `--path`       | Yes      | File path relative to repo root                    |
-| `--line`       | Yes      | Line number to comment on                          |
-| `--body`       | Yes      | Comment text                                       |
-| `--pr-number`  | No       | PR number (defaults to current branch's PR)        |
-| `--side`       | No       | `LEFT` or `RIGHT` for diff side (default: `RIGHT`) |
+| Option        | Required | Description                                        |
+| ------------- | -------- | -------------------------------------------------- |
+| `--path`      | Yes      | File path relative to repo root                    |
+| `--line`      | Yes      | Line number to comment on                          |
+| `--body`      | Yes      | Comment text                                       |
+| `--pr-number` | No       | PR number (defaults to current branch's PR)        |
+| `--side`      | No       | `LEFT` or `RIGHT` for diff side (default: `RIGHT`) |
 
 ### Examples
 
