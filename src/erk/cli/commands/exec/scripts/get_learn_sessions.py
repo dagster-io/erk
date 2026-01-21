@@ -44,6 +44,8 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.learn.extraction.session_source import (
     LocalSessionSource,
+    RemoteSessionSource,
+    SessionSource,
     SessionSourceDict,
 )
 from erk_shared.naming import extract_leading_issue_number
@@ -110,7 +112,7 @@ def _build_result(
     readable_session_ids: list[str],
     session_paths: list[str],
     local_session_ids: list[str],
-    session_sources: list[LocalSessionSource],
+    session_sources: list[SessionSource],
 ) -> GetLearnSessionsResult:
     """Build the result dataclass from session data."""
     return GetLearnSessionsResult(
@@ -165,7 +167,7 @@ def _discover_sessions(
     session_paths = [str(path) for _, path in readable_sessions]
 
     # Build session sources from readable sessions
-    session_sources: list[LocalSessionSource] = [
+    session_sources: list[SessionSource] = [
         LocalSessionSource(session_id=sid, path=str(path)) for sid, path in readable_sessions
     ]
 
@@ -183,6 +185,18 @@ def _discover_sessions(
             if path is not None:
                 session_paths.append(str(path))
                 session_sources.append(LocalSessionSource(session_id=sid, path=str(path)))
+
+    # Add remote session source if remote implementation exists
+    if (
+        sessions_for_plan.last_remote_impl_session_id is not None
+        and sessions_for_plan.last_remote_impl_run_id is not None
+    ):
+        remote_source = RemoteSessionSource(
+            session_id=sessions_for_plan.last_remote_impl_session_id,
+            run_id=sessions_for_plan.last_remote_impl_run_id,
+            path=None,  # Path is None until downloaded
+        )
+        session_sources.append(remote_source)
 
     return _build_result(
         issue_number=issue_number,
