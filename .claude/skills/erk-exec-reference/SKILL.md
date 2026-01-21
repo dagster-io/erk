@@ -75,6 +75,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.        |
+| `upload-learn-materials`          | Upload learn materials directory to a gist.                               |
 | `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.             |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.       |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                             |
@@ -878,6 +879,19 @@ Update plan-header metadata with remote session artifact location.
 | `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update |
 | `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID         |
 | `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID        |
+
+### upload-learn-materials
+
+Upload learn materials directory to a gist.
+
+**Usage:** `erk exec upload-learn-materials`
+
+**Options:**
+
+| Flag          | Type    | Required | Default        | Description                              |
+| ------------- | ------- | -------- | -------------- | ---------------------------------------- |
+| `--learn-dir` | PATH    | Yes      | Sentinel.UNSET | Path to the learn materials directory    |
+| `--issue`     | INTEGER | Yes      | Sentinel.UNSET | Plan issue number (for gist description) |
 
 ### upload-session
 
