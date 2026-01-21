@@ -41,8 +41,9 @@ Parse the JSON output to get:
 - `session_sources`: List of session source objects, each containing:
   - `source_type`: Either "local" (from ~/.claude) or "remote" (from GitHub Actions)
   - `session_id`: The Claude Code session ID
-  - `run_id`: GitHub Actions run ID (for remote sessions only)
+  - `run_id`: GitHub Actions run ID (legacy, may be null)
   - `path`: File path to the session (for local sessions only)
+  - `gist_url`: Raw gist URL for downloading session (for remote sessions)
 - `planning_session_id`: Session ID that created the plan
 - `implementation_session_ids`: Session IDs that executed the plan
 - `local_session_ids`: Fallback sessions found locally (when no tracked sessions exist)
@@ -137,10 +138,11 @@ For each session source from Step 1, preprocess to compressed XML format:
 
 - If `source_type == "local"` and `path` is set: Process the session using the path
 - If `source_type == "remote"`: Download the session first, then process:
-  1. Run: `erk exec download-remote-session --run-id "<run_id>" --session-id "<session_id>"`
-  2. Parse the JSON output to get the `path` field
-  3. If `success: true`, use the returned `path` for preprocessing
-  4. If `success: false` (artifact expired, permissions error, etc.), inform the user and skip this session
+  1. Check if `gist_url` is set (not null). If null, the session cannot be downloaded (legacy artifact-based session).
+  2. Run: `erk exec download-remote-session --gist-url "<gist_url>" --session-id "<session_id>"`
+  3. Parse the JSON output to get the `path` field
+  4. If `success: true`, use the returned `path` for preprocessing
+  5. If `success: false` (gist not accessible, etc.), inform the user and skip this session
 
 ```bash
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
