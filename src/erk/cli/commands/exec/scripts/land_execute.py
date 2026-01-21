@@ -135,9 +135,11 @@ def land_execute(
         resolved_target_child = children[0]
 
     # Auto-detect objective from branch if not explicitly provided
-    resolved_objective_number = objective_number
-    if resolved_objective_number is None:
-        resolved_objective_number = get_objective_for_branch(erk_ctx, repo_root, branch)
+    resolved_objective_number = (
+        objective_number
+        if objective_number is not None
+        else get_objective_for_branch(erk_ctx, repo_root, branch)
+    )
 
     _execute_land(
         erk_ctx,
