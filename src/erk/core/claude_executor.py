@@ -508,6 +508,7 @@ class RealClaudeExecutor(ClaudeExecutor):
         cmd = [
             "claude",
             "--print",
+            "--no-session-persistence",
             "--output-format",
             "text",
             "--model",
