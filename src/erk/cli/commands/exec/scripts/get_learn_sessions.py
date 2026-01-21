@@ -187,14 +187,16 @@ def _discover_sessions(
                 session_sources.append(LocalSessionSource(session_id=sid, path=str(path)))
 
     # Add remote session source if remote implementation exists
-    if sessions_for_plan.last_remote_impl_session_id is not None:
-        if sessions_for_plan.last_remote_impl_run_id is not None:
-            remote_source = RemoteSessionSource(
-                session_id=sessions_for_plan.last_remote_impl_session_id,
-                run_id=sessions_for_plan.last_remote_impl_run_id,
-                path=None,  # Path is None until downloaded
-            )
-            session_sources.append(remote_source)
+    if (
+        sessions_for_plan.last_remote_impl_session_id is not None
+        and sessions_for_plan.last_remote_impl_run_id is not None
+    ):
+        remote_source = RemoteSessionSource(
+            session_id=sessions_for_plan.last_remote_impl_session_id,
+            run_id=sessions_for_plan.last_remote_impl_run_id,
+            path=None,  # Path is None until downloaded
+        )
+        session_sources.append(remote_source)
 
     return _build_result(
         issue_number=issue_number,
