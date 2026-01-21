@@ -42,7 +42,7 @@ Parse the JSON output to get:
   - `source_type`: Either "local" (from ~/.claude) or "remote" (from GitHub Actions)
   - `session_id`: The Claude Code session ID
   - `run_id`: GitHub Actions run ID (for remote sessions only)
-  - `path`: File path to the session (for local sessions only)
+  - `path`: File path to the session. For local sessions, this is populated immediately. For remote sessions, this is `null` until the session is downloaded.
 - `planning_session_id`: Session ID that created the plan
 - `implementation_session_ids`: Session IDs that executed the plan
 - `local_session_ids`: Fallback sessions found locally (when no tracked sessions exist)
@@ -52,7 +52,7 @@ Parse the JSON output to get:
 
 If no sessions are found, inform the user and stop.
 
-**Note on remote implementations:** If `last_remote_impl_at` is set but no `session_sources` have `source_type: "local"` with a valid `path`, the plan was implemented remotely (via GitHub Actions). In Phase 1, remote sessions are not yet downloadable - inform the user that the plan was implemented remotely but session logs are not available locally.
+**Note on remote implementations:** If a `session_sources` entry has `source_type: "remote"` with `path: null`, this indicates a remote session from GitHub Actions that needs to be downloaded before analysis. See Step 3 for download instructions.
 
 ### Step 2: Analyze Implementation
 
@@ -136,7 +136,13 @@ For each session source from Step 1, preprocess to compressed XML format:
 **IMPORTANT:** Check `source_type` before processing:
 
 - If `source_type == "local"` and `path` is set: Process the session using the path
-- If `source_type == "remote"`: Skip for now (remote session download not yet implemented). Inform the user that this session originated from a remote implementation and cannot be analyzed locally yet.
+- If `source_type == "remote"`:
+  1. Download the session using the exec command:
+     ```bash
+     erk exec download-remote-session --run-id "<run_id>" --session-id "<session_id>"
+     ```
+  2. Parse the JSON output. If `success` is `true`, use the returned `path` for processing.
+  3. If `success` is `false` (artifact expired after 90-day retention, permissions error, etc.), inform the user and skip this session.
 
 ```bash
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn
