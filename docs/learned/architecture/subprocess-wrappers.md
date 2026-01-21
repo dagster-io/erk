@@ -6,7 +6,7 @@ read_when:
   - "understanding subprocess patterns"
 tripwires:
   - action: "using bare subprocess.run with check=True"
-    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI)."
+    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
 ---
 
 # Subprocess Execution Wrappers
@@ -103,6 +103,37 @@ if result.returncode != 0:
 ```
 
 When code explicitly uses `check=False` and checks the return code, this is a Look Before You Leap (LBYL) pattern for graceful degradation. Do not refactor these to use wrappers.
+
+## Graceful Degradation Pattern
+
+Not all subprocess calls should use `run_with_error_reporting()`. Use explicit exception handling when:
+
+1. **The operation is optional** - Failure should not stop the main workflow
+2. **Fire-and-forget semantics** - The result is informational, not critical
+3. **Warning vs Error** - You want to show a warning and continue, not exit
+
+### Example: Async Learn Trigger in Land Command
+
+```python
+# Pattern: check=True with explicit CalledProcessError handling
+try:
+    result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+    # Handle success
+except subprocess.CalledProcessError as e:
+    # Show warning, continue execution
+    user_output(click.style("⚠ ", fg="yellow") + f"Optional operation failed: {e}")
+except FileNotFoundError:
+    # Handle missing command gracefully
+    user_output(click.style("⚠ ", fg="yellow") + "Command not found")
+```
+
+### Decision Table
+
+| Scenario                       | Pattern                         | Reason                           |
+| ------------------------------ | ------------------------------- | -------------------------------- |
+| CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
+| Optional background operation  | Explicit exception handling     | Main operation should continue   |
+| Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
 
 ## Summary
 
