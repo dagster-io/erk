@@ -230,7 +230,7 @@ def _run_gitignore_prompts(repo_root: Path) -> None:
     gitignore_content, bin_added = _add_gitignore_entry_with_prompt(
         gitignore_content,
         ".erk/bin/",
-        "Add .erk/bin/ to .gitignore (compiled CLI binaries)?",
+        "Add .erk/bin/ to .gitignore (generated shell scripts)?",
     )
 
     # Write if any entry was modified
