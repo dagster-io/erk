@@ -264,14 +264,30 @@ def test_update_slot_objective_replaces_value() -> None:
     assert new_state.slots[0].last_objective_id == 200
 
 
-def test_update_slot_objective_returns_unchanged_for_unknown_slot() -> None:
-    """Test that update_slot_objective returns state unchanged if slot not found."""
+def test_update_slot_objective_creates_slot_if_not_found() -> None:
+    """Test that update_slot_objective creates a new slot entry if not found (upsert)."""
     slot1 = SlotInfo(name="erk-slot-01", last_objective_id=None)
     state = PoolState.test(slots=(slot1,))
 
     new_state = update_slot_objective(state, "erk-slot-99", 123)
 
-    assert new_state is state  # Same object, unchanged
+    assert new_state is not state  # Different object, modified
+    assert len(new_state.slots) == 2
+    assert new_state.slots[0].name == "erk-slot-01"
+    assert new_state.slots[0].last_objective_id is None
+    assert new_state.slots[1].name == "erk-slot-99"
+    assert new_state.slots[1].last_objective_id == 123
+
+
+def test_update_slot_objective_creates_slot_in_empty_pool() -> None:
+    """Test that update_slot_objective creates a slot in an empty pool."""
+    state = PoolState.test(slots=())
+
+    new_state = update_slot_objective(state, "erk-slot-01", 42)
+
+    assert len(new_state.slots) == 1
+    assert new_state.slots[0].name == "erk-slot-01"
+    assert new_state.slots[0].last_objective_id == 42
 
 
 def test_update_slot_objective_preserves_other_fields() -> None:
