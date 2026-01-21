@@ -8,7 +8,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from erk_shared.github.abc import GitHub
+from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
@@ -57,6 +57,7 @@ class FakeGitHub(GitHub):
         pr_diff_error: str | None = None,
         workflow_runs_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
+        gist_create_error: str | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -93,6 +94,7 @@ class FakeGitHub(GitHub):
                 is called. Callback receives (run_id, artifact_name, destination) and can create
                 files in destination to simulate artifact content. Return True for success,
                 False or raise to simulate failure.
+            gist_create_error: If set, create_gist() returns GistCreateError with this message.
         """
         # Default to test values if not provided
         self._repo_info = repo_info or RepoInfo(owner="test-owner", name="test-repo")
@@ -125,7 +127,11 @@ class FakeGitHub(GitHub):
         self._pr_diff_error = pr_diff_error
         self._workflow_runs_error = workflow_runs_error
         self._artifact_download_callback = artifact_download_callback
+        self._gist_create_error = gist_create_error
         self._downloaded_artifacts: list[tuple[str, str, Path]] = []
+        # (filename, content, description, public)
+        self._created_gists: list[tuple[str, str, str, bool]] = []
+        self._next_gist_id = 1000
         self._updated_pr_bases: list[tuple[int, str]] = []
         self._updated_pr_bodies: list[tuple[int, str]] = []
         self._updated_pr_titles: list[tuple[int, str]] = []
@@ -920,3 +926,37 @@ class FakeGitHub(GitHub):
         Returns list of (run_id, artifact_name, destination) tuples.
         """
         return self._downloaded_artifacts
+
+    def create_gist(
+        self,
+        *,
+        filename: str,
+        content: str,
+        description: str,
+        public: bool,
+    ) -> GistCreated | GistCreateError:
+        """Record gist creation in mutation tracking list.
+
+        Returns GistCreateError if gist_create_error is configured,
+        otherwise returns GistCreated with fake IDs.
+        """
+        if self._gist_create_error is not None:
+            return GistCreateError(message=self._gist_create_error)
+
+        self._created_gists.append((filename, content, description, public))
+        gist_id = f"fake-gist-{self._next_gist_id}"
+        self._next_gist_id += 1
+
+        return GistCreated(
+            gist_id=gist_id,
+            gist_url=f"https://gist.github.com/{self._repo_info.owner}/{gist_id}",
+            raw_url=f"https://gist.githubusercontent.com/{self._repo_info.owner}/{gist_id}/raw/{filename}",
+        )
+
+    @property
+    def created_gists(self) -> list[tuple[str, str, str, bool]]:
+        """Read-only access to created gists for test assertions.
+
+        Returns list of (filename, content, description, public) tuples.
+        """
+        return self._created_gists

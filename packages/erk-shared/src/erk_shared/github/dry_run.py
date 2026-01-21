@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from erk_shared.github.abc import GitHub
+from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
@@ -311,3 +311,21 @@ class DryRunGitHub(GitHub):
     ) -> bool:
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.download_run_artifact(repo_root, run_id, artifact_name, destination)
+
+    def create_gist(
+        self,
+        *,
+        filename: str,
+        content: str,
+        description: str,
+        public: bool,
+    ) -> GistCreated | GistCreateError:
+        """No-op for creating gist in dry-run mode.
+
+        Returns a fake GistCreated to allow dry-run workflows to continue.
+        """
+        return GistCreated(
+            gist_id="dry-run-gist-id",
+            gist_url="https://gist.github.com/dry-run/dry-run-gist-id",
+            raw_url=f"https://gist.githubusercontent.com/dry-run/dry-run-gist-id/raw/{filename}",
+        )
