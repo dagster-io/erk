@@ -28,7 +28,10 @@ from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import execute_finalize
 from erk_shared.gateway.gt.types import FinalizeResult, PostAnalysisError
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
-from erk_shared.gateway.pr.graphite_enhance import execute_graphite_enhance
+from erk_shared.gateway.pr.graphite_enhance import (
+    execute_graphite_enhance,
+    should_enhance_with_graphite,
+)
 from erk_shared.gateway.pr.submit import execute_core_submit
 from erk_shared.gateway.pr.types import (
     CoreSubmitError,
@@ -108,9 +111,15 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     cwd = Path.cwd()
     session_id = os.environ.get("SESSION_ID", str(uuid.uuid4()))
 
+    # Determine if Graphite will handle the push (skip git push to avoid tracking divergence)
+    skip_push = False
+    if use_graphite:
+        check_result = should_enhance_with_graphite(ctx, cwd)
+        skip_push = check_result.should_enhance
+
     # Phase 1: Core submit (git push + gh pr create)
     click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
-    core_result = _run_core_submit(ctx, cwd, debug, force)
+    core_result = _run_core_submit(ctx, cwd, debug, force, skip_push=skip_push)
 
     if isinstance(core_result, CoreSubmitError):
         raise click.ClickException(core_result.message)
@@ -221,13 +230,21 @@ def _run_core_submit(
     cwd: Path,
     debug: bool,
     force: bool,
+    *,
+    skip_push: bool,
 ) -> CoreSubmitResult | CoreSubmitError:
     """Run core submit phase (git push + gh pr create)."""
     result: CoreSubmitResult | CoreSubmitError | None = None
     plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
     for event in execute_core_submit(
-        ctx, cwd, pr_title="WIP", pr_body="", force=force, plans_repo=plans_repo
+        ctx,
+        cwd,
+        pr_title="WIP",
+        pr_body="",
+        force=force,
+        plans_repo=plans_repo,
+        skip_push=skip_push,
     ):
         if isinstance(event, ProgressEvent):
             if debug:

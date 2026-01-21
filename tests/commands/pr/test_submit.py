@@ -703,8 +703,9 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             claude_executor=claude_executor,
         )
 
-        # Run with --force flag
-        result = runner.invoke(pr_group, ["submit", "--force"], obj=ctx)
+        # Run with --force flag and --no-graphite to test git push force path
+        # (With Graphite enabled, the push is handled by gt submit, not git push)
+        result = runner.invoke(pr_group, ["submit", "--force", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
         # Verify force was passed to push_to_remote
@@ -799,8 +800,9 @@ def test_pr_submit_short_force_flag() -> None:
             claude_executor=claude_executor,
         )
 
-        # Run with -f short flag
-        result = runner.invoke(pr_group, ["submit", "-f"], obj=ctx)
+        # Run with -f short flag and --no-graphite to test git push force path
+        # (With Graphite enabled, the push is handled by gt submit, not git push)
+        result = runner.invoke(pr_group, ["submit", "-f", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
         # Verify force was passed to push_to_remote
