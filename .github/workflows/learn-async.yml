@@ -19,7 +19,7 @@ on:
         description: "Claude model to use"
         required: false
         type: string
-        default: "claude-haiku-4"
+        default: "claude-haiku-4-5"
       distinct_id:
         description: "Unique identifier for run discovery (base36)"
         required: false
