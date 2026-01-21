@@ -6,7 +6,7 @@
 # "GitHub Actions is not permitted to create or approve pull requests"
 
 name: learn-async
-run-name: "Learn async: #${{ inputs.issue_number }}"
+run-name: "Learn async: #${{ inputs.issue_number }}${{ inputs.distinct_id && format(':{0}', inputs.distinct_id) || '' }}"
 
 on:
   workflow_dispatch:
@@ -20,6 +20,11 @@ on:
         required: false
         type: string
         default: "claude-haiku-4"
+      distinct_id:
+        description: "Unique identifier for run discovery (base36)"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: learn-async-${{ inputs.issue_number }}
