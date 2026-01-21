@@ -84,6 +84,7 @@ class RealPromptExecutor(PromptExecutor):
         cmd = [
             "claude",
             "--print",
+            "--no-session-persistence",
             "--model",
             model,
             "--dangerously-skip-permissions",
