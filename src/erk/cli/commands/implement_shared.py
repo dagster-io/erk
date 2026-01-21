@@ -55,7 +55,8 @@ def implement_common_options(fn: F) -> F:
     - -m/--model: Model to use for Claude
     - --docker: Run Claude inside Docker container for filesystem isolation
     - --docker-image: Docker image to use (default: erk-local:latest)
-    - --codespace: Run Claude in registered codespace (uses default if name not provided)
+    - --codespace: Run Claude in registered codespace (uses default)
+    - --codespace-name: Run Claude in named codespace
 
     Example:
         @click.command("implement", cls=CommandWithHiddenOptions)
@@ -68,12 +69,15 @@ def implement_common_options(fn: F) -> F:
     # Apply options in reverse order (Click decorators are applied bottom-up)
     # This results in options appearing in this order in --help
     fn = click.option(
-        "--codespace",
+        "--codespace-name",
         type=str,
         default=None,
-        is_flag=False,
-        flag_value="",  # Empty string means "use default"
-        help="Run Claude in registered codespace (uses default if name not provided)",
+        help="Run Claude in named codespace for isolated implementation",
+    )(fn)
+    fn = click.option(
+        "--codespace",
+        is_flag=True,
+        help="Run Claude in registered codespace (uses default)",
     )(fn)
     fn = click.option(
         "--docker-image",
@@ -190,7 +194,8 @@ def validate_flags(
     no_interactive: bool,
     script: bool,
     docker: bool,
-    codespace: str | None,
+    codespace: bool,
+    codespace_name: str | None,
 ) -> None:
     """Validate flag combinations and raise ClickException if invalid.
 
@@ -199,7 +204,8 @@ def validate_flags(
         no_interactive: Whether to execute non-interactively
         script: Whether to output shell integration script
         docker: Whether to run in Docker container
-        codespace: Optional codespace name (None if not using codespace mode)
+        codespace: Whether to use default codespace
+        codespace_name: Named codespace (None if not using named codespace)
 
     Raises:
         click.ClickException: If flag combination is invalid
@@ -220,10 +226,17 @@ def validate_flags(
             "--no-interactive executes commands programmatically"
         )
 
-    # --docker and --codespace are mutually exclusive
-    if docker and codespace is not None:
+    # --codespace and --codespace-name are mutually exclusive
+    if codespace and codespace_name is not None:
         raise click.ClickException(
-            "--docker and --codespace are mutually exclusive\n"
+            "--codespace and --codespace-name are mutually exclusive\n"
+            "Use --codespace for default or --codespace-name NAME for a specific codespace"
+        )
+
+    # --docker and --codespace/--codespace-name are mutually exclusive
+    if docker and (codespace or codespace_name is not None):
+        raise click.ClickException(
+            "--docker and --codespace/--codespace-name are mutually exclusive\n"
             "Choose either Docker container or codespace execution"
         )
 
