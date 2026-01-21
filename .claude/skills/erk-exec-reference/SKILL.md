@@ -22,7 +22,6 @@ Quick reference for all `erk exec` subcommands.
 | `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                 |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                      |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                 |
-| `create-learn-branch`             | Create and push a branch for learn documentation.                         |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                |
 | `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.          |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
@@ -160,19 +159,6 @@ Extract plan from Claude session and create GitHub issue.
 | Flag           | Type | Required | Default        | Description                                                                   |
 | -------------- | ---- | -------- | -------------- | ----------------------------------------------------------------------------- |
 | `--session-id` | TEXT | No       | Sentinel.UNSET | Session ID to search within (optional, searches all sessions if not provided) |
-
-### create-learn-branch
-
-Create and push a branch for learn documentation.
-
-**Usage:** `erk exec create-learn-branch`
-
-**Options:**
-
-| Flag             | Type    | Required | Default        | Description                        |
-| ---------------- | ------- | -------- | -------------- | ---------------------------------- |
-| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number                |
-| `--trunk-branch` | TEXT    | Yes      | Sentinel.UNSET | Name of trunk branch (main/master) |
 
 ### create-plan-from-context
 
