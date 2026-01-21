@@ -177,7 +177,7 @@ class RemoteSessionSource(SessionSource):
         session_id: str,
         run_id: str | None = None,
         path: str | None = None,
-        gist_url: str | None = None,
+        gist_url: str | None,
     ) -> None:
         self._session_id = session_id
         self._run_id = run_id

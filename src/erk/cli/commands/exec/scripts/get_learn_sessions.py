@@ -215,6 +215,7 @@ def _discover_sessions(
             session_id=sessions_for_plan.last_remote_impl_session_id,
             run_id=sessions_for_plan.last_remote_impl_run_id,
             path=None,  # Path is None until downloaded
+            gist_url=None,
         )
         session_sources.append(remote_source)
 
