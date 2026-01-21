@@ -300,7 +300,7 @@ class FakeGtKitOps:
         """
         if isinstance(self._main_graphite, GraphiteDisabled):
             return GitBranchManager(git=self.git, github=self.github)
-        return GraphiteBranchManager(git=self.git, graphite=self._main_graphite)
+        return GraphiteBranchManager(git=self.git, graphite=self._main_graphite, github=self.github)
 
     # Declarative setup methods
 

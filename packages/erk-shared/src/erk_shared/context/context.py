@@ -170,7 +170,7 @@ class ErkContext:
         """
         if isinstance(self.graphite, GraphiteDisabled):
             return GitBranchManager(git=self.git, github=self.github)
-        return GraphiteBranchManager(git=self.git, graphite=self.graphite)
+        return GraphiteBranchManager(git=self.git, graphite=self.graphite, github=self.github)
 
     @staticmethod
     def for_test(

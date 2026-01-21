@@ -141,6 +141,7 @@ class GitHubData(NamedTuple):
     mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN" (empty if no PR)
     check_contexts: list[dict[str, str]]  # List of check contexts from statusCheckRollup
     review_thread_counts: tuple[int, int]  # (resolved, total) counts for PR review threads
+    from_fallback: bool  # True if PR info came from GitHub API fallback, not Graphite cache
 
 
 def get_git_root_via_gateway(ctx: StatuslineContext) -> Path | None:
@@ -364,7 +365,7 @@ def get_github_repo_via_gateway(ctx: StatuslineContext, repo_root: Path) -> tupl
 
 def get_pr_info_via_branch_manager(
     ctx: StatuslineContext, repo_root: Path, branch: str
-) -> tuple[int, str, bool] | None:
+) -> tuple[int, str, bool, bool] | None:
     """Get PR info via BranchManager.
 
     Uses BranchManager abstraction which automatically selects between
@@ -377,14 +378,15 @@ def get_pr_info_via_branch_manager(
         branch: Current branch name
 
     Returns:
-        Tuple of (pr_number, pr_state, is_draft) or None if no PR found.
+        Tuple of (pr_number, pr_state, is_draft, from_fallback) or None if no PR found.
         pr_state is one of "OPEN", "MERGED", "CLOSED".
+        from_fallback is True if PR was fetched via GitHub API fallback.
     """
     pr_info = ctx.branch_manager.get_pr_for_branch(repo_root, branch)
     if pr_info is None:
         return None
 
-    return (pr_info.number, pr_info.state, pr_info.is_draft)
+    return (pr_info.number, pr_info.state, pr_info.is_draft, pr_info.from_fallback)
 
 
 class PRDetailsResult(NamedTuple):
@@ -729,9 +731,10 @@ def fetch_github_data_via_gateway(
             mergeable="",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
 
-    pr_number, pr_state, is_draft = pr_info
+    pr_number, pr_state, is_draft, from_fallback = pr_info
     _logger.debug(
         "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
     )
@@ -792,6 +795,7 @@ def fetch_github_data_via_gateway(
         mergeable=mergeable,
         check_contexts=check_contexts,
         review_thread_counts=review_thread_counts,
+        from_fallback=from_fallback,
     )
 
 
@@ -1052,6 +1056,10 @@ def build_gh_label(
             # Add conflicts emoji if applicable
             if repo_info.pr_state in ("published", "draft") and repo_info.has_conflicts:
                 emoji += "💥"
+
+            # Add fallback warning if PR info came from GitHub API instead of Graphite cache
+            if github_data is not None and github_data.from_fallback:
+                emoji += "⚠️"
 
             if emoji:
                 parts.extend(

@@ -9,6 +9,8 @@ from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.branch_manager.types import PrInfo
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.git.abc import Git
+from erk_shared.github.abc import GitHub
+from erk_shared.github.types import PRNotFound
 
 
 @dataclass(frozen=True)
@@ -16,17 +18,20 @@ class GraphiteBranchManager(BranchManager):
     """BranchManager implementation using Graphite.
 
     Uses Graphite's local cache for fast PR lookups and `gt create`
-    for branch creation with parent tracking.
+    for branch creation with parent tracking. Falls back to GitHub API
+    when PR info is not in Graphite cache.
     """
 
     git: Git
     graphite: Graphite
+    github: GitHub
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
-        """Get PR info from Graphite's local cache.
+        """Get PR info from Graphite's local cache, falling back to GitHub API.
 
-        Reads from .graphite_pr_info cache file for fast lookup
-        without network calls.
+        First checks Graphite's .graphite_pr_info cache file for fast lookup
+        without network calls. If the branch is not in the cache (e.g., after
+        `gt track` without `gt sync`), falls back to GitHub API.
 
         Args:
             repo_root: Repository root directory
@@ -34,16 +39,28 @@ class GraphiteBranchManager(BranchManager):
 
         Returns:
             PrInfo if a PR exists for the branch, None otherwise.
+            The from_fallback field indicates whether GitHub API was used.
         """
+        # Try Graphite cache first (fast, local file read)
         prs = self.graphite.get_prs_from_graphite(self.git, repo_root)
-        if branch not in prs:
-            return None
+        if branch in prs:
+            pr_info = prs[branch]
+            return PrInfo(
+                number=pr_info.number,
+                state=pr_info.state,
+                is_draft=pr_info.is_draft,
+                from_fallback=False,
+            )
 
-        pr_info = prs[branch]
+        # Fall back to GitHub API for branches not in Graphite cache
+        pr_details = self.github.get_pr_for_branch(repo_root, branch)
+        if isinstance(pr_details, PRNotFound):
+            return None
         return PrInfo(
-            number=pr_info.number,
-            state=pr_info.state,
-            is_draft=pr_info.is_draft,
+            number=pr_details.number,
+            state=pr_details.state,
+            is_draft=pr_details.is_draft,
+            from_fallback=True,  # Mark as fallback
         )
 
     def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:

@@ -37,6 +37,7 @@ class FakeGitHub(GitHub):
         prs: dict[str, PullRequestInfo] | None = None,
         pr_bases: dict[int, str] | None = None,
         pr_details: dict[int, PRDetails] | None = None,
+        prs_by_branch: dict[str, PRDetails] | None = None,
         workflow_runs: list[WorkflowRun] | None = None,
         workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
         run_logs: dict[str, str] | None = None,
@@ -66,6 +67,7 @@ class FakeGitHub(GitHub):
             prs: Mapping of branch name -> PullRequestInfo
             pr_bases: Mapping of pr_number -> base_branch
             pr_details: Mapping of pr_number -> PRDetails for get_pr() and get_pr_for_branch()
+            prs_by_branch: Mapping of branch name -> PRDetails (simpler than prs + pr_details)
             workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
             workflow_runs_by_node_id: Mapping of GraphQL node_id -> WorkflowRun for
                                      get_workflow_runs_by_node_ids()
@@ -101,6 +103,7 @@ class FakeGitHub(GitHub):
         self._prs = prs or {}
         self._pr_bases = pr_bases or {}
         self._pr_details = pr_details or {}
+        self._prs_by_branch = prs_by_branch or {}
         self._workflow_runs = workflow_runs or []
         self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
         self._run_logs = run_logs or {}
@@ -570,9 +573,17 @@ class FakeGitHub(GitHub):
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PRDetails | PRNotFound:
         """Get comprehensive PR details for a branch from pre-configured state.
 
+        Checks prs_by_branch first (simpler lookup), then falls back to
+        prs + pr_details (original two-step lookup).
+
         Returns:
             PRDetails if a PR exists for the branch, PRNotFound otherwise
         """
+        # Simple lookup first
+        if branch in self._prs_by_branch:
+            return self._prs_by_branch[branch]
+
+        # Fall back to two-step lookup
         pr = self._prs.get(branch)
         if pr is None:
             return PRNotFound(branch=branch)

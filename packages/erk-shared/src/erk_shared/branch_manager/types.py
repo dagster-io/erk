@@ -14,3 +14,4 @@ class PrInfo:
     number: int
     state: str  # "OPEN", "MERGED", "CLOSED"
     is_draft: bool
+    from_fallback: bool  # True if fetched via GitHub API fallback (not from cache)

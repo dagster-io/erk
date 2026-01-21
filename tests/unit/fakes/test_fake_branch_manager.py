@@ -55,7 +55,7 @@ def test_create_branch_tracks_creation() -> None:
 
 def test_get_pr_for_branch_returns_configured_pr() -> None:
     """Test that get_pr_for_branch returns pre-configured PR info."""
-    pr_info = PrInfo(number=123, state="OPEN", is_draft=False)
+    pr_info = PrInfo(number=123, state="OPEN", is_draft=False, from_fallback=False)
     manager = FakeBranchManager(pr_info={"feature-branch": pr_info})
     repo_root = Path("/fake/repo")
 

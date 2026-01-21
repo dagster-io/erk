@@ -44,6 +44,7 @@ class GitBranchManager(BranchManager):
             number=result.number,
             state=result.state,
             is_draft=result.is_draft,
+            from_fallback=False,  # GitBranchManager always uses GitHub directly
         )
 
     def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:

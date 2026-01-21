@@ -139,6 +139,7 @@ class TestGetRepoInfo:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_repo_info(github_data)
         assert result.pr_state == "draft"
@@ -157,6 +158,7 @@ class TestGetRepoInfo:
             mergeable="CONFLICTING",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_repo_info(github_data)
         assert result.has_conflicts is True
@@ -181,6 +183,7 @@ class TestGetChecksStatus:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_checks_status(github_data)
         assert result == ""
@@ -203,6 +206,7 @@ class TestGetChecksStatus:
                 }
             ],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_checks_status(github_data)
         assert result == "[✅:1]"
@@ -237,6 +241,7 @@ class TestGetChecksStatus:
                 },
             ],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_checks_status(github_data)
         assert result == "[✅:3]"
@@ -289,6 +294,7 @@ class TestGetChecksStatus:
                 },
             ],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_checks_status(github_data)
         assert result == "[✅:3 🚫:1 🔄:2]"
@@ -311,6 +317,7 @@ class TestGetChecksStatus:
                 },
             ],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_checks_status(github_data)
         assert result == "[🚫:1]"
@@ -345,6 +352,7 @@ class TestGetChecksStatus:
                 },
             ],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = get_checks_status(github_data)
         assert result == "[✅:2 🔄:1]"
@@ -392,6 +400,7 @@ class TestBuildGhLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
 
         result = build_gh_label(repo_info, github_data)
@@ -421,6 +430,7 @@ class TestBuildGhLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
 
         result = build_gh_label(repo_info, github_data, issue_number=456)
@@ -470,6 +480,7 @@ class TestBuildGhLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(3, 5),
+            from_fallback=False,
         )
 
         result = build_gh_label(repo_info, github_data)
@@ -497,6 +508,7 @@ class TestBuildGhLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(5, 5),
+            from_fallback=False,
         )
 
         result = build_gh_label(repo_info, github_data)
@@ -524,6 +536,7 @@ class TestBuildGhLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
 
         result = build_gh_label(repo_info, github_data)
@@ -1081,6 +1094,7 @@ class TestBuildCommentCountLabel:
             mergeable="",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = build_comment_count_label(github_data)
         assert result == ""
@@ -1096,6 +1110,7 @@ class TestBuildCommentCountLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 0),
+            from_fallback=False,
         )
         result = build_comment_count_label(github_data)
         assert result == ""
@@ -1111,6 +1126,7 @@ class TestBuildCommentCountLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(3, 5),
+            from_fallback=False,
         )
         result = build_comment_count_label(github_data)
         assert result == "3/5"
@@ -1126,6 +1142,7 @@ class TestBuildCommentCountLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(5, 5),
+            from_fallback=False,
         )
         result = build_comment_count_label(github_data)
         assert result == "✓"
@@ -1141,6 +1158,7 @@ class TestBuildCommentCountLabel:
             mergeable="MERGEABLE",
             check_contexts=[],
             review_thread_counts=(0, 5),
+            from_fallback=False,
         )
         result = build_comment_count_label(github_data)
         assert result == "0/5"
@@ -1342,6 +1360,7 @@ class TestGetPrInfoViaBranchManager:
                     number=123,
                     state="OPEN",
                     is_draft=True,
+                    from_fallback=False,
                 )
             }
         )
@@ -1356,7 +1375,7 @@ class TestGetPrInfoViaBranchManager:
         result = get_pr_info_via_branch_manager(ctx, repo_root, "feature-branch")
 
         assert result is not None
-        assert result == (123, "OPEN", True)
+        assert result == (123, "OPEN", True, False)
 
     def test_returns_none_when_no_pr(self) -> None:
         """Should return None when branch has no PR."""
@@ -1436,6 +1455,7 @@ class TestFetchGitHubDataViaGateway:
                     number=456,
                     state="OPEN",
                     is_draft=False,
+                    from_fallback=False,
                 )
             }
         )
@@ -1470,3 +1490,4 @@ class TestFetchGitHubDataViaGateway:
         assert result.mergeable == "MERGEABLE"
         assert len(result.check_contexts) == 1
         assert result.review_thread_counts == (3, 5)
+        assert result.from_fallback is False

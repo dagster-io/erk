@@ -3,6 +3,7 @@
 Tests branch operations including:
 - delete_branch() with LBYL fallback to git when Graphite can't handle the branch
 - create_branch() with Graphite tracking
+- get_pr_for_branch() with GitHub fallback when not in Graphite cache
 """
 
 from pathlib import Path
@@ -11,6 +12,8 @@ from erk_shared.branch_manager.graphite import GraphiteBranchManager
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
 from erk_shared.git.fake import FakeGit
+from erk_shared.github.fake import FakeGitHub
+from erk_shared.github.types import PRDetails, PullRequestInfo
 
 
 def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:
@@ -33,7 +36,7 @@ def test_delete_branch_uses_graphite_when_tracked_and_not_diverged() -> None:
         },
     )
 
-    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=FakeGitHub())
     manager.delete_branch(repo_root, "feature-branch")
 
     # Graphite delete was called
@@ -53,7 +56,7 @@ def test_delete_branch_falls_back_to_git_when_untracked() -> None:
         branches={},  # Branch not tracked
     )
 
-    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=FakeGitHub())
     manager.delete_branch(repo_root, "feature-branch")
 
     # Graphite delete was NOT called
@@ -86,7 +89,7 @@ def test_delete_branch_uses_graphite_even_when_diverged() -> None:
         },
     )
 
-    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=FakeGitHub())
     manager.delete_branch(repo_root, "feature-branch")
 
     # Graphite delete WAS called (gt delete -f handles diverged branches)
@@ -118,7 +121,7 @@ def test_delete_branch_uses_graphite_when_commit_sha_is_none() -> None:
         },
     )
 
-    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=FakeGitHub())
     manager.delete_branch(repo_root, "feature-branch")
 
     # Graphite delete was called (branch is tracked)
@@ -150,7 +153,7 @@ def test_delete_branch_uses_graphite_when_git_branch_head_is_none() -> None:
         },
     )
 
-    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=FakeGitHub())
     manager.delete_branch(repo_root, "feature-branch")
 
     # Graphite delete was called (branch is tracked and can't compare SHAs)
@@ -172,7 +175,7 @@ def test_create_branch_tracks_with_graphite() -> None:
     )
     fake_graphite = FakeGraphite()
 
-    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite)
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=FakeGitHub())
     manager.create_branch(repo_root, "feature-branch", "main")
 
     # Git operations were called
@@ -186,3 +189,95 @@ def test_create_branch_tracks_with_graphite() -> None:
 
     # Graphite tracking was called
     assert fake_graphite.track_branch_calls == [(repo_root, "feature-branch", "main")]
+
+
+# --- PR lookup with GitHub fallback tests ---
+
+
+def test_get_pr_for_branch_returns_from_graphite_cache() -> None:
+    """When PR is in Graphite cache, returns with from_fallback=False."""
+    repo_root = Path("/repo")
+
+    fake_git = FakeGit()
+    fake_graphite = FakeGraphite(
+        pr_info={
+            "feature-branch": PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Feature branch",
+                checks_passing=True,
+                owner="owner",
+                repo="repo",
+            ),
+        },
+    )
+    fake_github = FakeGitHub()
+
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=fake_github)
+    result = manager.get_pr_for_branch(repo_root, "feature-branch")
+
+    assert result is not None
+    assert result.number == 123
+    assert result.state == "OPEN"
+    assert result.is_draft is False
+    assert result.from_fallback is False
+
+
+def test_get_pr_for_branch_falls_back_to_github_when_not_in_cache() -> None:
+    """When branch PR not in Graphite cache, falls back to GitHub API."""
+    repo_root = Path("/repo")
+
+    fake_git = FakeGit(
+        remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_graphite = FakeGraphite(
+        pr_info={},  # Branch not in Graphite cache
+    )
+    fake_github = FakeGitHub(
+        prs_by_branch={
+            "feature-branch": PRDetails(
+                number=456,
+                url="https://github.com/owner/repo/pull/456",
+                title="Feature branch PR",
+                body="",
+                state="OPEN",
+                is_draft=True,
+                base_ref_name="main",
+                head_ref_name="feature-branch",
+                is_cross_repository=False,
+                mergeable="UNKNOWN",
+                merge_state_status="UNKNOWN",
+                owner="owner",
+                repo="repo",
+            ),
+        },
+    )
+
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=fake_github)
+    result = manager.get_pr_for_branch(repo_root, "feature-branch")
+
+    assert result is not None
+    assert result.number == 456
+    assert result.state == "OPEN"
+    assert result.is_draft is True
+    assert result.from_fallback is True
+
+
+def test_get_pr_for_branch_returns_none_when_not_found_anywhere() -> None:
+    """When branch has no PR in either Graphite cache or GitHub, returns None."""
+    repo_root = Path("/repo")
+
+    fake_git = FakeGit(
+        remote_urls={(repo_root, "origin"): "git@github.com:owner/repo.git"},
+    )
+    fake_graphite = FakeGraphite(
+        pr_info={},
+    )
+    fake_github = FakeGitHub()  # No PRs configured
+
+    manager = GraphiteBranchManager(git=fake_git, graphite=fake_graphite, github=fake_github)
+    result = manager.get_pr_for_branch(repo_root, "no-pr-branch")
+
+    assert result is None
