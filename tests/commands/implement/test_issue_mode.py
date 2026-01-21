@@ -237,3 +237,104 @@ def test_auto_detect_fails_on_non_plan_branch() -> None:
         assert "Could not auto-detect plan number" in result.output
         assert "feature-branch" in result.output
         assert "PXXXX-* pattern" in result.output
+
+
+def test_implement_codespace_mode_skips_local_impl_creation() -> None:
+    """Test that codespace mode skips local .impl/ creation and passes issue to codespace."""
+    from erk.core.codespace.registry_fake import FakeCodespaceRegistry
+    from erk.core.codespace.types import RegisteredCodespace
+    from erk_shared.gateway.codespace.fake import FakeCodespace
+
+    plan_issue = create_sample_plan_issue("123")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"123": plan_issue})
+
+        # Set up codespace registry with a named codespace
+        codespace_instance = RegisteredCodespace(
+            name="mybox",
+            gh_name="user-mybox-abc123",
+            created_at=datetime(2025, 1, 1, 12, 0),
+        )
+        codespace_registry = FakeCodespaceRegistry(
+            codespaces=[codespace_instance], default_codespace="mybox"
+        )
+
+        # Use FakeCodespace to track SSH calls
+        codespace_gateway = FakeCodespace()
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            codespace_registry=codespace_registry,
+            codespace=codespace_gateway,
+        )
+
+        # Run in dry-run mode with named codespace
+        result = runner.invoke(implement, ["123", "--dry-run", "--codespace", "mybox"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Would execute /erk:plan-implement 123 in codespace" in result.output
+
+        # Verify NO .impl/ folder was created locally
+        assert not (env.cwd / ".impl").exists()
+
+
+def test_implement_codespace_mode_passes_issue_number_to_remote() -> None:
+    """Test that codespace mode passes issue number to remote command."""
+    from erk.core.codespace.registry_fake import FakeCodespaceRegistry
+    from erk.core.codespace.types import RegisteredCodespace
+    from erk_shared.gateway.codespace.fake import FakeCodespace
+
+    plan_issue = create_sample_plan_issue("456")
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+        store, _ = create_plan_store_with_plans({"456": plan_issue})
+
+        codespace_instance = RegisteredCodespace(
+            name="mybox",
+            gh_name="user-mybox-abc123",
+            created_at=datetime(2025, 1, 1, 12, 0),
+        )
+        codespace_registry = FakeCodespaceRegistry(
+            codespaces=[codespace_instance], default_codespace="mybox"
+        )
+        codespace_gateway = FakeCodespace()
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            plan_store=store,
+            codespace_registry=codespace_registry,
+            codespace=codespace_gateway,
+        )
+
+        # Run interactive mode with named codespace
+        # FakeCodespace's exec_ssh_interactive raises SystemExit(0)
+        result = runner.invoke(implement, ["456", "--codespace", "mybox"], obj=ctx)
+
+        # FakeCodespace's exec_ssh_interactive raises SystemExit(0)
+        assert result.exit_code == 0
+
+        # Verify the codespace was called with the issue number in the command
+        assert codespace_gateway.exec_called
+        assert len(codespace_gateway.ssh_calls) == 1
+        call = codespace_gateway.ssh_calls[0]
+        assert call.gh_name == "user-mybox-abc123"
+        # The command should include the issue number
+        assert "/erk:plan-implement 456" in call.remote_command
+        # Should also include git pull
+        assert "git pull" in call.remote_command
