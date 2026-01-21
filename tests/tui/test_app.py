@@ -600,7 +600,7 @@ class TestPlanDetailScreenCopyActions:
 
     @pytest.mark.asyncio
     async def test_copy_prepare_shortcut_1(self) -> None:
-        """Pressing '1' in detail screen copies prepare command."""
+        """Pressing '1' in detail screen copies prepare command with shell integration."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -622,11 +622,11 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("1")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk prepare 123"
+            assert clipboard.last_copied == "source <(erk prepare 123 --script)"
 
     @pytest.mark.asyncio
     async def test_copy_prepare_dangerous_shortcut_2(self) -> None:
-        """Pressing '2' in detail screen copies prepare --dangerous command."""
+        """Pressing '2' copies prepare --dangerous command with shell integration."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -646,7 +646,7 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("2")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk prepare 123 --dangerous"
+            assert clipboard.last_copied == "source <(erk prepare 123 --dangerous --script)"
 
     @pytest.mark.asyncio
     async def test_copy_submit_shortcut_3(self) -> None:

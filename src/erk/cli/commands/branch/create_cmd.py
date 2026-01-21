@@ -6,11 +6,13 @@ from erk.cli.activation import (
     activation_config_activate_only,
     activation_config_for_implement,
     print_activation_instructions,
+    render_activation_script,
     write_worktree_activate_script,
 )
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
@@ -22,7 +24,7 @@ from erk_shared.issue_workflow import (
 from erk_shared.output.output import user_output
 
 
-@click.command("create")
+@click.command("create", cls=CommandWithHiddenOptions)
 @click.argument("branch_name", metavar="BRANCH", required=False)
 @click.option(
     "--for-plan",
@@ -59,6 +61,7 @@ from erk_shared.output.output import user_output
     default=None,
     help="Use named codespace for isolated implementation",
 )
+@script_option
 @click.pass_obj
 def branch_create(
     ctx: ErkContext,
@@ -72,6 +75,7 @@ def branch_create(
     docker: bool,
     codespace: bool,
     codespace_name: str | None,
+    script: bool,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -199,35 +203,72 @@ def branch_create(
 
         user_output(f"Created .impl/ folder from issue #{setup.issue_number}")
 
-        # Write activation script
-        script_path = write_worktree_activate_script(
-            worktree_path=slot_result.worktree_path,
-            post_create_commands=None,
-        )
+        # Handle script mode vs normal mode
+        if script:
+            # Build activation script that CDs to worktree, activates venv, and runs erk implement
+            worktree_path = slot_result.worktree_path
 
-        # Print single activation command based on flags
-        # Determine activation config from CLI flags
-        if create_only:
-            config = activation_config_activate_only()
-        else:
-            # Convert codespace flag/name to ActivationConfig format:
-            # --codespace (flag only) → "" (empty string = default)
-            # --codespace-name NAME → "NAME" (named)
-            # neither → None (not using codespace)
-            codespace_value: str | None = None
+            # Build implement command with flags
+            implement_cmd = "erk implement"
+            if docker:
+                implement_cmd += " --docker"
             if codespace:
-                codespace_value = ""  # Use default codespace
+                implement_cmd += " --codespace"
             elif codespace_name is not None:
-                codespace_value = codespace_name
+                implement_cmd += f" --codespace-name {codespace_name}"
+            if dangerous:
+                implement_cmd += " --dangerous"
 
-            config = activation_config_for_implement(
-                docker=docker, dangerous=dangerous, codespace=codespace_value
+            # Determine post-cd commands
+            post_cd_commands: list[str] | None = None
+            if not create_only:
+                post_cd_commands = [implement_cmd]
+
+            # Build the activation script
+            script_content = render_activation_script(
+                worktree_path=worktree_path,
+                target_subpath=None,
+                post_cd_commands=post_cd_commands,
+                final_message='echo "Activated: $(pwd)"',
+                comment="prepare activation",
             )
 
-        print_activation_instructions(
-            script_path,
-            source_branch=None,
-            force=False,
-            config=config,
-            copy=True,
-        )
+            result = ctx.script_writer.write_activation_script(
+                script_content,
+                command_name="prepare",
+                comment=f"activate {worktree_path.name} and implement",
+            )
+            result.output_for_shell_integration()
+        else:
+            # Write activation script for manual sourcing
+            script_path = write_worktree_activate_script(
+                worktree_path=slot_result.worktree_path,
+                post_create_commands=None,
+            )
+
+            # Print single activation command based on flags
+            # Determine activation config from CLI flags
+            if create_only:
+                config = activation_config_activate_only()
+            else:
+                # Convert codespace flag/name to ActivationConfig format:
+                # --codespace (flag only) → "" (empty string = default)
+                # --codespace-name NAME → "NAME" (named)
+                # neither → None (not using codespace)
+                codespace_value: str | None = None
+                if codespace:
+                    codespace_value = ""  # Use default codespace
+                elif codespace_name is not None:
+                    codespace_value = codespace_name
+
+                config = activation_config_for_implement(
+                    docker=docker, dangerous=dangerous, codespace=codespace_value
+                )
+
+            print_activation_instructions(
+                script_path,
+                source_branch=None,
+                force=False,
+                config=config,
+                copy=True,
+            )
