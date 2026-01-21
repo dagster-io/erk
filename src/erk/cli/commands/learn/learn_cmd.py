@@ -15,6 +15,8 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
+from erk_shared.github.parsing import construct_workflow_run_url
+from erk_shared.github.types import GitHubRepoId
 from erk_shared.learn.trigger_async import (
     TriggerAsyncLearnNoSessionData,
     TriggerAsyncLearnNotErkPlan,
@@ -66,13 +68,19 @@ def _extract_issue_number(identifier: str) -> int | None:
     return None
 
 
-def _handle_async_mode(ctx: ErkContext, repo_root: Path, issue_number: int) -> None:
+def _handle_async_mode(
+    ctx: ErkContext,
+    repo_root: Path,
+    issue_number: int,
+    github_repo: GitHubRepoId | None,
+) -> None:
     """Handle async mode: enqueue learn job via GitHub Actions.
 
     Args:
         ctx: Erk context with gateway dependencies
         repo_root: Repository root directory
         issue_number: Plan issue number to learn from
+        github_repo: GitHub repository info for constructing workflow URL
     """
     result = trigger_async_learn_workflow(
         github=ctx.github,
@@ -93,7 +101,13 @@ def _handle_async_mode(ctx: ErkContext, repo_root: Path, issue_number: int) -> N
     if isinstance(result, TriggerAsyncLearnSuccess):
         user_output(click.style("Async learn job enqueued successfully", fg="green", bold=True))
         user_output(f"Issue: #{result.issue_number}")
-        user_output(f"Workflow run ID: {result.run_id}")
+        if github_repo is not None:
+            workflow_url = construct_workflow_run_url(
+                github_repo.owner, github_repo.repo, result.run_id
+            )
+            user_output(f"Workflow run: {workflow_url}")
+        else:
+            user_output(f"Workflow run ID: {result.run_id}")
         user_output("")
         user_output(click.style("Learn status: ", dim=True) + click.style("pending", fg="yellow"))
         return
@@ -186,7 +200,7 @@ def learn_cmd(
 
     # Async mode: enqueue for background processing via GitHub Actions
     if async_mode:
-        _handle_async_mode(ctx, repo_root, issue_number)
+        _handle_async_mode(ctx, repo_root, issue_number, repo.github)
         return
 
     # Find sessions for the plan
