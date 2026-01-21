@@ -21,6 +21,8 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 ## Agent Instructions
 
+> **Prerequisite**: Load `pr-operations` skill first for command reference.
+
 > **CRITICAL: Use ONLY `erk exec` Commands**
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
