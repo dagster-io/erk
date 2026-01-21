@@ -46,10 +46,9 @@ class PlanDetailScreen(ModalScreen):
         Binding("c", "copy_checkout", "Checkout"),
         Binding("e", "copy_pr_checkout", "PR Checkout"),
         Binding("y", "copy_output_logs", "Copy Logs"),
-        Binding("1", "copy_implement", "Implement"),
-        Binding("2", "copy_implement_dangerous", "Dangerous"),
-        Binding("3", "copy_implement_yolo", "Yolo"),
-        Binding("4", "copy_submit", "Submit"),
+        Binding("1", "copy_prepare", "Prepare"),
+        Binding("2", "copy_prepare_dangerous", "Dangerous"),
+        Binding("3", "copy_submit", "Submit"),
         Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
     ]
 
@@ -326,19 +325,14 @@ class PlanDetailScreen(ModalScreen):
             cmd = f"erk pr co {self._row.pr_number}"
             self._copy_and_notify(cmd)
 
-    def action_copy_implement(self) -> None:
-        """Copy basic implement command to clipboard."""
-        cmd = f"erk implement {self._row.issue_number}"
+    def action_copy_prepare(self) -> None:
+        """Copy basic prepare command to clipboard."""
+        cmd = f"erk prepare {self._row.issue_number}"
         self._copy_and_notify(cmd)
 
-    def action_copy_implement_dangerous(self) -> None:
-        """Copy implement --dangerous command to clipboard."""
-        cmd = f"erk implement {self._row.issue_number} --dangerous"
-        self._copy_and_notify(cmd)
-
-    def action_copy_implement_yolo(self) -> None:
-        """Copy implement --yolo command to clipboard."""
-        cmd = f"erk implement {self._row.issue_number} --yolo"
+    def action_copy_prepare_dangerous(self) -> None:
+        """Copy prepare --dangerous command to clipboard."""
+        cmd = f"erk prepare {self._row.issue_number} --dangerous"
         self._copy_and_notify(cmd)
 
     def action_copy_submit(self) -> None:
@@ -617,18 +611,13 @@ class PlanDetailScreen(ModalScreen):
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_implement":
-            cmd = f"erk implement {row.issue_number}"
+        elif command_id == "copy_prepare":
+            cmd = f"erk prepare {row.issue_number}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_implement_dangerous":
-            cmd = f"erk implement {row.issue_number} --dangerous"
-            executor.copy_to_clipboard(cmd)
-            executor.notify(f"Copied: {cmd}")
-
-        elif command_id == "copy_implement_yolo":
-            cmd = f"erk implement {row.issue_number} --yolo"
+        elif command_id == "copy_prepare_dangerous":
+            cmd = f"erk prepare {row.issue_number} --dangerous"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
@@ -766,26 +755,21 @@ class PlanDetailScreen(ModalScreen):
                 with Container(classes="command-row"):
                     yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)
 
-            # Implement commands
-            implement_cmd = f"erk implement {self._row.issue_number}"
+            # Prepare commands
+            prepare_cmd = f"erk prepare {self._row.issue_number}"
             with Container(classes="command-row"):
                 yield Label("[1]", classes="command-key")
-                yield CopyableLabel(implement_cmd, implement_cmd)
+                yield CopyableLabel(prepare_cmd, prepare_cmd)
 
-            dangerous_cmd = f"erk implement {self._row.issue_number} --dangerous"
+            dangerous_cmd = f"erk prepare {self._row.issue_number} --dangerous"
             with Container(classes="command-row"):
                 yield Label("[2]", classes="command-key")
                 yield CopyableLabel(dangerous_cmd, dangerous_cmd)
 
-            yolo_cmd = f"erk implement {self._row.issue_number} --yolo"
-            with Container(classes="command-row"):
-                yield Label("[3]", classes="command-key")
-                yield CopyableLabel(yolo_cmd, yolo_cmd)
-
             # Submit command
             submit_cmd = f"erk plan submit {self._row.issue_number}"
             with Container(classes="command-row"):
-                yield Label("[4]", classes="command-key")
+                yield Label("[3]", classes="command-key")
                 yield CopyableLabel(submit_cmd, submit_cmd)
 
             # Log entries (if any) - clickable timestamps

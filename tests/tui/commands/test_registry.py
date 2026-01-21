@@ -112,15 +112,14 @@ def test_copy_pr_checkout_not_available_when_no_pr() -> None:
     assert "copy_pr_checkout" not in cmd_ids
 
 
-def test_implement_commands_always_available() -> None:
-    """Implement commands should always be available."""
+def test_prepare_commands_always_available() -> None:
+    """Prepare commands should always be available."""
     row = make_plan_row(123, "Test")
     ctx = CommandContext(row=row)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_implement" in cmd_ids
-    assert "copy_implement_dangerous" in cmd_ids
-    assert "copy_implement_yolo" in cmd_ids
+    assert "copy_prepare" in cmd_ids
+    assert "copy_prepare_dangerous" in cmd_ids
     assert "copy_submit" in cmd_ids
 
 
