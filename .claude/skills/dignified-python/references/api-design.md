@@ -127,6 +127,17 @@ def create_worktree(
     checkout: bool,
 ) -> WorktreeInfo:
     ...
+
+# CORRECT: ALL parameters keyword-only (separator at start)
+def validate_flags(
+    *,
+    submit: bool,
+    no_interactive: bool,
+    script: bool,
+    docker: bool,
+    codespace: bool,
+) -> None:
+    ...
 ```
 
 ---
@@ -210,7 +221,7 @@ Before adding a default parameter value:
 
 Before adding a function with 5+ parameters:
 
-- [ ] Have I added `*` after the first (or ctx) parameter?
+- [ ] Have I added `*` after the first parameter, or at the start if ALL params should be keyword-only?
 - [ ] Is only `self`/`ctx` positional?
 - [ ] Is this an ABC/Protocol method? (exempt from rule)
 - [ ] If using ThreadPoolExecutor.submit(), am I using a lambda wrapper?
