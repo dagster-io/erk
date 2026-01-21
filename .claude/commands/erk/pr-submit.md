@@ -57,3 +57,11 @@ If `erk pr submit` fails, display the error and stop. The Python implementation 
 - Submission failures
 
 Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+
+### Refresh Status Line
+
+After reporting results, output the following to trigger a status line refresh:
+
+```
+🔄 Status line refreshed
+```
