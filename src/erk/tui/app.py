@@ -729,3 +729,26 @@ class ErkDashApp(App):
                     # Extract run ID from URL to avoid Rich markup in status bar
                     run_id = row.run_url.rsplit("/", 1)[-1]
                     self._status_bar.set_message(f"Opened run {run_id}")
+
+    @on(PlanDataTable.LearnClicked)
+    def on_learn_clicked(self, event: PlanDataTable.LearnClicked) -> None:
+        """Handle click on learn cell - open learn plan issue or PR in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            # Build URL based on which field is set
+            # PR takes priority (plan_completed state)
+            if row.learn_plan_pr is not None and row.issue_url:
+                # Extract owner/repo from issue_url to build PR URL
+                # issue_url format: https://github.com/owner/repo/issues/123
+                base_url = row.issue_url.rsplit("/issues/", 1)[0]
+                pr_url = f"{base_url}/pull/{row.learn_plan_pr}"
+                self._provider.browser.launch(pr_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened learn PR #{row.learn_plan_pr}")
+            elif row.learn_plan_issue is not None and row.issue_url:
+                # Extract owner/repo from issue_url to build issue URL
+                base_url = row.issue_url.rsplit("/issues/", 1)[0]
+                issue_url = f"{base_url}/issues/{row.learn_plan_issue}"
+                self._provider.browser.launch(issue_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened learn issue #{row.learn_plan_issue}")

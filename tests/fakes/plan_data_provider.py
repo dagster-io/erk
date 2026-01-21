@@ -173,6 +173,9 @@ def make_plan_row(
     run_status: str | None = None,
     run_conclusion: str | None = None,
     comment_counts: tuple[int, int] | None = None,
+    learn_status: str | None = None,
+    learn_plan_issue: int | None = None,
+    learn_plan_pr: int | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -195,12 +198,29 @@ def make_plan_row(
         run_status: Workflow run status
         run_conclusion: Workflow run conclusion
         comment_counts: Tuple of (resolved, total) comment counts (None shows "-")
+        learn_status: Learn workflow status ("pending", "completed_with_plan", etc.)
+        learn_plan_issue: Issue number of generated learn plan
+        learn_plan_pr: PR number that implemented the learn plan
 
     Returns:
         PlanRowData populated with test data
     """
     if issue_url is None:
         issue_url = f"https://github.com/test/repo/issues/{issue_number}"
+
+    # Compute learn_display based on learn fields
+    if learn_status is None or learn_status == "not_started":
+        learn_display = "-"
+    elif learn_status == "pending":
+        learn_display = "⟳"
+    elif learn_status == "completed_no_plan":
+        learn_display = "∅"
+    elif learn_status == "completed_with_plan" and learn_plan_issue is not None:
+        learn_display = f"#{learn_plan_issue}"
+    elif learn_status == "plan_completed" and learn_plan_pr is not None:
+        learn_display = f"✓ #{learn_plan_pr}"
+    else:
+        learn_display = "-"
 
     computed_pr_display = "-"
     if pr_number is not None:
@@ -252,4 +272,8 @@ def make_plan_row(
         resolved_comment_count=resolved_count,
         total_comment_count=total_count,
         comments_display=comments_display,
+        learn_status=learn_status,
+        learn_plan_issue=learn_plan_issue,
+        learn_plan_pr=learn_plan_pr,
+        learn_display=learn_display,
     )

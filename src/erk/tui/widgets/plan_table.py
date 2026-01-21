@@ -48,6 +48,13 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
+    class LearnClicked(Message):
+        """Posted when user clicks learn column on a row with a learn plan issue or PR."""
+
+        def __init__(self, row_index: int) -> None:
+            super().__init__()
+            self.row_index = row_index
+
     def __init__(self, plan_filters: PlanFilters) -> None:
         """Initialize table with column configuration based on filters.
 
@@ -59,6 +66,7 @@ class PlanDataTable(DataTable):
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
         self._pr_column_index: int | None = None
+        self._learn_column_index: int | None = None
         self._local_wt_column_index: int | None = None
         self._run_id_column_index: int | None = None
 
@@ -95,6 +103,9 @@ class PlanDataTable(DataTable):
         self.add_column("plan", key="plan")
         col_index += 1
         self.add_column("title", key="title")
+        col_index += 1
+        self.add_column("lrn", key="learn")
+        self._learn_column_index = col_index
         col_index += 1
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
@@ -175,8 +186,13 @@ class PlanDataTable(DataTable):
         else:
             wt_cell = "-"
 
+        # Format learn cell - colorize if clickable
+        learn_cell: str | Text = row.learn_display
+        if row.learn_plan_issue is not None or row.learn_plan_pr is not None:
+            learn_cell = Text(row.learn_display, style="cyan underline")
+
         # Build values list based on columns
-        values: list[str | Text] = [plan_cell, row.title]
+        values: list[str | Text] = [plan_cell, row.title, learn_cell]
         if self._plan_filters.show_prs:
             # Strip Rich markup and colorize if clickable
             pr_display = _strip_rich_markup(row.pr_display)
@@ -235,6 +251,18 @@ class PlanDataTable(DataTable):
         if col_index == self._plan_column_index:
             if row_index < len(self._rows) and self._rows[row_index].issue_url:
                 self.post_message(self.PlanClicked(row_index))
+                event.prevent_default()
+                event.stop()
+                return
+
+        # Check learn column - post event if learn plan issue or PR exists
+        if self._learn_column_index is not None and col_index == self._learn_column_index:
+            row = self._rows[row_index] if row_index < len(self._rows) else None
+            has_learn_link = row is not None and (
+                row.learn_plan_issue is not None or row.learn_plan_pr is not None
+            )
+            if has_learn_link:
+                self.post_message(self.LearnClicked(row_index))
                 event.prevent_default()
                 event.stop()
                 return

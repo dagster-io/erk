@@ -24,6 +24,9 @@ from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.plan_header import (
     extract_plan_from_comment,
     extract_plan_header_comment_id,
+    extract_plan_header_learn_plan_issue,
+    extract_plan_header_learn_plan_pr,
+    extract_plan_header_learn_status,
     extract_plan_header_local_impl_at,
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_at,
@@ -464,12 +467,21 @@ class RealPlanDataProvider(PlanDataProvider):
         # Extract from issue body
         local_impl_str: str | None = None
         remote_impl_str: str | None = None
+        learn_status: str | None = None
+        learn_plan_issue: int | None = None
+        learn_plan_pr: int | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted and not worktree_name:
                 worktree_name = extracted
             local_impl_str = extract_plan_header_local_impl_at(plan.body)
             remote_impl_str = extract_plan_header_remote_impl_at(plan.body)
+            learn_status = extract_plan_header_learn_status(plan.body)
+            learn_plan_issue = extract_plan_header_learn_plan_issue(plan.body)
+            learn_plan_pr = extract_plan_header_learn_plan_pr(plan.body)
+
+        # Format learn display
+        learn_display = _format_learn_display(learn_status, learn_plan_issue, learn_plan_pr)
 
         # Parse ISO 8601 timestamps for storage
         last_local_impl_at: datetime | None = None
@@ -580,7 +592,45 @@ class RealPlanDataProvider(PlanDataProvider):
             resolved_comment_count=resolved_comment_count,
             total_comment_count=total_comment_count,
             comments_display=comments_display,
+            learn_status=learn_status,
+            learn_plan_issue=learn_plan_issue,
+            learn_plan_pr=learn_plan_pr,
+            learn_display=learn_display,
         )
+
+
+def _format_learn_display(
+    learn_status: str | None,
+    learn_plan_issue: int | None,
+    learn_plan_pr: int | None,
+) -> str:
+    """Format learn status for display.
+
+    Args:
+        learn_status: Raw status value from plan header
+        learn_plan_issue: Issue number of generated learn plan
+        learn_plan_pr: PR number that implemented the learn plan
+
+    Returns:
+        Formatted display string based on status:
+        - None or "not_started" -> "-"
+        - "pending" -> "⟳"
+        - "completed_no_plan" -> "∅"
+        - "completed_with_plan" -> "#456" (using learn_plan_issue)
+        - "plan_completed" -> "✓ #12" (using learn_plan_pr)
+    """
+    if learn_status is None or learn_status == "not_started":
+        return "-"
+    if learn_status == "pending":
+        return "⟳"
+    if learn_status == "completed_no_plan":
+        return "∅"
+    if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+        return f"#{learn_plan_issue}"
+    if learn_status == "plan_completed" and learn_plan_pr is not None:
+        return f"✓ #{learn_plan_pr}"
+    # Fallback for unknown status
+    return "-"
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:

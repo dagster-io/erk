@@ -43,6 +43,10 @@ class PlanRowData:
         resolved_comment_count: Count of resolved PR review comments
         total_comment_count: Total count of PR review comments
         comments_display: Formatted display of comments (e.g., "3/5" or "-")
+        learn_status: Raw learn status value from plan header
+        learn_plan_issue: Plan issue number (for completed_with_plan status)
+        learn_plan_pr: PR number (for plan_completed status)
+        learn_display: Formatted display string ("-", "⟳", "∅", "#456", "✓ #12")
     """
 
     issue_number: int
@@ -74,6 +78,10 @@ class PlanRowData:
     resolved_comment_count: int
     total_comment_count: int
     comments_display: str
+    learn_status: str | None
+    learn_plan_issue: int | None
+    learn_plan_pr: int | None
+    learn_display: str
 
 
 @dataclass(frozen=True)
