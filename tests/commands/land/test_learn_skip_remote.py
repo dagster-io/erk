@@ -247,7 +247,19 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
             merge_should_succeed=True,
         )
 
-        issues_ops = FakeGitHubIssues(username="testuser")
+        # Create issue for the plan (required for learn status check)
+        from tests.test_utils.github_helpers import create_test_issue
+
+        plan_issue = create_test_issue(
+            number=4867,
+            title="Fix something",
+            body="",
+            labels=["erk-plan"],
+        )
+        issues_ops = FakeGitHubIssues(
+            username="testuser",
+            issues={4867: plan_issue},
+        )
 
         repo = RepoContext(
             root=env.cwd,

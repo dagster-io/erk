@@ -10,6 +10,7 @@ Usage:
     erk land <branch>     # Land PR for branch
 """
 
+import json
 import re
 import subprocess
 from dataclasses import replace
@@ -99,35 +100,28 @@ def _check_learn_status_and_prompt(
 
     # Skip learn check for learn plans (they don't need to be learned from)
     # Fetch issue to check labels and learn_status
-    try:
-        issue = ctx.issues.get_issue(repo_root, plan_issue_number)
-        if "erk-learn" in issue.labels:
-            return
-    except RuntimeError:
-        # If we can't fetch the issue, continue with normal flow
-        # (the sessions check will handle it)
-        issue = None
+    issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+    if "erk-learn" in issue.labels:
+        return
 
     # Check learn_status from plan header metadata
-    if issue is not None:
-        learn_status = extract_plan_header_learn_status(issue.body)
+    learn_status = extract_plan_header_learn_status(issue.body)
 
-        # Handle completed status - learn has already finished
-        if learn_status == "completed":
-            user_output(
-                click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
-            )
-            return
+    # Handle completed status - learn has already finished
+    if learn_status == "completed":
+        user_output(
+            click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
+        )
+        return
 
-        # Handle pending status - async learn is in progress
-        if learn_status == "pending":
-            user_output(
-                click.style("⏳", fg="cyan")
-                + f" Async learn in progress for plan #{plan_issue_number}"
-            )
-            return
+    # Handle pending status - async learn is in progress
+    if learn_status == "pending":
+        user_output(
+            click.style("⏳", fg="cyan") + f" Async learn in progress for plan #{plan_issue_number}"
+        )
+        return
 
-        # learn_status is null - fall through to check sessions
+    # learn_status is null - fall through to check sessions
 
     # Check for existing learn sessions (backward compatibility)
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
@@ -239,8 +233,6 @@ def _trigger_async_learn(
     # Silence unused parameter warning - repo_root kept for interface consistency
     _ = repo_root
 
-    import json
-
     user_output(f"Triggering async learn for plan #{plan_issue_number}...")
 
     try:
@@ -248,38 +240,44 @@ def _trigger_async_learn(
             ["erk", "exec", "trigger-async-learn", str(plan_issue_number)],
             capture_output=True,
             text=True,
-            check=False,
+            check=True,
             cwd=ctx.cwd,
         )
 
-        if result.returncode == 0:
-            # Parse output JSON to get run_id
-            output = json.loads(result.stdout)
-            if output.get("success"):
-                user_output(
-                    click.style("✓", fg="green")
-                    + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
-                )
-            else:
-                user_output(
-                    click.style("⚠ ", fg="yellow")
-                    + f"Async learn response: {output.get('error', 'unknown error')}"
-                )
+        # Parse output JSON to get run_id
+        output = json.loads(result.stdout)
+        if output.get("success"):
+            user_output(
+                click.style("✓", fg="green")
+                + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
+            )
         else:
-            # Command failed - parse error if possible
-            try:
-                error_output = json.loads(result.stdout)
-                error_msg = error_output.get("error", result.stderr or "unknown error")
-            except json.JSONDecodeError:
-                error_msg = result.stderr or result.stdout or "unknown error"
-            msg = f"Could not trigger async learn: {error_msg}"
-            user_output(click.style("⚠ ", fg="yellow") + msg)
+            user_output(
+                click.style("⚠ ", fg="yellow")
+                + f"Async learn response: {output.get('error', 'unknown error')}"
+            )
+    except subprocess.CalledProcessError as e:
+        # Command failed - parse error from stdout if possible
+        error_msg = _parse_trigger_error(e.stdout, e.stderr)
+        msg = f"Could not trigger async learn: {error_msg}"
+        user_output(click.style("⚠ ", fg="yellow") + msg)
     except FileNotFoundError:
         msg = "Could not trigger async learn: erk command not found"
         user_output(click.style("⚠ ", fg="yellow") + msg)
-    except subprocess.SubprocessError as e:
-        msg = f"Could not trigger async learn: {e}"
-        user_output(click.style("⚠ ", fg="yellow") + msg)
+
+
+def _parse_trigger_error(stdout: str, stderr: str) -> str:
+    """Parse error message from trigger-async-learn failure.
+
+    Attempts to extract error from JSON stdout, falls back to stderr or stdout.
+    """
+    # Check if stdout looks like JSON (starts with {) before parsing
+    if stdout and stdout.strip().startswith("{"):
+        error_output = json.loads(stdout)
+        error = error_output.get("error")
+        if error:
+            return error
+    return stderr or stdout or "unknown error"
 
 
 def _ensure_branch_not_checked_out(

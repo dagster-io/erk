@@ -1,7 +1,9 @@
 """Unit tests for learn status check prompts in land command."""
 
+import subprocess
 from pathlib import Path
 
+import click
 import pytest
 
 from erk.cli.commands import land_cmd
@@ -26,6 +28,17 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
+    issue_number = 123
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+
     # Mock find_sessions_for_plan to return sessions with learn_session_ids
     def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
         return SessionsForPlan(
@@ -39,11 +52,11 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-    ctx = context_for_test(cwd=repo_root)
+    ctx = context_for_test(cwd=repo_root, issues=fake_issues)
 
     # Should return without any interaction (plan already learned from)
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=False
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
     )
 
     # Verify positive feedback is shown
@@ -88,10 +101,19 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
 
     When user chooses option 2 (continue without learning), the function returns normally.
     """
-    import click
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
+
+    issue_number = 123
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
     # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
     def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
@@ -116,11 +138,11 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
         is_stderr_tty=True,
         confirm_responses=[],  # Not used - we mock click.prompt instead
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console)
+    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
 
     # Should show warning and continue
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=False
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
     )
 
     # Check that warning was shown
@@ -135,10 +157,19 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """Test that _check_learn_status_and_prompt exits when user chooses cancel."""
-    import click
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
+
+    issue_number = 123
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
     # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
     def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
@@ -163,12 +194,12 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
         is_stderr_tty=True,
         confirm_responses=[],  # Not used - we mock click.prompt instead
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console)
+    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
 
     # Should raise SystemExit(0) when user chooses cancel
     with pytest.raises(SystemExit) as exc_info:
         _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=False
+            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
         )
 
     assert exc_info.value.code == 0
@@ -185,10 +216,19 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
     no-op activation script path before exiting.
     This prevents 'cat: : No such file or directory' errors in land.sh.
     """
-    import click
-
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
+
+    issue_number = 123
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
 
     # Mock find_sessions_for_plan to return sessions WITHOUT learn_session_ids
     def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
@@ -213,12 +253,12 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
         is_stderr_tty=True,
         confirm_responses=[],  # Not used - we mock click.prompt instead
     )
-    ctx = context_for_test(cwd=repo_root, console=fake_console)
+    ctx = context_for_test(cwd=repo_root, console=fake_console, issues=fake_issues)
 
     # Should raise SystemExit(0) when user cancels, but with script output
     with pytest.raises(SystemExit) as exc_info:
         _check_learn_status_and_prompt(
-            ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=True
+            ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=True
         )
 
     assert exc_info.value.code == 0
@@ -314,6 +354,17 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
 
+    issue_number = 123
+
+    # Create issue (without learn_status - will fall back to session check)
+    issue = create_test_issue(
+        number=issue_number,
+        title="Test plan",
+        body="",
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={issue_number: issue})
+
     # Mock find_sessions_for_plan to return sessions with learn_session_ids
     def mock_find_sessions(github_issues, repo_root_arg, plan_issue_number):
         return SessionsForPlan(
@@ -332,11 +383,11 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
         erk_root=tmp_path / ".erk",
         prompt_learn_on_land=True,
     )
-    ctx = context_for_test(cwd=repo_root, global_config=global_config)
+    ctx = context_for_test(cwd=repo_root, global_config=global_config, issues=fake_issues)
 
     # Should run the check and show positive feedback
     _check_learn_status_and_prompt(
-        ctx, repo_root=repo_root, plan_issue_number=123, force=False, script=False
+        ctx, repo_root=repo_root, plan_issue_number=issue_number, force=False, script=False
     )
 
     # Verify positive feedback is shown (check actually ran)
@@ -526,8 +577,6 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
     # Mock subprocess.run to simulate successful async learn trigger
-    import subprocess
-
     def mock_subprocess_run(cmd, **kwargs):
         json_out = (
             '{"success": true, "issue_number": 123, '
