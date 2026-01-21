@@ -202,6 +202,7 @@ def _discover_sessions(
         # Use gist-based session (preferred)
         remote_source = RemoteSessionSource(
             session_id=sessions_for_plan.last_session_id,
+            run_id=None,  # Gist-based sessions don't use run IDs
             gist_url=sessions_for_plan.last_session_gist_url,
             path=None,  # Path is None until downloaded
         )

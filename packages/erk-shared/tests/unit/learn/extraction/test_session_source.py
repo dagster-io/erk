@@ -101,9 +101,7 @@ class TestRemoteSessionSource:
 
     def test_path_returns_none_when_not_downloaded(self) -> None:
         """path returns None when session not yet downloaded."""
-        source = RemoteSessionSource(
-            session_id="test", run_id="123", path=None, gist_url=None
-        )
+        source = RemoteSessionSource(session_id="test", run_id="123", path=None, gist_url=None)
         assert source.path is None
 
     def test_path_returns_provided_value(self) -> None:
@@ -118,9 +116,7 @@ class TestRemoteSessionSource:
 
     def test_is_session_source_subclass(self) -> None:
         """RemoteSessionSource is a SessionSource."""
-        source = RemoteSessionSource(
-            session_id="test", run_id="123", path=None, gist_url=None
-        )
+        source = RemoteSessionSource(session_id="test", run_id="123", path=None, gist_url=None)
         assert isinstance(source, SessionSource)
 
     def test_to_dict_serializes_all_fields(self) -> None:
@@ -181,9 +177,7 @@ class TestSessionSourcePolymorphism:
         """Can collect mixed sources in a list."""
         sources: list[SessionSource] = [
             LocalSessionSource(session_id="local-1", path=None),
-            RemoteSessionSource(
-                session_id="remote-1", run_id="run-1", path=None, gist_url=None
-            ),
+            RemoteSessionSource(session_id="remote-1", run_id="run-1", path=None, gist_url=None),
             LocalSessionSource(session_id="local-2", path=None),
         ]
 
