@@ -266,7 +266,6 @@ class ErkCommandGroup(click.Group):
             "md",
             "objective",
             "plan",
-            "planner",
             "pr",
             "project",
             "run",

@@ -14,7 +14,6 @@ from erk_shared.core.fakes import (
     FakeClaudeExecutor,
     FakeCodespaceRegistry,
     FakePlanListService,
-    FakePlannerRegistry,
     FakeScriptWriter,
 )
 
@@ -140,7 +139,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         codespace=FakeCodespace(),
         claude_executor=FakeClaudeExecutor(),
         script_writer=FakeScriptWriter(),
-        planner_registry=FakePlannerRegistry(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),
         cwd=resolved_cwd,

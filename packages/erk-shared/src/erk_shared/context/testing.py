@@ -13,7 +13,6 @@ from erk_shared.core.fakes import (
     FakeClaudeExecutor,
     FakeCodespaceRegistry,
     FakePlanListService,
-    FakePlannerRegistry,
     FakeScriptWriter,
 )
 from erk_shared.gateway.codespace.abc import Codespace
@@ -153,7 +152,6 @@ def context_for_test(
         codespace=resolved_codespace,
         claude_executor=resolved_claude_executor,
         script_writer=FakeScriptWriter(),
-        planner_registry=FakePlannerRegistry(),
         codespace_registry=FakeCodespaceRegistry(),
         plan_list_service=FakePlanListService(),
         cwd=resolved_cwd,
