@@ -240,30 +240,32 @@ def _trigger_async_learn(
             ["erk", "exec", "trigger-async-learn", str(plan_issue_number)],
             capture_output=True,
             text=True,
-            check=True,
+            check=False,  # LBYL: check returncode explicitly for graceful degradation
             cwd=ctx.cwd,
         )
-
-        # Parse output JSON to get run_id
-        output = json.loads(result.stdout)
-        if output.get("success"):
-            user_output(
-                click.style("✓", fg="green")
-                + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
-            )
-        else:
-            user_output(
-                click.style("⚠ ", fg="yellow")
-                + f"Async learn response: {output.get('error', 'unknown error')}"
-            )
-    except subprocess.CalledProcessError as e:
-        # Command failed - parse error from stdout if possible
-        error_msg = _parse_trigger_error(e.stdout, e.stderr)
-        msg = f"Could not trigger async learn: {error_msg}"
-        user_output(click.style("⚠ ", fg="yellow") + msg)
     except FileNotFoundError:
         msg = "Could not trigger async learn: erk command not found"
         user_output(click.style("⚠ ", fg="yellow") + msg)
+        return
+
+    if result.returncode != 0:
+        error_msg = _parse_trigger_error(result.stdout, result.stderr)
+        msg = f"Could not trigger async learn: {error_msg}"
+        user_output(click.style("⚠ ", fg="yellow") + msg)
+        return
+
+    # Parse output JSON to get run_id
+    output = json.loads(result.stdout)
+    if output.get("success"):
+        user_output(
+            click.style("✓", fg="green")
+            + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
+        )
+    else:
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + f"Async learn response: {output.get('error', 'unknown error')}"
+        )
 
 
 def _parse_trigger_error(stdout: str, stderr: str) -> str:
@@ -273,10 +275,13 @@ def _parse_trigger_error(stdout: str, stderr: str) -> str:
     """
     # Check if stdout looks like JSON (starts with {) before parsing
     if stdout and stdout.strip().startswith("{"):
-        error_output = json.loads(stdout)
-        error = error_output.get("error")
-        if error:
-            return error
+        try:
+            error_output = json.loads(stdout)
+            error = error_output.get("error")
+            if error:
+                return error
+        except json.JSONDecodeError:
+            pass  # Fall through to return raw stderr/stdout
     return stderr or stdout or "unknown error"
 
 
