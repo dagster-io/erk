@@ -4,7 +4,7 @@
 
 **[Read the Documentation](https://dagster-io.github.io/erk/)** for complete guides, tutorials, and reference. ([source](docs/))
 
-For the philosophy and design principles behind erk, see [The TAO of erk](TAO.md).
+For the philosophy and design principles behind erk, see [The TAO of erk](docs/TAO.md).
 
 ## Quick Start
 
