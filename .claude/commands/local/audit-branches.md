@@ -26,6 +26,16 @@ Automates the branch audit workflow to identify stale branches, worktrees, and P
 
 You are executing a branch audit workflow. Follow these phases carefully.
 
+**Shell Compatibility Note:** Complex bash pipelines may not work correctly in zsh. For multi-step scripts, write to a temporary file and execute with `bash`:
+
+```bash
+cat <<'SCRIPT' > /tmp/script.sh
+#!/bin/bash
+# ... complex logic ...
+SCRIPT
+bash /tmp/script.sh
+```
+
 ### Phase 1: Data Collection
 
 Collect comprehensive data about the repository state. Run these commands to gather information:
@@ -139,6 +149,67 @@ For branches that aren't clearly stale or clearly valuable:
 3. **Check if feature exists in master**: Search for key function/class names
 4. **Assess value**: Is the idea worth reimplementing even if code is stale?
 
+### Phase 2.8: Blocking Worktree Detection
+
+**CRITICAL**: Branches with closed/merged PRs that are checked out in worktrees block automated cleanup via `gt repo sync`. Detect these first.
+
+**2.8.1 Fetch all closed/merged PRs:**
+
+```bash
+gh pr list --state closed --limit 300 --json number,headRefName,state,mergedAt \
+  | jq -r '.[] | "\(.headRefName)|\(.number)|\(if .mergedAt then "MERGED" else "CLOSED" end)"' \
+  > /tmp/closed_prs.txt
+```
+
+**2.8.2 Get branches in worktrees:**
+
+```bash
+git worktree list --porcelain | grep "^branch refs/heads/" | sed 's|branch refs/heads/||' > /tmp/wt_branches.txt
+```
+
+**2.8.3 Cross-reference to find blocking worktrees:**
+
+Create a bash script to handle this reliably (avoids zsh pipe issues):
+
+```bash
+cat <<'SCRIPT' > /tmp/find_blocking.sh
+#!/bin/bash
+echo "=== SLOT WORKTREES blocking cleanup ==="
+git worktree list | grep "erk-slot-" | while read line; do
+  path=$(echo "$line" | awk '{print $1}')
+  branch=$(echo "$line" | grep -oE '\[[^]]+\]' | tr -d '[]')
+
+  # Skip stub branches
+  if [[ "$branch" == "__erk-slot-"* ]]; then
+    continue
+  fi
+
+  pr_info=$(grep "^${branch}|" /tmp/closed_prs.txt 2>/dev/null | head -1)
+  if [ -n "$pr_info" ]; then
+    slot=$(basename "$path")
+    pr_num=$(echo "$pr_info" | cut -d'|' -f2)
+    pr_status=$(echo "$pr_info" | cut -d'|' -f3)
+    echo "$slot | $branch | PR#$pr_num | $pr_status"
+  fi
+done
+
+echo ""
+echo "=== NON-SLOT WORKTREES blocking cleanup ==="
+git worktree list | grep -v "erk-slot" | grep -v "/code/erk " | while read line; do
+  path=$(echo "$line" | awk '{print $1}')
+  branch=$(echo "$line" | grep -oE '\[[^]]+\]' | tr -d '[]')
+
+  pr_info=$(grep "^${branch}|" /tmp/closed_prs.txt 2>/dev/null | head -1)
+  if [ -n "$pr_info" ]; then
+    pr_num=$(echo "$pr_info" | cut -d'|' -f2)
+    pr_status=$(echo "$pr_info" | cut -d'|' -f3)
+    echo "$(basename $path) | $branch | PR#$pr_num | $pr_status"
+  fi
+done
+SCRIPT
+bash /tmp/find_blocking.sh
+```
+
 ### Phase 3: Categorization
 
 Present branches/PRs in these categories:
@@ -147,6 +218,13 @@ Present branches/PRs in these categories:
 
 - Include context-based reason for each (superseded, duplicate, abandoned, etc.)
 - NOT just "old" - must have a specific reason
+
+**🟣 BLOCKING WORKTREES** - Worktrees preventing cleanup
+
+- Branches with closed/merged PRs that are checked out in worktrees
+- These block `gt repo sync` from cleaning up automatically
+- **Slot worktrees**: Need `erk slot unassign` to free
+- **Non-slot worktrees**: Need `git worktree remove --force` to free
 
 **🟡 CLEANUP** - Branches to delete
 
@@ -178,6 +256,13 @@ Present the analysis in tables for each category:
 | ---- | --------- | ------------------ | ------------ |
 | #123 | Feature X | Superseded by #456 | 3 weeks ago  |
 
+## 🟣 BLOCKING WORKTREES (X worktrees)
+
+| Worktree    | Branch        | PR    | Status | Action          |
+| ----------- | ------------- | ----- | ------ | --------------- |
+| erk-slot-03 | P1234-feat... | #1234 | CLOSED | Unassign slot   |
+| my-worktree | P5678-fix...  | #5678 | MERGED | Remove worktree |
+
 ## 🟡 CLEANUP (X branches)
 
 | Branch      | Type       | Status         |
@@ -206,10 +291,13 @@ After presenting findings, ask the user what they want to do:
 
 Ask which categories to act on:
 
+- "Free all 🟣 BLOCKING WORKTREES (unassign slots / remove non-slots)"
 - "Close all 🔴 SHOULD CLOSE PRs"
 - "Delete all 🟡 CLEANUP branches"
 - "Review 🟢 CONSIDER MERGING individually"
 - "Skip cleanup for now"
+
+**Important**: Free blocking worktrees FIRST, then run `gt repo sync` to let Graphite automatically clean up the freed branches before doing other cleanup.
 
 Allow user to exclude specific branches/PRs by number if needed.
 
@@ -218,6 +306,35 @@ Allow user to exclude specific branches/PRs by number if needed.
 **IMPORTANT: Confirm before each destructive operation type.**
 
 Execute in this order:
+
+**6.0 Free blocking worktrees (if selected):**
+
+This must happen FIRST to unblock automated cleanup.
+
+**6.0.1 Unassign slot worktrees:**
+
+```bash
+for slot in <slot-list>; do
+  erk slot unassign "$slot"
+done
+```
+
+**6.0.2 Remove non-slot worktrees:**
+
+```bash
+for path in <non-slot-paths>; do
+  git worktree remove --force "$path"
+done
+```
+
+**6.0.3 Prune and sync:**
+
+```bash
+git worktree prune
+gt repo sync --no-interactive --force
+```
+
+This lets Graphite automatically clean up the now-freed branches with closed/merged PRs.
 
 **6.1 Close PRs (if selected):**
 
@@ -231,19 +348,50 @@ gh pr close <number> --comment "Closing as part of branch audit: <reason>"
 git worktree remove --force <path>
 ```
 
-**6.3 Delete local branches (batched):**
+**6.3 Run gt repo sync for automated cleanup:**
+
+After freeing blocking worktrees (Phase 6.0), `gt repo sync` handles most branch deletion automatically:
 
 ```bash
-git branch -D <branch1> <branch2> ...
+gt repo sync --no-interactive --force
 ```
 
-**6.4 Delete remote branches (batched):**
+This automatically:
 
-```bash
-git push origin --delete <branch1> <branch2> ...
-```
+- Deletes local branches with closed/merged PRs
+- Cleans up remote tracking branches
+- Restacks remaining branches on master
 
-**6.5 Prune worktrees:**
+**6.4 Manual cleanup for non-Graphite branches:**
+
+For branches not tracked by Graphite (won't be cleaned by `gt sync`):
+
+1. **Check if branch is in a worktree:**
+
+   ```bash
+   worktree_path=$(git worktree list | grep "\[$branch\]" | awk '{print $1}')
+   ```
+
+2. **If in a worktree, free it first:**
+
+   ```bash
+   if [ -n "$worktree_path" ]; then
+     if [[ "$worktree_path" =~ erk-slot-[0-9]{2} ]]; then
+       erk slot unassign "$worktree_path"
+     else
+       git worktree remove --force "$worktree_path"
+     fi
+   fi
+   ```
+
+3. **Delete local and remote branches:**
+
+   ```bash
+   git branch -D "$branch"
+   git push origin --delete "$branch" 2>/dev/null || true
+   ```
+
+**6.5 Final prune:**
 
 ```bash
 git worktree prune
@@ -268,6 +416,25 @@ After execution, provide a summary:
 - X PRs need attention (🔵)
 - X PRs ready to merge (🟢)
 ```
+
+## Branch Deletion Strategy
+
+When deleting local branches, the command handles three special cases:
+
+**Worktree-Bound Branches:**
+
+- **Slot worktrees** (`erk-slot-NN`): Run `erk slot unassign` to free the branch while keeping the worktree directory for reuse
+- **Vanilla worktrees**: Run `git worktree remove --force` to remove the worktree entirely before deleting the branch
+
+**Graphite-Tracked Branches:**
+
+- Use `gt delete -f --no-interactive` instead of `git branch -D`
+- This properly handles Graphite metadata cleanup
+- Automatically re-parents any child branches in the stack
+
+**Non-Graphite Branches:**
+
+- Use standard `git branch -D` for branches not tracked by Graphite
 
 ## Key Principles
 
