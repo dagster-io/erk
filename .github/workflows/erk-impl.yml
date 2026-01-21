@@ -229,7 +229,7 @@ jobs:
       - name: Upload session to gist and update plan header
         if: always() && steps.session.outputs.session_id
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           SESSION_FILE: ${{ steps.session.outputs.session_file }}
