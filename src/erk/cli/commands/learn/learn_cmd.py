@@ -82,11 +82,16 @@ def _handle_async_mode(
         issue_number: Plan issue number to learn from
         github_repo: GitHub repository info for constructing workflow URL
     """
+
+    def show_progress(msg: str) -> None:
+        user_output(click.style(msg, dim=True))
+
     result = trigger_async_learn_workflow(
         github=ctx.github,
         issues=ctx.issues,
         repo_root=repo_root,
         issue_number=issue_number,
+        on_progress=show_progress,
     )
 
     if isinstance(result, TriggerAsyncLearnNotErkPlan):

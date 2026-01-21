@@ -6,6 +6,7 @@ workflow for a plan issue. It's used by both:
 - `erk exec trigger-async-learn` script
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -73,6 +74,7 @@ def trigger_async_learn_workflow(
     issues: GitHubIssues,
     repo_root: Path,
     issue_number: int,
+    on_progress: Callable[[str], None] | None,
 ) -> TriggerAsyncLearnResult:
     """Trigger async learn workflow for a plan issue.
 
@@ -84,11 +86,18 @@ def trigger_async_learn_workflow(
         issues: GitHubIssues gateway for issue operations
         repo_root: Repository root directory
         issue_number: Plan issue number to learn from
+        on_progress: Optional callback for progress updates
 
     Returns:
         TriggerAsyncLearnSuccess on success, or an error result type
     """
+
+    def emit(msg: str) -> None:
+        if on_progress is not None:
+            on_progress(msg)
+
     # Fetch issue to validate it exists and is an erk-plan
+    emit(f"Fetching issue #{issue_number}...")
     issue = issues.get_issue(repo_root, issue_number)
 
     # Validate erk-plan label
@@ -96,10 +105,13 @@ def trigger_async_learn_workflow(
         return TriggerAsyncLearnNotErkPlan(issue_number=issue_number)
 
     # Validate session data availability
+    emit("Validating plan metadata...")
     if not _has_session_data(issue.body):
         return TriggerAsyncLearnNoSessionData(issue_number=issue_number)
 
     # Dispatch the learn-async.yml workflow
+    emit("Triggering workflow...")
+    emit("Waiting for workflow to appear...")
     run_id = github.trigger_workflow(
         repo_root=repo_root,
         workflow="learn-async.yml",
@@ -107,6 +119,7 @@ def trigger_async_learn_workflow(
     )
 
     # Update plan header with learn_status=pending
+    emit("Updating plan status...")
     updated_body = update_plan_header_learn_status(
         issue_body=issue.body,
         learn_status="pending",
