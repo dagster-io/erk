@@ -609,3 +609,312 @@ def test_slot_repair_dry_run_branch_mismatch() -> None:
         assert erk_install.current_pool_state is not None
         assert len(erk_install.current_pool_state.assignments) == 1
         assert erk_install.current_pool_state.assignments[0].slot_name == "erk-slot-01"
+
+
+def test_slot_repair_repairs_closed_pr() -> None:
+    """Test repair fixes closed-pr issues by removing the assignment."""
+    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.github.types import PRDetails, PullRequestInfo
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        # Build worktrees list including the slot worktree in git registry
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "feature-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Branch exists in git
+            branch_heads={"feature-branch": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Configure FakeGitHub with a closed PR for the branch
+        fake_github = FakeGitHub(
+            prs={
+                "feature-branch": PullRequestInfo(
+                    number=123,
+                    state="CLOSED",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature",
+                    body="",
+                    state="CLOSED",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-branch",
+                    is_cross_repository=False,
+                    mergeable="UNKNOWN",
+                    merge_state_status="UNKNOWN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+        )
+
+        assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, github=fake_github, erk_installation=erk_install
+        )
+
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "closed-pr" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
+
+
+def test_slot_repair_repairs_merged_pr() -> None:
+    """Test repair fixes merged-pr issues by removing the assignment."""
+    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.github.types import PRDetails, PullRequestInfo
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        # Build worktrees list including the slot worktree in git registry
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "feature-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Branch exists in git
+            branch_heads={"feature-branch": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Configure FakeGitHub with a merged PR for the branch
+        fake_github = FakeGitHub(
+            prs={
+                "feature-branch": PullRequestInfo(
+                    number=456,
+                    state="MERGED",
+                    url="https://github.com/owner/repo/pull/456",
+                    is_draft=False,
+                    title="Feature",
+                    checks_passing=True,
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+            pr_details={
+                456: PRDetails(
+                    number=456,
+                    url="https://github.com/owner/repo/pull/456",
+                    title="Feature",
+                    body="",
+                    state="MERGED",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-branch",
+                    is_cross_repository=False,
+                    mergeable="UNKNOWN",
+                    merge_state_status="UNKNOWN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+        )
+
+        assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, github=fake_github, erk_installation=erk_install
+        )
+
+        result = runner.invoke(cli, ["slot", "repair", "-f"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "Found 1 repairable issue" in result.output
+        assert "merged" in result.output or "closed-pr" in result.output
+        assert "Removed 1 stale assignment" in result.output
+
+        # Assignment should be removed
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 0
+
+
+def test_slot_repair_skips_open_pr() -> None:
+    """Test repair does NOT flag slots with open PRs."""
+    from erk_shared.github.fake import FakeGitHub
+    from erk_shared.github.types import PRDetails, PullRequestInfo
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        # Build worktrees list including the slot worktree in git registry
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "feature-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Branch exists in git
+            branch_heads={"feature-branch": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # Configure FakeGitHub with an OPEN PR for the branch
+        fake_github = FakeGitHub(
+            prs={
+                "feature-branch": PullRequestInfo(
+                    number=789,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/789",
+                    is_draft=False,
+                    title="Feature",
+                    checks_passing=True,
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+            pr_details={
+                789: PRDetails(
+                    number=789,
+                    url="https://github.com/owner/repo/pull/789",
+                    title="Feature",
+                    body="",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-branch",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                ),
+            },
+        )
+
+        assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, github=fake_github, erk_installation=erk_install
+        )
+
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "No issues found" in result.output
+
+        # Assignment should be preserved
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 1
+
+
+def test_slot_repair_skips_branch_without_pr() -> None:
+    """Test repair does NOT flag slots where no PR exists."""
+    from erk_shared.github.fake import FakeGitHub
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        worktree_path = repo_dir / "worktrees" / "erk-slot-01"
+        worktree_path.mkdir(parents=True)
+
+        # Build worktrees list including the slot worktree in git registry
+        base_worktrees = env.build_worktrees("main")
+        slot_wt_info = _build_worktree_info(worktree_path, "feature-branch")
+        worktrees_with_slot = {env.cwd: base_worktrees[env.cwd] + [slot_wt_info]}
+
+        git_ops = FakeGit(
+            worktrees=worktrees_with_slot,
+            current_branches={env.cwd: "main", worktree_path: "feature-branch"},
+            git_common_dirs={env.cwd: env.git_dir, worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            existing_paths={worktree_path},
+            # Branch exists in git
+            branch_heads={"feature-branch": "abc123"},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        # FakeGitHub with no PRs configured - will return PRNotFound
+        fake_github = FakeGitHub()
+
+        assignment = _create_test_assignment("erk-slot-01", "feature-branch", worktree_path)
+        initial_state = PoolState.test(assignments=(assignment,))
+        erk_install = FakeErkInstallation(initial_pool_state=initial_state)
+
+        test_ctx = env.build_context(
+            git=git_ops, repo=repo, github=fake_github, erk_installation=erk_install
+        )
+
+        result = runner.invoke(cli, ["slot", "repair"], obj=test_ctx, catch_exceptions=False)
+        assert result.exit_code == 0
+        assert "No issues found" in result.output
+
+        # Assignment should be preserved
+        assert erk_install.current_pool_state is not None
+        assert len(erk_install.current_pool_state.assignments) == 1

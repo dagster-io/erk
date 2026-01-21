@@ -9,6 +9,7 @@ from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.worktree_pool import PoolState, SlotAssignment
 from erk_shared.git.abc import Git, WorktreeInfo
+from erk_shared.github.types import PRNotFound
 
 # Type alias for sync issue codes - using Literal for type safety
 SyncIssueCode = Literal[
@@ -18,6 +19,7 @@ SyncIssueCode = Literal[
     "branch-mismatch",
     "git-registry-missing",
     "untracked-worktree",
+    "closed-pr",
 ]
 
 
@@ -193,6 +195,32 @@ def _check_git_worktree_mismatch(
     return issues
 
 
+def _check_closed_prs(
+    assignments: tuple[SlotAssignment, ...],
+    ctx: ErkContext,
+    repo_root: Path,
+) -> list[SyncIssue]:
+    """Check for assignments where the branch's PR is closed or merged.
+
+    Args:
+        assignments: Current pool assignments
+        ctx: Erk context (for github.get_pr_for_branch)
+        repo_root: Path to the repository root
+
+    Returns:
+        List of SyncIssue instances
+    """
+    issues: list[SyncIssue] = []
+    for assignment in assignments:
+        pr = ctx.github.get_pr_for_branch(repo_root, assignment.branch_name)
+        if isinstance(pr, PRNotFound):
+            continue  # No PR exists, skip (not an error)
+        if pr.state in ("CLOSED", "MERGED"):
+            msg = f"Slot {assignment.slot_name}: PR #{pr.number} is {pr.state.lower()}"
+            issues.append(SyncIssue(code="closed-pr", message=msg))
+    return issues
+
+
 def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> list[SyncIssue]:
     """Run all sync diagnostics and return issues found.
 
@@ -219,5 +247,6 @@ def run_sync_diagnostics(ctx: ErkContext, state: PoolState, repo_root: Path) -> 
     issues.extend(_check_orphan_dirs(state, fs_slots))
     issues.extend(_check_missing_branches(state.assignments, ctx, repo.root))
     issues.extend(_check_git_worktree_mismatch(state, git_slots))
+    issues.extend(_check_closed_prs(state.assignments, ctx, repo.root))
 
     return issues

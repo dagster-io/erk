@@ -22,6 +22,7 @@ REPAIRABLE_CODES = frozenset(
         "missing-branch",
         "git-registry-missing",
         "branch-mismatch",
+        "closed-pr",
     }
 )
 
@@ -67,6 +68,8 @@ def _format_remediation(issue: SyncIssue, worktrees_dir: Path) -> list[str]:
     elif issue.code == "missing-branch":
         return [f"erk slot unassign {slot_name}"]
     elif issue.code == "git-registry-missing":
+        return [f"erk slot unassign {slot_name}"]
+    elif issue.code == "closed-pr":
         return [f"erk slot unassign {slot_name}"]
     else:
         return []
@@ -172,7 +175,7 @@ def slot_repair(ctx: ErkContext, force: bool, dry_run: bool) -> None:
     """Remove stale assignments from pool state.
 
     Repairs all detectable issues by removing the stale assignment:
-    orphan-state, missing-branch, branch-mismatch, and git-registry-missing.
+    orphan-state, missing-branch, branch-mismatch, git-registry-missing, and closed-pr.
 
     Use --force to skip the confirmation prompt.
     Use --dry-run to see what would be repaired without making changes.
