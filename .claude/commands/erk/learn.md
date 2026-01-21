@@ -182,7 +182,18 @@ erk exec get-pr-discussion-comments --pr <pr-number> \
 Upload preprocessed session files and PR comments to a secret gist:
 
 ```bash
-gh gist create --desc "Learn materials for plan #<issue-number>" .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/*
+result=$(erk exec upload-learn-materials \
+    --learn-dir .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn \
+    --issue <issue-number>)
+
+# Check for failure
+if echo "$result" | jq -e '.success == false' > /dev/null 2>&1; then
+    echo "ERROR: Failed to upload learn materials: $(echo "$result" | jq -r '.error')"
+    exit 1
+fi
+
+gist_url=$(echo "$result" | jq -r '.gist_url')
+echo "Gist created: $gist_url"
 ```
 
 Display the gist URL to the user and save it for the plan issue.
