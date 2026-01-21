@@ -75,6 +75,7 @@ def create_issue_from_session(ctx: click.Context, session_id: str | None) -> Non
         source_repo=None,
         objective_id=None,
         created_from_session=session_id,
+        learned_from_issue=None,
     )
 
     if not result.success:

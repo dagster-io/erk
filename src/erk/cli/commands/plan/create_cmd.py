@@ -92,6 +92,7 @@ def create_plan(
         source_repo=source_repo,
         objective_id=None,
         created_from_session=None,
+        learned_from_issue=None,
     )
 
     if not result.success:

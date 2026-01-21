@@ -69,6 +69,7 @@ def create_plan_issue(
     source_repo: str | None,
     objective_id: int | None,
     created_from_session: str | None,
+    learned_from_issue: int | None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2/v3 plan issue with proper structure.
 
@@ -89,6 +90,8 @@ def create_plan_issue(
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_id: Optional parent objective issue number
         created_from_session: Optional session ID that created this plan (for learn discovery)
+        learned_from_issue: Optional parent plan issue number (for learn plans, enables
+            auto-update when learn plan lands)
 
     Returns:
         CreatePlanIssueResult with success status and details
@@ -172,7 +175,7 @@ def create_plan_issue(
         learn_status=None,
         learn_plan_issue=None,
         learn_plan_pr=None,
-        learned_from_issue=None,
+        learned_from_issue=learned_from_issue,
     )
 
     # Create issue
