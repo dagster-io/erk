@@ -346,9 +346,10 @@ def config_get(ctx: ErkContext, key: str) -> None:
     # Handle repo config keys
     from erk.core.repo_discovery import NoRepoSentinel
 
-    if isinstance(ctx.repo, NoRepoSentinel):
-        user_output("Not in a git repository")
-        raise SystemExit(1)
+    Ensure.invariant(
+        not isinstance(ctx.repo, NoRepoSentinel),
+        "Not in a git repository",
+    )
 
     if parts[0] == "trunk-branch":
         trunk_branch = ctx.trunk_branch
@@ -382,9 +383,10 @@ def config_get(ctx: ErkContext, key: str) -> None:
 def _parse_config_value(key: str, value: str, current_type: type) -> object:
     """Parse a string value to the appropriate type for a config key."""
     if current_type is bool:
-        if value.lower() not in ("true", "false"):
-            user_output(f"Invalid boolean value: {value}")
-            raise SystemExit(1)
+        Ensure.invariant(
+            value.lower() in ("true", "false"),
+            f"Invalid boolean value: {value}",
+        )
         return value.lower() == "true"
     if current_type is Path or key == "erk_root":
         return Path(value).expanduser().resolve()
@@ -402,9 +404,10 @@ def _parse_config_value(key: str, value: str, current_type: type) -> object:
 def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: str) -> None:
     """Update configuration with a value for the given key."""
     # Validate mutually exclusive flags
-    if local and repo_flag:
-        user_output("Cannot use both --local and --repo flags")
-        raise SystemExit(1)
+    Ensure.invariant(
+        not (local and repo_flag),
+        "Cannot use both --local and --repo flags",
+    )
 
     # Parse key into parts
     parts = key.split(".")
@@ -415,17 +418,19 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
         is_overridable = parts[0] in get_overridable_global_keys()
 
         if local or repo_flag:
-            if not is_overridable:
-                user_output(f"Global key '{key}' cannot be written to local or repo config")
-                raise SystemExit(1)
+            Ensure.invariant(
+                is_overridable,
+                f"Global key '{key}' cannot be written to local or repo config",
+            )
 
             # Write overridable key to repo or local config
             repo = discover_repo_context(ctx, Path.cwd())
 
             # Parse as boolean for known boolean keys
-            if value.lower() not in ("true", "false"):
-                user_output(f"Invalid boolean value: {value}")
-                raise SystemExit(1)
+            Ensure.invariant(
+                value.lower() in ("true", "false"),
+                f"Invalid boolean value: {value}",
+            )
             parsed_bool = value.lower() == "true"
 
             _write_to_repo_config(
@@ -456,9 +461,10 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
     # Handle repo config keys
     if parts[0] == "trunk-branch":
         # trunk-branch lives in pyproject.toml, not erk config
-        if local or repo_flag:
-            user_output("trunk-branch lives in pyproject.toml. Cannot use --local or --repo flag.")
-            raise SystemExit(1)
+        Ensure.invariant(
+            not (local or repo_flag),
+            "trunk-branch lives in pyproject.toml. Cannot use --local or --repo flag.",
+        )
 
         # discover_repo_context checks for git repository and raises FileNotFoundError
         repo = discover_repo_context(ctx, Path.cwd())
@@ -495,9 +501,10 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
         case ["post_create", "commands"] | ["pool", "checkout", "commands"]:
             transformed = [cmd.strip() for cmd in value.split(",") if cmd.strip()]
         case ["pool", "max_slots"]:
-            if not value.isdigit() or int(value) < 1:
-                user_output(f"Invalid value: {value}. pool.max_slots must be a positive integer.")
-                raise SystemExit(1)
+            Ensure.invariant(
+                value.isdigit() and int(value) >= 1,
+                f"Invalid value: {value}. pool.max_slots must be a positive integer.",
+            )
             transformed = int(value)
         case _:
             user_output(f"Invalid key: {key}")
