@@ -40,41 +40,41 @@ bash /tmp/script.sh
 
 Collect comprehensive data about the repository state. Run these commands to gather information:
 
-**1.1 Get all PRs (open and closed):**
+**Step 1: Get all PRs (open and closed):**
 
 ```bash
 gh pr list --state all --limit 100 --json number,title,state,headRefName,updatedAt,mergeable,isDraft
 ```
 
-**1.2 List all worktrees:**
+**Step 2: List all worktrees:**
 
 ```bash
 git worktree list
 ```
 
-**1.3 Get all local branches:**
+**Step 3: Get all local branches:**
 
 ```bash
 git branch --format='%(refname:short)'
 ```
 
-**1.4 Get all remote branches:**
+**Step 4: Get all remote branches:**
 
 ```bash
 git branch -r --format='%(refname:short)' | grep -v HEAD
 ```
 
-**1.5 Get recent commit info for each branch (batch by 10):**
+**Step 5: Get recent commit info for each branch (batch by 10):**
 For each branch, get the last commit:
 
 ```bash
 git log -1 --format="%h %s (%cr)" origin/<branch> 2>/dev/null || echo "no remote"
 ```
 
-**1.6 Identify local-only branches:**
+**Step 6: Identify local-only branches:**
 Branches that exist locally but have no remote tracking branch.
 
-**1.7 Detect worktree anomalies:**
+**Step 7: Detect worktree anomalies:**
 
 - **Duplicate worktrees**: Multiple worktrees at same commit
 - **Branch mismatches**: Worktree directory name doesn't match checked-out branch
@@ -121,17 +121,17 @@ Analyze each branch/PR for these staleness indicators:
    - For branches with substantive commits, search master: `git log --grep="<feature keyword>" master`
    - If similar feature exists, branch is superseded even if PR wasn't merged
 
-### Phase 2.5: No-PR Worktree Analysis
+### Phase 3: No-PR Worktree Analysis
 
 For worktrees without associated PRs:
 
-**2.5.1 Get unique commits:**
+**Step 1: Get unique commits:**
 
 ```bash
 git log master..HEAD --oneline  # from worktree directory
 ```
 
-**2.5.2 Analyze actual code content:**
+**Step 2: Analyze actual code content:**
 
 - **Empty** (0 unique commits) → Safe to delete
 - **Has commits** → Examine the actual code changes:
@@ -140,7 +140,7 @@ git log master..HEAD --oneline  # from worktree directory
   - Determine: What feature/fix does this implement?
   - Check if that feature exists in master via different implementation
 
-### Phase 2.7: Deep Content Analysis (for uncertain branches)
+### Phase 4: Deep Content Analysis (for uncertain branches)
 
 For branches that aren't clearly stale or clearly valuable:
 
@@ -149,11 +149,11 @@ For branches that aren't clearly stale or clearly valuable:
 3. **Check if feature exists in master**: Search for key function/class names
 4. **Assess value**: Is the idea worth reimplementing even if code is stale?
 
-### Phase 2.8: Blocking Worktree Detection
+### Phase 5: Blocking Worktree Detection
 
 **CRITICAL**: Branches with closed/merged PRs that are checked out in worktrees block automated cleanup via `gt repo sync`. Detect these first.
 
-**2.8.1 Fetch all closed/merged PRs:**
+**Step 1: Fetch all closed/merged PRs:**
 
 ```bash
 gh pr list --state closed --limit 300 --json number,headRefName,state,mergedAt \
@@ -161,13 +161,13 @@ gh pr list --state closed --limit 300 --json number,headRefName,state,mergedAt \
   > /tmp/closed_prs.txt
 ```
 
-**2.8.2 Get branches in worktrees:**
+**Step 2: Get branches in worktrees:**
 
 ```bash
 git worktree list --porcelain | grep "^branch refs/heads/" | sed 's|branch refs/heads/||' > /tmp/wt_branches.txt
 ```
 
-**2.8.3 Cross-reference to find blocking worktrees:**
+**Step 3: Cross-reference to find blocking worktrees:**
 
 Create a bash script to handle this reliably (avoids zsh pipe issues):
 
@@ -210,7 +210,7 @@ SCRIPT
 bash /tmp/find_blocking.sh
 ```
 
-### Phase 3: Categorization
+### Phase 6: Categorization
 
 Present branches/PRs in these categories:
 
@@ -245,7 +245,7 @@ Present branches/PRs in these categories:
 - Draft PRs with significant work
 - Unclear status
 
-### Phase 4: Present Findings
+### Phase 7: Present Findings
 
 Present the analysis in tables for each category:
 
@@ -283,7 +283,7 @@ Present the analysis in tables for each category:
 | #101 | WIP Feature | Conflicting | Rebase needed  |
 ```
 
-### Phase 5: User Interaction
+### Phase 8: User Interaction
 
 After presenting findings, ask the user what they want to do:
 
@@ -301,17 +301,17 @@ Ask which categories to act on:
 
 Allow user to exclude specific branches/PRs by number if needed.
 
-### Phase 6: Execution
+### Phase 9: Execution
 
 **IMPORTANT: Confirm before each destructive operation type.**
 
 Execute in this order:
 
-**6.0 Free blocking worktrees (if selected):**
+**Step 1: Free blocking worktrees (if selected):**
 
 This must happen FIRST to unblock automated cleanup.
 
-**6.0.1 Unassign slot worktrees:**
+Unassign slot worktrees:
 
 ```bash
 for slot in <slot-list>; do
@@ -319,7 +319,7 @@ for slot in <slot-list>; do
 done
 ```
 
-**6.0.2 Remove non-slot worktrees:**
+Remove non-slot worktrees:
 
 ```bash
 for path in <non-slot-paths>; do
@@ -327,77 +327,76 @@ for path in <non-slot-paths>; do
 done
 ```
 
-**6.0.3 Prune and sync:**
+Prune and sync:
 
 ```bash
 git worktree prune
-gt repo sync --no-interactive --force
+gt repo sync --no-interactive --force --no-restack
 ```
 
 This lets Graphite automatically clean up the now-freed branches with closed/merged PRs.
 
-**6.1 Close PRs (if selected):**
+**Step 2: Close PRs (if selected):**
 
 ```bash
 gh pr close <number> --comment "Closing as part of branch audit: <reason>"
 ```
 
-**6.2 Remove worktrees (if applicable):**
+**Step 3: Remove worktrees (if applicable):**
 
 ```bash
 git worktree remove --force <path>
 ```
 
-**6.3 Run gt repo sync for automated cleanup:**
+**Step 4: Run gt repo sync for automated cleanup:**
 
-After freeing blocking worktrees (Phase 6.0), `gt repo sync` handles most branch deletion automatically:
+After freeing blocking worktrees, `gt repo sync` handles most branch deletion automatically:
 
 ```bash
-gt repo sync --no-interactive --force
+gt repo sync --no-interactive --force --no-restack
 ```
 
 This automatically:
 
 - Deletes local branches with closed/merged PRs
 - Cleans up remote tracking branches
-- Restacks remaining branches on master
 
-**6.4 Manual cleanup for non-Graphite branches:**
+**Step 5: Manual cleanup for non-Graphite branches:**
 
 For branches not tracked by Graphite (won't be cleaned by `gt sync`):
 
-1. **Check if branch is in a worktree:**
+Check if branch is in a worktree:
 
-   ```bash
-   worktree_path=$(git worktree list | grep "\[$branch\]" | awk '{print $1}')
-   ```
+```bash
+worktree_path=$(git worktree list | grep "\[$branch\]" | awk '{print $1}')
+```
 
-2. **If in a worktree, free it first:**
+If in a worktree, free it first:
 
-   ```bash
-   if [ -n "$worktree_path" ]; then
-     if [[ "$worktree_path" =~ erk-slot-[0-9]{2} ]]; then
-       erk slot unassign "$worktree_path"
-     else
-       git worktree remove --force "$worktree_path"
-     fi
-   fi
-   ```
+```bash
+if [ -n "$worktree_path" ]; then
+  if [[ "$worktree_path" =~ erk-slot-[0-9]{2} ]]; then
+    erk slot unassign "$worktree_path"
+  else
+    git worktree remove --force "$worktree_path"
+  fi
+fi
+```
 
-3. **Delete local and remote branches:**
+Delete local and remote branches:
 
-   ```bash
-   git branch -D "$branch"
-   git push origin --delete "$branch" 2>/dev/null || true
-   ```
+```bash
+git branch -D "$branch"
+git push origin --delete "$branch" 2>/dev/null || true
+```
 
-**6.5 Final prune:**
+**Step 6: Final prune:**
 
 ```bash
 git worktree prune
 ```
 
-### Phase 7: Summary
+### Phase 10: Summary
 
 After execution, provide a summary:
 
