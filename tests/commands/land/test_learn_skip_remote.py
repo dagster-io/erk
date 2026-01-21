@@ -144,12 +144,12 @@ def test_land_skips_learn_prompt_for_remote_pr(
         result = runner.invoke(
             cli,
             [
-                "exec",
-                "land-execute",
-                "--pr-number=100",
-                f"--branch={plan_branch}",
-                # Note: NOT passing --worktree-path (no local worktree)
-                "--use-graphite",
+                "land",
+                "--execute",
+                "--exec-pr-number=100",
+                f"--exec-branch={plan_branch}",
+                # Note: NOT passing --exec-worktree-path (no local worktree)
+                "--exec-use-graphite",
                 "--script",
             ],
             obj=test_ctx,

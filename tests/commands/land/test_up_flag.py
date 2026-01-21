@@ -108,14 +108,12 @@ def test_land_with_up_navigates_to_child_branch() -> None:
         # Verify PR was NOT merged yet (deferred to script execution)
         assert 123 not in github_ops.merged_prs
 
-        # Verify script was generated with passthrough for --up flag
+        # Verify script was generated with --up flag info
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk exec land-execute" in script_content
-        # --target-child is NOT baked in - --up is passed via "$@"
-        assert "--target-child" not in script_content
-        assert '"$@"' in script_content
+        assert "erk land --execute" in script_content
+        assert "--exec-target-child=feature-2" in script_content
         # Script should cd to child worktree after execution
         assert str(feature_2_path) in script_content
 
@@ -412,13 +410,11 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
         # Verify PR was NOT merged yet (deferred to script execution)
         assert 123 not in github_ops.merged_prs
 
-        # Verify script was generated with passthrough for --up flag
+        # Verify script was generated with correct parameters
         script_path = Path(result.stdout.strip())
         script_content = env.script_writer.get_script_content(script_path)
         assert script_content is not None
-        assert "erk exec land-execute" in script_content
-        # --target-child is NOT baked in - --up is passed via "$@"
-        assert "--target-child" not in script_content
-        assert '"$@"' in script_content
+        assert "erk land --execute" in script_content
+        assert "--exec-target-child=feature-2" in script_content
         # Script should cd to child worktree after execution
         assert str(feature_2_path) in script_content

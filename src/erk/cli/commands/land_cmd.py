@@ -212,6 +212,93 @@ def parse_argument(arg: str) -> ParsedArgument:
     return ParsedArgument(arg_type="branch", pr_number=None)
 
 
+def _prompt_slot_unassign_if_needed(
+    ctx: ErkContext,
+    *,
+    pool_json_path: Path,
+    branch: str,
+    force: bool,
+    no_delete: bool,
+) -> SlotAssignment | None:
+    """Check for slot assignment and prompt for unassign confirmation.
+
+    Returns the slot assignment if found (for dry-run output), or None.
+    Raises SystemExit(0) if user declines to unassign.
+    """
+    state = load_pool_state(pool_json_path)
+    if state is None:
+        return None
+
+    slot_assignment = find_branch_assignment(state, branch)
+    if slot_assignment is None:
+        return None
+
+    if not force and not ctx.dry_run and not no_delete:
+        if not ctx.console.confirm(
+            f"Unassign slot '{slot_assignment.slot_name}' and delete branch '{branch}'?",
+            default=True,
+        ):
+            user_output("Slot preserved. Branch still exists locally.")
+            raise SystemExit(0)
+
+    return slot_assignment
+
+
+def _output_dry_run_summary(
+    *,
+    pr_number: int,
+    branch: str,
+    slot_assignment: SlotAssignment | None,
+    target_path: Path,
+) -> None:
+    """Output dry-run summary and exit."""
+    user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+    if slot_assignment is not None:
+        user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+    user_output(f"Would delete branch '{branch}'")
+    user_output(f"Would navigate to {target_path}")
+    user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+    raise SystemExit(0)
+
+
+def _write_land_script_and_exit(
+    ctx: ErkContext,
+    *,
+    pr_number: int,
+    branch: str,
+    worktree_path: Path | None,
+    is_current_branch: bool,
+    target_child_branch: str | None,
+    objective_number: int | None,
+    use_graphite: bool,
+    pull_flag: bool,
+    no_delete: bool,
+    target_path: Path,
+    comment: str,
+) -> None:
+    """Generate activation script, write it, output path, and exit."""
+    script_content = render_land_execution_script(
+        pr_number=pr_number,
+        branch=branch,
+        worktree_path=worktree_path,
+        is_current_branch=is_current_branch,
+        target_child_branch=target_child_branch,
+        objective_number=objective_number,
+        use_graphite=use_graphite,
+        pull_flag=pull_flag,
+        no_delete=no_delete,
+        target_path=target_path,
+    )
+
+    result = ctx.script_writer.write_activation_script(
+        script_content,
+        command_name="land",
+        comment=comment,
+    )
+    machine_output(str(result.path), nl=False)
+    raise SystemExit(0)
+
+
 def resolve_branch_for_pr(ctx: ErkContext, repo_root: Path, pr_details: PRDetails) -> str:
     """Resolve the local branch name for a PR.
 
@@ -616,81 +703,57 @@ def render_land_execution_script(
     branch: str,
     worktree_path: Path | None,
     is_current_branch: bool,
+    target_child_branch: str | None,
     objective_number: int | None,
     use_graphite: bool,
+    pull_flag: bool,
+    no_delete: bool,
     target_path: Path,
 ) -> str:
     """Generate shell script that executes land and navigates.
 
     This script is generated after validation passes. When sourced, it:
-    1. Validates required arguments (PR number and branch)
-    2. Calls `erk exec land-execute` with pre-validated state plus user flags
-    3. Navigates to the target location (trunk or child branch)
-
-    Note: The execute phase always skips confirmation prompts because the user
-    already approved by sourcing the script. --force is not passed because
-    _execute_land handles this internally.
-
-    The script requires two positional arguments:
-    - $1: PR number to merge
-    - $2: Branch name being landed
-
-    Additional flags after the positional args (e.g., -f --up --no-pull --no-delete)
-    are passed through to `erk exec land-execute` via "$@".
-
-    **Baked-in (static, determined at script generation time):**
-    - --worktree-path: worktree location
-    - --is-current-branch: whether landing from that worktree
-    - --objective-number: linked objective
-    - --use-graphite: whether Graphite is enabled
-
-    **Passed via "$@" (user-controllable flags):**
-    - --up: navigate upstack (resolved at execution time)
-    - --no-pull: skip pull after landing
-    - --no-delete: preserve branch/slot
-    - -f: passed for documentation (execute mode is already non-interactive)
+    1. Calls `erk land --execute` with pre-validated state
+    2. Navigates to the target location (trunk or child branch)
 
     Args:
-        pr_number: PR number to merge (not used directly, passed as arg)
-        branch: Branch name being landed (not used directly, passed as arg)
+        pr_number: PR number to merge
+        branch: Branch name being landed
         worktree_path: Path to worktree being cleaned up (if any)
         is_current_branch: Whether landing from the branch's own worktree
+        target_child_branch: Target child branch for --up navigation
         objective_number: Linked objective issue number (if any)
         use_graphite: Whether to use Graphite for merge
+        pull_flag: Whether to pull after landing
+        no_delete: Whether to preserve branch and slot
         target_path: Where to cd after land completes
 
     Returns:
         Shell script content as string
     """
-    # Silence unused parameter warnings - these are still needed for the function
-    # signature to document what values the script will receive at runtime
-    _ = pr_number, branch
-
-    # Build erk exec land-execute command using shell variables for pr/branch
-    # Static flags are baked in; user flags come from "$@"
-    cmd_parts = ["erk exec land-execute"]
-    cmd_parts.append('--pr-number="$PR_NUMBER"')
-    cmd_parts.append('--branch="$BRANCH"')
+    # Build erk land --execute command with all state parameters
+    cmd_parts = ["erk land --execute"]
+    cmd_parts.append(f"--exec-pr-number={pr_number}")
+    cmd_parts.append(f"--exec-branch={branch}")
     if worktree_path is not None:
-        cmd_parts.append(f"--worktree-path={worktree_path}")
+        cmd_parts.append(f"--exec-worktree-path={worktree_path}")
     if is_current_branch:
-        cmd_parts.append("--is-current-branch")
+        cmd_parts.append("--exec-is-current-branch")
+    if target_child_branch is not None:
+        cmd_parts.append(f"--exec-target-child={target_child_branch}")
     if objective_number is not None:
-        cmd_parts.append(f"--objective-number={objective_number}")
+        cmd_parts.append(f"--exec-objective-number={objective_number}")
     if use_graphite:
-        cmd_parts.append("--use-graphite")
-    # User-controllable flags passed through "$@"
-    cmd_parts.append('"$@"')
+        cmd_parts.append("--exec-use-graphite")
+    if not pull_flag:
+        cmd_parts.append("--no-pull")
+    if no_delete:
+        cmd_parts.append("--no-delete")
 
     erk_cmd = " ".join(cmd_parts)
     target_path_str = str(target_path)
 
     return f"""# erk land deferred execution
-# Usage: source land.sh <pr_number> <branch> [flags...]
-PR_NUMBER="${{1:?Error: PR number required}}"
-BRANCH="${{2:?Error: Branch name required}}"
-shift 2
-
 {erk_cmd}
 cd {target_path_str}
 """
@@ -715,10 +778,6 @@ def _execute_land(
     This function is called when `erk land --execute` is invoked by the
     activation script. All validation has already been done - this just
     performs the destructive operations.
-
-    Confirmations are skipped in execute mode because the user already approved
-    by sourcing the activation script. Confirmations happen during validation
-    phase only.
 
     Args:
         ctx: ErkContext
@@ -794,8 +853,6 @@ def _execute_land(
 
     # Step 3: Cleanup (delete branch, unassign slot)
     # Note: Navigation is handled by the activation script's cd command
-    # Always use force=True in execute mode because user already approved by
-    # sourcing the script. Confirmations happen during validation phase only.
     _cleanup_and_navigate(
         ctx,
         repo=repo,
@@ -803,7 +860,7 @@ def _execute_land(
         worktree_path=worktree_path,
         script=script,
         pull_flag=pull_flag,
-        force=True,  # Execute mode skips confirmations (user approved via script)
+        force=True,  # Skip confirmation in execute mode
         is_current_branch=is_current_branch,
         target_child_branch=target_child_branch,
         objective_number=objective_number,
@@ -844,6 +901,15 @@ def _execute_land(
     is_flag=True,
     help="Preserve the local branch and its slot assignment after landing.",
 )
+# Hidden options for deferred execution (used by activation script)
+@click.option("--execute", is_flag=True, hidden=True)
+@click.option("--exec-pr-number", type=int, hidden=True)
+@click.option("--exec-branch", hidden=True)
+@click.option("--exec-worktree-path", type=click.Path(), hidden=True)
+@click.option("--exec-is-current-branch", is_flag=True, hidden=True)
+@click.option("--exec-target-child", hidden=True)
+@click.option("--exec-objective-number", type=int, hidden=True)
+@click.option("--exec-use-graphite", is_flag=True, hidden=True)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -855,6 +921,14 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
+    execute: bool,
+    exec_pr_number: int | None,
+    exec_branch: str | None,
+    exec_worktree_path: str | None,
+    exec_is_current_branch: bool,
+    exec_target_child: str | None,
+    exec_objective_number: int | None,
+    exec_use_graphite: bool,
 ) -> None:
     """Merge PR and delete worktree.
 
@@ -874,6 +948,23 @@ def land(
 
     Note: The --up flag requires Graphite for child branch tracking.
     """
+    # Execute mode: skip validation and perform deferred operations from activation script
+    if execute:
+        _execute_land(
+            ctx,
+            pr_number=exec_pr_number,
+            branch=exec_branch,
+            worktree_path=Path(exec_worktree_path) if exec_worktree_path else None,
+            is_current_branch=exec_is_current_branch,
+            target_child_branch=exec_target_child,
+            objective_number=exec_objective_number,
+            use_graphite=exec_use_graphite,
+            pull_flag=pull_flag,
+            no_delete=no_delete,
+            script=script,
+        )
+        return
+
     # Replace context with appropriate wrappers based on flags.
     #
     # Note: Other commands (consolidate, branch checkout) handle --script by skipping
@@ -1035,12 +1126,14 @@ def _land_current_branch(
     # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, current_branch)
 
-    # Check for slot assignment (needed for dry-run output)
-    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
-    state = load_pool_state(repo.pool_json_path)
-    slot_assignment: SlotAssignment | None = None
-    if state is not None:
-        slot_assignment = find_branch_assignment(state, current_branch)
+    # Prompt for slot unassign confirmation
+    slot_assignment = _prompt_slot_unassign_if_needed(
+        ctx,
+        pool_json_path=repo.pool_json_path,
+        branch=current_branch,
+        force=force,
+        no_delete=no_delete,
+    )
 
     # Determine target path for navigation after landing
     if target_child_branch is not None:
@@ -1058,58 +1151,28 @@ def _land_current_branch(
 
     # Handle dry-run mode: show what would happen without generating script
     if ctx.dry_run:
-        user_output(f"Would merge PR #{pr_number} for branch '{current_branch}'")
-        if slot_assignment is not None:
-            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
-        user_output(f"Would delete branch '{current_branch}'")
-        user_output(f"Would navigate to {target_path}")
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
+        _output_dry_run_summary(
+            pr_number=pr_number,
+            branch=current_branch,
+            slot_assignment=slot_assignment,
+            target_path=target_path,
+        )
 
-    # Generate execution script with all pre-validated state
-    script_content = render_land_execution_script(
+    # Generate activation script and exit
+    _write_land_script_and_exit(
+        ctx,
         pr_number=pr_number,
         branch=current_branch,
         worktree_path=current_worktree_path,
         is_current_branch=True,
+        target_child_branch=target_child_branch,
         objective_number=objective_number,
         use_graphite=ctx.branch_manager.is_graphite_managed(),
+        pull_flag=pull_flag,
+        no_delete=no_delete,
         target_path=target_path,
-    )
-
-    # Write script to .erk/bin/land.sh
-    result = ctx.script_writer.write_worktree_script(
-        script_content,
-        worktree_path=current_worktree_path,
-        script_name="land",
-        command_name="land",
         comment=f"land {current_branch}",
     )
-
-    # Build extra flags to display in the source command
-    display_flags: list[str] = []
-    if force:
-        display_flags.append("-f")
-    if up_flag:
-        display_flags.append("--up")
-    if not pull_flag:
-        display_flags.append("--no-pull")
-    if no_delete:
-        display_flags.append("--no-delete")
-
-    if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
-    else:
-        # Interactive mode: show instructions and copy to clipboard
-        print_temp_script_instructions(
-            result.path,
-            instruction="To land the PR:",
-            copy=True,
-            args=[pr_number, current_branch],
-            extra_flags=display_flags if display_flags else None,
-        )
-    raise SystemExit(0)
 
 
 def _land_specific_pr(
@@ -1187,70 +1250,43 @@ def _land_specific_pr(
     # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
 
-    # Check for slot assignment (needed for dry-run output)
-    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
-    state = load_pool_state(repo.pool_json_path)
-    slot_assignment: SlotAssignment | None = None
-    if state is not None:
-        slot_assignment = find_branch_assignment(state, branch)
+    # Prompt for slot unassign confirmation
+    slot_assignment = _prompt_slot_unassign_if_needed(
+        ctx,
+        pool_json_path=repo.pool_json_path,
+        branch=branch,
+        force=force,
+        no_delete=no_delete,
+    )
 
     # Determine target path for navigation (no --up for specific PR, always trunk)
     target_path = main_repo_root
 
     # Handle dry-run mode
     if ctx.dry_run:
-        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
-        if slot_assignment is not None:
-            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
-        user_output(f"Would delete branch '{branch}'")
-        user_output(f"Would navigate to {target_path}")
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
+        _output_dry_run_summary(
+            pr_number=pr_number,
+            branch=branch,
+            slot_assignment=slot_assignment,
+            target_path=target_path,
+        )
 
-    # Generate execution script with pre-validated state
+    # Generate activation script and exit
     # Note: specific PR landing doesn't support Graphite path (no stack validation)
-    script_content = render_land_execution_script(
+    _write_land_script_and_exit(
+        ctx,
         pr_number=pr_number,
         branch=branch,
         worktree_path=worktree_path,
         is_current_branch=is_current_branch,
+        target_child_branch=None,
         objective_number=objective_number,
         use_graphite=False,  # Specific PR landing uses GitHub API directly
+        pull_flag=pull_flag,
+        no_delete=no_delete,
         target_path=target_path,
-    )
-
-    # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
-    script_dir = worktree_path if worktree_path is not None else main_repo_root
-    result = ctx.script_writer.write_worktree_script(
-        script_content,
-        worktree_path=script_dir,
-        script_name="land",
-        command_name="land",
         comment=f"land PR #{pr_number}",
     )
-
-    # Build extra flags to display in the source command
-    display_flags: list[str] = []
-    if force:
-        display_flags.append("-f")
-    if not pull_flag:
-        display_flags.append("--no-pull")
-    if no_delete:
-        display_flags.append("--no-delete")
-
-    if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
-    else:
-        # Interactive mode: show instructions and copy to clipboard
-        print_temp_script_instructions(
-            result.path,
-            instruction=f"To land PR #{pr_number}:",
-            copy=True,
-            args=[pr_number, branch],
-            extra_flags=display_flags if display_flags else None,
-        )
-    raise SystemExit(0)
 
 
 def _land_by_branch(
@@ -1320,67 +1356,40 @@ def _land_by_branch(
     # Check for linked objective (needed for script generation)
     objective_number = get_objective_for_branch(ctx, main_repo_root, branch_name)
 
-    # Check for slot assignment (needed for dry-run output)
-    # Note: Confirmation for slot unassign happens in execute phase (_cleanup_and_navigate)
-    state = load_pool_state(repo.pool_json_path)
-    slot_assignment: SlotAssignment | None = None
-    if state is not None:
-        slot_assignment = find_branch_assignment(state, branch_name)
+    # Prompt for slot unassign confirmation
+    slot_assignment = _prompt_slot_unassign_if_needed(
+        ctx,
+        pool_json_path=repo.pool_json_path,
+        branch=branch_name,
+        force=force,
+        no_delete=no_delete,
+    )
 
     # Determine target path for navigation (no --up for branch landing, always trunk)
     target_path = main_repo_root
 
     # Handle dry-run mode
     if ctx.dry_run:
-        user_output(f"Would merge PR #{pr_number} for branch '{branch_name}'")
-        if slot_assignment is not None:
-            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
-        user_output(f"Would delete branch '{branch_name}'")
-        user_output(f"Would navigate to {target_path}")
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
+        _output_dry_run_summary(
+            pr_number=pr_number,
+            branch=branch_name,
+            slot_assignment=slot_assignment,
+            target_path=target_path,
+        )
 
-    # Generate execution script with pre-validated state
+    # Generate activation script and exit
     # Note: branch landing doesn't support Graphite path (no stack validation)
-    script_content = render_land_execution_script(
+    _write_land_script_and_exit(
+        ctx,
         pr_number=pr_number,
         branch=branch_name,
         worktree_path=worktree_path,
         is_current_branch=is_current_branch,
+        target_child_branch=None,
         objective_number=objective_number,
         use_graphite=False,  # Branch landing uses GitHub API directly
+        pull_flag=pull_flag,
+        no_delete=no_delete,
         target_path=target_path,
-    )
-
-    # Write script to .erk/bin/land.sh (use worktree if available, else repo root)
-    script_dir = worktree_path if worktree_path is not None else main_repo_root
-    result = ctx.script_writer.write_worktree_script(
-        script_content,
-        worktree_path=script_dir,
-        script_name="land",
-        command_name="land",
         comment=f"land {branch_name}",
     )
-
-    # Build extra flags to display in the source command
-    display_flags: list[str] = []
-    if force:
-        display_flags.append("-f")
-    if not pull_flag:
-        display_flags.append("--no-pull")
-    if no_delete:
-        display_flags.append("--no-delete")
-
-    if script:
-        # Shell integration mode: output just the path
-        machine_output(str(result.path), nl=False)
-    else:
-        # Interactive mode: show instructions and copy to clipboard
-        print_temp_script_instructions(
-            result.path,
-            instruction=f"To land branch '{branch_name}':",
-            copy=True,
-            args=[pr_number, branch_name],
-            extra_flags=display_flags if display_flags else None,
-        )
-    raise SystemExit(0)
