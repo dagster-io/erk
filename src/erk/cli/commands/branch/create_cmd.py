@@ -49,6 +49,13 @@ from erk_shared.output.output import user_output
     is_flag=True,
     help="Include --docker flag for filesystem-isolated implementation",
 )
+@click.option(
+    "--codespace",
+    default=None,
+    is_flag=False,
+    flag_value="",
+    help="Include --codespace flag for codespace-isolated implementation",
+)
 @click.pass_obj
 def branch_create(
     ctx: ErkContext,
@@ -60,6 +67,7 @@ def branch_create(
     create_only: bool,
     dangerous: bool,
     docker: bool,
+    codespace: str | None,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -86,6 +94,10 @@ def branch_create(
 
     if for_plan is None and branch_name is None:
         user_output("Error: Must provide BRANCH argument or --for-plan option.")
+        raise SystemExit(1) from None
+
+    if docker and codespace is not None:
+        user_output("Error: --docker and --codespace cannot be used together.")
         raise SystemExit(1) from None
 
     repo = discover_repo_context(ctx, ctx.cwd)
@@ -190,7 +202,9 @@ def branch_create(
         if create_only:
             config = activation_config_activate_only()
         else:
-            config = activation_config_for_implement(docker=docker, dangerous=dangerous)
+            config = activation_config_for_implement(
+                docker=docker, dangerous=dangerous, codespace=codespace
+            )
 
         print_activation_instructions(
             script_path,

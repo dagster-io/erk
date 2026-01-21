@@ -27,25 +27,31 @@ class ActivationConfig:
             False means activate-only mode (just source the script).
         dangerous: If True, include --dangerous flag (skip permission prompts).
         docker: If True, include --docker flag (filesystem isolation).
+        codespace: If not None, include --codespace flag for codespace isolation.
+            None = not using codespace mode.
+            "" (empty string) = use default codespace.
+            "name" = use named codespace.
     """
 
     implement: bool
     dangerous: bool
     docker: bool
+    codespace: str | None
 
 
 def activation_config_activate_only() -> ActivationConfig:
     """Create config for activate-only mode (no implement command)."""
-    return ActivationConfig(implement=False, dangerous=False, docker=False)
+    return ActivationConfig(implement=False, dangerous=False, docker=False, codespace=None)
 
 
 def activation_config_for_implement(
     *,
     dangerous: bool,
     docker: bool,
+    codespace: str | None,
 ) -> ActivationConfig:
     """Create config for implement mode with specified flags."""
-    return ActivationConfig(implement=True, dangerous=dangerous, docker=docker)
+    return ActivationConfig(implement=True, dangerous=dangerous, docker=docker, codespace=codespace)
 
 
 def build_activation_command(config: ActivationConfig, script_path: Path) -> str:
@@ -66,6 +72,11 @@ def build_activation_command(config: ActivationConfig, script_path: Path) -> str
     parts = [source_cmd, "&&", "erk", "implement"]
     if config.docker:
         parts.append("--docker")
+    if config.codespace is not None:
+        if config.codespace == "":
+            parts.append("--codespace")
+        else:
+            parts.append(f"--codespace {config.codespace}")
     if config.dangerous:
         parts.append("--dangerous")
 
@@ -275,6 +286,8 @@ def _get_activation_instruction(config: ActivationConfig) -> str:
         return "To activate the worktree environment:"
     if config.docker:
         return "To activate and start implementation (Docker isolation):"
+    if config.codespace is not None:
+        return "To activate and start implementation (codespace isolation):"
     if config.dangerous:
         return "To activate and start implementation (skip permissions):"
     return "To activate and start implementation:"
