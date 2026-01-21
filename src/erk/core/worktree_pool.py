@@ -156,7 +156,7 @@ def save_pool_state(pool_json_path: Path, state: PoolState) -> None:
 def update_slot_objective(
     state: PoolState, slot_name: str, objective_issue: int | None
 ) -> PoolState:
-    """Return new PoolState with slot's last_objective_id updated.
+    """Return new PoolState with slot's last_objective_id updated (upsert).
 
     Args:
         state: Current pool state
@@ -165,7 +165,7 @@ def update_slot_objective(
 
     Returns:
         New PoolState with the updated slot. If slot_name is not found,
-        returns state unchanged.
+        creates a new SlotInfo entry for it (upsert behavior).
     """
     new_slots: list[SlotInfo] = []
     found = False
@@ -178,7 +178,7 @@ def update_slot_objective(
             new_slots.append(slot)
 
     if not found:
-        return state
+        new_slots.append(SlotInfo(name=slot_name, last_objective_id=objective_issue))
 
     return PoolState(
         version=state.version,
