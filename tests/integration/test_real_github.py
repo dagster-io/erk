@@ -13,6 +13,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.github.abc import GistCreated, GistCreateError
 from erk_shared.github.real import RealGitHub
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -1085,8 +1086,6 @@ def test_create_gist_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import GistCreated
-
         ops = RealGitHub.for_test()
         result = ops.create_gist(
             filename="session.jsonl",
@@ -1150,8 +1149,6 @@ def test_create_gist_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh gist create failed: not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import GistCreateError
-
         ops = RealGitHub.for_test()
         result = ops.create_gist(
             filename="session.jsonl",
@@ -1177,8 +1174,6 @@ def test_create_gist_empty_output(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        from erk_shared.github.types import GistCreateError
-
         ops = RealGitHub.for_test()
         result = ops.create_gist(
             filename="session.jsonl",
