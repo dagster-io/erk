@@ -39,6 +39,11 @@ from erk_shared.github.metadata.schemas import (
     LAST_REMOTE_IMPL_AT,
     LAST_REMOTE_IMPL_RUN_ID,
     LAST_REMOTE_IMPL_SESSION_ID,
+    LAST_SESSION_AT,
+    LAST_SESSION_GIST_ID,
+    LAST_SESSION_GIST_URL,
+    LAST_SESSION_ID,
+    LAST_SESSION_SOURCE,
     LEARN_STATUS,
     OBJECTIVE_ISSUE,
     PLAN_COMMENT_ID,
@@ -47,6 +52,7 @@ from erk_shared.github.metadata.schemas import (
     WORKTREE_NAME,
     LearnStatusValue,
     PlanHeaderSchema,
+    SessionSourceValue,
 )
 from erk_shared.github.metadata.types import MetadataBlock
 
@@ -995,3 +1001,128 @@ def update_plan_header_learn_status(
 
     # Replace block in full body
     return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def update_plan_header_session_gist(
+    *,
+    issue_body: str,
+    gist_url: str,
+    gist_id: str,
+    session_id: str,
+    session_at: str,
+    source: SessionSourceValue,
+) -> str:
+    """Update session gist fields in plan-header metadata block.
+
+    Updates all 5 session gist fields atomically:
+    - last_session_gist_url (URL of the gist)
+    - last_session_gist_id (gist ID)
+    - last_session_id (Claude Code session ID)
+    - last_session_at (ISO 8601 timestamp)
+    - last_session_source ("local" or "remote")
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        gist_url: URL of the uploaded gist
+        gist_id: ID of the gist
+        session_id: Claude Code session ID
+        session_at: ISO 8601 timestamp of session upload
+        source: "local" or "remote" indicating where session was run
+
+    Returns:
+        Updated issue body with new session gist fields
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    # Extract existing plan-header block
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    # Update all session gist fields atomically
+    updated_data = dict(block.data)
+    updated_data[LAST_SESSION_GIST_URL] = gist_url
+    updated_data[LAST_SESSION_GIST_ID] = gist_id
+    updated_data[LAST_SESSION_ID] = session_id
+    updated_data[LAST_SESSION_AT] = session_at
+    updated_data[LAST_SESSION_SOURCE] = source
+
+    # Validate updated data
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    # Create new block and render
+    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    # Replace block in full body
+    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+
+
+def extract_plan_header_session_gist_url(issue_body: str) -> str | None:
+    """Extract last_session_gist_url from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        URL of session gist if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_SESSION_GIST_URL)
+
+
+def extract_plan_header_session_gist_id(issue_body: str) -> str | None:
+    """Extract last_session_gist_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        ID of session gist if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_SESSION_GIST_ID)
+
+
+def extract_plan_header_last_session_id(issue_body: str) -> str | None:
+    """Extract last_session_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Claude Code session ID if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LAST_SESSION_ID)
+
+
+def extract_plan_header_last_session_source(issue_body: str) -> SessionSourceValue | None:
+    """Extract last_session_source from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        "local" or "remote" if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    # Type narrowing: validation ensures this is a valid SessionSourceValue
+    value = block.data.get(LAST_SESSION_SOURCE)
+    if value is None:
+        return None
+    return value

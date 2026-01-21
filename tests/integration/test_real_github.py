@@ -13,6 +13,7 @@ import pytest
 from pytest import MonkeyPatch
 
 from erk_shared.gateway.time.fake import FakeTime
+from erk_shared.github.abc import GistCreated, GistCreateError
 from erk_shared.github.real import RealGitHub
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -1063,3 +1064,123 @@ def test_get_open_prs_with_base_branch_api_failure_returns_empty(
 
         # Should return empty list, not raise
         assert result == []
+
+
+# ============================================================================
+# create_gist() Tests
+# ============================================================================
+
+
+def test_create_gist_success(monkeypatch: MonkeyPatch) -> None:
+    """Test create_gist uses correct gh gist create command and parses output."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        # gh gist create returns the gist URL on stdout
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="https://gist.github.com/testuser/abc123def456\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.create_gist(
+            filename="session.jsonl",
+            content='{"type": "test"}',
+            description="Test gist",
+            public=False,
+        )
+
+        # Verify command structure (without --public for secret gist)
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        assert cmd[0:3] == ["gh", "gist", "create"]
+        # cmd[3] is the temp file path
+        assert "--filename" in cmd
+        assert "session.jsonl" in cmd
+        assert "--desc" in cmd
+        assert "Test gist" in cmd
+        assert "--public" not in cmd  # Secret gist
+
+        # Verify result parsing
+        assert isinstance(result, GistCreated)
+        assert result.gist_id == "abc123def456"
+        assert result.gist_url == "https://gist.github.com/testuser/abc123def456"
+        assert (
+            result.raw_url
+            == "https://gist.githubusercontent.com/testuser/abc123def456/raw/session.jsonl"
+        )
+
+
+def test_create_gist_public(monkeypatch: MonkeyPatch) -> None:
+    """Test create_gist includes --public flag for public gists."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="https://gist.github.com/testuser/public123\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        ops.create_gist(
+            filename="data.txt",
+            content="test content",
+            description="Public gist",
+            public=True,
+        )
+
+        # Verify --public flag is included
+        assert len(called_with) == 1
+        assert "--public" in called_with[0]
+
+
+def test_create_gist_failure(monkeypatch: MonkeyPatch) -> None:
+    """Test create_gist returns GistCreateError on command failure."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        raise RuntimeError("gh gist create failed: not authenticated")
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.create_gist(
+            filename="session.jsonl",
+            content="test",
+            description="Test",
+            public=False,
+        )
+
+        # Should return GistCreateError, not raise
+        assert isinstance(result, GistCreateError)
+        assert "not authenticated" in result.message
+
+
+def test_create_gist_empty_output(monkeypatch: MonkeyPatch) -> None:
+    """Test create_gist returns GistCreateError when gh returns empty output."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="",  # Empty output
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.create_gist(
+            filename="session.jsonl",
+            content="test",
+            description="Test",
+            public=False,
+        )
+
+        assert isinstance(result, GistCreateError)
+        assert "No gist URL returned" in result.message

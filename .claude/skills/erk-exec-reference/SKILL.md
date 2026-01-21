@@ -27,7 +27,7 @@ Quick reference for all `erk exec` subcommands.
 | `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.          |
 | `detect-trunk-branch`             | Detect whether repo uses main or master as trunk branch.                  |
 | `discover-reviews`                | Discover code reviews matching PR changed files.                          |
-| `download-remote-session`         | Download a session artifact from a GitHub Actions workflow run.           |
+| `download-remote-session`         | Download a session from a GitHub Gist.                                    |
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                        |
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                 |
@@ -76,6 +76,7 @@ Quick reference for all `erk exec` subcommands.
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
 | `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.        |
+| `upload-session`                  | Upload a session JSONL to GitHub Gist and update plan header.             |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.       |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                             |
 | `validate-plan-content`           | Validate plan content from stdin.                                         |
@@ -218,16 +219,16 @@ Discover code reviews matching PR changed files.
 
 ### download-remote-session
 
-Download a session artifact from a GitHub Actions workflow run.
+Download a session from a GitHub Gist.
 
 **Usage:** `erk exec download-remote-session`
 
 **Options:**
 
-| Flag           | Type | Required | Default        | Description                                 |
-| -------------- | ---- | -------- | -------------- | ------------------------------------------- |
-| `--run-id`     | TEXT | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID              |
-| `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to locate artifact) |
+| Flag           | Type | Required | Default        | Description                                       |
+| -------------- | ---- | -------- | -------------- | ------------------------------------------------- |
+| `--gist-url`   | TEXT | Yes      | Sentinel.UNSET | Raw gist URL to download session from             |
+| `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID (used to name output directory) |
 
 ### exit-plan-mode-hook
 
@@ -891,6 +892,21 @@ Update plan-header metadata with remote session artifact location.
 | `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update |
 | `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID         |
 | `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID        |
+
+### upload-session
+
+Upload a session JSONL to GitHub Gist and update plan header.
+
+**Usage:** `erk exec upload-session`
+
+**Options:**
+
+| Flag             | Type    | Required | Default        | Description                                             |
+| ---------------- | ------- | -------- | -------------- | ------------------------------------------------------- |
+| `--session-file` | PATH    | Yes      | Sentinel.UNSET | Path to the session JSONL file to upload                |
+| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID                                  |
+| `--source`       | CHOICE  | Yes      | Sentinel.UNSET | Session source: 'local' or 'remote'                     |
+| `--issue-number` | INTEGER | No       | Sentinel.UNSET | Optional erk-plan issue number to update with gist info |
 
 ### user-prompt-hook
 

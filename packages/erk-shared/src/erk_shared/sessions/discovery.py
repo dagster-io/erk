@@ -11,10 +11,13 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.metadata.plan_header import (
     extract_plan_header_created_from_session,
     extract_plan_header_last_learn_session,
+    extract_plan_header_last_session_id,
+    extract_plan_header_last_session_source,
     extract_plan_header_local_impl_session,
     extract_plan_header_remote_impl_at,
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
+    extract_plan_header_session_gist_url,
 )
 from erk_shared.learn.extraction.claude_installation.abc import (
     ClaudeInstallation,
@@ -37,6 +40,9 @@ class SessionsForPlan:
         last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
         last_remote_impl_run_id: GitHub Actions run ID for remote implementation
         last_remote_impl_session_id: Claude Code session ID for remote implementation
+        last_session_gist_url: URL of gist containing latest session JSONL
+        last_session_id: Session ID of latest uploaded session
+        last_session_source: "local" or "remote" indicating session origin
     """
 
     planning_session_id: str | None
@@ -45,6 +51,10 @@ class SessionsForPlan:
     last_remote_impl_at: str | None
     last_remote_impl_run_id: str | None
     last_remote_impl_session_id: str | None
+    # New gist-based session fields
+    last_session_gist_url: str | None
+    last_session_id: str | None
+    last_session_source: str | None  # "local" or "remote"
 
     def all_session_ids(self) -> list[str]:
         """Return all session IDs in logical order.
@@ -105,6 +115,10 @@ def find_sessions_for_plan(
     last_remote_impl_at = extract_plan_header_remote_impl_at(issue_info.body)
     last_remote_impl_run_id = extract_plan_header_remote_impl_run_id(issue_info.body)
     last_remote_impl_session_id = extract_plan_header_remote_impl_session_id(issue_info.body)
+    # Extract new gist-based session fields
+    last_session_gist_url = extract_plan_header_session_gist_url(issue_info.body)
+    last_session_id = extract_plan_header_last_session_id(issue_info.body)
+    last_session_source = extract_plan_header_last_session_source(issue_info.body)
 
     # Get comments to find implementation and learn sessions
     comments = github.get_issue_comments(repo_root, issue_number)
@@ -145,6 +159,9 @@ def find_sessions_for_plan(
         last_remote_impl_at=last_remote_impl_at,
         last_remote_impl_run_id=last_remote_impl_run_id,
         last_remote_impl_session_id=last_remote_impl_session_id,
+        last_session_gist_url=last_session_gist_url,
+        last_session_id=last_session_id,
+        last_session_source=last_session_source,
     )
 
 

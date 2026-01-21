@@ -4,7 +4,7 @@ from pathlib import Path
 
 import click
 
-from erk_shared.github.abc import GitHub
+from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
@@ -328,3 +328,21 @@ class PrintingGitHub(PrintingBase, GitHub):
     ) -> bool:
         """Download artifact (read-only, no printing)."""
         return self._wrapped.download_run_artifact(repo_root, run_id, artifact_name, destination)
+
+    def create_gist(
+        self,
+        *,
+        filename: str,
+        content: str,
+        description: str,
+        public: bool,
+    ) -> GistCreated | GistCreateError:
+        """Create gist with printed output."""
+        public_flag = "--public" if public else ""
+        self._emit(self._format_command(f"gh gist create --filename {filename} {public_flag}"))
+        result = self._wrapped.create_gist(
+            filename=filename, content=content, description=description, public=public
+        )
+        if isinstance(result, GistCreated):
+            self._emit(f"-> {click.style(result.gist_url, fg='green')}")
+        return result
