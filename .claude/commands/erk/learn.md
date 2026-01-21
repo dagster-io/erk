@@ -52,7 +52,7 @@ Parse the JSON output to get:
 
 If no sessions are found, inform the user and stop.
 
-**Note on remote implementations:** If `last_remote_impl_at` is set but no `session_sources` have `source_type: "local"` with a valid `path`, the plan was implemented remotely (via GitHub Actions). In Phase 1, remote sessions are not yet downloadable - inform the user that the plan was implemented remotely but session logs are not available locally.
+**Note on remote sessions:** Remote sessions appear in `session_sources` with `source_type: "remote"` and `path: null`. These sessions must be downloaded before processing (see Step 3).
 
 ### Step 2: Analyze Implementation
 
@@ -136,7 +136,11 @@ For each session source from Step 1, preprocess to compressed XML format:
 **IMPORTANT:** Check `source_type` before processing:
 
 - If `source_type == "local"` and `path` is set: Process the session using the path
-- If `source_type == "remote"`: Skip for now (remote session download not yet implemented). Inform the user that this session originated from a remote implementation and cannot be analyzed locally yet.
+- If `source_type == "remote"`: Download the session first, then process:
+  1. Run: `erk exec download-remote-session --run-id "<run_id>" --session-id "<session_id>"`
+  2. Parse the JSON output to get the `path` field
+  3. If `success: true`, use the returned `path` for preprocessing
+  4. If `success: false` (artifact expired, permissions error, etc.), inform the user and skip this session
 
 ```bash
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn

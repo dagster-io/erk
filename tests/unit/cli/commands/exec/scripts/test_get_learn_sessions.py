@@ -19,6 +19,7 @@ from erk_shared.learn.extraction.claude_installation.fake import (
     FakeSessionData,
 )
 from tests.test_utils.github_helpers import create_test_issue
+from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
@@ -288,3 +289,115 @@ def test_session_sources_contains_local_session_data(tmp_path: Path) -> None:
     session_ids = [s["session_id"] for s in output["session_sources"]]
     assert "session-def-456" in session_ids
     assert "session-abc-123" in session_ids
+
+
+# ============================================================================
+# Remote Session Tests (Layer 4: Business Logic over Fakes)
+# ============================================================================
+
+
+def test_session_sources_includes_remote_session(tmp_path: Path) -> None:
+    """Test session_sources includes RemoteSessionSource when remote impl exists."""
+    fake_git = FakeGit()
+
+    # Create issue with remote implementation metadata in plan header
+    plan_body = format_plan_header_body_for_test(
+        last_remote_impl_run_id="12345678",
+        last_remote_impl_session_id="remote-session-abc",
+        last_remote_impl_at="2024-01-15T12:00:00Z",
+    )
+    test_issue = create_test_issue(300, "Test Plan #300", body=plan_body)
+    fake_issues = FakeGitHubIssues(issues={300: test_issue})
+    fake_claude = FakeClaudeInstallation.for_test()
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        result = runner.invoke(
+            get_learn_sessions,
+            ["300"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github_issues=fake_issues,
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+
+    # Find the remote session source
+    remote_sources = [s for s in output["session_sources"] if s["source_type"] == "remote"]
+    assert len(remote_sources) == 1
+
+    remote_source = remote_sources[0]
+    assert remote_source["session_id"] == "remote-session-abc"
+    assert remote_source["run_id"] == "12345678"
+    assert remote_source["path"] is None  # Not downloaded yet
+
+
+def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
+    """Test session_sources contains both local and remote entries."""
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+
+        fake_git = FakeGit()
+
+        # Create issue with remote implementation metadata
+        plan_body = format_plan_header_body_for_test(
+            last_remote_impl_run_id="99999",
+            last_remote_impl_session_id="remote-xyz",
+            last_remote_impl_at="2024-01-15T12:00:00Z",
+        )
+        test_issue = create_test_issue(400, "Test Plan #400", body=plan_body)
+        fake_issues = FakeGitHubIssues(issues={400: test_issue})
+
+        # Set up fake claude installation with local sessions
+        fake_claude = FakeClaudeInstallation.for_test(
+            projects={
+                cwd: FakeProject(
+                    sessions={
+                        "local-session-123": FakeSessionData(
+                            content='{"type": "user"}\n',
+                            size_bytes=1024,
+                            modified_at=1000.0,
+                        ),
+                    }
+                )
+            },
+        )
+
+        result = runner.invoke(
+            get_learn_sessions,
+            ["400"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github_issues=fake_issues,
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+
+    # Verify we have both local and remote sources
+    local_sources = [s for s in output["session_sources"] if s["source_type"] == "local"]
+    remote_sources = [s for s in output["session_sources"] if s["source_type"] == "remote"]
+
+    assert len(local_sources) == 1
+    assert len(remote_sources) == 1
+
+    # Verify local source structure
+    assert local_sources[0]["session_id"] == "local-session-123"
+    assert local_sources[0]["run_id"] is None
+    assert local_sources[0]["path"] is not None
+
+    # Verify remote source structure
+    assert remote_sources[0]["session_id"] == "remote-xyz"
+    assert remote_sources[0]["run_id"] == "99999"
+    assert remote_sources[0]["path"] is None
