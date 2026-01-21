@@ -83,7 +83,7 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/erk:plan-implement",
-            issue_number=None,
+            command_arg=None,
         )
 
         # Should wrap in bash -l -c for login shell
@@ -105,7 +105,7 @@ class TestBuildRemoteCommand:
             interactive=False,
             model=None,
             command="/erk:plan-implement",
-            issue_number=None,
+            command_arg=None,
         )
 
         # Should include print mode and output format for non-interactive
@@ -121,7 +121,7 @@ class TestBuildRemoteCommand:
             interactive=True,
             model="haiku",
             command="/erk:plan-implement",
-            issue_number=None,
+            command_arg=None,
         )
 
         assert "--model haiku" in result
@@ -132,7 +132,7 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/erk:plan-implement",
-            issue_number=None,
+            command_arg=None,
         )
 
         assert "--model" not in result
@@ -143,30 +143,42 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/fast-ci",
-            issue_number=None,
+            command_arg=None,
         )
 
         assert '"/fast-ci"' in result
 
-    def test_with_issue_number(self) -> None:
-        """Test building remote command with issue_number generates correct command."""
+    def test_command_with_arg(self) -> None:
+        """Test that command_arg is appended to command."""
         result = build_remote_command(
             interactive=True,
             model=None,
             command="/erk:plan-implement",
-            issue_number="123",
+            command_arg="5394",
         )
 
-        # Should include the command with issue number argument
-        assert '"/erk:plan-implement 123"' in result
+        # Should include the command with argument (quoted)
+        assert '"/erk:plan-implement 5394"' in result
 
-    def test_without_issue_number(self) -> None:
-        """Test building remote command without issue_number has no argument."""
+    def test_command_with_file_path_arg(self) -> None:
+        """Test that file path command_arg is appended to command."""
         result = build_remote_command(
             interactive=True,
             model=None,
             command="/erk:plan-implement",
-            issue_number=None,
+            command_arg="./my-plan.md",
+        )
+
+        # Should include the command with file path argument (quoted)
+        assert '"/erk:plan-implement ./my-plan.md"' in result
+
+    def test_without_command_arg(self) -> None:
+        """Test building remote command without command_arg has no argument."""
+        result = build_remote_command(
+            interactive=True,
+            model=None,
+            command="/erk:plan-implement",
+            command_arg=None,
         )
 
         # Should include just the command without trailing argument
@@ -180,7 +192,7 @@ class TestBuildRemoteCommand:
             interactive=True,
             model=None,
             command="/erk:plan-implement",
-            issue_number=None,
+            command_arg=None,
         )
 
         # Should include git pull before source .venv

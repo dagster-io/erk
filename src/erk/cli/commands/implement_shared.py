@@ -724,7 +724,7 @@ def execute_codespace_mode(
     no_interactive: bool,
     submit: bool,
     verbose: bool,
-    issue_number: str | None,
+    command_arg: str | None,
 ) -> None:
     """Execute Claude in codespace mode (interactive or non-interactive).
 
@@ -738,7 +738,7 @@ def execute_codespace_mode(
         no_interactive: Whether to execute non-interactively
         submit: Whether to auto-submit PR after implementation
         verbose: Whether to show verbose output
-        issue_number: Optional issue number to pass to /erk:plan-implement
+        command_arg: Optional argument to pass to /erk:plan-implement (issue number or file path)
 
     Raises:
         click.ClickException: If codespace not found
@@ -770,7 +770,7 @@ def execute_codespace_mode(
             model=model,
             commands=commands,
             verbose=verbose,
-            issue_number=issue_number,
+            command_arg=command_arg,
         )
         if exit_code != 0:
             raise SystemExit(exit_code)
@@ -780,5 +780,5 @@ def execute_codespace_mode(
             codespace_gateway=ctx.codespace,
             codespace=resolved_codespace,
             model=model,
-            issue_number=issue_number,
+            command_arg=command_arg,
         )
