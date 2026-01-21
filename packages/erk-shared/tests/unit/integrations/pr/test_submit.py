@@ -33,9 +33,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         # Find the completion event
@@ -57,9 +55,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -81,9 +77,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -106,9 +100,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         # Find progress events
@@ -223,11 +215,7 @@ class TestExecuteCoreSubmit:
         graphite = FakeGraphite()
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
-        list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
-        )
+        list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
         # Should have committed WIP changes
         assert len(git._commits) == 1
@@ -262,9 +250,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -290,9 +276,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         progress_events = [e for e in events if isinstance(e, ProgressEvent)]
@@ -327,9 +311,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -357,9 +339,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         completion = [e for e in events if isinstance(e, CompletionEvent)]
@@ -383,11 +363,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         with pytest.raises(RuntimeError, match="Network connection failed"):
-            list(
-                execute_core_submit(
-                    ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-                )
-            )
+            list(execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None))
 
     def test_auto_rebases_when_behind_remote(self, tmp_path: Path) -> None:
         """Test that pull_rebase is called when local branch is behind remote."""
@@ -407,9 +383,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         # Verify pull_rebase was called
@@ -451,9 +425,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         # pull_rebase should NOT be called
@@ -488,9 +460,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=False, plans_repo=None)
         )
 
         # Should have rebased
@@ -525,9 +495,7 @@ class TestExecuteCoreSubmit:
         ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
 
         events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=True, plans_repo=None, skip_push=False
-            )
+            execute_core_submit(ctx, tmp_path, "Title", "Body", force=True, plans_repo=None)
         )
 
         # Should complete successfully with force
@@ -541,72 +509,3 @@ class TestExecuteCoreSubmit:
         assert len(git._pushed_branches) == 1
         pushed = git._pushed_branches[0]
         assert pushed.force is True
-
-    def test_skip_push_skips_git_push_and_divergence_check(self, tmp_path: Path) -> None:
-        """Test that skip_push=True skips git push (Graphite will handle it)."""
-        git = FakeGit(
-            current_branches={tmp_path: "feature-branch"},
-            repository_roots={tmp_path: tmp_path},
-            trunk_branches={tmp_path: "main"},
-            commits_ahead={(tmp_path, "main"): 2},
-            remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-        )
-        github = FakeGitHub(authenticated=True)
-        graphite = FakeGraphite()
-        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
-
-        events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=True
-            )
-        )
-
-        # Should NOT have pushed (Graphite will handle it)
-        assert len(git._pushed_branches) == 0
-
-        # Should have emitted skip push message
-        progress_events = [e for e in events if isinstance(e, ProgressEvent)]
-        messages = [e.message for e in progress_events]
-        assert any("Skipping git push" in m for m in messages)
-
-        # Should still complete successfully and create PR
-        completion = [e for e in events if isinstance(e, CompletionEvent)]
-        assert len(completion) == 1
-        result = completion[0].result
-        assert isinstance(result, CoreSubmitResult)
-        assert result.success is True
-        assert result.was_created is True
-
-    def test_skip_push_skips_divergence_check(self, tmp_path: Path) -> None:
-        """Test that skip_push=True skips divergence check (no rebase needed)."""
-        git = FakeGit(
-            current_branches={tmp_path: "feature-branch"},
-            repository_roots={tmp_path: tmp_path},
-            trunk_branches={tmp_path: "main"},
-            commits_ahead={(tmp_path, "main"): 2},
-            remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
-            branch_divergence={
-                (tmp_path, "feature-branch", "origin"): BranchDivergence(
-                    is_diverged=True, ahead=2, behind=1
-                )
-            },
-        )
-        github = FakeGitHub(authenticated=True)
-        graphite = FakeGraphite()
-        ctx = context_for_test(git=git, github=github, graphite=graphite, cwd=tmp_path)
-
-        events = list(
-            execute_core_submit(
-                ctx, tmp_path, "Title", "Body", force=False, plans_repo=None, skip_push=True
-            )
-        )
-
-        # Should NOT have rebased (skip_push skips divergence handling)
-        assert len(git.pull_rebase_calls) == 0
-
-        # Should complete successfully despite divergence (Graphite handles it)
-        completion = [e for e in events if isinstance(e, CompletionEvent)]
-        assert len(completion) == 1
-        result = completion[0].result
-        assert isinstance(result, CoreSubmitResult)
-        assert result.success is True

@@ -115,7 +115,6 @@ def execute_core_submit(
     *,
     force: bool,
     plans_repo: str | None,
-    skip_push: bool,
 ) -> Generator[ProgressEvent | CompletionEvent[CoreSubmitResult | CoreSubmitError]]:
     """Execute core PR submission: git push + gh pr create.
 
@@ -132,7 +131,6 @@ def execute_core_submit(
         force: If True, force push (use when branch has diverged from remote)
         plans_repo: Target repo in "owner/repo" format for cross-repo plans,
             or None for same-repo
-        skip_push: If True, skip git push (Graphite will handle it via gt submit)
 
     Yields:
         ProgressEvent for status updates
@@ -232,62 +230,58 @@ def execute_core_submit(
             )
         yield ProgressEvent(f"Found linked issue: #{issue_number}")
 
-    # Step 6-7: Push branch to remote (skip if Graphite will handle it)
-    if skip_push:
-        yield ProgressEvent("Skipping git push (Graphite will handle)", style="info")
-    else:
-        # Step 6: Pre-flight divergence check and auto-rebase
+    # Step 6: Pre-flight divergence check and auto-rebase
+    divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+
+    # If behind remote, auto-rebase first (handles CI commits)
+    if divergence.behind > 0:
+        yield ProgressEvent(
+            f"Branch is {divergence.behind} commit(s) behind remote, rebasing...",
+            style="info",
+        )
+        ctx.git.pull_rebase(cwd, "origin", branch_name)
+        # Re-check divergence after rebase
         divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
 
-        # If behind remote, auto-rebase first (handles CI commits)
-        if divergence.behind > 0:
-            yield ProgressEvent(
-                f"Branch is {divergence.behind} commit(s) behind remote, rebasing...",
-                style="info",
+    # Only fail on true divergence (ahead AND behind after rebase attempt)
+    if divergence.is_diverged:
+        if not force:
+            yield CompletionEvent(
+                _make_divergence_error(branch_name, divergence.ahead, divergence.behind)
             )
-            ctx.git.pull_rebase(cwd, "origin", branch_name)
-            # Re-check divergence after rebase
-            divergence = ctx.git.is_branch_diverged_from_remote(cwd, branch_name, "origin")
+            return
+        yield ProgressEvent(
+            f"Branch still diverged (ahead={divergence.ahead}, behind={divergence.behind}), "
+            "force pushing...",
+            style="warning",
+        )
 
-        # Only fail on true divergence (ahead AND behind after rebase attempt)
-        if divergence.is_diverged:
-            if not force:
-                yield CompletionEvent(
-                    _make_divergence_error(branch_name, divergence.ahead, divergence.behind)
+    # Step 7: Push branch to remote
+    push_msg = "Force pushing branch to origin..." if force else "Pushing branch to origin..."
+    yield ProgressEvent(push_msg)
+    try:
+        ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=force)
+    except RuntimeError as e:
+        error_str = str(e)
+        if "non-fast-forward" in error_str or "rejected" in error_str.lower():
+            yield CompletionEvent(
+                CoreSubmitError(
+                    success=False,
+                    error_type="branch_diverged",
+                    message=(
+                        f"Branch '{branch_name}' has diverged from remote.\n"
+                        f"Your local branch is behind origin/{branch_name}.\n\n"
+                        f"To fix: git pull --rebase origin {branch_name}\n"
+                        f"Or use: erk pr submit -f (to force push)"
+                    ),
+                    details={"branch": branch_name},
                 )
-                return
-            yield ProgressEvent(
-                f"Branch still diverged (ahead={divergence.ahead}, behind={divergence.behind}), "
-                "force pushing...",
-                style="warning",
             )
-
-        # Step 7: Push branch to remote
-        push_msg = "Force pushing branch to origin..." if force else "Pushing branch to origin..."
-        yield ProgressEvent(push_msg)
-        try:
-            ctx.git.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=force)
-        except RuntimeError as e:
-            error_str = str(e)
-            if "non-fast-forward" in error_str or "rejected" in error_str.lower():
-                yield CompletionEvent(
-                    CoreSubmitError(
-                        success=False,
-                        error_type="branch_diverged",
-                        message=(
-                            f"Branch '{branch_name}' has diverged from remote.\n"
-                            f"Your local branch is behind origin/{branch_name}.\n\n"
-                            f"To fix: git pull --rebase origin {branch_name}\n"
-                            f"Or use: erk pr submit -f (to force push)"
-                        ),
-                        details={"branch": branch_name},
-                    )
-                )
-                return
-            # Re-raise if it's a different error
-            raise
-        push_success = "Branch force pushed to origin" if force else "Branch pushed to origin"
-        yield ProgressEvent(push_success, style="success")
+            return
+        # Re-raise if it's a different error
+        raise
+    push_success = "Branch force pushed to origin" if force else "Branch pushed to origin"
+    yield ProgressEvent(push_success, style="success")
 
     # Step 8: Check for existing PR
     yield ProgressEvent("Checking for existing PR...")
