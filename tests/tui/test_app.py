@@ -744,8 +744,8 @@ class TestCommandPaletteFromMain:
     """
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_copy_implement(self) -> None:
-        """Execute palette command copies implement command."""
+    async def test_execute_palette_command_copy_prepare(self) -> None:
+        """Execute palette command copies prepare command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -759,9 +759,9 @@ class TestCommandPaletteFromMain:
             await pilot.pause()
 
             # Execute command directly (simulates palette selection)
-            app.execute_palette_command("copy_implement")
+            app.execute_palette_command("copy_prepare")
 
-            assert clipboard.last_copied == "erk implement 123"
+            assert clipboard.last_copied == "erk prepare 123"
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_open_pr(self) -> None:
@@ -798,7 +798,7 @@ class TestCommandPaletteFromMain:
             await pilot.pause()
 
             # Execute command with no rows selected
-            app.execute_palette_command("copy_implement")
+            app.execute_palette_command("copy_prepare")
 
             # Nothing should be copied
             assert clipboard.last_copied is None

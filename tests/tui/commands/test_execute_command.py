@@ -291,7 +291,7 @@ class TestExecuteCommandNoExecutor:
         screen = PlanDetailScreen(row=row)  # No executor
         # Should not raise
         screen.execute_command("open_browser")
-        screen.execute_command("copy_implement")
+        screen.execute_command("copy_prepare")
         screen.execute_command("close_plan")
         screen.execute_command("submit_to_queue")
         screen.execute_command("land_pr")
