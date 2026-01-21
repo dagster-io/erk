@@ -401,3 +401,40 @@ def test_session_sources_includes_both_local_and_remote(tmp_path: Path) -> None:
     assert remote_sources[0]["session_id"] == "remote-xyz"
     assert remote_sources[0]["run_id"] == "99999"
     assert remote_sources[0]["path"] is None
+
+
+def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None:
+    """Test session_sources does not include remote when run_id is missing."""
+    fake_git = FakeGit()
+
+    # Create issue with session_id but NO run_id (incomplete remote metadata)
+    plan_body = format_plan_header_body_for_test(
+        last_remote_impl_at="2024-01-20T15:30:00Z",
+        last_remote_impl_session_id="orphan-session",
+        # Note: last_remote_impl_run_id is NOT set
+    )
+    test_issue = create_test_issue(500, "Test Plan #500", body=plan_body)
+    fake_issues = FakeGitHubIssues(issues={500: test_issue})
+    fake_claude = FakeClaudeInstallation.for_test()
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        result = runner.invoke(
+            get_learn_sessions,
+            ["500"],
+            obj=ErkContext.for_test(
+                git=fake_git,
+                github_issues=fake_issues,
+                claude_installation=fake_claude,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+
+    # No remote session should be added without run_id
+    remote_sources = [s for s in output["session_sources"] if s["source_type"] == "remote"]
+    assert len(remote_sources) == 0
