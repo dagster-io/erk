@@ -3,6 +3,7 @@ description:
   Create git commit and submit current branch with Graphite (squashes commits
   and rebases stack)
 argument-hint: <description>
+context: fork
 ---
 
 # Submit PR
