@@ -50,6 +50,7 @@ from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
+from erk_shared.github.metadata.plan_header import extract_plan_header_learn_status
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
@@ -68,7 +69,7 @@ def _check_learn_status_and_prompt(
 
     This provides a conservative check before landing - if the plan has associated
     sessions but hasn't been learned from yet, warn the user and give them the
-    option to cancel and run learn manually first.
+    option to cancel, trigger async learn, or continue without learning.
 
     Learn plans (issues with erk-learn label) are skipped since they are for
     extracting insights, not for being "learned from" themselves.
@@ -97,6 +98,7 @@ def _check_learn_status_and_prompt(
         return
 
     # Skip learn check for learn plans (they don't need to be learned from)
+    # Fetch issue to check labels and learn_status
     try:
         issue = ctx.issues.get_issue(repo_root, plan_issue_number)
         if "erk-learn" in issue.labels:
@@ -104,8 +106,30 @@ def _check_learn_status_and_prompt(
     except RuntimeError:
         # If we can't fetch the issue, continue with normal flow
         # (the sessions check will handle it)
-        pass
+        issue = None
 
+    # Check learn_status from plan header metadata
+    if issue is not None:
+        learn_status = extract_plan_header_learn_status(issue.body)
+
+        # Handle completed status - learn has already finished
+        if learn_status == "completed":
+            user_output(
+                click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
+            )
+            return
+
+        # Handle pending status - async learn is in progress
+        if learn_status == "pending":
+            user_output(
+                click.style("⏳", fg="cyan")
+                + f" Async learn in progress for plan #{plan_issue_number}"
+            )
+            return
+
+        # learn_status is null - fall through to check sessions
+
+    # Check for existing learn sessions (backward compatibility)
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
 
     if sessions.learn_session_ids:
@@ -114,15 +138,70 @@ def _check_learn_status_and_prompt(
         )
         return
 
+    # No learn has happened - prompt user for action
+    _prompt_async_learn_and_continue(
+        ctx,
+        repo_root=repo_root,
+        plan_issue_number=plan_issue_number,
+        script=script,
+    )
+
+
+def _prompt_async_learn_and_continue(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_issue_number: int,
+    script: bool,
+) -> None:
+    """Prompt user for async learn options when no learning has occurred.
+
+    Offers three choices:
+    1. Trigger async learn and continue - dispatches workflow, then lands
+    2. Continue without learning - proceeds with landing
+    3. Cancel - aborts landing
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path
+        plan_issue_number: Issue number of the plan
+        script: If True, output no-op activation script on abort
+
+    Raises:
+        SystemExit(0) if user cancels
+    """
     user_output(
         click.style("Warning: ", fg="yellow")
         + f"Plan #{plan_issue_number} has not been learned from."
     )
-    user_output(
-        f"\nTo extract insights from this plan's sessions, run:\n  erk learn {plan_issue_number}\n"
+    user_output("")
+
+    # In script mode, auto-select "trigger async learn" as the default action
+    if not ctx.console.is_stdin_interactive():
+        _trigger_async_learn(ctx, repo_root=repo_root, plan_issue_number=plan_issue_number)
+        return
+
+    # Interactive mode: show numbered choice menu
+    user_output("Choose an action:")
+    user_output("  1. Trigger async learn and continue (recommended)")
+    user_output("  2. Continue without learning")
+    user_output("  3. Cancel")
+    user_output("")
+
+    choice = click.prompt(
+        "Enter choice",
+        type=click.IntRange(1, 3),
+        default=1,
     )
 
-    if not ctx.console.confirm("Continue landing without learning?", default=False):
+    if choice == 1:
+        # Trigger async learn workflow
+        _trigger_async_learn(ctx, repo_root=repo_root, plan_issue_number=plan_issue_number)
+    elif choice == 2:
+        # Continue without learning
+        user_output("Continuing without learning.")
+    else:
+        # Cancel
         user_output("Cancelled. Run 'erk learn' first, then retry landing.")
         if script:
             script_content = render_activation_script(
@@ -139,6 +218,68 @@ def _check_learn_status_and_prompt(
             )
             machine_output(str(result.path), nl=False)
         raise SystemExit(0)
+
+
+def _trigger_async_learn(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_issue_number: int,
+) -> None:
+    """Trigger async learn workflow for a plan issue.
+
+    Calls `erk exec trigger-async-learn` via subprocess and reports result.
+    This is a fire-and-forget operation - landing continues immediately.
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path (unused, for consistency)
+        plan_issue_number: Issue number of the plan
+    """
+    # Silence unused parameter warning - repo_root kept for interface consistency
+    _ = repo_root
+
+    import json
+
+    user_output(f"Triggering async learn for plan #{plan_issue_number}...")
+
+    try:
+        result = subprocess.run(
+            ["erk", "exec", "trigger-async-learn", str(plan_issue_number)],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=ctx.cwd,
+        )
+
+        if result.returncode == 0:
+            # Parse output JSON to get run_id
+            output = json.loads(result.stdout)
+            if output.get("success"):
+                user_output(
+                    click.style("✓", fg="green")
+                    + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
+                )
+            else:
+                user_output(
+                    click.style("⚠ ", fg="yellow")
+                    + f"Async learn response: {output.get('error', 'unknown error')}"
+                )
+        else:
+            # Command failed - parse error if possible
+            try:
+                error_output = json.loads(result.stdout)
+                error_msg = error_output.get("error", result.stderr or "unknown error")
+            except json.JSONDecodeError:
+                error_msg = result.stderr or result.stdout or "unknown error"
+            msg = f"Could not trigger async learn: {error_msg}"
+            user_output(click.style("⚠ ", fg="yellow") + msg)
+    except FileNotFoundError:
+        msg = "Could not trigger async learn: erk command not found"
+        user_output(click.style("⚠ ", fg="yellow") + msg)
+    except subprocess.SubprocessError as e:
+        msg = f"Could not trigger async learn: {e}"
+        user_output(click.style("⚠ ", fg="yellow") + msg)
 
 
 def _ensure_branch_not_checked_out(
