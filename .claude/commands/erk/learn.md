@@ -364,55 +364,73 @@ Present findings to the user with:
    - **[Plan]** - From planning/research phase
    - **[Impl]** - From implementation phase
 
-2. **Proposed documentation items** - What you plan to include in the issue
+2. **Proposed documentation items** - What files will be created/updated
 
-3. **Ask for validation** - Are there insights to add, remove, or refine?
+3. **Ask for validation** - Confirm which documentation items to write. Note that files will be written directly (not as a plan issue).
 
 If the user decides to skip (no valuable insights), proceed to Step 7.
 
-### Step 6: Create Plan Issue
+### Step 6: Write Documentation
 
-**Front-load context into the issue.** Include:
+**IMPORTANT:** Load the `learned-docs` skill before writing any documentation.
 
-1. **Rich context section**: Key files, patterns found, relevant existing docs, external resources, code examples
-2. **Raw materials link**: The gist URL from Step 3
-3. **Documentation items**: Location, action (create/update), draft content, source
+For each documentation item identified in Step 4, write the file directly.
 
-Write the plan content and create the issue:
+#### Creating New Documents
 
-```bash
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md << 'EOF'
-# Documentation Plan: <title>
+Use this structure:
 
-## Context
+```markdown
+---
+title: [Document Title]
+read_when:
+  - "[first condition]"
+  - "[second condition]"
+---
 
-<rich context section>
+# [Title Matching Frontmatter]
 
-## Raw Materials
-
-<gist-url>
-
-## PR Review Insights
-
-<If applicable, insights derived from PR #X comments>
-
-## Documentation Items
-
-<items with location, action, draft content, source>
-EOF
-
-erk exec plan-save-to-issue \
-    --plan-type learn \
-    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md \
-    --session-id="${CLAUDE_SESSION_ID}" \
-    --format display
+[Content following learned-docs patterns]
 ```
 
-Display the result:
+**Location patterns:**
+
+- CLI commands → `docs/learned/cli/`
+- Architecture patterns → `docs/learned/architecture/`
+- Testing patterns → `docs/learned/testing/`
+- TUI patterns → `docs/learned/tui/`
+- External integrations → `docs/learned/` (root)
+
+#### Updating Existing Documents
+
+Read the existing file first. Add new sections or update existing content while preserving document structure.
+
+#### If Adding Tripwires
+
+If any documentation item includes a tripwire (cross-cutting warning):
+
+1. Add to the relevant doc's frontmatter:
+   ```yaml
+   tripwires:
+     - action: "doing the dangerous thing"
+       warning: "Do the safe thing instead."
+   ```
+2. Run: `erk docs sync` to regenerate `tripwires.md`
+
+#### Validation
+
+After writing all files, run CI to catch formatting issues. Fix any errors before completing.
+
+#### Summary
+
+After writing, display:
 
 ```
-Documentation plan created: <issue-url>
-Raw materials: <gist-url>
+Documentation written:
+- docs/learned/tui/shortcuts-reference.md (created)
+- docs/learned/tui/adding-commands.md (updated)
+
+Files are ready for the workflow to commit.
 ```
 
 ### Step 7: Track Evaluation
