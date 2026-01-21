@@ -355,7 +355,6 @@ def _implement_from_file(
     elif codespace is not None:
         # Codespace mode - run Claude in registered codespace
         # Empty string means use default codespace
-        # Note: file-based plans don't have issue numbers
         codespace_name = codespace if codespace else None
         execute_codespace_mode(
             ctx,
@@ -364,7 +363,7 @@ def _implement_from_file(
             no_interactive=no_interactive,
             submit=submit,
             verbose=verbose,
-            issue_number=None,
+            command_arg=str(plan_file),
         )
     elif no_interactive:
         # Non-interactive mode - execute via subprocess

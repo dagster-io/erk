@@ -74,6 +74,7 @@ Quick reference for all `erk exec` subcommands.
 | `tripwires-reminder-hook`         | Output tripwires reminder for UserPromptSubmit hook.                      |
 | `update-dispatch-info`            | Update dispatch info in GitHub issue plan-header metadata.                |
 | `update-issue-body`               | Update an issue's body using REST API (avoids GraphQL rate limits).       |
+| `update-plan-remote-session`      | Update plan-header metadata with remote session artifact location.        |
 | `user-prompt-hook`                | UserPromptSubmit hook for session persistence and coding reminders.       |
 | `validate-claude-credentials`     | Validate Claude credentials for CI workflows.                             |
 | `validate-plan-content`           | Validate plan content from stdin.                                         |
@@ -863,6 +864,20 @@ Update an issue's body using REST API (avoids GraphQL rate limits).
 | ------------- | ---- | -------- | -------------- | ------------------- |
 | `--body`      | TEXT | No       | Sentinel.UNSET | New body content    |
 | `--body-file` | PATH | No       | Sentinel.UNSET | Read body from file |
+
+### update-plan-remote-session
+
+Update plan-header metadata with remote session artifact location.
+
+**Usage:** `erk exec update-plan-remote-session`
+
+**Options:**
+
+| Flag             | Type    | Required | Default        | Description                   |
+| ---------------- | ------- | -------- | -------------- | ----------------------------- |
+| `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | GitHub issue number to update |
+| `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID         |
+| `--session-id`   | TEXT    | Yes      | Sentinel.UNSET | Claude Code session ID        |
 
 ### user-prompt-hook
 
