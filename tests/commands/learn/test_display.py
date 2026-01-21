@@ -348,7 +348,7 @@ def test_async_flag_triggers_workflow(tmp_path: Path) -> None:
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "learn-dispatch.yml"
+    assert workflow == "learn-async.yml"
     assert inputs["issue_number"] == "123"
 
     # Verify Claude was NOT launched interactively
@@ -632,5 +632,5 @@ def test_async_flag_with_branch_inference(tmp_path: Path) -> None:
     # Verify workflow was triggered with correct issue number
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "learn-dispatch.yml"
+    assert workflow == "learn-async.yml"
     assert inputs["issue_number"] == "555"

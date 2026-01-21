@@ -79,6 +79,19 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def commit(self, repo_root: Path, message: str) -> None:
+        """Create a commit on the current branch.
+
+        For both Graphite and Git: Uses `git commit --allow-empty` since
+        commits are not Graphite-specific operations.
+
+        Args:
+            repo_root: Repository root directory
+            message: Commit message
+        """
+        ...
+
+    @abstractmethod
     def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
         """Get the linear worktree stack for a given branch.
 

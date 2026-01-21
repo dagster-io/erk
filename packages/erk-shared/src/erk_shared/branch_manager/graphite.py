@@ -120,6 +120,17 @@ class GraphiteBranchManager(BranchManager):
         """
         self.graphite.submit_stack(repo_root, quiet=True, force=True)
 
+    def commit(self, repo_root: Path, message: str) -> None:
+        """Create a commit using git.
+
+        Commits are not Graphite-specific, so we delegate to git.
+
+        Args:
+            repo_root: Repository root directory
+            message: Commit message
+        """
+        self.git.commit(repo_root, message)
+
     def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
         """Get stack from Graphite's local cache.
 
