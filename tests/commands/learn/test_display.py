@@ -357,6 +357,7 @@ def test_async_flag_triggers_workflow(tmp_path: Path) -> None:
     # Verify success output
     assert "Async learn job enqueued successfully" in result.output
     assert "Issue: #123" in result.output
+    assert "https://github.com/owner/repo/actions/runs/" in result.output
 
 
 def test_async_flag_updates_learn_status(tmp_path: Path) -> None:
