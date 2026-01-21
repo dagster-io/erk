@@ -86,6 +86,15 @@ class GitBranchManager(BranchManager):
         """
         self.git.push_to_remote(repo_root, "origin", branch, set_upstream=True, force=True)
 
+    def commit(self, repo_root: Path, message: str) -> None:
+        """Create a commit using git.
+
+        Args:
+            repo_root: Repository root directory
+            message: Commit message
+        """
+        self.git.commit(repo_root, message)
+
     def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
         """Git-only mode doesn't track stacks.
 

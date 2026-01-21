@@ -64,7 +64,7 @@ def test_trigger_async_learn_succeeds_with_remote_session(tmp_path: Path) -> Non
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
     workflow, inputs = fake_github.triggered_workflows[0]
-    assert workflow == "learn-dispatch.yml"
+    assert workflow == "learn-async.yml"
     assert inputs["issue_number"] == "123"
 
 

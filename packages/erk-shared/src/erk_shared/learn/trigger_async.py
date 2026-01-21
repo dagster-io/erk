@@ -1,6 +1,6 @@
 """Shared logic for triggering async learn workflow.
 
-This module provides the core function for dispatching the learn-dispatch.yml
+This module provides the core function for dispatching the learn-async.yml
 workflow for a plan issue. It's used by both:
 - `erk learn --async` command
 - `erk exec trigger-async-learn` script
@@ -77,7 +77,7 @@ def trigger_async_learn_workflow(
     """Trigger async learn workflow for a plan issue.
 
     Validates the issue is an erk-plan with session data available,
-    dispatches learn-dispatch.yml, and updates learn_status to pending.
+    dispatches learn-async.yml, and updates learn_status to pending.
 
     Args:
         github: GitHub gateway for workflow dispatch
@@ -99,10 +99,10 @@ def trigger_async_learn_workflow(
     if not _has_session_data(issue.body):
         return TriggerAsyncLearnNoSessionData(issue_number=issue_number)
 
-    # Dispatch the learn-dispatch.yml workflow
+    # Dispatch the learn-async.yml workflow
     run_id = github.trigger_workflow(
         repo_root=repo_root,
-        workflow="learn-dispatch.yml",
+        workflow="learn-async.yml",
         inputs={"issue_number": str(issue_number)},
     )
 

@@ -21,9 +21,6 @@ from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
 )
-from erk.cli.commands.exec.scripts.create_learn_branch import (
-    create_learn_branch,
-)
 from erk.cli.commands.exec.scripts.create_plan_from_context import (
     create_plan_from_context,
 )
@@ -141,7 +138,6 @@ exec_group.add_command(add_remote_execution_note, name="add-remote-execution-not
 exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(check_impl, name="check-impl")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
-exec_group.add_command(create_learn_branch, name="create-learn-branch")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")

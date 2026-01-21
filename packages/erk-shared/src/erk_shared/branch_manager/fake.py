@@ -35,6 +35,8 @@ class FakeBranchManager(BranchManager):
     _submitted_branches: list[str] = field(default_factory=list)
     # Track tracked branches for assertions: list of (branch_name, parent_branch) tuples
     _tracked_branches: list[tuple[str, str]] = field(default_factory=list)
+    # Track commits for assertions: list of commit messages
+    _commits: list[str] = field(default_factory=list)
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
         """Get PR info from in-memory storage.
@@ -87,6 +89,19 @@ class FakeBranchManager(BranchManager):
             branch: Branch name to submit
         """
         self._submitted_branches.append(branch)
+
+    def commit(self, repo_root: Path, message: str) -> None:
+        """Record commit in tracked list.
+
+        Note: This mutates internal state despite the frozen dataclass.
+        The list reference is frozen, but the list contents can change.
+        This is intentional for test observability.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            message: Commit message
+        """
+        self._commits.append(message)
 
     def get_branch_stack(self, repo_root: Path, branch: str) -> list[str] | None:
         """Get stack from configured test data.
@@ -177,3 +192,12 @@ class FakeBranchManager(BranchManager):
             List of (branch_name, parent_branch) tuples.
         """
         return list(self._tracked_branches)
+
+    @property
+    def commits(self) -> list[str]:
+        """Get list of commit messages for test assertions.
+
+        Returns:
+            List of commit messages.
+        """
+        return list(self._commits)
