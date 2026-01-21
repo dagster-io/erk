@@ -20,6 +20,7 @@ class SessionSourceDict(TypedDict):
     session_id: str
     run_id: str | None
     path: str | None
+    gist_url: str | None
 
 
 class SessionSource(ABC):
@@ -74,17 +75,27 @@ class SessionSource(ABC):
             For remote sessions, this is None until the session is downloaded.
         """
 
+    @property
+    @abstractmethod
+    def gist_url(self) -> str | None:
+        """Return the gist URL where the session JSONL is stored.
+
+        Returns:
+            Gist raw URL for remote sessions uploaded via gist, None otherwise.
+        """
+
     def to_dict(self) -> SessionSourceDict:
         """Serialize to a dictionary for JSON output.
 
         Returns:
-            Dictionary with source_type, session_id, run_id, and path.
+            Dictionary with source_type, session_id, run_id, path, and gist_url.
         """
         return SessionSourceDict(
             source_type=self.source_type,
             session_id=self.session_id,
             run_id=self.run_id,
             path=self.path,
+            gist_url=self.gist_url,
         )
 
 
@@ -131,31 +142,47 @@ class LocalSessionSource(SessionSource):
         """Return the file path where the session is located."""
         return self._path
 
+    @property
+    def gist_url(self) -> None:
+        """Return None - local sessions have no gist URL."""
+        return None
+
 
 class RemoteSessionSource(SessionSource):
-    """Session source for sessions downloaded from GitHub Actions artifacts.
+    """Session source for sessions from remote implementations.
 
     Remote sessions are those that originated from a GitHub Actions workflow
-    run. They have an associated run ID that can be used to fetch additional
-    details or link back to the original run.
+    run or other remote execution environment. They can be retrieved via:
+    - Gist URL (preferred): Direct download from gist raw URL
+    - Artifact (legacy): Download from GitHub Actions artifact using run_id
 
     Attributes:
         session_id: The Claude Code session ID
-        run_id: The GitHub Actions run ID that produced this session
-        path: Optional file path, populated after the session artifact is downloaded.
+        run_id: The GitHub Actions run ID (optional for gist-based sessions)
+        path: Optional file path, populated after the session is downloaded.
               None when remote session is discovered but not yet downloaded.
+        gist_url: Optional gist raw URL for direct download (preferred method)
     """
 
-    __slots__ = ("_session_id", "_run_id", "_path")
+    __slots__ = ("_session_id", "_run_id", "_path", "_gist_url")
 
     _session_id: str
-    _run_id: str
+    _run_id: str | None
     _path: str | None
+    _gist_url: str | None
 
-    def __init__(self, *, session_id: str, run_id: str, path: str | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        session_id: str,
+        run_id: str | None = None,
+        path: str | None = None,
+        gist_url: str | None = None,
+    ) -> None:
         self._session_id = session_id
         self._run_id = run_id
         self._path = path
+        self._gist_url = gist_url
 
     @property
     def source_type(self) -> Literal["remote"]:
@@ -168,8 +195,8 @@ class RemoteSessionSource(SessionSource):
         return self._session_id
 
     @property
-    def run_id(self) -> str:
-        """Return the GitHub Actions run ID."""
+    def run_id(self) -> str | None:
+        """Return the GitHub Actions run ID if available."""
         return self._run_id
 
     @property
@@ -177,7 +204,16 @@ class RemoteSessionSource(SessionSource):
         """Return the file path where the session is located.
 
         Returns:
-            File path string after the session artifact is downloaded,
+            File path string after the session is downloaded,
             None if the session has not been downloaded yet.
         """
         return self._path
+
+    @property
+    def gist_url(self) -> str | None:
+        """Return the gist raw URL for direct download.
+
+        Returns:
+            Gist raw URL if the session was uploaded to gist, None otherwise.
+        """
+        return self._gist_url

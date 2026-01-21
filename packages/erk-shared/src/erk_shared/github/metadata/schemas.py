@@ -333,6 +333,11 @@ PlanHeaderFieldName = Literal[
     "last_learn_session",
     "last_learn_at",
     "learn_status",
+    "last_session_gist_url",
+    "last_session_gist_id",
+    "last_session_id",
+    "last_session_at",
+    "last_session_source",
 ]
 """Union type of all valid plan-header field names."""
 
@@ -362,9 +367,20 @@ LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
 LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
 LEARN_STATUS: Literal["learn_status"] = "learn_status"
 
+# Session gist fields (unified for local and remote)
+LAST_SESSION_GIST_URL: Literal["last_session_gist_url"] = "last_session_gist_url"
+LAST_SESSION_GIST_ID: Literal["last_session_gist_id"] = "last_session_gist_id"
+LAST_SESSION_ID: Literal["last_session_id"] = "last_session_id"
+LAST_SESSION_AT: Literal["last_session_at"] = "last_session_at"
+LAST_SESSION_SOURCE: Literal["last_session_source"] = "last_session_source"
+
 # Valid values for learn_status field
 LearnStatusValue = Literal["pending", "completed"]
 """Valid values for the learn_status plan header field."""
+
+# Valid values for last_session_source field
+SessionSourceValue = Literal["local", "remote"]
+"""Valid values for the last_session_source plan header field."""
 
 
 @dataclass(frozen=True)
@@ -393,6 +409,11 @@ class PlanHeaderSchema(MetadataBlockSchema):
         last_learn_session: Session ID that last invoked learn (nullable)
         last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
         learn_status: Learning workflow status - "pending" or "completed" (nullable)
+        last_session_gist_url: URL of gist containing session JSONL (nullable)
+        last_session_gist_id: ID of gist containing session JSONL (nullable)
+        last_session_id: Claude Code session ID of uploaded session (nullable)
+        last_session_at: ISO 8601 timestamp of session upload (nullable)
+        last_session_source: "local" or "remote" indicating session origin (nullable)
     """
 
     def validate(self, data: dict[str, Any]) -> None:
@@ -422,6 +443,11 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_LEARN_SESSION,
             LAST_LEARN_AT,
             LEARN_STATUS,
+            LAST_SESSION_GIST_URL,
+            LAST_SESSION_GIST_ID,
+            LAST_SESSION_ID,
+            LAST_SESSION_AT,
+            LAST_SESSION_SOURCE,
         }
 
         # Check required fields exist
@@ -570,6 +596,45 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 status_value = data[LEARN_STATUS]
                 raise ValueError(
                     f"learn_status must be 'pending' or 'completed', got '{status_value}'"
+                )
+
+        # Validate optional last_session_gist_url field
+        if LAST_SESSION_GIST_URL in data and data[LAST_SESSION_GIST_URL] is not None:
+            if not isinstance(data[LAST_SESSION_GIST_URL], str):
+                raise ValueError("last_session_gist_url must be a string or null")
+            if len(data[LAST_SESSION_GIST_URL]) == 0:
+                raise ValueError("last_session_gist_url must not be empty when provided")
+
+        # Validate optional last_session_gist_id field
+        if LAST_SESSION_GIST_ID in data and data[LAST_SESSION_GIST_ID] is not None:
+            if not isinstance(data[LAST_SESSION_GIST_ID], str):
+                raise ValueError("last_session_gist_id must be a string or null")
+            if len(data[LAST_SESSION_GIST_ID]) == 0:
+                raise ValueError("last_session_gist_id must not be empty when provided")
+
+        # Validate optional last_session_id field
+        if LAST_SESSION_ID in data and data[LAST_SESSION_ID] is not None:
+            if not isinstance(data[LAST_SESSION_ID], str):
+                raise ValueError("last_session_id must be a string or null")
+            if len(data[LAST_SESSION_ID]) == 0:
+                raise ValueError("last_session_id must not be empty when provided")
+
+        # Validate optional last_session_at field
+        if LAST_SESSION_AT in data and data[LAST_SESSION_AT] is not None:
+            if not isinstance(data[LAST_SESSION_AT], str):
+                raise ValueError("last_session_at must be a string or null")
+            if len(data[LAST_SESSION_AT]) == 0:
+                raise ValueError("last_session_at must not be empty when provided")
+
+        # Validate optional last_session_source field
+        if LAST_SESSION_SOURCE in data and data[LAST_SESSION_SOURCE] is not None:
+            if not isinstance(data[LAST_SESSION_SOURCE], str):
+                raise ValueError("last_session_source must be a string or null")
+            valid_sources = {"local", "remote"}
+            if data[LAST_SESSION_SOURCE] not in valid_sources:
+                source_value = data[LAST_SESSION_SOURCE]
+                raise ValueError(
+                    f"last_session_source must be 'local' or 'remote', got '{source_value}'"
                 )
 
         # Check for unexpected fields

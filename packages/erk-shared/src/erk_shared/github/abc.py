@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -16,6 +17,22 @@ from erk_shared.github.types import (
     PullRequestInfo,
     WorkflowRun,
 )
+
+
+@dataclass(frozen=True)
+class GistCreated:
+    """Result when a gist is successfully created."""
+
+    gist_id: str
+    gist_url: str
+    raw_url: str  # Direct URL to file content
+
+
+@dataclass(frozen=True)
+class GistCreateError:
+    """Result when gist creation fails."""
+
+    message: str
 
 if TYPE_CHECKING:
     from erk_shared.github.issues.abc import GitHubIssues
@@ -675,5 +692,30 @@ class GitHub(ABC):
 
         Returns:
             True if the artifact was downloaded successfully, False otherwise
+        """
+        ...
+
+    @abstractmethod
+    def create_gist(
+        self,
+        *,
+        filename: str,
+        content: str,
+        description: str,
+        public: bool,
+    ) -> GistCreated | GistCreateError:
+        """Create a GitHub Gist.
+
+        Creates a single-file gist with the given content.
+
+        Args:
+            filename: Name of the file in the gist (e.g., "session.jsonl")
+            content: File content to upload
+            description: Gist description
+            public: If True, create a public gist; if False, create a secret gist
+
+        Returns:
+            GistCreated on success with gist_id, gist_url, and raw_url.
+            GistCreateError on failure with error message.
         """
         ...

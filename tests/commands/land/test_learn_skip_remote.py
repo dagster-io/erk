@@ -290,6 +290,9 @@ def test_land_shows_learn_prompt_for_local_plan_branch(
                 last_remote_impl_at=None,
                 last_remote_impl_run_id=None,
                 last_remote_impl_session_id=None,
+                last_session_gist_url=None,
+                last_session_id=None,
+                last_session_source=None,
             )
 
         # Patch the function in the land_cmd module
