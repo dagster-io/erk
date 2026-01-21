@@ -74,6 +74,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         issues=github_issues,
         repo_root=repo_root,
         issue_number=issue_number,
+        on_progress=None,
     )
 
     if isinstance(result, TriggerAsyncLearnNotErkPlan):
