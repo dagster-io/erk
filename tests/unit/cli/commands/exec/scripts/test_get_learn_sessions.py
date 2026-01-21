@@ -436,5 +436,4 @@ def test_session_sources_no_remote_when_metadata_missing(tmp_path: Path) -> None
     output = json.loads(result.output)
 
     # No remote session should be added without run_id
-    remote_sources = [s for s in output["session_sources"] if s["source_type"] == "remote"]
-    assert len(remote_sources) == 0
+    assert not any(s["source_type"] == "remote" for s in output["session_sources"])
