@@ -34,6 +34,7 @@ class GistCreateError:
 
     message: str
 
+
 if TYPE_CHECKING:
     from erk_shared.github.issues.abc import GitHubIssues
 

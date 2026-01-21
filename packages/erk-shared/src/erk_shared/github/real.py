@@ -2072,9 +2072,7 @@ query {{
 
             # Construct raw URL for the file
             # Format: https://gist.githubusercontent.com/{user}/{gist_id}/raw/{filename}
-            raw_url = gist_url.replace(
-                "gist.github.com", "gist.githubusercontent.com"
-            ).rstrip("/")
+            raw_url = gist_url.replace("gist.github.com", "gist.githubusercontent.com").rstrip("/")
             raw_url = f"{raw_url}/raw/{filename}"
 
             return GistCreated(
