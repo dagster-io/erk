@@ -226,27 +226,19 @@ jobs:
             echo "No session found for: $GITHUB_WORKSPACE"
           fi
 
-      - name: Upload session artifact
-        if: always() && steps.session.outputs.session_id
-        uses: actions/upload-artifact@v4
-        with:
-          name: session-${{ steps.session.outputs.session_id }}
-          path: ${{ steps.session.outputs.session_file }}
-          retention-days: 30
-          if-no-files-found: warn
-
-      - name: Update plan header with session artifact location
+      - name: Upload session to gist and update plan header
         if: always() && steps.session.outputs.session_id
         env:
           GH_TOKEN: ${{ github.token }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
-          RUN_ID: ${{ github.run_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
+          SESSION_FILE: ${{ steps.session.outputs.session_file }}
         run: |
-          erk exec update-plan-remote-session \
-            --issue-number "$ISSUE_NUMBER" \
-            --run-id "$RUN_ID" \
-            --session-id "$SESSION_ID"
+          erk exec upload-session \
+            --session-file "$SESSION_FILE" \
+            --session-id "$SESSION_ID" \
+            --source remote \
+            --issue-number "$ISSUE_NUMBER"
 
       - name: Validate implementation produced changes
         if: steps.implement.outputs.implementation_success == 'true'

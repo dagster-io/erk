@@ -48,6 +48,9 @@ def test_check_learn_status_and_prompt_skips_when_already_learned(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -124,6 +127,9 @@ def test_check_learn_status_and_prompt_warns_when_not_learned(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -180,6 +186,9 @@ def test_check_learn_status_and_prompt_cancels_when_user_declines(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -239,6 +248,9 @@ def test_check_learn_status_and_prompt_outputs_script_when_user_declines(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -374,6 +386,9 @@ def test_check_learn_status_and_prompt_runs_when_config_enabled(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -525,6 +540,9 @@ def test_check_learn_status_null_with_sessions_shows_success(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
@@ -572,6 +590,9 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
             last_remote_impl_at=None,
             last_remote_impl_run_id=None,
             last_remote_impl_session_id=None,
+            last_session_gist_url=None,
+            last_session_id=None,
+            last_session_source=None,
         )
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)

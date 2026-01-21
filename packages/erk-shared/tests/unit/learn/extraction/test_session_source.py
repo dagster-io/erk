@@ -16,22 +16,22 @@ class TestLocalSessionSource:
 
     def test_source_type_is_local(self) -> None:
         """source_type returns 'local'."""
-        source = LocalSessionSource(session_id="test-session-123")
+        source = LocalSessionSource(session_id="test-session-123", path=None)
         assert source.source_type == "local"
 
     def test_session_id_returns_provided_value(self) -> None:
         """session_id returns the provided session ID."""
-        source = LocalSessionSource(session_id="abc-def-ghi-123")
+        source = LocalSessionSource(session_id="abc-def-ghi-123", path=None)
         assert source.session_id == "abc-def-ghi-123"
 
     def test_run_id_is_none(self) -> None:
         """run_id returns None for local sessions."""
-        source = LocalSessionSource(session_id="test-session")
+        source = LocalSessionSource(session_id="test-session", path=None)
         assert source.run_id is None
 
-    def test_path_returns_none_by_default(self) -> None:
-        """path returns None when not provided."""
-        source = LocalSessionSource(session_id="test-session")
+    def test_path_returns_none_when_not_known(self) -> None:
+        """path returns None when path is unknown."""
+        source = LocalSessionSource(session_id="test-session", path=None)
         assert source.path is None
 
     def test_path_returns_provided_value(self) -> None:
@@ -44,7 +44,7 @@ class TestLocalSessionSource:
 
     def test_is_session_source_subclass(self) -> None:
         """LocalSessionSource is a SessionSource."""
-        source = LocalSessionSource(session_id="test")
+        source = LocalSessionSource(session_id="test", path=None)
         assert isinstance(source, SessionSource)
 
     def test_to_dict_serializes_all_fields(self) -> None:
@@ -59,17 +59,19 @@ class TestLocalSessionSource:
             "session_id": "abc-123",
             "run_id": None,
             "path": "/path/to/session.jsonl",
+            "gist_url": None,
         }
 
     def test_to_dict_with_none_path(self) -> None:
         """to_dict() works when path is None."""
-        source = LocalSessionSource(session_id="abc-123")
+        source = LocalSessionSource(session_id="abc-123", path=None)
         result = source.to_dict()
         assert result == {
             "source_type": "local",
             "session_id": "abc-123",
             "run_id": None,
             "path": None,
+            "gist_url": None,
         }
 
 
@@ -78,22 +80,28 @@ class TestRemoteSessionSource:
 
     def test_source_type_is_remote(self) -> None:
         """source_type returns 'remote'."""
-        source = RemoteSessionSource(session_id="test-session", run_id="12345")
+        source = RemoteSessionSource(
+            session_id="test-session", run_id="12345", path=None, gist_url=None
+        )
         assert source.source_type == "remote"
 
     def test_session_id_returns_provided_value(self) -> None:
         """session_id returns the provided session ID."""
-        source = RemoteSessionSource(session_id="abc-def-ghi", run_id="12345")
+        source = RemoteSessionSource(
+            session_id="abc-def-ghi", run_id="12345", path=None, gist_url=None
+        )
         assert source.session_id == "abc-def-ghi"
 
     def test_run_id_returns_provided_value(self) -> None:
         """run_id returns the provided run ID."""
-        source = RemoteSessionSource(session_id="test", run_id="run-98765")
+        source = RemoteSessionSource(
+            session_id="test", run_id="run-98765", path=None, gist_url=None
+        )
         assert source.run_id == "run-98765"
 
-    def test_path_returns_none_by_default(self) -> None:
-        """path returns None when not provided."""
-        source = RemoteSessionSource(session_id="test", run_id="123")
+    def test_path_returns_none_when_not_downloaded(self) -> None:
+        """path returns None when session not yet downloaded."""
+        source = RemoteSessionSource(session_id="test", run_id="123", path=None, gist_url=None)
         assert source.path is None
 
     def test_path_returns_provided_value(self) -> None:
@@ -102,23 +110,27 @@ class TestRemoteSessionSource:
             session_id="test",
             run_id="123",
             path="/Users/test/.erk/scratch/session-123/session.jsonl",
+            gist_url=None,
         )
         assert source.path == "/Users/test/.erk/scratch/session-123/session.jsonl"
 
     def test_is_session_source_subclass(self) -> None:
         """RemoteSessionSource is a SessionSource."""
-        source = RemoteSessionSource(session_id="test", run_id="123")
+        source = RemoteSessionSource(session_id="test", run_id="123", path=None, gist_url=None)
         assert isinstance(source, SessionSource)
 
     def test_to_dict_serializes_all_fields(self) -> None:
         """to_dict() serializes all fields to a dictionary."""
-        source = RemoteSessionSource(session_id="abc-123", run_id="run-456")
+        source = RemoteSessionSource(
+            session_id="abc-123", run_id="run-456", path=None, gist_url=None
+        )
         result = source.to_dict()
         assert result == {
             "source_type": "remote",
             "session_id": "abc-123",
             "run_id": "run-456",
             "path": None,
+            "gist_url": None,
         }
 
     def test_to_dict_with_path(self) -> None:
@@ -127,6 +139,7 @@ class TestRemoteSessionSource:
             session_id="abc-123",
             run_id="run-456",
             path="/path/to/downloaded/session.jsonl",
+            gist_url=None,
         )
         result = source.to_dict()
         assert result == {
@@ -134,6 +147,7 @@ class TestRemoteSessionSource:
             "session_id": "abc-123",
             "run_id": "run-456",
             "path": "/path/to/downloaded/session.jsonl",
+            "gist_url": None,
         }
 
 
@@ -142,8 +156,10 @@ class TestSessionSourcePolymorphism:
 
     def test_local_and_remote_share_interface(self) -> None:
         """Both sources share the same interface."""
-        local: SessionSource = LocalSessionSource(session_id="local-123")
-        remote: SessionSource = RemoteSessionSource(session_id="remote-456", run_id="run-789")
+        local: SessionSource = LocalSessionSource(session_id="local-123", path=None)
+        remote: SessionSource = RemoteSessionSource(
+            session_id="remote-456", run_id="run-789", path=None, gist_url=None
+        )
 
         # Both have source_type
         assert local.source_type == "local"
@@ -160,9 +176,9 @@ class TestSessionSourcePolymorphism:
     def test_can_use_in_list(self) -> None:
         """Can collect mixed sources in a list."""
         sources: list[SessionSource] = [
-            LocalSessionSource(session_id="local-1"),
-            RemoteSessionSource(session_id="remote-1", run_id="run-1"),
-            LocalSessionSource(session_id="local-2"),
+            LocalSessionSource(session_id="local-1", path=None),
+            RemoteSessionSource(session_id="remote-1", run_id="run-1", path=None, gist_url=None),
+            LocalSessionSource(session_id="local-2", path=None),
         ]
 
         assert len(sources) == 3

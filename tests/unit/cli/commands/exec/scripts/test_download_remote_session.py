@@ -1,26 +1,26 @@
 """Unit tests for download-remote-session exec script.
 
-Tests downloading session artifacts from GitHub Actions workflow runs.
-Uses FakeGitHub with artifact_download_callback for test isolation.
+Tests downloading session files from GitHub Gist URLs.
+Uses monkeypatching to simulate URL fetch responses.
 """
 
 import json
+import urllib.error
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.download_remote_session import (
-    _find_jsonl_file,
     _get_remote_sessions_dir,
 )
 from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session as download_remote_session_command,
 )
 from erk_shared.context.context import ErkContext
-from erk_shared.github.fake import FakeGitHub
 
 # ============================================================================
-# 1. Helper Function Tests (4 tests)
+# 1. Helper Function Tests (2 tests)
 # ============================================================================
 
 
@@ -47,34 +47,13 @@ def test_get_remote_sessions_dir_returns_existing(tmp_path: Path) -> None:
     assert result == expected
 
 
-def test_find_jsonl_file_success(tmp_path: Path) -> None:
-    """Test finding a .jsonl file in a directory."""
-    jsonl_file = tmp_path / "session-abc123.jsonl"
-    jsonl_file.write_text("{}", encoding="utf-8")
-
-    result = _find_jsonl_file(tmp_path)
-
-    assert result == jsonl_file
-
-
-def test_find_jsonl_file_not_found(tmp_path: Path) -> None:
-    """Test returning None when no .jsonl file exists."""
-    # Create a non-jsonl file
-    other_file = tmp_path / "other.txt"
-    other_file.write_text("hello", encoding="utf-8")
-
-    result = _find_jsonl_file(tmp_path)
-
-    assert result is None
-
-
 # ============================================================================
-# 2. CLI Command Tests (6 tests)
+# 2. CLI Command Tests (5 tests)
 # ============================================================================
 
 
-def test_cli_missing_run_id() -> None:
-    """Test CLI requires --run-id option."""
+def test_cli_missing_gist_url() -> None:
+    """Test CLI requires --gist-url option."""
     runner = CliRunner()
 
     result = runner.invoke(
@@ -83,7 +62,7 @@ def test_cli_missing_run_id() -> None:
     )
 
     assert result.exit_code != 0
-    assert "run-id" in result.output.lower() or "missing" in result.output.lower()
+    assert "gist-url" in result.output.lower() or "missing" in result.output.lower()
 
 
 def test_cli_missing_session_id() -> None:
@@ -92,104 +71,77 @@ def test_cli_missing_session_id() -> None:
 
     result = runner.invoke(
         download_remote_session_command,
-        ["--run-id", "12345678"],
+        ["--gist-url", "https://gist.githubusercontent.com/user/abc/raw/session.jsonl"],
     )
 
     assert result.exit_code != 0
     assert "session-id" in result.output.lower() or "missing" in result.output.lower()
 
 
-def test_cli_success_with_fake_github(tmp_path: Path) -> None:
-    """Test successful download using FakeGitHub with callback."""
+def test_cli_success_with_gist_download(tmp_path: Path) -> None:
+    """Test successful download from gist URL."""
     session_id = "abc-123"
-    run_id = "12345678"
+    gist_url = "https://gist.githubusercontent.com/user/abc123/raw/session.jsonl"
+    session_content = '{"type": "assistant"}\n{"type": "user"}\n'
 
-    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
-        """Simulate artifact download by creating a session file."""
-        session_file = destination / "uploaded-session.jsonl"
-        session_file.write_text('{"test": true}\n', encoding="utf-8")
-        return True
+    # Mock urllib.request.urlopen to return session content
+    mock_response = MagicMock()
+    mock_response.read.return_value = session_content.encode("utf-8")
+    mock_response.__enter__ = MagicMock(return_value=mock_response)
+    mock_response.__exit__ = MagicMock(return_value=False)
 
-    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
+    ctx = ErkContext.for_test(repo_root=tmp_path)
 
-    result = runner.invoke(
-        download_remote_session_command,
-        ["--run-id", run_id, "--session-id", session_id],
-        obj=ctx,
-    )
+    with patch("urllib.request.urlopen", return_value=mock_response):
+        result = runner.invoke(
+            download_remote_session_command,
+            ["--gist-url", gist_url, "--session-id", session_id],
+            obj=ctx,
+        )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)
     assert output["success"] is True
     assert output["session_id"] == session_id
-    assert output["run_id"] == run_id
-    assert output["artifact_name"] == f"session-{session_id}"
+    assert output["source"] == "gist"
     assert "session.jsonl" in output["path"]
 
-    # Verify the fake tracked the download
-    assert len(fake_github.downloaded_artifacts) == 1
-    assert fake_github.downloaded_artifacts[0][0] == run_id
-    assert fake_github.downloaded_artifacts[0][1] == f"session-{session_id}"
+    # Verify the file was created with correct content
+    session_file = Path(output["path"])
+    assert session_file.exists()
+    assert session_file.read_text(encoding="utf-8") == session_content
 
 
-def test_cli_error_artifact_not_found(tmp_path: Path) -> None:
-    """Test error when artifact download fails."""
-    session_id = "nonexistent-session"
-    run_id = "12345678"
+def test_cli_error_gist_download_fails(tmp_path: Path) -> None:
+    """Test error when gist URL cannot be fetched."""
+    session_id = "bad-session"
+    gist_url = "https://gist.githubusercontent.com/user/nonexistent/raw/session.jsonl"
 
-    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
-        """Simulate download failure."""
-        return False
-
-    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
+    ctx = ErkContext.for_test(repo_root=tmp_path)
 
-    result = runner.invoke(
-        download_remote_session_command,
-        ["--run-id", run_id, "--session-id", session_id],
-        obj=ctx,
-    )
+    with patch(
+        "urllib.request.urlopen",
+        side_effect=urllib.error.URLError("404 Not Found"),
+    ):
+        result = runner.invoke(
+            download_remote_session_command,
+            ["--gist-url", gist_url, "--session-id", session_id],
+            obj=ctx,
+        )
 
     assert result.exit_code == 1
     output = json.loads(result.output)
     assert output["success"] is False
-    assert "Failed to download" in output["error"]
-
-
-def test_cli_error_no_jsonl_in_artifact(tmp_path: Path) -> None:
-    """Test error when downloaded artifact has no .jsonl file."""
-    session_id = "no-jsonl-session"
-    run_id = "12345678"
-
-    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
-        """Simulate download with no .jsonl file."""
-        other_file = destination / "other.txt"
-        other_file.write_text("not a session file", encoding="utf-8")
-        return True
-
-    fake_github = FakeGitHub(artifact_download_callback=download_callback)
-    runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
-
-    result = runner.invoke(
-        download_remote_session_command,
-        ["--run-id", run_id, "--session-id", session_id],
-        obj=ctx,
-    )
-
-    assert result.exit_code == 1
-    output = json.loads(result.output)
-    assert output["success"] is False
-    assert "No .jsonl file found" in output["error"]
+    assert "Failed to download from gist URL" in output["error"]
 
 
 def test_cli_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     """Test that existing directory contents are cleaned up on re-download."""
     session_id = "redownload-session"
-    run_id = "12345678"
+    gist_url = "https://gist.githubusercontent.com/user/abc/raw/session.jsonl"
+    new_content = '{"new": true}\n'
 
     # Pre-create the session directory with old files
     session_dir = tmp_path / ".erk" / "scratch" / "remote-sessions" / session_id
@@ -197,21 +149,21 @@ def test_cli_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     old_file = session_dir / "old-session.jsonl"
     old_file.write_text('{"old": true}\n', encoding="utf-8")
 
-    def download_callback(cb_run_id: str, artifact_name: str, destination: Path) -> bool:
-        """Simulate download with new content."""
-        new_file = destination / "new-session.jsonl"
-        new_file.write_text('{"new": true}\n', encoding="utf-8")
-        return True
+    # Mock urllib.request.urlopen to return new content
+    mock_response = MagicMock()
+    mock_response.read.return_value = new_content.encode("utf-8")
+    mock_response.__enter__ = MagicMock(return_value=mock_response)
+    mock_response.__exit__ = MagicMock(return_value=False)
 
-    fake_github = FakeGitHub(artifact_download_callback=download_callback)
     runner = CliRunner()
-    ctx = ErkContext.for_test(repo_root=tmp_path, github=fake_github)
+    ctx = ErkContext.for_test(repo_root=tmp_path)
 
-    result = runner.invoke(
-        download_remote_session_command,
-        ["--run-id", run_id, "--session-id", session_id],
-        obj=ctx,
-    )
+    with patch("urllib.request.urlopen", return_value=mock_response):
+        result = runner.invoke(
+            download_remote_session_command,
+            ["--gist-url", gist_url, "--session-id", session_id],
+            obj=ctx,
+        )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     output = json.loads(result.output)

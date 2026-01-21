@@ -73,6 +73,10 @@ class GetLearnSessionsResult:
     last_remote_impl_run_id: str | None
     last_remote_impl_session_id: str | None
     session_sources: list[SessionSourceDict]
+    # New gist-based session fields
+    last_session_gist_url: str | None
+    last_session_id: str | None
+    last_session_source: str | None
 
 
 @dataclass(frozen=True)
@@ -128,6 +132,9 @@ def _build_result(
         last_remote_impl_run_id=sessions_for_plan.last_remote_impl_run_id,
         last_remote_impl_session_id=sessions_for_plan.last_remote_impl_session_id,
         session_sources=[source.to_dict() for source in session_sources],
+        last_session_gist_url=sessions_for_plan.last_session_gist_url,
+        last_session_id=sessions_for_plan.last_session_id,
+        last_session_source=sessions_for_plan.last_session_source,
     )
 
 
@@ -186,15 +193,30 @@ def _discover_sessions(
                 session_paths.append(str(path))
                 session_sources.append(LocalSessionSource(session_id=sid, path=str(path)))
 
-    # Add remote session source if remote implementation exists
+    # Add remote session source from gist-based or legacy artifact session
+    # Prefer gist-based fields (last_session_*) over legacy fields (last_remote_impl_*)
     if (
+        sessions_for_plan.last_session_gist_url is not None
+        and sessions_for_plan.last_session_id is not None
+    ):
+        # Use gist-based session (preferred)
+        remote_source = RemoteSessionSource(
+            session_id=sessions_for_plan.last_session_id,
+            run_id=None,  # Gist-based sessions don't use run IDs
+            gist_url=sessions_for_plan.last_session_gist_url,
+            path=None,  # Path is None until downloaded
+        )
+        session_sources.append(remote_source)
+    elif (
         sessions_for_plan.last_remote_impl_session_id is not None
         and sessions_for_plan.last_remote_impl_run_id is not None
     ):
+        # Fall back to legacy artifact-based session
         remote_source = RemoteSessionSource(
             session_id=sessions_for_plan.last_remote_impl_session_id,
             run_id=sessions_for_plan.last_remote_impl_run_id,
             path=None,  # Path is None until downloaded
+            gist_url=None,
         )
         session_sources.append(remote_source)
 

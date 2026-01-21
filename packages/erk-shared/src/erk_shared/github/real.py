@@ -13,13 +13,14 @@ Error Handling Philosophy:
 import json
 import secrets
 import string
+import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from erk_shared.debug import debug_log
 from erk_shared.gateway.time.abc import Time
-from erk_shared.github.abc import GitHub
+from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.github.graphql_queries import (
     ADD_REVIEW_THREAD_REPLY_MUTATION,
     GET_ISSUES_WITH_PR_LINKAGES_QUERY,
@@ -2019,3 +2020,67 @@ query {{
             return True
         except RuntimeError:
             return False
+
+    def create_gist(
+        self,
+        *,
+        filename: str,
+        content: str,
+        description: str,
+        public: bool,
+    ) -> GistCreated | GistCreateError:
+        """Create a GitHub Gist via gh CLI.
+
+        Uses `gh gist create` command.
+        """
+        # Write content to a temp file (gh gist create reads from files)
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=f"_{filename}", delete=False, encoding="utf-8"
+        ) as f:
+            f.write(content)
+            temp_path = Path(f.name)
+
+        try:
+            # Build command
+            cmd = [
+                "gh",
+                "gist",
+                "create",
+                str(temp_path),
+                "--filename",
+                filename,
+                "--desc",
+                description,
+            ]
+            if public:
+                cmd.append("--public")
+
+            # Execute and capture output
+            result = run_subprocess_with_context(
+                cmd=cmd,
+                operation_context=f"create gist '{filename}'",
+            )
+
+            # Parse output - gh gist create outputs the gist URL
+            gist_url = result.stdout.strip()
+            if not gist_url:
+                return GistCreateError(message="No gist URL returned from gh CLI")
+
+            # Extract gist ID from URL (format: https://gist.github.com/{user}/{gist_id})
+            gist_id = gist_url.rstrip("/").split("/")[-1]
+
+            # Construct raw URL for the file
+            # Format: https://gist.githubusercontent.com/{user}/{gist_id}/raw/{filename}
+            raw_url = gist_url.replace("gist.github.com", "gist.githubusercontent.com").rstrip("/")
+            raw_url = f"{raw_url}/raw/{filename}"
+
+            return GistCreated(
+                gist_id=gist_id,
+                gist_url=gist_url,
+                raw_url=raw_url,
+            )
+        except RuntimeError as e:
+            return GistCreateError(message=str(e))
+        finally:
+            # Clean up temp file
+            temp_path.unlink(missing_ok=True)
