@@ -86,9 +86,7 @@ class GraphiteBranchManager(BranchManager):
         self.git.checkout_branch(repo_root, branch_name)
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
-        parent_for_graphite = base_branch
-        if base_branch.startswith("origin/"):
-            parent_for_graphite = base_branch.removeprefix("origin/")
+        parent_for_graphite = base_branch.removeprefix("origin/")
         self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
 
     def delete_branch(self, repo_root: Path, branch: str) -> None:
