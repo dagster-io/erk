@@ -10,6 +10,8 @@ read_when:
 tripwires:
   - action: "calling gt commands without --no-interactive flag"
     warning: "Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately."
+  - action: "calling graphite.track_branch() with a remote ref (origin/branch)"
+    warning: 'Graphite''s `gt track --parent` only accepts local branch names. Use `BranchManager.create_branch()` which handles normalization, or strip the `origin/` prefix manually with `base_branch.removeprefix("origin/")`.'
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -188,6 +190,41 @@ gt restack --no-interactive
 - Various commands prompt when state is ambiguous
 
 **Implementation Reference**: This pattern is used throughout the Graphite gateway in `packages/erk-shared/src/erk_shared/gateway/graphite/real.py`.
+
+## Graphite Remote Ref Limitation
+
+**Surprising Behavior**: Graphite's `gt track --parent <branch>` command only accepts local branch names (e.g., `main`), while Git commands like `git branch` and `git checkout` accept both local and remote refs (e.g., `origin/main`).
+
+**Why It's Surprising**: When creating a branch with Git using a remote ref as the starting point, it's natural to pass the same ref to Graphite for tracking. However, passing `origin/main` to `gt track --parent` causes it to fail or create incorrect parent relationships.
+
+**The Problem in Code**:
+
+```python
+# WRONG - Graphite rejects remote refs
+ctx.git.create_branch(repo.root, branch_name, "origin/main")
+ctx.graphite.track_branch(repo.root, branch_name, "origin/main")  # Fails!
+
+# CORRECT - Strip origin/ prefix before passing to Graphite
+ctx.git.create_branch(repo.root, branch_name, "origin/main")
+ctx.graphite.track_branch(repo.root, branch_name, "main")  # Works
+```
+
+**Recommended Pattern**: Use `BranchManager.create_branch()` which handles this normalization internally:
+
+```python
+# BEST - BranchManager abstracts the quirk
+ctx.branch_manager.create_branch(repo.root, branch_name, "origin/main")
+# Internally: Git receives "origin/main", Graphite receives "main"
+```
+
+**Location in Codebase**: The normalization happens in `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`:
+
+```python
+parent_for_graphite = base_branch.removeprefix("origin/")
+self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
+```
+
+**Why BranchManager Exists**: This is a prime example of why BranchManager abstracts over Git and Graphite - it hides tool-specific quirks from callers. Code that bypasses BranchManager and calls Graphite directly must handle this normalization manually.
 
 ## Adding New Quirks
 
