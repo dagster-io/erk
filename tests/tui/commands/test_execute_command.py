@@ -164,6 +164,10 @@ class TestExecuteCommandClosePlan:
             resolved_comment_count=0,
             total_comment_count=0,
             comments_display="-",
+            learn_status=None,
+            learn_plan_issue=None,
+            learn_plan_pr=None,
+            learn_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -221,6 +225,10 @@ class TestExecuteCommandSubmitToQueue:
             resolved_comment_count=0,
             total_comment_count=0,
             comments_display="-",
+            learn_status=None,
+            learn_plan_issue=None,
+            learn_plan_pr=None,
+            learn_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

@@ -61,6 +61,10 @@ class TestPlanRowData:
         assert row.pr_display == "-"
         assert row.worktree_name == ""
         assert row.exists_locally is False
+        assert row.learn_status is None
+        assert row.learn_plan_issue is None
+        assert row.learn_plan_pr is None
+        assert row.learn_display == "-"
 
     def test_make_plan_row_with_pr(self) -> None:
         """make_plan_row with PR data."""
@@ -96,6 +100,41 @@ class TestPlanRowData:
         assert row.pr_number == 456
         assert row.pr_display == "#456 ✅🔗"
 
+    def test_make_plan_row_with_learn_status_pending(self) -> None:
+        """make_plan_row with learn_status pending shows spinner."""
+        row = make_plan_row(123, "Test Plan", learn_status="pending")
+        assert row.learn_status == "pending"
+        assert row.learn_display == "⟳"
+
+    def test_make_plan_row_with_learn_status_completed_no_plan(self) -> None:
+        """make_plan_row with learn_status completed_no_plan shows empty set."""
+        row = make_plan_row(123, "Test Plan", learn_status="completed_no_plan")
+        assert row.learn_status == "completed_no_plan"
+        assert row.learn_display == "∅"
+
+    def test_make_plan_row_with_learn_status_completed_with_plan(self) -> None:
+        """make_plan_row with learn_status completed_with_plan shows issue number."""
+        row = make_plan_row(
+            123, "Test Plan", learn_status="completed_with_plan", learn_plan_issue=456
+        )
+        assert row.learn_status == "completed_with_plan"
+        assert row.learn_plan_issue == 456
+        assert row.learn_display == "#456"
+
+    def test_make_plan_row_with_learn_status_plan_completed(self) -> None:
+        """make_plan_row with learn_status plan_completed shows checkmark and PR."""
+        row = make_plan_row(
+            123,
+            "Test Plan",
+            learn_status="plan_completed",
+            learn_plan_issue=456,
+            learn_plan_pr=789,
+        )
+        assert row.learn_status == "plan_completed"
+        assert row.learn_plan_issue == 456
+        assert row.learn_plan_pr == 789
+        assert row.learn_display == "✓ #789"
+
 
 class TestPlanDataTableRowConversion:
     """Tests for PlanDataTable row value conversion."""
@@ -115,12 +154,13 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Should have: plan, title, local-wt, local-impl
-        assert len(values) == 4
+        # Should have: plan, title, lrn, local-wt, local-impl
+        assert len(values) == 5
         assert _text_to_str(values[0]) == "#123"
         assert _text_to_str(values[1]) == "Test Plan"
-        assert _text_to_str(values[2]) == "-"  # worktree (not exists)
-        assert _text_to_str(values[3]) == "-"  # local impl
+        assert _text_to_str(values[2]) == "-"  # learn (no status)
+        assert _text_to_str(values[3]) == "-"  # worktree (not exists)
+        assert _text_to_str(values[4]) == "-"  # local impl
 
     def test_row_to_values_with_prs(self) -> None:
         """Row conversion with PR columns enabled."""
@@ -137,11 +177,12 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Should have: plan, title, pr, chks, comments, local-wt, local-impl
-        assert len(values) == 7
-        assert values[2] == "#456"  # pr display
-        assert values[3] == "-"  # checks
-        assert values[4] == "0/0"  # comments (default for PR with no counts)
+        # Should have: plan, title, lrn, pr, chks, comments, local-wt, local-impl
+        assert len(values) == 8
+        assert _text_to_str(values[2]) == "-"  # learn (no status)
+        assert values[3] == "#456"  # pr display
+        assert values[4] == "-"  # checks
+        assert values[5] == "0/0"  # comments (default for PR with no counts)
 
     def test_row_to_values_with_pr_link_indicator(self) -> None:
         """Row conversion shows 🔗 indicator for PRs that will close issues."""
@@ -159,8 +200,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # PR display should include the link indicator
-        assert values[2] == "#456 ✅🔗"
+        # PR display should include the link indicator (after learn column)
+        assert values[3] == "#456 ✅🔗"
 
     def test_row_to_values_with_runs(self) -> None:
         """Row conversion with run columns enabled."""
@@ -177,8 +218,8 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        # Should have: plan, title, local-wt, local-impl, remote-impl, run-id, run-state
-        assert len(values) == 7
+        # Should have: plan, title, lrn, local-wt, local-impl, remote-impl, run-id, run-state
+        assert len(values) == 8
 
     def test_row_to_values_with_worktree(self) -> None:
         """Row shows worktree name when exists locally."""
@@ -193,7 +234,42 @@ class TestPlanDataTableRowConversion:
 
         values = table._row_to_values(row)
 
-        assert values[2] == "feature-branch"
+        # Worktree is now at index 3 (after plan, title, lrn)
+        assert values[3] == "feature-branch"
+
+    def test_row_to_values_with_learn_status_clickable(self) -> None:
+        """Row shows learn display with clickable styling when issue/PR set."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        row = make_plan_row(
+            123,
+            "Test Plan",
+            learn_status="completed_with_plan",
+            learn_plan_issue=456,
+        )
+
+        values = table._row_to_values(row)
+
+        # Learn column is at index 2
+        learn_cell = values[2]
+        # Should be styled as clickable (cyan underline)
+        assert isinstance(learn_cell, Text)
+        assert learn_cell.plain == "#456"
+        assert "cyan" in str(learn_cell.style)
+        assert "underline" in str(learn_cell.style)
+
+    def test_row_to_values_with_learn_status_not_clickable(self) -> None:
+        """Row shows learn display without styling when not clickable."""
+        filters = PlanFilters.default()
+        table = PlanDataTable(filters)
+        row = make_plan_row(123, "Test Plan", learn_status="pending")
+
+        values = table._row_to_values(row)
+
+        # Learn column is at index 2
+        learn_cell = values[2]
+        # Should be plain string (not styled)
+        assert learn_cell == "⟳"
 
 
 class TestLocalWtColumnIndex:
@@ -208,34 +284,35 @@ class TestLocalWtColumnIndex:
         assert table.local_wt_column_index is None
 
     def test_expected_column_index_without_prs(self) -> None:
-        """Expected column index is 2 when show_prs=False (plan, title, local-wt).
+        """Expected column index is 3 when show_prs=False (plan, title, lrn, local-wt).
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
-        # Column layout without PRs: plan(0), title(1), local-wt(2), local-impl(3)
-        expected_index = 2
-        assert expected_index == 2
+        # Column layout without PRs: plan(0), title(1), lrn(2), local-wt(3), local-impl(4)
+        expected_index = 3
+        assert expected_index == 3
 
     def test_expected_column_index_with_prs(self) -> None:
-        """Expected column index is 5 when show_prs=True.
+        """Expected column index is 6 when show_prs=True.
 
         This test verifies the expected column calculation logic.
         The actual _setup_columns() requires a running Textual app context.
         """
         # Column layout with PRs:
-        # plan(0), title(1), pr(2), chks(3), comments(4), local-wt(5), local-impl(6)
-        expected_index = 5
-        assert expected_index == 5
+        # plan(0), title(1), lrn(2), pr(3), chks(4), comments(5), local-wt(6), local-impl(7)
+        expected_index = 6
+        assert expected_index == 6
 
     def test_expected_column_index_with_all_columns(self) -> None:
-        """Expected column index is 5 with show_prs=True and show_runs=True.
+        """Expected column index is 6 with show_prs=True and show_runs=True.
 
         The local-wt column index doesn't change with show_runs because
         run columns are added after local-wt.
         """
         # Column layout:
-        # plan(0), title(1), pr(2), chks(3), comments(4), local-wt(5), local-impl(6), ...runs
-        # Still 5: runs come after local-wt
-        expected_index = 5
-        assert expected_index == 5
+        # plan(0), title(1), lrn(2), pr(3), chks(4), comments(5),
+        # local-wt(6), local-impl(7), ...runs
+        # Still 6: runs come after local-wt
+        expected_index = 6
+        assert expected_index == 6
