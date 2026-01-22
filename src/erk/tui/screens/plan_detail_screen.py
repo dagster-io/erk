@@ -648,7 +648,7 @@ class PlanDetailScreen(ModalScreen):
             executor.notify(f"Copied: {cmd}")
 
         elif command_id == "copy_replan":
-            cmd = f"claude /erk:replan {row.issue_number}"
+            cmd = f"erk plan replan {row.issue_number}"
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 

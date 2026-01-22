@@ -16,6 +16,8 @@ tripwires:
     warning: "Use `erk exec update-issue-body` instead. `gh issue edit` uses GraphQL which has separate (often exhausted) rate limits."
   - action: "using gh pr view --json merged"
     warning: "The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names."
+  - action: "using gh api or gh api graphql to fetch or resolve PR review threads"
+    warning: "Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality."
 ---
 
 # GitHub API Rate Limits
