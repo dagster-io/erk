@@ -34,6 +34,37 @@ import click
 from erk_shared.context.helpers import require_repo_root
 
 
+def _normalize_gist_url(gist_url: str) -> str:
+    """Convert gist webpage URL to raw content URL if needed.
+
+    Accepts:
+    - gist.github.com/user/id -> converts to raw URL
+    - gist.githubusercontent.com/user/id/raw/file -> uses as-is
+
+    Args:
+        gist_url: Gist URL (either webpage or raw).
+
+    Returns:
+        Raw gist URL that can be used with urlopen.
+    """
+    # If URL already points to raw content, use as-is
+    if "gist.githubusercontent.com" in gist_url:
+        return gist_url
+
+    # Convert webpage URL to raw URL
+    if "gist.github.com" in gist_url:
+        # Replace domain
+        raw_url = gist_url.replace("gist.github.com", "gist.githubusercontent.com")
+        # Append /raw/session.jsonl (standard filename used by upload-session)
+        # Handle trailing slashes
+        raw_url = raw_url.rstrip("/")
+        raw_url = f"{raw_url}/raw/session.jsonl"
+        return raw_url
+
+    # Unknown format, return as-is and let urlopen handle it
+    return gist_url
+
+
 def _get_remote_sessions_dir(repo_root: Path, session_id: str) -> Path:
     """Get the remote sessions directory for a session ID.
 
@@ -52,17 +83,20 @@ def _get_remote_sessions_dir(repo_root: Path, session_id: str) -> Path:
 
 
 def _download_from_gist(gist_url: str, session_dir: Path) -> Path | str:
-    """Download session content from a gist raw URL.
+    """Download session content from a gist URL.
+
+    Handles both webpage URLs (gist.github.com) and raw URLs (gist.githubusercontent.com).
 
     Args:
-        gist_url: Raw gist URL to download from.
+        gist_url: Gist URL (webpage or raw).
         session_dir: Directory to save the session file in.
 
     Returns:
         Path to the downloaded session file on success, error message string on failure.
     """
+    normalized_url = _normalize_gist_url(gist_url)
     try:
-        with urllib.request.urlopen(gist_url) as response:
+        with urllib.request.urlopen(normalized_url) as response:
             content = response.read()
         session_file = session_dir / "session.jsonl"
         session_file.write_bytes(content)
