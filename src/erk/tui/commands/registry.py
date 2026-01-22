@@ -126,7 +126,7 @@ def get_all_commands() -> list[CommandDefinition]:
         ),
         CommandDefinition(
             id="copy_replan",
-            name="Copy: claude /erk:replan",
+            name="Copy: erk plan replan",
             description="Copy replan command to re-evaluate plan against current codebase",
             shortcut="6",
             is_available=lambda ctx: ctx.row.issue_url is not None,
