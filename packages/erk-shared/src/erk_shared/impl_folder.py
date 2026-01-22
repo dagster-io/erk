@@ -252,6 +252,78 @@ def validate_issue_linkage(impl_dir: Path, branch_name: str) -> int | None:
     return branch_issue
 
 
+@dataclass(frozen=True)
+class ResolvedIssue:
+    """Result of issue resolution with source tracking.
+
+    Provides a cleaner API than validate_issue_linkage(), returning
+    all resolved information in a single dataclass.
+    """
+
+    issue_number: int | None
+    issue_url: str | None
+    source: str  # "impl_folder" | "branch_name" | "none"
+
+
+def resolve_issue_reference(
+    *,
+    impl_dir: Path,
+    branch_name: str,
+    repo_owner: str | None,
+    repo_name: str | None,
+) -> ResolvedIssue:
+    """Resolve issue from .impl/issue.json or branch name pattern.
+
+    This function consolidates issue discovery logic, providing a cleaner
+    API than validate_issue_linkage(). It does NOT raise on mismatch -
+    callers should handle that case if needed.
+
+    Priority:
+    1. .impl/issue.json (if exists and valid) - returns "impl_folder" source
+    2. Branch name pattern (P{number}-...) - returns "branch_name" source
+    3. Neither found - returns "none" source with None values
+
+    Args:
+        impl_dir: Path to .impl/ or .worker-impl/ directory
+        branch_name: Current git branch name
+        repo_owner: Repository owner (for constructing issue URL)
+        repo_name: Repository name (for constructing issue URL)
+
+    Returns:
+        ResolvedIssue with issue_number, issue_url, and source
+    """
+    # Try .impl/issue.json first
+    if impl_dir.exists():
+        issue_ref = read_issue_reference(impl_dir)
+        if issue_ref is not None:
+            return ResolvedIssue(
+                issue_number=issue_ref.issue_number,
+                issue_url=issue_ref.issue_url,
+                source="impl_folder",
+            )
+
+    # Try branch name pattern
+    branch_issue = extract_leading_issue_number(branch_name)
+    if branch_issue is not None:
+        # Construct URL if we have repo info
+        issue_url: str | None = None
+        if repo_owner is not None and repo_name is not None:
+            issue_url = f"https://github.com/{repo_owner}/{repo_name}/issues/{branch_issue}"
+
+        return ResolvedIssue(
+            issue_number=branch_issue,
+            issue_url=issue_url,
+            source="branch_name",
+        )
+
+    # Neither found
+    return ResolvedIssue(
+        issue_number=None,
+        issue_url=None,
+        source="none",
+    )
+
+
 def read_run_info(impl_dir: Path) -> RunInfo | None:
     """Read GitHub Actions run info from .impl/run-info.json.
 

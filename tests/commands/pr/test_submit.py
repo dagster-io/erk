@@ -1169,3 +1169,167 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
         # Should NOT show "created" without qualifier
         # (check it's not "PR #123 created" which would indicate the bug)
         assert "PR #123 created" not in result.output
+
+
+def test_pr_submit_uses_graphite_strategy_when_branch_tracked() -> None:
+    """Test that GraphiteSubmitStrategy is used when branch is Graphite-tracked.
+
+    This verifies the strategy pattern integration: when Graphite handles
+    the push (branch is tracked and authenticated), the GraphiteSubmitStrategy
+    is used instead of the core submit flow.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=42,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/42",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=42,
+            url="https://github.com/owner/repo/pull/42",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        # Graphite authenticated with branch tracked (has metadata)
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={42: pr_details},
+            pr_bases={42: "main"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        # Do NOT use --no-graphite - let the Graphite strategy path be used
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Verify Graphite submit_stack was called (indicates strategy was used)
+        assert len(graphite._submit_stack_calls) == 1
+
+        # Verify output shows Graphite URL
+        assert "app.graphite" in result.output
+
+        # Verify PR URL in output
+        assert "github.com/owner/repo/pull/42" in result.output
+
+
+def test_pr_submit_strategy_error_becomes_click_exception() -> None:
+    """Test that SubmitStrategyError is converted to click.ClickException.
+
+    When the GraphiteSubmitStrategy returns an error, it should be converted
+    to a click.ClickException for proper CLI error handling.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+        )
+
+        # Graphite authenticated but submit_stack will fail
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+            submit_stack_raises=RuntimeError("gt submit failed: network error"),
+        )
+
+        github = FakeGitHub(authenticated=True)
+
+        claude_executor = FakeClaudeExecutor(claude_available=True)
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        # Do NOT use --no-graphite - let the Graphite strategy path be used
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        # Should fail with the error from the strategy
+        assert result.exit_code != 0
+        assert "network error" in result.output
