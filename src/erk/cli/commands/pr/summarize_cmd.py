@@ -17,6 +17,7 @@ from erk.cli.commands.pr.shared import (
     require_claude_available,
     run_commit_message_generation,
 )
+from erk.core.command_log import get_or_generate_session_id
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
@@ -51,8 +52,6 @@ def pr_summarize(ctx: ErkContext, debug: bool) -> None:
 
 def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     """Execute PR summarize with positively-named parameters."""
-    from erk.core.command_log import get_or_generate_session_id
-
     # Verify Claude is available
     require_claude_available(ctx)
 
