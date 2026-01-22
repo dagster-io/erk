@@ -33,6 +33,30 @@ You receive:
    - Teaching gaps (what was built that needs documentation)
    - Tripwire candidates (cross-cutting concerns for future agents)
 
+## Error Extraction (REQUIRED)
+
+Systematically scan the session for errors:
+
+1. **Tool Result Errors**: Look for `<tool_result>` blocks containing:
+   - `CalledProcessError` / `Exit code 1` / `Exit code N`
+   - `AssertionError` / `AssertionFailure`
+   - `TypeError` / `AttributeError` / `NameError`
+   - `FileNotFoundError` / `ModuleNotFoundError`
+   - `JSONDecodeError` / `ValidationError`
+   - Lines matching: `error`, `exception`, `failed`, `failure`, `fatal`
+
+2. **Failed Approach Detection**: Identify sequences where:
+   - Agent tried approach A → got error
+   - Agent tried approach B → got error
+   - Agent tried approach C → succeeded
+
+   Document: What was the winning approach and why did others fail?
+
+3. **User Corrections After Errors**: When user provides guidance after an error, capture:
+   - What the error was
+   - What the user said to do differently
+   - Why the original approach was wrong
+
 ## Output Format
 
 Return structured findings:
@@ -65,6 +89,18 @@ TYPE: <planning|implementation>
 
 ## Tripwire Candidates
 - [Candidate]: <trigger> → <action to take>
+
+## Prevention Insights
+
+| Error Pattern | Root Cause | Prevention | Severity |
+|---------------|------------|------------|----------|
+| <error type>  | <why it happened> | <how to avoid it> | HIGH/MEDIUM/LOW |
+
+## Failed Approaches
+
+| What Was Tried | Why It Failed | What Worked Instead |
+|----------------|---------------|---------------------|
+| <approach A>   | <failure reason> | <successful approach> |
 ```
 
 Focus on actionable insights. Skip trivial file reads or obvious operations.

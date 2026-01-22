@@ -40,6 +40,7 @@ Extract documentation candidates from all sources:
 - Documentation opportunities table entries
 - Tripwire candidates
 - External lookups (WebFetch/WebSearch) that indicate missing docs
+- **Prevention insights** (error patterns and failed approaches)
 
 **From Code Diff Analyzer output (if present):**
 
@@ -79,6 +80,16 @@ Assign a classification to each item:
 | UPDATE_EXISTING | Existing doc covers related topic, needs update   |
 | TRIPWIRE        | Cross-cutting concern that applies broadly        |
 | SKIP            | Already documented, or doesn't need documentation |
+
+### Prevention Item Classification
+
+For items extracted from Prevention Insights and Failed Approaches:
+
+| Severity | Classification             | Example                                                                                  |
+| -------- | -------------------------- | ---------------------------------------------------------------------------------------- |
+| HIGH     | TRIPWIRE                   | Non-obvious error that affects multiple commands (e.g., missing `--no-interactive` flag) |
+| MEDIUM   | NEW_DOC or UPDATE_EXISTING | Error pattern specific to one area (e.g., specific API quirk)                            |
+| LOW      | Include in related doc     | Minor gotcha, doesn't need standalone doc                                                |
 
 ### Step 6: Prioritize by Impact
 
