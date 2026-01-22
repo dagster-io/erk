@@ -12,6 +12,7 @@ A Personal Access Token (PAT) with the following permissions is required for wor
 
 - `contents: write` - Push commits to branches
 - `workflows` - Trigger workflow_dispatch events
+- `gist` - Create gists for session log storage
 
 **Why GITHUB_TOKEN isn't sufficient:**
 
