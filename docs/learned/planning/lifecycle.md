@@ -75,13 +75,13 @@ The erk plan lifecycle manages implementation plans from creation through automa
 
 When evaluating whether a plan should be implemented or closed, use the verdict classification system from `/local:check-relevance`:
 
-| Verdict               | Overlap | Meaning                                                     |
-| --------------------- | ------- | ----------------------------------------------------------- |
-| SUPERSEDED            | >80%    | Work is already implemented in master                       |
-| PARTIALLY_IMPLEMENTED | 30-80%  | Some work exists, plan may need scoping adjustment          |
-| DIFFERENT_APPROACH    | N/A     | Same problem solved with different implementation           |
-| STILL_RELEVANT        | <30%    | Work is not yet implemented, plan remains valid             |
-| NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive               |
+| Verdict               | Overlap | Meaning                                            |
+| --------------------- | ------- | -------------------------------------------------- |
+| SUPERSEDED            | >80%    | Work is already implemented in master              |
+| PARTIALLY_IMPLEMENTED | 30-80%  | Some work exists, plan may need scoping adjustment |
+| DIFFERENT_APPROACH    | N/A     | Same problem solved with different implementation  |
+| STILL_RELEVANT        | <30%    | Work is not yet implemented, plan remains valid    |
+| NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive      |
 
 **Usage:** Run `/local:check-relevance <plan-issue-number>` to assess a plan's current relevance before deciding to implement or close it.
 

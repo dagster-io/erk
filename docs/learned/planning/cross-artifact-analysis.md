@@ -14,12 +14,12 @@ This document describes how erk commands analyze relationships between different
 
 Plans and PRs can have complex relationships:
 
-| Relationship   | Description                                         | Detection Method                              |
-| -------------- | --------------------------------------------------- | --------------------------------------------- |
-| Linked         | PR explicitly references plan issue                 | PR body contains `Plan: #<issue>` reference   |
-| Superseding    | PR implements work that makes plan obsolete         | Compare PR changes with plan intent           |
-| Partial        | PR implements subset of plan scope                  | Evidence-based analysis of overlap            |
-| Independent    | PR and plan address unrelated concerns              | No meaningful overlap in changes              |
+| Relationship | Description                                 | Detection Method                            |
+| ------------ | ------------------------------------------- | ------------------------------------------- |
+| Linked       | PR explicitly references plan issue         | PR body contains `Plan: #<issue>` reference |
+| Superseding  | PR implements work that makes plan obsolete | Compare PR changes with plan intent         |
+| Partial      | PR implements subset of plan scope          | Evidence-based analysis of overlap          |
+| Independent  | PR and plan address unrelated concerns      | No meaningful overlap in changes            |
 
 ## Evidence-Based Analysis Pattern
 
