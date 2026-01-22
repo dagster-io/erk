@@ -531,10 +531,9 @@ def _submit_single_issue(
         # Fetch base branch
         ctx.git.fetch_branch(repo.root, "origin", base_branch)
 
-        # Create and checkout new branch from base
-        ctx.git.create_branch(repo.root, branch_name, f"origin/{base_branch}")
-        # Track branch so erk land can find child PRs
-        ctx.branch_manager.track_branch(repo.root, branch_name, base_branch)
+        # Create branch from remote state and track with Graphite (if enabled)
+        # BranchManager handles stripping origin/ prefix for Graphite tracking
+        ctx.branch_manager.create_branch(repo.root, branch_name, f"origin/{base_branch}")
         user_output(f"Created branch: {click.style(branch_name, fg='cyan')}")
 
         # Use context manager to restore original branch on failure

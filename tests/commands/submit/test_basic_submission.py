@@ -98,11 +98,13 @@ def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
     expected_branch = "P123-implement-feature-x-01-15-1430"
 
     # Verify branch was tracked with Graphite (critical for child PR detection)
+    # BranchManager.create_branch() strips the origin/ prefix for Graphite tracking
+    # because gt track doesn't accept remote refs - it uses local branch names
     assert len(fake_graphite.track_branch_calls) == 1
     tracked_repo, tracked_branch, parent_branch = fake_graphite.track_branch_calls[0]
     assert tracked_repo == repo_root
     assert tracked_branch == expected_branch
-    assert parent_branch == "main"  # Base branch without origin/ prefix
+    assert parent_branch == "main"  # Local branch name (origin/ stripped by BranchManager)
 
 
 def test_submit_displays_workflow_run_url(tmp_path: Path) -> None:
