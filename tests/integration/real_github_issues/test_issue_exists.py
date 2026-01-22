@@ -31,7 +31,12 @@ def test_issue_exists_returns_false_when_not_found(monkeypatch: MonkeyPatch) -> 
     """Test issue_exists returns False when gh CLI fails (404)."""
 
     def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
-        raise RuntimeError("Issue not found")
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=1,  # Non-zero = issue not found (404)
+            stdout="",
+            stderr="Issue not found",
+        )
 
     with mock_subprocess_run(monkeypatch, mock_run):
         issues = RealGitHubIssues(target_repo=None)
