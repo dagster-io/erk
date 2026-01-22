@@ -18,11 +18,12 @@ from pathlib import Path
 
 import click
 
-from erk.core.commit_message_generator import (
-    CommitMessageGenerator,
-    CommitMessageRequest,
-    CommitMessageResult,
+from erk.cli.commands.pr.shared import (
+    render_progress,
+    require_claude_available,
+    run_commit_message_generation,
 )
+from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import execute_finalize
@@ -42,21 +43,6 @@ from erk_shared.gateway.pr.types import (
 )
 from erk_shared.github.parsing import parse_git_remote_url
 from erk_shared.github.types import GitHubRepoId, PRNotFound
-
-
-def _render_progress(event: ProgressEvent) -> None:
-    """Render a progress event to the CLI."""
-    message = f"   {event.message}"
-    if event.style == "info":
-        click.echo(click.style(message, dim=True))
-    elif event.style == "success":
-        click.echo(click.style(message, fg="green"))
-    elif event.style == "warning":
-        click.echo(click.style(message, fg="yellow"))
-    elif event.style == "error":
-        click.echo(click.style(message, fg="red"))
-    else:
-        click.echo(message)
 
 
 @click.command("submit")
@@ -102,10 +88,7 @@ def pr_submit(ctx: ErkContext, debug: bool, no_graphite: bool, force: bool) -> N
 def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: bool) -> None:
     """Execute PR submission with positively-named parameters."""
     # Verify Claude is available (needed for commit message generation)
-    if not ctx.claude_executor.is_claude_available():
-        raise click.ClickException(
-            "Claude CLI not found\n\nInstall from: https://claude.com/download"
-        )
+    require_claude_available(ctx)
 
     click.echo(click.style("🚀 Submitting PR...", bold=True))
     click.echo("")
@@ -176,7 +159,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     # Phase 3: Generate commit message
     click.echo(click.style("Phase 3: Generating PR description", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
-    msg_result = _run_commit_message_generation(
+    msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,
         repo_root=Path(repo_root),
@@ -333,7 +316,7 @@ def _run_core_submit(
     ):
         if isinstance(event, ProgressEvent):
             if debug:
-                _render_progress(event)
+                render_progress(event)
         elif isinstance(event, CompletionEvent):
             result = event.result
 
@@ -363,7 +346,7 @@ def _run_diff_extraction(
     for event in execute_diff_extraction(ctx, cwd, pr_number, session_id, base_branch=base_branch):
         if isinstance(event, ProgressEvent):
             if debug:
-                _render_progress(event)
+                render_progress(event)
         elif isinstance(event, CompletionEvent):
             result = event.result
 
@@ -379,7 +362,7 @@ def _run_graphite_enhance(
     for event in execute_graphite_enhance(ctx, cwd, pr_number, force=force):
         if isinstance(event, ProgressEvent):
             if debug:
-                _render_progress(event)
+                render_progress(event)
         elif isinstance(event, CompletionEvent):
             result = event.result
 
@@ -419,7 +402,7 @@ def _run_finalize(
     ):
         if isinstance(event, ProgressEvent):
             if debug:
-                _render_progress(event)
+                render_progress(event)
         elif isinstance(event, CompletionEvent):
             result = event.result
 
@@ -429,44 +412,6 @@ def _run_finalize(
             error_type="submit-failed",
             message="Finalize did not complete",
             details={},
-        )
-
-    return result
-
-
-def _run_commit_message_generation(
-    *,
-    generator: CommitMessageGenerator,
-    diff_file: Path,
-    repo_root: Path,
-    current_branch: str,
-    parent_branch: str,
-    commit_messages: list[str] | None,
-    debug: bool,
-) -> CommitMessageResult:
-    """Run commit message generation and return result."""
-    result: CommitMessageResult | None = None
-
-    for event in generator.generate(
-        CommitMessageRequest(
-            diff_file=diff_file,
-            repo_root=repo_root,
-            current_branch=current_branch,
-            parent_branch=parent_branch,
-            commit_messages=commit_messages,
-        )
-    ):
-        if isinstance(event, ProgressEvent):
-            _render_progress(event)
-        elif isinstance(event, CompletionEvent):
-            result = event.result
-
-    if result is None:
-        return CommitMessageResult(
-            success=False,
-            title=None,
-            body=None,
-            error_message="Commit message generation did not complete",
         )
 
     return result

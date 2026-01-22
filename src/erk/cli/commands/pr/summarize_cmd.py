@@ -12,31 +12,15 @@ from pathlib import Path
 
 import click
 
-from erk.core.commit_message_generator import (
-    CommitMessageGenerator,
-    CommitMessageRequest,
-    CommitMessageResult,
+from erk.cli.commands.pr.shared import (
+    render_progress,
+    require_claude_available,
+    run_commit_message_generation,
 )
+from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-from erk_shared.gateway.gt.prompts import truncate_diff
-from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
-from erk_shared.scratch.scratch import write_scratch_file
-
-
-def _render_progress(event: ProgressEvent) -> None:
-    """Render a progress event to the CLI."""
-    message = f"   {event.message}"
-    if event.style == "info":
-        click.echo(click.style(message, dim=True))
-    elif event.style == "success":
-        click.echo(click.style(message, fg="green"))
-    elif event.style == "warning":
-        click.echo(click.style(message, fg="yellow"))
-    elif event.style == "error":
-        click.echo(click.style(message, fg="red"))
-    else:
-        click.echo(message)
+from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
 
 
 @click.command("summarize")
@@ -70,10 +54,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     from erk.core.command_log import get_or_generate_session_id
 
     # Verify Claude is available
-    if not ctx.claude_executor.is_claude_available():
-        raise click.ClickException(
-            "Claude CLI not found\n\nInstall from: https://claude.com/download"
-        )
+    require_claude_available(ctx)
 
     cwd = Path.cwd()
 
@@ -111,43 +92,31 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     click.echo(click.style("📝 Generating commit message...", bold=True))
     click.echo("")
 
-    # Get diff to parent branch
+    # Phase 1: Get diff using shared diff extraction
     click.echo(click.style("Phase 1: Getting diff", bold=True))
-    diff_content = ctx.git.get_diff_to_branch(cwd, parent_branch)
-    diff_lines = len(diff_content.splitlines())
-    if debug:
-        click.echo(click.style(f"   Diff retrieved ({diff_lines} lines)", dim=True))
-
-    # Filter out lock files
-    diff_content = filter_diff_excluded_files(diff_content)
-
-    # Truncate if needed
-    diff_content, was_truncated = truncate_diff(diff_content)
-    if was_truncated:
-        click.echo(click.style("   Diff truncated for size", fg="yellow"))
-
-    # Write diff to scratch file
-    diff_file = write_scratch_file(
-        diff_content,
+    diff_file = _run_diff_extraction(
+        ctx,
+        cwd=cwd,
         session_id=session_id,
-        suffix=".diff",
-        prefix="summarize-diff-",
-        repo_root=Path(repo_root),
+        base_branch=parent_branch,
+        debug=debug,
     )
-    if debug:
-        click.echo(click.style(f"   Diff written to {diff_file}", dim=True))
-    click.echo(click.style("   Diff ready", fg="green"))
+
+    if diff_file is None:
+        raise click.ClickException("Failed to extract diff for AI analysis")
+
     click.echo("")
 
-    # Generate commit message
+    # Phase 2: Generate commit message
     click.echo(click.style("Phase 2: Generating commit message", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
-    msg_result = _run_commit_message_generation(
+    msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,
         repo_root=Path(repo_root),
         current_branch=current_branch,
         parent_branch=parent_branch,
+        commit_messages=None,
         debug=debug,
     )
 
@@ -156,7 +125,7 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
 
     click.echo("")
 
-    # Amend the commit with new message
+    # Phase 3: Amend the commit with new message
     click.echo(click.style("Phase 3: Amending commit", bold=True))
     title = msg_result.title or "Update"
     body = msg_result.body or ""
@@ -175,38 +144,29 @@ def _execute_pr_summarize(ctx: ErkContext, *, debug: bool) -> None:
     click.echo(f"✅ Commit message updated: {title}")
 
 
-def _run_commit_message_generation(
+def _run_diff_extraction(
+    ctx: ErkContext,
     *,
-    generator: CommitMessageGenerator,
-    diff_file: Path,
-    repo_root: Path,
-    current_branch: str,
-    parent_branch: str,
+    cwd: Path,
+    session_id: str,
+    base_branch: str,
     debug: bool,
-) -> CommitMessageResult:
-    """Run commit message generation and return result."""
-    result: CommitMessageResult | None = None
+) -> Path | None:
+    """Run diff extraction phase for summarize command.
 
-    for event in generator.generate(
-        CommitMessageRequest(
-            diff_file=diff_file,
-            repo_root=repo_root,
-            current_branch=current_branch,
-            parent_branch=parent_branch,
-            commit_messages=None,
-        )
+    Uses the same execute_diff_extraction as submit, but with pr_number=0
+    since summarize doesn't have a PR yet.
+    """
+    result: Path | None = None
+
+    # pr_number=0 is used as a placeholder since summarize doesn't have a PR yet
+    for event in execute_diff_extraction(
+        ctx, cwd, pr_number=0, session_id=session_id, base_branch=base_branch
     ):
         if isinstance(event, ProgressEvent):
-            _render_progress(event)
+            if debug:
+                render_progress(event)
         elif isinstance(event, CompletionEvent):
             result = event.result
-
-    if result is None:
-        return CommitMessageResult(
-            success=False,
-            title=None,
-            body=None,
-            error_message="Commit message generation did not complete",
-        )
 
     return result
