@@ -619,18 +619,19 @@ def _format_learn_display(
         - "completed_with_plan" -> "#456" (using learn_plan_issue)
         - "plan_completed" -> "✓ #12" (using learn_plan_pr)
     """
-    if learn_status is None or learn_status == "not_started":
-        return "-"
-    if learn_status == "pending":
-        return "⟳"
-    if learn_status == "completed_no_plan":
-        return "∅"
-    if learn_status == "completed_with_plan" and learn_plan_issue is not None:
-        return f"#{learn_plan_issue}"
-    if learn_status == "plan_completed" and learn_plan_pr is not None:
-        return f"✓ #{learn_plan_pr}"
-    # Fallback for unknown status
-    return "-"
+    match learn_status:
+        case None | "not_started":
+            return "-"
+        case "pending":
+            return "⟳"
+        case "completed_no_plan":
+            return "∅"
+        case "completed_with_plan" if learn_plan_issue is not None:
+            return f"#{learn_plan_issue}"
+        case "plan_completed" if learn_plan_pr is not None:
+            return f"✓ #{learn_plan_pr}"
+        case _:
+            return "-"
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:

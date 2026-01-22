@@ -6,7 +6,13 @@ from pathlib import Path
 import pytest
 from textual.widgets import Markdown
 
-from erk.tui.app import ErkDashApp, HelpScreen, IssueBodyScreen, PlanDetailScreen
+from erk.tui.app import (
+    ErkDashApp,
+    HelpScreen,
+    IssueBodyScreen,
+    PlanDetailScreen,
+    _build_github_url,
+)
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
@@ -1493,3 +1499,19 @@ class TestIssueBodyScreen:
             # Verify content is rendered as Markdown widget
             content_widget = body_screen.query_one("#body-content", Markdown)
             assert content_widget is not None
+
+
+class TestBuildGithubUrl:
+    """Tests for _build_github_url helper function."""
+
+    def test_build_github_url_for_pull_request(self) -> None:
+        """_build_github_url constructs PR URL from issue URL."""
+        issue_url = "https://github.com/owner/repo/issues/123"
+        result = _build_github_url(issue_url, "pull", 456)
+        assert result == "https://github.com/owner/repo/pull/456"
+
+    def test_build_github_url_for_issue(self) -> None:
+        """_build_github_url constructs issue URL from issue URL."""
+        issue_url = "https://github.com/owner/repo/issues/123"
+        result = _build_github_url(issue_url, "issues", 789)
+        assert result == "https://github.com/owner/repo/issues/789"

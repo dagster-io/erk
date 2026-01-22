@@ -258,10 +258,9 @@ class PlanDataTable(DataTable):
         # Check learn column - post event if learn plan issue or PR exists
         if self._learn_column_index is not None and col_index == self._learn_column_index:
             row = self._rows[row_index] if row_index < len(self._rows) else None
-            has_learn_link = row is not None and (
+            if row is not None and (
                 row.learn_plan_issue is not None or row.learn_plan_pr is not None
-            )
-            if has_learn_link:
+            ):
                 self.post_message(self.LearnClicked(row_index))
                 event.prevent_default()
                 event.stop()

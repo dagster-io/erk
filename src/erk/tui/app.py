@@ -30,6 +30,21 @@ from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 
 
+def _build_github_url(issue_url: str, resource_type: str, number: int) -> str:
+    """Build a GitHub URL for a PR or issue from an existing issue URL.
+
+    Args:
+        issue_url: Base issue URL (e.g., https://github.com/owner/repo/issues/123)
+        resource_type: Either "pull" or "issues"
+        number: The PR or issue number
+
+    Returns:
+        Full URL (e.g., https://github.com/owner/repo/pull/456)
+    """
+    base_url = issue_url.rsplit("/issues/", 1)[0]
+    return f"{base_url}/{resource_type}/{number}"
+
+
 class ErkDashApp(App):
     """Interactive TUI for erk dash command.
 
@@ -738,17 +753,12 @@ class ErkDashApp(App):
             # Build URL based on which field is set
             # PR takes priority (plan_completed state)
             if row.learn_plan_pr is not None and row.issue_url:
-                # Extract owner/repo from issue_url to build PR URL
-                # issue_url format: https://github.com/owner/repo/issues/123
-                base_url = row.issue_url.rsplit("/issues/", 1)[0]
-                pr_url = f"{base_url}/pull/{row.learn_plan_pr}"
+                pr_url = _build_github_url(row.issue_url, "pull", row.learn_plan_pr)
                 self._provider.browser.launch(pr_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened learn PR #{row.learn_plan_pr}")
             elif row.learn_plan_issue is not None and row.issue_url:
-                # Extract owner/repo from issue_url to build issue URL
-                base_url = row.issue_url.rsplit("/issues/", 1)[0]
-                issue_url = f"{base_url}/issues/{row.learn_plan_issue}"
+                issue_url = _build_github_url(row.issue_url, "issues", row.learn_plan_issue)
                 self._provider.browser.launch(issue_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened learn issue #{row.learn_plan_issue}")
