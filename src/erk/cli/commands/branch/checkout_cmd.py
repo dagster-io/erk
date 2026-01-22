@@ -384,10 +384,19 @@ def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, sc
             )
         else:
             # Zero or multiple worktrees have it directly checked out
-            # Show error message listing all options
-            user_output(f"Branch '{branch}' exists in multiple worktrees:")
-            for wt in matching_worktrees:
-                user_output(_format_worktree_info(wt, repo.root))
+            if len(directly_checked_out) == 0:
+                # Internal state mismatch: branch was allocated but no worktree has it
+                user_output(
+                    f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+                    f"but no worktree has it checked out.\n"
+                    f"This may indicate corrupted pool state."
+                )
+                raise SystemExit(1) from None
+            else:
+                # Actual multiple worktrees case
+                user_output(f"Branch '{branch}' exists in multiple worktrees:")
+                for wt in matching_worktrees:
+                    user_output(_format_worktree_info(wt, repo.root))
 
-            user_output("\nPlease specify which worktree to use.")
-            raise SystemExit(1)
+                user_output("\nPlease specify which worktree to use.")
+                raise SystemExit(1) from None
