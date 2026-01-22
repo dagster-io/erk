@@ -212,6 +212,103 @@ def find_branch_assignment(state: PoolState, branch_name: str) -> SlotAssignment
     return None
 
 
+@dataclass(frozen=True)
+class ExistingAssignmentValidation:
+    """Result of validating an existing branch assignment."""
+
+    result: SlotAllocationResult | None  # If we can use the existing assignment
+    updated_state: PoolState | None  # If state was updated (stale assignment removed)
+
+
+def _validate_existing_assignment(
+    ctx: ErkContext,
+    state: PoolState,
+    existing: SlotAssignment,
+    branch_name: str,
+    repo_pool_json_path: Path,
+) -> ExistingAssignmentValidation:
+    """Validate an existing assignment and determine if it can be used.
+
+    Handles three cases:
+    1. Worktree directory missing → remove stale assignment, return updated state
+    2. Worktree has correct branch → return result to use existing assignment
+    3. Worktree has wrong branch → fix it or error if uncommitted changes
+
+    Args:
+        ctx: Erk context with git gateway
+        state: Current pool state
+        existing: The existing assignment to validate
+        branch_name: Expected branch name
+        repo_pool_json_path: Path to pool.json for saving updated state
+
+    Returns:
+        ExistingAssignmentValidation with either:
+        - result set: Use this existing assignment (fast path)
+        - updated_state set: Stale assignment removed, continue with normal allocation
+        - both None: Should not happen (raises SystemExit on error)
+
+    Raises:
+        SystemExit(1): If worktree has uncommitted changes and can't be fixed
+    """
+    if not existing.worktree_path.exists():
+        # Worktree directory doesn't exist - remove stale assignment
+        user_output(
+            click.style("⚠ ", fg="yellow")
+            + f"Removing stale assignment for '{branch_name}' "
+            + f"(worktree {existing.worktree_path} no longer exists)"
+        )
+        new_assignments = tuple(a for a in state.assignments if a.slot_name != existing.slot_name)
+        updated_state = PoolState(
+            version=state.version,
+            pool_size=state.pool_size,
+            slots=state.slots,
+            assignments=new_assignments,
+        )
+        save_pool_state(repo_pool_json_path, updated_state)
+        return ExistingAssignmentValidation(result=None, updated_state=updated_state)
+
+    # Worktree exists - verify it has the correct branch
+    actual_branch = ctx.git.get_current_branch(existing.worktree_path)
+    if actual_branch == branch_name:
+        # Branch matches - fast path
+        return ExistingAssignmentValidation(
+            result=SlotAllocationResult(
+                slot_name=existing.slot_name,
+                worktree_path=existing.worktree_path,
+                already_assigned=True,
+            ),
+            updated_state=None,
+        )
+
+    # Worktree has a different branch - need to fix
+    if ctx.git.has_uncommitted_changes(existing.worktree_path):
+        user_output(
+            click.style("Error: ", fg="red")
+            + f"Cannot checkout '{branch_name}' in {existing.slot_name}: "
+            + "worktree has uncommitted changes.\n"
+            + f"The worktree currently has branch '{actual_branch}' "
+            + f"but pool.json says it should have '{branch_name}'.\n"
+            + f"Please commit or stash changes in {existing.worktree_path} first."
+        )
+        raise SystemExit(1)
+
+    # Fix the worktree by checking out the correct branch
+    user_output(
+        click.style("⚠ ", fg="yellow")
+        + f"Fixing stale state: checking out '{branch_name}' in {existing.slot_name} "
+        + f"(was '{actual_branch}')"
+    )
+    ctx.git.checkout_branch(existing.worktree_path, branch_name)
+    return ExistingAssignmentValidation(
+        result=SlotAllocationResult(
+            slot_name=existing.slot_name,
+            worktree_path=existing.worktree_path,
+            already_assigned=True,
+        ),
+        updated_state=None,
+    )
+
+
 def find_assignment_by_worktree(state: PoolState, git: Git, cwd: Path) -> SlotAssignment | None:
     """Find if cwd is within a managed slot using git.
 
@@ -384,60 +481,14 @@ def allocate_slot_for_branch(
     # Check if branch is already assigned
     existing = find_branch_assignment(state, branch_name)
     if existing is not None:
-        # Verify the worktree state before trusting the assignment
-        if not existing.worktree_path.exists():
-            # Worktree directory doesn't exist - remove stale assignment
-            user_output(
-                click.style("⚠ ", fg="yellow")
-                + f"Removing stale assignment for '{branch_name}' "
-                + f"(worktree {existing.worktree_path} no longer exists)"
-            )
-            new_assignments = tuple(
-                a for a in state.assignments if a.slot_name != existing.slot_name
-            )
-            state = PoolState(
-                version=state.version,
-                pool_size=state.pool_size,
-                slots=state.slots,
-                assignments=new_assignments,
-            )
-            save_pool_state(repo.pool_json_path, state)
-            # Fall through to normal allocation
-        else:
-            # Worktree exists - verify it has the correct branch
-            actual_branch = ctx.git.get_current_branch(existing.worktree_path)
-            if actual_branch == branch_name:
-                # Branch matches - fast path
-                return SlotAllocationResult(
-                    slot_name=existing.slot_name,
-                    worktree_path=existing.worktree_path,
-                    already_assigned=True,
-                )
-
-            # Worktree has a different branch - need to fix
-            if ctx.git.has_uncommitted_changes(existing.worktree_path):
-                user_output(
-                    click.style("Error: ", fg="red")
-                    + f"Cannot checkout '{branch_name}' in {existing.slot_name}: "
-                    + "worktree has uncommitted changes.\n"
-                    + f"The worktree currently has branch '{actual_branch}' "
-                    + f"but pool.json says it should have '{branch_name}'.\n"
-                    + f"Please commit or stash changes in {existing.worktree_path} first."
-                )
-                raise SystemExit(1) from None
-
-            # Fix the worktree by checking out the correct branch
-            user_output(
-                click.style("⚠ ", fg="yellow")
-                + f"Fixing stale state: checking out '{branch_name}' in {existing.slot_name} "
-                + f"(was '{actual_branch}')"
-            )
-            ctx.git.checkout_branch(existing.worktree_path, branch_name)
-            return SlotAllocationResult(
-                slot_name=existing.slot_name,
-                worktree_path=existing.worktree_path,
-                already_assigned=True,
-            )
+        validation = _validate_existing_assignment(
+            ctx, state, existing, branch_name, repo.pool_json_path
+        )
+        if validation.result is not None:
+            return validation.result
+        if validation.updated_state is not None:
+            state = validation.updated_state
+        # Fall through to normal allocation
 
     # First, prefer reusing existing worktrees (fast path)
     inactive_slot = None

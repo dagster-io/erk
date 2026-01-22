@@ -590,3 +590,71 @@ def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes(
         assert "target-branch" in result.output
         # Should NOT attempt checkout
         assert len(git.checked_out_branches) == 0
+
+
+def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out() -> None:
+    """Test that internal state mismatch error when branch allocated but no worktree has it.
+
+    This tests the edge case where pool.json says a branch is assigned to a slot,
+    but when we query git for worktrees, no worktree has that branch checked out.
+    This indicates corrupted pool state that needs manual intervention.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        slot_worktree_path.mkdir(parents=True)
+
+        # FakeGit needs to be configured so that:
+        # 1. allocate_slot_for_branch succeeds (returns already_assigned=True)
+        # 2. But find_worktrees_containing_branch returns empty list
+        #
+        # This happens when:
+        # - Pool.json says branch is in slot
+        # - Worktree directory exists
+        # - Worktree reports SAME branch as pool.json (so validation passes)
+        # - But list_worktrees returns worktree with DIFFERENT branch
+        #
+        # This simulates a race condition or corruption where the worktree state
+        # changed between get_current_branch() and list_worktrees() calls.
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "orphaned-branch"]},
+            # list_worktrees returns worktree with DIFFERENT branch
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="some-other-branch"),
+                ]
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+            # But get_current_branch returns the branch from pool.json
+            # This simulates the validation passing but worktree list being stale
+            current_branches={slot_worktree_path: "orphaned-branch"},
+        )
+
+        # Pool.json says orphaned-branch is in slot-01
+        stale_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="orphaned-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=slot_worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, stale_state)
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        result = runner.invoke(branch_group, ["checkout", "orphaned-branch"], obj=ctx)
+
+        assert result.exit_code == 1
+        assert "Internal state mismatch" in result.output
+        assert "orphaned-branch" in result.output
+        assert "no worktree has it checked out" in result.output
