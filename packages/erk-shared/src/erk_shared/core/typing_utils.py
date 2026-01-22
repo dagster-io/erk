@@ -5,7 +5,7 @@ particularly for Literal types that need validation against a set of
 valid string values.
 """
 
-from typing import Any, TypeVar, get_args
+from typing import Any, TypeVar, cast, get_args
 
 # TypeVar bound to str for Literal string types
 LiteralT = TypeVar("LiteralT", bound=str)
@@ -47,6 +47,6 @@ def narrow_to_literal(
 
     valid_values = get_args(literal_type)
     if value in valid_values:
-        return value  # type: ignore[return-value]
+        return cast(LiteralT, value)
 
     return None
