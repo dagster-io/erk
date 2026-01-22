@@ -640,3 +640,91 @@ learn_plan_pr: 789
         assert result.exit_code == 0
         assert "Status:" in result.output
         assert "completed #789" in result.output
+
+
+def test_view_plan_learn_pending_with_workflow_url() -> None:
+    """Test learn status 'pending' with run_id displays workflow URL."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+learn_status: pending
+learn_run_id: "12345678"
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with pending learn and run_id",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Status:" in result.output
+        assert "in progress" in result.output
+        assert "Workflow:" in result.output
+        assert "https://github.com/owner/repo/actions/runs/12345678" in result.output
+
+
+def test_view_plan_learn_pending_without_run_id_no_workflow() -> None:
+    """Test learn status 'pending' without run_id does not display workflow URL."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+learn_status: pending
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with pending learn but no run_id",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Status:" in result.output
+        assert "in progress" in result.output
+        assert "Workflow:" not in result.output

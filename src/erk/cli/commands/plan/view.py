@@ -24,12 +24,17 @@ from erk_shared.github.metadata.schemas import (
     LAST_REMOTE_IMPL_AT,
     LEARN_PLAN_ISSUE,
     LEARN_PLAN_PR,
+    LEARN_RUN_ID,
     LEARN_STATUS,
     OBJECTIVE_ISSUE,
     SCHEMA_VERSION,
     SOURCE_REPO,
     WORKTREE_NAME,
     LearnStatusValue,
+)
+from erk_shared.github.parsing import (
+    construct_workflow_run_url,
+    extract_owner_repo_from_github_url,
 )
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
@@ -115,11 +120,12 @@ def _extract_plan_header_info(issue_body: str) -> dict[str, object]:
     return dict(block.data)
 
 
-def _format_header_section(header_info: dict[str, object]) -> list[str]:
+def _format_header_section(header_info: dict[str, object], *, plan_url: str | None) -> list[str]:
     """Format the header info section for display.
 
     Args:
         header_info: Dictionary of header fields from plan-header block
+        plan_url: GitHub issue URL for constructing workflow URLs
 
     Returns:
         List of formatted lines for display
@@ -209,6 +215,17 @@ def _format_header_section(header_info: dict[str, object]) -> list[str]:
 
     learn_display = _format_learn_state(learn_status_val, learn_plan_issue_int, learn_plan_pr_int)
     lines.append(_format_field("Status", learn_display))
+
+    # Show workflow URL when learn is in progress
+    if learn_status_val == "pending":
+        learn_run_id_raw = header_info.get(LEARN_RUN_ID)
+        if learn_run_id_raw is not None and plan_url is not None:
+            owner_repo = extract_owner_repo_from_github_url(plan_url)
+            if owner_repo is not None:
+                workflow_url = construct_workflow_run_url(
+                    owner_repo[0], owner_repo[1], str(learn_run_id_raw)
+                )
+                lines.append(_format_field("Workflow", workflow_url))
 
     if CREATED_FROM_SESSION in header_info:
         lines.append(_format_field("Plan session", str(header_info[CREATED_FROM_SESSION])))
@@ -311,7 +328,7 @@ def view_plan(ctx: ErkContext, identifier: str | None, *, full: bool) -> None:
     user_output(_format_field("Updated", updated))
 
     # Display header info section
-    header_lines = _format_header_section(header_info)
+    header_lines = _format_header_section(header_info, plan_url=plan.url)
     for line in header_lines:
         user_output(line)
 
