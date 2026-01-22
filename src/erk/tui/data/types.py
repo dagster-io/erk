@@ -46,7 +46,9 @@ class PlanRowData:
         learn_status: Raw learn status value from plan header
         learn_plan_issue: Plan issue number (for completed_with_plan status)
         learn_plan_pr: PR number (for plan_completed status)
-        learn_display: Formatted display string ("-", "⟳", "∅", "#456", "✓ #12")
+        learn_run_url: URL to GitHub Actions workflow run (for pending status)
+        learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
+        learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
     """
 
     issue_number: int
@@ -81,7 +83,9 @@ class PlanRowData:
     learn_status: str | None
     learn_plan_issue: int | None
     learn_plan_pr: int | None
+    learn_run_url: str | None
     learn_display: str
+    learn_display_icon: str
 
 
 @dataclass(frozen=True)

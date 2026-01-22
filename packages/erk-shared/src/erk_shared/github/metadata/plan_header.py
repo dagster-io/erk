@@ -46,6 +46,7 @@ from erk_shared.github.metadata.schemas import (
     LAST_SESSION_SOURCE,
     LEARN_PLAN_ISSUE,
     LEARN_PLAN_PR,
+    LEARN_RUN_ID,
     LEARN_STATUS,
     LEARNED_FROM_ISSUE,
     OBJECTIVE_ISSUE,
@@ -995,16 +996,34 @@ def extract_plan_header_learn_status(issue_body: str) -> LearnStatusValue | None
     return value
 
 
+def extract_plan_header_learn_run_id(issue_body: str) -> str | None:
+    """Extract learn_run_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Workflow run ID for pending learn workflow if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LEARN_RUN_ID)
+
+
 def update_plan_header_learn_status(
     *,
     issue_body: str,
     learn_status: LearnStatusValue,
+    learn_run_id: str | None = None,
 ) -> str:
     """Update learn_status field in plan-header metadata block.
 
     Args:
         issue_body: Current issue body containing plan-header block
         learn_status: Learning workflow status (see LearnStatusValue for valid values)
+        learn_run_id: Optional workflow run ID (set when status is "pending")
 
     Returns:
         Updated issue body with new learn_status field
@@ -1020,6 +1039,8 @@ def update_plan_header_learn_status(
     # Update learn_status field
     updated_data = dict(block.data)
     updated_data[LEARN_STATUS] = learn_status
+    if learn_run_id is not None:
+        updated_data[LEARN_RUN_ID] = learn_run_id
 
     # Validate updated data
     schema = PlanHeaderSchema()

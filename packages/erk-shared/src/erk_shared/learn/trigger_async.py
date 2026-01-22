@@ -118,11 +118,12 @@ def trigger_async_learn_workflow(
         inputs={"issue_number": str(issue_number)},
     )
 
-    # Update plan header with learn_status=pending
+    # Update plan header with learn_status=pending and learn_run_id
     emit("Updating plan status...")
     updated_body = update_plan_header_learn_status(
         issue_body=issue.body,
         learn_status="pending",
+        learn_run_id=run_id,
     )
     issues.update_issue_body(repo_root, issue_number, updated_body)
 

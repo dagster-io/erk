@@ -26,6 +26,7 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_comment_id,
     extract_plan_header_learn_plan_issue,
     extract_plan_header_learn_plan_pr,
+    extract_plan_header_learn_run_id,
     extract_plan_header_learn_status,
     extract_plan_header_local_impl_at,
     extract_plan_header_objective_issue,
@@ -470,6 +471,7 @@ class RealPlanDataProvider(PlanDataProvider):
         learn_status: str | None = None
         learn_plan_issue: int | None = None
         learn_plan_pr: int | None = None
+        learn_run_id: str | None = None
         if plan.body:
             extracted = extract_plan_header_worktree_name(plan.body)
             if extracted and not worktree_name:
@@ -479,9 +481,13 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_status = extract_plan_header_learn_status(plan.body)
             learn_plan_issue = extract_plan_header_learn_plan_issue(plan.body)
             learn_plan_pr = extract_plan_header_learn_plan_pr(plan.body)
+            learn_run_id = extract_plan_header_learn_run_id(plan.body)
 
-        # Format learn display
+        # Format learn display (full text for detail modal, icon-only for table)
         learn_display = _format_learn_display(learn_status, learn_plan_issue, learn_plan_pr)
+        learn_display_icon = _format_learn_display_icon(
+            learn_status, learn_plan_issue, learn_plan_pr
+        )
 
         # Parse ISO 8601 timestamps for storage
         last_local_impl_at: datetime | None = None
@@ -562,6 +568,17 @@ class RealPlanDataProvider(PlanDataProvider):
         # Log entries (empty for now - will be fetched on demand in the modal)
         log_entries: tuple[tuple[str, str, str], ...] = ()
 
+        # Build learn_run_url for pending status
+        learn_run_url: str | None = None
+        if learn_run_id is not None and plan.url is not None:
+            parts = plan.url.split("/")
+            if len(parts) >= 5:
+                owner = parts[-4]
+                repo_name = parts[-3]
+                learn_run_url = (
+                    f"https://github.com/{owner}/{repo_name}/actions/runs/{learn_run_id}"
+                )
+
         return PlanRowData(
             issue_number=issue_number,
             issue_url=plan.url,
@@ -595,7 +612,9 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_status=learn_status,
             learn_plan_issue=learn_plan_issue,
             learn_plan_pr=learn_plan_pr,
+            learn_run_url=learn_run_url,
             learn_display=learn_display,
+            learn_display_icon=learn_display_icon,
         )
 
 
@@ -631,6 +650,40 @@ def _format_learn_display(
         return f"✓ #{learn_plan_pr}"
     # Fallback for unknown status
     return "- not started"
+
+
+def _format_learn_display_icon(
+    learn_status: str | None,
+    learn_plan_issue: int | None,
+    learn_plan_pr: int | None,
+) -> str:
+    """Format learn status as icon-only for table display.
+
+    Args:
+        learn_status: Raw status value from plan header
+        learn_plan_issue: Issue number of generated learn plan
+        learn_plan_pr: PR number that implemented the learn plan
+
+    Returns:
+        Icon-only display string based on status:
+        - None or "not_started" -> "-"
+        - "pending" -> "⟳"
+        - "completed_no_plan" -> "∅"
+        - "completed_with_plan" -> "#456" (using learn_plan_issue)
+        - "plan_completed" -> "✓ #12" (using learn_plan_pr)
+    """
+    if learn_status is None or learn_status == "not_started":
+        return "-"
+    if learn_status == "pending":
+        return "⟳"
+    if learn_status == "completed_no_plan":
+        return "∅"
+    if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+        return f"#{learn_plan_issue}"
+    if learn_status == "plan_completed" and learn_plan_pr is not None:
+        return f"✓ #{learn_plan_pr}"
+    # Fallback for unknown status
+    return "-"
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:

@@ -748,7 +748,7 @@ class PlanDetailScreen(ModalScreen):
             # Learn status - always show for visibility into learn workflow
             with Container(classes="info-row"):
                 yield Label("Learn", classes="info-label")
-                # Make clickable if there's a plan issue or PR
+                # Make clickable if there's a plan issue, PR, or workflow run
                 if self._row.learn_plan_pr is not None and self._row.issue_url:
                     base_url = self._row.issue_url.rsplit("/issues/", 1)[0]
                     pr_url = f"{base_url}/pull/{self._row.learn_plan_pr}"
@@ -757,6 +757,10 @@ class PlanDetailScreen(ModalScreen):
                     base_url = self._row.issue_url.rsplit("/issues/", 1)[0]
                     issue_url = f"{base_url}/issues/{self._row.learn_plan_issue}"
                     yield ClickableLink(self._row.learn_display, issue_url, classes="info-value")
+                elif self._row.learn_run_url is not None:
+                    yield ClickableLink(
+                        self._row.learn_display, self._row.learn_run_url, classes="info-value"
+                    )
                 else:
                     yield Label(self._row.learn_display, classes="info-value", markup=False)
 
