@@ -135,6 +135,37 @@ The TUI shows learn status in the "lrn" column:
 
 Clicking the cell opens the learn plan issue or PR.
 
+## Agent Tier Architecture
+
+The learn workflow orchestrates 5 agents across 3 tiers with explicit model selection:
+
+### Parallel Tier (Haiku)
+
+Runs simultaneously via `run_in_background: true`:
+
+- **SessionAnalyzer** - Extracts patterns from preprocessed session XML
+- **CodeDiffAnalyzer** - Inventories PR changes
+- **ExistingDocsChecker** - Searches for duplicates/contradictions
+
+### Sequential Tier 1 (Haiku)
+
+Depends on parallel tier outputs:
+
+- **DocumentationGapIdentifier** - Synthesizes and deduplicates candidates
+
+### Sequential Tier 2 (Opus)
+
+Depends on Sequential Tier 1:
+
+- **PlanSynthesizer** - Creates narrative context and draft content
+
+### Model Selection Rationale
+
+- **Haiku for extraction**: Pattern matching and classification tasks produce similar quality regardless of model
+- **Opus for synthesis**: Creative authoring and narrative generation benefit from higher-quality reasoning
+
+For detailed guidance on model selection in multi-agent workflows, see [Model Selection for Learn Workflow Agents](model-selection-learn-workflow.md).
+
 ## Related Commands
 
 - `/erk:learn` - Run learn workflow on a plan

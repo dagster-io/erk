@@ -7,6 +7,7 @@
 - **[cross-repo-plans.md](cross-repo-plans.md)** — setting up plans in a separate repository, configuring [plans] repo in config.toml, understanding cross-repo issue closing syntax
 - **[learn-workflow.md](learn-workflow.md)** — using /erk:learn skill, understanding learn status tracking, auto-updating parent plans when learn plans land
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
+- **[model-selection-learn-workflow.md](model-selection-learn-workflow.md)** — implementing multi-agent workflows with Task tool, optimizing cost/quality tradeoffs in agent orchestration, adding or modifying learn workflow agents
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
 - **[workflow-markers.md](workflow-markers.md)** — building multi-step workflows that need state persistence, using erk exec marker commands, implementing objective-to-plan workflows
