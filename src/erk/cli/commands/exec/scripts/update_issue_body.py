@@ -4,6 +4,10 @@ Usage:
     erk exec update-issue-body <ISSUE_NUMBER> --body "new body content"
     erk exec update-issue-body <ISSUE_NUMBER> --body-file /path/to/body.md
 
+For large content (plans, objective roadmaps), prefer --body-file to avoid
+shell quoting issues and argument length limits. Note: --body-stdin does not
+exist - write content to a temp file and use --body-file instead.
+
 Output:
     JSON with {success, issue_number, url}
 
