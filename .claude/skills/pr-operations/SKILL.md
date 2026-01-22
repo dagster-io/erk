@@ -72,6 +72,35 @@ erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:
 >
 > Always use `erk exec resolve-review-thread` - it does both in one operation.
 
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
 ## Detailed Documentation
 
 For complete command documentation including JSON output formats, options, and examples:

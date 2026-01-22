@@ -49,21 +49,18 @@ For each comment, determine:
 - **Review Thread**: Code-specific feedback from PR review
 - **Discussion Comment**: General PR discussion
 
-**Complexity:**
+**Complexity and Proposed Action:**
 
-- **Local fix**: Single comment, single location change
-- **Multi-location**: Single comment, multiple spots in one file
-- **Cross-cutting**: Single comment, changes across multiple files
-- **Related**: Multiple comments that inform a single unified change
+> See `pr-operations` skill for the **Comment Classification Model**.
 
-**Proposed Action:**
+Determine proposed action for each:
 
 - **Code change**: Requires modification to source files
 - **Doc update**: Requires documentation changes
-- **Already resolved**: The issue appears to be already addressed in current code
-- **Question to answer**: Reviewer is asking a question, needs a reply
-- **No action**: Acknowledgment/thanks, no change needed
-- **Investigate**: Requires codebase exploration to understand implications
+- **Already resolved**: Issue appears already addressed
+- **Question to answer**: Needs a reply
+- **No action**: Acknowledgment, no change needed
+- **Investigate**: Requires codebase exploration
 
 ### Phase 4: Display Summary Table
 

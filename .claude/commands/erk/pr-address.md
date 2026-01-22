@@ -44,25 +44,13 @@ If both `threads` is empty AND `comments` is empty, display: "No unresolved revi
 
 #### Step 3: Holistic Analysis
 
-Analyze ALL comments together to understand relationships and complexity. Classify each comment:
+Analyze ALL comments together to understand relationships and complexity.
 
-- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
-- **Multi-location in same file**: Single comment → changes in multiple spots in one file
-- **Cross-cutting**: Single comment → changes across multiple files
-- **Related comments**: Multiple comments that inform a single unified change (e.g., two comments about the same refactor)
+> See `pr-operations` skill for the **Comment Classification Model** (complexity categories and batch ordering).
 
 #### Step 4: Batch and Prioritize
 
-Group comments into batches ordered by complexity (simplest first):
-
-| Batch | Complexity                 | Description                         | Example                                                   |
-| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
-| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
-| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
-| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
-| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
-
-**Note**: Discussion comments that require doc updates or non-code changes go in Batch 3 (cross-cutting) since they often affect multiple files.
+Group comments into batches ordered by complexity (simplest first). See `pr-operations` skill for the batch ordering table.
 
 ### Phase 2: Display Batched Plan
 
