@@ -12,7 +12,8 @@ Output:
         "success": true,
         "issue_number": 123,
         "workflow_triggered": true,
-        "run_id": "12345678"
+        "run_id": "12345678",
+        "workflow_url": "https://github.com/owner/repo/actions/runs/12345678"
     }
 
 Exit Codes:
@@ -26,10 +27,12 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import (
+    get_repo_identifier,
     require_github,
     require_issues,
     require_repo_root,
 )
+from erk_shared.github.parsing import construct_workflow_run_url
 from erk_shared.learn.trigger_async import (
     TriggerAsyncLearnNoSessionData,
     TriggerAsyncLearnNotErkPlan,
@@ -46,6 +49,7 @@ class ExecSuccessResponse:
     issue_number: int
     workflow_triggered: bool
     run_id: str
+    workflow_url: str
 
 
 @dataclass(frozen=True)
@@ -94,11 +98,21 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
         raise SystemExit(1)
 
     if isinstance(result, TriggerAsyncLearnSuccess):
+        # Construct workflow URL for display
+        repo_id = get_repo_identifier(ctx)
+        if repo_id is not None and "/" in repo_id:
+            owner, repo = repo_id.split("/", 1)
+            workflow_url = construct_workflow_run_url(owner, repo, result.run_id)
+        else:
+            # Fallback if repo identifier not available
+            workflow_url = ""
+
         response = ExecSuccessResponse(
             success=True,
             issue_number=result.issue_number,
             workflow_triggered=True,
             run_id=result.run_id,
+            workflow_url=workflow_url,
         )
         click.echo(json.dumps(asdict(response)))
         return

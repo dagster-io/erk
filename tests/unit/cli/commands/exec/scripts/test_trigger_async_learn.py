@@ -11,9 +11,11 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.trigger_async_learn import trigger_async_learn
 from erk_shared.context.context import ErkContext
+from erk_shared.context.types import RepoContext
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.metadata.core import find_metadata_block
+from erk_shared.github.types import GitHubRepoId
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -60,6 +62,8 @@ def test_trigger_async_learn_succeeds_with_remote_session(tmp_path: Path) -> Non
     assert output["issue_number"] == 123
     assert output["workflow_triggered"] is True
     assert "run_id" in output
+    # workflow_url is empty since test context has no GitHub repo identity
+    assert "workflow_url" in output
 
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1
@@ -104,6 +108,64 @@ def test_trigger_async_learn_succeeds_with_local_session(tmp_path: Path) -> None
     assert output["success"] is True
     assert output["issue_number"] == 456
     assert output["workflow_triggered"] is True
+    # workflow_url is empty since test context has no GitHub repo identity
+    assert "workflow_url" in output
+
+
+def test_trigger_async_learn_includes_workflow_url_when_repo_identity_available(
+    tmp_path: Path,
+) -> None:
+    """Test that workflow_url is correctly constructed when GitHub repo identity is available."""
+    # Create plan issue with remote implementation session
+    plan_body = format_plan_header_body_for_test(
+        last_remote_impl_run_id="12345678",
+        last_remote_impl_session_id="abc-def-ghi",
+    )
+    plan_body += "\n\n# Plan\n\nThis is the plan content."
+
+    test_issue = create_test_issue(
+        123,
+        "Test Plan #123",
+        plan_body,
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={123: test_issue})
+    fake_github = FakeGitHub()
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        # Create test context with repo identity
+        ctx = ErkContext.for_test(
+            github=fake_github,
+            github_issues=fake_issues,
+            cwd=cwd,
+            repo_root=cwd,
+        )
+        # Create a new repo context with GitHub identity
+        repo_with_github = RepoContext(
+            root=ctx.repo.root,
+            repo_name=ctx.repo.repo_name,
+            repo_dir=ctx.repo.repo_dir,
+            worktrees_dir=ctx.repo.worktrees_dir,
+            pool_json_path=ctx.repo.pool_json_path,
+            github=GitHubRepoId(owner="test-owner", repo="test-repo"),
+        )
+        # Replace repo in context (use object.__setattr__ because ErkContext is frozen)
+        object.__setattr__(ctx, "repo", repo_with_github)
+
+        result = runner.invoke(
+            trigger_async_learn,
+            ["123"],
+            obj=ctx,
+        )
+
+    assert result.exit_code == 0, result.output
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["workflow_url"] == (
+        f"https://github.com/test-owner/test-repo/actions/runs/{output['run_id']}"
+    )
 
 
 def test_trigger_async_learn_updates_learn_status(tmp_path: Path) -> None:
