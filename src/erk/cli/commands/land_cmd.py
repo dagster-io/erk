@@ -259,13 +259,18 @@ def _trigger_async_learn(
         user_output(click.style("⚠ ", fg="yellow") + msg)
         return
 
-    # Parse output JSON to get run_id
+    # Parse output JSON to get workflow_url
     output = json.loads(result.stdout)
     if output.get("success"):
-        user_output(
-            click.style("✓", fg="green")
-            + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
-        )
+        workflow_url = output.get("workflow_url", "")
+        if workflow_url:
+            user_output(click.style("✓", fg="green") + f" Async learn triggered: {workflow_url}")
+        else:
+            # Fallback for backwards compatibility
+            user_output(
+                click.style("✓", fg="green")
+                + f" Async learn triggered (run: {output.get('run_id', 'unknown')})"
+            )
     else:
         user_output(
             click.style("⚠ ", fg="yellow")
