@@ -4,11 +4,60 @@ read_when:
   - "using /erk:learn skill"
   - "understanding learn status tracking"
   - "auto-updating parent plans when learn plans land"
+  - "understanding learn workflow agent architecture"
 ---
 
 # Learn Workflow
 
 This guide explains the learn workflow in erk: how `/erk:learn` creates documentation plans, tracks status on parent plans, and enables automatic updates when learn plans are landed.
+
+## Agent Tier Architecture
+
+The learn workflow orchestrates 5 agents across 3 tiers, with model selection optimized for cost and quality:
+
+### Parallel Tier (Haiku)
+
+Runs simultaneously via `run_in_background: true`:
+
+- **SessionAnalyzer** - Extracts patterns from preprocessed session XML
+- **CodeDiffAnalyzer** - Inventories PR changes
+- **ExistingDocsChecker** - Searches for duplicates/contradictions
+
+### Sequential Tier 1 (Haiku)
+
+Depends on parallel tier outputs:
+
+- **DocumentationGapIdentifier** - Synthesizes and deduplicates candidates
+
+### Sequential Tier 2 (Opus)
+
+Depends on Sequential Tier 1:
+
+- **PlanSynthesizer** - Creates narrative context and draft content
+
+### Tier Boundaries
+
+Agents within the same tier can run in parallel. Tier boundaries enforce sequential ordering:
+
+- Parallel tier must complete before Sequential Tier 1 starts
+- Sequential Tier 1 must complete before Sequential Tier 2 starts
+
+### Agent Dependency Graph
+
+```
+Parallel Tier (can run simultaneously):
+  |- SessionAnalyzer (per session XML)
+  |- CodeDiffAnalyzer (if PR exists)
+  +- ExistingDocsChecker
+
+Sequential Tier 1 (depends on Parallel Tier):
+  +- DocumentationGapIdentifier
+
+Sequential Tier 2 (depends on Sequential Tier 1):
+  +- PlanSynthesizer
+```
+
+For details on model selection rationale, see [Model Selection for Learn Workflow](model-selection-learn-workflow.md).
 
 ## Overview
 

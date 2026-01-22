@@ -79,6 +79,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
+**CRITICAL: Before adding new Task invocation to any command file** → Read [Task Tool Parameter Reference](commands/task-parameter-reference.md) first. Always include explicit `model` parameter (haiku/sonnet/opus); don't rely on defaults. Model selection affects cost and quality.
+
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.
 
 **CRITICAL: Before adding --force flag to a CLI command** → Read [Code Conventions](conventions.md) first. Always include -f as the short form. Pattern: @click.option("-f", "--force", ...)
@@ -90,6 +92,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](planning/lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](planning/lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
+
+**CRITICAL: Before modifying learn command to add/remove/reorder Task invocations** → Read [Model Selection for Learn Workflow Agents](planning/model-selection-learn-workflow.md) first. Before applying model parameters, verify tier structure (parallel vs sequential). Misplacing haiku task in final synthesis tier degrades quality. Pattern: parallel extraction uses haiku, sequential synthesis uses opus.
+
+**CRITICAL: Before adding new agents to learn workflow** → Read [Model Selection for Learn Workflow Agents](planning/model-selection-learn-workflow.md) first. Document input/output format clearly and test file passing integration. Architecture assumes stateless agents with file-based composition.
 
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 

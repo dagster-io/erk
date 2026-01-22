@@ -209,9 +209,10 @@ After preprocessing, launch analysis agents in parallel to extract insights conc
 For each XML file in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`:
 
 ```
+# Session analysis uses haiku - mechanical pattern extraction from XML
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "haiku",  # Extraction task - haiku is fast and sufficient
   run_in_background: true,
   description: "Analyze session <session-id>",
   prompt: |
@@ -226,9 +227,10 @@ Task(
 **Agent 2: Code Diff Analysis** (if PR exists)
 
 ```
+# Code diff analysis uses haiku - structured inventory of PR changes
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "haiku",  # Extraction task - categorizing changes is rule-based
   run_in_background: true,
   description: "Analyze PR diff",
   prompt: |
@@ -245,9 +247,10 @@ Task(
 Proactively search for existing documentation to prevent duplicates and detect contradictions:
 
 ```
+# Existing docs check uses haiku - search and classification task
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "haiku",  # Classification task - detecting duplicates is rule-based
   run_in_background: true,
   description: "Check existing docs",
   prompt: |
@@ -304,9 +307,10 @@ EOF
 Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents:
 
 ```
+# Gap identification uses haiku - rule-based deduplication and prioritization
 Task(
   subagent_type: "general-purpose",
-  model: "haiku",
+  model: "haiku",  # Analysis task - deduplication follows explicit rules
   description: "Identify documentation gaps",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/documentation-gap-identifier.md`
@@ -343,9 +347,10 @@ EOF
 Launch the PlanSynthesizer agent to transform the gap analysis into a complete learn plan:
 
 ```
+# Plan synthesis uses opus - creative authoring requires quality reasoning
 Task(
   subagent_type: "general-purpose",
-  model: "opus",
+  model: "opus",  # Synthesis task - narrative generation benefits from premium model
   description: "Synthesize learn plan",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/plan-synthesizer.md`
