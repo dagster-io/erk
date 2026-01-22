@@ -33,15 +33,14 @@ from erk_shared.gateway.pr.graphite_enhance import (
     execute_graphite_enhance,
     should_enhance_with_graphite,
 )
+from erk_shared.gateway.pr.strategy.abc import SubmitStrategy
+from erk_shared.gateway.pr.strategy.core import CoreSubmitStrategy
 from erk_shared.gateway.pr.strategy.graphite import GraphiteSubmitStrategy
 from erk_shared.gateway.pr.strategy.types import (
     SubmitStrategyError,
     SubmitStrategyResult,
 )
-from erk_shared.gateway.pr.submit import execute_core_submit
 from erk_shared.gateway.pr.types import (
-    CoreSubmitError,
-    CoreSubmitResult,
     GraphiteEnhanceError,
     GraphiteEnhanceResult,
     GraphiteSkipped,
@@ -105,40 +104,39 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
         check_result = should_enhance_with_graphite(ctx, cwd)
         graphite_handles_push = check_result.should_enhance
 
-    # Branch on flow: Graphite-first vs standard
-    if graphite_handles_push:
-        # Graphite-first flow: use GraphiteSubmitStrategy
-        click.echo(click.style("Phase 1: Graphite Submit", bold=True))
-        strategy = GraphiteSubmitStrategy()
-        result = _run_strategy(ctx, cwd, strategy, debug, force)
+    # Get plans_repo for CoreSubmitStrategy
+    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
 
-        if isinstance(result, SubmitStrategyError):
-            raise click.ClickException(result.message)
+    # Select strategy based on Graphite availability
+    strategy: SubmitStrategy = (
+        GraphiteSubmitStrategy()
+        if graphite_handles_push
+        else CoreSubmitStrategy(pr_title="WIP", pr_body="", plans_repo=plans_repo)
+    )
 
-        click.echo(click.style(f"   PR #{result.pr_number} ready", fg="green"))
-        click.echo("")
+    # Single unified path through strategy
+    phase_label = "Graphite Submit" if graphite_handles_push else "Creating or Updating PR"
+    click.echo(click.style(f"Phase 1: {phase_label}", bold=True))
+    result = _run_strategy(ctx, cwd, strategy, debug, force)
 
-        pr_number = result.pr_number
-        base_branch = result.base_branch
-        graphite_url = result.graphite_url
-    else:
-        # Standard flow: core submit handles push + PR creation
-        click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
-        core_result = _run_core_submit(ctx, cwd, debug, force)
+    if isinstance(result, SubmitStrategyError):
+        raise click.ClickException(result.message)
 
-        if isinstance(core_result, CoreSubmitError):
-            raise click.ClickException(core_result.message)
+    # Extract common fields
+    pr_number = result.pr_number
+    base_branch = result.base_branch
+    graphite_url = result.graphite_url
 
-        action = "created" if core_result.was_created else "found (already exists)"
-        click.echo(click.style(f"   PR #{core_result.pr_number} {action}", fg="green"))
-        click.echo("")
+    action = (
+        "ready"
+        if graphite_handles_push
+        else ("created" if result.was_created else "found (already exists)")
+    )
+    click.echo(click.style(f"   PR #{pr_number} {action}", fg="green"))
+    click.echo("")
 
-        pr_number = core_result.pr_number
-        base_branch = core_result.base_branch
-        graphite_url = None
-
-        # Standard flow: Graphite enhancement happens later (Phase 4)
-        # This handles the case where use_graphite=True but branch isn't tracked yet
+    # Standard flow: Graphite enhancement happens later (Phase 4)
+    # This handles the case where use_graphite=True but branch isn't tracked yet
 
     # Phase 2: Get diff for AI
     click.echo(click.style("Phase 2: Getting diff", bold=True))
@@ -242,7 +240,7 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 def _run_strategy(
     ctx: ErkContext,
     cwd: Path,
-    strategy: GraphiteSubmitStrategy,
+    strategy: SubmitStrategy,
     debug: bool,
     force: bool,
 ) -> SubmitStrategyResult | SubmitStrategyError:
@@ -264,41 +262,6 @@ def _run_strategy(
         return SubmitStrategyError(
             error_type="strategy-incomplete",
             message="Strategy did not complete",
-            details={},
-        )
-
-    return result
-
-
-def _run_core_submit(
-    ctx: ErkContext,
-    cwd: Path,
-    debug: bool,
-    force: bool,
-) -> CoreSubmitResult | CoreSubmitError:
-    """Run core submit phase (git push + gh pr create)."""
-    result: CoreSubmitResult | CoreSubmitError | None = None
-    plans_repo = ctx.local_config.plans_repo if ctx.local_config else None
-
-    for event in execute_core_submit(
-        ctx,
-        cwd,
-        pr_title="WIP",
-        pr_body="",
-        force=force,
-        plans_repo=plans_repo,
-    ):
-        if isinstance(event, ProgressEvent):
-            if debug:
-                render_progress(event)
-        elif isinstance(event, CompletionEvent):
-            result = event.result
-
-    if result is None:
-        return CoreSubmitError(
-            success=False,
-            error_type="submit-failed",
-            message="Core submit did not complete",
             details={},
         )
 

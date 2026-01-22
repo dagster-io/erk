@@ -16,7 +16,7 @@ import re
 from collections.abc import Generator
 from pathlib import Path
 
-from erk_shared.context.context import ErkContext
+from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.types import CoreSubmitError, CoreSubmitResult
 from erk_shared.github.parsing import parse_git_remote_url
@@ -108,7 +108,7 @@ def _make_divergence_error(branch_name: str, ahead: int, behind: int) -> CoreSub
 
 
 def execute_core_submit(
-    ctx: ErkContext,
+    ctx: GtKit,
     cwd: Path,
     pr_title: str,
     pr_body: str,
@@ -124,7 +124,7 @@ def execute_core_submit(
     stack metadata afterward.
 
     Args:
-        ctx: ErkContext providing git and github operations
+        ctx: GtKit providing git and github operations
         cwd: Working directory (must be in a git repository)
         pr_title: Title for the PR (first line of commit message)
         pr_body: Body for the PR (remaining commit message lines)
