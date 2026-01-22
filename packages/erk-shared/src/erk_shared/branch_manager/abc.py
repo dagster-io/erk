@@ -164,6 +164,40 @@ class BranchManager(ABC):
         ...
 
     @abstractmethod
+    def checkout_branch(self, repo_root: Path, branch: str) -> None:
+        """Checkout a branch in the given directory.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to checkout
+
+        Raises:
+            RuntimeError: If the branch is already checked out in another worktree
+        """
+        ...
+
+    @abstractmethod
+    def checkout_detached(self, repo_root: Path, ref: str) -> None:
+        """Checkout a detached HEAD at the given ref.
+
+        Args:
+            repo_root: Repository root directory
+            ref: Git ref to checkout (commit SHA, branch name, etc.)
+        """
+        ...
+
+    @abstractmethod
+    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
+        """Create a local tracking branch from a remote branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name for the local branch
+            remote_ref: Remote reference to track (e.g., 'origin/feature-remote')
+        """
+        ...
+
+    @abstractmethod
     def is_graphite_managed(self) -> bool:
         """Returns True if using Graphite for branch operations.
 

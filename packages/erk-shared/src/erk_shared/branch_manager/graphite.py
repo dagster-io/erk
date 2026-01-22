@@ -8,7 +8,9 @@ from pathlib import Path
 from erk_shared.branch_manager.abc import BranchManager
 from erk_shared.branch_manager.types import PrInfo
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.git.abc import Git
+from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.types import PRNotFound
 
@@ -23,7 +25,9 @@ class GraphiteBranchManager(BranchManager):
     """
 
     git: Git
+    git_branch_ops: GitBranchOps
     graphite: Graphite
+    graphite_branch_ops: GraphiteBranchOps
     github: GitHub
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
@@ -79,15 +83,15 @@ class GraphiteBranchManager(BranchManager):
             base_branch: Name of the parent branch (can be local or remote ref like origin/main)
         """
         # First checkout the base branch (may result in detached HEAD if remote ref)
-        self.git.checkout_branch(repo_root, base_branch)
+        self.git_branch_ops.checkout_branch(repo_root, base_branch)
         # Create the branch using git (from base_branch)
-        self.git.create_branch(repo_root, branch_name, base_branch)
+        self.git_branch_ops.create_branch(repo_root, branch_name, base_branch)
         # Checkout the new branch
-        self.git.checkout_branch(repo_root, branch_name)
+        self.git_branch_ops.checkout_branch(repo_root, branch_name)
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
         parent_for_graphite = base_branch.removeprefix("origin/")
-        self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
+        self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_for_graphite)
 
     def delete_branch(self, repo_root: Path, branch: str) -> None:
         """Delete a branch with Graphite metadata cleanup.
@@ -102,14 +106,14 @@ class GraphiteBranchManager(BranchManager):
         # LBYL: Check if branch is tracked by Graphite
         if not self.graphite.is_branch_tracked(repo_root, branch):
             # Branch not in Graphite - use plain git
-            self.git.delete_branch(repo_root, branch, force=True)
+            self.git_branch_ops.delete_branch(repo_root, branch, force=True)
             return
 
         # Branch is tracked - use gt delete which:
         # - Re-parents children to parent branch
         # - Cleans up .graphite_cache_persist metadata
         # - Handles diverged SHAs gracefully
-        self.graphite.delete_branch(repo_root, branch)
+        self.graphite_branch_ops.delete_branch(repo_root, branch)
 
     def submit_branch(self, repo_root: Path, branch: str) -> None:
         """Submit branch via Graphite.
@@ -156,7 +160,7 @@ class GraphiteBranchManager(BranchManager):
             branch_name: Name of the branch to track
             parent_branch: Name of the parent branch
         """
-        self.graphite.track_branch(repo_root, branch_name, parent_branch)
+        self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_branch)
 
     def get_parent_branch(self, repo_root: Path, branch: str) -> str | None:
         """Get parent branch from Graphite's cache.
@@ -181,6 +185,34 @@ class GraphiteBranchManager(BranchManager):
             List of child branch names, or empty list if none.
         """
         return self.graphite.get_child_branches(self.git, repo_root, branch)
+
+    def checkout_branch(self, repo_root: Path, branch: str) -> None:
+        """Checkout a branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Branch name to checkout
+        """
+        self.git_branch_ops.checkout_branch(repo_root, branch)
+
+    def checkout_detached(self, repo_root: Path, ref: str) -> None:
+        """Checkout a detached HEAD at the given ref.
+
+        Args:
+            repo_root: Repository root directory
+            ref: Git ref to checkout
+        """
+        self.git_branch_ops.checkout_detached(repo_root, ref)
+
+    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
+        """Create a local tracking branch from a remote branch.
+
+        Args:
+            repo_root: Repository root directory
+            branch: Name for the local branch
+            remote_ref: Remote reference to track
+        """
+        self.git_branch_ops.create_tracking_branch(repo_root, branch, remote_ref)
 
     def is_graphite_managed(self) -> bool:
         """Returns True - this implementation uses Graphite."""

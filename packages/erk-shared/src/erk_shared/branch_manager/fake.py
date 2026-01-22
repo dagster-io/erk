@@ -37,6 +37,12 @@ class FakeBranchManager(BranchManager):
     _tracked_branches: list[tuple[str, str]] = field(default_factory=list)
     # Track commits for assertions: list of commit messages
     _commits: list[str] = field(default_factory=list)
+    # Track checked out branches for assertions: list of branch names
+    _checked_out_branches: list[str] = field(default_factory=list)
+    # Track detached checkouts for assertions: list of refs
+    _detached_checkouts: list[str] = field(default_factory=list)
+    # Track created tracking branches: list of (branch, remote_ref) tuples
+    _created_tracking_branches: list[tuple[str, str]] = field(default_factory=list)
 
     def get_pr_for_branch(self, repo_root: Path, branch: str) -> PrInfo | None:
         """Get PR info from in-memory storage.
@@ -153,6 +159,34 @@ class FakeBranchManager(BranchManager):
         """
         return self.child_branches.get(branch, [])
 
+    def checkout_branch(self, repo_root: Path, branch: str) -> None:
+        """Record branch checkout in tracked list.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch: Branch name to checkout
+        """
+        self._checked_out_branches.append(branch)
+
+    def checkout_detached(self, repo_root: Path, ref: str) -> None:
+        """Record detached HEAD checkout in tracked list.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            ref: Git ref to checkout
+        """
+        self._detached_checkouts.append(ref)
+
+    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
+        """Record tracking branch creation in tracked list.
+
+        Args:
+            repo_root: Repository root directory (unused in fake)
+            branch: Name for the local branch
+            remote_ref: Remote reference to track
+        """
+        self._created_tracking_branches.append((branch, remote_ref))
+
     def is_graphite_managed(self) -> bool:
         """Returns the configured graphite_mode value."""
         return self.graphite_mode
@@ -201,3 +235,30 @@ class FakeBranchManager(BranchManager):
             List of commit messages.
         """
         return list(self._commits)
+
+    @property
+    def checked_out_branches(self) -> list[str]:
+        """Get list of checked out branches for test assertions.
+
+        Returns:
+            List of branch names that were checked out.
+        """
+        return list(self._checked_out_branches)
+
+    @property
+    def detached_checkouts(self) -> list[str]:
+        """Get list of detached HEAD checkouts for test assertions.
+
+        Returns:
+            List of refs that were checked out with detached HEAD.
+        """
+        return list(self._detached_checkouts)
+
+    @property
+    def created_tracking_branches(self) -> list[tuple[str, str]]:
+        """Get list of created tracking branches for test assertions.
+
+        Returns:
+            List of (branch, remote_ref) tuples.
+        """
+        return list(self._created_tracking_branches)

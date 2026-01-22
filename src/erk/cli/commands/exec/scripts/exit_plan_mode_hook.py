@@ -55,7 +55,6 @@ import click
 
 from erk.hooks.decorators import HookContext, hook_command
 from erk_shared.branch_manager.abc import BranchManager
-from erk_shared.branch_manager.factory import create_branch_manager
 from erk_shared.git.abc import Git
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
@@ -780,10 +779,8 @@ def exit_plan_mode_hook(ctx: click.Context, *, hook_ctx: HookContext) -> None:
     global_config = ctx.obj.global_config
     github_planning_enabled = global_config.github_planning if global_config is not None else True
 
-    # Create branch manager for PR lookups
-    branch_manager = create_branch_manager(
-        git=ctx.obj.git, github=ctx.obj.github, graphite=ctx.obj.graphite
-    )
+    # Use branch_manager from context for PR lookups
+    branch_manager = ctx.obj.branch_manager
 
     # Gather all inputs (I/O layer)
     hook_input = _gather_inputs(

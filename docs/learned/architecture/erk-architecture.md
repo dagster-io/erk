@@ -28,6 +28,10 @@ tripwires:
     warning: "Accept optional Time in __init__ with default to RealTime(). Use injected dependency in methods. This enables testing with FakeTime without blocking. See packages/erk-shared/src/erk_shared/git/lock.py for pattern."
   - action: "adding file I/O, network calls, or subprocess invocations to a class __init__"
     warning: "Load `dignified-python` skill first. Class __init__ should be lightweight (just data assignment). Heavy operations belong in static factory methods like `from_config_path()` or `load()`. This enables direct instantiation in tests without I/O setup."
+  - action: "calling ctx.git mutation methods (create_branch, delete_branch, checkout_branch, checkout_detached, create_tracking_branch)"
+    warning: "Use ctx.branch_manager instead. Branch mutation methods are in GitBranchOps sub-gateway, accessible only through BranchManager. Query methods (get_current_branch, list_local_branches, etc.) remain on ctx.git."
+  - action: "calling ctx.graphite mutation methods (track_branch, delete_branch, submit_branch)"
+    warning: "Use ctx.branch_manager instead. Branch mutation methods are in GraphiteBranchOps sub-gateway, accessible only through BranchManager. Query methods (is_branch_tracked, get_parent_branch, etc.) remain on ctx.graphite."
 ---
 
 # Erk Architecture Patterns

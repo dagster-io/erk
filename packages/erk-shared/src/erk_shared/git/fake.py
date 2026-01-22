@@ -4,7 +4,13 @@ FakeGit is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
+from __future__ import annotations
+
 import subprocess
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
 from pathlib import Path
 from typing import NamedTuple
 
@@ -908,3 +914,32 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return list(self._pull_rebase_calls)
+
+    def create_linked_branch_ops(self) -> FakeGitBranchOps:
+        """Create a FakeGitBranchOps linked to this FakeGit's state.
+
+        The returned FakeGitBranchOps shares mutable state and mutation tracking
+        with this FakeGit instance. This allows tests to check FakeGit properties
+        like deleted_branches while mutations happen through BranchManager.
+
+        Returns:
+            FakeGitBranchOps with linked state and mutation tracking
+        """
+        from erk_shared.git.branch_ops.fake import FakeGitBranchOps
+
+        ops = FakeGitBranchOps(
+            worktrees=self._worktrees,
+            current_branches=self._current_branches,
+            local_branches=self._local_branches,
+            delete_branch_raises=self._delete_branch_raises,
+            tracking_branch_failures=self._tracking_branch_failures,
+        )
+        # Link mutation tracking so FakeGit properties see mutations from FakeGitBranchOps
+        ops.link_mutation_tracking(
+            created_branches=self._created_branches,
+            deleted_branches=self._deleted_branches,
+            checked_out_branches=self._checked_out_branches,
+            detached_checkouts=self._detached_checkouts,
+            created_tracking_branches=self._created_tracking_branches,
+        )
+        return ops

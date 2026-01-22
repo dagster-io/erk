@@ -47,6 +47,9 @@ from erk_shared.gateway.console.real import InteractiveConsole, ScriptConsole
 from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.erk_installation.real import RealErkInstallation
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
+from erk_shared.gateway.graphite.branch_ops.real import RealGraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import (
     GraphiteDisabled,
     GraphiteDisabledReason,
@@ -57,6 +60,9 @@ from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.gateway.time.real import RealTime
 from erk_shared.git.abc import Git
+from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.git.branch_ops.dry_run import DryRunGitBranchOps
+from erk_shared.git.branch_ops.real import RealGitBranchOps
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.real import RealGit
 from erk_shared.github.abc import GitHub
@@ -101,9 +107,11 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
+    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues.fake import FakeGitHubIssues
     from erk_shared.github_admin.fake import FakeGitHubAdmin
@@ -113,6 +121,8 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_issues = FakeGitHubIssues()
     fake_github = FakeGitHub(issues_gateway=fake_issues)
     fake_graphite = FakeGraphite()
+    fake_git_branch_ops = FakeGitBranchOps()
+    fake_graphite_branch_ops = FakeGraphiteBranchOps()
     fake_codespace = FakeCodespace()
     fake_console = FakeConsole(
         is_interactive=True,
@@ -123,10 +133,12 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
     fake_time = FakeTime()
     return ErkContext(
         git=git,
+        git_branch_ops=fake_git_branch_ops,
         github=fake_github,
         github_admin=FakeGitHubAdmin(),
         plan_store=GitHubPlanStore(fake_issues, fake_time),
         graphite=fake_graphite,
+        graphite_branch_ops=fake_graphite_branch_ops,
         console=fake_console,
         shell=FakeShell(),
         codespace=fake_codespace,
@@ -219,10 +231,14 @@ def context_for_test(
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+    from erk_shared.gateway.graphite.branch_ops.dry_run import DryRunGraphiteBranchOps
+    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.dry_run import DryRunGraphite
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
+    from erk_shared.git.branch_ops.dry_run import DryRunGitBranchOps
+    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -232,6 +248,16 @@ def context_for_test(
 
     if git is None:
         git = FakeGit()
+
+    # Create linked sub-gateways for branch operations.
+    # When git is FakeGit, create a linked FakeGitBranchOps so that mutation tracking
+    # is shared. This allows tests to check FakeGit.deleted_branches while mutations
+    # go through BranchManager (which uses FakeGitBranchOps under the hood).
+    git_branch_ops: GitBranchOps
+    if isinstance(git, FakeGit):
+        git_branch_ops = git.create_linked_branch_ops()
+    else:
+        git_branch_ops = FakeGitBranchOps()
 
     # Track whether issues was explicitly passed (for composition logic below)
     issues_explicitly_passed = issues is not None
@@ -261,6 +287,7 @@ def context_for_test(
     # Handle graphite based on global_config.use_graphite to match production behavior
     # When use_graphite=False, use GraphiteDisabled sentinel so that
     # ErkContext.branch_manager returns GitBranchManager
+    graphite_branch_ops: GraphiteBranchOps | None = None
     if graphite is None:
         # Need to check global_config.use_graphite - but it might be None or not set yet
         # If global_config is None, default will be set later with use_graphite=False
@@ -269,8 +296,15 @@ def context_for_test(
         )
         if use_graphite_from_config:
             graphite = FakeGraphite()
+            graphite_branch_ops = graphite.create_linked_branch_ops()
         else:
             graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
+    elif isinstance(graphite, FakeGraphite):
+        # Graphite is enabled and is a fake - create linked branch ops
+        graphite_branch_ops = graphite.create_linked_branch_ops()
+    elif not isinstance(graphite, GraphiteDisabled):
+        # Graphite is enabled but not a fake - create unlinked branch ops
+        graphite_branch_ops = FakeGraphiteBranchOps()
 
     if console is None:
         console = FakeConsole(
@@ -333,15 +367,20 @@ def context_for_test(
     # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
+        git_branch_ops = DryRunGitBranchOps(git_branch_ops)
         graphite = DryRunGraphite(graphite)
+        if graphite_branch_ops is not None:
+            graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
         github = DryRunGitHub(github)
 
     return ErkContext(
         git=git,
+        git_branch_ops=git_branch_ops,
         github=github,
         github_admin=github_admin,
         plan_store=plan_store,
         graphite=graphite,
+        graphite_branch_ops=graphite_branch_ops,
         console=console,
         shell=shell,
         codespace=codespace,
@@ -482,15 +521,18 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     time: Time = RealTime()
     console: Console = ScriptConsole() if script else InteractiveConsole()
     git: Git = RealGit()
+    git_branch_ops: GitBranchOps = RealGitBranchOps(time)
 
     # Create Graphite based on config and availability
     graphite: Graphite
+    graphite_branch_ops: GraphiteBranchOps | None = None
     if global_config is not None and global_config.use_graphite:
         # Config says use Graphite - check if gt is installed
         if shutil.which("gt") is None:
             graphite = GraphiteDisabled(GraphiteDisabledReason.NOT_INSTALLED)
         else:
             graphite = RealGraphite()
+            graphite_branch_ops = RealGraphiteBranchOps()
     else:
         # Graphite disabled by config (or config doesn't exist yet)
         graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
@@ -545,7 +587,10 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
+        git_branch_ops = DryRunGitBranchOps(git_branch_ops)
         graphite = DryRunGraphite(graphite)
+        if graphite_branch_ops is not None:
+            graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
         github = DryRunGitHub(github)
 
     # 10. Create claude installation and prompt executor
@@ -557,10 +602,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 11. Create context with all values
     return ErkContext(
         git=git,
+        git_branch_ops=git_branch_ops,
         github=github,
         github_admin=RealGitHubAdmin(),
         plan_store=plan_store,
         graphite=graphite,
+        graphite_branch_ops=graphite_branch_ops,
         console=console,
         shell=RealShell(),
         codespace=RealCodespace(),
