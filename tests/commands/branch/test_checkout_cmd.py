@@ -411,6 +411,7 @@ def test_branch_checkout_already_assigned_returns_existing() -> None:
                 ]
             },
             existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+            current_branches={slot_worktree_path: "already-assigned"},
         )
 
         # Create pool state with the branch already assigned
@@ -442,18 +443,60 @@ def test_branch_checkout_already_assigned_returns_existing() -> None:
 # --- Stale pool.json state handling tests ---
 
 
-def test_branch_checkout_fixes_stale_worktree_branch_mismatch() -> None:
-    """Test that checkout fixes stale pool.json when worktree has different branch."""
+def test_branch_checkout_stale_assignment_worktree_missing() -> None:
+    """Test that stale assignment with missing worktree is removed and proceeds."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Pre-create worktree directory for the slot
+        # Worktree path in pool.json but doesn't exist on disk
+        missing_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        # Note: NOT creating the directory - it's "missing"
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "stale-branch"]},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+
+        # Create pool state with assignment pointing to non-existent worktree
+        stale_state = PoolState.test(
+            pool_size=4,
+            assignments=(
+                SlotAssignment(
+                    slot_name="erk-slot-01",
+                    branch_name="stale-branch",
+                    assigned_at="2024-01-01T10:00:00+00:00",
+                    worktree_path=missing_worktree_path,
+                ),
+            ),
+        )
+        save_pool_state(env.repo.pool_json_path, stale_state)
+
+        ctx = build_workspace_test_context(env, git=git)
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(branch_group, ["checkout", "stale-branch"], obj=ctx)
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        # Should warn about removing stale assignment
+        assert "Removing stale assignment" in result.output
+        assert "no longer exists" in result.output
+        # Should proceed to assign to a slot
+        assert "Assigned stale-branch to" in result.output
+
+
+def test_branch_checkout_stale_assignment_wrong_branch() -> None:
+    """Test that stale assignment with wrong branch checked out is fixed."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
         slot_worktree_path.mkdir(parents=True)
 
-        # Configure FakeGit: worktree exists but has DIFFERENT branch than pool.json
-        # pool.json says "target-branch" but worktree actually has "different-branch"
+        # Git reports worktree has "different-branch" but pool.json says "target-branch"
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
@@ -464,11 +507,11 @@ def test_branch_checkout_fixes_stale_worktree_branch_mismatch() -> None:
                     WorktreeInfo(path=slot_worktree_path, branch="different-branch"),
                 ]
             },
-            current_branches={slot_worktree_path: "different-branch"},
             existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+            current_branches={slot_worktree_path: "different-branch"},
         )
 
-        # Create stale pool state: says "target-branch" but worktree has "different-branch"
+        # Pool.json says target-branch is in slot-01
         stale_state = PoolState.test(
             pool_size=4,
             assignments=(
@@ -488,43 +531,42 @@ def test_branch_checkout_fixes_stale_worktree_branch_mismatch() -> None:
             result = runner.invoke(branch_group, ["checkout", "target-branch"], obj=ctx)
 
         assert result.exit_code == 0, f"Failed: {result.output}"
-        # Should show fixing message
-        assert "Fixing stale pool state" in result.output
-        # Should have called checkout_branch to fix the worktree
+        # Should warn about fixing stale state
+        assert "Fixing stale state" in result.output
+        assert "was 'different-branch'" in result.output
+        # Should checkout the correct branch
         assert len(git.checked_out_branches) == 1
         checkout_path, checkout_branch = git.checked_out_branches[0]
         assert checkout_path == slot_worktree_path
         assert checkout_branch == "target-branch"
 
 
-def test_branch_checkout_fails_on_stale_worktree_with_uncommitted_changes() -> None:
-    """Test that checkout fails gracefully when stale worktree has uncommitted changes."""
+def test_branch_checkout_stale_assignment_wrong_branch_with_uncommitted_changes() -> None:
+    """Test that stale assignment with uncommitted changes fails gracefully."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Pre-create worktree directory for the slot
         slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
         slot_worktree_path.mkdir(parents=True)
 
-        # Configure FakeGit: worktree has different branch AND uncommitted changes
+        # Git reports worktree has wrong branch AND uncommitted changes
         git = FakeGit(
             git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
-            local_branches={env.cwd: ["main", "target-branch", "dirty-branch"]},
+            local_branches={env.cwd: ["main", "target-branch", "different-branch"]},
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=slot_worktree_path, branch="dirty-branch"),
+                    WorktreeInfo(path=slot_worktree_path, branch="different-branch"),
                 ]
             },
-            current_branches={slot_worktree_path: "dirty-branch"},
-            # Mark the worktree as having uncommitted changes
-            file_statuses={slot_worktree_path: ([], ["dirty.py"], [])},
             existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+            current_branches={slot_worktree_path: "different-branch"},
+            file_statuses={slot_worktree_path: ([], ["dirty.py"], [])},  # Uncommitted
         )
 
-        # Create stale pool state
+        # Pool.json says target-branch is in slot-01
         stale_state = PoolState.test(
             pool_size=4,
             assignments=(
@@ -544,34 +586,57 @@ def test_branch_checkout_fails_on_stale_worktree_with_uncommitted_changes() -> N
 
         assert result.exit_code == 1
         assert "uncommitted changes" in result.output
-        assert "dirty-branch" in result.output
-        # Should NOT have called checkout_branch
+        assert "different-branch" in result.output
+        assert "target-branch" in result.output
+        # Should NOT attempt checkout
         assert len(git.checked_out_branches) == 0
 
 
-def test_branch_checkout_removes_stale_assignment_when_worktree_missing() -> None:
-    """Test that checkout removes stale assignment when worktree directory is missing."""
+def test_branch_checkout_internal_state_mismatch_allocated_but_not_checked_out() -> None:
+    """Test that internal state mismatch error when branch allocated but no worktree has it.
+
+    This tests the edge case where pool.json says a branch is assigned to a slot,
+    but when we query git for worktrees, no worktree has that branch checked out.
+    This indicates corrupted pool state that needs manual intervention.
+    """
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
 
-        # Worktree path that does NOT exist on disk
-        missing_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
-        # Do NOT create the directory - simulating missing worktree
+        slot_worktree_path = env.repo.worktrees_dir / "erk-slot-01"
+        slot_worktree_path.mkdir(parents=True)
+
+        # FakeGit needs to be configured so that:
+        # 1. allocate_slot_for_branch succeeds (returns already_assigned=True)
+        # 2. But find_worktrees_containing_branch returns empty list
+        #
+        # This happens when:
+        # - Pool.json says branch is in slot
+        # - Worktree directory exists
+        # - Worktree reports SAME branch as pool.json (so validation passes)
+        # - But list_worktrees returns worktree with DIFFERENT branch
+        #
+        # This simulates a race condition or corruption where the worktree state
+        # changed between get_current_branch() and list_worktrees() calls.
 
         git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
+            git_common_dirs={env.cwd: env.git_dir, slot_worktree_path: env.git_dir},
             default_branches={env.cwd: "main"},
             local_branches={env.cwd: ["main", "orphaned-branch"]},
+            # list_worktrees returns worktree with DIFFERENT branch
             worktrees={
                 env.cwd: [
                     WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=slot_worktree_path, branch="some-other-branch"),
                 ]
             },
-            existing_paths={env.cwd, env.repo.worktrees_dir},
+            existing_paths={env.cwd, env.repo.worktrees_dir, slot_worktree_path},
+            # But get_current_branch returns the branch from pool.json
+            # This simulates the validation passing but worktree list being stale
+            current_branches={slot_worktree_path: "orphaned-branch"},
         )
 
-        # Create stale pool state with assignment pointing to non-existent worktree
+        # Pool.json says orphaned-branch is in slot-01
         stale_state = PoolState.test(
             pool_size=4,
             assignments=(
@@ -579,7 +644,7 @@ def test_branch_checkout_removes_stale_assignment_when_worktree_missing() -> Non
                     slot_name="erk-slot-01",
                     branch_name="orphaned-branch",
                     assigned_at="2024-01-01T10:00:00+00:00",
-                    worktree_path=missing_worktree_path,
+                    worktree_path=slot_worktree_path,
                 ),
             ),
         )
@@ -587,80 +652,9 @@ def test_branch_checkout_removes_stale_assignment_when_worktree_missing() -> Non
 
         ctx = build_workspace_test_context(env, git=git)
 
-        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
-            result = runner.invoke(branch_group, ["checkout", "orphaned-branch"], obj=ctx)
+        result = runner.invoke(branch_group, ["checkout", "orphaned-branch"], obj=ctx)
 
-        assert result.exit_code == 0, f"Failed: {result.output}"
-        # Should show warning about missing worktree
-        assert "worktree directory missing" in result.output
-        # Should proceed with new allocation
-        assert "Assigned orphaned-branch to erk-slot-01" in result.output
-
-        # Verify the stale assignment was removed and new one created
-        state = load_pool_state(env.repo.pool_json_path)
-        assert state is not None
-        assert len(state.assignments) == 1
-        assert state.assignments[0].branch_name == "orphaned-branch"
-
-
-def test_branch_checkout_shows_internal_state_mismatch_error() -> None:
-    """Test that checkout shows helpful error when branch allocated but not checked out anywhere."""
-    runner = CliRunner()
-    with erk_inmem_env(runner) as env:
-        repo_dir = env.setup_repo_structure()
-
-        # Set up multiple worktrees that "contain" the branch (via Graphite tracking)
-        # but none have it directly checked out
-        wt1 = repo_dir / "worktrees" / "erk-slot-01"
-        wt2 = repo_dir / "worktrees" / "erk-slot-02"
-
-        git = FakeGit(
-            worktrees={
-                env.cwd: [
-                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
-                    WorktreeInfo(path=wt1, branch="other-branch-1"),
-                    WorktreeInfo(path=wt2, branch="other-branch-2"),
-                ]
-            },
-            current_branches={env.cwd: "main", wt1: "other-branch-1", wt2: "other-branch-2"},
-            git_common_dirs={env.cwd: env.git_dir, wt1: env.git_dir, wt2: env.git_dir},
-        )
-
-        repo = RepoContext(
-            root=env.cwd,
-            repo_name=env.cwd.name,
-            repo_dir=repo_dir,
-            worktrees_dir=repo_dir / "worktrees",
-            pool_json_path=repo_dir / "pool.json",
-        )
-
-        # Use GraphiteDisabled to ensure find_worktrees_containing_branch
-        # returns worktrees that have the branch in their stack
-        graphite_disabled = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
-
-        # Simulate: matching_worktrees has entries but directly_checked_out is empty
-        # This happens when worktrees have the branch in Graphite stack but not checked out
-        test_ctx = env.build_context(
-            git=git,
-            graphite=graphite_disabled,
-            repo=repo,
-            existing_paths={wt1, wt2},
-        )
-
-        # Checkout a branch that doesn't exist in any worktree
-        # Since Graphite is disabled, find_worktrees_containing_branch returns empty
-        # and we'd fall through to auto-create (so this test needs different setup)
-
-        # Actually, to test the zero-directly-checked-out case, we need Graphite
-        # to return worktrees that contain the branch (in their stack) but none
-        # have it directly checked out. Let's use a different approach.
-        result = runner.invoke(
-            cli, ["br", "co", "nonexistent-branch"], obj=test_ctx, catch_exceptions=False
-        )
-
-        # With Graphite disabled, no matching worktrees means it tries to create one
-        # The "internal state mismatch" message only appears when matching_worktrees > 1
-        # but directly_checked_out == 0, which is a rare edge case
-        # For now, verify that checkout handles nonexistent branches correctly
         assert result.exit_code == 1
-        assert "does not exist" in result.output
+        assert "Internal state mismatch" in result.output
+        assert "orphaned-branch" in result.output
+        assert "no worktree has it checked out" in result.output
