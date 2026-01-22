@@ -18,6 +18,8 @@ tripwires:
     warning: "The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names."
   - action: "using gh api or gh api graphql to fetch or resolve PR review threads"
     warning: "Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality."
+  - action: "using gh pr view --json commits"
+    warning: "Use `erk exec get-pr-commits` instead. `gh pr view --json` uses GraphQL which has separate (often exhausted) rate limits."
 ---
 
 # GitHub API Rate Limits
@@ -129,6 +131,46 @@ gh api repos/{owner}/{repo}/issues/{number}/comments \
   --jq ".id"
 ```
 
-## Implementation Reference
+## Exec Commands as Rate-Limit-Safe Wrappers
 
-See `packages/erk-shared/src/erk_shared/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway.
+Rather than duplicating REST API calls across multiple slash commands and scripts, erk provides exec commands that wrap common operations:
+
+| Operation                   | GraphQL Alternative              | Exec Command                    | Rate Limit Safe? |
+| --------------------------- | -------------------------------- | ------------------------------- | ---------------- |
+| Get issue body/metadata     | `gh issue view`                  | `erk exec get-issue-body`       | Yes (REST API)   |
+| Update issue body           | `gh issue edit`                  | `erk exec update-issue-body`    | Yes (REST API)   |
+| List PR commits             | `gh pr view --json commits`      | `erk exec get-pr-commits`       | Yes (REST API)   |
+| Close issue with comment    | Manual two-step process          | `erk exec close-issue-with-comment` | Yes (REST API)   |
+| Fetch PR review comments    | `gh api graphql`                 | `erk exec get-pr-review-comments` | Yes (REST API)   |
+
+### When to Create New Exec Commands
+
+Create a new exec command when:
+
+- The operation is reused across multiple slash commands or scripts
+- The raw `gh api` call is complex (multiple steps, error handling, JSON parsing)
+- You need to combine multiple operations atomically
+
+### Example: check-relevance Command Integration
+
+The `/local:check-relevance` command demonstrates this pattern:
+
+```bash
+# Instead of raw API calls scattered throughout the command:
+gh api repos/{owner}/{repo}/pulls/{pr}/commits
+
+# Use the exec command wrapper:
+erk exec get-pr-commits $PR_NUMBER
+```
+
+This ensures:
+- **Consistent error handling** across all call sites
+- **Uniform JSON output format** for machine parsing
+- **Rate limit safety** via REST API (not GraphQL)
+- **Reusability** for future commands needing the same operation
+
+### Implementation Reference
+
+See `packages/erk-shared/src/erk_shared/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway. For exec command patterns, see:
+- `src/erk/cli/commands/exec/scripts/get_pr_commits.py` - REST API wrapper example
+- `src/erk/cli/commands/exec/scripts/close_issue_with_comment.py` - Gateway method wrapper example
