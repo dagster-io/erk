@@ -824,11 +824,12 @@ Track learn workflow result on a plan issue.
 
 **Options:**
 
-| Flag           | Type    | Required | Default        | Description                                                         |
-| -------------- | ------- | -------- | -------------- | ------------------------------------------------------------------- |
-| `--issue`      | INTEGER | Yes      | Sentinel.UNSET | Parent plan issue number                                            |
-| `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                        |
-| `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan issue number (required if status is completed_with_plan) |
+| Flag           | Type    | Required | Default        | Description                                                          |
+| -------------- | ------- | -------- | -------------- | -------------------------------------------------------------------- |
+| `--issue`      | INTEGER | Yes      | Sentinel.UNSET | Parent plan issue number                                             |
+| `--status`     | CHOICE  | Yes      | Sentinel.UNSET | Learn workflow result status                                         |
+| `--plan-issue` | INTEGER | No       | Sentinel.UNSET | Learn plan issue number (required if status is completed_with_plan)  |
+| `--plan-pr`    | INTEGER | No       | Sentinel.UNSET | Learn documentation PR number (required if status is pending_review) |
 
 ### trigger-async-learn
 

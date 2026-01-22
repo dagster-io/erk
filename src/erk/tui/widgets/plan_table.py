@@ -104,9 +104,6 @@ class PlanDataTable(DataTable):
         col_index += 1
         self.add_column("title", key="title")
         col_index += 1
-        self.add_column("lrn", key="learn")
-        self._learn_column_index = col_index
-        col_index += 1
         if self._plan_filters.show_prs:
             self.add_column("pr", key="pr")
             self._pr_column_index = col_index
@@ -114,6 +111,13 @@ class PlanDataTable(DataTable):
             self.add_column("chks", key="chks")
             col_index += 1
             self.add_column("comments", key="comments")
+            col_index += 1
+            self.add_column("lrn", key="learn")
+            self._learn_column_index = col_index
+            col_index += 1
+        else:
+            self.add_column("lrn", key="learn")
+            self._learn_column_index = col_index
             col_index += 1
         self._local_wt_column_index = col_index
         self.add_column("local-wt", key="local_wt")
@@ -186,13 +190,17 @@ class PlanDataTable(DataTable):
         else:
             wt_cell = "-"
 
-        # Format learn cell - colorize if clickable
-        learn_cell: str | Text = row.learn_display
-        if row.learn_plan_issue is not None or row.learn_plan_pr is not None:
-            learn_cell = Text(row.learn_display, style="cyan underline")
+        # Format learn cell - use icon-only for table, colorize if clickable
+        learn_cell: str | Text = row.learn_display_icon
+        if (
+            row.learn_plan_issue is not None
+            or row.learn_plan_pr is not None
+            or row.learn_run_url is not None
+        ):
+            learn_cell = Text(row.learn_display_icon, style="cyan underline")
 
         # Build values list based on columns
-        values: list[str | Text] = [plan_cell, row.title, learn_cell]
+        values: list[str | Text] = [plan_cell, row.title]
         if self._plan_filters.show_prs:
             # Strip Rich markup and colorize if clickable
             pr_display = _strip_rich_markup(row.pr_display)
@@ -200,7 +208,9 @@ class PlanDataTable(DataTable):
                 pr_display = Text(pr_display, style="cyan underline")
             checks_display = _strip_rich_markup(row.checks_display)
             comments_display = _strip_rich_markup(row.comments_display)
-            values.extend([pr_display, checks_display, comments_display])
+            values.extend([pr_display, checks_display, comments_display, learn_cell])
+        else:
+            values.append(learn_cell)
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)
@@ -255,11 +265,13 @@ class PlanDataTable(DataTable):
                 event.stop()
                 return
 
-        # Check learn column - post event if learn plan issue or PR exists
+        # Check learn column - post event if learn plan issue, PR, or run URL exists
         if self._learn_column_index is not None and col_index == self._learn_column_index:
             row = self._rows[row_index] if row_index < len(self._rows) else None
             if row is not None and (
-                row.learn_plan_issue is not None or row.learn_plan_pr is not None
+                row.learn_plan_issue is not None
+                or row.learn_plan_pr is not None
+                or row.learn_run_url is not None
             ):
                 self.post_message(self.LearnClicked(row_index))
                 event.prevent_default()

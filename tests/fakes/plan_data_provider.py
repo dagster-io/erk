@@ -176,6 +176,7 @@ def make_plan_row(
     learn_status: str | None = None,
     learn_plan_issue: int | None = None,
     learn_plan_pr: int | None = None,
+    learn_run_url: str | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -201,6 +202,7 @@ def make_plan_row(
         learn_status: Learn workflow status ("pending", "completed_with_plan", etc.)
         learn_plan_issue: Issue number of generated learn plan
         learn_plan_pr: PR number that implemented the learn plan
+        learn_run_url: URL to GitHub Actions workflow run (for pending status)
 
     Returns:
         PlanRowData populated with test data
@@ -208,19 +210,25 @@ def make_plan_row(
     if issue_url is None:
         issue_url = f"https://github.com/test/repo/issues/{issue_number}"
 
-    # Compute learn_display based on learn fields
+    # Compute learn_display (full text) and learn_display_icon (icon-only)
     if learn_status is None or learn_status == "not_started":
-        learn_display = "-"
+        learn_display = "- not started"
+        learn_display_icon = "-"
     elif learn_status == "pending":
-        learn_display = "⟳"
+        learn_display = "⟳ in progress"
+        learn_display_icon = "⟳"
     elif learn_status == "completed_no_plan":
-        learn_display = "∅"
+        learn_display = "∅ no insights"
+        learn_display_icon = "∅"
     elif learn_status == "completed_with_plan" and learn_plan_issue is not None:
         learn_display = f"#{learn_plan_issue}"
+        learn_display_icon = f"#{learn_plan_issue}"
     elif learn_status == "plan_completed" and learn_plan_pr is not None:
         learn_display = f"✓ #{learn_plan_pr}"
+        learn_display_icon = f"✓ #{learn_plan_pr}"
     else:
-        learn_display = "-"
+        learn_display = "- not started"
+        learn_display_icon = "-"
 
     computed_pr_display = "-"
     if pr_number is not None:
@@ -275,5 +283,7 @@ def make_plan_row(
         learn_status=learn_status,
         learn_plan_issue=learn_plan_issue,
         learn_plan_pr=learn_plan_pr,
+        learn_run_url=learn_run_url,
         learn_display=learn_display,
+        learn_display_icon=learn_display_icon,
     )

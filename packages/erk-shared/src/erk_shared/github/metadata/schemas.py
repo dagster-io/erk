@@ -333,6 +333,7 @@ PlanHeaderFieldName = Literal[
     "last_learn_session",
     "last_learn_at",
     "learn_status",
+    "learn_run_id",
     "last_session_gist_url",
     "last_session_gist_id",
     "last_session_id",
@@ -369,6 +370,7 @@ CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
 LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
 LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
 LEARN_STATUS: Literal["learn_status"] = "learn_status"
+LEARN_RUN_ID: Literal["learn_run_id"] = "learn_run_id"
 
 # Session gist fields (unified for local and remote)
 LAST_SESSION_GIST_URL: Literal["last_session_gist_url"] = "last_session_gist_url"
@@ -388,6 +390,7 @@ LearnStatusValue = Literal[
     "pending",
     "completed_no_plan",
     "completed_with_plan",
+    "pending_review",
     "plan_completed",
 ]
 """Valid values for the learn_status plan header field.
@@ -397,6 +400,7 @@ Status progression:
 - pending: Learn workflow is in progress
 - completed_no_plan: Learn completed, no plan was needed/created
 - completed_with_plan: Learn completed and created a plan issue
+- pending_review: Documentation PR created directly, awaiting review
 - plan_completed: The learn plan was implemented and landed
 """
 
@@ -468,6 +472,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             LAST_LEARN_SESSION,
             LAST_LEARN_AT,
             LEARN_STATUS,
+            LEARN_RUN_ID,
             LAST_SESSION_GIST_URL,
             LAST_SESSION_GIST_ID,
             LAST_SESSION_ID,
@@ -624,12 +629,20 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 "pending",
                 "completed_no_plan",
                 "completed_with_plan",
+                "pending_review",
                 "plan_completed",
             }
             if data[LEARN_STATUS] not in valid_statuses:
                 status_value = data[LEARN_STATUS]
                 valid_list = ", ".join(sorted(valid_statuses))
                 raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
+
+        # Validate optional learn_run_id field
+        if LEARN_RUN_ID in data and data[LEARN_RUN_ID] is not None:
+            if not isinstance(data[LEARN_RUN_ID], str):
+                raise ValueError("learn_run_id must be a string or null")
+            if len(data[LEARN_RUN_ID]) == 0:
+                raise ValueError("learn_run_id must not be empty when provided")
 
         # Validate optional last_session_gist_url field
         if LAST_SESSION_GIST_URL in data and data[LAST_SESSION_GIST_URL] is not None:

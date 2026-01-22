@@ -46,6 +46,7 @@ from erk_shared.github.metadata.schemas import (
     LAST_SESSION_SOURCE,
     LEARN_PLAN_ISSUE,
     LEARN_PLAN_PR,
+    LEARN_RUN_ID,
     LEARN_STATUS,
     LEARNED_FROM_ISSUE,
     OBJECTIVE_ISSUE,
@@ -995,16 +996,34 @@ def extract_plan_header_learn_status(issue_body: str) -> LearnStatusValue | None
     return value
 
 
+def extract_plan_header_learn_run_id(issue_body: str) -> str | None:
+    """Extract learn_run_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        Workflow run ID for pending learn workflow if found, None otherwise
+    """
+    block = find_metadata_block(issue_body, "plan-header")
+    if block is None:
+        return None
+
+    return block.data.get(LEARN_RUN_ID)
+
+
 def update_plan_header_learn_status(
     *,
     issue_body: str,
     learn_status: LearnStatusValue,
+    learn_run_id: str | None = None,
 ) -> str:
     """Update learn_status field in plan-header metadata block.
 
     Args:
         issue_body: Current issue body containing plan-header block
         learn_status: Learning workflow status (see LearnStatusValue for valid values)
+        learn_run_id: Optional workflow run ID (set when status is "pending")
 
     Returns:
         Updated issue body with new learn_status field
@@ -1020,6 +1039,8 @@ def update_plan_header_learn_status(
     # Update learn_status field
     updated_data = dict(block.data)
     updated_data[LEARN_STATUS] = learn_status
+    if learn_run_id is not None:
+        updated_data[LEARN_RUN_ID] = learn_run_id
 
     # Validate updated data
     schema = PlanHeaderSchema()
@@ -1214,17 +1235,20 @@ def update_plan_header_learn_result(
     issue_body: str,
     learn_status: LearnStatusValue,
     learn_plan_issue: int | None,
+    learn_plan_pr: int | None,
 ) -> str:
-    """Update learn_status and optionally learn_plan_issue atomically.
+    """Update learn_status and optionally learn_plan_issue/learn_plan_pr atomically.
 
     This is called when learn workflow completes to record the result:
     - "completed_no_plan": Learn completed but no plan was needed
     - "completed_with_plan": Learn completed and created a plan (learn_plan_issue set)
+    - "pending_review": Documentation PR created directly (learn_plan_pr set)
 
     Args:
         issue_body: Current issue body containing plan-header block
         learn_status: New learn status value
         learn_plan_issue: Issue number of created plan (for completed_with_plan)
+        learn_plan_pr: PR number of documentation PR (for pending_review)
 
     Returns:
         Updated issue body with new fields
@@ -1242,6 +1266,8 @@ def update_plan_header_learn_result(
     updated_data[LEARN_STATUS] = learn_status
     if learn_plan_issue is not None:
         updated_data[LEARN_PLAN_ISSUE] = learn_plan_issue
+    if learn_plan_pr is not None:
+        updated_data[LEARN_PLAN_PR] = learn_plan_pr
 
     # Validate updated data
     schema = PlanHeaderSchema()
