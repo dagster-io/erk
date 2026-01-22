@@ -53,6 +53,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using gh issue edit in command documentation** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. Use `erk exec update-issue-body` instead. `gh issue edit` uses GraphQL which has separate (often exhausted) rate limits.
 
+**CRITICAL: Before using gh pr view --json merged** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+
 **CRITICAL: Before passing variables to gh api graphql as JSON blob** → Read [GitHub GraphQL API Patterns](architecture/github-graphql.md) first. Variables must be passed individually with -f (strings) and -F (typed). The syntax `-f variables={...}` does NOT work.
 
 **CRITICAL: Before passing array or object variables to gh api graphql with -F and json.dumps()** → Read [GitHub GraphQL API Patterns](architecture/github-graphql.md) first. Arrays and objects require special gh syntax: arrays use -f key[]=value1 -f key[]=value2, objects use -f key[subkey]=value. Using -F key=[...] or -F key={...} passes them as literal strings, not typed values.
@@ -83,11 +85,17 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before adding a function with 5+ parameters** → Read [Code Conventions](conventions.md) first. Load `dignified-python` skill first. Use keyword-only arguments (add `*` after first param). Exception: ABC/Protocol method signatures and Click command callbacks.
 
+**CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
+
 **CRITICAL: Before manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](planning/lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+
+**CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](planning/lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
 
 **CRITICAL: Before writing to /tmp/** → Read [Scratch Storage](planning/scratch-storage.md) first. AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/.
 
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
+
+**CRITICAL: Before analyzing sessions larger than 100k characters** → Read [Scratch Storage](planning/scratch-storage.md) first. Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -> 67k chars). Critical for fitting large sessions in agent context windows.
 
 **CRITICAL: Before checking entry['type'] == 'tool_result' in Claude session JSONL** → Read [Claude Code JSONL Schema Reference](sessions/jsonl-schema-reference.md) first. tool_results are content blocks INSIDE user entries, NOT top-level entry types. Check message.content[].type == 'tool_result' within user entries instead. Load session-inspector skill for correct schema.
 

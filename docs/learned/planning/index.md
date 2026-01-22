@@ -9,4 +9,5 @@
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[scratch-storage.md](scratch-storage.md)** — writing temp files for AI workflows, passing files between processes, understanding scratch directory location
+- **[workflow-markers.md](workflow-markers.md)** — building multi-step workflows that need state persistence, using erk exec marker commands, implementing objective-to-plan workflows
 - **[workflow.md](workflow.md)** — using .impl/ folders, understanding plan file structure, implementing plans

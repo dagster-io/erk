@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "manually creating an erk-plan issue with gh issue create"
     warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+  - action: "saving a plan with --objective-issue flag"
+    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
 ---
 
 # Plan Lifecycle
@@ -367,6 +369,21 @@ steps:
 ```
 
 Progress tracking is done via the TodoWrite tool in the Claude Code session.
+
+### Detecting Queued vs Implemented Plans
+
+A PR associated with a plan may exist but not contain the actual implementation:
+
+- **Queued Plan**: PR contains only `.worker-impl/` folder with plan files
+- **Implemented Plan**: PR contains actual source code changes
+
+To verify implementation status:
+
+1. Check if PR diff includes changes outside `.worker-impl/`
+2. Use `gh pr diff <number>` and look for actual implementation files
+3. Don't rely solely on PR state (OPEN/MERGED) - a PR can be open with only plan files
+
+This pattern was discovered when verifying prerequisite PR #5577: the PR existed and was open, but only contained `.worker-impl/` plan files, not the actual PlanSynthesizer agent.
 
 ---
 

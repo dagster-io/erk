@@ -5,6 +5,9 @@ read_when:
   - "confused about domain-specific terms"
   - "working with worktrees, plans, or stacks"
   - "working with objectives or turns"
+tripwires:
+  - action: "parsing objective roadmap PR column status"
+    warning: "PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention."
 ---
 
 # Erk Glossary
