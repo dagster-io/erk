@@ -296,31 +296,40 @@ cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-chec
 EOF
 ```
 
-#### Synthesize Agent Findings
+#### Analyze Documentation Gaps
 
-Combine agent outputs to build the documentation gap inventory for Step 4.
+After writing the three parallel agent results to scratch storage, launch the gap identifier agent to synthesize findings:
 
-Use structured output from agents to populate the mandatory table. The agents have already:
+```
+Task(
+  subagent_type: "general-purpose",
+  run_in_background: false,  # Blocking - we need the result
+  description: "Identify documentation gaps",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/documentation-gap-identifier.md`
 
-- Categorized patterns and insights
-- Identified documentation opportunities
-- Suggested tripwire candidates
-- **Checked for existing documentation and contradictions** (existing-docs-checker)
+    Input:
+    - session_analysis_paths: [list of session-*.md files in .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/]
+    - diff_analysis_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md
+    - existing_docs_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md
+    - context: <plan title>
+)
+```
 
-**Merge existing-docs-checker findings:**
+Write the agent's output to scratch storage:
 
-1. Cross-reference documentation suggestions from session-analyzer and code-diff-analyzer against existing-docs-checker results
-2. For each suggested doc item, check if existing-docs-checker found:
-   - **ALREADY_DOCUMENTED**: Skip this item, note existing doc location
-   - **PARTIAL_OVERLAP**: Consider updating existing doc instead of creating new
-   - **NEW_TOPIC**: Proceed with new documentation
-3. Add "Duplicate Warnings" from existing-docs-checker to Step 4 analysis
-4. Review "Contradiction Warnings" from existing-docs-checker:
-   - **HIGH severity**: Flag for immediate resolution before creating new docs
-   - **MEDIUM/LOW severity**: Note in learn plan for future review
-   - If new insight contradicts existing tripwire, investigate before proceeding
+```bash
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md << 'EOF'
+<agent output>
+EOF
+```
 
-Review agent outputs and merge into a cohesive analysis.
+The gap-analysis.md file will contain:
+
+- Prioritized documentation gaps with rationale
+- Items already documented (to skip)
+- Contradiction warnings requiring resolution
+- Partial overlap recommendations
 
 #### Deep Analysis (Manual Fallback)
 
@@ -357,7 +366,23 @@ Read each file and mine them thoroughly.
 
 ### Step 4: Identify Documentation Gaps
 
-Based on session analysis and your Step 2 inventory, identify documentation that would help future agents.
+Read the gap analysis from `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md`.
+
+The DocumentationGapIdentifier agent has already:
+
+- Cross-referenced suggestions against existing documentation
+- Classified items as ALREADY_DOCUMENTED, PARTIAL_OVERLAP, or NEW_TOPIC
+- Prioritized gaps with rationale
+- Flagged contradictions requiring resolution
+
+Use the "Prioritized Documentation Gaps" table as the primary input for this step. The gap-analysis.md file provides:
+
+- **What to document** (Topic column)
+- **Where to put it** (Location column)
+- **Why it's needed** (Rationale column)
+- **Original source** (Source column - which agent identified it)
+
+Supplement with the additional analysis below for items not covered by the gap identifier.
 
 #### Learning Gaps
 
