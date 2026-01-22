@@ -18,6 +18,9 @@ from erk.cli.commands.exec.scripts.capture_session_info import (
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+from erk.cli.commands.exec.scripts.close_issue_with_comment import (
+    close_issue_with_comment,
+)
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
 )
@@ -48,6 +51,7 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
 )
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
@@ -143,6 +147,7 @@ exec_group.add_command(add_reaction_to_comment, name="add-reaction-to-comment")
 exec_group.add_command(add_remote_execution_note, name="add-remote-execution-note")
 exec_group.add_command(capture_session_info, name="capture-session-info")
 exec_group.add_command(check_impl, name="check-impl")
+exec_group.add_command(close_issue_with_comment, name="close-issue-with-comment")
 exec_group.add_command(create_issue_from_session, name="create-issue-from-session")
 exec_group.add_command(create_plan_from_context, name="create-plan-from-context")
 exec_group.add_command(create_worker_impl_from_issue, name="create-worker-impl-from-issue")
@@ -162,6 +167,7 @@ exec_group.add_command(get_issue_body, name="get-issue-body")
 exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
 exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
+exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(impl_init, name="impl-init")

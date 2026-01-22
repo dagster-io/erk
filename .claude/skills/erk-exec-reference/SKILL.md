@@ -21,6 +21,7 @@ Quick reference for all `erk exec` subcommands.
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                        |
 | `check-impl`                      | Check .impl/ folder structure and validate prerequisites.                 |
 | `ci-update-pr-body`               | Update PR body with AI-generated summary and footer.                      |
+| `close-issue-with-comment`        | Close an issue with a comment.                                            |
 | `create-issue-from-session`       | Extract plan from Claude session and create GitHub issue.                 |
 | `create-plan-from-context`        | Create GitHub issue from plan content with erk-plan label.                |
 | `create-worker-impl-from-issue`   | Create .worker-impl/ folder from GitHub issue with plan content.          |
@@ -39,6 +40,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-plan-metadata`               | Extract a metadata field from a plan issue's plan-header block.           |
 | `get-plans-for-objective`         | Fetch erk-plan issues linked to an objective.                             |
 | `get-pr-body-footer`              | Generate PR body footer with checkout command.                            |
+| `get-pr-commits`                  | Get commits for a PR using REST API (avoids GraphQL rate limits).         |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                 |
 | `get-pr-for-plan`                 | Get PR details for a plan issue.                                          |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                     |
@@ -149,6 +151,24 @@ Update PR body with AI-generated summary and footer.
 | `--issue-number` | INTEGER | Yes      | Sentinel.UNSET | Issue number to close on merge |
 | `--run-id`       | TEXT    | No       | -              | Optional workflow run ID       |
 | `--run-url`      | TEXT    | No       | -              | Optional workflow run URL      |
+
+### close-issue-with-comment
+
+Close an issue with a comment.
+
+**Usage:** `erk exec close-issue-with-comment` <issue_number>
+
+**Arguments:**
+
+| Name           | Required | Description |
+| -------------- | -------- | ----------- |
+| `ISSUE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag        | Type | Required | Default        | Description                   |
+| ----------- | ---- | -------- | -------------- | ----------------------------- |
+| `--comment` | TEXT | Yes      | Sentinel.UNSET | Comment to add before closing |
 
 ### create-issue-from-session
 
@@ -360,6 +380,18 @@ Generate PR body footer with checkout command.
 | `--pr-number`    | INTEGER | Yes      | Sentinel.UNSET | PR number for checkout command                |
 | `--issue-number` | INTEGER | No       | Sentinel.UNSET | Issue number to close                         |
 | `--plans-repo`   | TEXT    | No       | Sentinel.UNSET | Target repo in owner/repo format (cross-repo) |
+
+### get-pr-commits
+
+Get commits for a PR using REST API (avoids GraphQL rate limits).
+
+**Usage:** `erk exec get-pr-commits` <pr_number>
+
+**Arguments:**
+
+| Name        | Required | Description |
+| ----------- | -------- | ----------- |
+| `PR_NUMBER` | Yes      | -           |
 
 ### get-pr-discussion-comments
 
