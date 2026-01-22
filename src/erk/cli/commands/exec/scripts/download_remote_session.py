@@ -53,8 +53,8 @@ def _normalize_gist_url(gist_url: str) -> str:
 
     # Convert webpage URL to raw URL
     if "gist.github.com" in gist_url:
-        raw_url = gist_url.replace("gist.github.com", "gist.githubusercontent.com")
-        return raw_url.rstrip("/") + "/raw/session.jsonl"
+        normalized = gist_url.replace("gist.github.com", "gist.githubusercontent.com").rstrip("/")
+        return f"{normalized}/raw/session.jsonl"
 
     # Unknown format, return as-is and let urlopen handle it
     return gist_url
