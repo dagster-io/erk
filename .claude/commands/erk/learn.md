@@ -108,7 +108,9 @@ erk exec get-pr-discussion-comments --pr <pr-number>
 
 #### Check Existing Documentation
 
-Scan for existing documentation to avoid suggesting duplicates:
+**Note:** This manual check provides a quick overview. The **existing-docs-checker agent** (launched in parallel below) performs a thorough search across all documentation directories.
+
+Quick scan for existing documentation:
 
 ```bash
 ls -la docs/learned/ 2>/dev/null || echo "No docs/learned/ directory"
@@ -236,6 +238,31 @@ Task(
 )
 ```
 
+**Agent 3: Existing Documentation Check**
+
+Proactively search for existing documentation to prevent duplicates and detect contradictions:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  run_in_background: true,
+  description: "Check existing docs",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/existing-docs-checker.md`
+
+    Input:
+    - plan_title: <title from plan issue>
+    - pr_title: <PR title if available, or empty string>
+    - search_hints: <key terms extracted from plan title, comma-separated>
+)
+```
+
+Extract search hints by:
+
+1. Taking significant nouns/concepts from the plan title
+2. Removing common words (the, a, an, to, for, with, add, update, fix, etc.)
+3. Example: "Add parallel agent orchestration" → "parallel, agent, orchestration"
+
 #### Collect Agent Results
 
 Use TaskOutput to retrieve findings from each agent:
@@ -262,6 +289,11 @@ EOF
 cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md << 'EOF'
 <agent output>
 EOF
+
+# Write existing docs check results
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md << 'EOF'
+<agent output>
+EOF
 ```
 
 #### Synthesize Agent Findings
@@ -273,6 +305,20 @@ Use structured output from agents to populate the mandatory table. The agents ha
 - Categorized patterns and insights
 - Identified documentation opportunities
 - Suggested tripwire candidates
+- **Checked for existing documentation and contradictions** (existing-docs-checker)
+
+**Merge existing-docs-checker findings:**
+
+1. Cross-reference documentation suggestions from session-analyzer and code-diff-analyzer against existing-docs-checker results
+2. For each suggested doc item, check if existing-docs-checker found:
+   - **ALREADY_DOCUMENTED**: Skip this item, note existing doc location
+   - **PARTIAL_OVERLAP**: Consider updating existing doc instead of creating new
+   - **NEW_TOPIC**: Proceed with new documentation
+3. Add "Duplicate Warnings" from existing-docs-checker to Step 4 analysis
+4. Review "Contradiction Warnings" from existing-docs-checker:
+   - **HIGH severity**: Flag for immediate resolution before creating new docs
+   - **MEDIUM/LOW severity**: Note in learn plan for future review
+   - If new insight contradicts existing tripwire, investigate before proceeding
 
 Review agent outputs and merge into a cohesive analysis.
 
