@@ -599,21 +599,21 @@ def test_check_learn_status_null_no_sessions_triggers_async_in_non_interactive(
 
     monkeypatch.setattr(land_cmd, "find_sessions_for_plan", mock_find_sessions)
 
-    # Mock subprocess.run to simulate successful async learn trigger
-    def mock_subprocess_run(cmd, **kwargs):
-        json_out = (
-            '{"success": true, "issue_number": 123, '
-            '"workflow_triggered": true, "run_id": "test-run-id"}'
-        )
-        result = subprocess.CompletedProcess(
-            args=cmd,
-            returncode=0,
-            stdout=json_out,
-            stderr="",
-        )
-        return result
+    # Mock subprocess.Popen to simulate successful async learn trigger
+    # The _trigger_async_learn function uses Popen to stream stderr in real-time
+    class MockPopen:
+        def __init__(self, cmd, **kwargs):
+            self.args = cmd
+            self.returncode = 0
+            self._stdout = (
+                '{"success": true, "issue_number": 123, '
+                '"workflow_triggered": true, "run_id": "test-run-id"}'
+            )
 
-    monkeypatch.setattr(subprocess, "run", mock_subprocess_run)
+        def communicate(self):
+            return self._stdout, None
+
+    monkeypatch.setattr(subprocess, "Popen", MockPopen)
 
     # Create non-interactive console
     fake_console = FakeConsole(

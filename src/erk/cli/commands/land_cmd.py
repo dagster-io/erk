@@ -266,26 +266,28 @@ def _trigger_async_learn(
     user_output(f"Triggering async learn for plan #{plan_issue_number}...")
 
     try:
-        result = subprocess.run(
+        # Stream stderr (progress) in real-time while capturing stdout (JSON result)
+        process = subprocess.Popen(
             ["erk", "exec", "trigger-async-learn", str(plan_issue_number)],
-            capture_output=True,
+            stdout=subprocess.PIPE,
+            stderr=None,  # Inherit stderr - progress streams through
             text=True,
-            check=False,  # LBYL: check returncode explicitly for graceful degradation
             cwd=ctx.cwd,
         )
+        stdout, _ = process.communicate()
     except FileNotFoundError:
         msg = "Could not trigger async learn: erk command not found"
         user_output(click.style("⚠ ", fg="yellow") + msg)
         return
 
-    if result.returncode != 0:
-        error_msg = _parse_trigger_error(result.stdout, result.stderr)
+    if process.returncode != 0:
+        error_msg = _parse_trigger_error(stdout, "")
         msg = f"Could not trigger async learn: {error_msg}"
         user_output(click.style("⚠ ", fg="yellow") + msg)
         return
 
     # Parse output JSON to get workflow_url
-    output = json.loads(result.stdout)
+    output = json.loads(stdout)
     if output.get("success"):
         workflow_url = output.get("workflow_url", "")
         if workflow_url:
