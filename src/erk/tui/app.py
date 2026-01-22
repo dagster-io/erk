@@ -585,6 +585,11 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
+        elif command_id == "copy_replan":
+            cmd = f"claude /erk:replan {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
         elif command_id == "fix_conflicts_remote":
             if row.pr_number:
                 executor = RealCommandExecutor(
