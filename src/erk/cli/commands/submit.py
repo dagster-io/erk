@@ -388,6 +388,14 @@ def _create_branch_and_pr(
     # Add extraction skip label if this is a learn plan
     if validated.is_learn_origin:
         ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
+        # FUTURE ENHANCEMENT: When a learn plan issue gets a PR, update the parent
+        # plan's learn_status from "completed_with_plan" to track the PR number.
+        # Currently, the parent only gets updated when the learn plan's PR lands
+        # (in land_cmd._update_parent_learn_status_if_learn_plan). Adding an
+        # intermediate state here would let the TUI show the PR number (e.g.,
+        # "🚧 #5514") instead of the learn plan issue number (e.g., "#5508")
+        # while the PR is still in review.
+        # See: LearnStatusValue in erk_shared/github/metadata/schemas.py
 
     # Close any orphaned draft PRs for this issue
     closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
@@ -500,6 +508,8 @@ def _submit_single_issue(
             # Add extraction skip label if this is a learn plan
             if validated.is_learn_origin:
                 ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
+                # FUTURE ENHANCEMENT: See comment in _create_branch_and_pr for
+                # updating parent plan's learn_status when learn plan gets a PR.
 
             # Close any orphaned draft PRs
             closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)

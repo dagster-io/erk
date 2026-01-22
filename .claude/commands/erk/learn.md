@@ -198,7 +198,87 @@ echo "Gist created: $gist_url"
 
 Display the gist URL to the user and save it for the plan issue.
 
-#### Deep Analysis
+#### Launch Parallel Analysis Agents
+
+After preprocessing, launch analysis agents in parallel to extract insights concurrently.
+
+**Agent 1: Session Analysis** (for each preprocessed session)
+
+For each XML file in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  run_in_background: true,
+  description: "Analyze session <session-id>",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/session-analyzer.md`
+
+    Input:
+    - session_xml_path: .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/<filename>.xml
+    - context: <brief description from plan title>
+)
+```
+
+**Agent 2: Code Diff Analysis** (if PR exists)
+
+```
+Task(
+  subagent_type: "general-purpose",
+  run_in_background: true,
+  description: "Analyze PR diff",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/code-diff-analyzer.md`
+
+    Input:
+    - pr_number: <pr-number>
+    - issue_number: <issue-number>
+)
+```
+
+#### Collect Agent Results
+
+Use TaskOutput to retrieve findings from each agent:
+
+```
+TaskOutput(task_id: <agent-task-id>, block: true)
+```
+
+Collect all results before proceeding.
+
+#### Write Agent Results to Scratch Storage
+
+Save each agent's output to scratch storage for reference:
+
+```bash
+mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
+
+# Write session analysis results
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md << 'EOF'
+<agent output>
+EOF
+
+# Write diff analysis results
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md << 'EOF'
+<agent output>
+EOF
+```
+
+#### Synthesize Agent Findings
+
+Combine agent outputs to build the documentation gap inventory for Step 4.
+
+Use structured output from agents to populate the mandatory table. The agents have already:
+
+- Categorized patterns and insights
+- Identified documentation opportunities
+- Suggested tripwire candidates
+
+Review agent outputs and merge into a cohesive analysis.
+
+#### Deep Analysis (Manual Fallback)
+
+If agents were not launched or failed, fall back to manual analysis.
 
 Read all preprocessed session files in the learn directory:
 
