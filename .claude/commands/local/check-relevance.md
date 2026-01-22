@@ -263,7 +263,7 @@ gh api repos/dagster-io/erk/issues/<NUMBER> -X PATCH -f state=closed
 **Add label:**
 
 ```bash
-gh issue edit <NUMBER> --add-label "<label>"
+gh api repos/dagster-io/erk/issues/<NUMBER>/labels -X POST -f "labels[]=<label>"
 ```
 
 **Create follow-up issue:**
