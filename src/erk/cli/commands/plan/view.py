@@ -50,18 +50,21 @@ def _format_value(value: object) -> str:
     return str(value)
 
 
-def _format_field(label: str, value: str, *, width: int = 12) -> str:
+def _format_field(label: str, value: str) -> str:
     """Format a field with dimmed label and consistent width.
+
+    Uses a fixed width of 12 characters for label alignment across all
+    plan view output fields.
 
     Args:
         label: The field label (e.g., "State", "ID")
         value: The value to display
-        width: Minimum width for the label column (default 12)
 
     Returns:
         Formatted string with styled label and value
     """
-    styled_label = click.style(f"{label}:".ljust(width), dim=True)
+    label_width = 12
+    styled_label = click.style(f"{label}:".ljust(label_width), dim=True)
     return f"{styled_label} {value}"
 
 
