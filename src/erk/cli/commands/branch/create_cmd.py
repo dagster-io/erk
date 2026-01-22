@@ -1,16 +1,20 @@
 """Branch create command - create a new branch with optional slot assignment."""
 
+import sys
+
 import click
 
 from erk.cli.activation import (
     activation_config_activate_only,
     activation_config_for_implement,
     print_activation_instructions,
+    render_activation_script,
     write_worktree_activate_script,
 )
 from erk.cli.commands.slot.common import allocate_slot_for_branch
 from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.impl_folder import create_impl_folder, save_issue_reference
@@ -22,7 +26,7 @@ from erk_shared.issue_workflow import (
 from erk_shared.output.output import user_output
 
 
-@click.command("create")
+@click.command("create", cls=CommandWithHiddenOptions)
 @click.argument("branch_name", metavar="BRANCH", required=False)
 @click.option(
     "--for-plan",
@@ -59,6 +63,7 @@ from erk_shared.output.output import user_output
     default=None,
     help="Use named codespace for isolated implementation",
 )
+@script_option
 @click.pass_obj
 def branch_create(
     ctx: ErkContext,
@@ -72,6 +77,7 @@ def branch_create(
     docker: bool,
     codespace: bool,
     codespace_name: str | None,
+    script: bool,
 ) -> None:
     """Create a NEW branch and optionally assign it to a pool slot.
 
@@ -197,10 +203,27 @@ def branch_create(
             setup.issue_title,
         )
 
+        # In script mode, output activation script path and exit
+        if script:
+            activation_script = render_activation_script(
+                worktree_path=slot_result.worktree_path,
+                target_subpath=None,
+                post_cd_commands=None,
+                final_message=f'echo "Prepared plan #{setup.issue_number} at $(pwd)"',
+                comment="erk prepare activation script",
+            )
+            result = ctx.script_writer.write_activation_script(
+                activation_script,
+                command_name="prepare",
+                comment=f"prepare {setup.issue_number}",
+            )
+            result.output_for_shell_integration()
+            sys.exit(0)
+
         user_output(f"Created .impl/ folder from issue #{setup.issue_number}")
 
         # Write activation script
-        script_path = write_worktree_activate_script(
+        activate_script_path = write_worktree_activate_script(
             worktree_path=slot_result.worktree_path,
             post_create_commands=None,
         )
@@ -225,7 +248,7 @@ def branch_create(
             )
 
         print_activation_instructions(
-            script_path,
+            activate_script_path,
             source_branch=None,
             force=False,
             config=config,

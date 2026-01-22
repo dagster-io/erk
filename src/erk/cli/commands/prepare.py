@@ -3,9 +3,10 @@
 import click
 
 from erk.cli.commands.branch.create_cmd import branch_create
+from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 
 
-@click.command("prepare")
+@click.command("prepare", cls=CommandWithHiddenOptions)
 @click.argument("plan", metavar="PLAN")
 @click.option("--no-slot", is_flag=True, help="Create branch without slot assignment")
 @click.option("-f", "--force", is_flag=True, help="Auto-unassign oldest branch if pool is full")
@@ -35,6 +36,7 @@ from erk.cli.commands.branch.create_cmd import branch_create
     default=None,
     help="Use named codespace for isolated implementation",
 )
+@script_option
 @click.pass_context
 def prepare(
     ctx: click.Context,
@@ -46,6 +48,7 @@ def prepare(
     docker: bool,
     codespace: bool,
     codespace_name: str | None,
+    script: bool,
 ) -> None:
     """Prepare a plan for execution by creating a worktree.
 
@@ -64,4 +67,5 @@ def prepare(
         docker=docker,
         codespace=codespace,
         codespace_name=codespace_name,
+        script=script,
     )

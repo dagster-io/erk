@@ -111,6 +111,13 @@ def get_all_commands() -> list[CommandDefinition]:
             is_available=lambda _: True,
         ),
         CommandDefinition(
+            id="copy_prepare_activate",
+            name="Copy: source prepare && implement",
+            description="Copy one-liner to prepare worktree and start implementation",
+            shortcut="4",
+            is_available=lambda _: True,
+        ),
+        CommandDefinition(
             id="copy_submit",
             name="Copy: erk plan submit",
             description="Copy submit command",

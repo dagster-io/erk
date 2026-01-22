@@ -48,6 +48,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("y", "copy_output_logs", "Copy Logs"),
         Binding("1", "copy_prepare", "Prepare"),
         Binding("2", "copy_prepare_dangerous", "Dangerous"),
+        Binding("4", "copy_prepare_activate", "Activate"),
         Binding("3", "copy_submit", "Submit"),
         Binding("5", "fix_conflicts_remote", "Fix Conflicts"),
     ]
@@ -335,6 +336,14 @@ class PlanDetailScreen(ModalScreen):
         cmd = f"erk prepare {self._row.issue_number} --dangerous"
         self._copy_and_notify(cmd)
 
+    def action_copy_prepare_activate(self) -> None:
+        """Copy one-liner to prepare worktree and start implementation."""
+        cmd = (
+            f'source "$(erk prepare {self._row.issue_number} --script)" '
+            f"&& erk implement --dangerous"
+        )
+        self._copy_and_notify(cmd)
+
     def action_copy_submit(self) -> None:
         """Copy submit command to clipboard."""
         cmd = f"erk plan submit {self._row.issue_number}"
@@ -618,6 +627,13 @@ class PlanDetailScreen(ModalScreen):
 
         elif command_id == "copy_prepare_dangerous":
             cmd = f"erk prepare {row.issue_number} --dangerous"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
+        elif command_id == "copy_prepare_activate":
+            cmd = (
+                f'source "$(erk prepare {row.issue_number} --script)" && erk implement --dangerous'
+            )
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}")
 
