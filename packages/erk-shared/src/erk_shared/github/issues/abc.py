@@ -38,6 +38,22 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
+    def issue_exists(self, repo_root: Path, number: int) -> bool:
+        """Check if an issue exists (read-only).
+
+        Args:
+            repo_root: Repository root directory
+            number: Issue number to check
+
+        Returns:
+            True if issue exists, False otherwise
+
+        Raises:
+            RuntimeError: If gh CLI fails (not installed, not authenticated)
+        """
+        ...
+
+    @abstractmethod
     def get_issue(self, repo_root: Path, number: int) -> IssueInfo:
         """Fetch issue data by number.
 

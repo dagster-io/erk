@@ -51,7 +51,11 @@ from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.gt.cli import render_events
 from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
 from erk_shared.gateway.gt.types import LandPrError
-from erk_shared.github.metadata.plan_header import extract_plan_header_learn_status
+from erk_shared.github.metadata.plan_header import (
+    extract_plan_header_learn_status,
+    extract_plan_header_learned_from_issue,
+    update_plan_header_learn_plan_completed,
+)
 from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
@@ -107,8 +111,9 @@ def _check_learn_status_and_prompt(
     # Check learn_status from plan header metadata
     learn_status = extract_plan_header_learn_status(issue.body)
 
-    # Handle completed status - learn has already finished
-    if learn_status == "completed":
+    # Handle completed statuses - learn has already finished
+    completed_statuses = {"completed_no_plan", "completed_with_plan", "plan_completed"}
+    if learn_status in completed_statuses:
         user_output(
             click.style("✓", fg="green") + f" Learn completed for plan #{plan_issue_number}"
         )
@@ -121,7 +126,7 @@ def _check_learn_status_and_prompt(
         )
         return
 
-    # learn_status is null - fall through to check sessions
+    # learn_status is null or not_started - fall through to check sessions
 
     # Check for existing learn sessions (backward compatibility)
     sessions = find_sessions_for_plan(ctx.issues, repo_root, plan_issue_number)
@@ -283,6 +288,51 @@ def _parse_trigger_error(stdout: str, stderr: str) -> str:
         except json.JSONDecodeError:
             pass  # Fall through to return raw stderr/stdout
     return stderr or stdout or "unknown error"
+
+
+def _update_parent_learn_status_if_learn_plan(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    plan_issue_number: int,
+    pr_number: int,
+) -> None:
+    """Update parent plan's learn_status to plan_completed if this is a learn plan.
+
+    Learn plans have a 'learned_from_issue' field in their plan-header that points
+    to the parent plan they were generated from. When a learn plan is landed, we
+    update the parent plan to record:
+    - learn_status: "plan_completed"
+    - learn_plan_pr: the PR number that implemented the learn plan
+
+    Args:
+        ctx: ErkContext
+        repo_root: Repository root path
+        plan_issue_number: Issue number of the plan being landed
+        pr_number: PR number that merged this plan
+    """
+    # Check if plan issue exists before fetching
+    if not ctx.issues.issue_exists(repo_root, plan_issue_number):
+        return
+
+    issue = ctx.issues.get_issue(repo_root, plan_issue_number)
+    learned_from = extract_plan_header_learned_from_issue(issue.body)
+
+    if learned_from is None:
+        # Not a learn plan - nothing to update
+        return
+
+    # Check if parent issue exists before fetching
+    if not ctx.issues.issue_exists(repo_root, learned_from):
+        return
+
+    parent_issue = ctx.issues.get_issue(repo_root, learned_from)
+    updated_body = update_plan_header_learn_plan_completed(
+        issue_body=parent_issue.body,
+        learn_plan_pr=pr_number,
+    )
+    ctx.issues.update_issue_body(repo_root, learned_from, updated_body)
+    user_output(f"Updated learn status on parent plan #{learned_from}")
 
 
 def _ensure_branch_not_checked_out(
@@ -934,6 +984,16 @@ def _execute_land(
             pr_number=merged_pr_number,
             branch=branch,
             force=True,  # Skip confirmation in execute mode
+        )
+
+    # Step 2.5: Update parent plan if this is a learn plan
+    plan_issue_number = extract_leading_issue_number(branch)
+    if plan_issue_number is not None:
+        _update_parent_learn_status_if_learn_plan(
+            ctx,
+            repo_root=main_repo_root,
+            plan_issue_number=plan_issue_number,
+            pr_number=merged_pr_number,
         )
 
     # Step 3: Cleanup (delete branch, unassign slot)

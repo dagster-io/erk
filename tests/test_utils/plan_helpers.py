@@ -96,6 +96,9 @@ def format_plan_header_body_for_test(
     last_learn_session: str | None = None,
     last_learn_at: str | None = None,
     learn_status: str | None = None,
+    learn_plan_issue: int | None = None,
+    learn_plan_pr: int | None = None,
+    learned_from_issue: int | None = None,
 ) -> str:
     """Create plan header body for testing with sensible defaults."""
     return format_plan_header_body(
@@ -120,4 +123,7 @@ def format_plan_header_body_for_test(
         last_learn_session=last_learn_session,
         last_learn_at=last_learn_at,
         learn_status=learn_status,
+        learn_plan_issue=learn_plan_issue,
+        learn_plan_pr=learn_plan_pr,
+        learned_from_issue=learned_from_issue,
     )
