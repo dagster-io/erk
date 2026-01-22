@@ -21,6 +21,10 @@ class IssueNextSteps:
     def submit(self) -> str:
         return f"erk plan submit {self.issue_number}"
 
+    @property
+    def prepare_and_implement(self) -> str:
+        return f'source "$(erk prepare {self.issue_number} --script)" && erk implement --dangerous'
+
 
 # Slash commands (static, don't need issue number)
 SUBMIT_SLASH_COMMAND = "/erk:plan-submit"
@@ -40,6 +44,7 @@ In Claude Code:
 
 OR exit Claude Code first, then run one of:
   Local: {s.prepare}
+  Prepare+Implement: {s.prepare_and_implement}
   Submit to Queue: {s.submit}"""
 
 
