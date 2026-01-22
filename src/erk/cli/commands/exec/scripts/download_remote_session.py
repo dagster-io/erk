@@ -53,13 +53,7 @@ def _normalize_gist_url(gist_url: str) -> str:
 
     # Convert webpage URL to raw URL
     if "gist.github.com" in gist_url:
-        # Replace domain
-        raw_url = gist_url.replace("gist.github.com", "gist.githubusercontent.com")
-        # Append /raw/session.jsonl (standard filename used by upload-session)
-        # Handle trailing slashes
-        raw_url = raw_url.rstrip("/")
-        raw_url = f"{raw_url}/raw/session.jsonl"
-        return raw_url
+        return gist_url.replace("gist.github.com", "gist.githubusercontent.com").rstrip("/") + "/raw/session.jsonl"
 
     # Unknown format, return as-is and let urlopen handle it
     return gist_url
