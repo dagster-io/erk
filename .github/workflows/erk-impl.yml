@@ -240,6 +240,20 @@ jobs:
             --source remote \
             --issue-number "$ISSUE_NUMBER"
 
+      - name: Update plan header with remote impl info
+        if: always() && steps.session.outputs.session_id
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+          RUN_ID: ${{ github.run_id }}
+          SESSION_ID: ${{ steps.session.outputs.session_id }}
+        run: |
+          erk exec update-plan-remote-session \
+            --issue-number "$ISSUE_NUMBER" \
+            --run-id "$RUN_ID" \
+            --session-id "$SESSION_ID"
+
       - name: Validate implementation produced changes
         if: steps.implement.outputs.implementation_success == 'true'
         run: |
@@ -325,6 +339,16 @@ jobs:
           git commit --allow-empty -m "Trigger CI workflows"
           git push origin "$BRANCH_NAME"
           echo "CI workflows triggered via push event"
+
+      - name: Trigger async learning
+        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
+        run: |
+          echo "Triggering async learning for plan #$ISSUE_NUMBER..."
+          erk exec trigger-async-learn "$ISSUE_NUMBER" || echo "Learn trigger failed (non-blocking)"
 
       - name: Fail workflow if implementation failed
         if: steps.implement.outputs.implementation_success != 'true'
