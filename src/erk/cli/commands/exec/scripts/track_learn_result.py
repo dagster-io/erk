@@ -39,6 +39,7 @@ class TrackLearnResultSuccess:
     issue_number: int
     learn_status: str
     learn_plan_issue: int | None
+    learn_plan_pr: int | None
 
 
 @dataclass(frozen=True)
@@ -50,7 +51,11 @@ class TrackLearnResultError:
 
 
 # Valid status values for learn result
-VALID_RESULT_STATUSES: set[LearnStatusValue] = {"completed_no_plan", "completed_with_plan"}
+VALID_RESULT_STATUSES: set[LearnStatusValue] = {
+    "completed_no_plan",
+    "completed_with_plan",
+    "pending_review",
+}
 
 
 @click.command(name="track-learn-result")
@@ -63,13 +68,18 @@ VALID_RESULT_STATUSES: set[LearnStatusValue] = {"completed_no_plan", "completed_
 @click.option(
     "--status",
     required=True,
-    type=click.Choice(["completed_no_plan", "completed_with_plan"]),
+    type=click.Choice(["completed_no_plan", "completed_with_plan", "pending_review"]),
     help="Learn workflow result status",
 )
 @click.option(
     "--plan-issue",
     type=int,
     help="Learn plan issue number (required if status is completed_with_plan)",
+)
+@click.option(
+    "--plan-pr",
+    type=int,
+    help="Learn documentation PR number (required if status is pending_review)",
 )
 @click.pass_context
 def track_learn_result(
@@ -78,11 +88,13 @@ def track_learn_result(
     issue: int,
     status: str,
     plan_issue: int | None,
+    plan_pr: int | None,
 ) -> None:
     """Track learn workflow result on a plan issue.
 
     Updates the plan-header metadata block with the learn workflow result.
     If status is 'completed_with_plan', also records the learn_plan_issue.
+    If status is 'pending_review', also records the learn_plan_pr.
     """
     # Validate: completed_with_plan requires --plan-issue
     if status == "completed_with_plan" and plan_issue is None:
@@ -102,6 +114,33 @@ def track_learn_result(
         click.echo(json.dumps(asdict(error)))
         raise SystemExit(1)
 
+    # Validate: pending_review requires --plan-pr
+    if status == "pending_review" and plan_pr is None:
+        error = TrackLearnResultError(
+            success=False,
+            error="--plan-pr is required when status is 'pending_review'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)
+
+    # pending_review should not have --plan-issue
+    if status == "pending_review" and plan_issue is not None:
+        error = TrackLearnResultError(
+            success=False,
+            error="--plan-issue should not be provided when status is 'pending_review'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)
+
+    # completed_with_plan should not have --plan-pr
+    if status == "completed_with_plan" and plan_pr is not None:
+        error = TrackLearnResultError(
+            success=False,
+            error="--plan-pr should not be provided when status is 'completed_with_plan'",
+        )
+        click.echo(json.dumps(asdict(error)))
+        raise SystemExit(1)
+
     # Get dependencies from context
     github_issues = require_issues(ctx)
     repo_root = require_repo_root(ctx)
@@ -117,6 +156,7 @@ def track_learn_result(
         issue_body=issue_info.body,
         learn_status=learn_status,
         learn_plan_issue=plan_issue,
+        learn_plan_pr=plan_pr,
     )
 
     # Update issue
@@ -127,6 +167,7 @@ def track_learn_result(
         issue_number=issue,
         learn_status=status,
         learn_plan_issue=plan_issue,
+        learn_plan_pr=plan_pr,
     )
 
     click.echo(json.dumps(asdict(result), indent=2))

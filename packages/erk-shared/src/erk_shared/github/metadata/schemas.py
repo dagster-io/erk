@@ -390,6 +390,7 @@ LearnStatusValue = Literal[
     "pending",
     "completed_no_plan",
     "completed_with_plan",
+    "pending_review",
     "plan_completed",
 ]
 """Valid values for the learn_status plan header field.
@@ -399,6 +400,7 @@ Status progression:
 - pending: Learn workflow is in progress
 - completed_no_plan: Learn completed, no plan was needed/created
 - completed_with_plan: Learn completed and created a plan issue
+- pending_review: Documentation PR created directly, awaiting review
 - plan_completed: The learn plan was implemented and landed
 """
 
@@ -627,6 +629,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 "pending",
                 "completed_no_plan",
                 "completed_with_plan",
+                "pending_review",
                 "plan_completed",
             }
             if data[LEARN_STATUS] not in valid_statuses:
