@@ -261,7 +261,9 @@ def resolve_issue_reference(
         issue_url = issue_ref.issue_url
         # If no URL stored but we can construct one
         if issue_url is None and repo_owner is not None and repo_name is not None:
-            issue_url = f"https://github.com/{repo_owner}/{repo_name}/issues/{issue_ref.issue_number}"
+            issue_url = (
+                f"https://github.com/{repo_owner}/{repo_name}/issues/{issue_ref.issue_number}"
+            )
         return ResolvedIssue(
             issue_number=issue_ref.issue_number,
             issue_url=issue_url,
