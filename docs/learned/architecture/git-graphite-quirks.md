@@ -10,6 +10,8 @@ read_when:
 tripwires:
   - action: "calling gt commands without --no-interactive flag"
     warning: "Always use `--no-interactive` with gt commands (gt sync, gt submit, gt restack, etc.). Without this flag, gt may prompt for user input and hang indefinitely. Note: `--force` does NOT prevent prompts - you must use `--no-interactive` separately."
+  - action: "calling graphite.track_branch() with a remote ref like origin/main"
+    warning: "Graphite's `gt track` only accepts local branch names, not remote refs. Use BranchManager.create_branch() which normalizes refs automatically, or strip `origin/` prefix before calling track_branch()."
 ---
 
 # Git and Graphite Edge Cases Catalog
@@ -188,6 +190,33 @@ gt restack --no-interactive
 - Various commands prompt when state is ambiguous
 
 **Implementation Reference**: This pattern is used throughout the Graphite gateway in `packages/erk-shared/src/erk_shared/gateway/graphite/real.py`.
+
+## Graphite track_branch Remote Ref Limitation
+
+**Surprising Behavior**: Graphite's `gt track --parent <branch>` command **only accepts local branch names** (e.g., `main`), not remote refs (e.g., `origin/main`). Git commands like `git branch` and `git checkout` accept both transparently, but Graphite will reject remote refs or create incorrect parent relationships.
+
+**Why It's Surprising**: Git and Graphite are often used together, and Git's flexibility with branch references creates an expectation that Graphite would also accept remote refs. The error messages from Graphite don't clearly indicate that the issue is the `origin/` prefix.
+
+**Solution**: The `BranchManager.create_branch()` method in `GraphiteBranchManager` normalizes branch names before calling `graphite.track_branch()`:
+
+```python
+def create_branch(
+    self,
+    repo_root: Path,
+    branch_name: str,
+    base_branch: str,
+) -> None:
+    self.git.create_branch(repo_root, branch_name, base_branch)
+    # Graphite's `gt track` only accepts local branch names, not remote refs
+    parent_for_graphite = base_branch.removeprefix("origin/")
+    self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
+```
+
+**Design Pattern**: Tool quirks should be absorbed at abstraction boundaries. Callers (like the submit command) don't need to know about Graphite's limitations—they can pass remote refs freely and trust `BranchManager` to handle normalization.
+
+**Anti-Pattern**: Calling `graphite.track_branch()` directly with user-provided branch names that might contain `origin/` prefix.
+
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
 
 ## Adding New Quirks
 
