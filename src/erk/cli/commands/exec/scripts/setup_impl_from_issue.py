@@ -111,10 +111,12 @@ def setup_impl_from_issue(
     # Check if branch already exists
     local_branches = git.list_local_branches(repo_root)
 
+    branch_manager = require_branch_manager(ctx)
+
     if branch_name in local_branches:
         # Branch exists - just check it out
         click.echo(f"Branch '{branch_name}' already exists, checking out...", err=True)
-        git.checkout_branch(cwd, branch_name)
+        branch_manager.checkout_branch(cwd, branch_name)
     else:
         # Determine base branch: stack on feature branch, or use trunk
         if _is_trunk_branch(current_branch):
@@ -124,7 +126,6 @@ def setup_impl_from_issue(
             base_branch = current_branch
 
         # Create branch using BranchManager (handles Graphite tracking automatically)
-        branch_manager = require_branch_manager(ctx)
         branch_manager.create_branch(repo_root, branch_name, base_branch)
         click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
 

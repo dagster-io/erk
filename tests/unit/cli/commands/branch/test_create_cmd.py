@@ -317,9 +317,14 @@ def test_branch_create_force_reuses_unassigned_slot_with_checkout() -> None:
         assert "old-branch" in result.output
         assert "Assigned new-branch" in result.output
 
-        # Verify: checkout_branch was called (reusing existing worktree)
-        assert len(git_ops.checked_out_branches) == 1
-        checkout_path, checkout_branch = git_ops.checked_out_branches[0]
+        # Verify: checkout_branch was called in the slot worktree (reusing existing worktree)
+        # Note: There may be additional checkouts from create_branch (for Graphite tracking),
+        # but the key assertion is that the SLOT worktree received a checkout, not add_worktree
+        slot_checkouts = [
+            (path, branch) for path, branch in git_ops.checked_out_branches if path == worktree_path
+        ]
+        assert len(slot_checkouts) == 1
+        checkout_path, checkout_branch = slot_checkouts[0]
         assert checkout_path == worktree_path
         assert checkout_branch == "new-branch"
 

@@ -73,10 +73,10 @@ def execute_unassign(
     local_branches = ctx.git.list_local_branches(repo.root)
 
     if placeholder_branch not in local_branches:
-        ctx.git.create_branch(repo.root, placeholder_branch, trunk_branch)
+        ctx.branch_manager.create_branch(repo.root, placeholder_branch, trunk_branch)
 
     # Checkout placeholder branch in the worktree
-    ctx.git.checkout_branch(assignment.worktree_path, placeholder_branch)
+    ctx.branch_manager.checkout_branch(assignment.worktree_path, placeholder_branch)
 
     # Remove assignment from state (immutable update)
     new_assignments = tuple(a for a in state.assignments if a.slot_name != assignment.slot_name)

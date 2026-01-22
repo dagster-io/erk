@@ -382,64 +382,6 @@ def test_remove_worktree_with_force(git_ops_with_worktrees: GitWithWorktrees) ->
     assert worktrees[0].branch == "main"
 
 
-def test_checkout_branch(
-    tmp_path: Path,
-) -> None:
-    """Test checking out a branch using real git."""
-    from erk_shared.git.real import RealGit
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-
-    init_git_repo(repo, "main")
-
-    # Create a new branch
-    subprocess.run(["git", "branch", "feature"], cwd=repo, check=True)
-
-    git_ops = RealGit()
-
-    # Checkout the branch
-    git_ops.checkout_branch(repo, "feature")
-
-    # Verify branch is checked out
-    branch = git_ops.get_current_branch(repo)
-    assert branch == "feature"
-
-
-def test_checkout_branch_in_worktree(
-    tmp_path: Path,
-) -> None:
-    """Test checking out a branch within a worktree using real git."""
-    from erk_shared.git.real import RealGit
-    from tests.integration.conftest import init_git_repo
-
-    repo = tmp_path / "repo"
-    repo.mkdir()
-    wt = tmp_path / "wt"
-
-    init_git_repo(repo, "main")
-
-    # Create worktree with feature-1
-    subprocess.run(
-        ["git", "worktree", "add", "-b", "feature-1", str(wt)],
-        cwd=repo,
-        check=True,
-    )
-
-    # Create another branch from the worktree
-    subprocess.run(["git", "branch", "feature-2"], cwd=wt, check=True)
-
-    git_ops = RealGit()
-
-    # Checkout feature-2 in the worktree
-    git_ops.checkout_branch(wt, "feature-2")
-
-    # Verify branch is checked out
-    branch = git_ops.get_current_branch(wt)
-    assert branch == "feature-2"
-
-
 def test_remove_worktree_called_from_worktree_path(
     tmp_path: Path,
 ) -> None:

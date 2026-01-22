@@ -70,7 +70,7 @@ class FakeBranchManager(BranchManager):
         """
         self._created_branches.append((branch_name, base_branch))
 
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
+    def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Record branch deletion in tracked list.
 
         Note: This mutates internal state despite the frozen dataclass.
@@ -80,6 +80,7 @@ class FakeBranchManager(BranchManager):
         Args:
             repo_root: Repository root directory (unused in fake)
             branch: Branch name to delete
+            force: If True, force delete (unused in fake, but tracked)
         """
         self._deleted_branches.append(branch)
 

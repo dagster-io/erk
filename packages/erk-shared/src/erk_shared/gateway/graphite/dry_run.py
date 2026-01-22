@@ -60,16 +60,6 @@ class DryRunGraphite(Graphite):
         # Do nothing - prevents actual gt restack execution
         pass
 
-    def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
-        """No-op for gt track in dry-run mode."""
-        # Do nothing - prevents actual gt track execution
-        pass
-
-    def submit_branch(self, repo_root: Path, branch_name: str, *, quiet: bool) -> None:
-        """No-op for gt submit in dry-run mode."""
-        # Do nothing - prevents actual gt submit execution
-        pass
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check authentication status (read-only, delegates to wrapped)."""
         return self._wrapped.check_auth_status()
@@ -96,8 +86,4 @@ class DryRunGraphite(Graphite):
 
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """No-op for gt continue in dry-run mode."""
-        pass
-
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
-        """No-op for gt delete in dry-run mode."""
         pass

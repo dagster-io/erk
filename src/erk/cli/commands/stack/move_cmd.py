@@ -131,7 +131,7 @@ def execute_move(
     # 2. Create/checkout source_branch in target worktree
     # 3. Checkout fallback_ref in source worktree
     user_output(f"Moving '{source_branch}' from '{source_wt.name}' to '{target_wt.name}'")
-    ctx.git.checkout_detached(source_wt, source_branch)
+    ctx.branch_manager.checkout_detached(source_wt, source_branch)
 
     if target_exists:
         # Target exists - check for uncommitted changes
@@ -143,7 +143,7 @@ def execute_move(
             raise SystemExit(1)
 
         # Checkout branch in existing target
-        ctx.git.checkout_branch(target_wt, source_branch)
+        ctx.branch_manager.checkout_branch(target_wt, source_branch)
     else:
         # Create new worktree with branch
         ctx.git.add_worktree(
@@ -154,10 +154,10 @@ def execute_move(
     fallback_wt = ctx.git.is_branch_checked_out(repo_root, fallback_ref)
     if fallback_wt is not None and fallback_wt.resolve() != source_wt.resolve():
         # Fallback branch is checked out in another worktree, detach it first
-        ctx.git.checkout_detached(fallback_wt, fallback_ref)
+        ctx.branch_manager.checkout_detached(fallback_wt, fallback_ref)
 
     # Switch source to fallback branch
-    ctx.git.checkout_branch(source_wt, fallback_ref)
+    ctx.branch_manager.checkout_branch(source_wt, fallback_ref)
 
     user_output(f"✓ Moved '{source_branch}' from '{source_wt.name}' to '{target_wt.name}'")
 
@@ -207,9 +207,9 @@ def execute_swap(
     # 1. Detach HEAD in source worktree (frees up source_branch)
     # 2. Checkout source_branch in target worktree
     # 3. Checkout target_branch in source worktree
-    ctx.git.checkout_detached(source_wt, source_branch)
-    ctx.git.checkout_branch(target_wt, source_branch)
-    ctx.git.checkout_branch(source_wt, target_branch)
+    ctx.branch_manager.checkout_detached(source_wt, source_branch)
+    ctx.branch_manager.checkout_branch(target_wt, source_branch)
+    ctx.branch_manager.checkout_branch(source_wt, target_branch)
 
     user_output(f"✓ Swapped '{source_branch}' ↔ '{target_branch}'")
 

@@ -465,7 +465,7 @@ class Ensure:
         Example:
             >>> Ensure.gt_authenticated(ctx)
             >>> # Now safe to call gt submit
-            >>> ctx.graphite.submit_branch(repo.root, branch_name, quiet=True)
+            >>> ctx.branch_manager.submit_branch(repo.root, branch_name, quiet=True)
         """
         is_authenticated, username, _ = ctx.graphite.check_auth_status()
 

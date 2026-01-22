@@ -157,22 +157,6 @@ def test_restack_raises_error(tmp_path: Path) -> None:
         sentinel.restack(tmp_path, no_interactive=True, quiet=False)
 
 
-def test_track_branch_raises_error(tmp_path: Path) -> None:
-    """track_branch raises GraphiteDisabledError."""
-    sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
-
-    with pytest.raises(GraphiteDisabledError):
-        sentinel.track_branch(tmp_path, "feature", "main")
-
-
-def test_submit_branch_raises_error(tmp_path: Path) -> None:
-    """submit_branch raises GraphiteDisabledError."""
-    sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)
-
-    with pytest.raises(GraphiteDisabledError):
-        sentinel.submit_branch(tmp_path, "feature", quiet=False)
-
-
 def test_squash_branch_raises_error(tmp_path: Path) -> None:
     """squash_branch raises GraphiteDisabledError."""
     sentinel = GraphiteDisabled(reason=GraphiteDisabledReason.CONFIG_DISABLED)

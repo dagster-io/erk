@@ -353,9 +353,9 @@ class FakeGtKitOps:
         self._github_builder_state.current_branch = branch
         self._github_instance = None
 
-        # Configure graphite parent tracking
-        if hasattr(self._main_graphite, "track_branch"):
-            self._main_graphite.track_branch(repo_root, branch, parent)
+        # Configure graphite parent tracking (test helper method)
+        if hasattr(self._main_graphite, "set_branch_parent"):
+            self._main_graphite.set_branch_parent(branch, parent)
 
         return self
 
@@ -509,12 +509,11 @@ class FakeGtKitOps:
         Returns:
             Self for chaining
         """
-        # Track children relationships in main_graphite for each child
-        if hasattr(self._main_graphite, "track_branch"):
-            repo_root = Path(self._repo_root)
-            current_branch = self._git_current_branches.get(repo_root) or "main"
+        # Track children relationships in main_graphite for each child (test helper method)
+        if hasattr(self._main_graphite, "set_branch_parent"):
+            current_branch = self._git_current_branches.get(Path(self._repo_root)) or "main"
             for child in children:
-                self._main_graphite.track_branch(repo_root, child, current_branch)
+                self._main_graphite.set_branch_parent(child, current_branch)
 
         return self
 

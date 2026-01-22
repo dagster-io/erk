@@ -58,7 +58,7 @@ def try_switch_root_worktree(ctx: ErkContext, repo: RepoContext, branch: str) ->
         return None
 
     # Switch root to trunk branch
-    ctx.git.checkout_branch(root_worktree.path, branch)
+    ctx.branch_manager.checkout_branch(root_worktree.path, branch)
 
     return root_worktree.path
 
@@ -166,7 +166,7 @@ def _perform_checkout(
 
     # If we need to checkout, do it before generating the activation script
     if need_checkout:
-        ctx.git.checkout_branch(target_path, branch)
+        ctx.branch_manager.checkout_branch(target_path, branch)
 
     # Ensure branch is tracked with Graphite (idempotent)
     _ensure_graphite_tracking(
@@ -321,7 +321,7 @@ def branch_checkout(ctx: ErkContext, branch: str, no_slot: bool, force: bool, sc
                             f"Branch '{branch}' exists on origin, creating local tracking branch..."
                         )
                         ctx.git.fetch_branch(repo.root, "origin", branch)
-                        ctx.git.create_tracking_branch(repo.root, branch, remote_ref)
+                        ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
                     else:
                         user_output(
                             f"Error: Branch '{branch}' does not exist.\n"

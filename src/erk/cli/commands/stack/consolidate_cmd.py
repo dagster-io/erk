@@ -302,15 +302,9 @@ def consolidate_stack(
             # Use proper erks directory path resolution
             new_worktree_path = worktree_path_for(repo.worktrees_dir, name)
 
-            # Create temporary branch on current commit (doesn't checkout)
-            # Git operations use check=True, so failures raise CalledProcessError
-            ctx.git.create_branch(current_worktree, temp_branch_name, current_branch)
-
-            # Checkout temporary branch in source worktree to free up the original branch
-            ctx.git.checkout_branch(current_worktree, temp_branch_name)
-
-            # Track temporary branch
-            ctx.branch_manager.track_branch(current_worktree, temp_branch_name, current_branch)
+            # Create temporary branch and checkout it to free up current_branch for new worktree
+            ctx.branch_manager.create_branch(current_worktree, temp_branch_name, current_branch)
+            ctx.branch_manager.checkout_branch(current_worktree, temp_branch_name)
 
             # Create new worktree with original branch
             # (now available since source is on temp branch)
@@ -444,7 +438,7 @@ def consolidate_stack(
         # Delete temporary branch after source worktree is removed
         # (can't delete while it's checked out in the source worktree)
         if temp_branch_name is not None:
-            ctx.git.delete_branch(repo.root, temp_branch_name, force=True)
+            ctx.branch_manager.delete_branch(repo.root, temp_branch_name, force=True)
 
     # Display grouped removal progress
     user_output()

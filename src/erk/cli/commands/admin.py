@@ -221,10 +221,10 @@ def test_erk_impl_gh_workflow(ctx: ErkContext, issue: int | None, watch: bool) -
     # GitHub rejects PRs with no commits between base and head
     user_output(f"Adding initial commit to '{test_branch}'...")
     ctx.git.fetch_branch(repo.root, "origin", test_branch)
-    ctx.git.checkout_branch(repo.root, test_branch)
+    ctx.branch_manager.checkout_branch(repo.root, test_branch)
     ctx.git.commit(repo.root, "Test workflow run")
     ctx.git.push_to_remote(repo.root, "origin", test_branch)
-    ctx.git.checkout_branch(repo.root, current_branch)
+    ctx.branch_manager.checkout_branch(repo.root, current_branch)
     user_output(click.style("✓", fg="green") + f" Initial commit added to '{test_branch}'")
 
     # Step 5: Create draft PR

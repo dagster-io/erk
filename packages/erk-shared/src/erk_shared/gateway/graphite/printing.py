@@ -65,20 +65,3 @@ class PrintingGraphite(PrintingBase, Graphite):
         cmd = "gt restack --no-interactive" if no_interactive else "gt restack"
         self._emit(self._format_command(cmd))
         self._wrapped.restack(repo_root, no_interactive=no_interactive, quiet=quiet)
-
-    def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
-        """Track branch with printed output."""
-        self._emit(
-            self._format_command(f"gt track --branch {branch_name} --parent {parent_branch}")
-        )
-        self._wrapped.track_branch(cwd, branch_name, parent_branch)
-
-    def submit_branch(self, repo_root: Path, branch_name: str, *, quiet: bool) -> None:
-        """Submit branch with printed output."""
-        self._emit(self._format_command(f"gt submit --branch {branch_name} --no-edit"))
-        self._wrapped.submit_branch(repo_root, branch_name, quiet=quiet)
-
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
-        """Delete branch with printed output."""
-        self._emit(self._format_command(f"gt delete -f {branch}"))
-        self._wrapped.delete_branch(repo_root, branch)

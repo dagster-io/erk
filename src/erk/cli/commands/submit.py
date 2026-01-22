@@ -72,7 +72,7 @@ def branch_rollback(ctx: ErkContext, repo_root: Path, original_branch: str) -> I
         user_output(
             click.style("Error: ", fg="red") + "Operation failed, restoring original branch..."
         )
-        ctx.git.checkout_branch(repo_root, original_branch)
+        ctx.branch_manager.checkout_branch(repo_root, original_branch)
         raise
 
 
@@ -332,7 +332,7 @@ def _create_branch_and_pr(
     issue = validated.issue
     issue_number = validated.number
 
-    ctx.git.checkout_branch(repo.root, branch_name)
+    ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
     # Get plan content and create .worker-impl/ folder
     user_output("Fetching plan content...")
@@ -408,8 +408,8 @@ def _create_branch_and_pr(
 
     # Restore local state
     user_output("Restoring local state...")
-    ctx.git.checkout_branch(repo.root, original_branch)
-    ctx.git.delete_branch(repo.root, branch_name, force=True)
+    ctx.branch_manager.checkout_branch(repo.root, original_branch)
+    ctx.branch_manager.delete_branch(repo.root, branch_name, force=True)
     user_output(click.style("✓", fg="green") + " Local branch cleaned up")
 
     return pr_number
@@ -461,9 +461,10 @@ def _submit_single_issue(
             # Only create tracking branch if it doesn't exist locally (LBYL)
             local_branches = ctx.git.list_local_branches(repo.root)
             if branch_name not in local_branches:
-                ctx.git.create_tracking_branch(repo.root, branch_name, f"origin/{branch_name}")
+                remote_ref = f"origin/{branch_name}"
+                ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
 
-            ctx.git.checkout_branch(repo.root, branch_name)
+            ctx.branch_manager.checkout_branch(repo.root, branch_name)
 
             # Create empty commit as placeholder for PR creation
             ctx.git.commit(
@@ -521,8 +522,8 @@ def _submit_single_issue(
                 )
 
             # Restore local state
-            ctx.git.checkout_branch(repo.root, original_branch)
-            ctx.git.delete_branch(repo.root, branch_name, force=True)
+            ctx.branch_manager.checkout_branch(repo.root, original_branch)
+            ctx.branch_manager.delete_branch(repo.root, branch_name, force=True)
             user_output(click.style("✓", fg="green") + " Local branch cleaned up")
     else:
         # Create branch and initial commit

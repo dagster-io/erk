@@ -140,7 +140,7 @@ def ensure_worktree_for_branch(
         # Remote branch exists - create local tracking branch
         user_output(f"Branch '{branch}' exists on origin, creating local tracking branch...")
         try:
-            ctx.git.create_tracking_branch(repo.root, branch, remote_ref)
+            ctx.branch_manager.create_tracking_branch(repo.root, branch, remote_ref)
         except subprocess.CalledProcessError as e:
             user_output(
                 f"Error: Failed to create local tracking branch from {remote_ref}\n"
@@ -322,7 +322,7 @@ def add_worktree(
                     "Disable Graphite: erk config set use_graphite false",
                 ],
             )
-            ctx.git.checkout_branch(cwd, original_branch)
+            ctx.branch_manager.checkout_branch(cwd, original_branch)
             ctx.git.add_worktree(repo_root, path, branch=branch, ref=None, create_branch=False)
         else:
             ctx.git.add_worktree(repo_root, path, branch=branch, ref=ref, create_branch=True)
@@ -682,10 +682,8 @@ def create_wt(
         for warning in setup.warnings:
             user_output(click.style("Warning: ", fg="yellow") + warning)
 
-        # Create branch directly via git
-        ctx.git.create_branch(repo.root, setup.branch_name, trunk_branch)
-        # Track branch with Graphite if enabled (no-op for plain Git)
-        ctx.branch_manager.track_branch(repo.root, setup.branch_name, trunk_branch)
+        # Create branch via branch_manager (handles Graphite tracking automatically)
+        ctx.branch_manager.create_branch(repo.root, setup.branch_name, trunk_branch)
         user_output(f"Created branch: {setup.branch_name}")
 
         # Track linked branch name for add_worktree call
@@ -780,10 +778,10 @@ def create_wt(
         checkout_path = ctx.git.is_branch_checked_out(repo.root, to_branch)
         if checkout_path is not None:
             # Target branch is in use, fall back to detached HEAD
-            ctx.git.checkout_detached(ctx.cwd, current_branch)
+            ctx.branch_manager.checkout_detached(ctx.cwd, current_branch)
         else:
             # Target branch is available, checkout normally
-            ctx.git.checkout_branch(ctx.cwd, to_branch)
+            ctx.branch_manager.checkout_branch(ctx.cwd, to_branch)
 
         # Create worktree with existing branch
         add_worktree(

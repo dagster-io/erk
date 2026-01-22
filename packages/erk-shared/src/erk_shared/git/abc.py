@@ -170,20 +170,6 @@ class Git(ABC):
         ...
 
     @abstractmethod
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create a local tracking branch from a remote branch.
-
-        Args:
-            repo_root: Path to the repository root
-            branch: Name for the local branch (e.g., 'feature-remote')
-            remote_ref: Remote reference to track (e.g., 'origin/feature-remote')
-
-        Raises:
-            subprocess.CalledProcessError: If git command fails
-        """
-        ...
-
-    @abstractmethod
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
         ...
@@ -254,38 +240,6 @@ class Git(ABC):
             force: True to force removal even if worktree has uncommitted changes
         """
         self.worktree.remove_worktree(repo_root, path, force=force)
-
-    @abstractmethod
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout a branch in the given directory."""
-        ...
-
-    @abstractmethod
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout a detached HEAD at the given ref (commit SHA, branch, etc)."""
-        ...
-
-    @abstractmethod
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create a new branch without checking it out.
-
-        Args:
-            cwd: Working directory to run command in
-            branch_name: Name of the branch to create
-            start_point: Commit/branch to base the new branch on
-        """
-        ...
-
-    @abstractmethod
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch.
-
-        Args:
-            cwd: Working directory to run command in
-            branch_name: Name of the branch to delete
-            force: Use -D (force delete) instead of -d
-        """
-        ...
 
     def prune_worktrees(self, repo_root: Path) -> None:
         """Prune stale worktree metadata."""

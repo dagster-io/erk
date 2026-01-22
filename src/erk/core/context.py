@@ -164,6 +164,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
 def context_for_test(
     *,
     git: Git | None = None,
+    git_branch_ops: GitBranchOps | None = None,
     github: GitHub | None = None,
     github_admin: GitHubAdmin | None = None,
     issues: GitHubIssues | None = None,
@@ -253,11 +254,14 @@ def context_for_test(
     # When git is FakeGit, create a linked FakeGitBranchOps so that mutation tracking
     # is shared. This allows tests to check FakeGit.deleted_branches while mutations
     # go through BranchManager (which uses FakeGitBranchOps under the hood).
-    git_branch_ops: GitBranchOps
-    if isinstance(git, FakeGit):
-        git_branch_ops = git.create_linked_branch_ops()
+    resolved_git_branch_ops: GitBranchOps
+    if git_branch_ops is not None:
+        # Use provided git_branch_ops (allows tests to inject custom behavior)
+        resolved_git_branch_ops = git_branch_ops
+    elif isinstance(git, FakeGit):
+        resolved_git_branch_ops = git.create_linked_branch_ops()
     else:
-        git_branch_ops = FakeGitBranchOps()
+        resolved_git_branch_ops = FakeGitBranchOps()
 
     # Track whether issues was explicitly passed (for composition logic below)
     issues_explicitly_passed = issues is not None
@@ -367,7 +371,7 @@ def context_for_test(
     # Note: DryRunGitHub composes DryRunGitHubIssues internally for github.issues
     if dry_run:
         git = DryRunGit(git)
-        git_branch_ops = DryRunGitBranchOps(git_branch_ops)
+        resolved_git_branch_ops = DryRunGitBranchOps(resolved_git_branch_ops)
         graphite = DryRunGraphite(graphite)
         if graphite_branch_ops is not None:
             graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
@@ -375,7 +379,7 @@ def context_for_test(
 
     return ErkContext(
         git=git,
-        git_branch_ops=git_branch_ops,
+        git_branch_ops=resolved_git_branch_ops,
         github=github,
         github_admin=github_admin,
         plan_store=plan_store,

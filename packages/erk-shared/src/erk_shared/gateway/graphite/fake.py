@@ -163,17 +163,16 @@ class FakeGraphite(Graphite):
 
         return ancestors + descendants
 
-    def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
-        """Fake track_branch operation.
+    def set_branch_parent(self, branch_name: str, parent_branch: str) -> None:
+        """Test helper: Set up branch-parent relationship in the fake.
 
-        Tracks calls for verification and raises configured exception if set.
-        Also updates internal branch metadata so get_parent_branch() and
-        get_child_branches() work.
+        This method is for test setup only. It updates internal branch metadata
+        so that get_parent_branch() and get_child_branches() work correctly.
+
+        Args:
+            branch_name: Name of the child branch
+            parent_branch: Name of the parent branch
         """
-        self._track_branch_calls.append((cwd, branch_name, parent_branch))
-        self._operation_log.append(("track_branch", branch_name, parent_branch))
-
-        # Also update branch metadata so get_parent_branch() can find the parent
         from erk_shared.gateway.graphite.types import BranchMetadata
 
         self._branches[branch_name] = BranchMetadata(
@@ -197,19 +196,6 @@ class FakeGraphite(Graphite):
                     commit_sha=parent_metadata.commit_sha,
                 )
 
-        if self._track_branch_raises is not None:
-            raise self._track_branch_raises
-
-    def submit_branch(self, repo_root: Path, branch_name: str, *, quiet: bool) -> None:
-        """Fake submit_branch operation.
-
-        Tracks calls for verification and raises configured exception if set.
-        """
-        self._submit_branch_calls.append((repo_root, branch_name, quiet))
-
-        if self._submit_branch_raises is not None:
-            raise self._submit_branch_raises
-
     @property
     def sync_calls(self) -> list[tuple[Path, bool, bool]]:
         """Get the list of sync() calls that were made.
@@ -229,26 +215,6 @@ class FakeGraphite(Graphite):
         This property is for test assertions only.
         """
         return self._restack_calls
-
-    @property
-    def track_branch_calls(self) -> list[tuple[Path, str, str]]:
-        """Get the list of track_branch() calls that were made.
-
-        Returns list of (cwd, branch_name, parent_branch) tuples.
-
-        This property is for test assertions only.
-        """
-        return self._track_branch_calls
-
-    @property
-    def submit_branch_calls(self) -> list[tuple[Path, str, bool]]:
-        """Get the list of submit_branch() calls that were made.
-
-        Returns list of (repo_root, branch_name, quiet) tuples.
-
-        This property is for test assertions only.
-        """
-        return self._submit_branch_calls
 
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Return pre-configured authentication status.
@@ -311,6 +277,39 @@ class FakeGraphite(Graphite):
         """
         return self._submit_stack_calls
 
+    @property
+    def delete_branch_calls(self) -> list[tuple[Path, str]]:
+        """Get the list of delete_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (repo_root, branch) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._delete_branch_calls
+
+    @property
+    def track_branch_calls(self) -> list[tuple[Path, str, str]]:
+        """Get the list of track_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (repo_root, branch_name, parent_branch) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._track_branch_calls
+
+    @property
+    def submit_branch_calls(self) -> list[tuple[Path, str, bool]]:
+        """Get the list of submit_branch() calls made via linked FakeGraphiteBranchOps.
+
+        Returns list of (repo_root, branch, force) tuples.
+
+        Note: This list is populated when mutations happen through
+        FakeGraphiteBranchOps created via create_linked_branch_ops().
+        """
+        return self._submit_branch_calls
+
     def is_branch_tracked(self, repo_root: Path, branch: str) -> bool:
         """Return True if branch is in configured branches."""
         return branch in self._branches
@@ -328,29 +327,6 @@ class FakeGraphite(Graphite):
         Returns list of (repo_root, quiet) tuples.
         """
         return self._continue_restack_calls
-
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
-        """Track delete_branch calls and optionally raise.
-
-        Also removes the branch from internal branch metadata so
-        is_branch_tracked() returns False after deletion.
-        """
-        self._delete_branch_calls.append((repo_root, branch))
-
-        # Remove from branch metadata
-        if branch in self._branches:
-            del self._branches[branch]
-
-        if self._delete_branch_raises is not None:
-            raise self._delete_branch_raises
-
-    @property
-    def delete_branch_calls(self) -> list[tuple[Path, str]]:
-        """Get the list of delete_branch() calls.
-
-        Returns list of (repo_root, branch) tuples.
-        """
-        return self._delete_branch_calls
 
     @property
     def operation_log(self) -> list[tuple[str, ...]]:

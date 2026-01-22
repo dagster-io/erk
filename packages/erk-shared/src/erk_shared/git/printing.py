@@ -59,10 +59,6 @@ class PrintingGit(PrintingBase, Git):
         """List remote branches (read-only, no printing)."""
         return self._wrapped.list_remote_branches(repo_root)
 
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create tracking branch (read-only, no printing)."""
-        return self._wrapped.create_tracking_branch(repo_root, branch, remote_ref)
-
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get git common directory (read-only, no printing)."""
         return self._wrapped.get_git_common_dir(cwd)
@@ -90,28 +86,6 @@ class PrintingGit(PrintingBase, Git):
     def get_recent_commits(self, cwd: Path, *, limit: int = 5) -> list[dict[str, str]]:
         """Get recent commits (read-only, no printing)."""
         return self._wrapped.get_recent_commits(cwd, limit=limit)
-
-    # Operations that need printing
-
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout branch with printed output."""
-        self._emit(self._format_command(f"git checkout {branch}"))
-        self._wrapped.checkout_branch(cwd, branch)
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout detached HEAD (delegates without printing for now)."""
-        # No printing for detached HEAD in land-stack
-        self._wrapped.checkout_detached(cwd, ref)
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create branch (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.create_branch(cwd, branch_name, start_point)
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete branch (delegates without printing for now)."""
-        # Not used in land-stack
-        self._wrapped.delete_branch(cwd, branch_name, force=force)
 
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch branch with printed output."""

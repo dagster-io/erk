@@ -21,15 +21,21 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     plan_123 = create_plan("123", "Feature A", body=make_plan_body("Implementation for A..."))
     plan_456 = create_plan("456", "Feature B", body=make_plan_body("Implementation for B..."))
 
-    # Create a custom FakeGit that cleans up .worker-impl/ on branch checkout
+    # Create a custom FakeGit with linked branch_ops that cleans up .worker-impl/
     # This simulates the real behavior where checking out a branch without
     # .worker-impl/ removes the folder from the working directory
-    class FakeGitWithCheckoutCleanup(FakeGit):
-        def checkout_branch(self, cwd: Path, branch_name: str) -> None:
-            super().checkout_branch(cwd, branch_name)
+    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
+
+    class FakeGitBranchOpsWithCheckoutCleanup(FakeGitBranchOps):
+        def __init__(self, repo_root: Path, **kwargs):
+            super().__init__(**kwargs)
+            self._repo_root = repo_root
+
+        def checkout_branch(self, cwd: Path, branch: str) -> None:
+            super().checkout_branch(cwd, branch)
             # Simulate git checkout: when switching to original branch,
             # files from the feature branch (like .worker-impl/) are removed
-            worker_impl = cwd / ".worker-impl"
+            worker_impl = self._repo_root / ".worker-impl"
             if worker_impl.exists():
                 shutil.rmtree(worker_impl)
 
@@ -42,10 +48,12 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
         {"123": plan_123, "456": plan_456}
     )
 
-    fake_git = FakeGitWithCheckoutCleanup(
+    fake_git = FakeGit(
         current_branches={repo_root: "main"},
         trunk_branches={repo_root: "master"},
     )
+    # Create a custom branch_ops with cleanup behavior
+    fake_git_branch_ops = FakeGitBranchOpsWithCheckoutCleanup(repo_root=repo_root)
     fake_github = FakeGitHub()
 
     repo_dir = tmp_path / ".erk" / "repos" / "test-repo"
@@ -59,6 +67,7 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
+        git_branch_ops=fake_git_branch_ops,
         github=fake_github,
         issues=fake_github_issues,
         plan_store=fake_plan_store,
@@ -73,9 +82,9 @@ def test_submit_multiple_issues_success(tmp_path: Path) -> None:
     assert "#123: Feature A" in result.output
     assert "#456: Feature B" in result.output
 
-    # Verify both branches were created via git
-    assert len(fake_git.created_branches) == 2
-    created_branch_names = [b[1] for b in fake_git.created_branches]
+    # Verify both branches were created via git branch ops
+    assert len(fake_git_branch_ops.created_branches) == 2
+    created_branch_names = [b[1] for b in fake_git_branch_ops.created_branches]
     # Branch names include issue number prefix
     assert any("123-" in name for name in created_branch_names)
     assert any("456-" in name for name in created_branch_names)

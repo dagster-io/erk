@@ -121,7 +121,7 @@ def pr_checkout(
             remote_ref = f"origin/{branch_name}"
             if remote_ref in remote_branches:
                 ctx.git.fetch_branch(repo.root, "origin", branch_name)
-                ctx.git.create_tracking_branch(repo.root, branch_name, remote_ref)
+                ctx.branch_manager.create_tracking_branch(repo.root, branch_name, remote_ref)
             else:
                 ctx.git.fetch_pr_ref(
                     repo_root=repo.root,
@@ -144,7 +144,7 @@ def pr_checkout(
         if pr.base_ref_name not in local_branches:
             ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
             ctx.git.fetch_branch(repo.root, "origin", pr.base_ref_name)
-            ctx.git.create_tracking_branch(
+            ctx.branch_manager.create_tracking_branch(
                 repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
             )
 

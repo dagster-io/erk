@@ -164,8 +164,7 @@ def branch_create(
     else:
         parent_branch = trunk
 
-    ctx.git.create_branch(repo.root, branch_name, parent_branch)
-    ctx.branch_manager.track_branch(repo.root, branch_name, parent_branch)
+    ctx.branch_manager.create_branch(repo.root, branch_name, parent_branch)
     user_output(f"Created branch: {branch_name}")
 
     # If --no-slot is specified, we're done (but warn about .impl if --for-plan was used)
