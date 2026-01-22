@@ -219,6 +219,29 @@ Confirm all tasks executed, success criteria met, note deviations, summarize cha
 erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || true
 ```
 
+### Step 10b: Upload Session for Async Learn
+
+Upload the current session to enable async learn:
+
+```bash
+# Capture session info
+eval "$(erk exec capture-session-info)"
+
+# Get issue number from .impl/issue.json (jq extracts issue_number field)
+ISSUE_NUMBER=$(jq -r '.issue_number // empty' .impl/issue.json 2>/dev/null || echo "")
+
+# Upload if we have both session and issue tracking
+if [ -n "$SESSION_ID" ] && [ -n "$SESSION_FILE" ] && [ -n "$ISSUE_NUMBER" ]; then
+  erk exec upload-session \
+    --session-file "$SESSION_FILE" \
+    --session-id "$SESSION_ID" \
+    --source local \
+    --issue-number "$ISSUE_NUMBER" || true
+fi
+```
+
+This enables `erk learn --async` to work for locally-implemented PRs by uploading the session to a gist.
+
 ### Step 11: Verify .impl/ Preserved
 
 **CRITICAL GUARDRAIL**: Verify the .impl/ folder was NOT deleted.
