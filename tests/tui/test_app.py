@@ -599,8 +599,8 @@ class TestPlanDetailScreenCopyActions:
     """Tests for PlanDetailScreen copy keyboard shortcuts."""
 
     @pytest.mark.asyncio
-    async def test_copy_implement_shortcut_1(self) -> None:
-        """Pressing '1' in detail screen copies implement command."""
+    async def test_copy_prepare_shortcut_1(self) -> None:
+        """Pressing '1' in detail screen copies prepare command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -618,15 +618,15 @@ class TestPlanDetailScreenCopyActions:
             await pilot.pause()
             await pilot.pause()
 
-            # Press '1' to copy implement command
+            # Press '1' to copy prepare command
             await pilot.press("1")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk implement 123"
+            assert clipboard.last_copied == "erk prepare 123"
 
     @pytest.mark.asyncio
-    async def test_copy_implement_dangerous_shortcut_2(self) -> None:
-        """Pressing '2' in detail screen copies implement --dangerous command."""
+    async def test_copy_prepare_dangerous_shortcut_2(self) -> None:
+        """Pressing '2' in detail screen copies prepare --dangerous command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -646,11 +646,11 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("2")
             await pilot.pause()
 
-            assert clipboard.last_copied == "erk implement 123 --dangerous"
+            assert clipboard.last_copied == "erk prepare 123 --dangerous"
 
     @pytest.mark.asyncio
-    async def test_copy_implement_yolo_shortcut_3(self) -> None:
-        """Pressing '3' in detail screen copies implement --yolo command."""
+    async def test_copy_submit_shortcut_3(self) -> None:
+        """Pressing '3' in detail screen copies submit command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -668,30 +668,6 @@ class TestPlanDetailScreenCopyActions:
             await pilot.pause()
 
             await pilot.press("3")
-            await pilot.pause()
-
-            assert clipboard.last_copied == "erk implement 123 --yolo"
-
-    @pytest.mark.asyncio
-    async def test_copy_submit_shortcut_4(self) -> None:
-        """Pressing '4' in detail screen copies submit command."""
-        clipboard = FakeClipboard()
-        provider = FakePlanDataProvider(
-            plans=[make_plan_row(123, "Test Plan")],
-            clipboard=clipboard,
-        )
-        filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
-
-        async with app.run_test() as pilot:
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("space")
-            await pilot.pause()
-            await pilot.pause()
-
-            await pilot.press("4")
             await pilot.pause()
 
             assert clipboard.last_copied == "erk plan submit 123"
@@ -768,8 +744,8 @@ class TestCommandPaletteFromMain:
     """
 
     @pytest.mark.asyncio
-    async def test_execute_palette_command_copy_implement(self) -> None:
-        """Execute palette command copies implement command."""
+    async def test_execute_palette_command_copy_prepare(self) -> None:
+        """Execute palette command copies prepare command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
@@ -783,9 +759,9 @@ class TestCommandPaletteFromMain:
             await pilot.pause()
 
             # Execute command directly (simulates palette selection)
-            app.execute_palette_command("copy_implement")
+            app.execute_palette_command("copy_prepare")
 
-            assert clipboard.last_copied == "erk implement 123"
+            assert clipboard.last_copied == "erk prepare 123"
 
     @pytest.mark.asyncio
     async def test_execute_palette_command_open_pr(self) -> None:
@@ -822,7 +798,7 @@ class TestCommandPaletteFromMain:
             await pilot.pause()
 
             # Execute command with no rows selected
-            app.execute_palette_command("copy_implement")
+            app.execute_palette_command("copy_prepare")
 
             # Nothing should be copied
             assert clipboard.last_copied is None

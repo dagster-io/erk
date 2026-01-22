@@ -548,18 +548,13 @@ class ErkDashApp(App):
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_implement":
-            cmd = f"erk implement {row.issue_number}"
+        elif command_id == "copy_prepare":
+            cmd = f"erk prepare {row.issue_number}"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 
-        elif command_id == "copy_implement_dangerous":
-            cmd = f"erk implement {row.issue_number} --dangerous"
-            self._provider.clipboard.copy(cmd)
-            self.notify(f"Copied: {cmd}")
-
-        elif command_id == "copy_implement_yolo":
-            cmd = f"erk implement {row.issue_number} --yolo"
+        elif command_id == "copy_prepare_dangerous":
+            cmd = f"erk prepare {row.issue_number} --dangerous"
             self._provider.clipboard.copy(cmd)
             self.notify(f"Copied: {cmd}")
 

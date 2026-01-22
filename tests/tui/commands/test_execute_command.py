@@ -95,32 +95,23 @@ class TestExecuteCommandCopyCommands:
         assert executor.copied_texts == ["erk pr co 456"]
         assert "Copied: erk pr co 456" in executor.notifications
 
-    def test_copy_implement_copies_command(self) -> None:
-        """copy_implement copies the implement command."""
+    def test_copy_prepare_copies_command(self) -> None:
+        """copy_prepare copies the prepare command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("copy_implement")
-        assert executor.copied_texts == ["erk implement 123"]
-        assert "Copied: erk implement 123" in executor.notifications
+        screen.execute_command("copy_prepare")
+        assert executor.copied_texts == ["erk prepare 123"]
+        assert "Copied: erk prepare 123" in executor.notifications
 
-    def test_copy_implement_dangerous_copies_command(self) -> None:
-        """copy_implement_dangerous copies the dangerous implement command."""
+    def test_copy_prepare_dangerous_copies_command(self) -> None:
+        """copy_prepare_dangerous copies the dangerous prepare command."""
         row = make_plan_row(123, "Test")
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("copy_implement_dangerous")
-        assert executor.copied_texts == ["erk implement 123 --dangerous"]
-        assert "Copied: erk implement 123 --dangerous" in executor.notifications
-
-    def test_copy_implement_yolo_copies_command(self) -> None:
-        """copy_implement_yolo copies the yolo implement command."""
-        row = make_plan_row(123, "Test")
-        executor = FakeCommandExecutor()
-        screen = PlanDetailScreen(row=row, executor=executor)
-        screen.execute_command("copy_implement_yolo")
-        assert executor.copied_texts == ["erk implement 123 --yolo"]
-        assert "Copied: erk implement 123 --yolo" in executor.notifications
+        screen.execute_command("copy_prepare_dangerous")
+        assert executor.copied_texts == ["erk prepare 123 --dangerous"]
+        assert "Copied: erk prepare 123 --dangerous" in executor.notifications
 
     def test_copy_submit_copies_command(self) -> None:
         """copy_submit copies the submit command."""
@@ -300,7 +291,7 @@ class TestExecuteCommandNoExecutor:
         screen = PlanDetailScreen(row=row)  # No executor
         # Should not raise
         screen.execute_command("open_browser")
-        screen.execute_command("copy_implement")
+        screen.execute_command("copy_prepare")
         screen.execute_command("close_plan")
         screen.execute_command("submit_to_queue")
         screen.execute_command("land_pr")
