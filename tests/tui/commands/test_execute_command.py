@@ -167,7 +167,9 @@ class TestExecuteCommandClosePlan:
             learn_status=None,
             learn_plan_issue=None,
             learn_plan_pr=None,
-            learn_display="-",
+            learn_run_url=None,
+            learn_display="- not started",
+            learn_display_icon="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -228,7 +230,9 @@ class TestExecuteCommandSubmitToQueue:
             learn_status=None,
             learn_plan_issue=None,
             learn_plan_pr=None,
-            learn_display="-",
+            learn_run_url=None,
+            learn_display="- not started",
+            learn_display_icon="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
