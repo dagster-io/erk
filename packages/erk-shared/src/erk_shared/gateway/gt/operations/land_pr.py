@@ -13,6 +13,7 @@ from erk_shared.gateway.gt.abc import GtKit
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.types import LandPrError, LandPrSuccess
 from erk_shared.github.types import PRNotFound
+from erk_shared.stack.validation import validate_parent_is_trunk
 
 
 def execute_land_pr(
@@ -54,20 +55,20 @@ def execute_land_pr(
     # Step 3: Validate parent is trunk
     yield ProgressEvent("Validating parent is trunk branch...")
     trunk = ops.git.detect_trunk_branch(repo_root)
-    if parent != trunk:
+    validation_error = validate_parent_is_trunk(
+        current_branch=branch_name,
+        parent_branch=parent,
+        trunk_branch=trunk,
+    )
+    if validation_error is not None:
         yield CompletionEvent(
             LandPrError(
                 success=False,
                 error_type="parent-not-trunk",
-                message=(
-                    f"Branch must be exactly one level up from {trunk}\n"
-                    f"Current branch: {branch_name}\n"
-                    f"Parent branch: {parent} (expected: {trunk})\n\n"
-                    f"Please navigate to a branch that branches directly from {trunk}."
-                ),
+                message=validation_error.message,
                 details={
-                    "current_branch": branch_name,
-                    "parent_branch": parent,
+                    "current_branch": validation_error.current_branch,
+                    "parent_branch": validation_error.parent_branch or "unknown",
                 },
             )
         )
