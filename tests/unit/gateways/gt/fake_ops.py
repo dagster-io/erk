@@ -298,9 +298,26 @@ class FakeGtKitOps:
         Returns GraphiteBranchManager when using FakeGraphite,
         GitBranchManager when using GraphiteDisabled.
         """
+        # Get the FakeGit instance and create linked branch ops for mutation tracking
+        fake_git = self.git
+        git_branch_ops = fake_git.create_linked_branch_ops()
+
         if isinstance(self._main_graphite, GraphiteDisabled):
-            return GitBranchManager(git=self.git, github=self.github)
-        return GraphiteBranchManager(git=self.git, graphite=self._main_graphite, github=self.github)
+            return GitBranchManager(
+                git=fake_git,
+                git_branch_ops=git_branch_ops,
+                github=self.github,
+            )
+
+        # Create linked graphite branch ops for mutation tracking
+        graphite_branch_ops = self._main_graphite.create_linked_branch_ops()
+        return GraphiteBranchManager(
+            git=fake_git,
+            git_branch_ops=git_branch_ops,
+            graphite=self._main_graphite,
+            graphite_branch_ops=graphite_branch_ops,
+            github=self.github,
+        )
 
     # Declarative setup methods
 

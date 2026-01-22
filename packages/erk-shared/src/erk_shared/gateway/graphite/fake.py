@@ -4,7 +4,13 @@ FakeGraphite is an in-memory implementation that accepts pre-configured state
 in its constructor. Construct instances directly with keyword arguments.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
 
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -356,3 +362,32 @@ class FakeGraphite(Graphite):
         Returns list of tuples where first element is operation name.
         """
         return self._operation_log
+
+    def create_linked_branch_ops(self) -> FakeGraphiteBranchOps:
+        """Create a FakeGraphiteBranchOps linked to this FakeGraphite's state.
+
+        The returned FakeGraphiteBranchOps shares mutable state and mutation tracking
+        with this FakeGraphite instance. This allows tests to check FakeGraphite properties
+        like track_branch_calls while mutations happen through BranchManager.
+
+        Returns:
+            FakeGraphiteBranchOps with linked state and mutation tracking
+        """
+        from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+
+        # Build tracked branches set from branch metadata
+        tracked_branches = set(self._branches.keys())
+
+        ops = FakeGraphiteBranchOps(
+            track_branch_raises=self._track_branch_raises,
+            delete_branch_raises=self._delete_branch_raises,
+            submit_branch_raises=self._submit_branch_raises,
+            tracked_branches=tracked_branches,
+        )
+        # Link mutation tracking so FakeGraphite properties see mutations from FakeGraphiteBranchOps
+        ops.link_mutation_tracking(
+            track_branch_calls=self._track_branch_calls,
+            delete_branch_calls=self._delete_branch_calls,
+            submit_branch_calls=self._submit_branch_calls,
+        )
+        return ops

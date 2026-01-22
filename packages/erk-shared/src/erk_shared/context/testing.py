@@ -17,7 +17,10 @@ from erk_shared.core.fakes import (
 )
 from erk_shared.gateway.codespace.abc import Codespace
 from erk_shared.gateway.graphite.abc import Graphite
+from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+from erk_shared.gateway.graphite.disabled import GraphiteDisabled
 from erk_shared.git.abc import Git
+from erk_shared.git.branch_ops.abc import GitBranchOps
 from erk_shared.github.abc import GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.learn.extraction.claude_installation.abc import ClaudeInstallation
@@ -72,9 +75,11 @@ def context_for_test(
     from erk_shared.gateway.completion.fake import FakeCompletion
     from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.erk_installation.fake import FakeErkInstallation
+    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
+    from erk_shared.git.branch_ops.fake import FakeGitBranchOps
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
     from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -104,6 +109,21 @@ def context_for_test(
     else:
         resolved_github = github
     resolved_graphite: Graphite = graphite if graphite is not None else FakeGraphite()
+
+    # Create linked sub-gateways so mutation tracking is shared between fakes.
+    # This allows tests to check FakeGit.deleted_branches while mutations go through
+    # BranchManager (which uses FakeGitBranchOps under the hood).
+    if isinstance(resolved_git, FakeGit):
+        resolved_git_branch_ops: GitBranchOps = resolved_git.create_linked_branch_ops()
+    else:
+        resolved_git_branch_ops = FakeGitBranchOps()
+
+    if isinstance(resolved_graphite, GraphiteDisabled):
+        resolved_graphite_branch_ops: GraphiteBranchOps | None = None
+    elif isinstance(resolved_graphite, FakeGraphite):
+        resolved_graphite_branch_ops = resolved_graphite.create_linked_branch_ops()
+    else:
+        resolved_graphite_branch_ops = FakeGraphiteBranchOps()
     resolved_repo_root: Path = repo_root if repo_root is not None else Path("/fake/repo")
     resolved_claude_installation: ClaudeInstallation = (
         claude_installation
@@ -138,11 +158,13 @@ def context_for_test(
     )
     return ErkContext(
         git=resolved_git,
+        git_branch_ops=resolved_git_branch_ops,
         github=resolved_github,
         github_admin=FakeGitHubAdmin(),
         claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
         graphite=resolved_graphite,
+        graphite_branch_ops=resolved_graphite_branch_ops,
         console=fake_console,
         time=fake_time,
         erk_installation=FakeErkInstallation(),
