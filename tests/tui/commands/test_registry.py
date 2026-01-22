@@ -227,3 +227,12 @@ def test_fix_conflicts_remote_not_available_when_no_pr() -> None:
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
     assert "fix_conflicts_remote" not in cmd_ids
+
+
+def test_copy_replan_available_when_issue_url_exists() -> None:
+    """copy_replan should be available when issue URL exists."""
+    row = make_plan_row(123, "Test", issue_url="https://github.com/test/repo/issues/123")
+    ctx = CommandContext(row=row)
+    commands = get_available_commands(ctx)
+    cmd_ids = [cmd.id for cmd in commands]
+    assert "copy_replan" in cmd_ids

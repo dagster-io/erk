@@ -690,6 +690,11 @@ class ErkDashApp(App):
                     )
                 )
 
+        elif command_id == "copy_replan":
+            cmd = f"/erk:replan {row.issue_number}"
+            self._provider.clipboard.copy(cmd)
+            self.notify(f"Copied: {cmd}")
+
     @on(PlanDataTable.RowSelected)
     def on_row_selected(self, event: PlanDataTable.RowSelected) -> None:
         """Handle Enter/double-click on row - show plan details."""
