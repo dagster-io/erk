@@ -211,6 +211,7 @@ For each XML file in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`:
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "haiku",
   run_in_background: true,
   description: "Analyze session <session-id>",
   prompt: |
@@ -227,6 +228,7 @@ Task(
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "haiku",
   run_in_background: true,
   description: "Analyze PR diff",
   prompt: |
@@ -245,6 +247,7 @@ Proactively search for existing documentation to prevent duplicates and detect c
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "haiku",
   run_in_background: true,
   description: "Check existing docs",
   prompt: |
@@ -303,6 +306,7 @@ Launch the DocumentationGapIdentifier agent to synthesize outputs from the paral
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "haiku",
   description: "Identify documentation gaps",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/documentation-gap-identifier.md`
@@ -341,6 +345,7 @@ Launch the PlanSynthesizer agent to transform the gap analysis into a complete l
 ```
 Task(
   subagent_type: "general-purpose",
+  model: "opus",
   description: "Synthesize learn plan",
   prompt: |
     Load and follow the agent instructions in `.claude/agents/learn/plan-synthesizer.md`
