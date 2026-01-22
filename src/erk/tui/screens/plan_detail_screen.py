@@ -701,6 +701,11 @@ class PlanDetailScreen(ModalScreen):
                     timeout=600.0,
                 )
 
+        elif command_id == "copy_replan":
+            cmd = f"/erk:replan {row.issue_number}"
+            executor.copy_to_clipboard(cmd)
+            executor.notify(f"Copied: {cmd}")
+
     def compose(self) -> ComposeResult:
         """Create detail dialog content as an Action Hub."""
         with Vertical(id="detail-dialog"):
