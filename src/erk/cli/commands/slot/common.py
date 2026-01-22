@@ -384,12 +384,55 @@ def allocate_slot_for_branch(
     # Check if branch is already assigned
     existing = find_branch_assignment(state, branch_name)
     if existing is not None:
-        # Branch is already assigned to a slot - just return that path
-        return SlotAllocationResult(
-            slot_name=existing.slot_name,
-            worktree_path=existing.worktree_path,
-            already_assigned=True,
-        )
+        # Verify the worktree still exists and has the correct branch
+        if not existing.worktree_path.exists():
+            # Worktree directory doesn't exist - remove stale assignment
+            user_output(
+                f"Warning: Slot {existing.slot_name} worktree directory missing, "
+                "removing stale assignment..."
+            )
+            new_assignments = tuple(
+                a for a in state.assignments if a.slot_name != existing.slot_name
+            )
+            state = PoolState(
+                version=state.version,
+                pool_size=state.pool_size,
+                slots=state.slots,
+                assignments=new_assignments,
+            )
+            save_pool_state(repo.pool_json_path, state)
+            # Fall through to normal allocation
+        else:
+            # Worktree exists - verify it has the correct branch
+            actual_branch = ctx.git.get_current_branch(existing.worktree_path)
+            if actual_branch == branch_name:
+                # Branch matches - fast path, return existing assignment
+                return SlotAllocationResult(
+                    slot_name=existing.slot_name,
+                    worktree_path=existing.worktree_path,
+                    already_assigned=True,
+                )
+
+            # Mismatch - worktree has different branch than pool.json says
+            # Check for uncommitted changes before fixing
+            if ctx.git.has_uncommitted_changes(existing.worktree_path):
+                user_output(
+                    f"Error: Slot {existing.slot_name} has uncommitted changes "
+                    f"and is on branch '{actual_branch}' instead of '{branch_name}'.\n"
+                    f"Please commit or stash changes in {existing.worktree_path} first."
+                )
+                raise SystemExit(1) from None
+
+            # Fix the worktree by checking out the correct branch
+            user_output(
+                f"Fixing stale pool state: checking out '{branch_name}' in {existing.slot_name}..."
+            )
+            ctx.git.checkout_branch(existing.worktree_path, branch_name)
+            return SlotAllocationResult(
+                slot_name=existing.slot_name,
+                worktree_path=existing.worktree_path,
+                already_assigned=True,
+            )
 
     # First, prefer reusing existing worktrees (fast path)
     inactive_slot = None
