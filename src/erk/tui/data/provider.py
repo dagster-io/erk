@@ -635,7 +635,7 @@ def _format_learn_display(
         - None or "not_started" -> "- not started"
         - "pending" -> "⟳ in progress"
         - "completed_no_plan" -> "∅ no insights"
-        - "completed_with_plan" -> "#456" (using learn_plan_issue)
+        - "completed_with_plan" -> "📋 #456" (using learn_plan_issue)
         - "pending_review" -> "🚧 #789" (using learn_plan_pr for draft PR)
         - "plan_completed" -> "✓ #12" (using learn_plan_pr)
     """
@@ -646,7 +646,7 @@ def _format_learn_display(
     if learn_status == "completed_no_plan":
         return "∅ no insights"
     if learn_status == "completed_with_plan" and learn_plan_issue is not None:
-        return f"#{learn_plan_issue}"
+        return f"📋 #{learn_plan_issue}"
     if learn_status == "pending_review" and learn_plan_pr is not None:
         return f"🚧 #{learn_plan_pr}"
     if learn_status == "plan_completed" and learn_plan_pr is not None:
@@ -672,7 +672,7 @@ def _format_learn_display_icon(
         - None or "not_started" -> "-"
         - "pending" -> "⟳"
         - "completed_no_plan" -> "∅"
-        - "completed_with_plan" -> "#456" (using learn_plan_issue)
+        - "completed_with_plan" -> "📋 #456" (using learn_plan_issue)
         - "pending_review" -> "🚧 #789" (using learn_plan_pr for draft PR)
         - "plan_completed" -> "✓ #12" (using learn_plan_pr)
     """
@@ -683,7 +683,7 @@ def _format_learn_display_icon(
     if learn_status == "completed_no_plan":
         return "∅"
     if learn_status == "completed_with_plan" and learn_plan_issue is not None:
-        return f"#{learn_plan_issue}"
+        return f"📋 #{learn_plan_issue}"
     if learn_status == "pending_review" and learn_plan_pr is not None:
         return f"🚧 #{learn_plan_pr}"
     if learn_status == "plan_completed" and learn_plan_pr is not None:

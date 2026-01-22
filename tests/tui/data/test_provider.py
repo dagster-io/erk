@@ -906,7 +906,7 @@ class TestLearnStatusDisplay:
 
         assert row.learn_status == "completed_with_plan"
         assert row.learn_plan_issue == 456
-        assert row.learn_display == "#456"
+        assert row.learn_display == "📋 #456"
 
     def test_learn_status_plan_completed_shows_pr_number(self, tmp_path: Path) -> None:
         """When learn_status is 'plan_completed', display checkmark and PR number."""

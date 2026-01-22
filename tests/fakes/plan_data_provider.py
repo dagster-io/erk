@@ -221,8 +221,8 @@ def make_plan_row(
         learn_display = "∅ no insights"
         learn_display_icon = "∅"
     elif learn_status == "completed_with_plan" and learn_plan_issue is not None:
-        learn_display = f"#{learn_plan_issue}"
-        learn_display_icon = f"#{learn_plan_issue}"
+        learn_display = f"📋 #{learn_plan_issue}"
+        learn_display_icon = f"📋 #{learn_plan_issue}"
     elif learn_status == "plan_completed" and learn_plan_pr is not None:
         learn_display = f"✓ #{learn_plan_pr}"
         learn_display_icon = f"✓ #{learn_plan_pr}"
