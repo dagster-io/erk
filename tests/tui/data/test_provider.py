@@ -708,7 +708,7 @@ class TestLearnStatusDisplay:
         assert row.learn_status is None
         assert row.learn_plan_issue is None
         assert row.learn_plan_pr is None
-        assert row.learn_display == "-"
+        assert row.learn_display == "- not started"
 
     def test_learn_status_pending_shows_spinner(self, tmp_path: Path) -> None:
         """When learn_status is 'pending', display spinner symbol."""
@@ -773,7 +773,7 @@ class TestLearnStatusDisplay:
         )
 
         assert row.learn_status == "pending"
-        assert row.learn_display == "⟳"
+        assert row.learn_display == "⟳ in progress"
 
     def test_learn_status_completed_no_plan_shows_empty_set(self, tmp_path: Path) -> None:
         """When learn_status is 'completed_no_plan', display empty set symbol."""
@@ -838,7 +838,7 @@ class TestLearnStatusDisplay:
         )
 
         assert row.learn_status == "completed_no_plan"
-        assert row.learn_display == "∅"
+        assert row.learn_display == "∅ no insights"
 
     def test_learn_status_completed_with_plan_shows_issue_number(self, tmp_path: Path) -> None:
         """When learn_status is 'completed_with_plan', display issue number."""

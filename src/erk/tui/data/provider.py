@@ -604,7 +604,7 @@ def _format_learn_display(
     learn_plan_issue: int | None,
     learn_plan_pr: int | None,
 ) -> str:
-    """Format learn status for display.
+    """Format learn status for display with inline descriptions.
 
     Args:
         learn_status: Raw status value from plan header
@@ -613,25 +613,24 @@ def _format_learn_display(
 
     Returns:
         Formatted display string based on status:
-        - None or "not_started" -> "-"
-        - "pending" -> "⟳"
-        - "completed_no_plan" -> "∅"
+        - None or "not_started" -> "- not started"
+        - "pending" -> "⟳ in progress"
+        - "completed_no_plan" -> "∅ no insights"
         - "completed_with_plan" -> "#456" (using learn_plan_issue)
         - "plan_completed" -> "✓ #12" (using learn_plan_pr)
     """
-    match learn_status:
-        case None | "not_started":
-            return "-"
-        case "pending":
-            return "⟳"
-        case "completed_no_plan":
-            return "∅"
-        case "completed_with_plan" if learn_plan_issue is not None:
-            return f"#{learn_plan_issue}"
-        case "plan_completed" if learn_plan_pr is not None:
-            return f"✓ #{learn_plan_pr}"
-        case _:
-            return "-"
+    if learn_status is None or learn_status == "not_started":
+        return "- not started"
+    if learn_status == "pending":
+        return "⟳ in progress"
+    if learn_status == "completed_no_plan":
+        return "∅ no insights"
+    if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+        return f"#{learn_plan_issue}"
+    if learn_status == "plan_completed" and learn_plan_pr is not None:
+        return f"✓ #{learn_plan_pr}"
+    # Fallback for unknown status
+    return "- not started"
 
 
 def _issue_to_plan(issue: IssueInfo) -> Plan:
