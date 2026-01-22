@@ -787,7 +787,8 @@ gh search issues "is:open label:bug"
 gh search prs "is:merged author:octocat"
 
 # Gist management
-gh gist create file.txt
+gh gist create file.txt                    # Creates gist with original filename
+gh gist create - --filename name.txt       # stdin-only: --filename requires stdin input (-)
 gh gist list
 gh gist view abc123
 gh gist edit abc123

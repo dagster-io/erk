@@ -23,6 +23,8 @@
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[git-graphite-quirks.md](git-graphite-quirks.md)** — debugging unexpected git/gt behavior, handling rebase/restack edge cases, writing conflict detection logic, troubleshooting detached HEAD states, handling concurrent worktree operations, understanding worktree lock files
 - **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
+- **[github-cli-quirks.md](github-cli-quirks.md)** — using gh gist create with --filename flag, debugging unexpected gh CLI behavior, working with gh gist commands
+- **[github-gist-api.md](github-gist-api.md)** — constructing gist raw URLs, downloading gist content programmatically, working with single-file gists
 - **[github-graphql.md](github-graphql.md)** — using gh api graphql, writing GraphQL queries for GitHub, passing variables to GraphQL queries, fetching data not available in REST API
 - **[github-interface-patterns.md](github-interface-patterns.md)** — calling GitHub API from erk, working with gh api command, fetching PR or issue data efficiently, understanding PRDetails type
 - **[github-issue-autoclose.md](github-issue-autoclose.md)** — implementing PR-to-issue linking, debugging why issues didn't auto-close after PR merge, understanding closing keyword behavior, working with plan issue closure detection
