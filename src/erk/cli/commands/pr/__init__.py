@@ -8,6 +8,7 @@ from erk.cli.commands.pr.checkout_cmd import pr_checkout
 from erk.cli.commands.pr.fix_conflicts_cmd import pr_fix_conflicts
 from erk.cli.commands.pr.fix_conflicts_remote_cmd import pr_fix_conflicts_remote
 from erk.cli.commands.pr.submit_cmd import pr_submit
+from erk.cli.commands.pr.summarize_cmd import pr_summarize
 from erk.cli.commands.pr.sync_cmd import pr_sync
 
 
@@ -22,4 +23,5 @@ register_with_aliases(pr_group, pr_checkout)
 pr_group.add_command(pr_fix_conflicts, name="fix-conflicts")
 pr_group.add_command(pr_fix_conflicts_remote, name="fix-conflicts-remote")
 pr_group.add_command(pr_submit, name="submit")
+pr_group.add_command(pr_summarize, name="summarize")
 pr_group.add_command(pr_sync, name="sync")

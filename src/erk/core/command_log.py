@@ -13,6 +13,7 @@ import fcntl
 import json
 import os
 import sys
+import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -81,6 +82,18 @@ def _get_session_id(cwd: Path) -> str | None:
     if session_file.exists():
         return session_file.read_text(encoding="utf-8").strip()
     return None
+
+
+def get_or_generate_session_id(cwd: Path) -> str:
+    """Get session ID from hook-written file or generate a random one.
+
+    Reads from .erk/scratch/current-session-id (written by session-id-injector hook).
+    Falls back to a random UUID if file doesn't exist or is empty.
+    """
+    session_id = _get_session_id(cwd)
+    if session_id:
+        return session_id
+    return str(uuid.uuid4())
 
 
 def _rotate_log_if_needed(log_path: Path) -> None:
