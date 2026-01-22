@@ -45,9 +45,11 @@ def build_workspace_test_context(
     """
     # Only create default git if not provided in kwargs
     if "git" not in kwargs:
+        current_branches_dict = {env.cwd: current_branch} if current_branch else None
         git_ops = FakeGit(
             git_common_dirs={env.cwd: env.git_dir},
             remote_urls={(env.cwd, "origin"): "https://github.com/owner/repo.git"},
+            current_branches=current_branches_dict,
         )
         if dry_run:
             git_ops = DryRunGit(git_ops)

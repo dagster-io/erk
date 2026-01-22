@@ -40,12 +40,64 @@ def test_view_plan_displays_issue() -> None:
         assert result.exit_code == 0
         assert "Test Issue" in result.output
         assert "OPEN" in result.output
-        assert "42" in result.output
+        assert "#42" in result.output
         assert "erk-plan" in result.output
         assert "bug" in result.output
         assert "alice" in result.output
         # Body should NOT be displayed without --full
         assert "This is a test issue description" not in result.output
+
+
+def test_view_plan_infers_from_branch() -> None:
+    """Test inferring plan number from current branch name."""
+    # Arrange
+    plan_issue = Plan(
+        plan_identifier="123",
+        title="Inferred Plan",
+        body="Plan content",
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/123",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"123": plan_issue})
+        # Set current branch to a plan branch
+        ctx = build_workspace_test_context(
+            env, plan_store=store, current_branch="P123-foo-bar-feature"
+        )
+
+        # Act - no identifier provided
+        result = runner.invoke(cli, ["plan", "view"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 0
+        assert "Inferred Plan" in result.output
+        assert "#123" in result.output
+
+
+def test_view_plan_error_when_cannot_infer_from_branch() -> None:
+    """Test error message when on non-plan branch without identifier."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({})
+        # Set current branch to master (not a plan branch)
+        ctx = build_workspace_test_context(env, plan_store=store, current_branch="master")
+
+        # Act - no identifier provided
+        result = runner.invoke(cli, ["plan", "view"], obj=ctx)
+
+        # Assert
+        assert result.exit_code == 1
+        assert "Error" in result.output
+        assert "No identifier specified and could not infer from branch name" in result.output
+        assert "P{issue}-..." in result.output
 
 
 def test_view_plan_with_full_flag() -> None:
@@ -78,7 +130,7 @@ def test_view_plan_with_full_flag() -> None:
         assert "Test Issue" in result.output
         # Body SHOULD be displayed with --full
         assert "This is a test issue description" in result.output
-        assert "--- Plan ---" in result.output
+        assert "─── Plan ───" in result.output
 
 
 def test_view_plan_with_short_full_flag() -> None:
@@ -265,12 +317,12 @@ Some other content here.
         # Assert
         assert result.exit_code == 0
         assert "Plan with Header" in result.output
-        assert "--- Header Info ---" in result.output
-        assert "Created by: schrockn" in result.output
-        assert "Schema version: 2" in result.output
-        assert "Worktree: test-worktree" in result.output
-        assert "Source repo: dagster-io/erk" in result.output
-        assert "Objective: #100" in result.output
+        assert "─── Header ───" in result.output
+        assert "Created by:" in result.output and "schrockn" in result.output
+        assert "Schema version:" in result.output and "2" in result.output
+        assert "Worktree:" in result.output and "test-worktree" in result.output
+        assert "Source repo:" in result.output and "dagster-io/erk" in result.output
+        assert "Objective:" in result.output and "#100" in result.output
 
 
 def test_view_plan_with_implementation_info() -> None:
@@ -319,10 +371,11 @@ last_local_impl_user: testuser
 
         # Assert
         assert result.exit_code == 0
-        assert "--- Local Implementation ---" in result.output
-        assert "Last impl: 2024-01-15T10:30:00Z (ended)" in result.output
-        assert "Session: abc123" in result.output
-        assert "User: testuser" in result.output
+        assert "─── Local Implementation ───" in result.output
+        # Values use new formatted field pattern
+        assert "Last impl:" in result.output and "2024-01-15T10:30:00Z (ended)" in result.output
+        assert "Session:" in result.output and "abc123" in result.output
+        assert "User:" in result.output and "testuser" in result.output
 
 
 def test_view_plan_without_header_info() -> None:
@@ -354,11 +407,11 @@ def test_view_plan_without_header_info() -> None:
         assert result.exit_code == 0
         assert "Plan without Header" in result.output
         # Should NOT show header info section when no metadata
-        assert "--- Header Info ---" not in result.output
+        assert "─── Header ───" not in result.output
 
 
 def test_view_plan_learn_section_no_evaluation() -> None:
-    """Test that Learn section shows 'No learn evaluation' when learn hasn't been run."""
+    """Test that Learn section shows '- not started' when learn hasn't been run."""
     # Arrange - plan with header but no learn data
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
@@ -400,14 +453,18 @@ created_from_session: abc123-session-id
 
         # Assert
         assert result.exit_code == 0
-        assert "--- Learn ---" in result.output
-        assert "Plan created from session: abc123-session-id" in result.output
-        assert "No learn evaluation" in result.output
+        assert "─── Learn ───" in result.output
+        # Plan session uses the new formatted field
+        assert "Plan session:" in result.output
+        assert "abc123-session-id" in result.output
+        # Status shows "- not started" for no learn evaluation
+        assert "Status:" in result.output
+        assert "- not started" in result.output
 
 
-def test_view_plan_learn_section_with_evaluation() -> None:
-    """Test that Learn section shows learn data when available."""
-    # Arrange - plan with header and learn data
+def test_view_plan_learn_section_with_session_data() -> None:
+    """Test that Learn section shows session data when available."""
+    # Arrange - plan with header and learn session
     issue_body = """<!-- erk:metadata-block:plan-header -->
 <details>
 <summary><code>plan-header</code></summary>
@@ -417,7 +474,6 @@ def test_view_plan_learn_section_with_evaluation() -> None:
 created_by: schrockn
 schema_version: 2
 created_from_session: abc123-session-id
-last_learn_at: 2024-01-20T15:00:00Z
 last_learn_session: def456-learn-session
 
 ```
@@ -450,9 +506,137 @@ last_learn_session: def456-learn-session
 
         # Assert
         assert result.exit_code == 0
-        assert "--- Learn ---" in result.output
-        assert "Plan created from session: abc123-session-id" in result.output
-        assert "Last learn: 2024-01-20T15:00:00Z" in result.output
-        assert "Learn session: def456-learn-session" in result.output
-        # Should NOT show "No learn evaluation" when learn data is present
-        assert "No learn evaluation" not in result.output
+        assert "─── Learn ───" in result.output
+        # Plan session and learn session use formatted field names
+        assert "Plan session:" in result.output
+        assert "abc123-session-id" in result.output
+        assert "Learn session:" in result.output
+        assert "def456-learn-session" in result.output
+
+
+def test_view_plan_learn_status_pending() -> None:
+    """Test learn status 'pending' displays as 'in progress'."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+learn_status: pending
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with pending learn",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Status:" in result.output
+        assert "in progress" in result.output
+
+
+def test_view_plan_learn_status_completed_with_plan() -> None:
+    """Test learn status 'completed_with_plan' displays the issue number."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+learn_status: completed_with_plan
+learn_plan_issue: 456
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with completed learn",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Status:" in result.output
+        assert "#456" in result.output
+
+
+def test_view_plan_learn_status_plan_completed() -> None:
+    """Test learn status 'plan_completed' displays the PR number."""
+    issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+
+learn_status: plan_completed
+learn_plan_pr: 789
+
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->
+"""
+
+    plan_issue = Plan(
+        plan_identifier="42",
+        title="Plan with completed learn PR",
+        body=issue_body,
+        state=PlanState.OPEN,
+        url="https://github.com/owner/repo/issues/42",
+        labels=["erk-plan"],
+        assignees=[],
+        created_at=datetime(2024, 1, 1, tzinfo=UTC),
+        updated_at=datetime(2024, 1, 2, tzinfo=UTC),
+        metadata={},
+        objective_id=None,
+    )
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        store, _ = create_plan_store_with_plans({"42": plan_issue})
+        ctx = build_workspace_test_context(env, plan_store=store)
+
+        result = runner.invoke(cli, ["plan", "view", "42"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Status:" in result.output
+        assert "completed #789" in result.output
