@@ -207,3 +207,13 @@ last_remote_impl_at: "2024-12-06T..."
 
 - If GitHub API rate limited, report and stop
 - If plan-header parsing fails, note in report and continue
+
+## Related Commands
+
+For assessing a single plan's relevance without running a full audit, use:
+
+```bash
+/local:check-relevance <issue-number>
+```
+
+This provides focused, evidence-based assessment inline when reviewing or creating plans.
