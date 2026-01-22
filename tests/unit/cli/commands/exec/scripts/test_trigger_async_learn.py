@@ -6,6 +6,7 @@ Uses fakes for fast, reliable testing without subprocess calls.
 
 import json
 from pathlib import Path
+from typing import Any
 
 from click.testing import CliRunner
 
@@ -18,6 +19,19 @@ from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.types import GitHubRepoId
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+
+
+def _extract_json_from_output(output: str) -> dict[str, Any]:
+    """Extract JSON object from CLI output that may contain progress messages.
+
+    The trigger-async-learn script emits progress messages to stderr before
+    the JSON result on stdout. Since CliRunner mixes stdout/stderr by default,
+    we need to extract just the JSON portion (the last line).
+    """
+    lines = output.strip().split("\n")
+    json_line = lines[-1]
+    return json.loads(json_line)
+
 
 # ============================================================================
 # Success Cases (Layer 4: Business Logic over Fakes)
@@ -57,7 +71,7 @@ def test_trigger_async_learn_succeeds_with_remote_session(tmp_path: Path) -> Non
         )
 
     assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
+    output = _extract_json_from_output(result.output)
     assert output["success"] is True
     assert output["issue_number"] == 123
     assert output["workflow_triggered"] is True
@@ -104,7 +118,7 @@ def test_trigger_async_learn_succeeds_with_local_session(tmp_path: Path) -> None
         )
 
     assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
+    output = _extract_json_from_output(result.output)
     assert output["success"] is True
     assert output["issue_number"] == 456
     assert output["workflow_triggered"] is True
@@ -161,11 +175,67 @@ def test_trigger_async_learn_includes_workflow_url_when_repo_identity_available(
         )
 
     assert result.exit_code == 0, result.output
-    output = json.loads(result.output)
+    output = _extract_json_from_output(result.output)
     assert output["success"] is True
     assert output["workflow_url"] == (
         f"https://github.com/test-owner/test-repo/actions/runs/{output['run_id']}"
     )
+
+
+def test_trigger_async_learn_emits_progress_messages(tmp_path: Path) -> None:
+    """Test that progress messages are emitted during workflow dispatch.
+
+    The exec script passes an on_progress callback that writes to stderr.
+    This test verifies the callback is connected and messages are emitted.
+    Since CliRunner mixes stdout/stderr by default, we verify progress
+    messages appear in the combined output alongside the JSON result.
+    """
+    # Create plan issue with remote implementation session
+    plan_body = format_plan_header_body_for_test(
+        last_remote_impl_run_id="12345678",
+        last_remote_impl_session_id="abc-def-ghi",
+    )
+    plan_body += "\n\n# Plan\n\nThis is the plan content."
+
+    test_issue = create_test_issue(
+        123,
+        "Test Plan #123",
+        plan_body,
+        labels=["erk-plan"],
+    )
+    fake_issues = FakeGitHubIssues(issues={123: test_issue})
+    fake_github = FakeGitHub()
+
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        cwd = Path.cwd()
+        result = runner.invoke(
+            trigger_async_learn,
+            ["123"],
+            obj=ErkContext.for_test(
+                github=fake_github,
+                github_issues=fake_issues,
+                cwd=cwd,
+                repo_root=cwd,
+            ),
+        )
+
+    assert result.exit_code == 0, result.output
+
+    # Progress messages should appear in output (CliRunner mixes stdout/stderr)
+    # These are the messages emitted by trigger_async.py via on_progress callback
+    assert "Fetching issue" in result.output
+    assert "Validating plan metadata" in result.output
+    assert "Triggering workflow" in result.output
+    assert "Updating plan status" in result.output
+
+    # JSON result should also be in output (at the end)
+    # Extract just the JSON part (last line)
+    lines = result.output.strip().split("\n")
+    json_line = lines[-1]
+    output = json.loads(json_line)
+    assert output["success"] is True
+    assert output["issue_number"] == 123
 
 
 def test_trigger_async_learn_updates_learn_status(tmp_path: Path) -> None:
@@ -242,7 +312,7 @@ def test_trigger_async_learn_fails_not_erk_plan(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 1
-    output = json.loads(result.output)
+    output = _extract_json_from_output(result.output)
     assert output["success"] is False
     assert "is not an erk-plan" in output["error"]
 
@@ -280,7 +350,7 @@ def test_trigger_async_learn_fails_no_session_data(tmp_path: Path) -> None:
         )
 
     assert result.exit_code == 1
-    output = json.loads(result.output)
+    output = _extract_json_from_output(result.output)
     assert output["success"] is False
     assert "No session data available" in output["error"]
 
