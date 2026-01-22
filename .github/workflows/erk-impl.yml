@@ -256,13 +256,37 @@ jobs:
 
       - name: Validate implementation produced changes
         if: steps.implement.outputs.implementation_success == 'true'
+        env:
+          BASE_BRANCH: ${{ inputs.base_branch }}
+          ISSUE_NUMBER: ${{ inputs.issue_number }}
         run: |
           # Check for changes excluding .worker-impl/ and .impl/
           CHANGES=$(git status --porcelain | grep -v '^\s*D.*\.worker-impl/' | grep -v '\.impl/' || true)
 
           if [ -z "$CHANGES" ]; then
             echo "::error::Implementation completed but produced no code changes."
-            echo "This usually means the implementation command failed silently or couldn't find the plan."
+            echo ""
+            echo "Possible causes:"
+
+            # Check if this might be a duplicate plan scenario
+            git fetch origin "$BASE_BRANCH" --quiet
+            BEHIND_COUNT=$(git rev-list HEAD.."origin/$BASE_BRANCH" --count 2>/dev/null || echo "0")
+
+            if [ "$BEHIND_COUNT" -gt "0" ]; then
+              echo ""
+              echo "1. LIKELY: Duplicate plan - work may already be merged to $BASE_BRANCH"
+              echo "   Branch is $BEHIND_COUNT commit(s) behind origin/$BASE_BRANCH."
+              echo ""
+              echo "   Recent commits on $BASE_BRANCH:"
+              git log HEAD.."origin/$BASE_BRANCH" --oneline --max-count=5
+              echo ""
+              echo "   Action: Close issue #$ISSUE_NUMBER as duplicate if work is done."
+            else
+              echo ""
+              echo "1. Implementation command may have failed silently"
+              echo "2. Plan file (.impl/plan.md) may not have been found"
+              echo "3. Claude determined no changes were needed"
+            fi
             exit 1
           fi
 
