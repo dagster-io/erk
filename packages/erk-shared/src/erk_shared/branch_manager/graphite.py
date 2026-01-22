@@ -76,16 +76,20 @@ class GraphiteBranchManager(BranchManager):
         Args:
             repo_root: Repository root directory
             branch_name: Name of the new branch
-            base_branch: Name of the parent branch
+            base_branch: Name of the parent branch (can be local or remote ref like origin/main)
         """
-        # First checkout the base branch
+        # First checkout the base branch (may result in detached HEAD if remote ref)
         self.git.checkout_branch(repo_root, base_branch)
         # Create the branch using git (from base_branch)
         self.git.create_branch(repo_root, branch_name, base_branch)
         # Checkout the new branch
         self.git.checkout_branch(repo_root, branch_name)
-        # Track it with Graphite
-        self.graphite.track_branch(repo_root, branch_name, base_branch)
+        # Track it with Graphite - use local branch name for parent
+        # (gt track doesn't accept remote refs like origin/branch)
+        parent_for_graphite = base_branch
+        if base_branch.startswith("origin/"):
+            parent_for_graphite = base_branch.removeprefix("origin/")
+        self.graphite.track_branch(repo_root, branch_name, parent_for_graphite)
 
     def delete_branch(self, repo_root: Path, branch: str) -> None:
         """Delete a branch with Graphite metadata cleanup.
