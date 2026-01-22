@@ -819,6 +819,37 @@ def test_plan_save_to_issue_no_slot_update_without_objective_flag() -> None:
         assert unchanged_state.slots[0].last_objective_id == 123
 
 
+def test_plan_save_to_issue_learned_from_issue_sets_metadata() -> None:
+    """Test --learned-from-issue flag sets learned_from_issue in plan metadata."""
+    fake_gh = FakeGitHubIssues()
+    plan_content = """# Learn Plan
+
+- Document something"""
+    fake_store = FakeClaudeInstallation.for_test(plans={"learn-test": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json", "--plan-type", "learn", "--learned-from-issue", "123"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+    # Verify issue was created with erk-learn label
+    assert len(fake_gh.created_issues) == 1
+    _title, body, labels = fake_gh.created_issues[0]
+    assert "erk-learn" in labels
+
+    # Verify learned_from_issue is in the metadata block
+    assert "learned_from_issue: 123" in body
+
+
 def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
     """Test display format shows slot objective update message."""
     runner = CliRunner()

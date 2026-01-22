@@ -428,28 +428,69 @@ If any documentation item includes a tripwire (cross-cutting warning):
    ```
 2. Run: `erk docs sync` to regenerate `tripwires.md`
 
-#### Validation
+#### Save Learn Plan to GitHub Issue
 
-After writing all files, run:
+Create the learn plan markdown file and save it as a GitHub issue:
 
 ```bash
-make fast-ci
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md << 'EOF'
+# Documentation Plan: <title>
+
+## Context
+
+<rich context section>
+
+## Raw Materials
+
+<gist-url>
+
+## PR Review Insights
+
+<If applicable, insights derived from PR #X comments>
+
+## Documentation Items
+
+<items with location, action, draft content, source>
+EOF
+
+erk exec plan-save-to-issue \
+    --plan-type learn \
+    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md \
+    --session-id="${CLAUDE_SESSION_ID}" \
+    --learned-from-issue <parent-issue-number> \
+    --format json
 ```
 
-Fix any formatting or validation errors before completing.
+Parse the JSON output to get `issue_number` (the new learn plan issue).
 
-#### Summary
-
-After writing, display:
+Display the result:
 
 ```
-Documentation written:
-- docs/learned/tui/shortcuts-reference.md (created)
-- docs/learned/tui/adding-commands.md (updated)
+Learn plan saved to GitHub issue #<issue_number>
 
 Raw materials: <gist-url>
+```
 
-Files are ready for the workflow to commit.
+### Step 6b: Track Learn Result on Parent Plan
+
+**After creating the learn plan issue**, update the parent plan's status to link the two issues:
+
+```bash
+erk exec track-learn-result \
+    --issue <parent-issue-number> \
+    --status completed_with_plan \
+    --plan-issue <new-learn-plan-issue-number>
+```
+
+This sets `learn_status: completed_with_plan` and `learn_plan_issue: <N>` on the parent plan,
+enabling the TUI to show the linked learn plan issue.
+
+**If learn found no documentation needed (skipping Step 6):**
+
+```bash
+erk exec track-learn-result \
+    --issue <parent-issue-number> \
+    --status completed_no_plan
 ```
 
 ### Step 7: Track Evaluation

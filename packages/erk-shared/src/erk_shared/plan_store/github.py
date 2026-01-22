@@ -310,6 +310,7 @@ class GitHubPlanStore(PlanBackend):
             source_repo=source_repo_str,
             objective_id=objective_id,
             created_from_session=created_from_session_str,
+            learned_from_issue=None,
         )
 
         if not result.success:

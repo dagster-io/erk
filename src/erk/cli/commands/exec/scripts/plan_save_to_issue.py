@@ -175,6 +175,12 @@ def _update_slot_objective_if_applicable(
     default=None,
     help="Plan type: standard (default) or learn (for documentation learning plans)",
 )
+@click.option(
+    "--learned-from-issue",
+    type=int,
+    default=None,
+    help="Parent plan issue number (for learn plans, enables auto-update on land)",
+)
 @click.pass_context
 def plan_save_to_issue(
     ctx: click.Context,
@@ -184,6 +190,7 @@ def plan_save_to_issue(
     session_id: str | None,
     objective_issue: int | None,
     plan_type: str | None,
+    learned_from_issue: int | None,
 ) -> None:
     """Extract plan from ~/.claude/plans/ and create GitHub issue.
 
@@ -239,6 +246,7 @@ def plan_save_to_issue(
         source_repo=source_repo,
         objective_id=objective_issue,
         created_from_session=effective_session_id,
+        learned_from_issue=learned_from_issue,
     )
 
     if not result.success:
