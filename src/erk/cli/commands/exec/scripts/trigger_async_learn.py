@@ -99,8 +99,7 @@ def trigger_async_learn(ctx: click.Context, issue_number: int) -> None:
 
     if isinstance(result, TriggerAsyncLearnSuccess):
         # Construct workflow URL for display
-        repo_id = get_repo_identifier(ctx)
-        if repo_id is not None and "/" in repo_id:
+        if (repo_id := get_repo_identifier(ctx)) is not None and "/" in repo_id:
             owner, repo = repo_id.split("/", 1)
             workflow_url = construct_workflow_run_url(owner, repo, result.run_id)
         else:
