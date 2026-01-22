@@ -11,7 +11,23 @@ from typing import NamedTuple
 import pytest
 
 from erk_shared.git.abc import Git
+from erk_shared.git.branch_ops.abc import GitBranchOps
+from erk_shared.git.branch_ops.real import RealGitBranchOps
 from erk_shared.git.real import RealGit
+
+
+class GitBranchOpsSetup(NamedTuple):
+    """Result of git branch operations setup fixture for integration testing.
+
+    Attributes:
+        branch_ops: RealGitBranchOps instance for integration testing
+        git: RealGit instance for verification queries
+        repo: Path to the real repository root
+    """
+
+    branch_ops: GitBranchOps
+    git: Git
+    repo: Path
 
 
 class GitSetup(NamedTuple):
@@ -172,3 +188,23 @@ def git_ops_with_existing_branch(
     wt = tmp_path / "wt"
 
     yield GitWithExistingBranch(git=RealGit(), repo=repo, wt_path=wt)
+
+
+@pytest.fixture
+def git_branch_ops(
+    tmp_path: Path,
+) -> Iterator[GitBranchOpsSetup]:
+    """Provide RealGitBranchOps with setup repo for integration testing.
+
+    Returns a GitBranchOpsSetup namedtuple with (branch_ops, git, repo) where:
+    - branch_ops: RealGitBranchOps for testing branch mutations
+    - git: RealGit for verification queries
+    - repo: Path to a real git repository
+
+    Uses actual git subprocess calls on tmp_path repo for integration testing.
+    """
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    init_git_repo(repo, "main")
+
+    yield GitBranchOpsSetup(branch_ops=RealGitBranchOps(), git=RealGit(), repo=repo)
