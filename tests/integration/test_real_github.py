@@ -1074,9 +1074,11 @@ def test_get_open_prs_with_base_branch_api_failure_returns_empty(
 def test_create_gist_success(monkeypatch: MonkeyPatch) -> None:
     """Test create_gist uses correct gh gist create command and parses output."""
     called_with: list[list[str]] = []
+    captured_input: list[str | None] = []
 
-    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    def mock_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         called_with.append(cmd)
+        captured_input.append(kwargs.get("input"))
         # gh gist create returns the gist URL on stdout
         return subprocess.CompletedProcess(
             args=cmd,
@@ -1097,13 +1099,16 @@ def test_create_gist_success(monkeypatch: MonkeyPatch) -> None:
         # Verify command structure (without --public for secret gist)
         assert len(called_with) == 1
         cmd = called_with[0]
-        assert cmd[0:3] == ["gh", "gist", "create"]
-        # cmd[3] is the temp file path
+        # Uses stdin (-) so --filename works correctly
+        assert cmd[0:4] == ["gh", "gist", "create", "-"]
         assert "--filename" in cmd
         assert "session.jsonl" in cmd
         assert "--desc" in cmd
         assert "Test gist" in cmd
         assert "--public" not in cmd  # Secret gist
+
+        # Verify content was passed via stdin
+        assert captured_input[0] == '{"type": "test"}'
 
         # Verify result parsing
         assert isinstance(result, GistCreated)
@@ -1119,7 +1124,7 @@ def test_create_gist_public(monkeypatch: MonkeyPatch) -> None:
     """Test create_gist includes --public flag for public gists."""
     called_with: list[list[str]] = []
 
-    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    def mock_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         called_with.append(cmd)
         return subprocess.CompletedProcess(
             args=cmd,
@@ -1145,7 +1150,7 @@ def test_create_gist_public(monkeypatch: MonkeyPatch) -> None:
 def test_create_gist_failure(monkeypatch: MonkeyPatch) -> None:
     """Test create_gist returns GistCreateError on command failure."""
 
-    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    def mock_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         raise RuntimeError("gh gist create failed: not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
@@ -1165,7 +1170,7 @@ def test_create_gist_failure(monkeypatch: MonkeyPatch) -> None:
 def test_create_gist_empty_output(monkeypatch: MonkeyPatch) -> None:
     """Test create_gist returns GistCreateError when gh returns empty output."""
 
-    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    def mock_run(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
         return subprocess.CompletedProcess(
             args=cmd,
             returncode=0,

@@ -52,9 +52,10 @@ def _normalize_gist_url(gist_url: str) -> str:
         return gist_url
 
     # Convert webpage URL to raw URL
+    # Use /raw/ without filename - GitHub redirects to the first file in single-file gists
     if "gist.github.com" in gist_url:
         normalized = gist_url.replace("gist.github.com", "gist.githubusercontent.com").rstrip("/")
-        return f"{normalized}/raw/session.jsonl"
+        return f"{normalized}/raw/"
 
     # Unknown format, return as-is and let urlopen handle it
     return gist_url

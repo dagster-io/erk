@@ -54,12 +54,15 @@ def test_get_remote_sessions_dir_returns_existing(tmp_path: Path) -> None:
 
 
 def test_normalize_gist_url_webpage_to_raw() -> None:
-    """Test that gist.github.com webpage URL is converted to raw URL."""
+    """Test that gist.github.com webpage URL is converted to raw URL.
+
+    Uses /raw/ without filename - GitHub redirects to the first file in single-file gists.
+    """
     webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb"
 
     result = _normalize_gist_url(webpage_url)
 
-    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/session.jsonl"
+    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
     assert result == expected
 
 
@@ -69,7 +72,7 @@ def test_normalize_gist_url_webpage_with_trailing_slash() -> None:
 
     result = _normalize_gist_url(webpage_url)
 
-    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/session.jsonl"
+    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
     assert result == expected
 
 
@@ -255,6 +258,8 @@ def test_cli_success_with_webpage_url_normalized(tmp_path: Path) -> None:
     assert output["success"] is True
     assert output["session_id"] == session_id
 
-    # Verify the URL was normalized before download
-    expected_raw_url = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/session.jsonl"
+    # Verify the URL was normalized before download (uses /raw/ without filename)
+    expected_raw_url = (
+        "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/"
+    )
     assert captured_url == expected_raw_url
