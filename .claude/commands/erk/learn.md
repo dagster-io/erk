@@ -271,7 +271,7 @@ Use TaskOutput to retrieve findings from each agent:
 TaskOutput(task_id: <agent-task-id>, block: true)
 ```
 
-Collect all results before proceeding.
+Collect all results before proceeding to the next step.
 
 #### Write Agent Results to Scratch Storage
 
@@ -296,31 +296,44 @@ cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-chec
 EOF
 ```
 
-#### Synthesize Agent Findings
+#### Synthesize Agent Findings (Agent 4)
 
-Combine agent outputs to build the documentation gap inventory for Step 4.
+Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents:
 
-Use structured output from agents to populate the mandatory table. The agents have already:
+```
+Task(
+  subagent_type: "general-purpose",
+  description: "Identify documentation gaps",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/documentation-gap-identifier.md`
 
-- Categorized patterns and insights
-- Identified documentation opportunities
-- Suggested tripwire candidates
-- **Checked for existing documentation and contradictions** (existing-docs-checker)
+    Input:
+    - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
+    - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
+    - existing_docs_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md"
+    - plan_title: <title from plan issue>
+)
+```
 
-**Merge existing-docs-checker findings:**
+**Note:** This agent runs AFTER the parallel agents complete (sequential dependency).
 
-1. Cross-reference documentation suggestions from session-analyzer and code-diff-analyzer against existing-docs-checker results
-2. For each suggested doc item, check if existing-docs-checker found:
-   - **ALREADY_DOCUMENTED**: Skip this item, note existing doc location
-   - **PARTIAL_OVERLAP**: Consider updating existing doc instead of creating new
-   - **NEW_TOPIC**: Proceed with new documentation
-3. Add "Duplicate Warnings" from existing-docs-checker to Step 4 analysis
-4. Review "Contradiction Warnings" from existing-docs-checker:
-   - **HIGH severity**: Flag for immediate resolution before creating new docs
-   - **MEDIUM/LOW severity**: Note in learn plan for future review
-   - If new insight contradicts existing tripwire, investigate before proceeding
+The DocumentationGapIdentifier agent will:
 
-Review agent outputs and merge into a cohesive analysis.
+- Collect all candidates from session-analyzer, code-diff-analyzer, and existing-docs-checker
+- Deduplicate against existing documentation (ALREADY_DOCUMENTED, PARTIAL_OVERLAP, NEW_TOPIC)
+- Cross-reference against the diff inventory to ensure completeness
+- Classify items: NEW_DOC | UPDATE_EXISTING | TRIPWIRE | SKIP
+- Prioritize by impact: HIGH (gateway methods, contradictions) > MEDIUM (patterns) > LOW (helpers)
+- Produce the MANDATORY enumerated table required by Step 4
+
+Use the agent's output for Step 4 analysis. The agent provides:
+
+- Summary statistics
+- Contradiction resolutions table (HIGH priority - resolve before new docs)
+- Enumerated table with all inventory items
+- Prioritized action items (sorted by priority)
+- Skipped items with reasons
+- Tripwire additions table
 
 #### Deep Analysis (Manual Fallback)
 
@@ -357,27 +370,34 @@ Read each file and mine them thoroughly.
 
 ### Step 4: Identify Documentation Gaps
 
-Based on session analysis and your Step 2 inventory, identify documentation that would help future agents.
+Use the DocumentationGapIdentifier agent output from Step 3. The agent has already:
 
-#### Learning Gaps
+- Collected all candidates from the parallel agents
+- Deduplicated against existing documentation
+- Cross-referenced against the diff inventory for completeness
+- Classified each item (NEW_DOC, UPDATE_EXISTING, TRIPWIRE, SKIP)
+- Prioritized by impact (HIGH > MEDIUM > LOW)
+- Created the MANDATORY enumerated table
 
-What documentation would have made the session faster?
+#### Review Agent Output
 
-- Information not in the code (external API quirks, non-obvious interactions)
-- Patterns where the "why" isn't clear from reading code alone
-- Gotchas where code works but has surprising behavior
-- Cross-cutting concerns not visible from any single file
+The DocumentationGapIdentifier provides:
 
-**Execution discipline filter (advisory):** Some errors are execution discipline - agent should have read code more carefully. These are LESS likely to be documentation candidates, but when uncertain, include it.
+1. **Contradiction Resolutions** (HIGH priority) - Resolve these BEFORE creating new docs
+2. **Enumerated Table** - Every inventory item with status and rationale
+3. **Prioritized Action Items** - Sorted by impact
+4. **Skipped Items** - With explicit reasons
+5. **Tripwire Additions** - Cross-cutting concerns to add
 
-**Tripwires vs conventional docs:**
+**Validate the agent's analysis:**
 
-- **Tripwire**: Cross-cutting concerns that apply broadly (e.g., "before using subprocess.run anywhere")
-- **Conventional doc**: Module-specific or localized patterns
+- Check that contradiction resolutions make sense
+- Review any HIGH priority items carefully
+- Verify skip reasons are valid (not "self-documenting code")
 
-#### PR Comment Analysis
+#### PR Comment Analysis (Additional)
 
-If PR comments were fetched in Step 2, mine them for documentation opportunities:
+If PR comments were fetched in Step 2, mine them for additional documentation opportunities not captured by the agents:
 
 **Review Comments (Inline)**
 
@@ -404,17 +424,9 @@ Look for:
 - Trade-off conversations
 - Implementation details explained in prose
 
-#### Teaching Gaps (MANDATORY)
+Add any additional items from PR comments to the documentation plan.
 
-**If you built it, document it.** This is NOT optional.
-
-**IMPORTANT: "Self-documenting code" is NOT a valid reason to skip documentation.** Code shows WHAT but not WHY. Future agents need:
-
-- When to use this feature (context)
-- How it fits with other features (relationships)
-- Edge cases and gotchas (experience)
-
-**Reference: Common documentation locations**
+#### Reference: Common Documentation Locations
 
 | What was built            | Documentation needed                                       |
 | ------------------------- | ---------------------------------------------------------- |
@@ -426,41 +438,23 @@ Look for:
 | New architectural pattern | Create architecture doc or add tripwire                    |
 | External API integration  | Document quirks, rate limits, auth patterns discovered     |
 
-**MANDATORY: Create an enumerated table.** For EACH item from your Step 2 inventory, you MUST produce a row:
-
-| Item | Type | Documentation Needed? | If Yes: Location & Content | If No: Explicit Reason |
-| ---- | ---- | --------------------- | -------------------------- | ---------------------- |
-| ...  | ...  | Yes/No                | ...                        | ...                    |
-
-Valid reasons for "No":
-
-- Already documented at [location]
-- Pure refactoring with no new behavior
-- Internal helper with no external usage
-
-Invalid reasons (REJECT these):
-
-- "Code is self-documenting"
-- "Patterns are discoverable in the code"
-- "Well-tested so documentation unnecessary"
-- "Simple/straightforward implementation"
+#### Validation Checkpoint
 
 **⚠️ CHECKPOINT: Before proceeding to Step 5**
 
-You MUST have:
+Verify the DocumentationGapIdentifier output:
 
-- [ ] Created the enumerated table above with ALL inventory items
-- [ ] Provided explicit reasoning for every "No documentation needed" row
-- [ ] At least considered each item (empty tables = incomplete analysis)
-
-If your Step 2 inventory had N items, your table MUST have N rows.
+- [ ] Enumerated table includes ALL inventory items from Step 2
+- [ ] Every SKIP has an explicit, valid reason (not "self-documenting")
+- [ ] HIGH priority contradictions have resolution plans
+- [ ] All PR comment insights are captured
 
 **If no documentation needed for ANY item:**
 
-If your enumerated table shows NO documentation needed for ANY item:
+If the enumerated table shows NO documentation needed:
 
-1. Re-read your table reasoning
-2. Ask yourself: "Would a future agent working on similar code benefit from this?"
+1. Re-read the agent's skip reasons
+2. Ask: "Would a future agent benefit from this?"
 3. If still no documentation needed, state: "After explicit review of N inventory items, no documentation is needed because [specific reasons for top 3 items]"
 
 Only proceed to Step 7 (skipping Step 5-6) after this explicit justification.
