@@ -326,14 +326,59 @@ The DocumentationGapIdentifier agent will:
 - Prioritize by impact: HIGH (gateway methods, contradictions) > MEDIUM (patterns) > LOW (helpers)
 - Produce the MANDATORY enumerated table required by Step 4
 
-Use the agent's output for Step 4 analysis. The agent provides:
+Write the DocumentationGapIdentifier output to scratch storage:
 
-- Summary statistics
-- Contradiction resolutions table (HIGH priority - resolve before new docs)
-- Enumerated table with all inventory items
-- Prioritized action items (sorted by priority)
-- Skipped items with reasons
-- Tripwire additions table
+```bash
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md << 'EOF'
+<agent output>
+EOF
+```
+
+#### Synthesize Learn Plan (Agent 5)
+
+Launch the PlanSynthesizer agent to transform the gap analysis into a complete learn plan:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  description: "Synthesize learn plan",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/learn/plan-synthesizer.md`
+
+    Input:
+    - gap_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md"
+    - session_analysis_paths: [".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md", ...]
+    - diff_analysis_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md" (or null if no PR)
+    - plan_title: <title from plan issue>
+    - gist_url: <gist URL from Step 3>
+    - pr_number: <PR number if available, else null>
+)
+```
+
+**Note:** This agent runs AFTER DocumentationGapIdentifier completes (sequential dependency).
+
+Write the synthesized output to scratch storage:
+
+```bash
+cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md << 'EOF'
+<agent output>
+EOF
+```
+
+#### Agent Dependency Graph
+
+```
+Parallel Tier (can run simultaneously):
+  ├─ SessionAnalyzer (per session XML)
+  ├─ CodeDiffAnalyzer (if PR exists)
+  └─ ExistingDocsChecker
+
+Sequential Tier 1 (depends on Parallel Tier):
+  └─ DocumentationGapIdentifier
+
+Sequential Tier 2 (depends on Sequential Tier 1):
+  └─ PlanSynthesizer
+```
 
 #### Deep Analysis (Manual Fallback)
 
@@ -368,32 +413,30 @@ Read each file and mine them thoroughly.
 - External documentation fetched (WebFetch, WebSearch)
 - Error messages and how they were resolved
 
-### Step 4: Identify Documentation Gaps
+### Step 4: Review Synthesized Plan
 
-Use the DocumentationGapIdentifier agent output from Step 3. The agent has already:
+Read the PlanSynthesizer output:
 
-- Collected all candidates from the parallel agents
-- Deduplicated against existing documentation
-- Cross-referenced against the diff inventory for completeness
-- Classified each item (NEW_DOC, UPDATE_EXISTING, TRIPWIRE, SKIP)
-- Prioritized by impact (HIGH > MEDIUM > LOW)
-- Created the MANDATORY enumerated table
+```bash
+cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md
+```
 
-#### Review Agent Output
+The PlanSynthesizer has already:
 
-The DocumentationGapIdentifier provides:
+- Collected all candidates from the parallel agents via DocumentationGapIdentifier
+- Created a narrative context explaining what was built
+- Generated documentation items with draft content starters
+- Formatted tripwire additions for copy-paste
 
-1. **Contradiction Resolutions** (HIGH priority) - Resolve these BEFORE creating new docs
-2. **Enumerated Table** - Every inventory item with status and rationale
-3. **Prioritized Action Items** - Sorted by impact
-4. **Skipped Items** - With explicit reasons
-5. **Tripwire Additions** - Cross-cutting concerns to add
+#### Validate the Synthesized Plan
 
-**Validate the agent's analysis:**
+Review the synthesized plan:
 
-- Check that contradiction resolutions make sense
-- Review any HIGH priority items carefully
-- Verify skip reasons are valid (not "self-documenting code")
+1. **Context section**: Does it accurately describe what was built?
+2. **Contradiction resolutions**: Do they make sense?
+3. **HIGH priority items**: Are they appropriate?
+4. **Draft content starters**: Are they actionable (not just "document this")?
+5. **Skip reasons**: Are they valid (not "self-documenting code")?
 
 #### PR Comment Analysis (Additional)
 
@@ -442,16 +485,17 @@ Add any additional items from PR comments to the documentation plan.
 
 **⚠️ CHECKPOINT: Before proceeding to Step 5**
 
-Verify the DocumentationGapIdentifier output:
+Verify the PlanSynthesizer output:
 
-- [ ] Enumerated table includes ALL inventory items from Step 2
+- [ ] Context section accurately describes what was built
+- [ ] Documentation items have actionable draft content (not just "document this")
 - [ ] Every SKIP has an explicit, valid reason (not "self-documenting")
 - [ ] HIGH priority contradictions have resolution plans
 - [ ] All PR comment insights are captured
 
-**If no documentation needed for ANY item:**
+**If no documentation needed:**
 
-If the enumerated table shows NO documentation needed:
+If the synthesized plan shows NO documentation items:
 
 1. Re-read the agent's skip reasons
 2. Ask: "Would a future agent benefit from this?"
@@ -489,15 +533,13 @@ grep -r "<removed-feature>" docs/learned/ .claude/commands/ .claude/skills/
 
 ### Step 5: Present Findings
 
-Present findings to the user with:
+Present the synthesized plan to the user. The PlanSynthesizer output already includes:
 
-1. **Summary of insights** with source attribution:
-   - **[Plan]** - From planning/research phase
-   - **[Impl]** - From implementation phase
+1. **Context section** - What was built and why docs matter
+2. **Summary statistics** - Documentation items, contradictions, tripwires
+3. **Documentation items** - Prioritized with draft content starters and source attribution ([Plan], [Impl], [PR #N])
 
-2. **Proposed documentation items** - What files you will create or update
-
-3. **Ask for validation** - Confirm the documentation items to write. Note that files will be written directly (not saved as a plan for later).
+**Ask for validation**: Confirm the documentation items to write. Note that files will be written directly (not saved as a plan for later).
 
 If the user decides to skip (no valuable insights), proceed to Step 7.
 
@@ -505,7 +547,7 @@ If the user decides to skip (no valuable insights), proceed to Step 7.
 
 **IMPORTANT:** Load the `learned-docs` skill before writing any documentation.
 
-For each documentation item identified in Step 4, write the file directly.
+For each documentation item in the synthesized plan, write the file directly. The draft content starters from PlanSynthesizer provide the foundation.
 
 #### Creating New Documents
 
@@ -550,32 +592,13 @@ If any documentation item includes a tripwire (cross-cutting warning):
 
 #### Save Learn Plan to GitHub Issue
 
-Create the learn plan markdown file and save it as a GitHub issue:
+The synthesized plan is already formatted as learn plan markdown. Save it as a GitHub issue:
 
 ```bash
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md << 'EOF'
-# Documentation Plan: <title>
-
-## Context
-
-<rich context section>
-
-## Raw Materials
-
-<gist-url>
-
-## PR Review Insights
-
-<If applicable, insights derived from PR #X comments>
-
-## Documentation Items
-
-<items with location, action, draft content, source>
-EOF
-
+# Use the synthesized plan directly
 erk exec plan-save-to-issue \
     --plan-type learn \
-    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-plan.md \
+    --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \
     --session-id="${CLAUDE_SESSION_ID}" \
     --learned-from-issue <parent-issue-number> \
     --format json
