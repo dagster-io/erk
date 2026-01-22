@@ -9,6 +9,8 @@ tripwires:
     warning: "AI workflow files belong in .erk/scratch/<session-id>/, NOT /tmp/."
   - action: "creating temp files for AI workflows"
     warning: "Use worktree-scoped scratch storage for session-specific data."
+  - action: "analyzing sessions larger than 100k characters"
+    warning: "Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -> 67k chars). Critical for fitting large sessions in agent context windows."
 ---
 
 # Scratch Storage
