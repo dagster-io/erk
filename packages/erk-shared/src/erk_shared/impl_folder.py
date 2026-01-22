@@ -209,6 +209,80 @@ def has_issue_reference(impl_dir: Path) -> bool:
     return issue_file.exists()
 
 
+@dataclass(frozen=True)
+class ResolvedIssue:
+    """Result of resolving an issue reference from .impl/ or branch name.
+
+    Attributes:
+        issue_number: The resolved issue number, or None if not found
+        issue_url: Full GitHub issue URL, or None if not constructable
+        source: Where the issue was found: "impl_folder", "branch_name", or "none"
+    """
+
+    issue_number: int | None
+    issue_url: str | None
+    source: str  # "impl_folder" | "branch_name" | "none"
+
+
+def resolve_issue_reference(
+    impl_dir: Path,
+    branch_name: str,
+    *,
+    repo_owner: str | None,
+    repo_name: str | None,
+) -> ResolvedIssue:
+    """Resolve issue from .impl/issue.json or branch name pattern.
+
+    This consolidates issue discovery logic with a cleaner API than validate_issue_linkage().
+    Unlike validate_issue_linkage(), this does NOT raise ValueError on mismatch - it
+    prefers the .impl/issue.json source when both exist (caller can compare if needed).
+
+    Args:
+        impl_dir: Path to .impl/ or .worker-impl/ directory
+        branch_name: Current git branch name
+        repo_owner: GitHub repository owner (for URL construction)
+        repo_name: GitHub repository name (for URL construction)
+
+    Returns:
+        ResolvedIssue with issue_number, issue_url, and source.
+        - source="impl_folder" if from .impl/issue.json
+        - source="branch_name" if from branch name pattern (P{number}-...)
+        - source="none" if no issue found
+
+    Examples:
+        >>> # .impl/issue.json has issue 42 -> (42, url, "impl_folder")
+        >>> # No .impl/ but branch P42-feature -> (42, url, "branch_name")
+        >>> # No .impl/ and branch main -> (None, None, "none")
+    """
+    # Check .impl/issue.json first
+    issue_ref = read_issue_reference(impl_dir) if impl_dir.exists() else None
+    if issue_ref is not None:
+        # Prefer the URL from issue.json if available
+        issue_url = issue_ref.issue_url
+        # If no URL stored but we can construct one
+        if issue_url is None and repo_owner is not None and repo_name is not None:
+            issue_url = f"https://github.com/{repo_owner}/{repo_name}/issues/{issue_ref.issue_number}"
+        return ResolvedIssue(
+            issue_number=issue_ref.issue_number,
+            issue_url=issue_url,
+            source="impl_folder",
+        )
+
+    # Fall back to branch name pattern
+    branch_issue = extract_leading_issue_number(branch_name)
+    if branch_issue is not None:
+        issue_url = None
+        if repo_owner is not None and repo_name is not None:
+            issue_url = f"https://github.com/{repo_owner}/{repo_name}/issues/{branch_issue}"
+        return ResolvedIssue(
+            issue_number=branch_issue,
+            issue_url=issue_url,
+            source="branch_name",
+        )
+
+    return ResolvedIssue(issue_number=None, issue_url=None, source="none")
+
+
 def validate_issue_linkage(impl_dir: Path, branch_name: str) -> int | None:
     """Validate branch name and .impl/issue.json agree. Returns issue number.
 
