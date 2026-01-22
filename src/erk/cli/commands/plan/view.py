@@ -8,6 +8,7 @@ from erk.cli.core import discover_repo_context
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
+from erk_shared.core.typing_utils import narrow_to_literal
 from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.metadata.schemas import (
     BRANCH_NAME,
@@ -28,6 +29,7 @@ from erk_shared.github.metadata.schemas import (
     SCHEMA_VERSION,
     SOURCE_REPO,
     WORKTREE_NAME,
+    LearnStatusValue,
 )
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
@@ -69,14 +71,14 @@ def _format_field(label: str, value: str) -> str:
 
 
 def _format_learn_state(
-    learn_status: str | None,
+    learn_status: LearnStatusValue | None,
     learn_plan_issue: int | None,
     learn_plan_pr: int | None,
 ) -> str:
     """Format learn status for CLI display.
 
     Args:
-        learn_status: Raw status value from plan header
+        learn_status: Learn status value (see LearnStatusValue for valid values)
         learn_plan_issue: Issue number of generated learn plan
         learn_plan_pr: PR number that implemented the learn plan
 
@@ -188,24 +190,24 @@ def _format_header_section(header_info: dict[str, object]) -> list[str]:
     lines.append(click.style("─── Learn ───", bold=True))
 
     # Display learn state (status, plan issue, PR)
-    learn_status = header_info.get(LEARN_STATUS)
-    learn_plan_issue = header_info.get(LEARN_PLAN_ISSUE)
-    learn_plan_pr = header_info.get(LEARN_PLAN_PR)
+    learn_status_raw = header_info.get(LEARN_STATUS)
+    learn_plan_issue_raw = header_info.get(LEARN_PLAN_ISSUE)
+    learn_plan_pr_raw = header_info.get(LEARN_PLAN_PR)
 
     # Cast to correct types (LBYL)
-    learn_status_str: str | None = None
-    if isinstance(learn_status, str):
-        learn_status_str = learn_status
+    # Narrow learn_status to LearnStatusValue if valid
+    learn_status_str = learn_status_raw if isinstance(learn_status_raw, str) else None
+    learn_status_val = narrow_to_literal(learn_status_str, LearnStatusValue)
 
     learn_plan_issue_int: int | None = None
-    if isinstance(learn_plan_issue, int):
-        learn_plan_issue_int = learn_plan_issue
+    if isinstance(learn_plan_issue_raw, int):
+        learn_plan_issue_int = learn_plan_issue_raw
 
     learn_plan_pr_int: int | None = None
-    if isinstance(learn_plan_pr, int):
-        learn_plan_pr_int = learn_plan_pr
+    if isinstance(learn_plan_pr_raw, int):
+        learn_plan_pr_int = learn_plan_pr_raw
 
-    learn_display = _format_learn_state(learn_status_str, learn_plan_issue_int, learn_plan_pr_int)
+    learn_display = _format_learn_state(learn_status_val, learn_plan_issue_int, learn_plan_pr_int)
     lines.append(_format_field("Status", learn_display))
 
     if CREATED_FROM_SESSION in header_info:
