@@ -222,6 +222,7 @@ class ExistingAssignmentValidation:
 
 def _validate_existing_assignment(
     ctx: ErkContext,
+    *,
     state: PoolState,
     existing: SlotAssignment,
     branch_name: str,
@@ -482,7 +483,11 @@ def allocate_slot_for_branch(
     existing = find_branch_assignment(state, branch_name)
     if existing is not None:
         validation = _validate_existing_assignment(
-            ctx, state, existing, branch_name, repo.pool_json_path
+            ctx,
+            state=state,
+            existing=existing,
+            branch_name=branch_name,
+            repo_pool_json_path=repo.pool_json_path,
         )
         if validation.result is not None:
             return validation.result
