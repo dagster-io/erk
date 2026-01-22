@@ -681,6 +681,7 @@ class ErkDashApp(App):
                         ],
                         cwd=self._provider.repo_root,
                         title=f"Landing PR #{pr_num}",
+                        timeout=600.0,
                     )
                 )
 
