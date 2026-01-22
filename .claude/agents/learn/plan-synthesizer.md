@@ -42,6 +42,7 @@ Read session analysis files to extract:
 - Key decisions made (why certain approaches were taken)
 - Challenges overcome (errors, blockers, workarounds)
 - Patterns established (new patterns for future reference)
+- **Prevention insights** (what went wrong and how to avoid it)
 
 Read diff analysis (if available) to extract:
 
@@ -140,6 +141,19 @@ Return a complete learn plan markdown:
 **Existing doc:** `<path>`
 **Conflict:** <description of the contradiction>
 **Resolution:** <what to do - update existing, add context, etc.>
+
+## Prevention Insights
+
+Errors and failed approaches discovered during implementation:
+
+### 1. [Error Pattern Name]
+
+**What happened:** <description of the error>
+**Root cause:** <why it happened>
+**Prevention:** <how to avoid it>
+**Recommendation:** TRIPWIRE | ADD_TO_DOC | CONTEXT_ONLY
+
+### 2. ...
 
 ## Tripwire Additions
 
