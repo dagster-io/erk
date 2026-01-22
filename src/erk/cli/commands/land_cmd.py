@@ -13,7 +13,7 @@ Usage:
 import json
 import re
 import subprocess
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Literal, NamedTuple
 
@@ -42,6 +42,7 @@ from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
 from erk.core.context import ErkContext, create_context
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import (
+    PoolState,
     SlotAssignment,
     load_pool_state,
     save_pool_state,
@@ -61,6 +62,29 @@ from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
 from erk_shared.stack.validation import validate_parent_is_trunk
+
+
+@dataclass(frozen=True)
+class CleanupContext:
+    """Carries cleanup state through the extraction process.
+
+    This dataclass bundles all parameters needed for cleanup operations,
+    enabling focused helper functions without parameter explosion.
+    """
+
+    ctx: ErkContext
+    repo: RepoContext
+    branch: str
+    worktree_path: Path | None
+    main_repo_root: Path
+    script: bool
+    pull_flag: bool
+    force: bool
+    is_current_branch: bool
+    target_child_branch: str | None
+    objective_number: int | None
+    no_delete: bool
+    skip_activation_output: bool
 
 
 def _check_learn_status_and_prompt(
@@ -375,6 +399,177 @@ def _ensure_branch_not_checked_out(
     return worktree_path
 
 
+def _handle_no_delete(cleanup: CleanupContext) -> None:
+    """Handle --no-delete flag: preserve branch and slot, optionally navigate."""
+    user_output(
+        click.style("✓", fg="green")
+        + f" Branch '{cleanup.branch}' and slot assignment preserved (--no-delete)"
+    )
+    if cleanup.is_current_branch:
+        _navigate_after_land(
+            cleanup.ctx,
+            repo=cleanup.repo,
+            script=cleanup.script,
+            pull_flag=cleanup.pull_flag,
+            target_child_branch=cleanup.target_child_branch,
+            skip_activation_output=cleanup.skip_activation_output,
+        )
+    else:
+        raise SystemExit(0)
+
+
+def _cleanup_no_worktree(cleanup: CleanupContext) -> None:
+    """Handle cleanup when no worktree exists: delete branch only if exists locally."""
+    local_branches = cleanup.ctx.git.list_local_branches(cleanup.main_repo_root)
+    if cleanup.branch in local_branches:
+        cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+        user_output(click.style("✓", fg="green") + f" Deleted branch '{cleanup.branch}'")
+    # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
+
+
+def _cleanup_slot_with_assignment(
+    cleanup: CleanupContext,
+    *,
+    state: PoolState,
+    assignment: SlotAssignment,
+) -> None:
+    """Handle cleanup for slot worktree with assignment: unassign and delete branch."""
+    if not cleanup.force and not cleanup.ctx.dry_run:
+        if not cleanup.ctx.console.confirm(
+            f"Unassign slot '{assignment.slot_name}' and delete branch '{cleanup.branch}'?",
+            default=True,
+        ):
+            user_output("Slot preserved. Branch still exists locally.")
+            return
+    # Record objective on slot BEFORE unassigning (so it persists after assignment removed)
+    if cleanup.objective_number is not None:
+        updated_state = update_slot_objective(state, assignment.slot_name, cleanup.objective_number)
+        if cleanup.ctx.dry_run:
+            user_output("[DRY RUN] Would save pool state")
+        else:
+            save_pool_state(cleanup.repo.pool_json_path, updated_state)
+    execute_unassign(cleanup.ctx, cleanup.repo, state, assignment)
+    # Defensive: ensure branch is released before deletion
+    # (handles stale pool state where worktree_path doesn't match actual location)
+    _ensure_branch_not_checked_out(
+        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+    )
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+    user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
+
+
+def _cleanup_slot_without_assignment(
+    cleanup: CleanupContext,
+    *,
+    slot_name: str,
+) -> None:
+    """Handle cleanup for slot worktree without assignment: checkout placeholder, delete branch."""
+    if not cleanup.force and not cleanup.ctx.dry_run:
+        user_output(
+            click.style("Warning:", fg="yellow")
+            + f" Slot '{slot_name}' has no assignment (branch checked out outside erk)."
+        )
+        user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
+        if not cleanup.ctx.console.confirm(
+            f"Release slot '{slot_name}' and delete branch '{cleanup.branch}'?",
+            default=True,
+        ):
+            user_output("Slot preserved. Branch still exists locally.")
+            return
+
+    # Checkout placeholder branch before deleting the feature branch
+    # worktree_path is guaranteed non-None since we're in a slot worktree
+    assert cleanup.worktree_path is not None
+    placeholder = get_placeholder_branch_name(slot_name)
+    if placeholder is not None:
+        cleanup.ctx.git.checkout_branch(cleanup.worktree_path, placeholder)
+
+    # Defensive: ensure branch is released before deletion
+    _ensure_branch_not_checked_out(
+        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+    )
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+    user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
+
+
+def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
+    """Handle cleanup for non-slot worktree: checkout detached HEAD, delete branch."""
+    # worktree_path is guaranteed non-None since we're in a non-slot worktree
+    assert cleanup.worktree_path is not None
+
+    # Check for uncommitted changes before switching branches
+    Ensure.invariant(
+        not cleanup.ctx.git.has_uncommitted_changes(cleanup.worktree_path),
+        f"Worktree has uncommitted changes at {cleanup.worktree_path}.\n"
+        "Commit or stash your changes before landing.",
+    )
+
+    if not cleanup.force and not cleanup.ctx.dry_run:
+        if not cleanup.ctx.console.confirm(
+            f"Delete branch '{cleanup.branch}'? (worktree preserved)",
+            default=True,
+        ):
+            user_output("Branch preserved.")
+            return
+
+    # Checkout detached HEAD at trunk before deleting feature branch
+    # (git won't delete a branch that's checked out in any worktree)
+    # Use detached HEAD instead of checkout_branch because trunk may already
+    # be checked out in the root worktree
+    trunk_branch = cleanup.ctx.git.detect_trunk_branch(cleanup.main_repo_root)
+    cleanup.ctx.git.checkout_detached(cleanup.worktree_path, trunk_branch)
+
+    # Defensive: verify checkout succeeded before deletion
+    _ensure_branch_not_checked_out(
+        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+    )
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch)
+    user_output(
+        click.style("✓", fg="green")
+        + f" Deleted branch (worktree '{cleanup.worktree_path.name}' detached at '{trunk_branch}')"
+    )
+
+
+def _navigate_or_exit(cleanup: CleanupContext) -> None:
+    """Handle navigation or exit after cleanup.
+
+    In dry-run mode, shows summary and exits.
+    Otherwise, navigates to appropriate location or outputs no-op script.
+    """
+    # In dry-run mode, skip navigation and show summary
+    if cleanup.ctx.dry_run:
+        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+        raise SystemExit(0)
+
+    # Navigate (only if we were in the deleted worktree)
+    if cleanup.is_current_branch:
+        _navigate_after_land(
+            cleanup.ctx,
+            repo=cleanup.repo,
+            script=cleanup.script,
+            pull_flag=cleanup.pull_flag,
+            target_child_branch=cleanup.target_child_branch,
+            skip_activation_output=cleanup.skip_activation_output,
+        )
+    else:
+        if cleanup.script:
+            # Output no-op script for shell integration consistency
+            script_content = render_activation_script(
+                worktree_path=cleanup.ctx.cwd,
+                target_subpath=None,
+                post_cd_commands=None,
+                final_message='echo "Land complete"',
+                comment="land complete (no navigation needed)",
+            )
+            result = cleanup.ctx.script_writer.write_activation_script(
+                script_content,
+                command_name="land",
+                comment="no-op",
+            )
+            machine_output(str(result.path), nl=False)
+        raise SystemExit(0)
+
+
 class ParsedArgument(NamedTuple):
     """Result of parsing a land command argument."""
 
@@ -573,158 +768,52 @@ def _cleanup_and_navigate(
         skip_activation_output: If True, skip activation message (used in execute mode
             where the script's cd command handles navigation)
     """
-    # Handle --no-delete: skip cleanup, optionally navigate
-    if no_delete:
-        user_output(
-            click.style("✓", fg="green")
-            + f" Branch '{branch}' and slot assignment preserved (--no-delete)"
-        )
-        if is_current_branch:
-            _navigate_after_land(
-                ctx,
-                repo=repo,
-                script=script,
-                pull_flag=pull_flag,
-                target_child_branch=target_child_branch,
-                skip_activation_output=skip_activation_output,
-            )
-        else:
-            raise SystemExit(0)
-        return
-
     main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
 
-    if worktree_path is not None:
-        # Check if this is a slot worktree by branch name
-        # Using branch name is more reliable than path comparison which can fail
-        # with symlinks, different erk_root values, or path representation inconsistencies
-        state = load_pool_state(repo.pool_json_path)
-        assignment: SlotAssignment | None = None
-        if state is not None:
-            assignment = find_branch_assignment(state, branch)
+    cleanup = CleanupContext(
+        ctx=ctx,
+        repo=repo,
+        branch=branch,
+        worktree_path=worktree_path,
+        main_repo_root=main_repo_root,
+        script=script,
+        pull_flag=pull_flag,
+        force=force,
+        is_current_branch=is_current_branch,
+        target_child_branch=target_child_branch,
+        objective_number=objective_number,
+        no_delete=no_delete,
+        skip_activation_output=skip_activation_output,
+    )
 
-        if assignment is not None:
-            # Slot worktree: unassign instead of delete
-            # state is guaranteed to be non-None since assignment was found in it
-            assert state is not None
-            if not force and not ctx.dry_run:
-                if not ctx.console.confirm(
-                    f"Unassign slot '{assignment.slot_name}' and delete branch '{branch}'?",
-                    default=True,
-                ):
-                    user_output("Slot preserved. Branch still exists locally.")
-                    return
-            # Record objective on slot BEFORE unassigning (so it persists after assignment removed)
-            if objective_number is not None:
-                state = update_slot_objective(state, assignment.slot_name, objective_number)
-                if ctx.dry_run:
-                    user_output("[DRY RUN] Would save pool state")
-                else:
-                    save_pool_state(repo.pool_json_path, state)
-            execute_unassign(ctx, repo, state, assignment)
-            # Defensive: ensure branch is released before deletion
-            # (handles stale pool state where worktree_path doesn't match actual location)
-            _ensure_branch_not_checked_out(ctx, repo_root=main_repo_root, branch=branch)
-            ctx.branch_manager.delete_branch(main_repo_root, branch)
-            user_output(click.style("✓", fg="green") + " Unassigned slot and deleted branch")
-        elif extract_slot_number(worktree_path.name) is not None:
-            # Slot worktree without assignment (e.g., branch checked out via gt get)
-            # Don't delete the worktree - just delete branch and checkout placeholder
-            slot_name = worktree_path.name
+    # Path 1: --no-delete
+    if cleanup.no_delete:
+        _handle_no_delete(cleanup)
+        return
 
-            if not force and not ctx.dry_run:
-                user_output(
-                    click.style("Warning:", fg="yellow")
-                    + f" Slot '{slot_name}' has no assignment (branch checked out outside erk)."
-                )
-                user_output("  Use `erk pr co` or `erk branch checkout` to track slot usage.")
-                if not ctx.console.confirm(
-                    f"Release slot '{slot_name}' and delete branch '{branch}'?",
-                    default=True,
-                ):
-                    user_output("Slot preserved. Branch still exists locally.")
-                    return
+    # Path 2: No worktree
+    if cleanup.worktree_path is None:
+        _cleanup_no_worktree(cleanup)
+        _navigate_or_exit(cleanup)
+        return
 
-            # Checkout placeholder branch before deleting the feature branch
-            placeholder = get_placeholder_branch_name(slot_name)
-            if placeholder is not None:
-                ctx.git.checkout_branch(worktree_path, placeholder)
+    # Determine cleanup type for worktree cases
+    state = load_pool_state(repo.pool_json_path)
+    assignment = find_branch_assignment(state, branch) if state is not None else None
 
-            # Defensive: ensure branch is released before deletion
-            _ensure_branch_not_checked_out(ctx, repo_root=main_repo_root, branch=branch)
-            ctx.branch_manager.delete_branch(main_repo_root, branch)
-            user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
-        else:
-            # Non-slot worktree: preserve worktree, delete branch only
-            # Check for uncommitted changes before switching branches
-            Ensure.invariant(
-                not ctx.git.has_uncommitted_changes(worktree_path),
-                f"Worktree has uncommitted changes at {worktree_path}.\n"
-                "Commit or stash your changes before landing.",
-            )
-
-            if not force and not ctx.dry_run:
-                if not ctx.console.confirm(
-                    f"Delete branch '{branch}'? (worktree preserved)",
-                    default=True,
-                ):
-                    user_output("Branch preserved.")
-                    return
-
-            # Checkout detached HEAD at trunk before deleting feature branch
-            # (git won't delete a branch that's checked out in any worktree)
-            # Use detached HEAD instead of checkout_branch because trunk may already
-            # be checked out in the root worktree
-            trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
-            ctx.git.checkout_detached(worktree_path, trunk_branch)
-
-            # Defensive: verify checkout succeeded before deletion
-            _ensure_branch_not_checked_out(ctx, repo_root=main_repo_root, branch=branch)
-            ctx.branch_manager.delete_branch(main_repo_root, branch)
-            user_output(
-                click.style("✓", fg="green")
-                + f" Deleted branch (worktree '{worktree_path.name}' detached at '{trunk_branch}')"
-            )
+    if assignment is not None:
+        # Path 3: Slot with assignment
+        # state is guaranteed non-None since assignment was found in it
+        assert state is not None
+        _cleanup_slot_with_assignment(cleanup, state=state, assignment=assignment)
+    elif extract_slot_number(cleanup.worktree_path.name) is not None:
+        # Path 4: Slot without assignment
+        _cleanup_slot_without_assignment(cleanup, slot_name=cleanup.worktree_path.name)
     else:
-        # No worktree - check if branch exists locally before deletion (LBYL)
-        local_branches = ctx.git.list_local_branches(main_repo_root)
-        if branch in local_branches:
-            ctx.branch_manager.delete_branch(main_repo_root, branch)
-            user_output(click.style("✓", fg="green") + f" Deleted branch '{branch}'")
-        # else: Branch doesn't exist locally - no cleanup needed (remote implementation or fork PR)
+        # Path 5: Non-slot worktree
+        _cleanup_non_slot_worktree(cleanup)
 
-    # In dry-run mode, skip navigation and show summary
-    if ctx.dry_run:
-        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
-        raise SystemExit(0)
-
-    # Navigate (only if we were in the deleted worktree)
-    if is_current_branch:
-        _navigate_after_land(
-            ctx,
-            repo=repo,
-            script=script,
-            pull_flag=pull_flag,
-            target_child_branch=target_child_branch,
-            skip_activation_output=skip_activation_output,
-        )
-    else:
-        if script:
-            # Output no-op script for shell integration consistency
-            script_content = render_activation_script(
-                worktree_path=ctx.cwd,
-                target_subpath=None,
-                post_cd_commands=None,
-                final_message='echo "Land complete"',
-                comment="land complete (no navigation needed)",
-            )
-            result = ctx.script_writer.write_activation_script(
-                script_content,
-                command_name="land",
-                comment="no-op",
-            )
-            machine_output(str(result.path), nl=False)
-        raise SystemExit(0)
+    _navigate_or_exit(cleanup)
 
 
 def _navigate_after_land(
