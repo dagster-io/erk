@@ -278,26 +278,44 @@ Collect all results before proceeding to the next step.
 
 #### Write Agent Results to Scratch Storage
 
-Save each agent's output to scratch storage for reference:
+**CRITICAL:** Use the Write tool to save each agent's output. Do NOT use bash heredoc syntax - it fails with large outputs.
+
+First, create the directory:
 
 ```bash
 mkdir -p .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
-
-# Write session analysis results
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<id>.md << 'EOF'
-<agent output>
-EOF
-
-# Write diff analysis results
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md << 'EOF'
-<agent output>
-EOF
-
-# Write existing docs check results
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md << 'EOF'
-<agent output>
-EOF
 ```
+
+Then use the Write tool for each agent output:
+
+1. **Session analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/session-<session-id>.md`
+2. **Diff analysis results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md`
+3. **Existing docs check results** - Write to `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/existing-docs-check.md`
+
+**Example:**
+
+```
+Write(
+  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/diff-analysis.md",
+  content: <full agent output from TaskOutput>
+)
+```
+
+**Why Write tool instead of heredoc?**
+
+- Agent outputs can be 10KB+ of markdown
+- Bash heredoc fails silently with special characters
+- Write tool guarantees the file is created with exact content
+
+#### Verify Files Exist
+
+**Verify files exist before launching gap-identifier:**
+
+```bash
+ls -la .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/
+```
+
+Confirm you see the expected files (session-\*.md, diff-analysis.md, existing-docs-check.md) before proceeding. If any files are missing, the Write tool call failed and must be retried.
 
 #### Synthesize Agent Findings (Agent 4)
 
@@ -330,12 +348,13 @@ The DocumentationGapIdentifier agent will:
 - Prioritize by impact: HIGH (gateway methods, contradictions) > MEDIUM (patterns) > LOW (helpers)
 - Produce the MANDATORY enumerated table required by Step 4
 
-Write the DocumentationGapIdentifier output to scratch storage:
+Write the DocumentationGapIdentifier output to scratch storage using the Write tool:
 
-```bash
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md << 'EOF'
-<agent output>
-EOF
+```
+Write(
+  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/gap-analysis.md",
+  content: <full agent output from TaskOutput>
+)
 ```
 
 #### Synthesize Learn Plan (Agent 5)
@@ -362,12 +381,13 @@ Task(
 
 **Note:** This agent runs AFTER DocumentationGapIdentifier completes (sequential dependency).
 
-Write the synthesized output to scratch storage:
+Write the synthesized output to scratch storage using the Write tool:
 
-```bash
-cat > .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md << 'EOF'
-<agent output>
-EOF
+```
+Write(
+  file_path: ".erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md",
+  content: <full agent output from TaskOutput>
+)
 ```
 
 #### Agent Dependency Graph
