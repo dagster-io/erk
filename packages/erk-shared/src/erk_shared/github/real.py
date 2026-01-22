@@ -13,7 +13,6 @@ Error Handling Philosophy:
 import json
 import secrets
 import string
-import tempfile
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -2031,22 +2030,16 @@ query {{
     ) -> GistCreated | GistCreateError:
         """Create a GitHub Gist via gh CLI.
 
-        Uses `gh gist create` command.
+        Uses `gh gist create` with stdin input so --filename works correctly.
+        When passing a file path, --filename is ignored; it only works with stdin (-).
         """
-        # Write content to a temp file (gh gist create reads from files)
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=f"_{filename}", delete=False, encoding="utf-8"
-        ) as f:
-            f.write(content)
-            temp_path = Path(f.name)
-
         try:
-            # Build command
+            # Build command - use "-" to read from stdin so --filename works
             cmd = [
                 "gh",
                 "gist",
                 "create",
-                str(temp_path),
+                "-",  # Read from stdin
                 "--filename",
                 filename,
                 "--desc",
@@ -2055,10 +2048,11 @@ query {{
             if public:
                 cmd.append("--public")
 
-            # Execute and capture output
+            # Execute and pass content via stdin
             result = run_subprocess_with_context(
                 cmd=cmd,
                 operation_context=f"create gist '{filename}'",
+                input=content,
             )
 
             # Parse output - gh gist create outputs the gist URL
@@ -2081,6 +2075,3 @@ query {{
             )
         except RuntimeError as e:
             return GistCreateError(message=str(e))
-        finally:
-            # Clean up temp file
-            temp_path.unlink(missing_ok=True)
