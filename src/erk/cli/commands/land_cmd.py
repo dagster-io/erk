@@ -60,6 +60,7 @@ from erk_shared.github.types import PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
+from erk_shared.stack.validation import validate_parent_is_trunk
 
 
 def _check_learn_status_and_prompt(
@@ -1202,12 +1203,14 @@ def _land_current_branch(
     if ctx.branch_manager.is_graphite_managed():
         parent = ctx.graphite.get_parent_branch(ctx.git, repo.root, current_branch)
         trunk = ctx.git.detect_trunk_branch(repo.root)
+        validation_error = validate_parent_is_trunk(
+            current_branch=current_branch,
+            parent_branch=parent,
+            trunk_branch=trunk,
+        )
         Ensure.invariant(
-            parent == trunk,
-            f"Branch must be exactly one level up from {trunk}\n"
-            f"Current branch: {current_branch}\n"
-            f"Parent branch: {parent or 'unknown'} (expected: {trunk})\n\n"
-            f"Please navigate to a branch that branches directly from {trunk}.",
+            validation_error is None,
+            validation_error.message if validation_error else "",
         )
 
     # Look up PR for current branch to check unresolved comments BEFORE merge
