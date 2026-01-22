@@ -13,6 +13,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.download_remote_session import (
     _get_remote_sessions_dir,
+    _normalize_gist_url,
 )
 from erk.cli.commands.exec.scripts.download_remote_session import (
     download_remote_session as download_remote_session_command,
@@ -48,7 +49,50 @@ def test_get_remote_sessions_dir_returns_existing(tmp_path: Path) -> None:
 
 
 # ============================================================================
-# 2. CLI Command Tests (5 tests)
+# 2. URL Normalization Tests (4 tests)
+# ============================================================================
+
+
+def test_normalize_gist_url_webpage_to_raw() -> None:
+    """Test that gist.github.com webpage URL is converted to raw URL."""
+    webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb"
+
+    result = _normalize_gist_url(webpage_url)
+
+    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/session.jsonl"
+    assert result == expected
+
+
+def test_normalize_gist_url_webpage_with_trailing_slash() -> None:
+    """Test that webpage URL with trailing slash is handled correctly."""
+    webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb/"
+
+    result = _normalize_gist_url(webpage_url)
+
+    expected = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/session.jsonl"
+    assert result == expected
+
+
+def test_normalize_gist_url_raw_passthrough() -> None:
+    """Test that gist.githubusercontent.com raw URL passes through unchanged."""
+    raw_url = "https://gist.githubusercontent.com/user/abc123/raw/session.jsonl"
+
+    result = _normalize_gist_url(raw_url)
+
+    assert result == raw_url
+
+
+def test_normalize_gist_url_unknown_format_passthrough() -> None:
+    """Test that unknown URL formats pass through unchanged."""
+    unknown_url = "https://example.com/some/path"
+
+    result = _normalize_gist_url(unknown_url)
+
+    assert result == unknown_url
+
+
+# ============================================================================
+# 3. CLI Command Tests (5 tests)
 # ============================================================================
 
 
@@ -175,3 +219,42 @@ def test_cli_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     assert session_file.exists()
     content = session_file.read_text(encoding="utf-8")
     assert "new" in content
+
+
+def test_cli_success_with_webpage_url_normalized(tmp_path: Path) -> None:
+    """Test successful download from gist.github.com webpage URL (normalized to raw)."""
+    session_id = "webpage-session"
+    webpage_url = "https://gist.github.com/schrockn/33680528033dc162ed0d563c063c70bb"
+    session_content = '{"type": "assistant"}\n'
+
+    # Mock urllib.request.urlopen to return session content
+    mock_response = MagicMock()
+    mock_response.read.return_value = session_content.encode("utf-8")
+    mock_response.__enter__ = MagicMock(return_value=mock_response)
+    mock_response.__exit__ = MagicMock(return_value=False)
+
+    runner = CliRunner()
+    ctx = ErkContext.for_test(repo_root=tmp_path)
+
+    captured_url = None
+
+    def capture_urlopen(url: str) -> MagicMock:
+        nonlocal captured_url
+        captured_url = url
+        return mock_response
+
+    with patch("urllib.request.urlopen", side_effect=capture_urlopen):
+        result = runner.invoke(
+            download_remote_session_command,
+            ["--gist-url", webpage_url, "--session-id", session_id],
+            obj=ctx,
+        )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["session_id"] == session_id
+
+    # Verify the URL was normalized before download
+    expected_raw_url = "https://gist.githubusercontent.com/schrockn/33680528033dc162ed0d563c063c70bb/raw/session.jsonl"
+    assert captured_url == expected_raw_url
