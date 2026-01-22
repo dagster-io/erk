@@ -1,6 +1,6 @@
 ---
 name: existing-docs-checker
-description: Search existing documentation to identify duplicates before suggesting new docs
+description: Search existing documentation to identify duplicates and contradictions before suggesting new docs
 allowed-tools:
   - Read
   - Glob
@@ -9,7 +9,7 @@ allowed-tools:
 
 # Existing Docs Checker Agent
 
-Search `docs/learned/`, `.claude/commands/`, and `.claude/skills/` to identify what documentation already exists before suggesting duplicates during learn extraction.
+Search `docs/learned/`, `.claude/commands/`, and `.claude/skills/` to identify what documentation already exists before suggesting duplicates during learn extraction. Also detect potential contradictions between existing docs and new insights.
 
 ## Input
 
@@ -51,6 +51,19 @@ You receive:
    - **Partial overlap**: Existing doc covers related topic
    - **No match**: Topic not currently documented
 
+5. **Detect contradictions:**
+   When reading related files, look for statements that conflict with the new insights being documented:
+   - **Opposite guidance**: Doc A says "do X", new insight says "don't do X"
+   - **Outdated patterns**: Existing doc recommends deprecated approach
+   - **Conflicting constraints**: Different docs give incompatible rules for same scenario
+   - **Version drift**: Doc references old API/syntax that's been superseded
+
+   Common contradiction patterns:
+   - "Use try/except" vs "Use LBYL (check first)"
+   - "Required" vs "Optional" for same tool/feature
+   - "Always" vs "Never" for same action
+   - Different file paths or command syntax for same operation
+
 ## Output Format
 
 Return structured findings:
@@ -64,6 +77,7 @@ Search terms used: <list of terms>
 Total files searched: <N>
 Files with matches: <N>
 Potential duplicates: <N>
+Potential contradictions: <N>
 
 ### Search Results
 
@@ -91,11 +105,39 @@ For each topic that might be documented:
 
 If suggesting new documentation, these topics already have coverage:
 - <topic>: See <existing-doc-path>
+
+### Contradiction Warnings
+
+Potential conflicts between existing docs and new insights:
+
+| Existing Doc | States | New Insight States | Severity |
+|--------------|--------|-------------------|----------|
+| docs/learned/architecture/foo.md | "Use pattern A" | "Use pattern B" | HIGH |
+| .claude/skills/bar.md | "X is required" | "X is optional" | MEDIUM |
+
+For each contradiction:
+
+1. **<topic>**
+   - Existing doc: <path>
+   - Existing guidance: "<quote or summary>"
+   - New insight: "<conflicting statement>"
+   - Severity: HIGH | MEDIUM | LOW
+   - Resolution: UPDATE_EXISTING | CLARIFY_CONTEXT | INVESTIGATE
 ```
 
 ## Key Principles
+
+### Duplicate Detection
 
 - **Err toward flagging duplicates**: Better to flag a false positive than miss a duplicate
 - **Check frontmatter**: The `read_when` field often reveals if a doc covers a topic
 - **Consider skill documents**: Skills like `fake-driven-testing` contain substantial documentation
 - **Check commands too**: Some documentation lives in command files (e.g., `/erk:learn` documents the learn workflow)
+
+### Contradiction Detection
+
+- **Err toward flagging contradictions**: Surface potential conflicts for human review
+- **Context matters**: "Use X" in one context and "Don't use X" in another may not be contradictory
+- **Check tripwires.md**: Tripwires contain authoritative "CRITICAL" rules—contradicting these is HIGH severity
+- **Newer isn't always right**: The new insight may be wrong; flag for investigation, don't assume
+- **Look for absolutes**: Words like "always", "never", "required", "forbidden" signal strong claims that may conflict

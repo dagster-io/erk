@@ -240,7 +240,7 @@ Task(
 
 **Agent 3: Existing Documentation Check**
 
-Proactively search for existing documentation to prevent duplicates:
+Proactively search for existing documentation to prevent duplicates and detect contradictions:
 
 ```
 Task(
@@ -305,7 +305,7 @@ Use structured output from agents to populate the mandatory table. The agents ha
 - Categorized patterns and insights
 - Identified documentation opportunities
 - Suggested tripwire candidates
-- **Checked for existing documentation** (existing-docs-checker)
+- **Checked for existing documentation and contradictions** (existing-docs-checker)
 
 **Merge existing-docs-checker findings:**
 
@@ -315,6 +315,10 @@ Use structured output from agents to populate the mandatory table. The agents ha
    - **PARTIAL_OVERLAP**: Consider updating existing doc instead of creating new
    - **NEW_TOPIC**: Proceed with new documentation
 3. Add "Duplicate Warnings" from existing-docs-checker to Step 4 analysis
+4. Review "Contradiction Warnings" from existing-docs-checker:
+   - **HIGH severity**: Flag for immediate resolution before creating new docs
+   - **MEDIUM/LOW severity**: Note in learn plan for future review
+   - If new insight contradicts existing tripwire, investigate before proceeding
 
 Review agent outputs and merge into a cohesive analysis.
 
