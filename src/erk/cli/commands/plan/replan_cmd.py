@@ -1,4 +1,4 @@
-"""Launch Claude to replan an existing erk-plan issue."""
+"""Launch Claude to replan existing erk-plan issue(s)."""
 
 import os
 import shutil
@@ -11,20 +11,22 @@ from erk_shared.context.types import InteractiveClaudeConfig
 
 
 @click.command("replan")
-@click.argument("issue_ref")
+@click.argument("issue_refs", nargs=-1, required=True)
 @click.pass_obj
-def replan_plan(ctx: ErkContext, issue_ref: str) -> None:
-    """Replan an existing erk-plan issue against current codebase state.
+def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
+    """Replan existing erk-plan issue(s) against current codebase state.
 
-    ISSUE_REF is an issue number or GitHub URL.
+    ISSUE_REFS are issue numbers or GitHub URLs. Multiple refs can be provided
+    to consolidate plans into a single unified plan.
 
-    This command launches Claude in plan mode to re-evaluate an existing
-    plan against the current codebase, creating a fresh plan that incorporates
-    any changes. The original issue is closed after the new plan is created.
+    This command launches Claude in plan mode to re-evaluate existing plan(s)
+    against the current codebase, creating a fresh plan that incorporates
+    any changes. Original issues are closed after the new plan is created.
 
     Examples:
         erk plan replan 2521
         erk plan replan https://github.com/owner/repo/issues/2521
+        erk plan replan 123 456 789  # Consolidate multiple plans
     """
     # Verify Claude CLI is available
     if shutil.which("claude") is None:
@@ -44,8 +46,8 @@ def replan_plan(ctx: ErkContext, issue_ref: str) -> None:
         allow_dangerous_override=None,
     )
 
-    # Build Claude CLI arguments
-    cmd_args = build_claude_args(config, command=f"/erk:replan {issue_ref}")
+    # Build Claude CLI arguments with space-separated issue refs
+    cmd_args = build_claude_args(config, command=f"/erk:replan {' '.join(issue_refs)}")
 
     # Replace current process with Claude
     os.execvp("claude", cmd_args)

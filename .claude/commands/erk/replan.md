@@ -5,54 +5,63 @@ argument-hint: <issue-number-or-url>
 
 # /erk:replan
 
-Recomputes an existing erk-plan issue against the current codebase state, creating a new plan and closing the original.
+Recomputes existing erk-plan issue(s) against the current codebase state, creating a new plan and closing the original(s).
+
+Supports consolidating multiple plans into a single unified plan.
 
 ## Usage
 
 ```bash
-/erk:replan 2521
+/erk:replan 2521                          # Single plan replan
 /erk:replan https://github.com/owner/repo/issues/2521
+/erk:replan 123 456 789                   # Consolidate multiple plans
 ```
 
 ---
 
 ## Agent Instructions
 
-### Step 1: Parse Issue Reference
+### Step 1: Parse Issue References
 
-Extract the issue number from the argument:
+Split `$ARGUMENTS` on whitespace. For each argument:
 
-- If numeric (e.g., `2521`), use directly
+- If numeric (e.g., `2521`), use directly as issue number
 - If URL (e.g., `https://github.com/owner/repo/issues/2521`), extract the number from the path
+
+Store all issue numbers in a list. Set `CONSOLIDATION_MODE=true` if multiple issues provided.
 
 If no argument provided, ask the user for the issue number.
 
-### Step 2: Fetch Original Issue
+### Step 2: Validate All Plans (Parallel if Multiple)
+
+For each issue number, fetch and validate:
 
 ```bash
 erk exec get-issue-body <number>
 ```
 
-This returns JSON with `{success, issue_number, title, body, state, labels, url}`. Store the issue title and check that:
+This returns JSON with `{success, issue_number, title, body, state, labels, url}`. Store each issue's title.
+
+Validate each issue:
 
 1. Issue exists
 2. Issue has `erk-plan` label
 
-If not an erk-plan issue, display error:
+If any issue is not an erk-plan issue, display error and abort:
 
 ```
 Error: Issue #<number> is not an erk-plan issue (missing erk-plan label).
 ```
 
-If issue is already closed, display warning but continue:
+If any issue is already closed, display warning but continue:
 
 ```
 Warning: Issue #<number> is already closed. Proceeding with replan anyway.
 ```
 
-### Step 3: Fetch Plan Content
+### Step 3: Fetch Plan Content (Parallel if Multiple)
 
-The plan content is stored in the first comment's `plan-body` metadata block:
+For each issue, fetch the plan content stored in the first comment's `plan-body` metadata block:
 
 ```bash
 gh issue view <number> --comments --json comments
@@ -62,7 +71,7 @@ Parse the first comment to find `<!-- erk:metadata-block:plan-body -->` section.
 
 Extract the plan content from within the `<details>` block.
 
-If no plan-body found, display error:
+If no plan-body found for any issue, display error:
 
 ```
 Error: No plan content found in issue #<number>. Expected plan-body metadata block in first comment.
@@ -70,7 +79,17 @@ Error: No plan content found in issue #<number>. Expected plan-body metadata blo
 
 ### Step 4: Deep Investigation
 
-Use the Explore agent (Task tool with subagent_type=Explore) to perform deep investigation of the codebase. This is the most important step - surface-level analysis leads to poor plans.
+Use the Explore agent (Task tool with subagent_type=Explore) to perform deep investigation of the codebase.
+
+**If CONSOLIDATION_MODE:**
+
+Launch parallel Explore agents (one per plan, using `run_in_background: true`), each investigating:
+
+- Plan items and their current status
+- Overlap potential with other plans being consolidated
+- File mentions and their current state
+
+**For each plan (parallel or sequential):**
 
 #### 4a: Check Plan Items Against Codebase
 
@@ -98,16 +117,23 @@ Go beyond the plan items to understand the actual implementation:
 
 #### 4c: Document Corrections and Discoveries
 
-Create two lists:
+Create two lists per plan:
 
 1. **Corrections to Original Plan**: Wrong assumptions, incorrect names, outdated information
 2. **Additional Details**: Implementation specifics, architectural insights, edge cases
 
-These lists will be posted to the original issue and included in the new plan.
+### Step 4d: Consolidation Analysis (CONSOLIDATION_MODE only)
 
-### Step 5: Post Investigation to Original Issue
+If consolidating multiple plans:
 
-Before creating the new plan, post the investigation findings to the original issue as a comment. This preserves context if the new plan is also replanned later.
+1. **Identify Overlap**: Find items that appear in multiple plans
+2. **Merge Strategy**: Determine how to combine overlapping items
+3. **Dependency Ordering**: Order items by dependency across all plans
+4. **Attribution Tracking**: Track which items came from which plan
+
+### Step 5: Post Investigation to Original Issue(s)
+
+Before creating the new plan, post investigation findings to each original issue as a comment:
 
 ```bash
 gh issue comment <original_number> --body "## Deep Investigation Notes (for implementing agent)
@@ -122,65 +148,109 @@ gh issue comment <original_number> --body "## Deep Investigation Notes (for impl
 - [List important discoveries]"
 ```
 
+If consolidating, include note:
+
+```
+Note: This plan is being consolidated with #<other_numbers> into a unified plan.
+```
+
 ### Step 6: Create New Plan (Always)
 
-**Always create a new plan issue**, regardless of implementation status. Even if the original plan is fully implemented or obsolete, a fresh plan with investigation context is valuable.
+**Always create a new plan issue**, regardless of implementation status.
 
 Use EnterPlanMode to create an updated plan.
 
-The new plan should include:
+---
 
-#### Header Section
+#### Single Plan Format
 
 ```markdown
 # Plan: [Updated Title]
 
 > **Replans:** #<original_issue_number>
-```
 
-#### What Changed Section
-
-```markdown
 ## What Changed Since Original Plan
 
 - [List major codebase changes that affect this plan]
-- [Reference specific PRs or commits if relevant]
-```
 
-#### Investigation Findings Section
-
-```markdown
 ## Investigation Findings
 
 ### Corrections to Original Plan
 
-- [List any wrong assumptions or incorrect names from original plan]
+- [List any wrong assumptions or incorrect names]
 
 ### Additional Details Discovered
 
 - [List implementation specifics not in original plan]
-- [Include data structures, helper functions, naming conventions]
-```
 
-#### Remaining Gaps Section
-
-```markdown
 ## Remaining Gaps
 
 - [List items from original plan that still need implementation]
-- [Note any items that are partially done]
-- [Note if plan is fully implemented or obsolete - still document for context]
-```
 
-#### Implementation Steps Section
-
-```markdown
 ## Implementation Steps
 
 1. [Updated step 1]
 2. [Updated step 2]
-   ...
 ```
+
+---
+
+#### Consolidated Plan Format (CONSOLIDATION_MODE)
+
+```markdown
+# Plan: [Unified Title]
+
+> **Consolidates:** #123, #456, #789
+
+## Source Plans
+
+| #   | Title              | Items Merged |
+| --- | ------------------ | ------------ |
+| 123 | [Title from issue] | X items      |
+| 456 | [Title from issue] | Y items      |
+| 789 | [Title from issue] | Z items      |
+
+## What Changed Since Original Plans
+
+- [List major codebase changes affecting any of the plans]
+
+## Investigation Findings
+
+### Corrections to Original Plans
+
+- **#123**: [corrections]
+- **#456**: [corrections]
+- **#789**: [corrections]
+
+### Additional Details Discovered
+
+- [Combined implementation specifics]
+
+### Overlap Analysis
+
+- [Items that appeared in multiple plans, now merged]
+
+## Remaining Gaps
+
+- [Combined items that still need implementation]
+
+## Implementation Steps
+
+1. [Step] _(from #123)_
+2. [Merged step] _(from #123, #456)_
+3. [Step] _(from #456)_
+4. [Step] _(from #789)_
+
+## Attribution
+
+Items by source:
+
+- **#123**: Steps 1, 2
+- **#456**: Steps 2, 3
+- **#789**: Step 4
+```
+
+---
 
 ### Step 7: Save and Close
 
@@ -188,13 +258,25 @@ After the user approves the plan in Plan Mode:
 
 1. Exit Plan Mode
 2. Run `/erk:plan-save` to create the new GitHub issue
-3. Close the original issue with a comment linking to the new one:
+3. Close original issue(s) with comment linking to the new one:
+
+**Single plan:**
 
 ```bash
 gh issue close <original_number> --comment "Superseded by #<new_number> - see updated plan that accounts for codebase changes."
 ```
 
+**Consolidated plans:**
+
+```bash
+gh issue close 123 --comment "Consolidated into #<new_number> with #456, #789"
+gh issue close 456 --comment "Consolidated into #<new_number> with #123, #789"
+gh issue close 789 --comment "Consolidated into #<new_number> with #123, #456"
+```
+
 Display final summary:
+
+**Single plan:**
 
 ```
 ✓ Created new plan issue #<new_number>
@@ -202,6 +284,22 @@ Display final summary:
 
 Next steps:
 - Review the new plan: gh issue view <new_number>
+- Submit for implementation: erk plan submit <new_number>
+```
+
+**Consolidated plans:**
+
+```
+✓ Created consolidated plan issue #<new_number>
+✓ Closed original issues: #123, #456, #789
+
+Source plans consolidated:
+- #123: [title]
+- #456: [title]
+- #789: [title]
+
+Next steps:
+- Review the consolidated plan: gh issue view <new_number>
 - Submit for implementation: erk plan submit <new_number>
 ```
 
@@ -224,5 +322,6 @@ Next steps:
 - **DO NOT implement the plan** - This command only creates an updated plan
 - **DO NOT skip codebase analysis** - Always verify current state before replanning
 - **Use Explore agent** for comprehensive codebase searches (Task tool with subagent_type=Explore)
-- The original issue is closed only after the new plan is successfully created
-- The new plan references the original issue for traceability
+- **Parallel investigation** for multiple plans (run_in_background: true)
+- Original issue(s) closed only after the new plan is successfully created
+- The new plan references all original issue(s) for traceability
