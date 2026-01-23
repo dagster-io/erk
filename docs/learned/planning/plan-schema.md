@@ -4,6 +4,7 @@ read_when:
   - "understanding plan issue structure"
   - "debugging plan validation errors"
   - "working with plan-header or plan-body blocks"
+  - "creating consolidated or replan issues"
 ---
 
 # Plan Schema Reference
@@ -147,7 +148,72 @@ if block:
     created_by = block.data.get("created_by")
 ```
 
+## Plan Title Headers
+
+Plans use specific header formats to indicate their origin:
+
+### Standard Plan
+
+```markdown
+# Plan: Feature Description
+```
+
+### Replan (Single Source)
+
+```markdown
+# Plan: Feature Description
+
+> **Replans:** #123
+```
+
+Indicates this plan replaces issue #123 (which will be closed when this plan is implemented).
+
+### Consolidated Plan (Multiple Sources)
+
+```markdown
+# Plan: Consolidated Feature Description
+
+> **Consolidates:** #123, #456, #789
+
+## Source Plans
+
+| #    | Title       | Status       |
+| ---- | ----------- | ------------ |
+| #123 | First Plan  | To be closed |
+| #456 | Second Plan | To be closed |
+| #789 | Third Plan  | To be closed |
+```
+
+Indicates this plan merges multiple source plans. All listed issues will be closed when implemented.
+
+### Consolidated Plan Sections
+
+Consolidated plans include additional sections:
+
+- **Source Plans table**: Lists all merged plans with their status
+- **Investigation Findings**: What was discovered during consolidation
+  - What Already Exists (items to skip)
+  - Corrections to Original Plans
+  - Overlap Analysis
+- **Remaining Gaps**: Deduplicated items to actually implement
+
+### Attribution Tracking
+
+Items in consolidated plans include source attribution:
+
+```markdown
+### Add feature X [from #123]
+
+Implementation details...
+
+### Update module Y [from #123, #456]
+
+Merged requirements from both plans...
+```
+
+The `[from #123]` syntax allows tracing items back to their original plans.
+
 ## Related Documentation
 
 - [Plan Lifecycle](lifecycle.md) - Full plan lifecycle from creation to merge
-- [Kit CLI Commands](../kits/cli-commands.md) - Commands that create/update plans
+- [Multi-Plan Consolidation](multi-plan-consolidation.md) - When and how to consolidate plans

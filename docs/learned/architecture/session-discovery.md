@@ -6,6 +6,11 @@ read_when:
   - "understanding dual-source discovery patterns"
   - "working with gist-based session storage"
   - "downloading remote sessions for learn workflow"
+tripwires:
+  - action: "downloading remote sessions with erk exec download-remote-session --gist-url"
+    warning: "Check `last_session_gist_url != null` first. Legacy artifact-based sessions have no gist URL and require different handling (download from workflow artifacts)."
+  - action: "preprocessing sessions in erk learn workflow"
+    warning: "Inspect `source.source_type` to determine local vs remote access. LocalSessionSource paths point to ~/.claude/projects/, RemoteSessionSource paths point to .erk/scratch/remote-sessions/."
 ---
 
 # Session Discovery Architecture

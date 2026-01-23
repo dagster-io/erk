@@ -44,3 +44,9 @@ See the `erk-exec` skill for complete workflow guidance and the full command ref
 
 - `list-sessions` - List Claude Code sessions
 - `preprocess-session` - Compress session for analysis
+
+### GitHub PR/Issue Operations
+
+- `get-pr-commits` - Fetch commits from a PR via REST API
+- `close-issue-with-comment` - Close an issue with a comment (two-step: add comment, then close)
+- `handle-no-changes` - Handle no-changes scenario in workflows (see [No-Changes Handling](../planning/no-changes-handling.md))

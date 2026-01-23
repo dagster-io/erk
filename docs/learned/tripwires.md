@@ -77,6 +77,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](architecture/protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
 
+**CRITICAL: Before downloading remote sessions with erk exec download-remote-session --gist-url** → Read [Session Discovery Architecture](architecture/session-discovery.md) first. Check `last_session_gist_url != null` first. Legacy artifact-based sessions have no gist URL and require different handling (download from workflow artifacts).
+
+**CRITICAL: Before preprocessing sessions in erk learn workflow** → Read [Session Discovery Architecture](architecture/session-discovery.md) first. Inspect `source.source_type` to determine local vs remote access. LocalSessionSource paths point to ~/.claude/projects/, RemoteSessionSource paths point to .erk/scratch/remote-sessions/.
+
 **CRITICAL: Before using bare subprocess.run with check=True** → Read [Subprocess Wrappers](architecture/subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
 
 **CRITICAL: Before using fnmatch for gitignore-style glob patterns** → Read [Convention-Based Code Reviews](ci/convention-based-reviews.md) first. Use pathspec library instead. fnmatch doesn't support \*\* recursive globs. Example: pathspec.PathSpec.from_lines('gitignore', patterns)
@@ -122,6 +126,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before creating temp files for AI workflows** → Read [Scratch Storage](planning/scratch-storage.md) first. Use worktree-scoped scratch storage for session-specific data.
 
 **CRITICAL: Before analyzing sessions larger than 100k characters** → Read [Scratch Storage](planning/scratch-storage.md) first. Use `erk exec preprocess-session` first. Achieves ~99% token reduction (e.g., 6.2M -> 67k chars). Critical for fitting large sessions in agent context windows.
+
+**CRITICAL: Before implementing branch reuse detection in plan submit** → Read [Branch Reuse in Plan Submit](planning/submit-branch-reuse.md) first. When reusing existing branches, ensure Graphite tracking sync via BranchManager. Existing local branches may not be tracked in Graphite.
 
 **CRITICAL: Before checking entry['type'] == 'tool_result' in Claude session JSONL** → Read [Claude Code JSONL Schema Reference](sessions/jsonl-schema-reference.md) first. tool_results are content blocks INSIDE user entries, NOT top-level entry types. Check message.content[].type == 'tool_result' within user entries instead. Load session-inspector skill for correct schema.
 
