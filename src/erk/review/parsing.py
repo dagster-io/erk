@@ -8,9 +8,9 @@ import re
 from collections.abc import Mapping
 from pathlib import Path
 
-import frontmatter
 import pathspec
 
+from erk.core.frontmatter import parse_markdown_frontmatter
 from erk.review.models import (
     DiscoveryResult,
     ParsedReview,
@@ -25,39 +25,6 @@ DEFAULT_MODEL = "claude-sonnet-4-5"
 DEFAULT_TIMEOUT_MINUTES = 30
 DEFAULT_ALLOWED_TOOLS = "Bash(gh:*),Bash(erk exec:*),Bash(TZ=*),Read(*)"
 DEFAULT_ENABLED = True
-
-
-def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None, str]:
-    """Parse YAML frontmatter from markdown content.
-
-    Args:
-        content: The markdown file content.
-
-    Returns:
-        Tuple of (parsed_dict, error_message, body_text).
-        If parsing fails, parsed_dict is None and error_message describes the issue.
-        body_text is the content after the frontmatter.
-    """
-    # Check if content has frontmatter delimiters before parsing
-    has_frontmatter_delimiters = content.startswith("---")
-
-    try:
-        post = frontmatter.loads(content)
-    except Exception as e:
-        return None, f"Invalid YAML: {e}", content
-
-    # Check if metadata is a dict (frontmatter library stores non-dict YAML differently)
-    if not isinstance(post.metadata, dict):
-        return None, "Frontmatter is not a valid YAML mapping", post.content
-
-    # Distinguish between "no frontmatter" vs "frontmatter was non-dict YAML"
-    # When frontmatter library encounters non-dict YAML, it returns empty metadata
-    if not post.metadata:
-        if has_frontmatter_delimiters:
-            return None, "Frontmatter is not a valid YAML mapping", post.content
-        return None, "No frontmatter found", content
-
-    return dict(post.metadata), None, post.content
 
 
 def _validate_paths(paths_data: object) -> tuple[tuple[str, ...], list[str]]:
@@ -228,16 +195,16 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
             errors=(f"Cannot read file: {e}",),
         )
 
-    parsed, parse_error, body = parse_frontmatter(content)
-    if parse_error is not None:
+    result = parse_markdown_frontmatter(content)
+    if result.error is not None:
         return ReviewValidationResult(
             filename=filename,
             parsed_review=None,
-            errors=(parse_error,),
+            errors=(result.error,),
         )
 
-    assert parsed is not None
-    frontmatter_result, validation_errors = validate_review_frontmatter(parsed)
+    assert result.metadata is not None
+    frontmatter_result, validation_errors = validate_review_frontmatter(result.metadata)
 
     if validation_errors:
         return ReviewValidationResult(
@@ -251,7 +218,7 @@ def parse_review_file(file_path: Path) -> ReviewValidationResult:
         filename=filename,
         parsed_review=ParsedReview(
             frontmatter=frontmatter_result,
-            body=body.strip(),
+            body=result.body.strip(),
             filename=filename,
         ),
         errors=(),

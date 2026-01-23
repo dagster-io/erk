@@ -4,12 +4,9 @@ This module provides functionality for validating and syncing agent documentatio
 files with frontmatter metadata.
 """
 
-import re
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any, cast
-
-import yaml
 
 from erk.agent_docs.models import (
     AgentDocFrontmatter,
@@ -20,10 +17,10 @@ from erk.agent_docs.models import (
     SyncResult,
     Tripwire,
 )
+from erk.core.frontmatter import parse_markdown_frontmatter
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 AGENT_DOCS_DIR = "docs/learned"
-FRONTMATTER_PATTERN = re.compile(r"^---\s*\n(.*?)\n---", re.DOTALL)
 
 # Category descriptions for root index generation.
 # Format: "Explore when [doing X]. Add docs here for [type of content]."
@@ -82,30 +79,6 @@ GENERATED_FILE_BANNER = """<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
 <!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. -->
 
 """
-
-
-def parse_frontmatter(content: str) -> tuple[dict[str, object] | None, str | None]:
-    """Parse YAML frontmatter from markdown content.
-
-    Args:
-        content: The markdown file content.
-
-    Returns:
-        Tuple of (parsed_dict, error_message). If parsing succeeds,
-        error_message is None. If parsing fails, parsed_dict is None.
-    """
-    match = FRONTMATTER_PATTERN.match(content)
-    if match is None:
-        return None, "No frontmatter found"
-
-    frontmatter_text = match.group(1)
-    try:
-        parsed = yaml.safe_load(frontmatter_text)
-        if not isinstance(parsed, dict):
-            return None, "Frontmatter is not a valid YAML mapping"
-        return parsed, None
-    except yaml.YAMLError as e:
-        return None, f"Invalid YAML: {e}"
 
 
 def _validate_tripwires(
@@ -236,17 +209,17 @@ def validate_agent_doc_file(file_path: Path, agent_docs_root: Path) -> AgentDocV
             errors=(f"Cannot read file: {e}",),
         )
 
-    parsed, parse_error = parse_frontmatter(content)
-    if parse_error is not None:
+    result = parse_markdown_frontmatter(content)
+    if result.error is not None:
         return AgentDocValidationResult(
             file_path=rel_path,
             frontmatter=None,
-            errors=(parse_error,),
+            errors=(result.error,),
         )
 
-    # parse_error is None means parsed is not None
-    assert parsed is not None
-    frontmatter, validation_errors = validate_agent_doc_frontmatter(parsed)
+    # result.error is None means result.metadata is not None
+    assert result.metadata is not None
+    frontmatter, validation_errors = validate_agent_doc_frontmatter(result.metadata)
     return AgentDocValidationResult(
         file_path=rel_path,
         frontmatter=frontmatter,

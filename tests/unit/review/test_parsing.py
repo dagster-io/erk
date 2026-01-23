@@ -7,75 +7,9 @@ from erk.review.parsing import (
     check_duplicate_markers,
     discover_matching_reviews,
     discover_review_files,
-    parse_frontmatter,
     parse_review_file,
     validate_review_frontmatter,
 )
-
-
-class TestParseFrontmatter:
-    """Tests for frontmatter parsing."""
-
-    def test_valid_frontmatter(self) -> None:
-        """Parse valid YAML frontmatter from markdown."""
-        content = """\
----
-name: Test Review
-paths:
-  - "**/*.py"
-marker: "<!-- test -->"
----
-
-Body content here.
-"""
-        parsed, error, body = parse_frontmatter(content)
-
-        assert error is None
-        assert parsed is not None
-        assert parsed["name"] == "Test Review"
-        assert parsed["paths"] == ["**/*.py"]
-        assert parsed["marker"] == "<!-- test -->"
-        assert body.strip() == "Body content here."
-
-    def test_no_frontmatter(self) -> None:
-        """Return error when no frontmatter found."""
-        content = "Just plain markdown without frontmatter."
-
-        parsed, error, body = parse_frontmatter(content)
-
-        assert parsed is None
-        assert error == "No frontmatter found"
-        assert body == content
-
-    def test_invalid_yaml(self) -> None:
-        """Return error for invalid YAML."""
-        content = """\
----
-name: [unclosed bracket
----
-
-Body.
-"""
-        parsed, error, body = parse_frontmatter(content)
-
-        assert parsed is None
-        assert "Invalid YAML" in str(error)
-
-    def test_non_dict_frontmatter(self) -> None:
-        """Return error when frontmatter is not a dict."""
-        content = """\
----
-- just
-- a
-- list
----
-
-Body.
-"""
-        parsed, error, body = parse_frontmatter(content)
-
-        assert parsed is None
-        assert "not a valid YAML mapping" in str(error)
 
 
 class TestValidateReviewFrontmatter:
