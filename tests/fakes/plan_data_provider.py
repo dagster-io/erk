@@ -178,6 +178,7 @@ def make_plan_row(
     learn_plan_issue_closed: bool | None = None,
     learn_plan_pr: int | None = None,
     learn_run_url: str | None = None,
+    objective_issue: int | None = None,
 ) -> PlanRowData:
     """Create a PlanRowData for testing with sensible defaults.
 
@@ -205,6 +206,7 @@ def make_plan_row(
         learn_plan_issue_closed: Whether the learn plan issue is closed (True/False/None)
         learn_plan_pr: PR number that implemented the learn plan
         learn_run_url: URL to GitHub Actions workflow run (for pending status)
+        objective_issue: Objective issue number (for linking plans to objectives)
 
     Returns:
         PlanRowData populated with test data
@@ -256,6 +258,9 @@ def make_plan_row(
         resolved_count, total_count = comment_counts
         comments_display = f"{resolved_count}/{total_count}"
 
+    # Compute objective display
+    objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+
     return PlanRowData(
         issue_number=issue_number,
         issue_url=issue_url,
@@ -293,4 +298,6 @@ def make_plan_row(
         learn_run_url=learn_run_url,
         learn_display=learn_display,
         learn_display_icon=learn_display_icon,
+        objective_issue=objective_issue,
+        objective_display=objective_display,
     )

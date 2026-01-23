@@ -55,6 +55,13 @@ class PlanDataTable(DataTable):
             super().__init__()
             self.row_index = row_index
 
+    class ObjectiveClicked(Message):
+        """Posted when user clicks objective column on a row with an objective issue."""
+
+        def __init__(self, row_index: int) -> None:
+            super().__init__()
+            self.row_index = row_index
+
     def __init__(self, plan_filters: PlanFilters) -> None:
         """Initialize table with column configuration based on filters.
 
@@ -65,6 +72,7 @@ class PlanDataTable(DataTable):
         self._plan_filters = plan_filters
         self._rows: list[PlanRowData] = []
         self._plan_column_index: int = 0  # Always first column
+        self._objective_column_index: int | None = None
         self._pr_column_index: int | None = None
         self._learn_column_index: int | None = None
         self._local_wt_column_index: int | None = None
@@ -77,8 +85,8 @@ class PlanDataTable(DataTable):
         Returns:
             Column index (0-based), or None if columns not yet set up.
             The index varies based on show_prs flag:
-            - Without PRs: index 2 (plan, title, local-wt)
-            - With PRs: index 5 (plan, title, pr, chks, comments, local-wt)
+            - Without PRs: index 4 (plan, title, obj, lrn, local-wt)
+            - With PRs: index 7 (plan, title, pr, chks, comments, obj, lrn, local-wt)
         """
         return self._local_wt_column_index
 
@@ -112,10 +120,16 @@ class PlanDataTable(DataTable):
             col_index += 1
             self.add_column("comments", key="comments")
             col_index += 1
+            self.add_column("obj", key="objective")
+            self._objective_column_index = col_index
+            col_index += 1
             self.add_column("lrn", key="learn")
             self._learn_column_index = col_index
             col_index += 1
         else:
+            self.add_column("obj", key="objective")
+            self._objective_column_index = col_index
+            col_index += 1
             self.add_column("lrn", key="learn")
             self._learn_column_index = col_index
             col_index += 1
@@ -199,6 +213,11 @@ class PlanDataTable(DataTable):
         ):
             learn_cell = Text(row.learn_display_icon, style="cyan underline")
 
+        # Format objective cell - colorize if clickable
+        objective_cell: str | Text = row.objective_display
+        if row.objective_issue is not None:
+            objective_cell = Text(row.objective_display, style="cyan underline")
+
         # Build values list based on columns
         values: list[str | Text] = [plan_cell, row.title]
         if self._plan_filters.show_prs:
@@ -208,9 +227,11 @@ class PlanDataTable(DataTable):
                 pr_display = Text(pr_display, style="cyan underline")
             checks_display = _strip_rich_markup(row.checks_display)
             comments_display = _strip_rich_markup(row.comments_display)
-            values.extend([pr_display, checks_display, comments_display, learn_cell])
+            values.extend(
+                [pr_display, checks_display, comments_display, objective_cell, learn_cell]
+            )
         else:
-            values.append(learn_cell)
+            values.extend([objective_cell, learn_cell])
         values.extend([wt_cell, row.local_impl_display])
         if self._plan_filters.show_runs:
             remote_impl = _strip_rich_markup(row.remote_impl_display)
@@ -261,6 +282,14 @@ class PlanDataTable(DataTable):
         if col_index == self._plan_column_index:
             if row_index < len(self._rows) and self._rows[row_index].issue_url:
                 self.post_message(self.PlanClicked(row_index))
+                event.prevent_default()
+                event.stop()
+                return
+
+        # Check objective column - post event if objective issue exists
+        if self._objective_column_index is not None and col_index == self._objective_column_index:
+            if row_index < len(self._rows) and self._rows[row_index].objective_issue is not None:
+                self.post_message(self.ObjectiveClicked(row_index))
                 event.prevent_default()
                 event.stop()
                 return
