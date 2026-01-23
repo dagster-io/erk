@@ -30,6 +30,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -66,6 +67,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -73,7 +75,7 @@ class TestCreatePlanIssueSuccess:
 
         # Verify labels include both erk-plan and erk-learn
         title, body, labels = fake_gh.created_issues[0]
-        assert title == "Extraction Plan: main [erk-learn]"
+        assert title == "[erk-learn] Extraction Plan: main"
         assert "erk-plan" in labels
         assert "erk-learn" in labels
 
@@ -95,6 +97,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -117,6 +120,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -138,6 +142,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -159,6 +164,7 @@ class TestCreatePlanIssueSuccess:
             source_repo="owner/impl-repo",
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -184,6 +190,7 @@ class TestCreatePlanIssueSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -212,6 +219,7 @@ class TestCreatePlanIssueTitleExtraction:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.title == "Feature: Add Auth"
@@ -231,6 +239,7 @@ class TestCreatePlanIssueTitleExtraction:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.title == "Add Feature X"
@@ -250,6 +259,7 @@ class TestCreatePlanIssueTitleExtraction:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.title == "Refactor Y"
@@ -273,6 +283,7 @@ class TestCreatePlanIssueErrors:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is False
@@ -303,6 +314,7 @@ class TestCreatePlanIssueErrors:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is False
@@ -330,6 +342,7 @@ class TestCreatePlanIssueErrors:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is False
@@ -362,6 +375,7 @@ class TestCreatePlanIssuePartialSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         # Partial success: issue created but comment failed
@@ -391,6 +405,7 @@ class TestCreatePlanIssuePartialSuccess:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is False
@@ -415,6 +430,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -440,6 +456,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -464,6 +481,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -485,6 +503,7 @@ class TestCreatePlanIssueLabelManagement:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -676,6 +695,7 @@ class TestCreatePlanIssueCommandsSection:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -706,6 +726,7 @@ class TestCreatePlanIssueCommandsSection:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
@@ -735,6 +756,7 @@ class TestCreatePlanIssueCommandsSection:
             source_repo=None,
             objective_id=None,
             created_from_session=None,
+            learned_from_issue=None,
         )
 
         assert result.success is True
