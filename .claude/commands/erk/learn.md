@@ -574,9 +574,15 @@ Present the synthesized plan to the user. The PlanSynthesizer output already inc
 2. **Summary statistics** - Documentation items, contradictions, tripwires
 3. **Documentation items** - Prioritized with draft content starters and source attribution ([Plan], [Impl], [PR #N])
 
-**Ask for validation**: Confirm the documentation items to write. Note that files will be written directly (not saved as a plan for later).
+**CI Detection**: Check if running in CI/streaming mode by running:
 
-If the user decides to skip (no valuable insights), proceed to Step 7.
+```bash
+[ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
+```
+
+**If CI mode (CI_MODE)**: Skip user confirmation. Auto-proceed to Step 6 to write all HIGH and MEDIUM priority documentation items. This is expected behavior - CI runs should complete without user interaction.
+
+**If interactive mode (INTERACTIVE)**: Confirm the documentation items to write with the user. Note that files will be written directly (not saved as a plan for later). If the user decides to skip (no valuable insights), proceed to Step 7.
 
 ### Step 6: Write Documentation
 
