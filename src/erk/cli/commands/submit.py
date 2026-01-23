@@ -570,6 +570,21 @@ def _submit_single_issue(
         # Fetch base branch
         ctx.git.fetch_branch(repo.root, "origin", base_branch)
 
+        # Before creating the stacked branch, verify parent is tracked by Graphite (if enabled)
+        # This is a "non-ideal state" check - the user needs to track the parent first
+        if ctx.branch_manager.is_graphite_managed():
+            parent_branch = base_branch.removeprefix("origin/")
+            if not ctx.graphite.is_branch_tracked(repo.root, parent_branch):
+                msg = (
+                    f"Cannot stack on branch '{parent_branch}' - it's not tracked by Graphite.\n\n"
+                    f"To fix this:\n"
+                    f"  1. gt checkout {parent_branch}\n"
+                    f"  2. gt track --parent <parent-branch>\n\n"
+                    f"Then retry your command."
+                )
+                user_output(click.style("Error: ", fg="red") + msg)
+                raise SystemExit(1)
+
         # Create branch from remote state and track with Graphite (if enabled)
         # BranchManager handles stripping origin/ prefix for Graphite tracking
         ctx.branch_manager.create_branch(repo.root, branch_name, f"origin/{base_branch}")
