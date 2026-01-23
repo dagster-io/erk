@@ -198,3 +198,169 @@ last_learn_session: abc123 # Session ID that ran learn
 ```yaml
 learned_from_issue: 100 # Parent plan issue number
 ```
+
+## Learn Plan Parent Branch Stacking
+
+When a learn plan is submitted via `erk plan submit`, it automatically stacks on its parent plan's branch rather than trunk.
+
+### Auto-Detection
+
+The submit command calls `get_learn_plan_parent_branch()` which:
+
+1. Extracts `learned_from_issue` from the learn plan's metadata
+2. Fetches the parent plan issue
+3. Returns the parent plan's `branch_name` from its plan-header
+
+### How It Works
+
+```
+trunk (main)
+    └── P123-feature-branch (parent plan)
+            └── P456-docs-for-feature (learn plan)
+```
+
+This stacking ensures learn plan PRs can be reviewed and merged after their parent features land.
+
+### Fallback Behavior
+
+If the parent branch lookup fails (parent issue missing, no branch recorded, etc.), the learn plan falls back to being based on trunk. This is graceful degradation - the plan can still be implemented, just not stacked.
+
+### Implementation Reference
+
+See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`.
+
+## CI Environment Behavior
+
+The learn workflow detects CI environments to skip interactive prompts:
+
+```bash
+# CI detection
+[ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
+```
+
+**In CI mode:**
+
+- User confirmations are skipped
+- Auto-proceeds to write HIGH and MEDIUM priority documentation
+- No blocking prompts that would hang the workflow
+
+**In interactive mode:**
+
+- User confirms documentation items before writing
+- Can choose to skip if no valuable insights
+
+See [CI-Aware Commands](../cli/ci-aware-commands.md) for the general CI detection pattern.
+
+## Agent Input/Output Formats
+
+The learn workflow uses stateless agents with file-based composition. Each agent reads from scratch storage and writes structured output.
+
+### SessionAnalyzer
+
+**Input:**
+
+- `session_xml_path`: Path to preprocessed session XML
+- `context`: Brief description from plan title
+
+**Output:** Structured markdown with:
+
+- Key discoveries (files read, patterns found)
+- Error resolutions
+- Design decisions
+- External documentation fetched
+
+### CodeDiffAnalyzer
+
+**Input:**
+
+- `pr_number`: Pull request number
+- `issue_number`: Plan issue number
+
+**Output:** Inventory markdown with:
+
+- New files created
+- New functions/classes added
+- New CLI commands
+- Config changes
+
+### ExistingDocsChecker
+
+**Input:**
+
+- `plan_title`: Title from plan issue
+- `pr_title`: PR title (if available)
+- `search_hints`: Key terms for searching
+
+**Output:** Report with:
+
+- Existing docs found
+- Potential duplicates
+- Contradiction candidates
+
+### DocumentationGapIdentifier
+
+**Input:**
+
+- `session_analysis_paths`: List of session analysis file paths
+- `diff_analysis_path`: Path to diff analysis (or null)
+- `existing_docs_path`: Path to existing docs check
+- `plan_title`: Title from plan issue
+
+**Output:** Enumerated table with:
+
+- Classification (NEW_DOC, UPDATE_EXISTING, TRIPWIRE, SKIP)
+- Priority (HIGH, MEDIUM, LOW)
+- Deduplication status (ALREADY_DOCUMENTED, PARTIAL_OVERLAP, NEW_TOPIC)
+
+### PlanSynthesizer
+
+**Input:**
+
+- `gap_analysis_path`: Path to gap analysis
+- `session_analysis_paths`: Session analysis file paths
+- `diff_analysis_path`: Diff analysis path (or null)
+- `plan_title`: Title from plan issue
+- `gist_url`: Gist URL with raw materials
+- `pr_number`: PR number (or null)
+
+**Output:** Complete learn plan markdown with:
+
+- Context section
+- Summary statistics
+- Documentation items with draft content starters
+- Tripwire additions formatted for copy-paste
+
+## Stateless File-Based Composition
+
+The learn workflow uses a **stateless file-based composition** pattern:
+
+### Why Stateless?
+
+1. **Parallelism**: Agents run in background with no shared state
+2. **Resumability**: If one agent fails, others' outputs are preserved
+3. **Debuggability**: Intermediate outputs saved to scratch storage for inspection
+4. **Token efficiency**: Each agent gets only the context it needs
+
+### File Flow
+
+```
+Session preprocessing
+    └── .erk/scratch/sessions/{session-id}/learn/*.xml
+
+Parallel agents
+    └── .erk/scratch/sessions/{session-id}/learn-agents/
+            ├── session-*.md      (SessionAnalyzer outputs)
+            ├── diff-analysis.md  (CodeDiffAnalyzer output)
+            └── existing-docs-check.md (ExistingDocsChecker output)
+
+Sequential agents
+    └── .erk/scratch/sessions/{session-id}/learn-agents/
+            ├── gap-analysis.md   (DocumentationGapIdentifier output)
+            └── learn-plan.md     (PlanSynthesizer output)
+```
+
+### Composition Guarantees
+
+- Each agent receives explicit file paths as input
+- Write tool (not bash heredoc) ensures reliable large content writes
+- File existence verified before launching dependent agents

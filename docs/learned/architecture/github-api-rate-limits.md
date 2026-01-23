@@ -129,6 +129,19 @@ gh api repos/{owner}/{repo}/issues/{number}/comments \
   --jq ".id"
 ```
 
+## Rate Limits vs Transient Errors
+
+Erk has a [retry mechanism](github-api-retry-mechanism.md) for transient network errors, but **rate limits are NOT retried**.
+
+| Error Type       | Retried? | Why                                       |
+| ---------------- | -------- | ----------------------------------------- |
+| Network timeout  | Yes      | Transient, likely succeeds on retry       |
+| Connection reset | Yes      | Transient, likely succeeds on retry       |
+| Rate limit       | No       | Persistent until quota resets (up to 1hr) |
+| Auth failure     | No       | Configuration issue, won't fix on retry   |
+
+**Rationale**: Rate limit errors indicate quota exhaustion. Retrying immediately wastes time and may trigger abuse detection. The correct response is to either wait for quota reset or switch to REST API (separate quota).
+
 ## Implementation Reference
 
 See `packages/erk-shared/src/erk_shared/github/issues/real.py` for examples of REST API usage in erk's GitHub gateway.

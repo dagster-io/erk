@@ -942,6 +942,67 @@ def test_quick_submit_tracks_submission() -> None:
     assert fake_branch_manager.submitted_branches == ["feature-branch"]
 ```
 
+### context.branch_manager Property
+
+The `ErkContext.branch_manager` property provides automatic wrapper unwrapping for dry-run mode:
+
+```python
+@property
+def branch_manager(self) -> BranchManager:
+    # Unwrap DryRunGraphite to get to the underlying Graphite
+    graphite = self.graphite
+    if isinstance(graphite, DryRunGraphite):
+        graphite = graphite._wrapped
+
+    if isinstance(graphite, GraphiteDisabled):
+        return GitBranchManager(git=self.git, github=self.github)
+    return GraphiteBranchManager(git=self.git, graphite=graphite)
+```
+
+This unwrapping is necessary because:
+
+1. `DryRunGraphite` wraps a real `Graphite` implementation
+2. `isinstance(ctx.graphite, GraphiteDisabled)` would return `False` for `DryRunGraphite`
+3. Without unwrapping, commands in dry-run mode would incorrectly use `GraphiteBranchManager`
+
+## Graceful Degradation Patterns
+
+When operations have optional behavior based on availability of resources, use graceful degradation instead of hard failures.
+
+### Pattern: Branch Lookup Fallback
+
+The `get_learn_plan_parent_branch()` function gracefully handles missing parent plans:
+
+```python
+def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_body: str) -> str | None:
+    """Get parent branch for learn plan stacking, or None to use trunk."""
+    learned_from = extract_plan_header_learned_from_issue(issue_body)
+    if learned_from is None:
+        return None  # No parent link - use trunk
+
+    parent_issue = ctx.issues.get_issue(repo_root, learned_from)
+    return extract_plan_header_branch_name(parent_issue.body)  # May return None
+```
+
+Callers check the return value and fall back to trunk:
+
+```python
+parent_branch = get_learn_plan_parent_branch(ctx, repo_root, issue.body)
+base_branch = parent_branch if parent_branch else trunk_branch
+```
+
+### When to Use Graceful Degradation
+
+- **Resource might not exist**: Parent plan may be deleted, branch may not be recorded
+- **Feature is enhancement, not requirement**: Stacking on parent is nice, stacking on trunk still works
+- **Failure doesn't corrupt state**: Using trunk as base doesn't break anything
+
+### When NOT to Use
+
+- **Failure indicates bug**: Missing required field should raise exception
+- **Degraded behavior is confusing**: User expects A, silently gets B
+- **State corruption possible**: Partial operation would leave invalid state
+
 ## Deferred Actions via Activation Scripts
 
 When actions must execute **after** the user changes directory (e.g., deleting the current worktree), use the `post_cd_commands` pattern to embed shell commands in activation scripts.

@@ -394,7 +394,117 @@ with erk_isolated_fs_env(runner) as env:
 
 Choose the fixture based on what you're testing - use `erk_inmem_env` for pure logic with fakes, use `erk_isolated_fs_env` when scripts are written to the real filesystem.
 
+## Branch Divergence Testing
+
+Testing code that validates local vs remote branch divergence requires specific FakeGit setup.
+
+### Setting Up Diverged Branches
+
+```python
+from tests.fakes.gitops import FakeGit
+
+# Set up diverged local and remote branches
+fake_git = FakeGit()
+fake_git.branch_heads = {
+    "feature-branch": "abc1234",       # Local has different commit
+    "origin/feature-branch": "def5678", # Remote has different commit
+}
+fake_git.local_branches = {"feature-branch", "main"}
+```
+
+### Testing Divergence Detection
+
+```python
+def test_divergence_raises_error() -> None:
+    fake_git = FakeGit()
+    fake_git.branch_heads = {
+        "parent": "local-sha",
+        "origin/parent": "remote-sha",  # Different from local
+    }
+    fake_git.local_branches = {"parent", "main"}
+
+    branch_manager = GraphiteBranchManager(
+        git=fake_git,
+        git_branch_ops=FakeGitBranchOps(),
+        graphite=FakeGraphite(),
+        graphite_branch_ops=FakeGraphiteBranchOps(),
+        github=FakeGitHub(),
+    )
+
+    with pytest.raises(RuntimeError, match="has diverged"):
+        branch_manager.create_branch(repo_root, "child", "origin/parent")
+```
+
+### Testing Sync Scenarios
+
+```python
+def test_synced_branches_succeed() -> None:
+    fake_git = FakeGit()
+    fake_git.branch_heads = {
+        "parent": "same-sha",
+        "origin/parent": "same-sha",  # Same as local
+    }
+    # ... should succeed without error
+```
+
+## FakeGraphite Sub-Gateway Linking
+
+When testing code that uses `GraphiteBranchManager`, you need to link FakeGraphite with its FakeGraphiteBranchOps sub-gateway.
+
+### The create_linked_branch_ops() Pattern
+
+```python
+from erk_shared.gateway.graphite.fake import FakeGraphite
+from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+
+# Create linked fake pair
+fake_graphite = FakeGraphite()
+fake_graphite_branch_ops = FakeGraphiteBranchOps()
+
+# Use in GraphiteBranchManager
+branch_manager = GraphiteBranchManager(
+    git=fake_git,
+    git_branch_ops=fake_git_branch_ops,
+    graphite=fake_graphite,
+    graphite_branch_ops=fake_graphite_branch_ops,
+    github=fake_github,
+)
+```
+
+### Asserting on Sub-Gateway Mutations
+
+```python
+def test_branch_tracked_via_graphite() -> None:
+    fake_graphite_branch_ops = FakeGraphiteBranchOps()
+    # ... set up branch_manager with fake_graphite_branch_ops ...
+
+    branch_manager.create_branch(repo_root, "feature", "main")
+
+    # Assert on sub-gateway mutations
+    assert ("feature", "main") in fake_graphite_branch_ops.tracked_branches
+```
+
+## BranchManager Test Placement
+
+Tests for BranchManager implementations live in:
+
+```
+tests/unit/branch_manager/
+├── test_git_branch_manager.py      # GitBranchManager tests
+├── test_graphite_branch_manager.py # GraphiteBranchManager tests
+└── test_fake_branch_manager.py     # FakeBranchManager tests
+```
+
+Integration tests for real sub-gateways:
+
+```
+tests/integration/
+├── test_real_git_branch_ops.py
+└── test_real_graphite_branch_ops.py
+```
+
 ## Related
 
 - **Testing philosophy**: Load `fake-driven-testing` skill
 - **Rebase conflicts**: [rebase-conflicts.md](rebase-conflicts.md)
+- **Gateway implementation**: [Gateway ABC Implementation](../architecture/gateway-abc-implementation.md)
