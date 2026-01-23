@@ -625,12 +625,22 @@ If any documentation item includes a tripwire (cross-cutting warning):
    ```
 2. Run: `erk docs sync` to regenerate `tripwires.md`
 
-#### Save Learn Plan to GitHub Issue
+#### Validate and Save Learn Plan to GitHub Issue
 
-The synthesized plan is already formatted as learn plan markdown. Save it as a GitHub issue:
+First validate the synthesized plan has actionable content:
 
 ```bash
-# Use the synthesized plan directly
+cat .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md | erk exec validate-plan-content
+```
+
+Parse the JSON output:
+
+- If `valid: false` → Skip saving, proceed to Step 6b with `completed_no_plan`
+- If `valid: true` → Continue with save below
+
+**If plan is valid**, save it as a GitHub issue:
+
+```bash
 erk exec plan-save-to-issue \
     --plan-type learn \
     --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \
@@ -651,7 +661,7 @@ Raw materials: <gist-url>
 
 ### Step 6b: Track Learn Result on Parent Plan
 
-**After creating the learn plan issue**, update the parent plan's status to link the two issues:
+**If plan was valid and saved**, update the parent plan's status to link the two issues:
 
 ```bash
 erk exec track-learn-result \
@@ -663,7 +673,7 @@ erk exec track-learn-result \
 This sets `learn_status: completed_with_plan` and `learn_plan_issue: <N>` on the parent plan,
 enabling the TUI to show the linked learn plan issue.
 
-**If learn found no documentation needed (skipping Step 6):**
+**If plan validation failed (no actionable documentation):**
 
 ```bash
 erk exec track-learn-result \
