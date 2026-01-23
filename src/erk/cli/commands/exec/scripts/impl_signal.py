@@ -162,6 +162,16 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
     """Handle 'started' event - post comment and update metadata."""
     event = "started"
 
+    # Validate session_id is provided and non-empty
+    if session_id is None or session_id.strip() == "":
+        _output_error(
+            event,
+            "session-id-required",
+            "Session ID required for impl-signal started. "
+            "Ensure ${CLAUDE_SESSION_ID} is available in the command context.",
+        )
+        return
+
     # Find impl directory (.impl/ or .worker-impl/) - check BEFORE context access
     impl_dir = Path.cwd() / ".impl"
     if not impl_dir.exists():
