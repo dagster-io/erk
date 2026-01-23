@@ -15,6 +15,7 @@ from erk.cli.cli import cli
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
+from erk_shared.git.abc import BranchDivergence
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.fake import FakeGitHubIssues
@@ -39,6 +40,10 @@ def test_land_default_calls_git_pull_in_python() -> None:
             git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
             repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            # Configure branch as behind remote so pull is attempted
+            branch_divergence={
+                (env.cwd, "main", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=1),
+            },
         )
 
         graphite_ops = FakeGraphite(
@@ -120,6 +125,9 @@ def test_land_default_calls_git_pull_in_python() -> None:
         )
 
         assert result.exit_code == 0
+
+        # Verify fetch was called first to check divergence
+        assert ("origin", "main") in git_ops.fetched_branches
 
         # Verify git pull was called in Python (via the Git gateway)
         assert ("origin", "main", True) in git_ops.pulled_branches
@@ -328,8 +336,6 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
     """Test that git pull failure shows a warning but doesn't fail the command."""
     runner = CliRunner()
     with erk_inmem_env(runner) as env:
-        import subprocess
-
         repo_dir = env.setup_repo_structure()
         feature_1_path = repo_dir / "worktrees" / "feature-1"
 
@@ -343,8 +349,12 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
             git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
             repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
-            # Simulate git pull failure
-            pull_branch_raises=subprocess.CalledProcessError(1, "git pull"),
+            # Configure branch as behind remote so pull is attempted
+            branch_divergence={
+                (env.cwd, "main", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=1),
+            },
+            # Simulate git pull failure with RuntimeError (wrapped by run_subprocess_with_context)
+            pull_branch_raises=RuntimeError("git pull failed"),
         )
 
         graphite_ops = FakeGraphite(
@@ -429,6 +439,466 @@ def test_land_git_pull_failure_shows_warning_but_succeeds() -> None:
         assert result.exit_code == 0
 
         # Verify git pull was attempted
+        assert ("origin", "main", True) in git_ops.pulled_branches
+
+        # Verify warning message was shown
+        assert "Warning:" in result.output
+        assert "git pull failed" in result.output
+
+
+def test_land_detects_diverged_branch_and_skips_pull() -> None:
+    """Test that land detects diverged branch (ahead AND behind) and skips pull with warning."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+            # Configure diverged state: 2 commits ahead, 3 commits behind
+            branch_divergence={
+                (env.cwd, "main", "origin"): BranchDivergence(is_diverged=True, ahead=2, behind=3),
+            },
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+
+        # Execute mode: test diverged branch detection during execution phase
+        result = runner.invoke(
+            cli,
+            [
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Command should succeed
+        assert result.exit_code == 0
+
+        # Verify fetch was called to update remote refs
+        assert ("origin", "main") in git_ops.fetched_branches
+
+        # Verify pull was NOT called (skipped due to divergence)
+        assert len(git_ops.pulled_branches) == 0
+
+        # Verify divergence warning was shown
+        assert "Warning:" in result.output
+        assert "diverged" in result.output
+        assert "2 ahead" in result.output
+        assert "3 behind" in result.output
+        assert "git reset --hard origin/main" in result.output
+
+
+def test_land_pulls_when_behind_only() -> None:
+    """Test that land performs pull when only behind (not diverged)."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+            # Configure behind only: 0 commits ahead, 5 commits behind
+            branch_divergence={
+                (env.cwd, "main", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=5),
+            },
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+
+        # Execute mode: test pull when behind but not diverged
+        result = runner.invoke(
+            cli,
+            [
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Command should succeed
+        assert result.exit_code == 0
+
+        # Verify fetch was called first
+        assert ("origin", "main") in git_ops.fetched_branches
+
+        # Verify pull WAS called (behind only, can fast-forward)
+        assert ("origin", "main", True) in git_ops.pulled_branches
+
+        # Verify pulling message was shown
+        assert "Pulling latest changes" in result.output
+
+
+def test_land_skips_pull_when_up_to_date() -> None:
+    """Test that land skips pull when already up to date (0 ahead, 0 behind)."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+            # Configure up to date: 0 commits ahead, 0 commits behind
+            branch_divergence={
+                (env.cwd, "main", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=0),
+            },
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+
+        # Execute mode: test pull when already up to date
+        result = runner.invoke(
+            cli,
+            [
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Command should succeed
+        assert result.exit_code == 0
+
+        # Verify fetch was called first
+        assert ("origin", "main") in git_ops.fetched_branches
+
+        # Verify pull was NOT called (already up to date)
+        assert len(git_ops.pulled_branches) == 0
+
+        # Verify no "Pulling latest changes" message (skipped silently)
+        assert "Pulling latest changes" not in result.output
+
+
+def test_land_pull_failure_after_divergence_check_shows_warning() -> None:
+    """Test that pull failure shows warning even after divergence check passes."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+        feature_1_path = repo_dir / "worktrees" / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={
+                env.cwd: "feature-1",
+                feature_1_path: "feature-1",
+            },
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_path: env.git_dir},
+            repository_roots={env.cwd: env.cwd, feature_1_path: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+            # Configure behind only: should proceed to pull
+            branch_divergence={
+                (env.cwd, "main", "origin"): BranchDivergence(is_diverged=False, ahead=0, behind=5),
+            },
+            # But pull fails for some other reason
+            pull_branch_raises=RuntimeError("Unexpected pull failure"),
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            pr_bases={123: "main"},
+            merge_should_succeed=True,
+        )
+
+        issues_ops = FakeGitHubIssues(username="testuser")
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            github=github_ops,
+            repo=repo,
+            use_graphite=True,
+            issues=issues_ops,
+        )
+
+        # Execute mode: test pull failure handling
+        result = runner.invoke(
+            cli,
+            [
+                "exec",
+                "land-execute",
+                "--pr-number=123",
+                "--branch=feature-1",
+                f"--worktree-path={feature_1_path}",
+                "--is-current-branch",
+                "--use-graphite",
+                "--script",
+            ],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        # Command should succeed (pull failure is non-fatal)
+        assert result.exit_code == 0
+
+        # Verify pull was attempted
         assert ("origin", "main", True) in git_ops.pulled_branches
 
         # Verify warning message was shown
