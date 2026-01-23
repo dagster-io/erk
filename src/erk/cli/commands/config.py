@@ -1,7 +1,6 @@
 import subprocess
 from collections.abc import MutableMapping
 from dataclasses import replace
-from functools import cache
 from pathlib import Path
 from typing import Any, cast
 
@@ -13,58 +12,15 @@ from erk.cli.config import LoadedConfig
 from erk.cli.core import discover_repo_context
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext, write_trunk_to_pyproject
+from erk_shared.config.schema import (
+    ConfigLevel,
+    get_global_config_fields,
+    get_overridable_keys,
+    get_repo_config_fields,
+    is_global_config_key,
+)
 from erk_shared.context.types import GlobalConfig
 from erk_shared.output.output import machine_output, user_output
-
-
-@cache
-def get_global_config_keys() -> dict[str, str]:
-    """Get user-exposed global config keys with descriptions.
-
-    Order determines display order in 'erk config list'.
-    shell_setup_complete is internal and not exposed.
-    """
-    return {
-        "erk_root": "Root directory for erk data (~/.erk by default)",
-        "use_graphite": "Enable Graphite integration for stack management",
-        "github_planning": "Enable GitHub issues integration for planning",
-        "fix_conflicts_require_dangerous_flag": "Require --dangerous flag for fix-conflicts",
-        "show_hidden_commands": "Show deprecated/hidden commands in help output",
-        "prompt_learn_on_land": "Prompt about running learn before landing plan PRs",
-        "shell_integration": "Enable auto-navigation shell integration (opt-in)",
-    }
-
-
-@cache
-def get_overridable_global_keys() -> set[str]:
-    """Get keys that can be set at global, repo, or local level.
-
-    These keys can be overridden per-repo or per-user:
-    - Global: `erk config set <key> <value>`
-    - Repo: `erk config set --repo <key> <value>`
-    - Local: `erk config set --local <key> <value>`
-
-    Override chain: Global < Repo < Local
-    """
-    return {
-        "prompt_learn_on_land",
-        "fix_conflicts_require_dangerous_flag",
-        "show_hidden_commands",
-        "use_graphite",
-        "github_planning",
-        "shell_integration",
-    }
-
-
-@cache
-def get_global_only_keys() -> set[str]:
-    """Get keys that can ONLY be set at global level.
-
-    These keys don't make sense at repo or local level.
-    """
-    return {
-        "erk_root",
-    }
 
 
 def _get_env_value(cfg: LoadedConfig, parts: list[str], key: str) -> None:
@@ -168,8 +124,8 @@ def config_keys() -> None:
 
     # Global config section
     user_output(click.style("Global configuration keys:", bold=True))
-    rows = list(get_global_config_keys().items())
-    formatter.write_dl(rows)
+    global_rows = [(meta.cli_key, meta.description) for meta in get_global_config_fields()]
+    formatter.write_dl(global_rows)
     user_output(formatter.getvalue().rstrip())
 
     user_output("")
@@ -177,17 +133,8 @@ def config_keys() -> None:
     # Repository config section
     user_output(click.style("Repository configuration keys:", bold=True))
     formatter = click.HelpFormatter()
-    repo_keys = [
-        ("trunk-branch", "The main/master branch name for the repository"),
-        ("pool.max_slots", "Maximum number of pool slots for worktree pool"),
-        ("pool.checkout.shell", "Shell to use for pool checkout commands"),
-        ("pool.checkout.commands", "Commands to run after checking out a worktree from pool"),
-        ("env.<name>", "Environment variables to set in worktrees"),
-        ("post_create.shell", "Shell to use for post-create commands"),
-        ("post_create.commands", "Commands to run after creating a worktree"),
-        ("plans.repo", "Repository for storing plan issues (owner/repo format)"),
-    ]
-    formatter.write_dl(repo_keys)
+    repo_rows = [(meta.cli_key, meta.description) for meta in get_repo_config_fields()]
+    formatter.write_dl(repo_rows)
     user_output(formatter.getvalue().rstrip())
 
 
@@ -250,25 +197,25 @@ def config_list(ctx: ErkContext) -> None:
     # Display global config
     user_output(click.style("Global configuration:", bold=True))
     if ctx.global_config:
-        overridable_keys = get_overridable_global_keys()
-        for key in get_global_config_keys():
+        for meta in get_global_config_fields():
+            is_overridable = meta.level == ConfigLevel.OVERRIDABLE
             # For overridable keys, show effective value with source annotation
-            if key in overridable_keys and repo_only_config and local_only_config:
+            if is_overridable and repo_only_config and local_only_config:
                 effective_value = _get_effective_value_for_overridable_key(
-                    key,
+                    meta.field_name,
                     global_config=ctx.global_config,
                     merged_config=ctx.local_config,
                 )
                 source = _get_overridable_key_source(
-                    key,
+                    meta.field_name,
                     repo_config=repo_only_config,
                     local_config=local_only_config,
                 )
-                user_output(f"  {key}={_format_config_value(effective_value)}{source}")
+                user_output(f"  {meta.cli_key}={_format_config_value(effective_value)}{source}")
             else:
                 # Non-overridable key or not in repo - show global value
-                value = getattr(ctx.global_config, key)
-                user_output(f"  {key}={_format_config_value(value)}")
+                value = getattr(ctx.global_config, meta.field_name)
+                user_output(f"  {meta.cli_key}={_format_config_value(value)}")
 
         # Interactive Claude configuration
         ic = ctx.global_config.interactive_claude
@@ -371,7 +318,7 @@ def config_get(ctx: ErkContext, key: str) -> None:
     parts = key.split(".")
 
     # Handle global config keys
-    if parts[0] in get_global_config_keys():
+    if is_global_config_key(parts[0]):
         global_config = Ensure.not_none(
             ctx.global_config, f"Global config not found at {ctx.erk_installation.config_path()}"
         )
@@ -449,9 +396,9 @@ def config_set(ctx: ErkContext, local: bool, repo_flag: bool, key: str, value: s
     parts = key.split(".")
 
     # Handle global config keys
-    if parts[0] in get_global_config_keys():
+    if is_global_config_key(parts[0]):
         # Check if this key is overridable at repo/local level
-        is_overridable = parts[0] in get_overridable_global_keys()
+        is_overridable = parts[0] in get_overridable_keys()
 
         if local or repo_flag:
             Ensure.invariant(
