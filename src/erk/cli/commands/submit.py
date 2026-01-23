@@ -766,26 +766,28 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
             target_branch = original_branch
 
     # For single-issue learn plan submissions, auto-detect parent branch
-    if len(issue_numbers) == 1 and base is None:
-        try:
-            issue = ctx.issues.get_issue(repo.root, issue_numbers[0])
-            if is_issue_learn_plan(issue.labels):
-                parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
-                if parent_branch is not None:
-                    if ctx.git.branch_exists_on_remote(repo.root, "origin", parent_branch):
-                        target_branch = parent_branch
-                        user_output(
-                            f"Learn plan detected, stacking on parent branch: "
-                            f"{click.style(parent_branch, fg='cyan')}"
-                        )
-                    else:
-                        user_output(
-                            click.style("Warning: ", fg="yellow")
-                            + f"Parent branch '{parent_branch}' not on remote, using trunk"
-                        )
-        except RuntimeError:
-            # Issue fetch failed - will be caught again in validation phase
-            pass
+    issue_number = issue_numbers[0] if len(issue_numbers) == 1 else None
+    if (
+        issue_number is not None
+        and base is None
+        and ctx.issues.issue_exists(repo.root, issue_number)
+    ):
+        issue = ctx.issues.get_issue(repo.root, issue_number)
+        if is_issue_learn_plan(issue.labels):
+            parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
+            if parent_branch is not None and ctx.git.branch_exists_on_remote(
+                repo.root, "origin", parent_branch
+            ):
+                target_branch = parent_branch
+                user_output(
+                    f"Learn plan detected, stacking on parent branch: "
+                    f"{click.style(parent_branch, fg='cyan')}"
+                )
+            elif parent_branch is not None:
+                user_output(
+                    click.style("Warning: ", fg="yellow")
+                    + f"Parent branch '{parent_branch}' not on remote, using trunk"
+                )
 
     # Get GitHub username (authentication already validated)
     _, username, _ = ctx.github.check_auth_status()
