@@ -177,7 +177,9 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
 
     # Update issue body
     try:
-        github_issues.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
+        github_issues.update_issue_body(
+            repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+        )
     except RuntimeError as e:
         result = MarkImplError(
             success=False,

@@ -411,7 +411,9 @@ class GitHubPlanStore(PlanBackend):
         updated_body = replace_metadata_block_in_body(
             issue_info.body, "plan-header", new_block_content
         )
-        self._github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
+        self._github_issues.update_issue_body(
+            repo_root, issue_number, BodyText(content=updated_body)
+        )
 
     def add_comment(
         self,
