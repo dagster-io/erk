@@ -330,23 +330,24 @@ def config_list(ctx: ErkContext) -> None:
 
         # pool.checkout.shell with source annotation
         if cfg.pool_checkout_shell:
-            checkout_shell_source = (
-                " (local)" if local_only_config.pool_checkout_shell is not None else ""
+            user_output(
+                f"  pool.checkout.shell={cfg.pool_checkout_shell}"
+                f"{' (local)' if local_only_config.pool_checkout_shell is not None else ''}"
             )
-            user_output(f"  pool.checkout.shell={cfg.pool_checkout_shell}{checkout_shell_source}")
 
         # pool.checkout.commands with source annotation
         if cfg.pool_checkout_commands:
-            has_local_checkout_commands = bool(local_only_config.pool_checkout_commands)
-            checkout_cmds_source = " (includes local)" if has_local_checkout_commands else ""
             user_output(
-                f"  pool.checkout.commands={cfg.pool_checkout_commands}{checkout_cmds_source}"
+                f"  pool.checkout.commands={cfg.pool_checkout_commands}"
+                f"{' (includes local)' if local_only_config.pool_checkout_commands else ''}"
             )
 
         # plans.repo with source annotation
         if cfg.plans_repo:
-            plans_repo_source = " (local)" if local_only_config.plans_repo is not None else ""
-            user_output(f"  plans.repo={cfg.plans_repo}{plans_repo_source}")
+            user_output(
+                f"  plans.repo={cfg.plans_repo}"
+                f"{' (local)' if local_only_config.plans_repo is not None else ''}"
+            )
 
         has_no_custom_config = (
             not trunk_branch
