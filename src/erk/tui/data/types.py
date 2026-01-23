@@ -45,6 +45,7 @@ class PlanRowData:
         comments_display: Formatted display of comments (e.g., "3/5" or "-")
         learn_status: Raw learn status value from plan header
         learn_plan_issue: Plan issue number (for completed_with_plan status)
+        learn_plan_issue_closed: Whether the learn plan issue is closed (True/False/None)
         learn_plan_pr: PR number (for plan_completed status)
         learn_run_url: URL to GitHub Actions workflow run (for pending status)
         learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
@@ -82,6 +83,7 @@ class PlanRowData:
     comments_display: str
     learn_status: str | None
     learn_plan_issue: int | None
+    learn_plan_issue_closed: bool | None
     learn_plan_pr: int | None
     learn_run_url: str | None
     learn_display: str

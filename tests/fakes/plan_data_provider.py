@@ -175,6 +175,7 @@ def make_plan_row(
     comment_counts: tuple[int, int] | None = None,
     learn_status: str | None = None,
     learn_plan_issue: int | None = None,
+    learn_plan_issue_closed: bool | None = None,
     learn_plan_pr: int | None = None,
     learn_run_url: str | None = None,
 ) -> PlanRowData:
@@ -201,6 +202,7 @@ def make_plan_row(
         comment_counts: Tuple of (resolved, total) comment counts (None shows "-")
         learn_status: Learn workflow status ("pending", "completed_with_plan", etc.)
         learn_plan_issue: Issue number of generated learn plan
+        learn_plan_issue_closed: Whether the learn plan issue is closed (True/False/None)
         learn_plan_pr: PR number that implemented the learn plan
         learn_run_url: URL to GitHub Actions workflow run (for pending status)
 
@@ -221,8 +223,12 @@ def make_plan_row(
         learn_display = "∅ no insights"
         learn_display_icon = "∅"
     elif learn_status == "completed_with_plan" and learn_plan_issue is not None:
-        learn_display = f"📋 #{learn_plan_issue}"
-        learn_display_icon = f"📋 #{learn_plan_issue}"
+        if learn_plan_issue_closed is True:
+            learn_display = f"✅ #{learn_plan_issue}"
+            learn_display_icon = f"✅ #{learn_plan_issue}"
+        else:
+            learn_display = f"📋 #{learn_plan_issue}"
+            learn_display_icon = f"📋 #{learn_plan_issue}"
     elif learn_status == "plan_completed" and learn_plan_pr is not None:
         learn_display = f"✓ #{learn_plan_pr}"
         learn_display_icon = f"✓ #{learn_plan_pr}"
@@ -282,6 +288,7 @@ def make_plan_row(
         comments_display=comments_display,
         learn_status=learn_status,
         learn_plan_issue=learn_plan_issue,
+        learn_plan_issue_closed=learn_plan_issue_closed,
         learn_plan_pr=learn_plan_pr,
         learn_run_url=learn_run_url,
         learn_display=learn_display,
