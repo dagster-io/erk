@@ -406,6 +406,18 @@ def _create_branch_and_pr(
             + ", ".join(f"#{n}" for n in closed_prs)
         )
 
+    # Sync Graphite stack metadata to remote
+    # Must happen while on branch, before local branch deletion
+    if ctx.branch_manager.is_graphite_managed():
+        try:
+            ctx.branch_manager.submit_branch(repo.root, branch_name)
+            user_output(click.style("✓", fg="green") + " Graphite stack synced to remote")
+        except Exception as e:
+            # Warn but don't fail - PR was already created successfully
+            user_output(
+                click.style("Warning: ", fg="yellow") + f"Failed to sync Graphite stack: {e}"
+            )
+
     # Restore local state
     user_output("Restoring local state...")
     ctx.branch_manager.checkout_branch(repo.root, original_branch)
@@ -520,6 +532,17 @@ def _submit_single_issue(
                     + f" Closed {len(closed_prs)} orphaned draft PR(s): "
                     + ", ".join(f"#{n}" for n in closed_prs)
                 )
+
+            # Sync Graphite stack metadata to remote
+            if ctx.branch_manager.is_graphite_managed():
+                try:
+                    ctx.branch_manager.submit_branch(repo.root, branch_name)
+                    user_output(click.style("✓", fg="green") + " Graphite stack synced to remote")
+                except Exception as e:
+                    user_output(
+                        click.style("Warning: ", fg="yellow")
+                        + f"Failed to sync Graphite stack: {e}"
+                    )
 
             # Restore local state
             ctx.branch_manager.checkout_branch(repo.root, original_branch)
