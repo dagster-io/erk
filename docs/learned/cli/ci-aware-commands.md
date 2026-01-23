@@ -62,10 +62,10 @@ The command checks both `$CI` and `$GITHUB_ACTIONS` before determining behavior,
 
 ## Environment Variables
 
-| Variable          | Set By                  | Purpose               |
-| ----------------- | ----------------------- | --------------------- |
-| `$CI`             | Most CI systems         | General CI indicator  |
-| `$GITHUB_ACTIONS` | GitHub Actions only     | GitHub-specific       |
+| Variable          | Set By              | Purpose              |
+| ----------------- | ------------------- | -------------------- |
+| `$CI`             | Most CI systems     | General CI indicator |
+| `$GITHUB_ACTIONS` | GitHub Actions only | GitHub-specific      |
 
 Check both for maximum compatibility across CI platforms.
 

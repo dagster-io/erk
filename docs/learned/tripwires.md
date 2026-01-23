@@ -87,6 +87,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](cli/checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
 
+**CRITICAL: Before adding user-interactive steps to command workflows** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Check if running in CI mode first using $CI/$GITHUB_ACTIONS environment variables. Implement conditional branching (if CI then auto-proceed, else prompt). See learn command Step 5 pattern.
+
+**CRITICAL: Before calling blocking commands/tools in workflow orchestration** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Verify all blocking operations have CI-aware branching. Commands assuming interactive execution will block in GitHub Actions.
+
 **CRITICAL: Before running any erk exec subcommand** → Read [erk exec Commands](cli/erk-exec-commands.md) first. Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance.
 
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
@@ -128,7 +132,3 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing/testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **CRITICAL: Before using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](tui/command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
-
-**CRITICAL: Before adding user-interactive steps to command workflows** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Check if running in CI mode using $CI/$GITHUB_ACTIONS environment variables. Implement conditional branching (if CI then auto-proceed, else prompt). See learn command Step 5 pattern.
-
-**CRITICAL: Before calling blocking commands/tools in workflow orchestration** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Verify all blocking operations have CI-aware branching. Commands assuming interactive execution will block in GitHub Actions.

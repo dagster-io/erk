@@ -212,10 +212,10 @@ The command checks for CI mode using these environment variables:
 
 ### Behavioral Differences
 
-| Context     | Detection                                 | Step 5 Behavior                                    |
-| ----------- | ----------------------------------------- | -------------------------------------------------- |
-| Interactive | Neither `$CI` nor `$GITHUB_ACTIONS` set   | Prompts user to confirm which items to include     |
-| CI Mode     | Either `$CI` or `$GITHUB_ACTIONS` is set  | Auto-proceeds with all HIGH/MEDIUM priority items  |
+| Context     | Detection                                | Step 5 Behavior                                   |
+| ----------- | ---------------------------------------- | ------------------------------------------------- |
+| Interactive | Neither `$CI` nor `$GITHUB_ACTIONS` set  | Prompts user to confirm which items to include    |
+| CI Mode     | Either `$CI` or `$GITHUB_ACTIONS` is set | Auto-proceeds with all HIGH/MEDIUM priority items |
 
 ### Detection Pattern
 
