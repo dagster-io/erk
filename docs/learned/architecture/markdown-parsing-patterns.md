@@ -13,6 +13,7 @@ This document covers the shared frontmatter parsing infrastructure in `erk.core.
 ## Overview
 
 Frontmatter parsing is consolidated into a single module to provide:
+
 - **Single source of truth** for all frontmatter operations
 - **Consistent error handling** across consumers
 - **Type-safe return types** via frozen dataclass
@@ -44,6 +45,7 @@ class FrontmatterParseResult:
 ### Why body is always populated
 
 Even when parsing fails, the body contains the original content after the frontmatter delimiters. This allows consumers to:
+
 - Provide error context to users
 - Fall back to treating entire content as body text
 - Log the unparseable content for debugging
@@ -52,11 +54,11 @@ Even when parsing fails, the body contains the original content after the frontm
 
 The parser distinguishes three distinct failure modes:
 
-| Condition | Error Message | When it occurs |
-|-----------|---------------|----------------|
-| No frontmatter | "No frontmatter found" | Content doesn't start with `---` delimiter |
-| Invalid YAML | "Invalid YAML syntax: {details}" | YAML parser raises exception on malformed syntax |
-| Non-dict YAML | "Frontmatter is not a valid YAML mapping" | Parsed YAML is list, scalar, or other non-dict type |
+| Condition      | Error Message                             | When it occurs                                      |
+| -------------- | ----------------------------------------- | --------------------------------------------------- |
+| No frontmatter | "No frontmatter found"                    | Content doesn't start with `---` delimiter          |
+| Invalid YAML   | "Invalid YAML syntax: {details}"          | YAML parser raises exception on malformed syntax    |
+| Non-dict YAML  | "Frontmatter is not a valid YAML mapping" | Parsed YAML is list, scalar, or other non-dict type |
 
 ### Pre-check for delimiters
 
