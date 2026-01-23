@@ -197,3 +197,84 @@ class TestSetupImplFromIssueBranchManager:
         assert tracked_call[0] == tmp_path  # repo_root
         assert tracked_call[1].startswith("P42-")  # branch_name starts with issue prefix
         assert tracked_call[2] == "main"  # parent_branch is main
+
+    def test_checks_out_newly_created_branch(self, tmp_path: Path) -> None:
+        """Verify setup-impl-from-issue checks out the newly created branch.
+
+        This test ensures that after creating a new branch, the command also
+        checks it out so that subsequent operations happen on the new branch,
+        not the parent branch.
+
+        Previously, only create_branch was called without checkout_branch,
+        causing implementation changes to end up on the wrong branch.
+        """
+        # Arrange: Create plan issue with erk-plan label
+        now = datetime.now(UTC)
+        plan_issue = IssueInfo(
+            number=99,
+            title="Branch Checkout Test",
+            body="# Plan Content\n\nVerify checkout after branch creation.",
+            state="OPEN",
+            url="https://github.com/test-owner/test-repo/issues/99",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="test-author",
+        )
+        fake_issues = FakeGitHubIssues(issues={99: plan_issue})
+
+        # Configure FakeGit with:
+        # - current branch on a feature branch (to test stacking)
+        # - empty list of local branches (so new branch doesn't exist)
+        fake_git = FakeGit(
+            current_branches={tmp_path: "parent-feature"},
+            local_branches=[],
+        )
+
+        # Configure FakeGraphite to track calls
+        fake_graphite = FakeGraphite()
+
+        # Create test context with all fakes
+        ctx = context_for_test(
+            github_issues=fake_issues,
+            git=fake_git,
+            graphite=fake_graphite,
+            cwd=tmp_path,
+            repo_root=tmp_path,
+        )
+
+        # Act: Invoke command with --no-impl to skip folder creation
+        runner = CliRunner()
+        result = runner.invoke(
+            setup_impl_from_issue,
+            ["99", "--no-impl"],
+            obj=ctx,
+        )
+
+        # Assert: Command succeeded
+        assert result.exit_code == 0, f"Command failed: {result.output}"
+
+        # Assert: Branch was created
+        assert len(fake_git.created_branches) == 1
+        created_branch = fake_git.created_branches[0]
+        branch_name = created_branch[1]  # (cwd, branch_name, start_point)
+        assert branch_name.startswith("P99-")
+
+        # Assert: The newly created branch was checked out (KEY ASSERTION)
+        # This is the bug fix - previously checkout_branch was never called
+        # after GraphiteBranchManager.create_branch, which does temporary checkouts
+        # internally but restores the original branch at the end.
+        #
+        # GraphiteBranchManager.create_branch does:
+        #   1. Checkout new branch (to track with Graphite)
+        #   2. Restore original branch (parent-feature)
+        # Then setup_impl_from_issue should:
+        #   3. Checkout the new branch again
+        #
+        # So we verify the LAST checkout is to the new branch
+        assert len(fake_git.checked_out_branches) >= 1, "At least one checkout should occur"
+        final_checkout = fake_git.checked_out_branches[-1]
+        # checked_out_branches are (cwd, branch) tuples
+        assert final_checkout[0] == tmp_path
+        assert final_checkout[1] == branch_name  # Last checkout is to the new branch
