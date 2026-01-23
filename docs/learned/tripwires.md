@@ -97,6 +97,10 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before parsing objective roadmap PR column status** → Read [Erk Glossary](glossary.md) first. PR column format is non-standard: empty=pending, #XXXX=done (merged PR), `plan #XXXX`=plan in progress. This is erk-specific, not GitHub convention.
 
+**CRITICAL: Before modifying learn command to add/remove/reorder agents** → Read [Learn Workflow](planning/learn-workflow.md) first. Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output.
+
+**CRITICAL: Before adding new agents to learn workflow** → Read [Learn Workflow](planning/learn-workflow.md) first. Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition.
+
 **CRITICAL: Before manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](planning/lifecycle.md) first. Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **CRITICAL: Before saving a plan with --objective-issue flag** → Read [Plan Lifecycle](planning/lifecycle.md) first. Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives.
