@@ -64,9 +64,8 @@ def test_submit_creates_branch_and_draft_pr(tmp_path: Path) -> None:
     assert workflow == "erk-impl.yml"
     assert inputs["issue_number"] == "123"
 
-    # Verify local branch was cleaned up
-    assert len(fake_git._deleted_branches) == 1
-    assert expected_branch in fake_git._deleted_branches
+    # Verify local branch is preserved (for Graphite lineage tracking)
+    assert len(fake_git._deleted_branches) == 0
 
 
 def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
