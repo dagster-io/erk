@@ -208,6 +208,8 @@ After preprocessing, launch analysis agents in parallel to extract insights conc
 
 For each XML file in `.erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn/`:
 
+<!-- Model: haiku - Mechanical extraction from XML; deterministic pattern matching -->
+
 ```
 Task(
   subagent_type: "general-purpose",
@@ -224,6 +226,8 @@ Task(
 ```
 
 **Agent 2: Code Diff Analysis** (if PR exists)
+
+<!-- Model: haiku - Structured inventory of changes; no creative reasoning needed -->
 
 ```
 Task(
@@ -243,6 +247,8 @@ Task(
 **Agent 3: Existing Documentation Check**
 
 Proactively search for existing documentation to prevent duplicates and detect contradictions:
+
+<!-- Model: haiku - Search and classification task; fast iteration preferred -->
 
 ```
 Task(
@@ -303,6 +309,8 @@ EOF
 
 Launch the DocumentationGapIdentifier agent to synthesize outputs from the parallel agents:
 
+<!-- Model: haiku - Rule-based deduplication; explicit criteria, no creativity -->
+
 ```
 Task(
   subagent_type: "general-purpose",
@@ -341,6 +349,8 @@ EOF
 #### Synthesize Learn Plan (Agent 5)
 
 Launch the PlanSynthesizer agent to transform the gap analysis into a complete learn plan:
+
+<!-- Model: opus - Creative authoring of narrative context and draft content; quality-critical final output -->
 
 ```
 Task(

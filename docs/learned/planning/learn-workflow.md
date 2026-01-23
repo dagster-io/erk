@@ -4,6 +4,11 @@ read_when:
   - "using /erk:learn skill"
   - "understanding learn status tracking"
   - "auto-updating parent plans when learn plans land"
+tripwires:
+  - action: "modifying learn command to add/remove/reorder agents"
+    warning: "Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output."
+  - action: "adding new agents to learn workflow"
+    warning: "Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition."
 ---
 
 # Learn Workflow
@@ -64,6 +69,40 @@ This backlink enables automatic status updates when the learn plan is landed.
 | `completed_no_plan`   | Learn completed, no documentation needed    |
 | `completed_with_plan` | Learn completed, documentation plan created |
 | `plan_completed`      | Learn plan was implemented and PR landed    |
+
+## Agent Tier Architecture
+
+The learn workflow orchestrates 5 agents across 3 tiers:
+
+### Parallel Tier (Haiku)
+
+Run simultaneously via `run_in_background: true`:
+
+- **SessionAnalyzer** - Extracts patterns from preprocessed session XML
+- **CodeDiffAnalyzer** - Inventories PR changes
+- **ExistingDocsChecker** - Searches for duplicates/contradictions
+
+### Sequential Tier 1 (Haiku)
+
+Depends on parallel tier outputs:
+
+- **DocumentationGapIdentifier** - Synthesizes and deduplicates candidates
+
+### Sequential Tier 2 (Opus)
+
+Depends on Sequential Tier 1:
+
+- **PlanSynthesizer** - Creates narrative context and draft content
+
+### Model Selection Rationale
+
+| Tier         | Model | Rationale                                                      |
+| ------------ | ----- | -------------------------------------------------------------- |
+| Parallel     | Haiku | Mechanical extraction tasks - pattern matching, classification |
+| Sequential 1 | Haiku | Rule-based deduplication and prioritization                    |
+| Sequential 2 | Opus  | Creative authoring, narrative generation, quality-critical     |
+
+See [Agent Delegation](agent-delegation.md#model-selection) for general model selection guidance.
 
 ## The Learn Flow
 
