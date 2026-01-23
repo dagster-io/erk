@@ -28,14 +28,25 @@ from erk_shared.learn.extraction.claude_installation.fake import (
 )
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
+# Valid plan content that passes validation (100+ chars with structure)
+VALID_PLAN_CONTENT = """# Feature Plan
+
+This plan describes the implementation of a new feature.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+- Step 3: Add tests and documentation"""
+
 
 def test_plan_save_to_issue_success() -> None:
     """Test successful plan extraction and issue creation."""
     fake_gh = FakeGitHubIssues()
     plan_content = """# My Feature
 
-- Step 1
-- Step 2"""
+This is a comprehensive feature plan that includes all the necessary details.
+
+- Step 1: Implement the feature
+- Step 2: Add tests for the feature"""
     fake_store = FakeClaudeInstallation.for_test(plans={"test-plan": plan_content})
     runner = CliRunner()
 
@@ -81,9 +92,7 @@ def test_plan_save_to_issue_format() -> None:
     """Verify plan format (metadata in body, plan in comment)."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """# Test Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     fake_store = FakeClaudeInstallation.for_test(plans={"format-test": plan_content})
     runner = CliRunner()
 
@@ -117,7 +126,10 @@ def test_plan_save_to_issue_display_format() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """# Test Feature
 
-- Implementation step"""
+This is a comprehensive test feature that covers the implementation.
+
+- Implementation step
+- Documentation step"""
     fake_store = FakeClaudeInstallation.for_test(plans={"display-test": plan_content})
     runner = CliRunner()
 
@@ -156,7 +168,10 @@ def test_plan_save_to_issue_label_created() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """# Feature
 
-Steps here"""
+This feature adds a new capability to the system with comprehensive testing.
+
+- Step 1: Implement core logic
+- Step 2: Add unit tests"""
     fake_store = FakeClaudeInstallation.for_test(plans={"label-test": plan_content})
     runner = CliRunner()
 
@@ -192,9 +207,7 @@ def test_plan_save_to_issue_session_context_removed(tmp_path: Path) -> None:
         '{"type": "user", "message": {"content": "Hello"}}\n'
         '{"type": "assistant", "message": {"content": [{"type": "text", "text": "Hi!"}]}}\n'
     )
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
@@ -247,9 +260,7 @@ def test_plan_save_to_issue_no_session_exchanges_without_session_id() -> None:
     """Test session exchanges comment is skipped when no session ID provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     # Session store with no sessions but has a plan
     fake_store = FakeClaudeInstallation.for_test(plans={"no-session-test": plan_content})
 
@@ -280,9 +291,7 @@ def test_plan_save_to_issue_json_output_no_session_metadata() -> None:
     """Test JSON output no longer includes session embedding fields."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """# Feature
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     fake_store = FakeClaudeInstallation.for_test(plans={"metadata-test": plan_content})
 
     runner = CliRunner()
@@ -321,9 +330,7 @@ def test_plan_save_to_issue_session_id_still_creates_marker(
     )
 
     test_session_id = "test-session-12345"
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
 
     fake_store = FakeClaudeInstallation.for_test(plans={"session-id-test": plan_content})
 
@@ -370,9 +377,7 @@ def test_plan_save_to_issue_display_format_no_session_context_shown(tmp_path: Pa
     )
 
     session_content = '{"type": "user", "message": {"content": "Hello"}}\n'
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     fake_store = FakeClaudeInstallation.for_test(
         projects={
             tmp_path: FakeProject(
@@ -417,9 +422,7 @@ def test_plan_save_to_issue_no_session_exchanges_without_flag(tmp_path: Path) ->
     )
 
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
 
     # Session store has sessions but no session ID is passed via CLI
     fake_store = FakeClaudeInstallation.for_test(
@@ -473,9 +476,7 @@ def test_plan_save_to_issue_session_id_posts_exchanges_comment(tmp_path: Path) -
 
     flag_session_id = "flag-based-session-id"
     session_content = '{"type": "user", "message": {"content": "Test"}}\n'
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
 
     # Session store has the session that matches the flag
     fake_store = FakeClaudeInstallation.for_test(
@@ -521,9 +522,7 @@ def test_plan_save_to_issue_creates_marker_file(tmp_path: Path) -> None:
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
     test_session_id = "marker-test-session-id"
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     fake_store = FakeClaudeInstallation.for_test(plans={"marker-test": plan_content})
     runner = CliRunner()
 
@@ -564,9 +563,7 @@ def test_plan_save_to_issue_no_marker_without_session_id(tmp_path: Path) -> None
     """Test marker file is not created when no session ID is provided."""
     fake_gh = FakeGitHubIssues()
     fake_git = FakeGit()
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     # Session store has plan but no session ID will be passed
     fake_store = FakeClaudeInstallation.for_test(plans={"no-marker-test": plan_content})
     runner = CliRunner()
@@ -605,9 +602,7 @@ def test_plan_save_to_issue_preserves_plan_file_after_save(
     fake_gh = FakeGitHubIssues()
     test_session_id = "delete-test-session"
     test_slug = "test-plan-slug"
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
 
     # Set up a real plans directory so we can verify deletion
     plans_dir = tmp_path / ".claude" / "plans"
@@ -655,9 +650,7 @@ def test_plan_save_to_issue_updates_slot_objective_when_in_slot() -> None:
         worktree_path.mkdir(parents=True)
 
         fake_gh = FakeGitHubIssues()
-        plan_content = """# Feature Plan
-
-- Step 1"""
+        plan_content = VALID_PLAN_CONTENT
         fake_store = FakeClaudeInstallation.for_test(plans={"slot-test": plan_content})
 
         # Build worktrees including the slot worktree
@@ -726,9 +719,7 @@ def test_plan_save_to_issue_updates_slot_objective_when_in_slot() -> None:
 def test_plan_save_to_issue_no_slot_update_when_not_in_slot() -> None:
     """Test slot fields are absent from output when not in a slot worktree."""
     fake_gh = FakeGitHubIssues()
-    plan_content = """# Feature Plan
-
-- Step 1"""
+    plan_content = VALID_PLAN_CONTENT
     fake_store = FakeClaudeInstallation.for_test(plans={"no-slot-test": plan_content})
     runner = CliRunner()
 
@@ -760,9 +751,7 @@ def test_plan_save_to_issue_no_slot_update_without_objective_flag() -> None:
         worktree_path.mkdir(parents=True)
 
         fake_gh = FakeGitHubIssues()
-        plan_content = """# Feature Plan
-
-- Step 1"""
+        plan_content = VALID_PLAN_CONTENT
         fake_store = FakeClaudeInstallation.for_test(plans={"no-flag-test": plan_content})
 
         git_ops = FakeGit(
@@ -828,7 +817,10 @@ def test_plan_save_to_issue_learned_from_issue_sets_metadata() -> None:
     fake_gh = FakeGitHubIssues()
     plan_content = """# Learn Plan
 
-- Document something"""
+This plan documents the learnings and insights from the implementation session.
+
+- Document the architecture decisions
+- Document the edge cases discovered"""
     fake_store = FakeClaudeInstallation.for_test(plans={"learn-test": plan_content})
     runner = CliRunner()
 
@@ -865,9 +857,7 @@ def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
         worktree_path.mkdir(parents=True)
 
         fake_gh = FakeGitHubIssues()
-        plan_content = """# Feature Plan
-
-- Step 1"""
+        plan_content = VALID_PLAN_CONTENT
         fake_store = FakeClaudeInstallation.for_test(plans={"display-slot-test": plan_content})
 
         # Build worktrees including the slot worktree
@@ -923,3 +913,115 @@ def test_plan_save_to_issue_display_format_shows_slot_update() -> None:
 
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Slot objective updated: erk-slot-01 → #789" in result.output
+
+
+# --- Validation rejection tests ---
+
+
+def test_plan_save_to_issue_rejects_empty_plan() -> None:
+    """Test that empty plan content returns exit code 2 and no issue is created."""
+    fake_gh = FakeGitHubIssues()
+    # Empty plan content (whitespace only)
+    plan_content = "   \n\n  "
+    fake_store = FakeClaudeInstallation.for_test(plans={"empty-plan": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "validation_failed" == output["error_type"]
+    assert "empty" in output["error"].lower() or "whitespace" in output["error"].lower()
+    # Verify no issue was created
+    assert len(fake_gh.created_issues) == 0
+
+
+def test_plan_save_to_issue_rejects_too_short_plan() -> None:
+    """Test that plan under 100 chars returns exit code 2 and no issue is created."""
+    fake_gh = FakeGitHubIssues()
+    # Plan content under 100 characters (has structure but too short)
+    plan_content = """# Short
+
+- Step"""  # ~15 characters after stripping
+    fake_store = FakeClaudeInstallation.for_test(plans={"short-plan": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "validation_failed" == output["error_type"]
+    assert "too short" in output["error"].lower()
+    assert output["details"]["length"] < 100
+    # Verify no issue was created
+    assert len(fake_gh.created_issues) == 0
+
+
+def test_plan_save_to_issue_rejects_unstructured_plan() -> None:
+    """Test that plan without headers or lists returns exit code 2 and no issue is created."""
+    fake_gh = FakeGitHubIssues()
+    # Plan content with enough characters but no structure (no headers or lists)
+    plan_content = """This is a plan that has enough characters to pass the length check.
+It spans multiple lines and contains detailed information about what we're going to do.
+However, it doesn't have any markdown headers or bullet points or numbered lists.
+So it should fail the structure validation check."""
+    fake_store = FakeClaudeInstallation.for_test(plans={"unstructured-plan": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "json"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    output = json.loads(result.output)
+    assert output["success"] is False
+    assert "validation_failed" == output["error_type"]
+    assert "structure" in output["error"].lower() or "lacks" in output["error"].lower()
+    assert output["details"]["has_headers"] is False
+    assert output["details"]["has_lists"] is False
+    # Verify no issue was created
+    assert len(fake_gh.created_issues) == 0
+
+
+def test_plan_save_to_issue_rejects_whitespace_plan_display_format() -> None:
+    """Test that whitespace-only plan shows error in display format."""
+    fake_gh = FakeGitHubIssues()
+    # Whitespace-only plan content (truthy but fails validation)
+    plan_content = "   \n\n  "
+    fake_store = FakeClaudeInstallation.for_test(plans={"whitespace-display": plan_content})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save_to_issue,
+        ["--format", "display"],
+        obj=ErkContext.for_test(
+            github_issues=fake_gh,
+            claude_installation=fake_store,
+        ),
+    )
+
+    assert result.exit_code == 2
+    assert "Plan validation failed" in result.output
+    # Verify no issue was created
+    assert len(fake_gh.created_issues) == 0

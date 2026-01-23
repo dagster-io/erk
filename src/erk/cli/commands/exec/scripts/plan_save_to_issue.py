@@ -5,7 +5,8 @@ Usage:
 
 This command combines plan extraction and issue creation:
 1. Extract plan from specified file, session-scoped lookup, or latest from ~/.claude/plans/
-2. Create GitHub issue with plan content
+2. Validate plan content meets minimum requirements
+3. Create GitHub issue with plan content
 
 Options:
     --plan-file PATH: Use specific plan file (highest priority)
@@ -19,6 +20,7 @@ Output:
 Exit Codes:
     0: Success - plan extracted and issue created
     1: Error - no plan found, gh failure, etc.
+    2: Validation failed - plan empty, too short, or lacks structure
 """
 
 import json
@@ -26,6 +28,7 @@ from pathlib import Path
 
 import click
 
+from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
 from erk.core.worktree_pool import (
     load_pool_state,
     save_pool_state,
@@ -221,6 +224,24 @@ def plan_save_to_issue(
         else:
             click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
         raise SystemExit(1)
+
+    # Validate plan content before creating issue
+    valid, error, details = _validate_plan_content(plan)
+    if not valid:
+        if output_format == "display":
+            click.echo(f"Error: Plan validation failed: {error}", err=True)
+        else:
+            click.echo(
+                json.dumps(
+                    {
+                        "success": False,
+                        "error": f"Plan validation failed: {error}",
+                        "error_type": "validation_failed",
+                        "details": details,
+                    }
+                )
+            )
+        raise SystemExit(2)
 
     # Determine source_repo for cross-repo plans
     # When plans_repo is configured, plans are stored in a separate repo
