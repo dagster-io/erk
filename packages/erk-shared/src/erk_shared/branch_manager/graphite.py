@@ -94,11 +94,56 @@ class GraphiteBranchManager(BranchManager):
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
         parent_for_graphite = base_branch.removeprefix("origin/")
+
+        # If base was origin/something, ensure local parent branch matches remote
+        # so Graphite's ancestry check passes (local must be ancestor of new branch)
+        if base_branch.startswith("origin/"):
+            self._ensure_local_matches_remote(repo_root, parent_for_graphite, base_branch)
+
         self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_for_graphite)
 
         # Restore original branch so callers can create worktrees with the new branch
         if current_branch is not None:
             self.git_branch_ops.checkout_branch(repo_root, current_branch)
+
+    def _ensure_local_matches_remote(
+        self, repo_root: Path, local_branch: str, remote_ref: str
+    ) -> None:
+        """Ensure local branch matches remote ref for Graphite tracking.
+
+        Args:
+            repo_root: Repository root directory
+            local_branch: Local branch name (e.g., "feature-branch")
+            remote_ref: Remote reference (e.g., "origin/feature-branch")
+
+        Raises:
+            RuntimeError: If local branch has diverged from remote
+        """
+        local_branches = self.git.list_local_branches(repo_root)
+
+        if local_branch not in local_branches:
+            # Local doesn't exist - create it from remote
+            self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref)
+            return
+
+        # Check if local differs from remote
+        local_sha = self.git.get_branch_head(repo_root, local_branch)
+        remote_sha = self.git.get_branch_head(repo_root, remote_ref)
+
+        if local_sha == remote_sha:
+            return  # Already in sync
+
+        # Local and remote diverged - fail with clear instructions
+        raise RuntimeError(
+            f"Local branch '{local_branch}' has diverged from {remote_ref}.\n"
+            f"Graphite requires the local branch to match the remote for stack tracking.\n\n"
+            f"To fix, update your local branch to match remote and restack:\n"
+            f"  git fetch origin && git branch -f {local_branch} {remote_ref}\n"
+            f"  gt restack --downstack\n\n"
+            f"Or if you have local changes to keep, push them first:\n"
+            f"  With Graphite: gt checkout {local_branch} && gt submit\n"
+            f"  With git:      git checkout {local_branch} && git push origin {local_branch}"
+        )
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch with Graphite metadata cleanup.
