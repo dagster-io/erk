@@ -184,6 +184,10 @@ jobs:
           EOF
           echo "Created .impl/run-info.json"
 
+      - name: Save pre-implementation HEAD
+        id: pre_impl
+        run: echo "head=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
       - name: Run implementation
         id: implement
         run: |
@@ -261,12 +265,22 @@ jobs:
           BASE_BRANCH: ${{ inputs.base_branch }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
           PR_NUMBER: ${{ inputs.pr_number }}
+          PRE_IMPL_HEAD: ${{ steps.pre_impl.outputs.head }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Check for changes excluding .worker-impl/ and .impl/
-          CHANGES=$(git status --porcelain | grep -v '^\s*D.*\.worker-impl/' | grep -v '\.impl/' || true)
+          # Check for uncommitted changes (staged or unstaged) excluding .worker-impl/ and .impl/
+          UNCOMMITTED=$(git status --porcelain | grep -v '^\s*D.*\.worker-impl/' | grep -v '\.impl/' || true)
 
-          if [ -z "$CHANGES" ]; then
+          # Check for new commits since pre-implementation
+          CURRENT_HEAD=$(git rev-parse HEAD)
+          NEW_COMMITS="false"
+          if [ "$CURRENT_HEAD" != "$PRE_IMPL_HEAD" ]; then
+            NEW_COMMITS="true"
+            echo "New commits detected since pre-implementation HEAD"
+          fi
+
+          # Has changes if either condition is true
+          if [ -z "$UNCOMMITTED" ] && [ "$NEW_COMMITS" = "false" ]; then
             echo "No code changes detected, handling gracefully..."
 
             # Gather diagnostic info
@@ -286,7 +300,14 @@ jobs:
             echo "has_changes=false" >> $GITHUB_OUTPUT
           else
             echo "Implementation produced changes:"
-            echo "$CHANGES"
+            if [ -n "$UNCOMMITTED" ]; then
+              echo "Uncommitted changes:"
+              echo "$UNCOMMITTED"
+            fi
+            if [ "$NEW_COMMITS" = "true" ]; then
+              echo "New commits since $PRE_IMPL_HEAD:"
+              git log --oneline "$PRE_IMPL_HEAD"..HEAD
+            fi
             echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
 
