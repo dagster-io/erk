@@ -61,6 +61,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before using gh api or gh api graphql to fetch or resolve PR review threads** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. Load `pr-operations` skill first. Use `erk exec get-pr-review-comments` and `erk exec resolve-review-thread` instead. Raw gh api calls miss thread resolution functionality.
 
+**CRITICAL: Before using gh pr view --json commits** → Read [GitHub API Rate Limits](architecture/github-api-rate-limits.md) first. Use `erk exec get-pr-commits` instead. `gh pr view --json` uses GraphQL which has separate (often exhausted) rate limits.
+
 **CRITICAL: Before using gh gist create with --filename flag** → Read [GitHub CLI Quirks and Edge Cases](architecture/github-cli-quirks.md) first. --filename only works with stdin input (-), not file paths.
 
 **CRITICAL: Before constructing gist raw URLs with hardcoded filenames** → Read [GitHub Gist URL Patterns](architecture/github-gist-api.md) first. Use /raw/ without filename - GitHub redirects to first file.
@@ -86,6 +88,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before using heredoc (<<) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](ci/prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
 
 **CRITICAL: Before putting checkout-specific helpers in navigation_helpers.py** → Read [Checkout Helpers Module](cli/checkout-helpers.md) first. `src/erk/cli/commands/navigation_helpers.py` imports from `wt.create_cmd`, which creates a cycle if navigation_helpers tries to import from `wt` subpackage. Keep checkout-specific helpers in separate `checkout_helpers.py` module instead.
+
+**CRITICAL: Before adding a new exec command to src/erk/cli/commands/exec/scripts/** → Read [Exec Script Implementation Patterns](cli/exec-script-patterns.md) first. Must register in 3 places: (1) src/erk/cli/commands/exec/group.py with exec_group.add_command(), (2) .claude/skills/erk-exec-reference/SKILL.md command table, (3) docs/learned/cli/exec-commands.md if public-facing. Missing registration causes silent documentation gaps.
 
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
