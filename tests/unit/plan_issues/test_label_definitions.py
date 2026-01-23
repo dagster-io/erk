@@ -6,11 +6,11 @@ Pure unit tests (Layer 3) - no dependencies on fakes or external systems.
 from erk_shared.github.plan_issues import get_erk_label_definitions, get_required_erk_labels
 
 
-def test_get_erk_label_definitions_returns_three_labels() -> None:
-    """Test that get_erk_label_definitions returns all three expected labels."""
+def test_get_erk_label_definitions_returns_four_labels() -> None:
+    """Test that get_erk_label_definitions returns all four expected labels."""
     labels = get_erk_label_definitions()
 
-    assert len(labels) == 3
+    assert len(labels) == 4
 
 
 def test_get_erk_label_definitions_contains_erk_plan() -> None:
@@ -50,6 +50,19 @@ def test_get_erk_label_definitions_contains_erk_objective() -> None:
     assert erk_objective.name == "erk-objective"
     assert erk_objective.description == "Multi-phase objective with roadmap"
     assert erk_objective.color == "5319E7"  # Purple
+
+
+def test_get_erk_label_definitions_contains_no_changes() -> None:
+    """Test that no-changes label is included with correct properties."""
+    labels = get_erk_label_definitions()
+
+    no_changes_labels = [label for label in labels if label.name == "no-changes"]
+    assert len(no_changes_labels) == 1
+
+    no_changes = no_changes_labels[0]
+    assert no_changes.name == "no-changes"
+    assert no_changes.description == "Implementation produced no code changes"
+    assert no_changes.color == "FFA500"  # Orange
 
 
 def test_get_erk_label_definitions_returns_frozen_dataclasses() -> None:

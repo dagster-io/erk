@@ -254,49 +254,46 @@ jobs:
             --run-id "$RUN_ID" \
             --session-id "$SESSION_ID"
 
-      - name: Validate implementation produced changes
+      - name: Handle implementation outcome
+        id: handle_outcome
         if: steps.implement.outputs.implementation_success == 'true'
         env:
           BASE_BRANCH: ${{ inputs.base_branch }}
           ISSUE_NUMBER: ${{ inputs.issue_number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           # Check for changes excluding .worker-impl/ and .impl/
           CHANGES=$(git status --porcelain | grep -v '^\s*D.*\.worker-impl/' | grep -v '\.impl/' || true)
 
           if [ -z "$CHANGES" ]; then
-            echo "::error::Implementation completed but produced no code changes."
-            echo ""
-            echo "Possible causes:"
+            echo "No code changes detected, handling gracefully..."
 
-            # Check if this might be a duplicate plan scenario
+            # Gather diagnostic info
             git fetch origin "$BASE_BRANCH" --quiet
             BEHIND_COUNT=$(git rev-list HEAD.."origin/$BASE_BRANCH" --count 2>/dev/null || echo "0")
+            RECENT_COMMITS=$(git log HEAD.."origin/$BASE_BRANCH" --oneline --max-count=5 2>/dev/null || echo "")
 
-            if [ "$BEHIND_COUNT" -gt "0" ]; then
-              echo ""
-              echo "1. LIKELY: Duplicate plan - work may already be merged to $BASE_BRANCH"
-              echo "   Branch is $BEHIND_COUNT commit(s) behind origin/$BASE_BRANCH."
-              echo ""
-              echo "   Recent commits on $BASE_BRANCH:"
-              git log HEAD.."origin/$BASE_BRANCH" --oneline --max-count=5
-              echo ""
-              echo "   Action: Close issue #$ISSUE_NUMBER as duplicate if work is done."
-            else
-              echo ""
-              echo "1. Implementation command may have failed silently"
-              echo "2. Plan file (.impl/plan.md) may not have been found"
-              echo "3. Claude determined no changes were needed"
-            fi
-            exit 1
+            # Call exec command to handle no-changes scenario
+            erk exec handle-no-changes \
+              --pr-number "$PR_NUMBER" \
+              --issue-number "$ISSUE_NUMBER" \
+              --behind-count "$BEHIND_COUNT" \
+              --base-branch "$BASE_BRANCH" \
+              --recent-commits "$RECENT_COMMITS" \
+              --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "Implementation produced changes:"
+            echo "$CHANGES"
+            echo "has_changes=true" >> $GITHUB_OUTPUT
           fi
-
-          echo "Implementation produced changes:"
-          echo "$CHANGES"
 
       - name: Submit branch with proper commit message
         id: submit
         continue-on-error: true
-        if: steps.implement.outputs.implementation_success == 'true'
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true'
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -329,7 +326,7 @@ jobs:
             --model "${{ inputs.model_name }}"
 
       - name: Mark PR ready for review
-        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
@@ -339,7 +336,7 @@ jobs:
 
       - name: Update PR body with implementation summary
         continue-on-error: true
-        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -351,7 +348,7 @@ jobs:
             --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
       - name: Trigger CI workflows
-        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
           SUBMITTED_BY: ${{ inputs.submitted_by }}
@@ -365,7 +362,7 @@ jobs:
           echo "CI workflows triggered via push event"
 
       - name: Trigger async learning
-        if: steps.implement.outputs.implementation_success == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
+        if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}

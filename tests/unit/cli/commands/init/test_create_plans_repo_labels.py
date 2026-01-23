@@ -10,7 +10,7 @@ from tests.test_utils.paths import sentinel_path
 
 
 def test_create_plans_repo_labels_creates_all_labels() -> None:
-    """Test that all three erk labels are created."""
+    """Test that all four erk labels are created."""
     github_issues = FakeGitHubIssues()
 
     result = create_plans_repo_labels(
@@ -23,6 +23,7 @@ def test_create_plans_repo_labels_creates_all_labels() -> None:
     assert "erk-plan" in github_issues.labels
     assert "erk-learn" in github_issues.labels
     assert "erk-objective" in github_issues.labels
+    assert "no-changes" in github_issues.labels
 
 
 def test_create_plans_repo_labels_tracks_created_labels() -> None:
@@ -37,12 +38,13 @@ def test_create_plans_repo_labels_tracks_created_labels() -> None:
 
     # Verify all labels were created with correct details
     created = github_issues.created_labels
-    assert len(created) == 3
+    assert len(created) == 4
 
     label_names = [label[0] for label in created]
     assert "erk-plan" in label_names
     assert "erk-learn" in label_names
     assert "erk-objective" in label_names
+    assert "no-changes" in label_names
 
 
 def test_create_plans_repo_labels_idempotent_with_existing() -> None:
@@ -55,14 +57,18 @@ def test_create_plans_repo_labels_idempotent_with_existing() -> None:
         github_issues=github_issues,
     )
 
-    # Only one label should be created (erk-learn was missing)
-    assert len(github_issues.created_labels) == 1
-    assert github_issues.created_labels[0][0] == "erk-learn"
+    # Two labels should be created (erk-learn and no-changes were missing)
+    assert len(github_issues.created_labels) == 2
+    created_names = [label[0] for label in github_issues.created_labels]
+    assert "erk-learn" in created_names
+    assert "no-changes" in created_names
 
 
 def test_create_plans_repo_labels_all_exist_no_creation() -> None:
     """Test that no labels are created when all already exist."""
-    github_issues = FakeGitHubIssues(labels={"erk-plan", "erk-learn", "erk-objective"})
+    github_issues = FakeGitHubIssues(
+        labels={"erk-plan", "erk-learn", "erk-objective", "no-changes"}
+    )
 
     create_plans_repo_labels(
         repo_root=sentinel_path(),

@@ -59,6 +59,7 @@ from erk.cli.commands.exec.scripts.get_pr_for_plan import get_pr_for_plan
 from erk.cli.commands.exec.scripts.get_pr_review_comments import (
     get_pr_review_comments,
 )
+from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
@@ -167,6 +168,7 @@ exec_group.add_command(get_issue_body, name="get-issue-body")
 exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
 exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
+exec_group.add_command(handle_no_changes, name="handle-no-changes")
 exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")

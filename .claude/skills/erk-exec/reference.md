@@ -37,6 +37,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                 |
 | `get-pr-for-plan`                 | Get PR details for a plan issue.                                          |
 | `get-pr-review-comments`          | Fetch PR review comments for agent context injection.                     |
+| `handle-no-changes`               | Handle no-changes scenario gracefully.                                    |
 | `impl-init`                       | Initialize implementation by validating .impl/ folder.                    |
 | `impl-signal`                     | Signal implementation events to GitHub.                                   |
 | `impl-verify`                     | Verify .impl/ folder still exists after implementation.                   |
@@ -423,6 +424,23 @@ Fetch PR review comments for agent context injection.
 | -------------------- | ------- | -------- | ------- | ------------------------------------------- |
 | `--pr`               | INTEGER | No       | -       | PR number (defaults to current branch's PR) |
 | `--include-resolved` | FLAG    | No       | -       | Include resolved threads                    |
+
+### handle-no-changes
+
+Handle no-changes scenario gracefully.
+
+**Usage:** `erk exec handle-no-changes`
+
+**Options:**
+
+| Flag               | Type    | Required | Default        | Description                                       |
+| ------------------ | ------- | -------- | -------------- | ------------------------------------------------- |
+| `--pr-number`      | INTEGER | Yes      | Sentinel.UNSET | PR number to update                               |
+| `--issue-number`   | INTEGER | Yes      | Sentinel.UNSET | Plan issue number                                 |
+| `--behind-count`   | INTEGER | Yes      | Sentinel.UNSET | How many commits behind base branch               |
+| `--base-branch`    | TEXT    | Yes      | Sentinel.UNSET | Base branch name                                  |
+| `--recent-commits` | TEXT    | No       | -              | Recent commits on base branch (newline-separated) |
+| `--run-url`        | TEXT    | No       | -              | Optional workflow run URL                         |
 
 ### impl-init
 
