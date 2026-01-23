@@ -137,10 +137,12 @@ class GraphiteBranchManager(BranchManager):
         raise RuntimeError(
             f"Local branch '{local_branch}' has diverged from {remote_ref}.\n"
             f"Graphite requires the local branch to match the remote for stack tracking.\n\n"
-            f"To fix, sync your local branch:\n"
-            f"  git checkout {local_branch} && git reset --hard {remote_ref}\n\n"
+            f"To fix, update your local branch to match remote and restack:\n"
+            f"  git fetch origin && git branch -f {local_branch} {remote_ref}\n"
+            f"  gt restack --downstack\n\n"
             f"Or if you have local changes to keep, push them first:\n"
-            f"  git checkout {local_branch} && git push origin {local_branch}"
+            f"  With Graphite: gt checkout {local_branch} && gt submit\n"
+            f"  With git:      git checkout {local_branch} && git push origin {local_branch}"
         )
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
