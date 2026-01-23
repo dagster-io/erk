@@ -211,5 +211,6 @@ Follow the existing pattern of:
 
 ## Related Topics
 
+- [Markdown Parsing Patterns](markdown-parsing-patterns.md) - Shared frontmatter parsing implementation
 - [Learned Documentation Guide](../../../.claude/skills/learned-docs/SKILL.md) - Operational guidance for doc maintenance
 - [Erk Architecture Patterns](erk-architecture.md) - Contains the meta-tripwire definition

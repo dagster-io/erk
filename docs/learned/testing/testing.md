@@ -61,6 +61,18 @@ tests/
 └── test_utils/        # Test helpers (env_helpers, builders)
 ```
 
+## Reference Test Examples
+
+### Comprehensive Unit Test Coverage
+
+`tests/unit/core/test_frontmatter.py` demonstrates thorough test coverage for a parsing module:
+
+- **Valid cases**: Basic parsing, complex nested structures, multiline strings, special characters
+- **Error cases**: No frontmatter, invalid YAML syntax, non-dict YAML (list), non-dict YAML (scalar), empty block
+- **Property testing**: Dataclass `is_valid` property behavior
+
+This 10-case coverage pattern (1 valid case + 5 error modes + 3 edge cases + 1 property test) is a good reference for new parsing modules. The test file demonstrates the principle of comprehensive error coverage: for a module that can fail in multiple ways, each failure mode deserves its own test.
+
 ## Erk Fakes Reference
 
 ### FakeGit
