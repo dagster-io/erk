@@ -94,11 +94,61 @@ class GraphiteBranchManager(BranchManager):
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
         parent_for_graphite = base_branch.removeprefix("origin/")
+
+        # If base was origin/something, ensure local parent branch matches remote
+        # so Graphite's ancestry check passes (local must be ancestor of new branch)
+        if base_branch.startswith("origin/"):
+            self._ensure_local_matches_remote(repo_root, parent_for_graphite, base_branch)
+
         self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_for_graphite)
 
         # Restore original branch so callers can create worktrees with the new branch
         if current_branch is not None:
             self.git_branch_ops.checkout_branch(repo_root, current_branch)
+
+    def _ensure_local_matches_remote(
+        self, repo_root: Path, local_branch: str, remote_ref: str
+    ) -> None:
+        """Ensure local branch matches remote ref for Graphite tracking.
+
+        When creating a branch from origin/something, Graphite needs the local
+        parent branch to be an ancestor of the new branch. If local has diverged
+        from origin (e.g., after rebase/force-push), update it to match.
+
+        Args:
+            repo_root: Repository root directory
+            local_branch: Local branch name (e.g., "feature-branch")
+            remote_ref: Remote reference (e.g., "origin/feature-branch")
+
+        Raises:
+            RuntimeError: If local branch is checked out and cannot be updated
+        """
+        local_branches = self.git.list_local_branches(repo_root)
+
+        if local_branch not in local_branches:
+            # Local doesn't exist - create it from remote
+            self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref)
+            return
+
+        # Check if local differs from remote
+        local_sha = self.git.get_branch_head(repo_root, local_branch)
+        remote_sha = self.git.get_branch_head(repo_root, remote_ref)
+
+        if local_sha == remote_sha:
+            return  # Already in sync
+
+        # Local and remote diverged - check if safe to update
+        checked_out_path = self.git.is_branch_checked_out(repo_root, local_branch)
+        if checked_out_path is not None:
+            raise RuntimeError(
+                f"Cannot update diverged branch '{local_branch}' - "
+                f"it is checked out at {checked_out_path}. "
+                f"Please sync your local branch with origin/{local_branch}."
+            )
+
+        # Safe to update: delete and recreate from remote
+        self.git_branch_ops.delete_branch(repo_root, local_branch, force=True)
+        self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref)
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch with Graphite metadata cleanup.
