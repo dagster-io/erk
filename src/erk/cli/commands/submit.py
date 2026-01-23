@@ -438,11 +438,8 @@ def _create_branch_and_pr(
             + ", ".join(f"#{n}" for n in closed_prs)
         )
 
-    # Restore local state
-    user_output("Restoring local state...")
+    # Switch back to original branch (keep the new branch for Graphite lineage)
     ctx.branch_manager.checkout_branch(repo.root, original_branch)
-    ctx.branch_manager.delete_branch(repo.root, branch_name, force=True)
-    user_output(click.style("✓", fg="green") + " Local branch cleaned up")
 
     return pr_number
 
@@ -559,10 +556,8 @@ def _submit_single_issue(
                     + ", ".join(f"#{n}" for n in closed_prs)
                 )
 
-            # Restore local state
+            # Switch back to original branch (keep the new branch for Graphite lineage)
             ctx.branch_manager.checkout_branch(repo.root, original_branch)
-            ctx.branch_manager.delete_branch(repo.root, branch_name, force=True)
-            user_output(click.style("✓", fg="green") + " Local branch cleaned up")
     else:
         # Create branch and initial commit
         user_output(f"Creating branch from origin/{base_branch}...")
