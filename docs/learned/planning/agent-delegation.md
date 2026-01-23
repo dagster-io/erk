@@ -4,9 +4,6 @@ read_when:
   - "delegating to agents from commands"
   - "implementing command-agent pattern"
   - "workflow orchestration"
-tripwires:
-  - action: "adding new Task invocation to any command file"
-    warning: "Always include explicit `model` parameter (haiku/sonnet/opus); don't rely on defaults. Model selection affects cost and quality."
 ---
 
 # Command-Agent Delegation Pattern
