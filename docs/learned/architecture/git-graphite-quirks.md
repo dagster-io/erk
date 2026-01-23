@@ -218,6 +218,58 @@ def create_branch(
 
 **Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
 
+## Parent Branch Divergence Detection
+
+**Surprising Behavior**: When creating a new branch from a remote ref (e.g., `origin/feature-parent`) and the corresponding local branch `feature-parent` exists but has different commits, Graphite's `gt track` can succeed but create an invalid stack relationship (local parent is not an ancestor of the child).
+
+**Why It's Surprising**: Git handles remote vs local refs transparently - creating branches from either just works. Graphite's stack tracking requires the local parent branch to be an ancestor of the new branch, which fails silently if local has diverged from remote.
+
+**Solution**: The `GraphiteBranchManager.create_branch()` method validates parent branch state via `_ensure_local_matches_remote()`:
+
+1. If local branch doesn't exist, create it from remote
+2. If local exists and matches remote, proceed normally
+3. If local has diverged from remote, fail with clear fix instructions
+
+**Error Message**:
+
+```
+Local branch 'feature-parent' has diverged from origin/feature-parent.
+Graphite requires the local branch to match the remote for stack tracking.
+
+To fix, update your local branch to match remote and restack:
+  git fetch origin && git branch -f feature-parent origin/feature-parent
+  gt restack --downstack
+
+Or if you have local changes to keep, push them first:
+  With Graphite: gt checkout feature-parent && gt submit
+  With git:      git checkout feature-parent && git push origin feature-parent
+```
+
+**When This Happens**:
+
+- User has local commits on parent branch not yet pushed
+- Parent branch was rebased/amended remotely
+- `gt sync` was not run after another user pushed to parent
+
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py` - `_ensure_local_matches_remote()` method
+
+## Branch Restoration After Graphite Tracking
+
+**Surprising Behavior**: Graphite's `gt track` command requires the branch to be checked out. After tracking, the original branch is not automatically restored.
+
+**Why It's Surprising**: Most git operations don't require checkout, and callers expect `create_branch()` to not change the current branch.
+
+**Solution**: `GraphiteBranchManager.create_branch()` saves and restores the current branch:
+
+1. Save current branch before operations
+2. Create and checkout new branch
+3. Track with Graphite
+4. Checkout original branch
+
+This ensures callers can create multiple branches without unexpected working directory changes.
+
+**Location in Codebase**: `packages/erk-shared/src/erk_shared/branch_manager/graphite.py`
+
 ## Adding New Quirks
 
 When you discover a new edge case, add it to this document with:

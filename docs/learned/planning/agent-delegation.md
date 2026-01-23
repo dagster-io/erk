@@ -411,6 +411,40 @@ Choose the appropriate model based on agent's cognitive requirements:
 - `planned-wt-creator` (haiku) - Detects files, validates, creates worktree
 - Code review agent (sonnet) - Analyzes code quality and patterns
 
+### Multi-Tier Agent Orchestration
+
+For complex workflows requiring multiple agents, use a tiered orchestration pattern:
+
+```
+Parallel Tier (independent extraction, run simultaneously)
+  ├─ Agent A (haiku) - Extract patterns from source A
+  ├─ Agent B (haiku) - Extract patterns from source B
+  └─ Agent C (haiku) - Extract patterns from source C
+
+Sequential Tier 1 (depends on Parallel Tier)
+  └─ Agent D (haiku) - Synthesize and deduplicate
+
+Sequential Tier 2 (depends on Sequential Tier 1)
+  └─ Agent E (opus) - Creative authoring, quality-critical output
+```
+
+**Key principles:**
+
+1. **Parallel extraction**: Independent agents run simultaneously via `run_in_background: true`
+2. **Sequential synthesis**: Dependent agents wait for inputs before launching
+3. **Model escalation**: Use cheaper models (haiku) for mechanical tasks, expensive models (opus) for creative/quality-critical tasks
+4. **File-based composition**: Agents write to scratch storage; subsequent agents read from those paths
+
+**Real-world example:** The learn workflow uses this exact pattern:
+
+| Tier         | Agents                                                 | Model | Purpose                  |
+| ------------ | ------------------------------------------------------ | ----- | ------------------------ |
+| Parallel     | SessionAnalyzer, CodeDiffAnalyzer, ExistingDocsChecker | Haiku | Mechanical extraction    |
+| Sequential 1 | DocumentationGapIdentifier                             | Haiku | Rule-based deduplication |
+| Sequential 2 | PlanSynthesizer                                        | Opus  | Creative authoring       |
+
+See [Learn Workflow](learn-workflow.md#agent-tier-architecture) for the complete implementation.
+
 ### Tools Available
 
 Agents can specify which tools they need:

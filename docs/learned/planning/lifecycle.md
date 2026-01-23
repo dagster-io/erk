@@ -199,6 +199,27 @@ git branch <branch_name> <base_branch>
 
 **Example**: Issue #123 "Add user authentication" → `123-add-user-authentic-11-30-1430`
 
+### Learn Plan Base Branch Selection
+
+Learn plans (issues with `erk-learn` label) use special base branch logic:
+
+1. **Extract parent reference**: Read `learned_from_issue` from plan-header metadata
+2. **Fetch parent plan**: Get the parent implementation plan's issue
+3. **Get parent branch**: Extract `branch_name` from parent's plan-header
+4. **Stack on parent**: Use parent's branch as base instead of trunk
+
+This creates a branch hierarchy:
+
+```
+trunk (main)
+    └── P123-feature-branch (parent implementation)
+            └── P456-docs-for-feature (learn plan)
+```
+
+**Fallback**: If parent lookup fails (missing parent, no branch recorded), falls back to trunk.
+
+**Implementation**: See `get_learn_plan_parent_branch()` in `src/erk/cli/commands/submit.py`.
+
 ### `.worker-impl/` Folder Creation
 
 The submit command creates the `.worker-impl/` folder structure:

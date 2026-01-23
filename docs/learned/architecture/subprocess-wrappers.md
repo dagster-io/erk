@@ -135,9 +135,28 @@ except FileNotFoundError:
 | Optional background operation  | Explicit exception handling     | Main operation should continue   |
 | Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
 
+## GitHub API Commands with Retry
+
+For GitHub API commands that may fail due to transient network errors, use `execute_gh_command_with_retry()`:
+
+```python
+from erk_shared.subprocess_utils import execute_gh_command_with_retry
+
+result = execute_gh_command_with_retry(cmd, cwd, time_impl)
+```
+
+This builds on `run_subprocess_with_context()` and adds:
+
+- Automatic retry on transient errors (network timeouts, connection failures)
+- Exponential backoff delays (0.5s, 1.0s by default)
+- Time injection for testability
+
+See [GitHub API Retry Mechanism](github-api-retry-mechanism.md) for the full pattern.
+
 ## Summary
 
 - **Gateway layer**: Use `run_subprocess_with_context()` for business logic
 - **CLI layer**: Use `run_with_error_reporting()` for command handlers
+- **GitHub with retry**: Use `execute_gh_command_with_retry()` for network-sensitive operations
 - **Keep LBYL**: Don't migrate intentional `check=False` patterns
 - **Never use bare check=True**: Always use one of the wrapper functions

@@ -257,6 +257,128 @@ class RealGit(Git):
 
 **Reference Implementation**: `packages/erk-shared/src/erk_shared/git/lock.py` and `packages/erk-shared/src/erk_shared/git/real.py`
 
+## Sub-Gateway Pattern for Method Extraction
+
+When a subset of gateway methods needs to be accessed through a higher-level abstraction (like BranchManager), extract them into a sub-gateway.
+
+### Motivation
+
+The BranchManager abstraction handles Graphite vs Git differences. To enforce that callers use BranchManager for branch mutations (not raw gateways), mutation methods were extracted into sub-gateways:
+
+- `GitBranchOps`: Branch mutations from Git ABC
+- `GraphiteBranchOps`: Branch mutations from Graphite ABC
+
+Query methods remain on the main gateways for convenience.
+
+### Sub-Gateway Structure
+
+```
+packages/erk-shared/src/erk_shared/git/
+├── abc.py             # Main Git ABC (queries + branch_ops property)
+├── branch_ops/        # Sub-gateway for mutations
+│   ├── __init__.py
+│   ├── abc.py         # GitBranchOps ABC
+│   ├── real.py
+│   ├── fake.py
+│   ├── dry_run.py
+│   └── printing.py
+```
+
+### ABC Composition
+
+The main gateway ABC exposes the sub-gateway via a property:
+
+```python
+class Git(ABC):
+    @property
+    @abstractmethod
+    def branch_ops(self) -> GitBranchOps:
+        """Return the branch operations sub-gateway."""
+        ...
+
+    # Query methods remain here
+    @abstractmethod
+    def get_current_branch(self, cwd: Path) -> str:
+        ...
+```
+
+### Query vs Mutation Split
+
+| Category | Where       | Examples                                                                 |
+| -------- | ----------- | ------------------------------------------------------------------------ |
+| Query    | Main ABC    | `get_current_branch()`, `list_local_branches()`, `get_repository_root()` |
+| Mutation | Sub-gateway | `create_branch()`, `delete_branch()`, `checkout_branch()`                |
+
+### Why Split?
+
+1. **Enforcement**: Callers can't bypass BranchManager to mutate branches directly
+2. **Clarity**: Clear distinction between read and write operations
+3. **Testing**: FakeBranchManager can track mutations without full gateway wiring
+
+### Implementation Checklist
+
+When extracting methods to a sub-gateway:
+
+1. [ ] Create sub-gateway directory (`branch_ops/`)
+2. [ ] Implement 5 files: abc.py, real.py, fake.py, dry_run.py, printing.py
+3. [ ] Add `@property` to main ABC returning sub-gateway
+4. [ ] Update all 5 main gateway implementations to compose sub-gateway
+5. [ ] Create factory method in Fake to link sub-gateway state
+
+### FakeGit/FakeGraphite Sub-Gateway Linking
+
+Fakes need special handling to share state between main gateway and sub-gateway:
+
+```python
+class FakeGit(Git):
+    def __init__(self) -> None:
+        self._branch_ops = FakeGitBranchOps()
+
+    @property
+    def branch_ops(self) -> GitBranchOps:
+        return self._branch_ops
+
+    @classmethod
+    def create_linked_branch_ops(cls) -> tuple["FakeGit", FakeGitBranchOps]:
+        """Create FakeGit with linked FakeGitBranchOps for testing.
+
+        Returns both so tests can assert on branch_ops mutations.
+        """
+        fake = cls()
+        return fake, fake._branch_ops
+```
+
+### Reference Implementation
+
+- Git sub-gateway: `packages/erk-shared/src/erk_shared/git/branch_ops/`
+- Graphite sub-gateway: `packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/`
+
+## Time Injection for Retry-Enabled Gateways
+
+Gateways that implement retry logic need Time dependency injection for testability.
+
+### Pattern
+
+Accept optional `Time` in `__init__` with default to `RealTime()`:
+
+```python
+class RealGitHub(GitHub):
+    def __init__(self, time: Time, repo_info: RepoInfo | None, ...) -> None:
+        from erk_shared.gateway.time.real import RealTime
+        self._time = time if time is not None else RealTime()
+
+    def fetch_with_retry(self, ...) -> str:
+        return execute_gh_command_with_retry(cmd, cwd, self._time)
+```
+
+### Benefits
+
+- Tests use `FakeTime` - retry loops complete instantly
+- Retry delays can be asserted in tests
+- Consistent with erk's DI pattern
+
+See [GitHub API Retry Mechanism](github-api-retry-mechanism.md) for the full retry pattern.
+
 ## Integration with Fake-Driven Testing
 
 This pattern aligns with the [Fake-Driven Testing Architecture](../testing/):
