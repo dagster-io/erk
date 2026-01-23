@@ -1035,8 +1035,8 @@ class TestLearnStatusDisplay:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
             metadata={},
             objective_id=None,
         )
@@ -1107,8 +1107,8 @@ class TestLearnStatusDisplay:
             url="https://github.com/test/repo/issues/123",
             labels=[],
             assignees=[],
-            created_at=datetime.now(UTC),
-            updated_at=datetime.now(UTC),
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
             metadata={},
             objective_id=None,
         )
