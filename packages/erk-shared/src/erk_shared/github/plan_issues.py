@@ -37,6 +37,10 @@ _LABEL_ERK_OBJECTIVE = "erk-objective"
 _LABEL_ERK_OBJECTIVE_DESC = "Multi-phase objective with roadmap"
 _LABEL_ERK_OBJECTIVE_COLOR = "5319E7"
 
+_LABEL_NO_CHANGES = "no-changes"
+_LABEL_NO_CHANGES_DESC = "Implementation produced no code changes"
+_LABEL_NO_CHANGES_COLOR = "FFA500"  # Orange - attention needed
+
 
 @dataclass(frozen=True)
 class CreatePlanIssueResult:
@@ -357,6 +361,13 @@ def _ensure_labels_exist(
                     description=_LABEL_ERK_OBJECTIVE_DESC,
                     color=_LABEL_ERK_OBJECTIVE_COLOR,
                 )
+            elif label == _LABEL_NO_CHANGES:
+                github_issues.ensure_label_exists(
+                    repo_root=repo_root,
+                    label=_LABEL_NO_CHANGES,
+                    description=_LABEL_NO_CHANGES_DESC,
+                    color=_LABEL_NO_CHANGES_COLOR,
+                )
             # Extra labels are assumed to already exist
     except RuntimeError as e:
         return f"Failed to ensure labels exist: {e}"
@@ -377,7 +388,7 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
     """Get all erk label definitions.
 
     Returns list of LabelDefinition for all erk labels (erk-plan,
-    erk-learn, erk-objective). Used by init command to set up
+    erk-learn, erk-objective, no-changes). Used by init command to set up
     labels in target issue repositories.
     """
     return [
@@ -395,6 +406,11 @@ def get_erk_label_definitions() -> list[LabelDefinition]:
             name=_LABEL_ERK_OBJECTIVE,
             description=_LABEL_ERK_OBJECTIVE_DESC,
             color=_LABEL_ERK_OBJECTIVE_COLOR,
+        ),
+        LabelDefinition(
+            name=_LABEL_NO_CHANGES,
+            description=_LABEL_NO_CHANGES_DESC,
+            color=_LABEL_NO_CHANGES_COLOR,
         ),
     ]
 
