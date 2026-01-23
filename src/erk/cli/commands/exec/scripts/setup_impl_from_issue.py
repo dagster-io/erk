@@ -129,7 +129,6 @@ def setup_impl_from_issue(
         branch_manager.create_branch(repo_root, branch_name, base_branch)
         click.echo(f"Created branch '{branch_name}' from '{base_branch}'", err=True)
 
-        # Checkout the newly created branch
         branch_manager.checkout_branch(cwd, branch_name)
 
     # Step 3: Create .impl/ folder with plan content (unless --no-impl)
