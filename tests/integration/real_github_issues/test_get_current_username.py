@@ -4,6 +4,7 @@ import subprocess
 
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -22,7 +23,7 @@ def test_get_current_username_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_current_username()
 
         assert result == "octocat"
@@ -40,7 +41,7 @@ def test_get_current_username_not_authenticated(monkeypatch: MonkeyPatch) -> Non
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_current_username()
 
         assert result is None
@@ -58,7 +59,7 @@ def test_get_current_username_strips_whitespace(monkeypatch: MonkeyPatch) -> Non
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_current_username()
 
         assert result == "username-with-spaces"

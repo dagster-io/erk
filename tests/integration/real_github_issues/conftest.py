@@ -4,13 +4,14 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 
 
 @pytest.fixture
 def issues() -> RealGitHubIssues:
     """Create a RealGitHubIssues instance for testing."""
-    return RealGitHubIssues(target_repo=None)
+    return RealGitHubIssues(target_repo=None, time=RealTime())
 
 
 @pytest.fixture

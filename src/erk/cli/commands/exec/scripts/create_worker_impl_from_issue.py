@@ -58,7 +58,7 @@ def create_worker_impl_from_issue(
     # Direct instantiation of required dependencies (avoids erk import)
     # This allows the command to work when run via erk kit exec without uv
     time = RealTime()
-    github_issues = RealGitHubIssues(target_repo=None)
+    github_issues = RealGitHubIssues(target_repo=None, time=time)
     plan_store = GitHubPlanStore(github_issues, time)
 
     # Fetch plan from GitHub (raises RuntimeError if not found)

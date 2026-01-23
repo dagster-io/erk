@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -37,7 +38,7 @@ def test_ensure_label_exists_creates_new(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.ensure_label_exists(
             repo_root=Path("/repo"),
             label="erk-plan",
@@ -81,7 +82,7 @@ def test_ensure_label_exists_already_exists(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.ensure_label_exists(
             repo_root=Path("/repo"),
             label="erk-plan",
@@ -104,7 +105,7 @@ def test_ensure_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="not authenticated"):
             issues.ensure_label_exists(
@@ -132,7 +133,7 @@ def test_label_exists_returns_true_when_found(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.label_exists(Path("/repo"), "erk-plan")
 
         assert result is True
@@ -159,7 +160,7 @@ def test_label_exists_returns_false_when_not_found(monkeypatch: MonkeyPatch) -> 
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.label_exists(Path("/repo"), "nonexistent-label")
 
         assert result is False
@@ -195,7 +196,7 @@ def test_label_exists_uses_cache(monkeypatch: MonkeyPatch, tmp_path: Path) -> No
     (tmp_path / ".git").mkdir()
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         # First call should hit API
         result1 = issues.label_exists(tmp_path, "erk-plan")
@@ -215,7 +216,7 @@ def test_label_exists_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="not authenticated"):
             issues.label_exists(Path("/repo"), "erk-plan")
@@ -240,7 +241,7 @@ def test_ensure_label_on_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.ensure_label_on_issue(Path("/repo"), 42, "erk-plan")
 
         cmd = created_commands[0]
@@ -261,7 +262,7 @@ def test_ensure_label_on_issue_command_failure(monkeypatch: MonkeyPatch) -> None
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.ensure_label_on_issue(Path("/repo"), 999, "label")
