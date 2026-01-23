@@ -5,6 +5,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
+from erk_shared.gateway.time.abc import Time
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.label_cache import RealLabelCache
 from erk_shared.github.issues.types import (
@@ -13,7 +14,7 @@ from erk_shared.github.issues.types import (
     IssueInfo,
     PRReference,
 )
-from erk_shared.subprocess_utils import execute_gh_command
+from erk_shared.subprocess_utils import execute_gh_command_with_retry
 
 
 class RealGitHubIssues(GitHubIssues):
@@ -23,15 +24,17 @@ class RealGitHubIssues(GitHubIssues):
     Maintains an internal label cache to avoid redundant API calls.
     """
 
-    def __init__(self, target_repo: str | None) -> None:
+    def __init__(self, target_repo: str | None, *, time: Time) -> None:
         """Initialize RealGitHubIssues.
 
         Args:
             target_repo: Target repository in "owner/repo" format.
                 If set, all gh commands will use -R flag to target this repo.
                 If None, gh CLI uses cwd-based repo detection (default behavior).
+            time: Time abstraction for sleep operations (used in retry logic).
         """
         self._target_repo = target_repo
+        self._time = time
         self._label_cache: RealLabelCache | None = None
 
     @property
@@ -93,7 +96,7 @@ class RealGitHubIssues(GitHubIssues):
             base_cmd.extend(["-f", f"labels[]={label}"])
 
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         # REST API returns JSON, --jq extracts "number url" format
         parts = stdout.strip().split(" ", 1)
         number = int(parts[0])
@@ -143,7 +146,7 @@ class RealGitHubIssues(GitHubIssues):
             f"repos/{{owner}}/{{repo}}/issues/{number}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         data = json.loads(stdout)
 
         # Extract author login (user who created the issue)
@@ -183,7 +186,7 @@ class RealGitHubIssues(GitHubIssues):
             ".id",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         return int(stdout.strip())
 
     def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
@@ -206,7 +209,7 @@ class RealGitHubIssues(GitHubIssues):
             f"body={body}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def list_issues(
         self,
@@ -244,7 +247,7 @@ class RealGitHubIssues(GitHubIssues):
         # GH-API-AUDIT: REST - GET issues (with filters)
         base_cmd = ["gh", "api", endpoint]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         data = json.loads(stdout)
 
         return [
@@ -283,7 +286,7 @@ class RealGitHubIssues(GitHubIssues):
             "[.[].body]",  # JSON array format preserves multi-line bodies
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
 
         if not stdout.strip():
             return []
@@ -307,7 +310,7 @@ class RealGitHubIssues(GitHubIssues):
             ".body",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         return stdout
 
     def get_issue_comments_with_urls(self, repo_root: Path, number: int) -> list[IssueComment]:
@@ -328,7 +331,7 @@ class RealGitHubIssues(GitHubIssues):
             "[.[] | {body, url: .html_url, id, author: .user.login}]",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
 
         if not stdout.strip():
             return []
@@ -367,7 +370,7 @@ class RealGitHubIssues(GitHubIssues):
             f'.[] | select(.name == "{label}") | .name',
         ]
         check_cmd = self._build_gh_command(base_check_cmd)
-        stdout = execute_gh_command(check_cmd, repo_root)
+        stdout = execute_gh_command_with_retry(check_cmd, repo_root, self._time)
 
         if stdout.strip():
             # Label exists - cache it for future calls
@@ -386,7 +389,7 @@ class RealGitHubIssues(GitHubIssues):
             color,
         ]
         create_cmd = self._build_gh_command(base_create_cmd)
-        execute_gh_command(create_cmd, repo_root)
+        execute_gh_command_with_retry(create_cmd, repo_root, self._time)
 
         # Cache newly created label
         self._label_cache.add(label)
@@ -413,7 +416,7 @@ class RealGitHubIssues(GitHubIssues):
             f'.[] | select(.name == "{label}") | .name',
         ]
         check_cmd = self._build_gh_command(base_check_cmd)
-        stdout = execute_gh_command(check_cmd, repo_root)
+        stdout = execute_gh_command_with_retry(check_cmd, repo_root, self._time)
 
         if stdout.strip():
             # Label exists - cache it for future calls
@@ -443,7 +446,7 @@ class RealGitHubIssues(GitHubIssues):
             f"labels[]={label}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def remove_label_from_issue(self, repo_root: Path, issue_number: int, label: str) -> None:
         """Remove label from issue using gh CLI REST API.
@@ -464,7 +467,7 @@ class RealGitHubIssues(GitHubIssues):
             f"repos/{{owner}}/{{repo}}/issues/{issue_number}/labels/{label}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def close_issue(self, repo_root: Path, number: int) -> None:
         """Close issue using gh CLI REST API.
@@ -486,7 +489,7 @@ class RealGitHubIssues(GitHubIssues):
             "state=closed",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def get_current_username(self) -> str | None:
         """Get current GitHub username via gh api user.
@@ -525,7 +528,7 @@ class RealGitHubIssues(GitHubIssues):
             "| .source.issue | {number, state, is_draft: .draft}]",
         ]
         cmd = self._build_gh_command(base_cmd)
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
 
         if not stdout.strip():
             return []
@@ -565,7 +568,7 @@ class RealGitHubIssues(GitHubIssues):
             f"content={reaction}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def update_comment(
         self,
@@ -591,4 +594,4 @@ class RealGitHubIssues(GitHubIssues):
             f"body={body}",
         ]
         cmd = self._build_gh_command(base_cmd)
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)

@@ -101,12 +101,10 @@ def create_context(cwd: str) -> StatuslineContext:
         pass
 
     # Create issues first, then compose into github
-    issues = RealGitHubIssues(target_repo=None)
-    github = RealGitHub(RealTime(), repo_info, issues=issues)
-    graphite = resolve_graphite(RealErkInstallation())
-
-    # Create sub-gateways for branch operations
     time = RealTime()
+    issues = RealGitHubIssues(target_repo=None, time=time)
+    github = RealGitHub(time, repo_info, issues=issues)
+    graphite = resolve_graphite(RealErkInstallation())
     git_branch_ops = RealGitBranchOps(time)
     graphite_branch_ops = (
         RealGraphiteBranchOps() if not isinstance(graphite, GraphiteDisabled) else None

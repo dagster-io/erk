@@ -122,8 +122,8 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     fake_graphite = FakeGraphite()
     fake_git_branch_ops = FakeGitBranchOps()
     # Create issues first, then compose into github
-    github_issues = RealGitHubIssues(target_repo=None)
     time = RealTime()
+    github_issues = RealGitHubIssues(target_repo=None, time=time)
     fake_time = FakeTime()
     return ErkContext(
         git=git,

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -54,7 +55,7 @@ def test_list_issues_all(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.list_issues(repo_root=Path("/repo"))
 
         assert len(result) == 2
@@ -79,7 +80,7 @@ def test_list_issues_with_state_filter(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.list_issues(repo_root=Path("/repo"), state="open")
 
         cmd = created_commands[0]
@@ -105,7 +106,7 @@ def test_list_issues_with_labels_filter(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.list_issues(repo_root=Path("/repo"), labels=["plan", "erk"])
 
         cmd = created_commands[0]
@@ -131,7 +132,7 @@ def test_list_issues_with_both_filters(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.list_issues(repo_root=Path("/repo"), labels=["bug"], state="closed")
 
         cmd = created_commands[0]
@@ -157,7 +158,7 @@ def test_list_issues_rest_api_endpoint(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.list_issues(repo_root=Path("/repo"))
 
         cmd = created_commands[0]
@@ -176,7 +177,7 @@ def test_list_issues_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("gh not authenticated")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="not authenticated"):
             issues.list_issues(repo_root=Path("/repo"))
@@ -194,7 +195,7 @@ def test_list_issues_empty_response(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.list_issues(repo_root=Path("/repo"))
 
         assert result == []
@@ -227,7 +228,7 @@ def test_list_issues_null_body(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.list_issues(repo_root=Path("/repo"))
 
         assert len(result) == 1
@@ -265,7 +266,7 @@ def test_list_issues_parses_all_fields(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.list_issues(repo_root=Path("/repo"))
 
         assert len(result) == 1
@@ -292,7 +293,7 @@ def test_list_issues_with_limit(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.list_issues(repo_root=Path("/repo"), limit=10)
 
         cmd = created_commands[0]

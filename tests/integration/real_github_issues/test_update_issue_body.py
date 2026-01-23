@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -24,7 +25,7 @@ def test_update_issue_body_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.update_issue_body(Path("/repo"), 42, "Updated body content")
 
         # Verify command structure (REST API)
@@ -53,7 +54,7 @@ def test_update_issue_body_multiline(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         multiline_body = """# Heading
 
 Paragraph with **bold** text.
@@ -74,7 +75,7 @@ def test_update_issue_body_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.update_issue_body(Path("/repo"), 999, "New body")

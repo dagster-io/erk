@@ -5,6 +5,7 @@ from pathlib import Path
 
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -23,7 +24,7 @@ def test_get_comment_by_id_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         body = issues.get_comment_by_id(Path("/repo"), 12345678)
 
         assert body == "This is the comment body"

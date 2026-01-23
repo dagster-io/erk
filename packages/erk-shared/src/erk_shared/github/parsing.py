@@ -4,6 +4,9 @@ import re
 from pathlib import Path
 from typing import Any
 
+from erk_shared.gateway.time.abc import Time
+from erk_shared.github.retry import RETRY_DELAYS, RetriesExhausted, RetryRequested, with_retries
+from erk_shared.github.transient_errors import is_transient_error
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
@@ -30,6 +33,54 @@ def execute_gh_command(cmd: list[str], cwd: Path) -> str:
         cwd=cwd,
     )
     return result.stdout
+
+
+def execute_gh_command_with_retry(
+    cmd: list[str],
+    cwd: Path,
+    time_impl: Time,
+    *,
+    retry_delays: list[float] | None = None,
+) -> str:
+    """Execute gh command with automatic retry on transient network errors.
+
+    Wraps execute_gh_command with retry logic using the with_retries pattern.
+    Transient errors (network timeouts, connection failures) trigger automatic
+    retry with configurable delays.
+
+    Args:
+        cmd: Command and arguments to execute
+        cwd: Working directory for command execution
+        time_impl: Time abstraction for sleep operations
+        retry_delays: Custom delays between retries. Defaults to RETRY_DELAYS.
+
+    Returns:
+        stdout from the command
+
+    Raises:
+        RuntimeError: If command fails after all retries, or with non-transient error
+        FileNotFoundError: If gh is not installed
+    """
+
+    def try_execute() -> str | RetryRequested:
+        try:
+            return execute_gh_command(cmd, cwd)
+        except RuntimeError as e:
+            if is_transient_error(str(e)):
+                return RetryRequested(reason=str(e))
+            raise
+
+    delays = retry_delays if retry_delays is not None else list(RETRY_DELAYS)
+    result = with_retries(time_impl, "execute gh command", try_execute, delays)
+
+    if isinstance(result, RetriesExhausted):
+        msg = f"GitHub command failed after retries: {result.reason}"
+        raise RuntimeError(msg)
+
+    # Type narrowing: with_retries returns T | RetriesExhausted.
+    # After the isinstance check above, we know result is T (str).
+    assert isinstance(result, str)
+    return result
 
 
 def _parse_github_pr_url(url: str) -> tuple[str, str] | None:

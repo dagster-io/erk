@@ -6,16 +6,17 @@ from pathlib import Path
 
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
 
 def test_target_repo_property_returns_configured_value() -> None:
     """Test target_repo property returns the configured value."""
-    issues = RealGitHubIssues(target_repo="owner/plans-repo")
+    issues = RealGitHubIssues(target_repo="owner/plans-repo", time=RealTime())
     assert issues.target_repo == "owner/plans-repo"
 
-    issues_none = RealGitHubIssues(target_repo=None)
+    issues_none = RealGitHubIssues(target_repo=None, time=RealTime())
     assert issues_none.target_repo is None
 
 
@@ -37,7 +38,7 @@ def test_create_issue_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyP
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo="owner/plans-repo")
+        issues = RealGitHubIssues(target_repo="owner/plans-repo", time=RealTime())
         issues.create_issue(
             repo_root=Path("/repo"),
             title="Test Issue",
@@ -84,7 +85,7 @@ def test_get_issue_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPatc
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo="owner/plans-repo")
+        issues = RealGitHubIssues(target_repo="owner/plans-repo", time=RealTime())
         issues.get_issue(Path("/repo"), 42)
 
         cmd = created_commands[0]
@@ -113,7 +114,7 @@ def test_list_issues_with_target_repo_substitutes_endpoint(monkeypatch: MonkeyPa
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo="owner/plans-repo")
+        issues = RealGitHubIssues(target_repo="owner/plans-repo", time=RealTime())
         issues.list_issues(repo_root=Path("/repo"), labels=["erk-plan"])
 
         cmd = created_commands[0]

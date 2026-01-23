@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -24,7 +25,7 @@ def test_close_issue_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.close_issue(Path("/repo"), 42)
 
         cmd = created_commands[0]
@@ -45,7 +46,7 @@ def test_close_issue_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.close_issue(Path("/repo"), 999)

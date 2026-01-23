@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -25,7 +26,7 @@ def test_add_comment_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         comment_id = issues.add_comment(Path("/repo"), 42, "This is my comment body")
 
         # Verify return value
@@ -58,7 +59,7 @@ def test_add_comment_multiline_body(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         multiline_body = """First line of comment
 
 Second line after blank line
@@ -79,7 +80,7 @@ def test_add_comment_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.add_comment(Path("/repo"), 999, "Comment body")

@@ -38,6 +38,7 @@ from erk.core.repo_discovery import (
 from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.console.real import InteractiveConsole
 from erk_shared.gateway.shell.abc import Shell
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.real import RealGitHubIssues
 from erk_shared.github.plan_issues import get_erk_label_definitions
@@ -355,7 +356,7 @@ def offer_plans_repo_label_setup(repo_root: Path, plans_repo: str) -> None:
         user_output("Skipped. You can set up labels later with: erk doctor --fix")
         return
 
-    github_issues = RealGitHubIssues(target_repo=plans_repo)
+    github_issues = RealGitHubIssues(target_repo=plans_repo, time=RealTime())
 
     try:
         create_plans_repo_labels(repo_root, plans_repo, github_issues)

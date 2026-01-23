@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from pytest import MonkeyPatch
 
+from erk_shared.gateway.time.real import RealTime
 from erk_shared.github.issues.real import RealGitHubIssues
 from tests.integration.test_helpers import mock_subprocess_run
 
@@ -25,7 +26,7 @@ def test_get_issue_comments_success(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         assert result == ["First comment", "Second comment", "Third comment"]
@@ -43,7 +44,7 @@ def test_get_issue_comments_empty(monkeypatch: MonkeyPatch) -> None:
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         assert result == []
@@ -56,7 +57,7 @@ def test_get_issue_comments_command_failure(monkeypatch: MonkeyPatch) -> None:
         raise RuntimeError("Issue not found")
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
 
         with pytest.raises(RuntimeError, match="Issue not found"):
             issues.get_issue_comments(Path("/repo"), 999)
@@ -91,7 +92,7 @@ def test_get_issue_comments_multiline_bodies_preserved(monkeypatch: MonkeyPatch)
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         # Should be 3 comments, NOT 8 (which would happen with split("\n"))
@@ -130,7 +131,7 @@ More details across multiple lines.
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         result = issues.get_issue_comments(Path("/repo"), 42)
 
         # Should be exactly ONE comment with all content intact
@@ -155,7 +156,7 @@ def test_get_issue_comments_command_uses_json_array_output(monkeypatch: MonkeyPa
         )
 
     with mock_subprocess_run(monkeypatch, mock_run):
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=RealTime())
         issues.get_issue_comments(Path("/repo"), 42)
 
         # Verify command structure

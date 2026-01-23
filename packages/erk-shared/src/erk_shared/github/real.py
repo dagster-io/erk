@@ -31,7 +31,7 @@ from erk_shared.github.graphql_queries import (
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.parsing import (
-    execute_gh_command,
+    execute_gh_command_with_retry,
     parse_aggregated_check_counts,
     parse_gh_auth_status_output,
 )
@@ -152,7 +152,7 @@ class RealGitHub(GitHub):
                 "-f",
                 f"base={new_base}",
             ]
-            execute_gh_command(cmd, repo_root)
+            execute_gh_command_with_retry(cmd, repo_root, self._time)
         except (RuntimeError, FileNotFoundError):
             # gh not installed, not authenticated, or command failed
             # Graceful degradation - operation skipped
@@ -183,7 +183,7 @@ class RealGitHub(GitHub):
                 "-f",
                 f"body={body}",
             ]
-            execute_gh_command(cmd, repo_root)
+            execute_gh_command_with_retry(cmd, repo_root, self._time)
         except (RuntimeError, FileNotFoundError):
             # gh not installed, not authenticated, or command failed
             # Graceful degradation - operation skipped
@@ -203,7 +203,7 @@ class RealGitHub(GitHub):
         # GH-API-AUDIT: GraphQL - explicit graphql query
         # WHY GRAPHQL: Used by get_prs_linked_to_issues for erk dash batch queries
         cmd = ["gh", "api", "graphql", "-f", f"query={query}"]
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         return json.loads(stdout)
 
     def merge_pr(
@@ -501,7 +501,7 @@ class RealGitHub(GitHub):
             "-f",
             "state=closed",
         ]
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def list_workflow_runs(
         self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
@@ -572,7 +572,7 @@ class RealGitHub(GitHub):
                 f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}",
             ]
 
-            stdout = execute_gh_command(cmd, repo_root)
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
             data = json.loads(stdout)
 
             # Parse created_at timestamp if present
@@ -1011,7 +1011,7 @@ query {{
         ]
         for node_id in node_ids:
             cmd.extend(["-f", f"nodeIds[]={node_id}"])
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         response = json.loads(stdout)
 
         # Parse response into WorkflowRun objects
@@ -1116,7 +1116,7 @@ query {{
             "--jq",
             ".node_id",
         ]
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         node_id = stdout.strip()
         return node_id if node_id else None
 
@@ -1173,7 +1173,7 @@ query {{
         if creator is not None:
             cmd.extend(["-f", f"filterBy[createdBy]={creator}"])
 
-        stdout = execute_gh_command(cmd, location.root)
+        stdout = execute_gh_command_with_retry(cmd, location.root, self._time)
         response = json.loads(stdout)
         return self._parse_issues_with_pr_linkages(response, repo_id)
 
@@ -1376,7 +1376,7 @@ query {{
         # GH-API-AUDIT: REST - GET pulls/{number}
         cmd = ["gh", "api", endpoint]
         try:
-            stdout = execute_gh_command(cmd, repo_root)
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         except RuntimeError:
             # API call failed - PR not found or other error
             return PRNotFound(pr_number=pr_number)
@@ -1401,7 +1401,7 @@ query {{
 
         # GH-API-AUDIT: REST - GET pulls (filtered by head)
         cmd = ["gh", "api", endpoint]
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         data = json.loads(stdout)
 
         if not data:
@@ -1494,7 +1494,7 @@ query {{
         cmd = ["gh", "api", endpoint]
 
         try:
-            stdout = execute_gh_command(cmd, repo_root)
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         except RuntimeError:
             # API call failed - return empty dict for graceful degradation
             # This allows callers to proceed without PR data rather than crashing
@@ -1551,7 +1551,7 @@ query {{
             "-f",
             f"body={body}",
         ]
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
         """Mark a draft PR as ready for review.
@@ -1571,7 +1571,7 @@ query {{
             "-F",
             "draft=false",
         ]
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def get_pr_diff(self, repo_root: Path, pr_number: int) -> str:
         """Get the diff for a PR using gh CLI.
@@ -1606,7 +1606,7 @@ query {{
             "-f",
             f"labels[]={label}",
         ]
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -> bool:
         """Check if a PR has a specific label using gh CLI.
@@ -1624,7 +1624,7 @@ query {{
             "--jq",
             ".labels[].name",
         ]
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         labels = stdout.strip().split("\n") if stdout.strip() else []
         return label in labels
 
@@ -1657,7 +1657,7 @@ query {{
             "-F",
             f"number={pr_number}",
         ]
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         response = json.loads(stdout)
 
         return self._parse_review_threads_response(response, include_resolved)
@@ -1750,7 +1750,7 @@ query {{
             f"threadId={thread_id}",
         ]
 
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         response = json.loads(stdout)
 
         # Check if the thread was resolved
@@ -1790,7 +1790,7 @@ query {{
             f"body={body}",
         ]
 
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         response = json.loads(stdout)
 
         # Check if the comment was added
@@ -1823,7 +1823,7 @@ query {{
             "side=RIGHT",
         ]
 
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         response = json.loads(stdout)
         return response["id"]
 
@@ -1849,7 +1849,7 @@ query {{
         ]
 
         try:
-            stdout = execute_gh_command(cmd, repo_root)
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
             comments = json.loads(stdout)
             for comment in comments:
                 body = comment.get("body", "")
@@ -1884,7 +1884,7 @@ query {{
             "-f",
             f"body={body}",
         ]
-        execute_gh_command(cmd, repo_root)
+        execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def create_pr_comment(
         self,
@@ -1905,7 +1905,7 @@ query {{
             "-f",
             f"body={body}",
         ]
-        stdout = execute_gh_command(cmd, repo_root)
+        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         response = json.loads(stdout)
         return response["id"]
 
@@ -1959,7 +1959,7 @@ query {{
         cmd = ["gh", "api", endpoint]
 
         try:
-            stdout = execute_gh_command(cmd, repo_root)
+            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         except RuntimeError:
             # API call failed - return empty list for graceful degradation
             return []

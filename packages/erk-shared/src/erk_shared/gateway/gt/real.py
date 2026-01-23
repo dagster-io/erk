@@ -56,6 +56,6 @@ class RealGtKit:
         repo_info = get_repo_info(self.git, repo_root)
 
         # Create issues first, then compose into github
-        issues = RealGitHubIssues(target_repo=None)
+        issues = RealGitHubIssues(target_repo=None, time=self.time)
         self.github = RealGitHub(time=self.time, repo_info=repo_info, issues=issues)
         self.graphite = RealGraphite()
