@@ -259,3 +259,7 @@ class PrintingGit(PrintingBase, Git):
         """Pull with rebase with printed output."""
         self._emit(self._format_command(f"git pull --rebase {remote} {branch}"))
         self._wrapped.pull_rebase(cwd, remote, branch)
+
+    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
+        """Get merge base (read-only, no printing)."""
+        return self._wrapped.get_merge_base(repo_root, ref1, ref2)

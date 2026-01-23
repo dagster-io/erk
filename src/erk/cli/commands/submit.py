@@ -11,6 +11,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.slot.common import is_placeholder_branch
+from erk.cli.commands.submit_helpers import ensure_trunk_synced
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
     DISPATCH_WORKFLOW_NAME,
@@ -825,6 +826,9 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
         repo = ctx.repo
     else:
         repo = discover_repo_context(ctx, ctx.cwd)
+
+    # Ensure trunk is synced before any operations
+    ensure_trunk_synced(ctx, repo)
 
     # Save current state (needed for both default base and restoration)
     original_branch = ctx.git.get_current_branch(repo.root)

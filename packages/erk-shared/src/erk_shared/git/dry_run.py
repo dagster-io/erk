@@ -291,3 +291,7 @@ class DryRunGit(Git):
     def pull_rebase(self, cwd: Path, remote: str, branch: str) -> None:
         """No-op for pull --rebase in dry-run mode."""
         pass
+
+    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
+        """Get merge base (read-only, delegates to wrapped)."""
+        return self._wrapped.get_merge_base(repo_root, ref1, ref2)
