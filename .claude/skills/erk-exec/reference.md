@@ -53,6 +53,7 @@ Quick reference for all `erk exec` subcommands.
 | `post-or-update-pr-summary`       | Post or update a PR summary comment.                                      |
 | `post-pr-inline-comment`          | Post an inline review comment on a PR.                                    |
 | `post-workflow-started-comment`   | Post a workflow started comment to a GitHub issue.                        |
+| `pr-sync-commit`                  | Sync PR title and body from the latest git commit.                        |
 | `preprocess-session`              | Preprocess session log JSONL to compressed XML format.                    |
 | `quick-submit`                    | Quick commit all changes and submit.                                      |
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.              |
@@ -670,6 +671,18 @@ Post a workflow started comment to a GitHub issue.
 | `--run-id`       | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions workflow run ID  |
 | `--run-url`      | TEXT    | Yes      | Sentinel.UNSET | Full URL to workflow run        |
 | `--repository`   | TEXT    | Yes      | Sentinel.UNSET | Repository in owner/repo format |
+
+### pr-sync-commit
+
+Sync PR title and body from the latest git commit.
+
+**Usage:** `erk exec pr-sync-commit`
+
+**Options:**
+
+| Flag     | Type | Required | Default | Description    |
+| -------- | ---- | -------- | ------- | -------------- |
+| `--json` | FLAG | No       | -       | Output as JSON |
 
 ### preprocess-session
 

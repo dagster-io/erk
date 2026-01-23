@@ -80,6 +80,7 @@ from erk.cli.commands.exec.scripts.post_pr_inline_comment import (
 from erk.cli.commands.exec.scripts.post_workflow_started_comment import (
     post_workflow_started_comment,
 )
+from erk.cli.commands.exec.scripts.pr_sync_commit import pr_sync_commit
 from erk.cli.commands.exec.scripts.preprocess_session import preprocess_session
 from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
@@ -178,6 +179,7 @@ exec_group.add_command(plan_save_to_issue, name="plan-save-to-issue")
 exec_group.add_command(plan_update_issue, name="plan-update-issue")
 exec_group.add_command(post_or_update_pr_summary, name="post-or-update-pr-summary")
 exec_group.add_command(post_pr_inline_comment, name="post-pr-inline-comment")
+exec_group.add_command(pr_sync_commit, name="pr-sync-commit")
 exec_group.add_command(post_workflow_started_comment, name="post-workflow-started-comment")
 exec_group.add_command(preprocess_session, name="preprocess-session")
 exec_group.add_command(quick_submit, name="quick-submit")

@@ -62,6 +62,120 @@ def extract_closing_reference(footer: str) -> ClosingReference | None:
     return None
 
 
+# Header patterns that should be preserved when syncing PR body from commit
+HEADER_PATTERNS = (
+    "**Plan:**",
+    "**Remotely executed:**",
+)
+
+
+def extract_header_from_body(body: str) -> str:
+    """Extract header lines from the beginning of a PR body.
+
+    Header lines are lines at the start that match known patterns like
+    `**Plan:** #123` or `**Remotely executed:** [Run #...]`.
+
+    Args:
+        body: Full PR body content
+
+    Returns:
+        Header content (including trailing newlines) or empty string if no header
+    """
+    if not body:
+        return ""
+
+    lines = body.split("\n")
+    header_lines: list[str] = []
+
+    for line in lines:
+        # Empty lines at the start are part of header if followed by header content
+        if not line.strip():
+            # If we already have header lines, include blank lines
+            if header_lines:
+                header_lines.append(line)
+            continue
+
+        # Check if line starts with a header pattern
+        if any(line.startswith(pattern) for pattern in HEADER_PATTERNS):
+            header_lines.append(line)
+        else:
+            # First non-header, non-blank line - stop
+            break
+
+    if not header_lines:
+        return ""
+
+    # Remove trailing blank lines from header
+    while header_lines and not header_lines[-1].strip():
+        header_lines.pop()
+
+    # Return header with double newline separator if we have content
+    if header_lines:
+        return "\n".join(header_lines) + "\n\n"
+    return ""
+
+
+def extract_main_content(body: str) -> str:
+    """Extract the main content between header and footer.
+
+    Args:
+        body: Full PR body content
+
+    Returns:
+        Main content without header or footer
+    """
+    if not body:
+        return ""
+
+    # Remove footer first
+    parts = body.rsplit("\n---\n", 1)
+    content_without_footer = parts[0]
+
+    # Remove header
+    header = extract_header_from_body(content_without_footer)
+    if header:
+        # Header ends with \n\n, so strip that from the body
+        content = content_without_footer[len(header) - 1 :].lstrip("\n")
+    else:
+        content = content_without_footer
+
+    return content
+
+
+def rebuild_pr_body(
+    *,
+    header: str,
+    content: str,
+    footer: str,
+) -> str:
+    """Reassemble PR body from header, content, and footer.
+
+    Args:
+        header: Header content (may be empty)
+        content: Main body content
+        footer: Footer content (may be empty, should NOT include --- delimiter)
+
+    Returns:
+        Complete PR body with proper delimiters
+    """
+    parts: list[str] = []
+
+    if header:
+        # Header should already end with \n\n from extract_header_from_body
+        parts.append(header.rstrip("\n"))
+        parts.append("")  # Blank line after header
+
+    parts.append(content.strip())
+
+    if footer:
+        parts.append("")
+        parts.append("---")
+        parts.append("")
+        parts.append(footer.strip())
+
+    return "\n".join(parts)
+
+
 def build_remote_execution_note(workflow_run_id: str, workflow_run_url: str) -> str:
     """Build a remote execution tracking note for PR body.
 
