@@ -386,6 +386,42 @@ steps:
 
 Progress tracking is done via the TodoWrite tool in the Claude Code session.
 
+### No-Changes Error Flow
+
+When implementation produces zero code changes (typically duplicate plans or refactoring-only changes), the workflow handles this gracefully:
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│ Implement   │────▶│   Detect    │────▶│  Create     │────▶│  Graceful   │
+│    Plan     │     │ No Changes  │     │ Diagnostic  │     │    Exit     │
+└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+       │                  │                   │                   │
+       ▼                  ▼                   ▼                   ▼
+ Code executed       git diff empty      PR + label +        Exit code 1
+                                         issue comment        (not failure)
+```
+
+**Exit code semantics:**
+
+| Exit Code | Meaning                                       |
+| --------- | --------------------------------------------- |
+| 0         | Implementation succeeded with changes         |
+| 1         | No changes detected (handled gracefully)      |
+| 2         | Blocking error (workflow should fail)         |
+
+When no changes are detected, the `erk exec handle-no-changes` command:
+
+1. Creates or updates the PR with diagnostic information
+2. Applies the `no-changes` label (orange, #FFA500)
+3. Posts a notification to the plan issue
+4. Sets `has_changes=false` output to gate downstream steps
+
+Subsequent workflow steps (submit, mark-ready, CI, learn) check `has_changes` and only execute when actual code changes exist.
+
+**User experience:** Users see a diagnostic PR explaining why no changes occurred (e.g., duplicate plan, already-merged work) and receive guidance for next steps.
+
+See [No-Code-Changes Handling](no-changes-handling.md) for complete user guidance.
+
 ### Detecting Queued vs Implemented Plans
 
 A PR associated with a plan may exist but not contain the actual implementation:

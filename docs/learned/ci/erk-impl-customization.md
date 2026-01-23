@@ -69,7 +69,56 @@ Use a local composite action when your repository needs:
 
 The `hashFiles()` check ensures zero overhead for repos without customization.
 
+## Conditional Step Gating
+
+The erk-impl workflow uses step outputs to gate subsequent steps based on implementation results. This allows the workflow to handle error scenarios gracefully without failing.
+
+### has_changes Output Pattern
+
+After the handle-no-changes step, subsequent steps check the `has_changes` output:
+
+```yaml
+- name: Submit implementation
+  if: steps.handle_outcome.outputs.has_changes == 'true'
+  run: erk pr submit ...
+
+- name: Mark PR ready
+  if: steps.handle_outcome.outputs.has_changes == 'true'
+  run: gh pr ready ...
+
+- name: Run CI
+  if: steps.handle_outcome.outputs.has_changes == 'true'
+  run: make ci
+
+- name: Trigger learn workflow
+  if: steps.handle_outcome.outputs.has_changes == 'true'
+  run: ...
+```
+
+### When to Add Conditional Gates
+
+Add gating when a step:
+
+- Should only run when actual code changes exist
+- Depends on implementation having produced code
+- Would fail or produce noise without real changes
+- Should be skipped in error scenarios
+
+### Common Gated Steps
+
+The standard erk-impl workflow gates these steps:
+
+| Step | Reason | Condition |
+|------|--------|-----------|
+| Submit PR | Avoid submitting empty PRs | `has_changes == 'true'` |
+| Mark ready | Only when implementation complete | `has_changes == 'true'` |
+| Run CI | Unnecessary for empty changes | `has_changes == 'true'` |
+| Trigger learn | Documentation only for actual work | `has_changes == 'true'` |
+
+When `has_changes` is false (no code changes detected), these steps are skipped and the user sees the diagnostic PR with guidance.
+
 ## Related Documentation
 
 - [Container-less CI](containerless-ci.md) - General CI setup patterns
 - [GitHub Actions Security](github-actions-security.md) - Security patterns for workflows
+- [No-Code-Changes Handling](../planning/no-changes-handling.md) - Understanding and resolving no-changes scenarios
