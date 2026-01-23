@@ -47,8 +47,7 @@ def replan_plan(ctx: ErkContext, issue_refs: tuple[str, ...]) -> None:
     )
 
     # Build Claude CLI arguments with space-separated issue refs
-    refs_str = " ".join(issue_refs)
-    cmd_args = build_claude_args(config, command=f"/erk:replan {refs_str}")
+    cmd_args = build_claude_args(config, command=f"/erk:replan {' '.join(issue_refs)}")
 
     # Replace current process with Claude
     os.execvp("claude", cmd_args)
