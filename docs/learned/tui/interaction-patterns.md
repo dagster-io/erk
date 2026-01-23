@@ -125,6 +125,7 @@ self._status_bar.set_message(f"Opened objective #{row.objective_issue}")
 **Format Convention:** `"Opened <thing> #<number>"`
 
 Examples:
+
 - "Opened objective #42"
 - "Opened PR #156"
 - "Opened issue #789"

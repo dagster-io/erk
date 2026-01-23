@@ -60,10 +60,10 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 
 ### Objective Info
 
-| Field              | Type          | Description                          | Nullable?             |
-| ------------------ | ------------- | ------------------------------------ | --------------------- |
-| `objective_issue`  | `int \| None` | Linked objective issue number        | Yes                   |
-| `objective_display` | `str`         | Formatted objective (e.g., "#42")    | Never (dash possible) |
+| Field               | Type          | Description                       | Nullable?             |
+| ------------------- | ------------- | --------------------------------- | --------------------- |
+| `objective_issue`   | `int \| None` | Linked objective issue number     | Yes                   |
+| `objective_display` | `str`         | Formatted objective (e.g., "#42") | Never (dash possible) |
 
 ### Run Info (GitHub Actions)
 
