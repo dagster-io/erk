@@ -58,6 +58,13 @@ Quick reference of `PlanRowData` fields for writing command availability predica
 | `last_local_impl_at`  | `datetime \| None` | Raw timestamp for local impl         | Yes                   |
 | `last_remote_impl_at` | `datetime \| None` | Raw timestamp for remote impl        | Yes                   |
 
+### Objective Info
+
+| Field              | Type          | Description                          | Nullable?             |
+| ------------------ | ------------- | ------------------------------------ | --------------------- |
+| `objective_issue`  | `int \| None` | Linked objective issue number        | Yes                   |
+| `objective_display` | `str`         | Formatted objective (e.g., "#42")    | Never (dash possible) |
+
 ### Run Info (GitHub Actions)
 
 | Field               | Type          | Description                                       | Nullable?             |
@@ -126,6 +133,7 @@ Many pieces of data have both a raw value and a display value:
 | `issue_number`                                 | (used directly in display) | Issue number            |
 | `pr_number`                                    | `pr_display`               | PR with state indicator |
 | `resolved_comment_count`/`total_comment_count` | `comments_display`         | Comment counts (X/Y)    |
+| `objective_issue`                              | `objective_display`        | Objective reference     |
 | `run_id`                                       | `run_id_display`           | Run ID formatted        |
 | `run_status`/`run_conclusion`                  | `run_state_display`        | Human-readable state    |
 | `title`                                        | (is already display)       | Truncated title         |
@@ -154,6 +162,9 @@ row = make_plan_row(123, "Test", worktree_name="feature-123", exists_locally=Tru
 
 # With workflow run
 row = make_plan_row(123, "Test", run_url="https://github.com/.../runs/789")
+
+# With objective issue
+row = make_plan_row(123, "Test", objective_issue=42)
 ```
 
 ## Related Topics

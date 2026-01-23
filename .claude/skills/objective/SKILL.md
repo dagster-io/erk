@@ -121,13 +121,44 @@ To implement a specific roadmap step, create an erk-plan that references the obj
 erk plan create --title "Implement [step description]" --body "Part of Objective #123, Step 1.2"
 ```
 
+## TUI Integration
+
+Plans linked to objectives display the objective in `erk dash`:
+
+### Dashboard Visibility
+
+- **Objective column** shows `#N` for linked plans, `-` for unlinked
+- **Clickable:** Click objective cell to open the objective issue in browser
+- **Status feedback:** Shows "Opened objective #N" in status bar
+
+### Workflow Benefits
+
+1. Quickly see which plans are part of larger objectives
+2. Navigate from plan to objective without leaving the dashboard
+3. Identify orphaned plans (no objective) that may need linking
+
+### Setting the Link
+
+When creating a plan as part of an objective, include the objective issue number:
+
+```bash
+erk plan create --title "Implement [step]" --objective-issue 789
+```
+
+Or update an existing plan:
+
+```bash
+/erk:plan-save --objective-issue 789
+```
+
 ## Workflow Summary
 
 1. **Create objective** - When starting multi-plan work
 2. **Log actions** - After completing each significant piece of work
 3. **Update body** - Keep roadmap status current
 4. **Spawn erk-plans** - For individual implementation steps
-5. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
+5. **Link plans to objective** - Set objective_issue so dashboard shows the relationship
+6. **Close** - When goal achieved or abandoned (proactively ask when all steps done)
 
 ## Resources
 
