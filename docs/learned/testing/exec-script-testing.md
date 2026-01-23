@@ -105,10 +105,74 @@ From `erk_shared.context.helpers`:
 | `require_github(ctx)`    | `GitHub`       | GitHub operations         |
 | `require_issues(ctx)`    | `GitHubIssues` | GitHub issues operations  |
 
+## Testing Validation Edge Cases
+
+When testing exec scripts that validate input parameters, follow this pattern to isolate validation logic:
+
+### Setup: Satisfy Prerequisites
+
+Create minimal fixtures to pass earlier checks, isolating the validation under test:
+
+```python
+@pytest.fixture
+def impl_folder(tmp_path: Path) -> Path:
+    """Create minimal .impl folder with issue.json for validation tests."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    (impl_dir / "issue.json").write_text('{"number": 123}')
+    return impl_dir
+```
+
+### Test Pattern: Validation Edge Cases
+
+Test all validation boundaries (None, empty, whitespace):
+
+```python
+def test_started_fails_without_session_id(impl_folder: Path) -> None:
+    """Test missing session ID parameter."""
+    result = runner.invoke(
+        cli, ["exec", "impl-signal", "started"],
+        obj=ErkContext.for_test(cwd=impl_folder.parent)
+    )
+    assert result.exit_code == 0  # Graceful degradation
+    data = json.loads(result.output)
+    assert data["success"] is False
+    assert data["error_type"] == "session-id-required"
+
+def test_started_fails_with_empty_session_id(impl_folder: Path) -> None:
+    """Test empty string session ID."""
+    result = runner.invoke(
+        cli, ["exec", "impl-signal", "started", "--session-id", ""],
+        obj=ErkContext.for_test(cwd=impl_folder.parent)
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+
+def test_started_fails_with_whitespace_session_id(impl_folder: Path) -> None:
+    """Test whitespace-only session ID."""
+    result = runner.invoke(
+        cli, ["exec", "impl-signal", "started", "--session-id", "   "],
+        obj=ErkContext.for_test(cwd=impl_folder.parent)
+    )
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+```
+
+### Key Assertions
+
+1. **Exit code 0**: Exec scripts use graceful degradation (see [exec-command-patterns.md](exec-command-patterns.md))
+2. **JSON response**: Parse output and check `success` field
+3. **Error type**: Verify specific `error_type` for targeted error handling
+4. **Message content**: Optionally verify human-readable message for debugging
+
 ## Test File Locations
 
 - **Integration tests**: `tests/integration/cli/commands/exec/scripts/`
 - **Unit tests**: `tests/unit/cli/commands/exec/scripts/`
+
+**Reference implementation**: See `tests/unit/cli/commands/exec/scripts/test_impl_signal.py` for complete validation testing patterns.
 
 ## Pattern: Parameterizing Path.home() for Testability
 
