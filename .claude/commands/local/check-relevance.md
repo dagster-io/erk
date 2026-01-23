@@ -31,7 +31,8 @@ Parse `$ARGUMENTS` to determine input:
 **Step 1.2: Auto-detect type (if not explicit)**
 
 ```bash
-gh api repos/dagster-io/erk/issues/<NUMBER> --jq '.labels[].name' | grep -q "erk-plan" && echo "plan" || echo "pr"
+# Uses erk exec to avoid GraphQL rate limits
+erk exec get-issue-body <NUMBER> | jq -r '.labels[]' | grep -q "erk-plan" && echo "plan" || echo "pr"
 ```
 
 Store result as `ITEM_TYPE` (either `pr` or `plan`).
@@ -122,8 +123,8 @@ gh pr list --state merged --search "<keywords from title>" --json number,title,m
 For PRs, check if the branch commits are already in master:
 
 ```bash
-# Get commits unique to the PR branch
-gh pr view <NUMBER> --json commits --jq '.commits[].oid' | while read sha; do
+# Get commits using erk exec (avoids GraphQL rate limits)
+erk exec get-pr-commits <NUMBER> | jq -r '.commits[].sha' | while read sha; do
   git branch --contains "$sha" 2>/dev/null | grep -qE '^\*?\s*master$' && echo "$sha: IN_MASTER" || echo "$sha: NOT_IN_MASTER"
 done
 ```
@@ -255,9 +256,8 @@ Based on user selection:
 # For PRs
 gh pr close <NUMBER> --comment "Closing: This work is already represented in master via <evidence>. See #<related_pr> for the merged implementation."
 
-# For plans
-gh api repos/dagster-io/erk/issues/<NUMBER>/comments -X POST -f body="Closing: This work is already represented in master. <evidence>"
-gh api repos/dagster-io/erk/issues/<NUMBER> -X PATCH -f state=closed
+# For plans (uses erk exec to avoid GraphQL rate limits)
+erk exec close-issue-with-comment <NUMBER> --comment "Closing: This work is already represented in master. <evidence>"
 ```
 
 **Add label:**

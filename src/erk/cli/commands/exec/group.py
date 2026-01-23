@@ -18,6 +18,9 @@ from erk.cli.commands.exec.scripts.capture_session_info import (
 )
 from erk.cli.commands.exec.scripts.check_impl import check_impl
 from erk.cli.commands.exec.scripts.ci_update_pr_body import ci_update_pr_body
+from erk.cli.commands.exec.scripts.close_issue_with_comment import (
+    close_issue_with_comment,
+)
 from erk.cli.commands.exec.scripts.create_issue_from_session import (
     create_issue_from_session,
 )
@@ -48,6 +51,7 @@ from erk.cli.commands.exec.scripts.get_plans_for_objective import (
     get_plans_for_objective,
 )
 from erk.cli.commands.exec.scripts.get_pr_body_footer import get_pr_body_footer
+from erk.cli.commands.exec.scripts.get_pr_commits import get_pr_commits
 from erk.cli.commands.exec.scripts.get_pr_discussion_comments import (
     get_pr_discussion_comments,
 )
@@ -163,6 +167,7 @@ exec_group.add_command(get_issue_body, name="get-issue-body")
 exec_group.add_command(get_issue_timeline_prs, name="get-issue-timeline-prs")
 exec_group.add_command(get_learn_sessions, name="get-learn-sessions")
 exec_group.add_command(get_pr_body_footer, name="get-pr-body-footer")
+exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
 exec_group.add_command(impl_init, name="impl-init")
@@ -200,6 +205,7 @@ exec_group.add_command(update_plan_remote_session, name="update-plan-remote-sess
 exec_group.add_command(upload_learn_materials, name="upload-learn-materials")
 exec_group.add_command(upload_session, name="upload-session")
 exec_group.add_command(ci_update_pr_body)
+exec_group.add_command(close_issue_with_comment, name="close-issue-with-comment")
 exec_group.add_command(user_prompt_hook, name="user-prompt-hook")
 exec_group.add_command(validate_claude_credentials, name="validate-claude-credentials")
 exec_group.add_command(validate_plan_content, name="validate-plan-content")
