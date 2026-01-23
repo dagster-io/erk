@@ -830,3 +830,20 @@ class Git(ABC):
             subprocess.CalledProcessError: If rebase fails (e.g., conflicts)
         """
         ...
+
+    @abstractmethod
+    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
+        """Get the merge base commit SHA between two refs.
+
+        The merge base is the best common ancestor of two commits, which is
+        useful for determining how branches have diverged.
+
+        Args:
+            repo_root: Path to the git repository root
+            ref1: First ref (branch name, commit SHA, or remote ref like origin/main)
+            ref2: Second ref (branch name, commit SHA, or remote ref like origin/main)
+
+        Returns:
+            Commit SHA of the merge base, or None if refs have no common ancestor
+        """
+        ...

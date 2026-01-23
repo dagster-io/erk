@@ -813,3 +813,16 @@ class RealGit(Git):
             operation_context=f"pull --rebase {remote} {branch}",
             cwd=cwd,
         )
+
+    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
+        """Get the merge base commit SHA between two refs."""
+        result = subprocess.run(
+            ["git", "merge-base", ref1, ref2],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()

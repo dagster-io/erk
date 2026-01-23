@@ -132,6 +132,7 @@ class FakeGit(Git):
         rebase_onto_result: RebaseResult | None = None,
         rebase_abort_raises: Exception | None = None,
         pull_rebase_raises: Exception | None = None,
+        merge_bases: dict[tuple[str, str], str] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -184,6 +185,9 @@ class FakeGit(Git):
             rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
             rebase_abort_raises: Exception to raise when rebase_abort() is called
             pull_rebase_raises: Exception to raise when pull_rebase() is called
+            merge_bases: Mapping of (ref1, ref2) -> merge base commit SHA for
+                get_merge_base(). Keys are ordered pairs, so (A, B) and (B, A)
+                are both checked.
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -228,6 +232,7 @@ class FakeGit(Git):
         self._rebase_onto_result = rebase_onto_result
         self._rebase_abort_raises = rebase_abort_raises
         self._pull_rebase_raises = pull_rebase_raises
+        self._merge_bases = merge_bases or {}
 
         # Mutation tracking
         self._deleted_branches: list[str] = []
@@ -830,6 +835,17 @@ class FakeGit(Git):
         This property is for test assertions only.
         """
         return list(self._pull_rebase_calls)
+
+    def get_merge_base(self, repo_root: Path, ref1: str, ref2: str) -> str | None:
+        """Get the merge base commit SHA between two refs.
+
+        Checks both (ref1, ref2) and (ref2, ref1) key orderings.
+        """
+        if (ref1, ref2) in self._merge_bases:
+            return self._merge_bases[(ref1, ref2)]
+        if (ref2, ref1) in self._merge_bases:
+            return self._merge_bases[(ref2, ref1)]
+        return None
 
     def create_linked_branch_ops(self) -> FakeGitBranchOps:
         """Create a FakeGitBranchOps linked to this FakeGit's state.
