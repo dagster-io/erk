@@ -89,6 +89,8 @@ Action-triggered rules that fire when you're about to perform specific actions.
 
 **CRITICAL: Before running any erk exec subcommand** → Read [erk exec Commands](cli/erk-exec-commands.md) first. Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance.
 
+**CRITICAL: Before writing PR/issue body generation in exec scripts** → Read [Exec Command Patterns](cli/exec-command-patterns.md) first. Use `_build_pr_body` and `_build_issue_comment` patterns from handle_no_changes.py for consistency and testability.
+
 **CRITICAL: Before using click.confirm() after user_output()** → Read [CLI Output Styling Guide](cli/output-styling.md) first. Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed.
 
 **CRITICAL: Before writing `__all__` to a Python file** → Read [Code Conventions](conventions.md) first. Re-export modules are forbidden. Import directly from where code is defined.

@@ -85,6 +85,7 @@ erk exec handle-no-changes \
 **User Experience:**
 
 Users will see:
+
 - A PR with the `no-changes` label explaining the scenario
 - A comment on the plan issue notifying them of the diagnostic PR
 - Recent commits listed that may represent duplicate work

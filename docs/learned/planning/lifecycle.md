@@ -403,11 +403,11 @@ When implementation produces zero code changes (typically duplicate plans or ref
 
 **Exit code semantics:**
 
-| Exit Code | Meaning                                       |
-| --------- | --------------------------------------------- |
-| 0         | Implementation succeeded with changes         |
-| 1         | No changes detected (handled gracefully)      |
-| 2         | Blocking error (workflow should fail)         |
+| Exit Code | Meaning                                  |
+| --------- | ---------------------------------------- |
+| 0         | Implementation succeeded with changes    |
+| 1         | No changes detected (handled gracefully) |
+| 2         | Blocking error (workflow should fail)    |
 
 When no changes are detected, the `erk exec handle-no-changes` command:
 

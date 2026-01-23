@@ -90,14 +90,14 @@ Steps like `submit`, `mark-ready`, `CI`, and `learn` only execute when `has_chan
 
 ## The `no-changes` Label
 
-| Property      | Value                                   |
-| ------------- | --------------------------------------- |
-| Label Name    | `no-changes`                            |
-| Color         | Orange (#FFA500)                        |
-| Meaning       | Implementation produced no code changes |
-| Applied By    | `erk exec handle-no-changes` command    |
-| User Visible  | Yes - appears in PR labels list         |
-| Searchable    | Yes - can filter PRs by label           |
+| Property     | Value                                   |
+| ------------ | --------------------------------------- |
+| Label Name   | `no-changes`                            |
+| Color        | Orange (#FFA500)                        |
+| Meaning      | Implementation produced no code changes |
+| Applied By   | `erk exec handle-no-changes` command    |
+| User Visible | Yes - appears in PR labels list         |
+| Searchable   | Yes - can filter PRs by label           |
 
 ## Duplicate Plan Detection
 
@@ -160,18 +160,18 @@ If the recent commits don't explain the no-changes detection:
 
 The `handle-no-changes` command uses exit codes to distinguish scenarios:
 
-| Exit Code | Meaning                                          |
-| --------- | ------------------------------------------------ |
-| 0         | Successfully handled no-changes scenario        |
-| 1         | Error during handling (API failures, etc.)      |
+| Exit Code | Meaning                                    |
+| --------- | ------------------------------------------ |
+| 0         | Successfully handled no-changes scenario   |
+| 1         | Error during handling (API failures, etc.) |
 
 The workflow itself uses different semantics:
 
-| Exit Code | Meaning                                   |
-| --------- | ----------------------------------------- |
+| Exit Code | Meaning                                    |
+| --------- | ------------------------------------------ |
 | 0         | Implementation succeeded with code changes |
-| 1         | No code changes detected (graceful)       |
-| 2         | Blocking error (workflow failed)          |
+| 1         | No code changes detected (graceful)        |
+| 2         | Blocking error (workflow failed)           |
 
 ## Exec Command Reference
 

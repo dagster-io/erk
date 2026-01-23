@@ -108,11 +108,11 @@ Add gating when a step:
 
 The standard erk-impl workflow gates these steps:
 
-| Step | Reason | Condition |
-|------|--------|-----------|
-| Submit PR | Avoid submitting empty PRs | `has_changes == 'true'` |
-| Mark ready | Only when implementation complete | `has_changes == 'true'` |
-| Run CI | Unnecessary for empty changes | `has_changes == 'true'` |
+| Step          | Reason                             | Condition               |
+| ------------- | ---------------------------------- | ----------------------- |
+| Submit PR     | Avoid submitting empty PRs         | `has_changes == 'true'` |
+| Mark ready    | Only when implementation complete  | `has_changes == 'true'` |
+| Run CI        | Unnecessary for empty changes      | `has_changes == 'true'` |
 | Trigger learn | Documentation only for actual work | `has_changes == 'true'` |
 
 When `has_changes` is false (no code changes detected), these steps are skipped and the user sees the diagnostic PR with guidance.
