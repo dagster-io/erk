@@ -194,7 +194,7 @@ class DryRunGitHub(GitHub):
         return self._wrapped.list_prs(repo_root, state=state)
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
     ) -> None:
         """No-op for updating PR title and body in dry-run mode."""
         pass

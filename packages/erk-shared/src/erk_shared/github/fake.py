@@ -615,7 +615,7 @@ class FakeGitHub(GitHub):
         return {branch: pr for branch, pr in self._prs.items() if pr.state == target_state}
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
     ) -> None:
         """Record PR title and body update in mutation tracking lists.
 
@@ -624,8 +624,14 @@ class FakeGitHub(GitHub):
         if not self._pr_update_should_succeed:
             raise RuntimeError("PR update failed (configured to fail)")
 
+        # Resolve body content from file if Path provided
+        if isinstance(body, Path):
+            body_content = body.read_text(encoding="utf-8")
+        else:
+            body_content = body
+
         self._updated_pr_titles.append((pr_number, title))
-        self._updated_pr_bodies.append((pr_number, body))
+        self._updated_pr_bodies.append((pr_number, body_content))
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:
         """Mark a draft PR as ready for review (fake is a no-op)."""

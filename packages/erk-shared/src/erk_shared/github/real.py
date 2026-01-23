@@ -1530,11 +1530,14 @@ query {{
         return result
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
     ) -> None:
         """Update PR title and body on GitHub.
 
         Uses REST API to preserve GraphQL quota.
+
+        When body is a Path, uses gh api's -F body=@{path} syntax to read
+        from file, avoiding shell argument length limits for large bodies.
 
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
@@ -1548,9 +1551,14 @@ query {{
             f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
             "-f",
             f"title={title}",
-            "-f",
-            f"body={body}",
         ]
+
+        # Use -F body=@file for Path input, -f body=value for string input
+        if isinstance(body, Path):
+            cmd.extend(["-F", f"body=@{body}"])
+        else:
+            cmd.extend(["-f", f"body={body}"])
+
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:

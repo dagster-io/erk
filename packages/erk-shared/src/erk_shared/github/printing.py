@@ -201,10 +201,17 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.list_prs(repo_root, state=state)
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
     ) -> None:
         """Update PR title and body with printed output."""
-        self._emit(self._format_command(f"gh pr edit {pr_number} --title <title> --body <body>"))
+        if isinstance(body, Path):
+            self._emit(
+                self._format_command(f"gh pr edit {pr_number} --title <title> --body-file {body}")
+            )
+        else:
+            self._emit(
+                self._format_command(f"gh pr edit {pr_number} --title <title> --body <body>")
+            )
         self._wrapped.update_pr_title_and_body(
             repo_root=repo_root, pr_number=pr_number, title=title, body=body
         )

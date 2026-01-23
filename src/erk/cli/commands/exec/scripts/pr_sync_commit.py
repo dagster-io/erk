@@ -33,6 +33,7 @@ Examples:
 """
 
 import json
+import tempfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -130,13 +131,21 @@ def _sync_pr_from_commit(
         footer=footer if footer else "",
     )
 
-    # Update PR
+    # Write body to temp file to avoid shell argument length limits for large bodies
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False, encoding="utf-8") as f:
+        f.write(new_body)
+        body_file = Path(f.name)
+
+    # Update PR using file-based body to handle large content
     github.update_pr_title_and_body(
         repo_root=repo_root,
         pr_number=pr_number,
         title=commit_title,
-        body=new_body,
+        body=body_file,
     )
+
+    # Clean up temp file
+    body_file.unlink(missing_ok=True)
 
     return SyncSuccess(
         success=True,
