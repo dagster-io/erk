@@ -100,7 +100,16 @@ def setup_submit_context(
 
     fake_git = FakeGit(**git_kwargs)
     fake_github = FakeGitHub(**(github_kwargs or {}))
-    fake_graphite = FakeGraphite(**(graphite_kwargs or {}))
+    # When use_graphite=False, use GraphiteDisabled sentinel to match production behavior
+    if use_graphite:
+        fake_graphite = FakeGraphite(**(graphite_kwargs or {}))
+    else:
+        from erk_shared.gateway.graphite.disabled import (
+            GraphiteDisabled,
+            GraphiteDisabledReason,
+        )
+
+        fake_graphite = GraphiteDisabled(GraphiteDisabledReason.CONFIG_DISABLED)
 
     # Update issues kwargs if provided
     if issues_kwargs:

@@ -158,6 +158,20 @@ def pr_checkout(
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
+    # Graphite integration: Track and submit if enabled (for new worktrees only)
+    if (
+        ctx.branch_manager.is_graphite_managed()
+        and not already_existed
+        and not pr.is_cross_repository
+    ):
+        parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
+        if parent is None:
+            ctx.console.info("Tracking branch with Graphite...")
+            ctx.branch_manager.track_branch(worktree_path, branch_name, pr.base_ref_name)
+            ctx.console.info("Submitting to link with Graphite...")
+            ctx.branch_manager.submit_branch(worktree_path, branch_name)
+            ctx.console.info(click.style("✓", fg="green") + " Branch linked with Graphite")
+
     # Navigate and display checkout result
     navigate_and_display_checkout(
         ctx,
