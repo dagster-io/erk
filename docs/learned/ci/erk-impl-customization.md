@@ -69,6 +69,51 @@ Use a local composite action when your repository needs:
 
 The `hashFiles()` check ensures zero overhead for repos without customization.
 
+## Step Output Gating Pattern
+
+The erk-impl workflow uses step outputs to conditionally execute downstream steps based on implementation results.
+
+### `has_changes` Gating
+
+After implementation, the workflow checks if any code changes were produced:
+
+```yaml
+- name: Check implementation outcome
+  id: handle_outcome
+  run: |
+    CHANGES=$(git diff --name-only origin/$BASE_BRANCH)
+    if [ -z "$CHANGES" ]; then
+      echo "has_changes=false" >> $GITHUB_OUTPUT
+    else
+      echo "has_changes=true" >> $GITHUB_OUTPUT
+    fi
+
+- name: Submit branch
+  if: steps.handle_outcome.outputs.has_changes == 'true'
+  run: |
+    # Only runs if there are actual changes
+```
+
+### When to Add Gating
+
+Add output gating to custom steps when:
+
+- Step should only run if implementation produced changes
+- Step depends on prior step success
+- Step is expensive and should be skipped when not needed
+
+### Common Conditions
+
+```yaml
+# Only if changes exist
+if: steps.handle_outcome.outputs.has_changes == 'true'
+
+# Only if implementation succeeded AND changes exist
+if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true'
+```
+
+See [No Code Changes Handling](../planning/no-changes-handling.md) for details on the no-changes scenario.
+
 ## Related Documentation
 
 - [Container-less CI](containerless-ci.md) - General CI setup patterns
