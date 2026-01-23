@@ -397,6 +397,12 @@ def _create_branch_and_pr(
         # while the PR is still in review.
         # See: LearnStatusValue in erk_shared/github/metadata/schemas.py
 
+    # Link PR with Graphite (if enabled)
+    if ctx.branch_manager.is_graphite_managed():
+        user_output("Linking PR with Graphite...")
+        ctx.branch_manager.submit_branch(repo.root, branch_name)
+        user_output(click.style("✓", fg="green") + " PR linked with Graphite")
+
     # Close any orphaned draft PRs for this issue
     closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)
     if closed_prs:
@@ -511,6 +517,12 @@ def _submit_single_issue(
                 ctx.github.add_label_to_pr(repo.root, pr_number, ERK_SKIP_LEARN_LABEL)
                 # FUTURE ENHANCEMENT: See comment in _create_branch_and_pr for
                 # updating parent plan's learn_status when learn plan gets a PR.
+
+            # Link PR with Graphite (if enabled)
+            if ctx.branch_manager.is_graphite_managed():
+                user_output("Linking PR with Graphite...")
+                ctx.branch_manager.submit_branch(repo.root, branch_name)
+                user_output(click.style("✓", fg="green") + " PR linked with Graphite")
 
             # Close any orphaned draft PRs
             closed_prs = _close_orphaned_draft_prs(ctx, repo.root, issue_number, pr_number)

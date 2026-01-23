@@ -6,7 +6,6 @@ ErkContext with appropriate fake implementations.
 """
 
 from erk.core.context import ErkContext
-from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.git.dry_run import DryRunGit
 from erk_shared.git.fake import FakeGit
 from erk_shared.github.fake import FakeGitHub
@@ -66,8 +65,8 @@ def build_workspace_test_context(
     # Provide defaults for other integrations if not in kwargs
     if "github" not in kwargs:
         kwargs["github"] = FakeGitHub()
-    if "graphite" not in kwargs:
-        kwargs["graphite"] = FakeGraphite()
+    # Note: Don't set graphite here - let env.build_context handle it
+    # based on use_graphite flag (uses GraphiteDisabled when disabled)
     if "shell" not in kwargs:
         kwargs["shell"] = FakeShell()
 
