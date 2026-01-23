@@ -73,16 +73,20 @@ def setup_submit_context(
     graphite_kwargs: dict | None = None,
     *,
     use_graphite: bool = False,
+    confirm_responses: list[bool] | None = None,
 ):
     """Setup common context for submit tests.
 
     Args:
         use_graphite: If True, enable Graphite integration (allows track_branch calls).
                      Default False for backwards compatibility with existing tests.
+        confirm_responses: List of boolean responses for ctx.console.confirm() calls.
+                          If None, uses default FakeConsole with no responses configured.
 
     Returns (ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root)
     """
     from erk_shared.context.types import GlobalConfig
+    from erk_shared.gateway.console.fake import FakeConsole
     from erk_shared.gateway.graphite.fake import FakeGraphite
     from erk_shared.git.fake import FakeGit
     from erk_shared.github.fake import FakeGitHub
@@ -128,6 +132,14 @@ def setup_submit_context(
     # Create GlobalConfig with use_graphite setting
     global_config = GlobalConfig.test(erk_root=repo_dir, use_graphite=use_graphite)
 
+    # Create FakeConsole with confirm responses if provided
+    fake_console = FakeConsole(
+        is_interactive=True,
+        is_stdout_tty=None,
+        is_stderr_tty=None,
+        confirm_responses=confirm_responses,
+    )
+
     ctx = context_for_test(
         cwd=repo_root,
         git=fake_git,
@@ -137,6 +149,7 @@ def setup_submit_context(
         graphite=fake_graphite,
         repo=repo,
         global_config=global_config,
+        console=fake_console,
     )
 
     return ctx, fake_git, fake_github, fake_github_issues, fake_graphite, repo_root
