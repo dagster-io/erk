@@ -163,13 +163,9 @@ def _generate_command_section(
     return lines
 
 
-SKILL_FRONTMATTER = """\
----
-name: erk-exec-reference
-description: >
-  Reference for all `erk exec` subcommands with flags and usage.
-  Use when looking up erk exec command syntax, flags, or options.
----
+REFERENCE_HEADER = """\
+<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->
+<!-- Run 'erk-dev gen-exec-reference-docs' to regenerate. -->
 """
 
 
@@ -177,13 +173,8 @@ def generate_exec_reference(commands: list[ExecCommandInfo]) -> str:
     """Generate markdown reference documentation for exec commands."""
     lines: list[str] = []
 
-    # Frontmatter for skill
-    lines.append(SKILL_FRONTMATTER.rstrip())
-    lines.append("")
-
-    # Header
-    lines.append("<!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY -->")
-    lines.append("<!-- Run 'erk-dev gen-exec-reference-docs' to regenerate. -->")
+    # Auto-generated header
+    lines.append(REFERENCE_HEADER.rstrip())
     lines.append("")
     lines.append("# erk exec Commands Reference")
     lines.append("")
