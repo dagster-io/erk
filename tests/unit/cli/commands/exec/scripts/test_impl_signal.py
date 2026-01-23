@@ -55,7 +55,7 @@ def test_impl_signal_started_no_issue_reference(impl_folder: Path, monkeypatch) 
     monkeypatch.chdir(impl_folder.parent)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    result = runner.invoke(impl_signal, ["started", "--session-id", "test-session-id"])
 
     # Should exit 0 (graceful degradation for || true pattern)
     assert result.exit_code == 0
@@ -85,7 +85,7 @@ def test_impl_signal_started_missing_impl_folder(tmp_path: Path, monkeypatch) ->
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    result = runner.invoke(impl_signal, ["started", "--session-id", "test-session-id"])
 
     # Should exit 0 (graceful degradation)
     assert result.exit_code == 0
@@ -127,7 +127,7 @@ def test_impl_signal_with_worker_impl(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
 
     runner = CliRunner()
-    result = runner.invoke(impl_signal, ["started"])
+    result = runner.invoke(impl_signal, ["started", "--session-id", "test-session-id"])
 
     assert result.exit_code == 0
     data = json.loads(result.output)
@@ -191,3 +191,60 @@ def test_get_worktree_name_handles_failure() -> None:
         result = _get_worktree_name()
 
         assert result is None
+
+
+def test_started_fails_without_session_id(impl_folder: Path, monkeypatch) -> None:
+    """Test impl-signal started returns error when no session-id provided."""
+    # Add issue.json to pass the issue reference check and reach validation
+    issue_json = impl_folder / "issue.json"
+    issue_json.write_text('{"issue_number": 123, "issue_url": "https://example.com"}')
+    monkeypatch.chdir(impl_folder.parent)
+
+    runner = CliRunner()
+    result = runner.invoke(impl_signal, ["started"])
+
+    # Should exit 0 (graceful degradation for || true pattern)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+    assert data["event"] == "started"
+    assert data["error_type"] == "session-id-required"
+    assert "Session ID required" in data["message"]
+
+
+def test_started_fails_with_empty_session_id(impl_folder: Path, monkeypatch) -> None:
+    """Test impl-signal started returns error when session-id is empty string."""
+    # Add issue.json to pass the issue reference check and reach validation
+    issue_json = impl_folder / "issue.json"
+    issue_json.write_text('{"issue_number": 123, "issue_url": "https://example.com"}')
+    monkeypatch.chdir(impl_folder.parent)
+
+    runner = CliRunner()
+    result = runner.invoke(impl_signal, ["started", "--session-id", ""])
+
+    # Should exit 0 (graceful degradation for || true pattern)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+    assert data["event"] == "started"
+    assert data["error_type"] == "session-id-required"
+    assert "Session ID required" in data["message"]
+
+
+def test_started_fails_with_whitespace_session_id(impl_folder: Path, monkeypatch) -> None:
+    """Test impl-signal started returns error when session-id is whitespace only."""
+    # Add issue.json to pass the issue reference check and reach validation
+    issue_json = impl_folder / "issue.json"
+    issue_json.write_text('{"issue_number": 123, "issue_url": "https://example.com"}')
+    monkeypatch.chdir(impl_folder.parent)
+
+    runner = CliRunner()
+    result = runner.invoke(impl_signal, ["started", "--session-id", "   "])
+
+    # Should exit 0 (graceful degradation for || true pattern)
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    assert data["success"] is False
+    assert data["event"] == "started"
+    assert data["error_type"] == "session-id-required"
+    assert "Session ID required" in data["message"]
