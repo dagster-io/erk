@@ -218,6 +218,46 @@ def _close_orphaned_draft_prs(
     return closed_prs
 
 
+def _sync_graphite_stack_metadata(
+    ctx: ErkContext,
+    repo_root: Path,
+    branch_name: str,
+) -> None:
+    """Sync Graphite stack metadata to remote after PR creation.
+
+    ERROR BOUNDARY: This function intentionally catches all exceptions from
+    submit_branch() because the PR has already been created successfully.
+    Graphite sync failure is non-fatal - it only affects stack visualization
+    in Graphite's web UI.
+
+    When sync fails, the user has a working PR but Graphite won't show the
+    correct stack relationships. Manual remediation: run `gt submit` from
+    the branch after resolving any issues.
+
+    Args:
+        ctx: ErkContext with branch_manager
+        repo_root: Repository root path
+        branch_name: Name of the branch to sync
+    """
+    if not ctx.branch_manager.is_graphite_managed():
+        return
+
+    try:
+        ctx.branch_manager.submit_branch(repo_root, branch_name)
+        user_output(click.style("✓", fg="green") + " Graphite stack synced to remote")
+    except Exception as e:
+        # ERROR BOUNDARY: PR already created, sync is best-effort
+        user_output(click.style("⚠ Warning: ", fg="yellow") + "Graphite stack sync failed")
+        user_output(f"  Error: {e}")
+        user_output("")
+        user_output("  Your PR was created successfully, but Graphite's stack metadata")
+        user_output("  was not updated. The stack may not display correctly in Graphite's UI.")
+        user_output("")
+        user_output("  To fix manually, checkout the branch and run:")
+        user_output(f"    git checkout {branch_name}")
+        user_output("    gt submit --no-interactive")
+
+
 def _validate_issue_for_submit(
     ctx: ErkContext,
     repo: RepoContext,
@@ -408,15 +448,7 @@ def _create_branch_and_pr(
 
     # Sync Graphite stack metadata to remote
     # Must happen while on branch, before local branch deletion
-    if ctx.branch_manager.is_graphite_managed():
-        try:
-            ctx.branch_manager.submit_branch(repo.root, branch_name)
-            user_output(click.style("✓", fg="green") + " Graphite stack synced to remote")
-        except Exception as e:
-            # Warn but don't fail - PR was already created successfully
-            user_output(
-                click.style("Warning: ", fg="yellow") + f"Failed to sync Graphite stack: {e}"
-            )
+    _sync_graphite_stack_metadata(ctx, repo.root, branch_name)
 
     # Restore local state
     user_output("Restoring local state...")
@@ -534,15 +566,7 @@ def _submit_single_issue(
                 )
 
             # Sync Graphite stack metadata to remote
-            if ctx.branch_manager.is_graphite_managed():
-                try:
-                    ctx.branch_manager.submit_branch(repo.root, branch_name)
-                    user_output(click.style("✓", fg="green") + " Graphite stack synced to remote")
-                except Exception as e:
-                    user_output(
-                        click.style("Warning: ", fg="yellow")
-                        + f"Failed to sync Graphite stack: {e}"
-                    )
+            _sync_graphite_stack_metadata(ctx, repo.root, branch_name)
 
             # Restore local state
             ctx.branch_manager.checkout_branch(repo.root, original_branch)
