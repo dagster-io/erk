@@ -128,8 +128,8 @@ def test_pr_sync_tracks_squashes_restacks_and_submits(tmp_path: Path) -> None:
         assert force is True  # Required because squashing rewrites history
 
 
-def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
-    """Test idempotent behavior when branch is already tracked."""
+def test_pr_sync_syncs_remote_when_already_tracked(tmp_path: Path) -> None:
+    """Test that already-tracked branches still sync with remote."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner) as env:
         env.setup_repo_structure()
@@ -171,12 +171,76 @@ def test_pr_sync_succeeds_silently_when_already_tracked(tmp_path: Path) -> None:
         assert result.exit_code == 0
         assert "already tracked by Graphite" in result.output
         assert "parent: main" in result.output
+        assert "Syncing with remote" in result.output
+        assert "Branch restacked" in result.output
 
-        # Should NOT call track/squash/restack/submit
+        # Should call sync and restack (but NOT track/squash/submit)
+        assert len(graphite.sync_calls) == 1
+        assert graphite.sync_calls[0] == (env.cwd, True, False)  # (repo_root, force, quiet)
+        assert len(graphite.restack_calls) == 1
+
+        # Should NOT re-track, re-squash, or re-submit
         assert len(graphite.track_branch_calls) == 0
         assert len(graphite.squash_branch_calls) == 0
-        assert len(graphite.restack_calls) == 0
         assert len(graphite.submit_stack_calls) == 0
+
+
+def test_pr_sync_handles_restack_conflict_when_already_tracked(tmp_path: Path) -> None:
+    """Test sync handles conflicts during restack of already-tracked branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        # Setup PR info
+        pr_info = _make_pr_info(123, "feature-branch", title="Feature PR")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            title="Feature PR",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        # Branch ALREADY tracked (has parent), but restack will fail with conflict
+        graphite = FakeGraphite(
+            branches={
+                "feature-branch": BranchMetadata(
+                    name="feature-branch",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha="abc123",
+                )
+            },
+            restack_raises=RuntimeError(
+                "CONFLICT (content): Merge conflict in file.py\n"
+                "error: could not apply abc123... commit message"
+            ),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github, graphite=graphite)
+
+        result = runner.invoke(pr_group, ["sync", "--dangerous"], obj=ctx)
+
+        # Should exit with code 1 for conflict
+        assert result.exit_code == 1
+        # Should show user-friendly conflict message
+        assert "Restack paused due to merge conflicts" in result.output
+        # Should provide guidance on resolution
+        assert "erk pr fix-conflicts --dangerous" in result.output
+        # Should NOT show traceback
+        assert "Traceback" not in result.output
+
+        # Should have called sync and attempted restack
+        assert len(graphite.sync_calls) == 1
+        assert len(graphite.restack_calls) == 1
 
 
 def test_pr_sync_graphite_mode_requires_dangerous_flag(tmp_path: Path) -> None:
