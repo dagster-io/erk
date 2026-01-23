@@ -212,13 +212,33 @@ def pr_sync(ctx: ErkContext, *, dangerous: bool) -> None:
     # Validate Graphite auth
     Ensure.gt_authenticated(ctx)
 
-    # Step 3: Check if already tracked by Graphite (idempotent)
+    # Step 3: Check if already tracked by Graphite
     parent_branch = ctx.branch_manager.get_parent_branch(repo.root, current_branch)
     if parent_branch is not None:
         user_output(
             click.style("✓", fg="green")
             + f" Branch '{current_branch}' already tracked by Graphite (parent: {parent_branch})"
         )
+
+        # Sync with remote to pull any new commits
+        user_output("Syncing with remote...")
+        ctx.graphite.sync(repo.root, force=True, quiet=False)
+        user_output(click.style("✓", fg="green") + " Synced with remote")
+
+        # Restack to incorporate parent branch changes
+        user_output("Restacking branch...")
+        restack_result = ctx.graphite.restack_idempotent(
+            repo.root, no_interactive=True, quiet=False
+        )
+        if isinstance(restack_result, RestackError):
+            if restack_result.error_type == "restack-conflict":
+                user_output(click.style("\nRestack paused due to merge conflicts.", fg="yellow"))
+                user_output("To resolve conflicts, run:")
+                user_output(click.style("  erk pr fix-conflicts --dangerous", fg="cyan"))
+                raise SystemExit(1)
+            raise click.ClickException(restack_result.message)
+        user_output(click.style("✓", fg="green") + " Branch restacked")
+
         return
 
     user_output(f"Base branch: {base_branch}")
