@@ -128,3 +128,7 @@ Action-triggered rules that fire when you're about to perform specific actions.
 **CRITICAL: Before modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing/testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **CRITICAL: Before using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL** → Read [Command Execution Strategies](tui/command-execution.md) first. Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls.
+
+**CRITICAL: Before adding user-interactive steps to command workflows** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Check if running in CI mode using $CI/$GITHUB_ACTIONS environment variables. Implement conditional branching (if CI then auto-proceed, else prompt). See learn command Step 5 pattern.
+
+**CRITICAL: Before calling blocking commands/tools in workflow orchestration** → Read [CI-Aware Commands](cli/ci-aware-commands.md) first. Verify all blocking operations have CI-aware branching. Commands assuming interactive execution will block in GitHub Actions.

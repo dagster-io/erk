@@ -198,3 +198,29 @@ last_learn_session: abc123 # Session ID that ran learn
 ```yaml
 learned_from_issue: 100 # Parent plan issue number
 ```
+
+## CI Environment Behavior
+
+The learn workflow automatically detects CI environments and adjusts its behavior:
+
+### Environment Detection
+
+The command checks for CI mode using these environment variables:
+
+- `$CI` - Set by most CI systems including GitHub Actions
+- `$GITHUB_ACTIONS` - GitHub-specific indicator
+
+### Behavioral Differences
+
+| Context     | Detection                                 | Step 5 Behavior                                    |
+| ----------- | ----------------------------------------- | -------------------------------------------------- |
+| Interactive | Neither `$CI` nor `$GITHUB_ACTIONS` set   | Prompts user to confirm which items to include     |
+| CI Mode     | Either `$CI` or `$GITHUB_ACTIONS` is set  | Auto-proceeds with all HIGH/MEDIUM priority items  |
+
+### Detection Pattern
+
+```bash
+[ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ] && echo "CI_MODE" || echo "INTERACTIVE"
+```
+
+This pattern is used in Step 5 (Present Findings) to determine whether to prompt the user or auto-proceed.
