@@ -127,11 +127,12 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     base_branch = result.base_branch
     graphite_url = result.graphite_url
 
-    action = (
-        "ready"
-        if graphite_handles_push
-        else ("created" if result.was_created else "found (already exists)")
-    )
+    if graphite_handles_push:
+        action = "ready"
+    elif result.was_created:
+        action = "created"
+    else:
+        action = "found (already exists)"
     click.echo(click.style(f"   PR #{pr_number} {action}", fg="green"))
     click.echo("")
 
