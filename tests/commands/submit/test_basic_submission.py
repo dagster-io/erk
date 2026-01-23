@@ -5,6 +5,7 @@ from pathlib import Path
 from click.testing import CliRunner
 
 from erk.cli.commands.submit import submit_cmd
+from erk_shared.gateway.graphite.types import BranchMetadata
 from tests.commands.submit.conftest import create_plan, setup_submit_context
 
 
@@ -85,6 +86,12 @@ def test_submit_tracks_branch_with_graphite(tmp_path: Path) -> None:
             "current_branches": {repo_root: "main"},
             "trunk_branches": {repo_root: "master"},
             "remote_branches": {repo_root: ["origin/main"]},
+        },
+        graphite_kwargs={
+            # main must be tracked for stacking to work
+            "branches": {
+                "main": BranchMetadata.trunk("main"),
+            },
         },
         use_graphite=True,
     )
