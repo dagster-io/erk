@@ -12,6 +12,16 @@ Automates the branch audit workflow to identify stale branches, worktrees, and P
 /audit-branches
 ```
 
+## Related Commands
+
+For assessing a single PR or plan's relevance (faster than a full audit), use:
+
+```bash
+/local:check-relevance <issue-number>
+```
+
+This provides focused, inline assessment during development workflows when you need to quickly determine if specific work is already implemented. See `/local:check-relevance` for details.
+
 ## What This Command Does
 
 1. **Collects data** about PRs, worktrees, and branches

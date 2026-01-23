@@ -9,6 +9,8 @@ tripwires:
     warning: "Use `erk exec plan-save-to-issue --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan with --objective-issue flag"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
+  - action: "implementing custom PR/plan relevance assessment logic"
+    warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
 ---
 
 # Plan Lifecycle
@@ -68,6 +70,20 @@ The erk plan lifecycle manages implementation plans from creation through automa
 | PR is draft, workflow running           | Phase 4: Implementing        |
 | PR is ready for review                  | Phase 5: Complete            |
 | Issue is CLOSED                         | Merged (PR closed the issue) |
+
+## Plan Relevance Assessment
+
+When evaluating whether a plan should be implemented or closed, use the verdict classification system from `/local:check-relevance`:
+
+| Verdict               | Overlap | Meaning                                            |
+| --------------------- | ------- | -------------------------------------------------- |
+| SUPERSEDED            | >80%    | Work is already implemented in master              |
+| PARTIALLY_IMPLEMENTED | 30-80%  | Some work exists, plan may need scoping adjustment |
+| DIFFERENT_APPROACH    | N/A     | Same problem solved with different implementation  |
+| STILL_RELEVANT        | <30%    | Work is not yet implemented, plan remains valid    |
+| NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive      |
+
+**Usage:** Run `/local:check-relevance <plan-issue-number>` to assess a plan's current relevance before deciding to implement or close it.
 
 ---
 

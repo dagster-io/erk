@@ -13,6 +13,16 @@ Audits open erk-plan issues to identify stale or completed plans that may need a
 /local:audit-plans --all     # All open plans
 ```
 
+## Related Commands
+
+For assessing a single plan's relevance without running a full audit, use:
+
+```bash
+/local:check-relevance <issue-number>
+```
+
+This provides focused, evidence-based assessment inline when reviewing or creating plans. See `/local:check-relevance` for details.
+
 ---
 
 ## Agent Instructions
