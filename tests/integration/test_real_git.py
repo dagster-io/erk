@@ -1178,3 +1178,115 @@ def test_get_behind_commit_authors_with_bot_author(tmp_path: Path) -> None:
     # Assert: Should contain the bot author name
     assert len(authors) == 1
     assert authors[0] == "github-actions[bot]"
+
+
+def test_get_merge_base_returns_common_ancestor(tmp_path: Path) -> None:
+    """Test get_merge_base returns the common ancestor commit between two branches."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Get the initial commit SHA (this will be the merge base)
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    initial_commit = result.stdout.strip()
+
+    # Create feature branch and add a commit
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+    (repo / "feature_file.txt").write_text("feature content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "feature_file.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add feature file"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    merge_base = git_ops.get_merge_base(repo, "main", "feature")
+
+    # Assert: Merge base should be the initial commit
+    assert merge_base == initial_commit
+
+
+def test_get_merge_base_with_diverged_branches(tmp_path: Path) -> None:
+    """Test get_merge_base finds common ancestor when both branches have diverged."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Get the initial commit SHA
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    initial_commit = result.stdout.strip()
+
+    # Create feature branch and add a commit
+    subprocess.run(["git", "checkout", "-b", "feature"], cwd=repo, check=True)
+    (repo / "feature_file.txt").write_text("feature content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "feature_file.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add feature file"], cwd=repo, check=True)
+
+    # Go back to main and add a different commit
+    subprocess.run(["git", "checkout", "main"], cwd=repo, check=True)
+    (repo / "main_file.txt").write_text("main content\n", encoding="utf-8")
+    subprocess.run(["git", "add", "main_file.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Add main file"], cwd=repo, check=True)
+
+    git_ops = RealGit()
+
+    # Act
+    merge_base = git_ops.get_merge_base(repo, "main", "feature")
+
+    # Assert: Merge base should still be the initial commit
+    assert merge_base == initial_commit
+
+
+def test_get_merge_base_same_branch(tmp_path: Path) -> None:
+    """Test get_merge_base with same ref returns current commit."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    # Get current commit SHA
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    current_commit = result.stdout.strip()
+
+    git_ops = RealGit()
+
+    # Act
+    merge_base = git_ops.get_merge_base(repo, "main", "main")
+
+    # Assert: Merge base of a branch with itself is the branch tip
+    assert merge_base == current_commit
+
+
+def test_get_merge_base_nonexistent_ref(tmp_path: Path) -> None:
+    """Test get_merge_base returns None for nonexistent ref."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act: Try to get merge base with nonexistent branch
+    merge_base = git_ops.get_merge_base(repo, "main", "nonexistent-branch")
+
+    # Assert: Should return None (graceful degradation)
+    assert merge_base is None
