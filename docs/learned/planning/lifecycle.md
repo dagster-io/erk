@@ -187,6 +187,28 @@ Before submission, the command validates:
 2. **State check**: Issue must be OPEN (not closed)
 3. **Clean working directory**: No uncommitted changes
 
+### Branch Reuse Detection
+
+Before creating a new branch, `erk plan submit` checks for existing local branches matching `P{issue_number}-*`:
+
+```
+Found existing local branch(es) for this issue:
+  • P123-feature-01-10-0900
+  • P123-feature-01-12-1430
+
+New branch would be: P123-feature-01-15-1600
+
+Use existing branch 'P123-feature-01-12-1430'? [Y/n]
+```
+
+**User options:**
+
+1. **Use existing** (default): Continue with the most recent branch
+2. **Delete and create new**: Remove existing branches, start fresh
+3. **Abort**: Cancel submission
+
+This prevents branch proliferation when resubmitting plans. See [Branch Reuse in Plan Submit](submit-branch-reuse.md) for details.
+
 ### Branch Creation
 
 Branches are created directly via git:
@@ -421,6 +443,25 @@ To verify implementation status:
 3. Don't rely solely on PR state (OPEN/MERGED) - a PR can be open with only plan files
 
 This pattern was discovered when verifying prerequisite PR #5577: the PR existed and was open, but only contained `.worker-impl/` plan files, not the actual PlanSynthesizer agent.
+
+### No-Changes Error Scenario
+
+When implementation produces no code changes (duplicate plan, work already merged), the workflow handles this gracefully:
+
+1. **Detects no changes**: Branch has no commits beyond base
+2. **Creates diagnostic PR**: Updates PR body with diagnostic information
+3. **Applies `no-changes` label**: Marks PR for user review
+4. **Posts issue comment**: Links issue to diagnostic PR
+5. **Exits gracefully**: Returns exit code 0 (success)
+
+**Exit code semantics:**
+
+- Exit 0 = Success (PR updated and ready for review)
+- Exit 1 = Error (GitHub API failure)
+
+The workflow treats no-changes as successful completion, not an error. Users review the diagnostic PR to determine if work is already done.
+
+See [No Code Changes Handling](no-changes-handling.md) for details.
 
 ---
 

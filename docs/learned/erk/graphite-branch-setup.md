@@ -73,6 +73,24 @@ You should see your branch in the stack output with its parent relationship.
    gt submit
    ```
 
+## Automatic Tracking on Branch Reuse
+
+When reusing an existing branch (e.g., in `erk plan submit`), the code uses LBYL (Look Before You Leap) to avoid re-tracking errors:
+
+**Pattern:**
+
+1. Check if branch is tracked: `graphite.is_branch_tracked(branch_name)`
+2. Only track if not already tracked: `graphite.track_branch(branch_name, parent)`
+
+This prevents the "branch already tracked" error that occurs when calling `gt track` on an existing Graphite branch.
+
+**When this occurs:**
+
+- `erk plan submit` with branch reuse (user chooses existing branch)
+- Any workflow that may operate on previously-tracked branches
+
+See `src/erk/cli/commands/submit.py` for the implementation.
+
 ## Common Errors
 
 ### no_parent Error

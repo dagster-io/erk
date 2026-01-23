@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "modifying business logic in src/ without adding a test"
     warning: "Bug fixes require regression tests (fails before, passes after). Features require behavior tests."
+  - action: "implementing interactive prompts with ctx.console.confirm()"
+    warning: "Ensure FakeConsole in test fixture is configured with `confirm_responses` parameter. See tests/commands/submit/test_existing_branch_detection.py for examples."
 ---
 
 # Erk Test Reference
@@ -502,6 +504,59 @@ tests/integration/
 ├── test_real_git_branch_ops.py
 └── test_real_graphite_branch_ops.py
 ```
+
+## FakeConsole for Interactive Prompts
+
+FakeConsole enables testing code that uses `ctx.console.confirm()` for user prompts.
+
+### Constructor Parameters
+
+```python
+FakeConsole(
+    is_interactive=True,        # Whether stdin is TTY
+    is_stdout_tty=None,         # Defaults to is_interactive
+    is_stderr_tty=None,         # Defaults to is_interactive
+    confirm_responses=[...],    # List of boolean responses
+)
+```
+
+### Testing Pattern
+
+Configure `confirm_responses` with the sequence of True/False values:
+
+```python
+from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+def test_with_user_confirmation() -> None:
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        ctx = env.context_for_test(
+            confirm_responses=[True, False],  # First prompt: Yes, Second: No
+        )
+
+        result = runner.invoke(cli, ["command"], obj=ctx)
+
+        assert result.exit_code == 0
+```
+
+### Assertion Helpers
+
+```python
+# Check what prompts were shown
+assert "Delete file?" in fake_console.confirm_prompts
+
+# Check captured messages
+fake_console.assert_contains("Operation complete")
+fake_console.assert_not_contains("Error")
+```
+
+### Error Behavior
+
+If `confirm()` is called but no responses remain, FakeConsole raises `AssertionError` with the prompt text. This catches missing test setup.
+
+### Example Tests
+
+See `tests/commands/submit/test_existing_branch_detection.py` for comprehensive examples of testing interactive prompts.
 
 ## Related
 
