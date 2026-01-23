@@ -779,3 +779,14 @@ class ErkDashApp(App):
                     # Extract run ID from URL for status message
                     run_id = row.learn_run_url.rsplit("/", 1)[-1]
                     self._status_bar.set_message(f"Opened learn workflow run {run_id}")
+
+    @on(PlanDataTable.ObjectiveClicked)
+    def on_objective_clicked(self, event: PlanDataTable.ObjectiveClicked) -> None:
+        """Handle click on objective cell - open objective issue in browser."""
+        if event.row_index < len(self._rows):
+            row = self._rows[event.row_index]
+            if row.objective_issue is not None and row.issue_url:
+                objective_url = _build_github_url(row.issue_url, "issues", row.objective_issue)
+                self._provider.browser.launch(objective_url)
+                if self._status_bar is not None:
+                    self._status_bar.set_message(f"Opened objective #{row.objective_issue}")

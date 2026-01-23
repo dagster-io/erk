@@ -50,6 +50,8 @@ class PlanRowData:
         learn_run_url: URL to GitHub Actions workflow run (for pending status)
         learn_display: Formatted display string with text (e.g., "- not started", "⟳ in progress")
         learn_display_icon: Icon-only display for table ("-", "⟳", "∅", "#456", "✓ #12")
+        objective_issue: Objective issue number (for linking plans to objectives)
+        objective_display: Formatted display string (e.g., "#123" or "-")
     """
 
     issue_number: int
@@ -88,6 +90,8 @@ class PlanRowData:
     learn_run_url: str | None
     learn_display: str
     learn_display_icon: str
+    objective_issue: int | None
+    objective_display: str
 
 
 @dataclass(frozen=True)

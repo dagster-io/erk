@@ -166,10 +166,13 @@ class TestExecuteCommandClosePlan:
             comments_display="-",
             learn_status=None,
             learn_plan_issue=None,
+            learn_plan_issue_closed=None,
             learn_plan_pr=None,
             learn_run_url=None,
             learn_display="- not started",
             learn_display_icon="-",
+            objective_issue=None,
+            objective_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)
@@ -229,10 +232,13 @@ class TestExecuteCommandSubmitToQueue:
             comments_display="-",
             learn_status=None,
             learn_plan_issue=None,
+            learn_plan_issue_closed=None,
             learn_plan_pr=None,
             learn_run_url=None,
             learn_display="- not started",
             learn_display_icon="-",
+            objective_issue=None,
+            objective_display="-",
         )
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor)

@@ -521,6 +521,11 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_plan_pr = extract_plan_header_learn_plan_pr(plan.body)
             learn_run_id = extract_plan_header_learn_run_id(plan.body)
 
+        # Extract objective_issue from plan body
+        objective_issue: int | None = None
+        if plan.body:
+            objective_issue = extract_plan_header_objective_issue(plan.body)
+
         # Look up learn plan issue closed state
         learn_plan_issue_closed: bool | None = None
         if learn_plan_issue is not None and learn_plan_issue in learn_issue_states:
@@ -630,6 +635,9 @@ class RealPlanDataProvider(PlanDataProvider):
                     f"https://github.com/{owner}/{repo_name}/actions/runs/{learn_run_id}"
                 )
 
+        # Format objective display
+        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+
         return PlanRowData(
             issue_number=issue_number,
             issue_url=plan.url,
@@ -667,6 +675,8 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_run_url=learn_run_url,
             learn_display=learn_display,
             learn_display_icon=learn_display_icon,
+            objective_issue=objective_issue,
+            objective_display=objective_display,
         )
 
 
