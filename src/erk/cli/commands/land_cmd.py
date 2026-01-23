@@ -876,13 +876,34 @@ def _navigate_after_land(
         # with stale index.lock files from earlier git operations
         if pull_flag:
             trunk_branch = ctx.git.detect_trunk_branch(main_repo_root)
-            user_output(f"Pulling latest changes from origin/{trunk_branch}...")
-            try:
-                ctx.git.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
-            except subprocess.CalledProcessError:
+
+            # Fetch first to get latest remote state
+            ctx.git.fetch_branch(main_repo_root, "origin", trunk_branch)
+
+            # Check if local branch can be fast-forwarded
+            divergence = ctx.git.is_branch_diverged_from_remote(
+                main_repo_root, trunk_branch, "origin"
+            )
+
+            if divergence.is_diverged:
                 user_output(
-                    click.style("Warning: ", fg="yellow") + "git pull failed (try running manually)"
+                    click.style("Warning: ", fg="yellow")
+                    + f"Local {trunk_branch} has diverged from origin/{trunk_branch}.\n"
+                    + f"  (local is {divergence.ahead} ahead, {divergence.behind} behind)\n"
+                    + "  Skipping pull. To resolve, run:\n"
+                    + f"    git fetch origin && git reset --hard origin/{trunk_branch}"
                 )
+            elif divergence.behind > 0:
+                user_output(f"Pulling latest changes from origin/{trunk_branch}...")
+                try:
+                    ctx.git.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
+                except RuntimeError:
+                    # Fallback if pull still fails for unexpected reasons
+                    user_output(
+                        click.style("Warning: ", fg="yellow")
+                        + "git pull failed (try running manually)"
+                    )
+            # If behind == 0, already up to date, no pull needed
 
         # Skip activation output in execute mode (script's cd command handles navigation)
         if skip_activation_output:
