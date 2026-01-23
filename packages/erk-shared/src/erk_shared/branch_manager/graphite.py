@@ -111,17 +111,13 @@ class GraphiteBranchManager(BranchManager):
     ) -> None:
         """Ensure local branch matches remote ref for Graphite tracking.
 
-        When creating a branch from origin/something, Graphite needs the local
-        parent branch to be an ancestor of the new branch. If local has diverged
-        from origin (e.g., after rebase/force-push), update it to match.
-
         Args:
             repo_root: Repository root directory
             local_branch: Local branch name (e.g., "feature-branch")
             remote_ref: Remote reference (e.g., "origin/feature-branch")
 
         Raises:
-            RuntimeError: If local branch is checked out and cannot be updated
+            RuntimeError: If local branch has diverged from remote
         """
         local_branches = self.git.list_local_branches(repo_root)
 
@@ -137,18 +133,15 @@ class GraphiteBranchManager(BranchManager):
         if local_sha == remote_sha:
             return  # Already in sync
 
-        # Local and remote diverged - check if safe to update
-        checked_out_path = self.git.is_branch_checked_out(repo_root, local_branch)
-        if checked_out_path is not None:
-            raise RuntimeError(
-                f"Cannot update diverged branch '{local_branch}' - "
-                f"it is checked out at {checked_out_path}. "
-                f"Please sync your local branch with origin/{local_branch}."
-            )
-
-        # Safe to update: delete and recreate from remote
-        self.git_branch_ops.delete_branch(repo_root, local_branch, force=True)
-        self.git_branch_ops.create_branch(repo_root, local_branch, remote_ref)
+        # Local and remote diverged - fail with clear instructions
+        raise RuntimeError(
+            f"Local branch '{local_branch}' has diverged from {remote_ref}.\n"
+            f"Graphite requires the local branch to match the remote for stack tracking.\n\n"
+            f"To fix, sync your local branch:\n"
+            f"  git checkout {local_branch} && git reset --hard {remote_ref}\n\n"
+            f"Or if you have local changes to keep, push them first:\n"
+            f"  git checkout {local_branch} && git push origin {local_branch}"
+        )
 
     def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch with Graphite metadata cleanup.
