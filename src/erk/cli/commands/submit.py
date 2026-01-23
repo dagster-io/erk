@@ -26,7 +26,11 @@ from erk_shared.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
 )
-from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
+from erk_shared.github.metadata.plan_header import (
+    extract_plan_header_branch_name,
+    extract_plan_header_learned_from_issue,
+    update_plan_header_dispatch,
+)
 from erk_shared.github.parsing import (
     construct_pr_url,
     construct_workflow_run_url,
@@ -86,6 +90,28 @@ def is_issue_learn_plan(labels: list[str]) -> bool:
         True if the issue has the erk-learn label, False otherwise
     """
     return "erk-learn" in labels
+
+
+def get_learn_plan_parent_branch(ctx: ErkContext, repo_root: Path, issue_body: str) -> str | None:
+    """Get the parent branch for a learn plan.
+
+    Learn plans should stack on their parent plan's branch.
+    Extracts learned_from_issue, fetches parent, returns its branch_name.
+
+    Args:
+        ctx: ErkContext with issue operations
+        repo_root: Repository root path
+        issue_body: The learn plan issue body
+
+    Returns:
+        Parent plan's branch_name if found, None otherwise
+    """
+    learned_from = extract_plan_header_learned_from_issue(issue_body)
+    if learned_from is None:
+        return None
+
+    parent_issue = ctx.issues.get_issue(repo_root, learned_from)
+    return extract_plan_header_branch_name(parent_issue.body)
 
 
 def load_workflow_config(repo_root: Path, workflow_name: str) -> dict[str, str]:
@@ -738,6 +764,28 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
             target_branch = ctx.git.detect_trunk_branch(repo.root)
         else:
             target_branch = original_branch
+
+    # For single-issue learn plan submissions, auto-detect parent branch
+    if len(issue_numbers) == 1 and base is None:
+        try:
+            issue = ctx.issues.get_issue(repo.root, issue_numbers[0])
+            if is_issue_learn_plan(issue.labels):
+                parent_branch = get_learn_plan_parent_branch(ctx, repo.root, issue.body)
+                if parent_branch is not None:
+                    if ctx.git.branch_exists_on_remote(repo.root, "origin", parent_branch):
+                        target_branch = parent_branch
+                        user_output(
+                            f"Learn plan detected, stacking on parent branch: "
+                            f"{click.style(parent_branch, fg='cyan')}"
+                        )
+                    else:
+                        user_output(
+                            click.style("Warning: ", fg="yellow")
+                            + f"Parent branch '{parent_branch}' not on remote, using trunk"
+                        )
+        except RuntimeError:
+            # Issue fetch failed - will be caught again in validation phase
+            pass
 
     # Get GitHub username (authentication already validated)
     _, username, _ = ctx.github.check_auth_status()
