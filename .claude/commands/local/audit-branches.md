@@ -448,3 +448,13 @@ When deleting local branches, the command handles three special cases:
 - If a branch deletion fails, continue with others and report failures at end
 - If PR close fails, note it and continue
 - Always run `git worktree prune` at the end regardless of other operations
+
+## Related Commands
+
+For assessing a single PR or plan's relevance (faster than a full audit), use:
+
+```bash
+/local:check-relevance <issue-number>
+```
+
+This provides focused, inline assessment during development workflows when you need to quickly determine if specific work is already implemented.
