@@ -109,16 +109,33 @@ def _prompt_existing_branch_action(
     repo_root: Path,
     existing_branches: list[str],
     new_branch_name: str,
+    *,
+    force: bool,
 ) -> str | None:
     """Prompt user to decide what to do with existing branch(es).
+
+    Args:
+        ctx: ErkContext with branch operations
+        repo_root: Repository root path
+        existing_branches: List of existing branch names matching P{issue}-* pattern
+        new_branch_name: Name for the new branch if creating fresh
+        force: If True, skip prompts and delete existing branches to create fresh
 
     Returns:
         - Branch name to use (existing branch)
         - None to signal "create new" (after deleting existing)
 
     Raises:
-        SystemExit: If user aborts
+        SystemExit: If user aborts (only when force=False)
     """
+    if force:
+        # Force mode: delete all existing branches and signal to create new
+        user_output(f"\nDeleting {len(existing_branches)} existing branch(es) (--force mode):")
+        for branch in existing_branches:
+            ctx.branch_manager.delete_branch(repo_root, branch, force=True)
+            user_output(f"  Deleted: {branch}")
+        return None
+
     user_output("\nFound existing local branch(es) for this issue:")
     for branch in existing_branches:
         user_output(f"  • {branch}")
@@ -297,6 +314,8 @@ def _validate_issue_for_submit(
     repo: RepoContext,
     issue_number: int,
     base_branch: str,
+    *,
+    force: bool,
 ) -> ValidatedIssue:
     """Validate a single issue for submission.
 
@@ -308,6 +327,7 @@ def _validate_issue_for_submit(
         repo: Repository context
         issue_number: GitHub issue number to validate
         base_branch: Base branch for PR (trunk or custom feature branch)
+        force: If True, skip prompts and delete existing branches to create fresh
 
     Raises:
         SystemExit: If issue doesn't exist, missing label, or closed.
@@ -351,7 +371,9 @@ def _validate_issue_for_submit(
     new_branch_name = base_branch_name + timestamp_suffix
 
     if existing_branches:
-        chosen = _prompt_existing_branch_action(ctx, repo.root, existing_branches, new_branch_name)
+        chosen = _prompt_existing_branch_action(
+            ctx, repo.root, existing_branches, new_branch_name, force=force
+        )
         branch_name = chosen if chosen is not None else new_branch_name
     else:
         branch_name = new_branch_name
@@ -798,8 +820,16 @@ def _submit_single_issue(
     default=None,
     help="Base branch for PR (defaults to current branch).",
 )
+@click.option(
+    "-f",
+    "--force",
+    is_flag=True,
+    help="Delete existing branches and create fresh without prompting.",
+)
 @click.pass_obj
-def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None) -> None:
+def submit_cmd(
+    ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None, force: bool
+) -> None:
     """Submit issues for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
@@ -892,7 +922,9 @@ def submit_cmd(ctx: ErkContext, issue_numbers: tuple[int, ...], base: str | None
     validated: list[ValidatedIssue] = []
     for issue_number in issue_numbers:
         user_output(f"Validating issue #{issue_number}...")
-        validated_issue = _validate_issue_for_submit(ctx, repo, issue_number, target_branch)
+        validated_issue = _validate_issue_for_submit(
+            ctx, repo, issue_number, target_branch, force=force
+        )
         validated.append(validated_issue)
 
     user_output("")

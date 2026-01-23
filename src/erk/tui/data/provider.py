@@ -374,8 +374,9 @@ class RealPlanDataProvider(PlanDataProvider):
             issue_url: The issue URL (unused, kept for interface consistency)
         """
         # Run erk plan submit command from the repository root
+        # Pass -f to skip prompts since subprocess has no interactive terminal
         subprocess.run(
-            ["erk", "plan", "submit", str(issue_number)],
+            ["erk", "plan", "submit", str(issue_number), "-f"],
             cwd=self._location.root,
             check=True,
             capture_output=True,

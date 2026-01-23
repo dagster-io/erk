@@ -672,8 +672,9 @@ class PlanDetailScreen(ModalScreen):
         elif command_id == "submit_to_queue":
             if row.issue_url and self._repo_root is not None:
                 # Use streaming output for submit command
+                # Pass -f to skip prompts since TUI sets stdin=subprocess.DEVNULL
                 self.run_streaming_command(
-                    ["erk", "plan", "submit", str(row.issue_number)],
+                    ["erk", "plan", "submit", str(row.issue_number), "-f"],
                     cwd=self._repo_root,
                     title=f"Submitting Plan #{row.issue_number}",
                 )

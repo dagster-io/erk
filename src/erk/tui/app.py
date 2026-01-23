@@ -642,9 +642,10 @@ class ErkDashApp(App):
                 )
                 self.push_screen(detail_screen)
                 # Trigger the streaming command after screen is mounted
+                # Pass -f to skip prompts since TUI sets stdin=subprocess.DEVNULL
                 detail_screen.call_after_refresh(
                     lambda: detail_screen.run_streaming_command(
-                        ["erk", "plan", "submit", str(row.issue_number)],
+                        ["erk", "plan", "submit", str(row.issue_number), "-f"],
                         cwd=self._provider.repo_root,
                         title=f"Submitting Plan #{row.issue_number}",
                     )
