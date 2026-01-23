@@ -1,5 +1,6 @@
 """Data provider for TUI plan table."""
 
+import logging
 import subprocess
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -36,6 +37,8 @@ from erk_shared.github.metadata.plan_header import (
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
+
+logger = logging.getLogger(__name__)
 
 
 class PlanDataProvider(ABC):
@@ -269,9 +272,9 @@ class RealPlanDataProvider(PlanDataProvider):
             try:
                 issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
                 result[issue_number] = issue_info.state == "CLOSED"
-            except RuntimeError:
-                # Issue not found or API error - skip
-                pass
+            except RuntimeError as e:
+                # Issue not found or API error - log and skip
+                logger.debug("Could not fetch learn issue %d: %s", issue_number, e)
         return result
 
     def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
