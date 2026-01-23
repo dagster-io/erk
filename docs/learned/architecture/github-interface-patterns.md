@@ -105,8 +105,49 @@ This pattern:
 - Simplifies call site code (no need to make additional fetches)
 - Makes the data contract explicit via the type definition
 
+## Atomic Multi-Step Operations
+
+When multiple API calls must succeed together, combine them into a single exec command.
+
+### When to Combine Operations
+
+- **Semantic atomicity**: Operations only make sense together (close issue + add comment)
+- **Ordering dependency**: Second operation depends on first completing
+- **Reusability**: Multiple callers need the same combination
+
+### Implementation Pattern
+
+Order operations so failures leave the system in a valid state. Include partial success data in errors:
+
+```python
+# First operation
+comment_id = github_issues.add_comment(repo_root, issue_number, comment)
+
+# Second operation - include first result in error if this fails
+try:
+    github_issues.close_issue(repo_root, issue_number)
+except RuntimeError as e:
+    click.echo(json.dumps({
+        "success": False,
+        "error": f"Failed to close: {e}",
+        "comment_id": comment_id,  # Caller knows comment exists
+    }))
+    raise SystemExit(1) from e
+```
+
+### Trade-offs
+
+| Combined Command          | Separate Commands           |
+| ------------------------- | --------------------------- |
+| Single call for caller    | More flexible composition   |
+| Consistent error handling | Caller controls retry logic |
+| Atomic semantics          | Partial success possible    |
+
+**Source example**: `src/erk/cli/commands/exec/scripts/close_issue_with_comment.py`
+
 ## Related Topics
 
 - [GitHub GraphQL API Patterns](github-graphql.md) - GraphQL queries and mutations
 - [GitHub URL Parsing Architecture](github-parsing.md) - Parsing URLs and identifiers
 - [Subprocess Wrappers](subprocess-wrappers.md) - Running `gh` commands safely
+- [Exec Script Implementation Patterns](../cli/exec-script-patterns.md) - Creating exec commands
