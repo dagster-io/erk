@@ -20,6 +20,7 @@ from erk_shared.impl_folder import (
     read_issue_reference,
     read_last_dispatched_run_id,
     read_plan_author,
+    resolve_issue_reference,
     save_issue_reference,
     validate_issue_linkage,
 )
@@ -760,3 +761,98 @@ def test_validate_issue_linkage_worker_impl(tmp_path: Path) -> None:
     result = validate_issue_linkage(worker_impl_dir, "P555-worker-feature-01-04-1234")
 
     assert result == 555
+
+
+# ============================================================================
+# resolve_issue_reference Tests
+# ============================================================================
+
+
+def test_resolve_issue_reference_from_impl_folder(tmp_path: Path) -> None:
+    """Test resolution from .impl/issue.json when it exists and is valid."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    save_issue_reference(impl_dir, 42, "https://github.com/owner/repo/issues/42")
+
+    result = resolve_issue_reference(
+        impl_dir=impl_dir,
+        branch_name="P99-different-branch",  # Different issue number in branch
+        repo_owner="owner",
+        repo_name="repo",
+    )
+
+    assert result.source == "impl_folder"
+    assert result.issue_number == 42
+    assert result.issue_url == "https://github.com/owner/repo/issues/42"
+
+
+def test_resolve_issue_reference_from_branch_name(tmp_path: Path) -> None:
+    """Test resolution from branch name P{number} pattern."""
+    impl_dir = tmp_path / ".impl"
+    # Don't create impl_dir - should fall back to branch name
+
+    result = resolve_issue_reference(
+        impl_dir=impl_dir,
+        branch_name="P123-add-feature-01-04-1234",
+        repo_owner="myorg",
+        repo_name="myrepo",
+    )
+
+    assert result.source == "branch_name"
+    assert result.issue_number == 123
+    assert result.issue_url == "https://github.com/myorg/myrepo/issues/123"
+
+
+def test_resolve_issue_reference_branch_name_no_repo_info(tmp_path: Path) -> None:
+    """Test resolution from branch name when repo info is not provided."""
+    impl_dir = tmp_path / ".impl"
+    # Don't create impl_dir
+
+    result = resolve_issue_reference(
+        impl_dir=impl_dir,
+        branch_name="P456-some-feature",
+        repo_owner=None,
+        repo_name=None,
+    )
+
+    assert result.source == "branch_name"
+    assert result.issue_number == 456
+    assert result.issue_url is None  # No URL without repo info
+
+
+def test_resolve_issue_reference_neither_found(tmp_path: Path) -> None:
+    """Test resolution returns 'none' source when no issue can be found."""
+    impl_dir = tmp_path / ".impl"
+    # Don't create impl_dir
+
+    result = resolve_issue_reference(
+        impl_dir=impl_dir,
+        branch_name="feature-branch",  # No P{number} pattern
+        repo_owner="owner",
+        repo_name="repo",
+    )
+
+    assert result.source == "none"
+    assert result.issue_number is None
+    assert result.issue_url is None
+
+
+def test_resolve_issue_reference_impl_takes_precedence(tmp_path: Path) -> None:
+    """Test that .impl/issue.json takes priority over branch name pattern."""
+    impl_dir = tmp_path / ".impl"
+    impl_dir.mkdir()
+    # Save issue 100 to impl folder
+    save_issue_reference(impl_dir, 100, "https://github.com/org/repo/issues/100")
+
+    # Branch name has issue 200
+    result = resolve_issue_reference(
+        impl_dir=impl_dir,
+        branch_name="P200-different-issue",
+        repo_owner="org",
+        repo_name="repo",
+    )
+
+    # impl_folder should win
+    assert result.source == "impl_folder"
+    assert result.issue_number == 100
+    assert result.issue_url == "https://github.com/org/repo/issues/100"
