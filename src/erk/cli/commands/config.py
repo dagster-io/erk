@@ -278,8 +278,9 @@ def config_list(ctx: ErkContext) -> None:
         user_output(f"  interactive_claude.verbose={_format_config_value(ic.verbose)}")
         user_output(f"  interactive_claude.permission_mode={ic.permission_mode}")
         user_output(f"  interactive_claude.dangerous={_format_config_value(ic.dangerous)}")
-        allow_dangerous_val = _format_config_value(ic.allow_dangerous)
-        user_output(f"  interactive_claude.allow_dangerous={allow_dangerous_val}")
+        user_output(
+            f"  interactive_claude.allow_dangerous={_format_config_value(ic.allow_dangerous)}"
+        )
     else:
         user_output("  (not configured - run 'erk init' to create)")
 
