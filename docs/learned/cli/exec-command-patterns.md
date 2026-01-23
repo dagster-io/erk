@@ -87,9 +87,56 @@ def _build_pr_body(
 ) -> str:
 ```
 
+## Graceful Degradation Exit Pattern
+
+Exec scripts that may be called with `|| true` safety nets (common in CI/workflow contexts) must follow a graceful degradation contract:
+
+### Requirements
+
+1. **Always exit 0**: Never exit with non-zero codes, even for validation failures
+2. **Return structured JSON errors**: Include `success: false` and descriptive error fields
+3. **Fail fast**: Validate preconditions before expensive operations (network calls, context initialization)
+
+### Why Exit 0?
+
+Exec scripts are often invoked in workflow contexts like:
+
+```bash
+erk exec impl-signal started --session-id "$SESSION_ID" || true
+```
+
+If the script exits non-zero, the `|| true` silently swallows the error. By exiting 0 with a JSON error response, callers can parse the response and handle failures appropriately.
+
+### Error Response Structure
+
+```json
+{
+  "success": false,
+  "error_type": "<error-category>",
+  "message": "<human-readable description>"
+}
+```
+
+### Example: impl-signal Validation
+
+```python
+if not session_id or not session_id.strip():
+    return json.dumps({
+        "success": False,
+        "event": "started",
+        "error_type": "session-id-required",
+        "message": "Session ID required for impl-signal started."
+    })
+    # Note: Function returns normally (exit 0), not sys.exit(1)
+```
+
+This differs from typical CLI error handling where non-zero exits indicate failure. For exec scripts in workflow contexts, exit 0 + JSON error response enables proper error handling by callers.
+
 ## Implementation Reference
 
-See `src/erk/cli/commands/exec/scripts/handle_no_changes.py` for the canonical implementation of these patterns.
+See `src/erk/cli/commands/exec/scripts/handle_no_changes.py` for the canonical implementation of PR body generation patterns.
+
+See `src/erk/cli/commands/exec/scripts/impl_signal.py` for the canonical implementation of graceful degradation and validation patterns.
 
 ## Related Topics
 
