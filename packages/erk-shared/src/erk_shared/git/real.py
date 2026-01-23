@@ -139,14 +139,6 @@ class RealGit(Git):
         )
         return [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
 
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create a local tracking branch from a remote branch."""
-        run_subprocess_with_context(
-            cmd=["git", "branch", "--track", branch, remote_ref],
-            operation_context=f"create tracking branch '{branch}' from '{remote_ref}'",
-            cwd=repo_root,
-        )
-
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory."""
         result = subprocess.run(
@@ -191,42 +183,6 @@ class RealGit(Git):
         if result.returncode != 0:
             return False
         return bool(result.stdout.strip())
-
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout a branch in the given directory."""
-        # Wait for index lock if another git operation is in progress
-        wait_for_index_lock(cwd, self._time)
-
-        run_subprocess_with_context(
-            cmd=["git", "checkout", branch],
-            operation_context=f"checkout branch '{branch}'",
-            cwd=cwd,
-        )
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout a detached HEAD at the given ref."""
-        run_subprocess_with_context(
-            cmd=["git", "checkout", "--detach", ref],
-            operation_context=f"checkout detached HEAD at '{ref}'",
-            cwd=cwd,
-        )
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create a new branch without checking it out."""
-        run_subprocess_with_context(
-            cmd=["git", "branch", branch_name, start_point],
-            operation_context=f"create branch '{branch_name}' from '{start_point}'",
-            cwd=cwd,
-        )
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch."""
-        flag = "-D" if force else "-d"
-        run_subprocess_with_context(
-            cmd=["git", "branch", flag, branch_name],
-            operation_context=f"delete branch '{branch_name}'",
-            cwd=cwd,
-        )
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get the commit SHA at the head of a branch."""

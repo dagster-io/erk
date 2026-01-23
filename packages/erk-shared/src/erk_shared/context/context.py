@@ -33,6 +33,7 @@ from erk_shared.gateway.erk_installation.abc import ErkInstallation
 from erk_shared.gateway.graphite.abc import Graphite
 from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+from erk_shared.gateway.graphite.dry_run import DryRunGraphite
 from erk_shared.gateway.shell.abc import Shell
 from erk_shared.gateway.time.abc import Time
 from erk_shared.git.abc import Git
@@ -172,7 +173,11 @@ class ErkContext:
         This provides a unified interface for branch operations that
         handles Graphite vs plain Git differences transparently.
         """
-        if isinstance(self.graphite, GraphiteDisabled):
+        # Check if Graphite is disabled (also handles DryRunGraphite wrapping GraphiteDisabled)
+        graphite = self.graphite
+        if isinstance(graphite, DryRunGraphite):
+            graphite = graphite._wrapped
+        if isinstance(graphite, GraphiteDisabled):
             return GitBranchManager(
                 git=self.git,
                 git_branch_ops=self.git_branch_ops,

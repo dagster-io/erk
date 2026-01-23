@@ -299,7 +299,7 @@ def _validate_existing_assignment(
         + f"Fixing stale state: checking out '{branch_name}' in {existing.slot_name} "
         + f"(was '{actual_branch}')"
     )
-    ctx.git.checkout_branch(existing.worktree_path, branch_name)
+    ctx.branch_manager.checkout_branch(existing.worktree_path, branch_name)
     return ExistingAssignmentValidation(
         result=SlotAllocationResult(
             slot_name=existing.slot_name,
@@ -504,7 +504,7 @@ def allocate_slot_for_branch(
         slot_name, worktree_path = inactive_slot
         if cleanup_artifacts:
             cleanup_worktree_artifacts(worktree_path)
-        ctx.git.checkout_branch(worktree_path, branch_name)
+        ctx.branch_manager.checkout_branch(worktree_path, branch_name)
     else:
         # Fall back to on-demand slot creation
         slot_num = find_next_available_slot(state, repo.worktrees_dir)
@@ -540,7 +540,7 @@ def allocate_slot_for_branch(
                 # Worktree exists - clean up and checkout
                 if cleanup_artifacts:
                     cleanup_worktree_artifacts(worktree_path)
-                ctx.git.checkout_branch(worktree_path, branch_name)
+                ctx.branch_manager.checkout_branch(worktree_path, branch_name)
             else:
                 # Worktree doesn't exist (orphaned assignment) - create it
                 worktree_path.mkdir(parents=True, exist_ok=True)

@@ -67,36 +67,6 @@ def test_list_remote_branches_strips_whitespace() -> None:
         assert branches == ["origin/main", "origin/feature"]
 
 
-def test_create_tracking_branch() -> None:
-    """Test git branch --track with mocked subprocess."""
-    with patch("subprocess.run") as mock_run:
-        # Act: Call the method
-        ops = RealGit()
-        ops.create_tracking_branch(Path("/test/repo"), "feature-1", "origin/feature-1")
-
-        # Assert: Verify command construction
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ["git", "branch", "--track", "feature-1", "origin/feature-1"]
-        assert call_args[1]["cwd"] == Path("/test/repo")
-        assert call_args[1]["capture_output"] is True
-        assert call_args[1]["text"] is True
-        assert call_args[1]["check"] is True
-
-
-def test_create_tracking_branch_with_different_names() -> None:
-    """Test git branch --track with local and remote names different."""
-    with patch("subprocess.run") as mock_run:
-        # Act: Call the method with different branch names
-        ops = RealGit()
-        ops.create_tracking_branch(Path("/test/repo"), "local-name", "upstream/remote-name")
-
-        # Assert: Verify command construction
-        mock_run.assert_called_once()
-        call_args = mock_run.call_args
-        assert call_args[0][0] == ["git", "branch", "--track", "local-name", "upstream/remote-name"]
-
-
 def test_branch_exists_on_remote_when_exists() -> None:
     """Test git ls-remote returns True when branch exists on remote."""
     with patch("subprocess.run") as mock_run:

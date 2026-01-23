@@ -118,36 +118,6 @@ class Graphite(ABC):
         ...
 
     @abstractmethod
-    def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
-        """Track a branch with Graphite.
-
-        Uses `gt track` to register a branch in Graphite's cache. This is needed
-        when branches are created with direct git operations (git branch) instead
-        of gt create.
-
-        Args:
-            cwd: Working directory where gt track should run
-            branch_name: Name of the branch to track
-            parent_branch: Name of the parent branch in the stack
-        """
-        ...
-
-    @abstractmethod
-    def submit_branch(self, repo_root: Path, branch_name: str, *, quiet: bool) -> None:
-        """Submit (force-push) a branch to GitHub.
-
-        Uses `gt submit` to push a branch that was rebased by `gt sync -f`.
-        This is typically called after merging a PR to push the rebased remaining
-        branches in a stack to GitHub.
-
-        Args:
-            repo_root: Repository root directory
-            branch_name: Name of the branch to submit
-            quiet: If True, pass --quiet flag to gt submit for minimal output
-        """
-        ...
-
-    @abstractmethod
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check Graphite authentication status.
 
@@ -330,22 +300,6 @@ class Graphite(ABC):
 
         Raises:
             subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
-        """
-        ...
-
-    @abstractmethod
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
-        """Delete a branch using Graphite's gt delete command.
-
-        Uses `gt delete -f <branch>` to delete a branch and clean up Graphite
-        metadata. The -f flag is always used to force deletion without prompts.
-
-        Args:
-            repo_root: Repository root directory
-            branch: Name of the branch to delete
-
-        Raises:
-            RuntimeError: If gt delete fails
         """
         ...
 

@@ -219,59 +219,6 @@ class RealGraphite(Graphite):
         # ancestors already contains the current branch
         return ancestors + descendants
 
-    def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
-        """Track a branch with Graphite.
-
-        Uses `gt track --branch <branch> --parent <parent>` to register a branch
-        in Graphite's cache. This is needed when branches are created with direct
-        git operations (git branch) instead of gt create.
-
-        Args:
-            cwd: Working directory where gt track should run
-            branch_name: Name of the branch to track
-            parent_branch: Name of the parent branch in the stack
-        """
-        run_subprocess_with_context(
-            cmd=["gt", "track", "--branch", branch_name, "--parent", parent_branch],
-            operation_context=f"track branch '{branch_name}' with Graphite",
-            cwd=cwd,
-        )
-
-        # Invalidate branches cache - gt track modifies Graphite metadata
-        self._branches_cache = None
-
-    def submit_branch(self, repo_root: Path, branch_name: str, *, quiet: bool) -> None:
-        """Submit (force-push) a branch to GitHub.
-
-        Uses `gt submit --branch <branch> --no-edit` to push a branch that was
-        rebased by `gt sync -f`. This ensures GitHub PRs show the rebased commits
-        rather than stale versions with duplicate commits.
-
-        Error output (stderr) is always captured to ensure RuntimeError
-        includes complete error messages for debugging. In verbose mode (!quiet),
-        stderr is displayed to the user after successful execution.
-
-        Args:
-            repo_root: Repository root directory
-            branch_name: Name of the branch to submit
-            quiet: If True, pass --quiet flag to gt submit for minimal output
-        """
-        cmd = ["gt", "submit", "--branch", branch_name, "--no-edit", "--no-interactive"]
-        if quiet:
-            cmd.append("--quiet")
-
-        result = run_subprocess_with_context(
-            cmd=cmd,
-            operation_context=f"submit branch '{branch_name}' with Graphite",
-            cwd=repo_root,
-            stdout=DEVNULL if quiet else sys.stdout,
-            stderr=subprocess.PIPE,
-        )
-
-        # Display stderr in verbose mode after successful execution
-        if not quiet and result.stderr:
-            user_output(result.stderr, nl=False)
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Check Graphite authentication status.
 
@@ -406,15 +353,4 @@ class RealGraphite(Graphite):
             user_output(result.stderr, nl=False)
 
         # Invalidate branches cache - gt continue modifies Graphite metadata
-        self._branches_cache = None
-
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
-        """Delete a branch using Graphite's gt delete command."""
-        run_subprocess_with_context(
-            cmd=["gt", "delete", "-f", branch],
-            operation_context=f"delete branch '{branch}' with Graphite",
-            cwd=repo_root,
-        )
-
-        # Invalidate branches cache - gt delete modifies Graphite metadata
         self._branches_cache = None

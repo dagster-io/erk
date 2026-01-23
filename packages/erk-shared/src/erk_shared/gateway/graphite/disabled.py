@@ -81,14 +81,6 @@ class GraphiteDisabled(Graphite):
         """Return None - branch not tracked when disabled."""
         return None
 
-    def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -> None:
-        """Raise error - track_branch is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)
-
-    def submit_branch(self, repo_root: Path, branch_name: str, *, quiet: bool) -> None:
-        """Raise error - submit_branch is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)
-
     def check_auth_status(self) -> tuple[bool, str | None, str | None]:
         """Return not authenticated - auth not applicable when disabled."""
         return (False, None, None)
@@ -115,8 +107,4 @@ class GraphiteDisabled(Graphite):
 
     def continue_restack(self, repo_root: Path, *, quiet: bool = False) -> None:
         """Raise error - continue_restack is a mutating operation."""
-        raise GraphiteDisabledError(self.reason)
-
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
-        """Raise error - delete_branch is a mutating operation."""
         raise GraphiteDisabledError(self.reason)

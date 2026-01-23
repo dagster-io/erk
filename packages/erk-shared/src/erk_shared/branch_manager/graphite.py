@@ -70,30 +70,37 @@ class GraphiteBranchManager(BranchManager):
     def create_branch(self, repo_root: Path, branch_name: str, base_branch: str) -> None:
         """Create a new branch using Graphite.
 
-        Uses `gt create` via the Graphite gateway. This creates the branch
-        and registers it with Graphite for stack tracking.
+        Creates the branch via git and registers it with Graphite for stack tracking.
+        Does NOT checkout the branch - leaves the current branch unchanged.
 
-        Note: This currently uses track_branch after git branch creation
-        since there's no direct `gt create` method in the gateway yet.
-        Future work may add a direct create method.
+        Note: Graphite's `gt track` requires the branch to exist and be checked out,
+        so we temporarily checkout the new branch to track it, then checkout back.
 
         Args:
             repo_root: Repository root directory
             branch_name: Name of the new branch
             base_branch: Name of the parent branch (can be local or remote ref like origin/main)
         """
-        # First checkout the base branch (may result in detached HEAD if remote ref)
-        self.git_branch_ops.checkout_branch(repo_root, base_branch)
-        # Create the branch using git (from base_branch)
+        # Save current branch to restore later
+        current_branch = self.git.get_current_branch(repo_root)
+
+        # Create the branch from base_branch
         self.git_branch_ops.create_branch(repo_root, branch_name, base_branch)
-        # Checkout the new branch
+
+        # Checkout the new branch temporarily to track it with Graphite
+        # (gt track requires the branch to be checked out)
         self.git_branch_ops.checkout_branch(repo_root, branch_name)
+
         # Track it with Graphite - use local branch name for parent
         # (gt track doesn't accept remote refs like origin/branch)
         parent_for_graphite = base_branch.removeprefix("origin/")
         self.graphite_branch_ops.track_branch(repo_root, branch_name, parent_for_graphite)
 
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
+        # Restore original branch so callers can create worktrees with the new branch
+        if current_branch is not None:
+            self.git_branch_ops.checkout_branch(repo_root, current_branch)
+
+    def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch with Graphite metadata cleanup.
 
         Always uses gt delete when tracked (handles diverged branches gracefully).
@@ -102,11 +109,14 @@ class GraphiteBranchManager(BranchManager):
         Args:
             repo_root: Repository root directory
             branch: Branch name to delete
+            force: If True, use -D (force delete) for non-Graphite branches.
+                   Graphite-tracked branches always use gt delete which handles
+                   diverged branches gracefully.
         """
         # LBYL: Check if branch is tracked by Graphite
         if not self.graphite.is_branch_tracked(repo_root, branch):
             # Branch not in Graphite - use plain git
-            self.git_branch_ops.delete_branch(repo_root, branch, force=True)
+            self.git_branch_ops.delete_branch(repo_root, branch, force=force)
             return
 
         # Branch is tracked - use gt delete which:

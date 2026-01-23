@@ -97,26 +97,6 @@ def test_fake_gitops_get_git_common_dir() -> None:
     assert common_dir == git_dir
 
 
-def test_fake_gitops_checkout_branch() -> None:
-    """Test that FakeGit can checkout branches."""
-    cwd = Path("/repo")
-    git_ops = FakeGit(current_branches={cwd: "main"})
-
-    git_ops.checkout_branch(cwd, "feature")
-
-    assert git_ops.get_current_branch(cwd) == "feature"
-
-
-def test_fake_gitops_delete_branch_tracking() -> None:
-    """Test that FakeGit tracks deleted branches."""
-    cwd = Path("/repo")
-    git_ops = FakeGit()
-
-    git_ops.delete_branch(cwd, "old-branch", force=True)
-
-    assert "old-branch" in git_ops.deleted_branches
-
-
 def test_fake_gitops_detached_head() -> None:
     """Test FakeGit with detached HEAD (None branch)."""
     cwd = Path("/repo")
@@ -269,27 +249,6 @@ def test_fake_gitops_move_worktree(tmp_path: Path) -> None:
     # FakeGit is purely in-memory - does not rename directories
 
 
-def test_fake_gitops_checkout_detached(tmp_path: Path) -> None:
-    """Test checkout_detached sets branch to None and tracks operation."""
-    cwd = tmp_path / "repo"
-    git_ops = FakeGit(
-        current_branches={cwd: "main"},
-        worktrees={tmp_path: [WorktreeInfo(path=cwd, branch="main", is_root=True)]},
-    )
-
-    git_ops.checkout_detached(cwd, "abc123")
-
-    # Verify branch is now None (detached HEAD)
-    assert git_ops.get_current_branch(cwd) is None
-
-    # Verify tracking property updated
-    assert (cwd, "abc123") in git_ops.detached_checkouts
-
-    # Verify worktree state updated
-    worktrees = git_ops.list_worktrees(tmp_path)
-    assert worktrees[0].branch is None
-
-
 def test_fake_gitops_get_branch_head() -> None:
     """Test get_branch_head returns commit SHA from dict."""
     repo_root = Path("/repo")
@@ -382,78 +341,6 @@ def test_fake_gitops_removed_worktrees_tracking() -> None:
     assert wt1 in git_ops.removed_worktrees
     assert wt2 in git_ops.removed_worktrees
     assert len(git_ops.removed_worktrees) == 2
-
-
-def test_fake_gitops_checked_out_branches_tracking() -> None:
-    """Test checked_out_branches tracking property updates on checkout."""
-    cwd1 = Path("/repo/wt1")
-    cwd2 = Path("/repo/wt2")
-
-    git_ops = FakeGit(
-        current_branches={cwd1: "main", cwd2: "feature"},
-        worktrees={
-            Path("/repo"): [
-                WorktreeInfo(path=cwd1, branch="main", is_root=True),
-                WorktreeInfo(path=cwd2, branch="feature", is_root=False),
-            ]
-        },
-    )
-
-    git_ops.checkout_branch(cwd1, "new-branch")
-
-    assert (cwd1, "new-branch") in git_ops.checked_out_branches
-
-
-def test_fake_gitops_detached_checkouts_tracking() -> None:
-    """Test detached_checkouts tracking property updates on detached checkout."""
-    cwd = Path("/repo")
-    git_ops = FakeGit(
-        current_branches={cwd: "main"},
-        worktrees={Path("/repo"): [WorktreeInfo(path=cwd, branch="main", is_root=True)]},
-    )
-
-    git_ops.checkout_detached(cwd, "abc123")
-    git_ops.checkout_detached(cwd, "def456")
-
-    assert (cwd, "abc123") in git_ops.detached_checkouts
-    assert (cwd, "def456") in git_ops.detached_checkouts
-    assert len(git_ops.detached_checkouts) == 2
-
-
-def test_fake_gitops_delete_branch_raises() -> None:
-    """Test that FakeGit wraps CalledProcessError in RuntimeError on delete.
-
-    This matches run_subprocess_with_context behavior where CalledProcessError
-    is caught and re-raised as RuntimeError with the original in __cause__.
-    """
-    import subprocess
-
-    import pytest
-
-    error = subprocess.CalledProcessError(
-        returncode=1,
-        cmd=["git", "branch", "-D", "test-branch"],
-        stderr=None,
-    )
-
-    git_ops = FakeGit(
-        delete_branch_raises={"test-branch": error},
-    )
-
-    cwd = Path("/fake/repo")
-
-    # Should raise RuntimeError wrapping the CalledProcessError
-    with pytest.raises(RuntimeError) as exc_info:
-        git_ops.delete_branch(cwd, "test-branch", force=False)
-
-    # Original CalledProcessError should be accessible via __cause__
-    assert isinstance(exc_info.value.__cause__, subprocess.CalledProcessError)
-    assert exc_info.value.__cause__.returncode == 1
-    assert "test-branch" in exc_info.value.__cause__.cmd
-
-    # Other branches should not raise
-    git_ops.delete_branch(cwd, "other-branch", force=False)
-    assert "other-branch" in git_ops.deleted_branches
 
 
 def test_fake_git_is_worktree_clean_with_clean_worktree() -> None:

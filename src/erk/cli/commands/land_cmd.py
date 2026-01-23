@@ -397,7 +397,7 @@ def _ensure_branch_not_checked_out(
         return None
 
     trunk_branch = ctx.git.detect_trunk_branch(repo_root)
-    ctx.git.checkout_detached(worktree_path, trunk_branch)
+    ctx.branch_manager.checkout_detached(worktree_path, trunk_branch)
     return worktree_path
 
 
@@ -484,7 +484,7 @@ def _cleanup_slot_without_assignment(
     assert cleanup.worktree_path is not None
     placeholder = get_placeholder_branch_name(slot_name)
     if placeholder is not None:
-        cleanup.ctx.git.checkout_branch(cleanup.worktree_path, placeholder)
+        cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, placeholder)
 
     # Defensive: ensure branch is released before deletion
     _ensure_branch_not_checked_out(
@@ -519,7 +519,7 @@ def _cleanup_non_slot_worktree(cleanup: CleanupContext) -> None:
     # Use detached HEAD instead of checkout_branch because trunk may already
     # be checked out in the root worktree
     trunk_branch = cleanup.ctx.git.detect_trunk_branch(cleanup.main_repo_root)
-    cleanup.ctx.git.checkout_detached(cleanup.worktree_path, trunk_branch)
+    cleanup.ctx.branch_manager.checkout_detached(cleanup.worktree_path, trunk_branch)
 
     # Defensive: verify checkout succeeded before deletion
     _ensure_branch_not_checked_out(

@@ -152,8 +152,8 @@ def test_dryrun_graphite_delete_branch_is_noop(tmp_path: Path) -> None:
     )
     assert "feature-branch" in result.stdout
 
-    # Call graphite.delete_branch in dry-run mode (should be a no-op)
-    ctx.graphite.delete_branch(repo, "feature-branch")
+    # Call branch_manager.delete_branch in dry-run mode (should be a no-op)
+    ctx.branch_manager.delete_branch(repo, "feature-branch")
 
     # Verify the branch still exists (dry-run didn't actually delete)
     result = subprocess.run(
@@ -233,7 +233,7 @@ def test_dryrun_git_checkout_branch_is_blocked(tmp_path: Path) -> None:
     ctx = create_context(dry_run=True)
 
     # Checkout is blocked in dry-run mode (it's a write operation that mutates state)
-    ctx.git.checkout_branch(repo, "feature")
+    ctx.branch_manager.checkout_branch(repo, "feature")
 
     # Verify we did NOT check out (checkout is blocked in dry-run)
     assert real_ops.get_current_branch(repo) == "main"

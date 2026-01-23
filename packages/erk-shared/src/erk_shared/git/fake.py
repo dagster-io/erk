@@ -6,7 +6,6 @@ in its constructor. Construct instances directly with keyword arguments.
 
 from __future__ import annotations
 
-import subprocess
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -294,26 +293,6 @@ class FakeGit(Git):
         """List all remote branch names in the repository (fake implementation)."""
         return self._remote_branches.get(repo_root, [])
 
-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -> None:
-        """Create a local tracking branch from a remote branch (fake implementation)."""
-        import subprocess
-
-        # Check if this branch should fail
-        if branch in self._tracking_branch_failures:
-            error_msg = self._tracking_branch_failures[branch]
-            raise subprocess.CalledProcessError(
-                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
-            )
-
-        # Track this mutation
-        self._created_tracking_branches.append((branch, remote_ref))
-
-        # In the fake, we simulate branch creation by adding to local branches
-        if repo_root not in self._local_branches:
-            self._local_branches[repo_root] = []
-        if branch not in self._local_branches[repo_root]:
-            self._local_branches[repo_root].append(branch)
-
     def get_git_common_dir(self, cwd: Path) -> Path | None:
         """Get the common git directory.
 
@@ -345,69 +324,6 @@ class FakeGit(Git):
         """Check if a worktree has uncommitted changes."""
         staged, modified, untracked = self._file_statuses.get(cwd, ([], [], []))
         return bool(staged or modified or untracked)
-
-    def checkout_branch(self, cwd: Path, branch: str) -> None:
-        """Checkout a branch (mutates internal state).
-
-        Validates that the branch is not already checked out in another worktree,
-        matching Git's behavior.
-        """
-        # Check if branch is already checked out in a different worktree
-        for _repo_root, worktrees in self._worktrees.items():
-            for wt in worktrees:
-                if wt.branch == branch and wt.path.resolve() != cwd.resolve():
-                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
-                    raise RuntimeError(msg)
-
-        self._current_branches[cwd] = branch
-        # Update worktree branch in the worktrees list
-        for repo_root, worktrees in self._worktrees.items():
-            for i, wt in enumerate(worktrees):
-                if wt.path.resolve() == cwd.resolve():
-                    self._worktrees[repo_root][i] = WorktreeInfo(
-                        path=wt.path, branch=branch, is_root=wt.is_root
-                    )
-                    break
-        # Track the checkout
-        self._checked_out_branches.append((cwd, branch))
-
-    def checkout_detached(self, cwd: Path, ref: str) -> None:
-        """Checkout a detached HEAD (mutates internal state)."""
-        # Detached HEAD means no branch is checked out (branch=None)
-        self._current_branches[cwd] = None
-        # Update worktree to show detached HEAD state
-        for repo_root, worktrees in self._worktrees.items():
-            for i, wt in enumerate(worktrees):
-                if wt.path.resolve() == cwd.resolve():
-                    self._worktrees[repo_root][i] = WorktreeInfo(
-                        path=wt.path, branch=None, is_root=wt.is_root
-                    )
-                    break
-        # Track the detached checkout
-        self._detached_checkouts.append((cwd, ref))
-
-    def create_branch(self, cwd: Path, branch_name: str, start_point: str) -> None:
-        """Create a new branch without checking it out.
-
-        Tracks the branch creation for test assertions via created_branches property.
-        """
-        self._created_branches.append((cwd, branch_name, start_point))
-
-    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -> None:
-        """Delete a local branch (mutates internal state for test assertions).
-
-        If delete_branch_raises contains a CalledProcessError, it is wrapped in
-        RuntimeError to match run_subprocess_with_context behavior.
-        """
-        # Check if we should raise an exception for this branch
-        if branch_name in self._delete_branch_raises:
-            exc = self._delete_branch_raises[branch_name]
-            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
-            if isinstance(exc, subprocess.CalledProcessError):
-                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
-            raise exc
-
-        self._deleted_branches.append(branch_name)
 
     def get_branch_head(self, repo_root: Path, branch: str) -> str | None:
         """Get the commit SHA at the head of a branch."""

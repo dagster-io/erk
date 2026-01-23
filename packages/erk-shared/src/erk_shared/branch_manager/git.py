@@ -53,27 +53,26 @@ class GitBranchManager(BranchManager):
         """Create a new branch using Git.
 
         Uses plain git commands without Graphite tracking.
+        Does NOT checkout the branch - leaves the current branch unchanged.
 
         Args:
             repo_root: Repository root directory
             branch_name: Name of the new branch
             base_branch: Name of the base branch
         """
-        # First checkout the base branch
-        self.git_branch_ops.checkout_branch(repo_root, base_branch)
-        # Create the branch using git (from base_branch)
+        # Create the branch from base_branch without checking it out
+        # This allows callers to create worktrees with the branch later
         self.git_branch_ops.create_branch(repo_root, branch_name, base_branch)
-        # Checkout the new branch
-        self.git_branch_ops.checkout_branch(repo_root, branch_name)
 
-    def delete_branch(self, repo_root: Path, branch: str) -> None:
+    def delete_branch(self, repo_root: Path, branch: str, *, force: bool = False) -> None:
         """Delete a branch using plain Git.
 
         Args:
             repo_root: Repository root directory
             branch: Branch name to delete
+            force: If True, use -D (force delete) instead of -d
         """
-        self.git_branch_ops.delete_branch(repo_root, branch, force=True)
+        self.git_branch_ops.delete_branch(repo_root, branch, force=force)
 
     def submit_branch(self, repo_root: Path, branch: str) -> None:
         """Submit branch via git push.

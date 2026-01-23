@@ -104,7 +104,7 @@ def slot_init_pool(ctx: ErkContext, count: int | None, *, dry_run: bool) -> None
             continue
 
         if placeholder_branch not in local_branches:
-            ctx.git.create_branch(repo.root, placeholder_branch, trunk)
+            ctx.branch_manager.create_branch(repo.root, placeholder_branch, trunk)
 
         # Create worktree directory
         if ctx.dry_run:
