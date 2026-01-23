@@ -49,6 +49,7 @@ from erk_shared.github.metadata.plan_header import (
     update_plan_header_remote_impl,
     update_plan_header_worktree_and_branch,
 )
+from erk_shared.github.types import BodyText
 from erk_shared.impl_folder import (
     read_issue_reference,
     write_local_run_state,
@@ -262,7 +263,7 @@ def _signal_started(ctx: click.Context, session_id: str | None) -> None:
             branch_name=branch_name,
         )
 
-        github.update_issue_body(repo_root, issue_ref.issue_number, updated_body)
+        github.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
     except (RuntimeError, ValueError):
         # Non-fatal - comment was posted, metadata update failed
         # Continue successfully
@@ -343,7 +344,7 @@ def _signal_ended(ctx: click.Context, session_id: str | None) -> None:
                 user=user,
             )
 
-        github.update_issue_body(repo_root, issue_ref.issue_number, updated_body)
+        github.update_issue_body(repo_root, issue_ref.issue_number, BodyText(content=updated_body))
     except (RuntimeError, ValueError) as e:
         _output_error(event, "github-api-failed", f"Failed to update issue: {e}")
         return

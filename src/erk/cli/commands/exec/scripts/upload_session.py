@@ -42,6 +42,7 @@ import click
 
 from erk_shared.context.helpers import require_github, require_issues, require_repo_root
 from erk_shared.github.abc import GistCreateError
+from erk_shared.github.types import BodyText
 
 
 @click.command(name="upload-session")
@@ -140,7 +141,7 @@ def upload_session(
                 session_at=timestamp,
                 source=source,
             )
-            issues.update_issue_body(repo_root, issue_number, updated_body)
+            issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
             result["issue_updated"] = True
         except (ValueError, RuntimeError) as e:
             # Issue update failed but gist was created - partial success

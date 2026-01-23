@@ -18,7 +18,7 @@ from erk_shared.github.pr_footer import (
     extract_closing_reference,
     extract_footer_from_body,
 )
-from erk_shared.github.types import GitHubRepoId, PRNotFound
+from erk_shared.github.types import BodyText, GitHubRepoId, PRNotFound
 from erk_shared.impl_folder import has_issue_reference, read_issue_reference
 
 # Label added to PRs that originate from learn plans.
@@ -147,7 +147,7 @@ def execute_finalize(
     # Update PR metadata
     yield ProgressEvent("Updating PR metadata... (gh pr edit)")
     ops.github.update_pr_title_and_body(
-        repo_root=repo_root, pr_number=pr_number, title=pr_title, body=final_body
+        repo_root=repo_root, pr_number=pr_number, title=pr_title, body=BodyText(content=final_body)
     )
     yield ProgressEvent("PR metadata updated", style="success")
 

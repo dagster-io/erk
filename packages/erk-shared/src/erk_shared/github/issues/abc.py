@@ -9,6 +9,7 @@ from erk_shared.github.issues.types import (
     IssueInfo,
     PRReference,
 )
+from erk_shared.github.types import BodyContent
 
 
 class GitHubIssues(ABC):
@@ -87,13 +88,16 @@ class GitHubIssues(ABC):
         ...
 
     @abstractmethod
-    def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
+    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
         """Update the body of an existing issue.
 
         Args:
             repo_root: Repository root directory
             number: Issue number to update
-            body: New issue body markdown
+            body: New issue body - either BodyText with inline content, or
+                BodyFile with a path to read from. When BodyFile is provided,
+                the gh CLI reads from the file using -F body=@{path} syntax,
+                which avoids shell argument length limits for large bodies.
 
         Raises:
             RuntimeError: If gh CLI fails or issue not found

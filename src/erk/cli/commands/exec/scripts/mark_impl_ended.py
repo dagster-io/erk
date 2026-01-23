@@ -44,6 +44,7 @@ from erk_shared.github.metadata.plan_header import (
     update_plan_header_local_impl_event,
     update_plan_header_remote_impl,
 )
+from erk_shared.github.types import BodyText
 from erk_shared.impl_folder import read_issue_reference, write_local_run_state
 
 
@@ -176,7 +177,9 @@ def mark_impl_ended(ctx: click.Context, session_id: str | None) -> None:
 
     # Update issue body
     try:
-        github_issues.update_issue_body(repo_root, issue_ref.issue_number, updated_body)
+        github_issues.update_issue_body(
+            repo_root, issue_ref.issue_number, BodyText(content=updated_body)
+        )
     except RuntimeError as e:
         result = MarkImplError(
             success=False,

@@ -9,6 +9,7 @@ from erk_shared.github.issues.types import (
     IssueInfo,
     PRReference,
 )
+from erk_shared.github.types import BodyContent
 
 
 class DryRunGitHubIssues(GitHubIssues):
@@ -53,7 +54,7 @@ class DryRunGitHubIssues(GitHubIssues):
         """
         return 1234567890  # Fake comment ID for dry-run mode
 
-    def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
+    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
         """No-op for updating issue body in dry-run mode."""
 
     def list_issues(

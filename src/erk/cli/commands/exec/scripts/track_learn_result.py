@@ -29,6 +29,7 @@ import click
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.github.metadata.plan_header import update_plan_header_learn_result
 from erk_shared.github.metadata.schemas import LearnStatusValue
+from erk_shared.github.types import BodyText
 
 
 @dataclass(frozen=True)
@@ -160,7 +161,7 @@ def track_learn_result(
     )
 
     # Update issue
-    github_issues.update_issue_body(repo_root, issue, updated_body)
+    github_issues.update_issue_body(repo_root, issue, BodyText(content=updated_body))
 
     result = TrackLearnResultSuccess(
         success=True,

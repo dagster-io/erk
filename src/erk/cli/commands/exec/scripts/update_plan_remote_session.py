@@ -33,6 +33,7 @@ from erk_shared.context.helpers import require_issues, require_repo_root, requir
 from erk_shared.github.metadata.plan_header import (
     update_plan_header_remote_impl_event,
 )
+from erk_shared.github.types import BodyText
 
 
 @dataclass(frozen=True)
@@ -132,7 +133,7 @@ def update_plan_remote_session(
 
     # Update issue body (RuntimeError if API fails)
     try:
-        github_issues.update_issue_body(repo_root, issue_number, updated_body)
+        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
     except RuntimeError as e:
         _output_error("github-api-failed", f"Failed to update issue body: {e}")
         return  # Never reached, but helps type checker

@@ -17,6 +17,7 @@ from erk_shared.context.context import ErkContext
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.metadata.core import find_metadata_block
+from erk_shared.github.types import BodyContent
 
 
 def make_plan_header_body(
@@ -207,7 +208,7 @@ def test_update_dispatch_info_github_api_failure() -> None:
     body = make_plan_header_body()
 
     class FailingFakeGitHubIssues(FakeGitHubIssues):
-        def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
+        def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
             raise RuntimeError("Network error")
 
     fake_gh = FailingFakeGitHubIssues(issues={200: make_issue_info(200, body)})

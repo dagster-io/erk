@@ -9,6 +9,33 @@ PRState = Literal["OPEN", "MERGED", "CLOSED"]
 
 
 @dataclass(frozen=True)
+class BodyText:
+    """Body content as inline text.
+
+    Used when the body content is a string that should be passed directly
+    to the GitHub API using -f body={content} syntax.
+    """
+
+    content: str
+
+
+@dataclass(frozen=True)
+class BodyFile:
+    """Body content read from a file path.
+
+    Used when the body content should be read from a file using the
+    gh CLI's -F body=@{path} syntax, which avoids shell argument length
+    limits for large bodies.
+    """
+
+    path: Path
+
+
+# Type alias for body content passed to update methods
+BodyContent = BodyText | BodyFile
+
+
+@dataclass(frozen=True)
 class PRReviewComment:
     """A single comment within a PR review thread."""
 

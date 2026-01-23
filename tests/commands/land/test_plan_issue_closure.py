@@ -20,6 +20,7 @@ from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.fake import FakeGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
+from erk_shared.github.types import BodyContent
 
 
 def _create_issue(number: int, state: str) -> IssueInfo:
@@ -105,7 +106,7 @@ class StatefulFakeGitHubIssues(GitHubIssues):
     def add_comment(self, repo_root: Path, number: int, body: str) -> int:
         raise NotImplementedError
 
-    def update_issue_body(self, repo_root: Path, number: int, body: str) -> None:
+    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
         raise NotImplementedError
 
     def list_issues(

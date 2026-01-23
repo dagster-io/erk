@@ -39,6 +39,9 @@ from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retri
 from erk_shared.github.types import (
     BRANCH_NOT_AVAILABLE,
     DISPLAY_TITLE_NOT_AVAILABLE,
+    BodyContent,
+    BodyFile,
+    BodyText,
     GitHubRepoId,
     GitHubRepoLocation,
     PRDetails,
@@ -1530,11 +1533,14 @@ query {{
         return result
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:
         """Update PR title and body on GitHub.
 
         Uses REST API to preserve GraphQL quota.
+
+        When body is BodyFile, uses gh api's -F body=@{path} syntax to read
+        from file, avoiding shell argument length limits for large bodies.
 
         Raises:
             RuntimeError: If gh command fails (auth issues, network errors, etc.)
@@ -1548,9 +1554,14 @@ query {{
             f"repos/{{owner}}/{{repo}}/pulls/{pr_number}",
             "-f",
             f"title={title}",
-            "-f",
-            f"body={body}",
         ]
+
+        # Use -F body=@file for BodyFile, -f body=value for BodyText
+        if isinstance(body, BodyFile):
+            cmd.extend(["-F", f"body=@{body.path}"])
+        elif isinstance(body, BodyText):
+            cmd.extend(["-f", f"body={body.content}"])
+
         execute_gh_command_with_retry(cmd, repo_root, self._time)
 
     def mark_pr_ready(self, repo_root: Path, pr_number: int) -> None:

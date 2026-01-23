@@ -57,7 +57,7 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_learned_from_issue,
     update_plan_header_learn_plan_completed,
 )
-from erk_shared.github.types import PRDetails, PRNotFound
+from erk_shared.github.types import BodyText, PRDetails, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.sessions.discovery import find_sessions_for_plan
@@ -363,7 +363,7 @@ def _update_parent_learn_status_if_learn_plan(
         issue_body=parent_issue.body,
         learn_plan_pr=pr_number,
     )
-    ctx.issues.update_issue_body(repo_root, learned_from, updated_body)
+    ctx.issues.update_issue_body(repo_root, learned_from, BodyText(content=updated_body))
     user_output(f"Updated learn status on parent plan #{learned_from}")
 
 

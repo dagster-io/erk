@@ -19,6 +19,7 @@ import click
 from erk_shared.context.helpers import require_issues as require_github_issues
 from erk_shared.context.helpers import require_repo_root
 from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
+from erk_shared.github.types import BodyText
 
 
 @dataclass(frozen=True)
@@ -93,7 +94,7 @@ def update_dispatch_info(
 
     # Update issue body
     try:
-        github_issues.update_issue_body(repo_root, issue_number, updated_body)
+        github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
     except RuntimeError as e:
         result = UpdateError(
             success=False,

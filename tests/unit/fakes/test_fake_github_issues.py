@@ -9,6 +9,7 @@ from datetime import UTC, datetime
 import pytest
 
 from erk_shared.github.issues.fake import FakeGitHubIssues
+from erk_shared.github.types import BodyText
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
 
@@ -185,7 +186,7 @@ def test_fake_github_issues_update_issue_body_existing_issue() -> None:
     pre_configured = {42: create_test_issue(42, "Test", "Original body")}
     issues = FakeGitHubIssues(issues=pre_configured)
 
-    issues.update_issue_body(sentinel_path(), 42, "Updated body content")
+    issues.update_issue_body(sentinel_path(), 42, BodyText(content="Updated body content"))
 
     # Verify body was updated
     updated_issue = issues.get_issue(sentinel_path(), 42)
@@ -199,7 +200,7 @@ def test_fake_github_issues_update_issue_body_missing_issue() -> None:
     issues = FakeGitHubIssues()
 
     with pytest.raises(RuntimeError, match="Issue #999 not found"):
-        issues.update_issue_body(sentinel_path(), 999, "New body")
+        issues.update_issue_body(sentinel_path(), 999, BodyText(content="New body"))
 
 
 def test_fake_github_issues_update_issue_body_updates_timestamp() -> None:
@@ -213,7 +214,7 @@ def test_fake_github_issues_update_issue_body_updates_timestamp() -> None:
     issues = FakeGitHubIssues(issues=pre_configured)
 
     # Update the body
-    issues.update_issue_body(sentinel_path(), 42, "Updated body")
+    issues.update_issue_body(sentinel_path(), 42, BodyText(content="Updated body"))
 
     # Verify timestamp was updated (should be later than creation time)
     updated_issue = issues.get_issue(sentinel_path(), 42)

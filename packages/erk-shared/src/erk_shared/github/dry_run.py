@@ -7,6 +7,7 @@ from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    BodyContent,
     GitHubRepoLocation,
     PRDetails,
     PRListState,
@@ -194,7 +195,7 @@ class DryRunGitHub(GitHub):
         return self._wrapped.list_prs(repo_root, state=state)
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str
+        self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:
         """No-op for updating PR title and body in dry-run mode."""
         pass

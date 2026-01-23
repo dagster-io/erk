@@ -103,6 +103,30 @@ gh api repos/{owner}/{repo}/issues/{number} \
   -f body="Updated body"
 ```
 
+### Handling Large Bodies
+
+Large body content (3,500+ characters) can fail with shell argument length limits or trigger GitHub's abuse detection. Use the `-F body=@{filepath}` syntax to read content from a file:
+
+```bash
+# Write content to temp file, then pass via -F with @ prefix
+gh api repos/{owner}/{repo}/pulls/{number} \
+  -X PATCH \
+  -f title="PR title" \
+  -F body=@/tmp/pr-body.md
+```
+
+**Gateway API Pattern**: The gateway methods accept `body: str | Path`:
+
+```python
+# Pass string for small bodies
+github.update_pr_title_and_body(repo_root=root, pr_number=123, title="Title", body="Small body")
+
+# Pass Path for large bodies (reads from file using -F body=@path)
+github.update_pr_title_and_body(repo_root=root, pr_number=123, title="Title", body=body_file)
+```
+
+The gateway uses `isinstance(body, Path)` to determine which `gh api` syntax to use.
+
 ### Adding Comments
 
 ```bash

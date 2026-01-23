@@ -36,6 +36,7 @@ from erk_shared.context.helpers import (
 )
 from erk_shared.gateway.time.abc import Time
 from erk_shared.github.metadata.plan_header import update_plan_header_learn_event
+from erk_shared.github.types import BodyText
 from erk_shared.learn.tracking import track_learn_invocation
 from erk_shared.naming import extract_leading_issue_number
 
@@ -116,7 +117,7 @@ def _do_track(
         learn_at=timestamp,
         session_id=session_id,
     )
-    github_issues.update_issue_body(repo_root, issue_number, updated_body)
+    github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
 
 @click.command(name="track-learn-evaluation")
