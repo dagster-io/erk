@@ -269,6 +269,17 @@ def config_list(ctx: ErkContext) -> None:
                 # Non-overridable key or not in repo - show global value
                 value = getattr(ctx.global_config, key)
                 user_output(f"  {key}={_format_config_value(value)}")
+
+        # Interactive Claude configuration
+        ic = ctx.global_config.interactive_claude
+        user_output(click.style("\nInteractive Claude configuration:", bold=True))
+        if ic.model:
+            user_output(f"  interactive_claude.model={ic.model}")
+        user_output(f"  interactive_claude.verbose={_format_config_value(ic.verbose)}")
+        user_output(f"  interactive_claude.permission_mode={ic.permission_mode}")
+        user_output(f"  interactive_claude.dangerous={_format_config_value(ic.dangerous)}")
+        allow_dangerous_val = _format_config_value(ic.allow_dangerous)
+        user_output(f"  interactive_claude.allow_dangerous={allow_dangerous_val}")
     else:
         user_output("  (not configured - run 'erk init' to create)")
 
@@ -316,12 +327,35 @@ def config_list(ctx: ErkContext) -> None:
             cmds_source = " (includes local)" if has_local_commands else ""
             user_output(f"  post_create.commands={cfg.post_create_commands}{cmds_source}")
 
+        # pool.checkout.shell with source annotation
+        if cfg.pool_checkout_shell:
+            checkout_shell_source = (
+                " (local)" if local_only_config.pool_checkout_shell is not None else ""
+            )
+            user_output(f"  pool.checkout.shell={cfg.pool_checkout_shell}{checkout_shell_source}")
+
+        # pool.checkout.commands with source annotation
+        if cfg.pool_checkout_commands:
+            has_local_checkout_commands = bool(local_only_config.pool_checkout_commands)
+            checkout_cmds_source = " (includes local)" if has_local_checkout_commands else ""
+            user_output(
+                f"  pool.checkout.commands={cfg.pool_checkout_commands}{checkout_cmds_source}"
+            )
+
+        # plans.repo with source annotation
+        if cfg.plans_repo:
+            plans_repo_source = " (local)" if local_only_config.plans_repo is not None else ""
+            user_output(f"  plans.repo={cfg.plans_repo}{plans_repo_source}")
+
         has_no_custom_config = (
             not trunk_branch
             and cfg.pool_size is None
             and not cfg.env
             and not cfg.post_create_shell
             and not cfg.post_create_commands
+            and not cfg.pool_checkout_shell
+            and not cfg.pool_checkout_commands
+            and not cfg.plans_repo
         )
         if has_no_custom_config:
             user_output("  (no custom configuration - run 'erk init' to create)")
