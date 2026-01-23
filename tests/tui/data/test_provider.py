@@ -488,6 +488,7 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.resolved_comment_count == 3
@@ -568,6 +569,7 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.resolved_comment_count == 0
@@ -634,6 +636,7 @@ class TestCommentCountsDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.resolved_comment_count == 0
@@ -703,6 +706,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.learn_status is None
@@ -770,6 +774,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.learn_status == "pending"
@@ -835,6 +840,7 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.learn_status == "completed_no_plan"
@@ -902,10 +908,12 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.learn_status == "completed_with_plan"
         assert row.learn_plan_issue == 456
+        assert row.learn_plan_issue_closed is None
         assert row.learn_display == "📋 #456"
 
     def test_learn_status_plan_completed_shows_pr_number(self, tmp_path: Path) -> None:
@@ -970,9 +978,154 @@ class TestLearnStatusDisplay:
             workflow_run=None,
             worktree_by_issue={},
             use_graphite=False,
+            learn_issue_states={},
         )
 
         assert row.learn_status == "plan_completed"
         assert row.learn_plan_issue == 456
         assert row.learn_plan_pr == 789
         assert row.learn_display == "✓ #789"
+
+    def test_learn_status_completed_with_plan_closed_shows_checkmark(self, tmp_path: Path) -> None:
+        """When learn plan issue is closed, display checkmark instead of clipboard."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        github = FakeGitHub(pr_issue_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        # Plan with learn_status: completed_with_plan and learn_plan_issue
+        plan_body = format_plan_header_body_for_test(
+            learn_status="completed_with_plan", learn_plan_issue=456
+        )
+        plan = Plan(
+            plan_identifier="123",
+            title="Test Plan",
+            body=plan_body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        # Learn issue 456 is closed
+        row = provider._build_row_data(
+            plan=plan,
+            issue_number=123,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_issue={},
+            use_graphite=False,
+            learn_issue_states={456: True},
+        )
+
+        assert row.learn_status == "completed_with_plan"
+        assert row.learn_plan_issue == 456
+        assert row.learn_plan_issue_closed is True
+        assert row.learn_display == "✅ #456"
+        assert row.learn_display_icon == "✅ #456"
+
+    def test_learn_status_completed_with_plan_open_shows_clipboard(self, tmp_path: Path) -> None:
+        """When learn plan issue is open, display clipboard emoji."""
+        repo_root = tmp_path / "repo"
+        repo_root.mkdir()
+        erk_dir = repo_root / ".erk"
+        erk_dir.mkdir()
+
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
+                ]
+            },
+            git_common_dirs={repo_root: repo_root / ".git"},
+        )
+
+        github = FakeGitHub(pr_issue_linkages={})
+
+        ctx = create_test_context(
+            git=git,
+            github=github,
+            cwd=repo_root,
+            repo=_make_repo_context(repo_root, tmp_path),
+        )
+
+        location = GitHubRepoLocation(
+            root=repo_root,
+            repo_id=GitHubRepoId(owner="test", repo="repo"),
+        )
+        provider = RealPlanDataProvider(
+            ctx=ctx,
+            location=location,
+            clipboard=FakeClipboard(),
+            browser=FakeBrowserLauncher(),
+            http_client=FakeHttpClient(),
+        )
+
+        # Plan with learn_status: completed_with_plan and learn_plan_issue
+        plan_body = format_plan_header_body_for_test(
+            learn_status="completed_with_plan", learn_plan_issue=456
+        )
+        plan = Plan(
+            plan_identifier="123",
+            title="Test Plan",
+            body=plan_body,
+            state=PlanState.OPEN,
+            url="https://github.com/test/repo/issues/123",
+            labels=[],
+            assignees=[],
+            created_at=datetime(2024, 1, 1, tzinfo=UTC),
+            updated_at=datetime(2024, 1, 1, tzinfo=UTC),
+            metadata={},
+            objective_id=None,
+        )
+
+        # Learn issue 456 is open
+        row = provider._build_row_data(
+            plan=plan,
+            issue_number=123,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_issue={},
+            use_graphite=False,
+            learn_issue_states={456: False},
+        )
+
+        assert row.learn_status == "completed_with_plan"
+        assert row.learn_plan_issue == 456
+        assert row.learn_plan_issue_closed is False
+        assert row.learn_display == "📋 #456"
+        assert row.learn_display_icon == "📋 #456"

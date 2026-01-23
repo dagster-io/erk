@@ -1,5 +1,6 @@
 """Data provider for TUI plan table."""
 
+import logging
 import subprocess
 from abc import ABC, abstractmethod
 from datetime import datetime
@@ -36,6 +37,8 @@ from erk_shared.github.metadata.plan_header import (
 from erk_shared.github.types import GitHubRepoId, GitHubRepoLocation, PullRequestInfo, WorkflowRun
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.plan_store.types import Plan, PlanState
+
+logger = logging.getLogger(__name__)
 
 
 class PlanDataProvider(ABC):
@@ -210,6 +213,17 @@ class RealPlanDataProvider(PlanDataProvider):
         # Build local worktree mapping
         worktree_by_issue = self._build_worktree_mapping()
 
+        # First pass: collect learn_plan_issue numbers for batch fetch
+        learn_issue_numbers: set[int] = set()
+        for issue in plan_data.issues:
+            if issue.body:
+                learn_plan_issue = extract_plan_header_learn_plan_issue(issue.body)
+                if learn_plan_issue is not None:
+                    learn_issue_numbers.add(learn_plan_issue)
+
+        # Batch fetch learn issue states
+        learn_issue_states = self._fetch_learn_issue_states(learn_issue_numbers)
+
         # Transform to PlanRowData
         rows: list[PlanRowData] = []
         use_graphite = self._ctx.global_config.use_graphite if self._ctx.global_config else False
@@ -235,10 +249,33 @@ class RealPlanDataProvider(PlanDataProvider):
                 workflow_run=workflow_run,
                 worktree_by_issue=worktree_by_issue,
                 use_graphite=use_graphite,
+                learn_issue_states=learn_issue_states,
             )
             rows.append(row)
 
         return rows
+
+    def _fetch_learn_issue_states(
+        self,
+        issue_numbers: set[int],
+    ) -> dict[int, bool]:
+        """Batch fetch issue closed states for learn plan issues.
+
+        Args:
+            issue_numbers: Set of issue numbers to fetch
+
+        Returns:
+            Mapping of issue number to is_closed (True if closed, False if open)
+        """
+        result: dict[int, bool] = {}
+        for issue_number in issue_numbers:
+            try:
+                issue_info = self._ctx.github.issues.get_issue(self._location.root, issue_number)
+                result[issue_number] = issue_info.state == "CLOSED"
+            except RuntimeError as e:
+                # Issue not found or API error - log and skip
+                logger.debug("Could not fetch learn issue %d: %s", issue_number, e)
+        return result
 
     def close_plan(self, issue_number: int, issue_url: str) -> list[int]:
         """Close a plan and its linked PRs using direct HTTP calls.
@@ -446,6 +483,7 @@ class RealPlanDataProvider(PlanDataProvider):
         workflow_run: WorkflowRun | None,
         worktree_by_issue: dict[int, tuple[str, str | None]],
         use_graphite: bool,
+        learn_issue_states: dict[int, bool],
     ) -> PlanRowData:
         """Build a single PlanRowData from plan and related data."""
         # Truncate title for display
@@ -483,10 +521,23 @@ class RealPlanDataProvider(PlanDataProvider):
             learn_plan_pr = extract_plan_header_learn_plan_pr(plan.body)
             learn_run_id = extract_plan_header_learn_run_id(plan.body)
 
+        # Look up learn plan issue closed state
+        learn_plan_issue_closed: bool | None = None
+        if learn_plan_issue is not None and learn_plan_issue in learn_issue_states:
+            learn_plan_issue_closed = learn_issue_states[learn_plan_issue]
+
         # Format learn display (full text for detail modal, icon-only for table)
-        learn_display = _format_learn_display(learn_status, learn_plan_issue, learn_plan_pr)
+        learn_display = _format_learn_display(
+            learn_status,
+            learn_plan_issue,
+            learn_plan_pr,
+            learn_plan_issue_closed=learn_plan_issue_closed,
+        )
         learn_display_icon = _format_learn_display_icon(
-            learn_status, learn_plan_issue, learn_plan_pr
+            learn_status,
+            learn_plan_issue,
+            learn_plan_pr,
+            learn_plan_issue_closed=learn_plan_issue_closed,
         )
 
         # Parse ISO 8601 timestamps for storage
@@ -611,6 +662,7 @@ class RealPlanDataProvider(PlanDataProvider):
             comments_display=comments_display,
             learn_status=learn_status,
             learn_plan_issue=learn_plan_issue,
+            learn_plan_issue_closed=learn_plan_issue_closed,
             learn_plan_pr=learn_plan_pr,
             learn_run_url=learn_run_url,
             learn_display=learn_display,
@@ -622,6 +674,8 @@ def _format_learn_display(
     learn_status: str | None,
     learn_plan_issue: int | None,
     learn_plan_pr: int | None,
+    *,
+    learn_plan_issue_closed: bool | None,
 ) -> str:
     """Format learn status for display with inline descriptions.
 
@@ -629,13 +683,15 @@ def _format_learn_display(
         learn_status: Raw status value from plan header
         learn_plan_issue: Issue number of generated learn plan
         learn_plan_pr: PR number that implemented the learn plan
+        learn_plan_issue_closed: Whether the learn plan issue is closed
 
     Returns:
         Formatted display string based on status:
         - None or "not_started" -> "- not started"
         - "pending" -> "⟳ in progress"
         - "completed_no_plan" -> "∅ no insights"
-        - "completed_with_plan" -> "📋 #456" (using learn_plan_issue)
+        - "completed_with_plan" + closed -> "✅ #456" (using learn_plan_issue)
+        - "completed_with_plan" + open -> "📋 #456" (using learn_plan_issue)
         - "pending_review" -> "🚧 #789" (using learn_plan_pr for draft PR)
         - "plan_completed" -> "✓ #12" (using learn_plan_pr)
     """
@@ -646,6 +702,8 @@ def _format_learn_display(
     if learn_status == "completed_no_plan":
         return "∅ no insights"
     if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+        if learn_plan_issue_closed is True:
+            return f"✅ #{learn_plan_issue}"
         return f"📋 #{learn_plan_issue}"
     if learn_status == "pending_review" and learn_plan_pr is not None:
         return f"🚧 #{learn_plan_pr}"
@@ -659,6 +717,8 @@ def _format_learn_display_icon(
     learn_status: str | None,
     learn_plan_issue: int | None,
     learn_plan_pr: int | None,
+    *,
+    learn_plan_issue_closed: bool | None,
 ) -> str:
     """Format learn status as icon-only for table display.
 
@@ -666,13 +726,15 @@ def _format_learn_display_icon(
         learn_status: Raw status value from plan header
         learn_plan_issue: Issue number of generated learn plan
         learn_plan_pr: PR number that implemented the learn plan
+        learn_plan_issue_closed: Whether the learn plan issue is closed
 
     Returns:
         Icon-only display string based on status:
         - None or "not_started" -> "-"
         - "pending" -> "⟳"
         - "completed_no_plan" -> "∅"
-        - "completed_with_plan" -> "📋 #456" (using learn_plan_issue)
+        - "completed_with_plan" + closed -> "✅ #456" (using learn_plan_issue)
+        - "completed_with_plan" + open -> "📋 #456" (using learn_plan_issue)
         - "pending_review" -> "🚧 #789" (using learn_plan_pr for draft PR)
         - "plan_completed" -> "✓ #12" (using learn_plan_pr)
     """
@@ -683,6 +745,8 @@ def _format_learn_display_icon(
     if learn_status == "completed_no_plan":
         return "∅"
     if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+        if learn_plan_issue_closed is True:
+            return f"✅ #{learn_plan_issue}"
         return f"📋 #{learn_plan_issue}"
     if learn_status == "pending_review" and learn_plan_pr is not None:
         return f"🚧 #{learn_plan_pr}"
