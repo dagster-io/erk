@@ -14,6 +14,7 @@ from erk_shared.github.issues.types import (
     IssueInfo,
     PRReference,
 )
+from erk_shared.github.types import BodyContent, BodyFile, BodyText
 from erk_shared.subprocess_utils import execute_gh_command_with_retry
 
 
@@ -189,13 +190,13 @@ class RealGitHubIssues(GitHubIssues):
         stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
         return int(stdout.strip())
 
-    def update_issue_body(self, repo_root: Path, number: int, body: str | Path) -> None:
+    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
         """Update issue body using gh CLI REST API.
 
         Uses REST API instead of GraphQL (`gh issue edit`) to avoid hitting
         GraphQL rate limits. GraphQL and REST have separate quotas.
 
-        When body is a Path, uses gh api's -F body=@{path} syntax to read
+        When body is BodyFile, uses gh api's -F body=@{path} syntax to read
         from file, avoiding shell argument length limits for large bodies.
 
         Note: Uses gh's native error handling - gh CLI raises RuntimeError
@@ -210,11 +211,11 @@ class RealGitHubIssues(GitHubIssues):
             f"repos/{{owner}}/{{repo}}/issues/{number}",
         ]
 
-        # Use -F body=@file for Path input, -f body=value for string input
-        if isinstance(body, Path):
-            base_cmd.extend(["-F", f"body=@{body}"])
-        else:
-            base_cmd.extend(["-f", f"body={body}"])
+        # Use -F body=@file for BodyFile, -f body=value for BodyText
+        if isinstance(body, BodyFile):
+            base_cmd.extend(["-F", f"body=@{body.path}"])
+        elif isinstance(body, BodyText):
+            base_cmd.extend(["-f", f"body={body.content}"])
 
         cmd = self._build_gh_command(base_cmd)
         execute_gh_command_with_retry(cmd, repo_root, self._time)

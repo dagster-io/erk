@@ -17,6 +17,7 @@ from erk_shared.github.metadata.plan_header import (
     extract_plan_header_remote_impl_run_id,
     update_plan_header_learn_status,
 )
+from erk_shared.github.types import BodyText
 
 
 @dataclass(frozen=True)
@@ -125,6 +126,6 @@ def trigger_async_learn_workflow(
         learn_status="pending",
         learn_run_id=run_id,
     )
-    issues.update_issue_body(repo_root, issue_number, updated_body)
+    issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
     return TriggerAsyncLearnSuccess(issue_number=issue_number, run_id=run_id)

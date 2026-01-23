@@ -27,6 +27,7 @@ from erk_shared.context.helpers import (
 from erk_shared.context.helpers import (
     require_repo_root,
 )
+from erk_shared.github.types import BodyFile, BodyText
 
 
 @click.command(name="update-issue-body")
@@ -74,10 +75,14 @@ def update_issue_body(
         )
         raise SystemExit(1) from e
 
-    # Update the issue body - pass body string or body_file path to gateway
+    # Update the issue body - create appropriate wrapper type
     # Gateway handles file reading via gh api's -F body=@{path} syntax
     # At this point exactly one of body or body_file is set (validated above)
-    body_arg: str | Path = body_file if body_file is not None else body  # type: ignore[assignment]
+    if body_file is not None:
+        body_arg = BodyFile(path=body_file)
+    else:
+        assert body is not None
+        body_arg = BodyText(content=body)
     try:
         github.update_issue_body(repo_root, issue_number, body_arg)
     except RuntimeError as e:

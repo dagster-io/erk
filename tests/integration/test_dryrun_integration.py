@@ -22,7 +22,7 @@ from erk_shared.github.dry_run import DryRunGitHub
 from erk_shared.github.fake import FakeGitHub
 from erk_shared.github.issues.dry_run import DryRunGitHubIssues
 from erk_shared.github.issues.fake import FakeGitHubIssues
-from erk_shared.github.types import GitHubRepoId
+from erk_shared.github.types import BodyText, GitHubRepoId
 from tests.fakes.shell import FakeShell
 from tests.test_utils.github_helpers import create_test_issue
 from tests.test_utils.paths import sentinel_path
@@ -430,7 +430,7 @@ def test_noop_github_issues_update_issue_body_noop() -> None:
     noop = DryRunGitHubIssues(fake)
 
     # Should not raise error
-    noop.update_issue_body(sentinel_path(), 42, "Updated body")
+    noop.update_issue_body(sentinel_path(), 42, BodyText(content="Updated body"))
 
     # Wrapped fake should not have mutated
     original_issue = fake.get_issue(sentinel_path(), 42)

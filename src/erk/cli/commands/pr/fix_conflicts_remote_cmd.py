@@ -15,7 +15,7 @@ from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.github.metadata.core import find_metadata_block
 from erk_shared.github.metadata.plan_header import update_plan_header_dispatch
-from erk_shared.github.types import PRNotFound
+from erk_shared.github.types import BodyText, PRNotFound
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_output
 
@@ -54,7 +54,7 @@ def _maybe_update_plan_dispatch_metadata(
         node_id=node_id,
         dispatched_at=ctx.time.now().isoformat(),
     )
-    ctx.issues.update_issue_body(repo.root, plan_issue_number, updated_body)
+    ctx.issues.update_issue_body(repo.root, plan_issue_number, BodyText(content=updated_body))
     user_output(
         click.style("✓", fg="green") + f" Updated dispatch metadata on plan #{plan_issue_number}"
     )

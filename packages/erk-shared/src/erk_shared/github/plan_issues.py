@@ -22,6 +22,7 @@ from erk_shared.github.metadata.plan_header import (
     format_plan_header_body,
     update_plan_header_comment_id,
 )
+from erk_shared.github.types import BodyText
 from erk_shared.plan_utils import extract_title_from_plan
 
 # Label configurations
@@ -221,7 +222,7 @@ def create_plan_issue(
         commands_section = format_plan_commands_section(result.number)
         updated_body = updated_body + "\n\n" + commands_section
 
-    github_issues.update_issue_body(repo_root, result.number, updated_body)
+    github_issues.update_issue_body(repo_root, result.number, BodyText(content=updated_body))
 
     return CreatePlanIssueResult(
         success=True,

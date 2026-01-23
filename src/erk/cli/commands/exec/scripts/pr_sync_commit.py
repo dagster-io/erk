@@ -47,7 +47,7 @@ from erk_shared.github.pr_footer import (
     extract_header_from_body,
     rebuild_pr_body,
 )
-from erk_shared.github.types import PRNotFound
+from erk_shared.github.types import BodyFile, PRNotFound
 
 
 @dataclass(frozen=True)
@@ -141,7 +141,7 @@ def _sync_pr_from_commit(
         repo_root=repo_root,
         pr_number=pr_number,
         title=commit_title,
-        body=body_file,
+        body=BodyFile(path=body_file),
     )
 
     # Clean up temp file

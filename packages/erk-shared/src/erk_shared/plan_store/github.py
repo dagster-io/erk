@@ -28,6 +28,7 @@ from erk_shared.github.metadata.schemas import (
 )
 from erk_shared.github.plan_issues import create_plan_issue
 from erk_shared.github.retry import RetriesExhausted, RetryRequested, with_retries
+from erk_shared.github.types import BodyText
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.types import CreatePlanResult, Plan, PlanQuery, PlanState
 
@@ -410,7 +411,7 @@ class GitHubPlanStore(PlanBackend):
         updated_body = replace_metadata_block_in_body(
             issue_info.body, "plan-header", new_block_content
         )
-        self._github_issues.update_issue_body(repo_root, issue_number, updated_body)
+        self._github_issues.update_issue_body(repo_root, issue_number, BodyText(content=updated_body))
 
     def add_comment(
         self,

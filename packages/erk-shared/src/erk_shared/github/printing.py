@@ -8,6 +8,9 @@ from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    BodyContent,
+    BodyFile,
+    BodyText,
     GitHubRepoLocation,
     PRDetails,
     PRListState,
@@ -201,14 +204,16 @@ class PrintingGitHub(PrintingBase, GitHub):
         return self._wrapped.list_prs(repo_root, state=state)
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
+        self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:
         """Update PR title and body with printed output."""
-        if isinstance(body, Path):
+        if isinstance(body, BodyFile):
             self._emit(
-                self._format_command(f"gh pr edit {pr_number} --title <title> --body-file {body}")
+                self._format_command(
+                    f"gh pr edit {pr_number} --title <title> --body-file {body.path}"
+                )
             )
-        else:
+        elif isinstance(body, BodyText):
             self._emit(
                 self._format_command(f"gh pr edit {pr_number} --title <title> --body <body>")
             )

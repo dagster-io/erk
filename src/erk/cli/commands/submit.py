@@ -38,7 +38,7 @@ from erk_shared.github.parsing import (
     extract_owner_repo_from_github_url,
 )
 from erk_shared.github.pr_footer import build_pr_body_footer
-from erk_shared.github.types import PRNotFound
+from erk_shared.github.types import BodyText, PRNotFound
 from erk_shared.naming import (
     format_branch_timestamp_suffix,
     sanitize_worktree_name,
@@ -728,7 +728,7 @@ def _submit_single_issue(
                 node_id=node_id,
                 dispatched_at=queued_at,
             )
-            ctx.issues.update_issue_body(repo.root, issue_number, updated_body)
+            ctx.issues.update_issue_body(repo.root, issue_number, BodyText(content=updated_body))
             user_output(click.style("✓", fg="green") + " Dispatch metadata written to issue")
         except Exception as e:
             # Log warning but don't block - workflow is already triggered

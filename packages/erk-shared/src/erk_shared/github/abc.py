@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    BodyContent,
     GitHubRepoLocation,
     PRDetails,
     PRListState,
@@ -419,7 +420,7 @@ class GitHub(ABC):
 
     @abstractmethod
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
+        self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:
         """Update PR title and body.
 
@@ -427,10 +428,10 @@ class GitHub(ABC):
             repo_root: Repository root directory
             pr_number: PR number to update
             title: New PR title
-            body: New PR body - either a string with the content, or a Path
-                to a file containing the content. When a Path is provided, the
-                gh CLI reads from the file using -F body=@{path} syntax, which
-                avoids shell argument length limits for large bodies.
+            body: New PR body - either BodyText with inline content, or
+                BodyFile with a path to read from. When BodyFile is provided,
+                the gh CLI reads from the file using -F body=@{path} syntax,
+                which avoids shell argument length limits for large bodies.
 
         Raises:
             RuntimeError: If gh command fails

@@ -10,6 +10,7 @@ from erk_shared.github.issues.types import (
     IssueInfo,
     PRReference,
 )
+from erk_shared.github.types import BodyContent, BodyFile, BodyText
 
 
 class FakeGitHubIssues(GitHubIssues):
@@ -198,7 +199,7 @@ class FakeGitHubIssues(GitHubIssues):
         self._added_comments.append((number, body, comment_id))
         return comment_id
 
-    def update_issue_body(self, repo_root: Path, number: int, body: str | Path) -> None:
+    def update_issue_body(self, repo_root: Path, number: int, body: BodyContent) -> None:
         """Update issue body in fake storage and track mutation.
 
         Raises:
@@ -208,11 +209,14 @@ class FakeGitHubIssues(GitHubIssues):
             msg = f"Issue #{number} not found"
             raise RuntimeError(msg)
 
-        # Resolve body content from file if Path provided
-        if isinstance(body, Path):
-            body_content = body.read_text(encoding="utf-8")
+        # Resolve body content from BodyFile or BodyText
+        if isinstance(body, BodyFile):
+            body_content = body.path.read_text(encoding="utf-8")
+        elif isinstance(body, BodyText):
+            body_content = body.content
         else:
-            body_content = body
+            # Should never happen with proper typing, but handle gracefully
+            body_content = str(body)
 
         # Track the update for test assertions
         self._updated_bodies.append((number, body_content))

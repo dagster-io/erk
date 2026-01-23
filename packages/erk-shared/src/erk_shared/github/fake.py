@@ -12,6 +12,9 @@ from erk_shared.github.abc import GistCreated, GistCreateError, GitHub
 from erk_shared.github.issues.abc import GitHubIssues
 from erk_shared.github.issues.types import IssueInfo
 from erk_shared.github.types import (
+    BodyContent,
+    BodyFile,
+    BodyText,
     GitHubRepoLocation,
     PRDetails,
     PRListState,
@@ -615,7 +618,7 @@ class FakeGitHub(GitHub):
         return {branch: pr for branch, pr in self._prs.items() if pr.state == target_state}
 
     def update_pr_title_and_body(
-        self, *, repo_root: Path, pr_number: int, title: str, body: str | Path
+        self, *, repo_root: Path, pr_number: int, title: str, body: BodyContent
     ) -> None:
         """Record PR title and body update in mutation tracking lists.
 
@@ -624,11 +627,14 @@ class FakeGitHub(GitHub):
         if not self._pr_update_should_succeed:
             raise RuntimeError("PR update failed (configured to fail)")
 
-        # Resolve body content from file if Path provided
-        if isinstance(body, Path):
-            body_content = body.read_text(encoding="utf-8")
+        # Resolve body content from BodyFile or BodyText
+        if isinstance(body, BodyFile):
+            body_content = body.path.read_text(encoding="utf-8")
+        elif isinstance(body, BodyText):
+            body_content = body.content
         else:
-            body_content = body
+            # Should never happen with proper typing, but handle gracefully
+            body_content = str(body)
 
         self._updated_pr_titles.append((pr_number, title))
         self._updated_pr_bodies.append((pr_number, body_content))
