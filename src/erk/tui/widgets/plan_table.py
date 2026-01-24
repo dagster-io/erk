@@ -219,7 +219,9 @@ class PlanDataTable(DataTable):
             objective_cell = Text(row.objective_display, style="cyan underline")
 
         # Build values list based on columns
-        values: list[str | Text] = [plan_cell, row.title]
+        # Wrap title in Text to prevent Rich markup interpretation
+        # (e.g., "[erk-learn]" prefix would otherwise be treated as a markup tag)
+        values: list[str | Text] = [plan_cell, Text(row.title)]
         if self._plan_filters.show_prs:
             # Strip Rich markup and colorize if clickable
             pr_display = _strip_rich_markup(row.pr_display)
