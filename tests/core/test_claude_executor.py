@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from erk.core.claude_executor import RealClaudeExecutor
+from erk.core.claude_executor import RealClaudeExecutor, format_prompt_error
 from erk.core.output_filter import extract_pr_metadata_from_text
 
 
@@ -541,3 +541,69 @@ https://github.com/dagster-io/erk/pull/1311"""
 
         assert result["pr_number"] == 99999
         assert result["pr_title"] == "Large PR number"
+
+
+# =============================================================================
+# Tests for format_prompt_error (pure function)
+# =============================================================================
+
+
+class TestFormatPromptError:
+    """Tests for format_prompt_error() - pure function, no fakes needed."""
+
+    def test_error_includes_exit_code_and_stderr(self) -> None:
+        """Error message includes exit code and stderr."""
+        result = format_prompt_error(
+            returncode=1,
+            stderr="Permission denied",
+            stdout="",
+        )
+
+        assert "Exit code 1" in result
+        assert "stderr: Permission denied" in result
+
+    def test_error_includes_stdout_when_present(self) -> None:
+        """Error message includes stdout preview when available."""
+        result = format_prompt_error(
+            returncode=1,
+            stderr="",
+            stdout='{"error": "rate_limited"}',
+        )
+
+        assert "Exit code 1" in result
+        assert 'stdout: {"error": "rate_limited"}' in result
+
+    def test_error_with_both_stderr_and_stdout(self) -> None:
+        """Error message includes both stderr and stdout when both present."""
+        result = format_prompt_error(
+            returncode=2,
+            stderr="Some error",
+            stdout="Some output",
+        )
+
+        assert "Exit code 2" in result
+        assert "stderr: Some error" in result
+        assert "stdout: Some output" in result
+
+    def test_error_without_stderr_or_stdout(self) -> None:
+        """Error message includes only exit code when no output."""
+        result = format_prompt_error(
+            returncode=137,
+            stderr="",
+            stdout="",
+        )
+
+        assert result == "Exit code 137"
+
+    def test_stdout_preview_truncated_at_500_chars(self) -> None:
+        """Stdout is truncated to 500 chars in error message."""
+        long_output = "x" * 1000
+        result = format_prompt_error(
+            returncode=1,
+            stderr="",
+            stdout=long_output,
+        )
+
+        # stdout should be truncated to 500 chars
+        assert "stdout: " + ("x" * 500) in result
+        assert ("x" * 501) not in result

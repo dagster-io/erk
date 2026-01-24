@@ -122,7 +122,7 @@ class TestRealPromptExecutorSubprocessIntegration:
             assert fake_time.sleep_calls == [RETRY_DELAYS[0]]
 
     def test_all_attempts_fail_returns_last_failure(self) -> None:
-        """When all attempts fail, return last failure result."""
+        """When all attempts fail, return last failure result with rich context."""
         fake_time = FakeTime()
         executor = RealPromptExecutor(fake_time)
 
@@ -137,7 +137,9 @@ class TestRealPromptExecutorSubprocessIntegration:
 
             assert result.success is False
             assert result.output == ""
-            assert result.error == "Persistent error"
+            # Error now includes exit code and stderr with labels
+            assert "Exit code 1" in result.error
+            assert "stderr: Persistent error" in result.error
             assert mock_run.call_count == len(RETRY_DELAYS) + 1
             assert fake_time.sleep_calls == list(RETRY_DELAYS)
 
@@ -179,3 +181,81 @@ class TestRealPromptExecutorSubprocessIntegration:
             assert "--model" in cmd
             model_index = cmd.index("--model")
             assert cmd[model_index + 1] == "opus"
+
+
+class TestRealPromptExecutorErrorHandling:
+    """Tests for improved error reporting in _execute_once."""
+
+    def test_error_includes_exit_code_only_when_no_output(self) -> None:
+        """Error message includes only exit code when no stderr/stdout."""
+        fake_time = FakeTime()
+        executor = RealPromptExecutor(fake_time)
+
+        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
+            mock_run.return_value = FakeCompletedProcess(
+                returncode=137,
+                stdout="",
+                stderr="",
+            )
+
+            result = executor.execute_prompt("test prompt", model="haiku")
+
+            assert result.success is False
+            assert result.error == "Exit code 137"
+
+    def test_error_includes_stdout_when_present(self) -> None:
+        """Error message includes stdout preview when available."""
+        fake_time = FakeTime()
+        executor = RealPromptExecutor(fake_time)
+
+        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
+            mock_run.return_value = FakeCompletedProcess(
+                returncode=1,
+                stdout='{"error": "rate_limited", "retry_after": 60}',
+                stderr="",
+            )
+
+            result = executor.execute_prompt("test prompt", model="haiku")
+
+            assert result.success is False
+            assert "Exit code 1" in result.error
+            assert 'stdout: {"error": "rate_limited", "retry_after": 60}' in result.error
+
+    def test_error_includes_both_stderr_and_stdout(self) -> None:
+        """Error message includes both stderr and stdout when both present."""
+        fake_time = FakeTime()
+        executor = RealPromptExecutor(fake_time)
+
+        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
+            mock_run.return_value = FakeCompletedProcess(
+                returncode=2,
+                stdout="Partial output before failure",
+                stderr="Connection reset by peer",
+            )
+
+            result = executor.execute_prompt("test prompt", model="haiku")
+
+            assert result.success is False
+            assert "Exit code 2" in result.error
+            assert "stderr: Connection reset by peer" in result.error
+            assert "stdout: Partial output before failure" in result.error
+
+    def test_stdout_preview_truncated_at_500_chars(self) -> None:
+        """Stdout is truncated to 500 chars in error message."""
+        fake_time = FakeTime()
+        executor = RealPromptExecutor(fake_time)
+
+        with patch("erk_shared.prompt_executor.real.subprocess.run") as mock_run:
+            long_output = "y" * 1000
+            mock_run.return_value = FakeCompletedProcess(
+                returncode=1,
+                stdout=long_output,
+                stderr="",
+            )
+
+            result = executor.execute_prompt("test prompt", model="haiku")
+
+            assert result.success is False
+            # stdout should be truncated to 500 chars
+            assert "stdout: " + ("y" * 500) in result.error
+            assert ("y" * 501) not in result.error

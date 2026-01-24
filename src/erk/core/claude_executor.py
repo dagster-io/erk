@@ -46,6 +46,33 @@ STDERR_JOIN_TIMEOUT = 5.0  # 5 seconds (increased from 1.0)
 logger = logging.getLogger(__name__)
 
 
+def format_prompt_error(
+    *,
+    returncode: int,
+    stderr: str,
+    stdout: str,
+) -> str:
+    """Format error message for failed prompt execution.
+
+    Constructs a structured error message from subprocess failure details.
+
+    Args:
+        returncode: Process exit code
+        stderr: Standard error output
+        stdout: Standard output (truncated to 500 characters)
+
+    Returns:
+        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    """
+    error_parts = [f"Exit code {returncode}"]
+    if stderr and stderr.strip():
+        error_parts.append(f"stderr: {stderr.strip()}")
+    if stdout and stdout.strip():
+        stdout_preview = stdout.strip()[:500]
+        error_parts.append(f"stdout: {stdout_preview}")
+    return " | ".join(error_parts)
+
+
 class RealClaudeExecutor(ClaudeExecutor):
     """Production implementation using subprocess and Claude CLI."""
 
@@ -532,7 +559,11 @@ class RealClaudeExecutor(ClaudeExecutor):
             return PromptResult(
                 success=False,
                 output="",
-                error=result.stderr.strip() if result.stderr else f"Exit code {result.returncode}",
+                error=format_prompt_error(
+                    returncode=result.returncode,
+                    stderr=result.stderr,
+                    stdout=result.stdout,
+                ),
             )
 
         return PromptResult(

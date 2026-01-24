@@ -104,10 +104,17 @@ class RealPromptExecutor(PromptExecutor):
             print(f"Claude CLI stderr: {result.stderr}", file=sys.stderr)
 
         if result.returncode != 0:
+            error_parts = [f"Exit code {result.returncode}"]
+            if result.stderr and result.stderr.strip():
+                error_parts.append(f"stderr: {result.stderr.strip()}")
+            if result.stdout and result.stdout.strip():
+                # Include stdout preview (first 500 chars) - may contain error details
+                stdout_preview = result.stdout.strip()[:500]
+                error_parts.append(f"stdout: {stdout_preview}")
             return PromptResult(
                 success=False,
                 output="",
-                error=result.stderr or "Claude CLI execution failed",
+                error=" | ".join(error_parts),
             )
 
         return PromptResult(
