@@ -59,6 +59,24 @@ If any issue is already closed, display warning but continue:
 Warning: Issue #<number> is already closed. Proceeding with replan anyway.
 ```
 
+### Step 2.5: Extract Objective Issue
+
+For each validated plan, extract the `objective_issue` metadata:
+
+```bash
+erk exec get-plan-metadata <number> objective_issue
+```
+
+Store the objective issue number(s) for later use when saving the new plan.
+
+**For single plan:** Use the `objective_issue` if present.
+
+**For consolidation mode:**
+
+- If all plans share the same `objective_issue`, use it
+- If plans have different `objective_issues`, warn the user and ask which to use
+- If only some plans have `objective_issues`, use the one(s) that exist
+
 ### Step 3: Fetch Plan Content (Parallel if Multiple)
 
 For each issue, fetch the plan content stored in the first comment's `plan-body` metadata block:
@@ -257,8 +275,16 @@ Items by source:
 After the user approves the plan in Plan Mode:
 
 1. Exit Plan Mode
-2. Run `/erk:plan-save` to create the new GitHub issue
-3. Close original issue(s) with comment linking to the new one:
+2. Run `/erk:plan-save` to create the new GitHub issue:
+   - **If the source plan(s) had an `objective_issue`**: Pass it with `/erk:plan-save --objective-issue=<objective_number>`
+   - **If consolidating with conflicting objectives**: Use the objective chosen by the user in Step 2.5
+   - **Otherwise**: Run `/erk:plan-save` without the flag
+3. **If `--objective-issue` was used**, verify the link was saved correctly:
+   ```bash
+   erk exec get-plan-metadata <new_issue_number> objective_issue
+   ```
+   If the objective link is missing, warn the user that the plan may not be linked to its objective.
+4. Close original issue(s) with comment linking to the new one:
 
 **Single plan:**
 
