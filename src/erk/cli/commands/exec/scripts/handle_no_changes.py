@@ -29,6 +29,7 @@ from dataclasses import asdict, dataclass
 import click
 
 from erk_shared.context.helpers import require_github, require_repo_root
+from erk_shared.github.types import BodyText
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,19 @@ class HandleNoChangesError:
 _LABEL_NO_CHANGES = "no-changes"
 _LABEL_NO_CHANGES_DESC = "Implementation produced no code changes"
 _LABEL_NO_CHANGES_COLOR = "FFA500"
+
+
+def _build_no_changes_title(*, issue_number: int, original_title: str) -> str:
+    """Build PR title indicating no changes were produced.
+
+    Args:
+        issue_number: Plan issue number
+        original_title: Original PR title
+
+    Returns:
+        New title with [no-changes] prefix and issue reference
+    """
+    return f"[no-changes] P{issue_number} Impl Attempt: {original_title}"
 
 
 def _build_pr_body(
@@ -134,6 +148,7 @@ def _build_issue_comment(*, pr_number: int) -> str:
 @click.option("--issue-number", type=int, required=True, help="Plan issue number")
 @click.option("--behind-count", type=int, required=True, help="How many commits behind base branch")
 @click.option("--base-branch", type=str, required=True, help="Base branch name")
+@click.option("--original-title", type=str, required=True, help="Original PR title")
 @click.option(
     "--recent-commits",
     type=str,
@@ -149,6 +164,7 @@ def handle_no_changes(
     issue_number: int,
     behind_count: int,
     base_branch: str,
+    original_title: str,
     recent_commits: str | None,
     run_url: str | None,
 ) -> None:
@@ -163,7 +179,8 @@ def handle_no_changes(
     github = require_github(ctx)
     repo_root = require_repo_root(ctx)
 
-    # Build PR body
+    # Build PR title and body
+    new_title = _build_no_changes_title(issue_number=issue_number, original_title=original_title)
     pr_body = _build_pr_body(
         issue_number=issue_number,
         behind_count=behind_count,
@@ -172,14 +189,19 @@ def handle_no_changes(
         run_url=run_url,
     )
 
-    # 1. Update PR body
+    # 1. Update PR title and body
     try:
-        github.update_pr_body(repo_root, pr_number, pr_body)
+        github.update_pr_title_and_body(
+            repo_root=repo_root,
+            pr_number=pr_number,
+            title=new_title,
+            body=BodyText(content=pr_body),
+        )
     except RuntimeError as e:
         result = HandleNoChangesError(
             success=False,
             error="github-api-failed",
-            message=f"Failed to update PR body: {e}",
+            message=f"Failed to update PR title and body: {e}",
         )
         click.echo(json.dumps(asdict(result), indent=2))
         raise SystemExit(1) from None

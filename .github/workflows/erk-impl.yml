@@ -294,6 +294,7 @@ jobs:
               --issue-number "$ISSUE_NUMBER" \
               --behind-count "$BEHIND_COUNT" \
               --base-branch "$BASE_BRANCH" \
+              --original-title "${{ inputs.issue_title }}" \
               --recent-commits "$RECENT_COMMITS" \
               --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
