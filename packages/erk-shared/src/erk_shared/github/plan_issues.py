@@ -74,6 +74,7 @@ def create_plan_issue(
     source_repo: str | None,
     objective_id: int | None,
     created_from_session: str | None,
+    created_from_workflow_run_url: str | None,
     learned_from_issue: int | None,
 ) -> CreatePlanIssueResult:
     """Create Schema v2/v3 plan issue with proper structure.
@@ -94,7 +95,8 @@ def create_plan_issue(
         title_tag: Tag for issue title (defaults based on labels, may be prefix or suffix)
         source_repo: For cross-repo plans, the implementation repo in "owner/repo" format
         objective_id: Optional parent objective issue number
-        created_from_session: Optional session ID that created this plan (for learn discovery)
+        created_from_session: Optional session ID that created this plan
+        created_from_workflow_run_url: Optional workflow run URL that created this plan
         learned_from_issue: Optional parent plan issue number (for learn plans, enables
             auto-update when learn plan lands)
 
@@ -175,6 +177,7 @@ def create_plan_issue(
         source_repo=source_repo,
         objective_issue=objective_id,
         created_from_session=created_from_session,
+        created_from_workflow_run_url=created_from_workflow_run_url,
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,

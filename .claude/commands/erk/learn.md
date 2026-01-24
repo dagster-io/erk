@@ -600,12 +600,20 @@ Parse the JSON output:
 **If plan is valid**, save it as a GitHub issue:
 
 ```bash
-erk exec plan-save-to-issue \
+# Build command with optional workflow run URL for backlink
+CMD="erk exec plan-save-to-issue \
     --plan-type learn \
     --plan-file .erk/scratch/sessions/${CLAUDE_SESSION_ID}/learn-agents/learn-plan.md \
-    --session-id="${CLAUDE_SESSION_ID}" \
+    --session-id=\"${CLAUDE_SESSION_ID}\" \
     --learned-from-issue <parent-issue-number> \
-    --format json
+    --format json"
+
+# Add workflow run URL if set (enables backlink to GitHub Actions run)
+if [ -n "$WORKFLOW_RUN_URL" ]; then
+    CMD="$CMD --created-from-workflow-run-url \"$WORKFLOW_RUN_URL\""
+fi
+
+eval "$CMD"
 ```
 
 Parse the JSON output to get `issue_number` (the new learn plan issue).

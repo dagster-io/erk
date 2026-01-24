@@ -669,14 +669,15 @@ Extract plan from ~/.claude/plans/ and create GitHub issue.
 
 **Options:**
 
-| Flag                   | Type    | Required | Default | Description                                                               |
-| ---------------------- | ------- | -------- | ------- | ------------------------------------------------------------------------- |
-| `--format`             | CHOICE  | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
-| `--plan-file`          | PATH    | No       | -       | Path to specific plan file (highest priority)                             |
-| `--session-id`         | TEXT    | No       | -       | Session ID for scoped plan lookup (uses slug from session logs)           |
-| `--objective-issue`    | INTEGER | No       | -       | Link plan to parent objective issue number                                |
-| `--plan-type`          | CHOICE  | No       | -       | Plan type: standard (default) or learn (for documentation learning plans) |
-| `--learned-from-issue` | INTEGER | No       | -       | Parent plan issue number (for learn plans, enables auto-update on land)   |
+| Flag                              | Type    | Required | Default | Description                                                               |
+| --------------------------------- | ------- | -------- | ------- | ------------------------------------------------------------------------- |
+| `--format`                        | CHOICE  | No       | 'json'  | Output format: json (default) or display (formatted text)                 |
+| `--plan-file`                     | PATH    | No       | -       | Path to specific plan file (highest priority)                             |
+| `--session-id`                    | TEXT    | No       | -       | Session ID for scoped plan lookup (uses slug from session logs)           |
+| `--objective-issue`               | INTEGER | No       | -       | Link plan to parent objective issue number                                |
+| `--plan-type`                     | CHOICE  | No       | -       | Plan type: standard (default) or learn (for documentation learning plans) |
+| `--learned-from-issue`            | INTEGER | No       | -       | Parent plan issue number (for learn plans, enables auto-update on land)   |
+| `--created-from-workflow-run-url` | TEXT    | No       | -       | GitHub Actions workflow run URL that created this plan (for backlink)     |
 
 ### plan-update-issue
 

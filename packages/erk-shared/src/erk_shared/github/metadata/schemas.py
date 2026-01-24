@@ -330,6 +330,7 @@ PlanHeaderFieldName = Literal[
     "source_repo",
     "objective_issue",
     "created_from_session",
+    "created_from_workflow_run_url",
     "last_learn_session",
     "last_learn_at",
     "learn_status",
@@ -367,6 +368,9 @@ LAST_REMOTE_IMPL_SESSION_ID: Literal["last_remote_impl_session_id"] = "last_remo
 SOURCE_REPO: Literal["source_repo"] = "source_repo"
 OBJECTIVE_ISSUE: Literal["objective_issue"] = "objective_issue"
 CREATED_FROM_SESSION: Literal["created_from_session"] = "created_from_session"
+CREATED_FROM_WORKFLOW_RUN_URL: Literal["created_from_workflow_run_url"] = (
+    "created_from_workflow_run_url"
+)
 LAST_LEARN_SESSION: Literal["last_learn_session"] = "last_learn_session"
 LAST_LEARN_AT: Literal["last_learn_at"] = "last_learn_at"
 LEARN_STATUS: Literal["learn_status"] = "learn_status"
@@ -432,6 +436,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         source_repo: For cross-repo plans, the repo where implementation happens (nullable)
         objective_issue: Parent objective issue number (nullable)
         created_from_session: Session ID that created this plan (nullable)
+        created_from_workflow_run_url: Workflow run URL that created this plan (nullable)
         last_learn_session: Session ID that last invoked learn (nullable)
         last_learn_at: ISO 8601 timestamp of last learn invocation (nullable)
         learn_status: Learning workflow status (nullable)
@@ -469,6 +474,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             SOURCE_REPO,
             OBJECTIVE_ISSUE,
             CREATED_FROM_SESSION,
+            CREATED_FROM_WORKFLOW_RUN_URL,
             LAST_LEARN_SESSION,
             LAST_LEARN_AT,
             LEARN_STATUS,
@@ -605,6 +611,16 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("created_from_session must be a string or null")
             if len(data[CREATED_FROM_SESSION]) == 0:
                 raise ValueError("created_from_session must not be empty when provided")
+
+        # Validate optional created_from_workflow_run_url field
+        if (
+            CREATED_FROM_WORKFLOW_RUN_URL in data
+            and data[CREATED_FROM_WORKFLOW_RUN_URL] is not None
+        ):
+            if not isinstance(data[CREATED_FROM_WORKFLOW_RUN_URL], str):
+                raise ValueError("created_from_workflow_run_url must be a string or null")
+            if len(data[CREATED_FROM_WORKFLOW_RUN_URL]) == 0:
+                raise ValueError("created_from_workflow_run_url must not be empty when provided")
 
         # Validate optional last_learn_session field
         if LAST_LEARN_SESSION in data and data[LAST_LEARN_SESSION] is not None:

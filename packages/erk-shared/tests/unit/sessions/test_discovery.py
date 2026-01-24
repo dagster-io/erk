@@ -134,9 +134,13 @@ def _make_plan_body(
         source_repo=None,
         objective_issue=None,
         created_from_session=created_from_session,
+        created_from_workflow_run_url=None,
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
 
@@ -287,9 +291,13 @@ def _make_plan_body_with_remote_impl(
         source_repo=None,
         objective_issue=None,
         created_from_session=None,
+        created_from_workflow_run_url=None,
         last_learn_session=None,
         last_learn_at=None,
         learn_status=None,
+        learn_plan_issue=None,
+        learn_plan_pr=None,
+        learned_from_issue=None,
     )
 
 
