@@ -58,7 +58,6 @@ For cost-sensitive CI jobs, specify a faster/cheaper model:
 claude --print \
 --model claude-haiku-4-5 \
 --verbose \
-...
 ```
 
 Models ranked by speed/cost (fastest first):
