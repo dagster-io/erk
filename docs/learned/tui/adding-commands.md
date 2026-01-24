@@ -29,20 +29,34 @@ This pattern exists because commands need different behavior depending on where 
 In `src/erk/tui/commands/registry.py`, add a `CommandDefinition`:
 
 ```python
+from erk.tui.commands.types import CommandCategory, CommandDefinition
+
 CommandDefinition(
     id="land_pr",  # Unique identifier
-    name="Action: Land PR",  # Display name (Category: Name format)
+    name="Land PR",  # Display name (used as fallback if no get_display_name)
     description="Merge PR and clean up worktree",  # Brief description
+    category=CommandCategory.ACTION,  # Determines emoji prefix (⚡)
     shortcut="l",  # Optional keyboard shortcut (single char) or None
     is_available=lambda ctx: ctx.row.pr_number is not None and ctx.row.exists_locally,
+    get_display_name=lambda ctx: f"erk land {ctx.row.pr_number}",  # Dynamic name
 )
 ```
 
-**Command categories** (use in name prefix):
+**Command Categories** (from `CommandCategory` enum):
 
-- `Action:` - Mutative operations (close, submit, land)
-- `Open:` - Browser navigation (open issue, PR, run)
-- `Copy:` - Clipboard operations (copy commands)
+| Category                 | Emoji | Use For                                   |
+| ------------------------ | ----- | ----------------------------------------- |
+| `CommandCategory.ACTION` | ⚡    | Mutative operations (close, submit, land) |
+| `CommandCategory.OPEN`   | 🔗    | Browser navigation (open issue, PR, run)  |
+| `CommandCategory.COPY`   | 📋    | Clipboard operations (copy commands)      |
+
+The emoji is automatically prepended via `CATEGORY_EMOJI` mapping in `registry.py`.
+
+**Dynamic Display Names** with `get_display_name`:
+
+- If provided, returns context-aware name (e.g., `"erk land 456"`)
+- If `None`, falls back to static `name` field
+- Displayed in palette as: `⚡ erk land 456`
 
 **Availability predicates** use `CommandContext.row` (a `PlanRowData` instance). See [plan-row-data.md](plan-row-data.md) for field reference.
 

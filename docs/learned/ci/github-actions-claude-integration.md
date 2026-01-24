@@ -103,6 +103,37 @@ See `.github/workflows/learn-dispatch.yml` for a complete working example.
 | No output captured               | Missing `--print`                        | Add `--print`          |
 | Authentication failed            | Missing `ANTHROPIC_API_KEY`              | Add secret to workflow |
 
+## Workflow Flag Consistency Matrix
+
+All Claude-invoking workflows should use the same flag pattern for consistency:
+
+| Workflow             | `--print` | `--verbose` | `--output-format` | `--dangerously-skip-permissions` |
+| -------------------- | --------- | ----------- | ----------------- | -------------------------------- |
+| erk-impl.yml         | Yes       | Yes         | stream-json       | Yes                              |
+| learn-dispatch.yml   | Yes       | Yes         | stream-json       | Yes                              |
+| pr-address.yml       | Yes       | Yes         | stream-json       | Yes                              |
+| ci.yml (AI lint fix) | Yes       | Yes         | stream-json       | Yes                              |
+
+**All workflows use identical flags.** When adding new Claude-invoking workflows, follow this pattern:
+
+```yaml
+claude --print \
+--model <model-name> \
+--output-format stream-json \
+--dangerously-skip-permissions \
+--verbose \
+"/your:command"
+```
+
+**Flag order**: While flag order doesn't affect functionality, maintaining consistent ordering improves readability. The canonical order is:
+
+1. `--print`
+2. `--model`
+3. `--output-format stream-json`
+4. `--dangerously-skip-permissions`
+5. `--verbose`
+6. Command/prompt
+
 ## Related Topics
 
 - [CI Prompt Patterns](prompt-patterns.md) - How to structure prompts for CI
