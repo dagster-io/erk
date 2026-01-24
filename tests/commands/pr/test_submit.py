@@ -1175,3 +1175,412 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
         # Should NOT show "created" without qualifier
         # (check it's not "PR #123 created" which would indicate the bug)
         assert "PR #123 created" not in result.output
+
+
+def test_pr_submit_shows_plan_context_phase() -> None:
+    """Test that Phase 3 displays plan context fetching output.
+
+    When a branch is linked to an erk-plan issue, the submit command should
+    show a dedicated phase for fetching plan context with the issue number.
+    """
+    from datetime import UTC, datetime
+
+    from erk_shared.github.issues.fake import FakeGitHubIssues
+    from erk_shared.github.issues.types import IssueComment, IssueInfo
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="P5823-add-feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "P5823-add-feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "P5823-add-feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "P5823-add-feature": BranchMetadata(
+                    name="P5823-add-feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["P5823-add-feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # Create issue with plan metadata referencing comment (using proper format)
+        now = datetime.now(UTC)
+        issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2025-01-24T12:00:00Z'
+created_by: testuser
+plan_comment_id: 1000
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+        plan_issue = IssueInfo(
+            number=5823,
+            title="[erk-plan] Add feature",
+            body=issue_body,
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/5823",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="testuser",
+        )
+
+        # Comment containing the plan content (using old format for backward compatibility)
+        plan_body = (
+            "<!-- erk:plan-content -->\n"
+            "# Plan\n"
+            "Add the feature implementation.\n"
+            "<!-- /erk:plan-content -->"
+        )
+        plan_comment = IssueComment(
+            id=1000,
+            body=plan_body,
+            url="https://github.com/owner/repo/issues/5823#issuecomment-1000",
+            author="testuser",
+        )
+
+        github_issues = FakeGitHubIssues(
+            issues={5823: plan_issue},
+            comments_with_urls={5823: [plan_comment]},
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"P5823-add-feature": pr_info},
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+            issues_gateway=github_issues,
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify Phase 3 output for plan context
+        assert "Phase 3: Fetching plan context" in result.output
+        assert "Incorporating plan from issue #5823" in result.output
+
+
+def test_pr_submit_shows_plan_context_with_objective() -> None:
+    """Test that Phase 3 displays objective link when plan has one.
+
+    When a plan is linked to an objective issue, the submit command should
+    show both the plan issue number and the objective summary.
+    """
+    from datetime import UTC, datetime
+
+    from erk_shared.github.issues.fake import FakeGitHubIssues
+    from erk_shared.github.issues.types import IssueComment, IssueInfo
+
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="P5823-add-feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "P5823-add-feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "P5823-add-feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "P5823-add-feature": BranchMetadata(
+                    name="P5823-add-feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["P5823-add-feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        # Create issue with plan metadata referencing comment AND objective
+        now = datetime.now(UTC)
+        issue_body = """<!-- erk:metadata-block:plan-header -->
+<details>
+<summary><code>plan-header</code></summary>
+
+```yaml
+schema_version: '2'
+created_at: '2025-01-24T12:00:00Z'
+created_by: testuser
+plan_comment_id: 1000
+objective_issue: 5000
+```
+
+</details>
+<!-- /erk:metadata-block:plan-header -->"""
+        plan_issue = IssueInfo(
+            number=5823,
+            title="[erk-plan] Add feature",
+            body=issue_body,
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/5823",
+            labels=["erk-plan"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="testuser",
+        )
+
+        # Objective issue
+        objective_issue = IssueInfo(
+            number=5000,
+            title="Improve PR workflow",
+            body="Objective body",
+            state="OPEN",
+            url="https://github.com/owner/repo/issues/5000",
+            labels=["erk-objective"],
+            assignees=[],
+            created_at=now,
+            updated_at=now,
+            author="testuser",
+        )
+
+        # Comment containing the plan content (using old format for backward compatibility)
+        plan_body = (
+            "<!-- erk:plan-content -->\n"
+            "# Plan\n"
+            "Add the feature implementation.\n"
+            "<!-- /erk:plan-content -->"
+        )
+        plan_comment = IssueComment(
+            id=1000,
+            body=plan_body,
+            url="https://github.com/owner/repo/issues/5823#issuecomment-1000",
+            author="testuser",
+        )
+
+        github_issues = FakeGitHubIssues(
+            issues={5823: plan_issue, 5000: objective_issue},
+            comments_with_urls={5823: [plan_comment]},
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"P5823-add-feature": pr_info},
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+            issues_gateway=github_issues,
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify Phase 3 output includes objective
+        assert "Phase 3: Fetching plan context" in result.output
+        assert "Incorporating plan from issue #5823" in result.output
+        assert "Linked to Objective #5000: Improve PR workflow" in result.output
+
+
+def test_pr_submit_shows_no_plan_message() -> None:
+    """Test that Phase 3 shows 'No linked plan found' for non-plan branches.
+
+    When a branch is not linked to an erk-plan issue (regular branch name),
+    the submit command should show a "No linked plan found" message.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        pr_info = PullRequestInfo(
+            number=123,
+            state="OPEN",
+            url="https://github.com/owner/repo/pull/123",
+            is_draft=False,
+            title="Feature PR",
+            checks_passing=True,
+            owner="owner",
+            repo="repo",
+        )
+        pr_details = PRDetails(
+            number=123,
+            url="https://github.com/owner/repo/pull/123",
+            title="Feature PR",
+            body="",
+            state="OPEN",
+            is_draft=False,
+            base_ref_name="main",
+            head_ref_name="feature",
+            is_cross_repository=False,
+            mergeable="MERGEABLE",
+            merge_state_status="CLEAN",
+            owner="owner",
+            repo="repo",
+            labels=(),
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.git_dir: "main"},
+            current_branches={env.cwd: "feature"},
+            commits_ahead={(env.cwd, "main"): 1},
+            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+content"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "feature": BranchMetadata(
+                    name="feature",
+                    parent="main",
+                    children=[],
+                    is_trunk=False,
+                    commit_sha=None,
+                ),
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=["feature"],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+            # PR info for cache polling - ensures polling finds PR immediately
+            pr_info={"feature": pr_info},
+        )
+
+        github = FakeGitHub(
+            authenticated=True,
+            prs={"feature": pr_info},
+            pr_details={123: pr_details},
+            pr_bases={123: "main"},
+        )
+
+        claude_executor = FakeClaudeExecutor(
+            claude_available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            claude_executor=claude_executor,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify Phase 3 shows no linked plan
+        assert "Phase 3: Fetching plan context" in result.output
+        assert "No linked plan found" in result.output

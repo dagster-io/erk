@@ -7,9 +7,10 @@ Unified PR submission with two-layer architecture:
 The workflow:
 1. Core submit: git push + gh pr create
 2. Get diff for AI: GitHub API
-3. Generate: AI-generated commit message via Claude CLI
-4. Graphite enhance: Optional gt submit for stack metadata
-5. Finalize: Update PR with AI-generated title/body
+3. Fetch plan context: Get plan from linked erk-plan issue
+4. Generate: AI-generated commit message via Claude CLI
+5. Graphite enhance: Optional gt submit for stack metadata
+6. Finalize: Update PR with AI-generated title/body
 """
 
 import os
@@ -194,15 +195,24 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
     # Get commit messages for AI context (only from current branch)
     commit_messages = ctx.git.get_commit_messages_since(cwd, parent_branch)
 
-    # Fetch plan context if branch is linked to a plan issue
+    # Phase 3: Fetch plan context
+    click.echo(click.style("Phase 3: Fetching plan context", bold=True))
     plan_provider = PlanContextProvider(ctx.github_issues)
     plan_context = plan_provider.get_plan_context(
         repo_root=Path(repo_root),
         branch_name=current_branch,
     )
+    if plan_context is not None:
+        msg = f"   Incorporating plan from issue #{plan_context.issue_number}"
+        click.echo(click.style(msg, fg="green"))
+        if plan_context.objective_summary is not None:
+            click.echo(click.style(f"   Linked to {plan_context.objective_summary}", fg="green"))
+    else:
+        click.echo(click.style("   No linked plan found", dim=True))
+    click.echo("")
 
-    # Phase 3: Generate commit message
-    click.echo(click.style("Phase 3: Generating PR description", bold=True))
+    # Phase 4: Generate commit message
+    click.echo(click.style("Phase 4: Generating PR description", bold=True))
     msg_gen = CommitMessageGenerator(ctx.claude_executor)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
@@ -220,10 +230,10 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
 
     click.echo("")
 
-    # Phase 4: Graphite enhancement (only for standard flow, when branch not already tracked)
+    # Phase 5: Graphite enhancement (only for standard flow, when branch not already tracked)
     # Skip if graphite_handles_push=True since gt submit already ran
     if use_graphite and not graphite_handles_push:
-        click.echo(click.style("Phase 4: Graphite enhancement", bold=True))
+        click.echo(click.style("Phase 5: Graphite enhancement", bold=True))
         graphite_result = _run_graphite_enhance(
             ctx, cwd=cwd, pr_number=pr_number, debug=debug, force=force
         )
@@ -240,8 +250,8 @@ def _execute_pr_submit(ctx: ErkContext, debug: bool, use_graphite: bool, force: 
             click.echo(click.style(f"   Warning: {graphite_result.message}", fg="yellow"))
             click.echo("")
 
-    # Phase 5: Finalize (update PR metadata)
-    click.echo(click.style("Phase 5: Updating PR metadata", bold=True))
+    # Phase 6: Finalize (update PR metadata)
+    click.echo(click.style("Phase 6: Updating PR metadata", bold=True))
     finalize_result = _run_finalize(
         ctx,
         cwd=cwd,
