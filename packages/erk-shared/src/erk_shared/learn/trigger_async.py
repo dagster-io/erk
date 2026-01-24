@@ -1,9 +1,12 @@
 """Shared logic for triggering async learn workflow.
 
-This module provides the core function for dispatching the learn-async.yml
-workflow for a plan issue. It's used by both:
-- `erk learn --async` command
-- `erk exec trigger-async-learn` script
+NOTE: The erk-impl workflow now runs learn inline after implementation,
+so this module is only used for:
+- `erk learn --async` command (local implementations that weren't auto-learned)
+- `erk exec trigger-async-learn` script (manual triggering)
+
+For remote implementations via erk-impl.yml, learn runs automatically
+as part of the workflow and documentation is committed to the same PR branch.
 """
 
 from collections.abc import Callable

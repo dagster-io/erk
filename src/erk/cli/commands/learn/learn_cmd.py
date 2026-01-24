@@ -15,14 +15,7 @@ import click
 
 from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
-from erk_shared.github.parsing import construct_workflow_run_url
 from erk_shared.github.types import GitHubRepoId
-from erk_shared.learn.trigger_async import (
-    TriggerAsyncLearnNoSessionData,
-    TriggerAsyncLearnNotErkPlan,
-    TriggerAsyncLearnSuccess,
-    trigger_async_learn_workflow,
-)
 from erk_shared.naming import extract_leading_issue_number
 from erk_shared.output.output import user_confirm, user_output
 from erk_shared.sessions.discovery import (
@@ -69,57 +62,31 @@ def _extract_issue_number(identifier: str) -> int | None:
 
 
 def _handle_async_mode(
-    ctx: ErkContext,
-    repo_root: Path,
+    _ctx: ErkContext,
+    _repo_root: Path,
     issue_number: int,
-    github_repo: GitHubRepoId | None,
+    _github_repo: GitHubRepoId | None,
 ) -> None:
-    """Handle async mode: enqueue learn job via GitHub Actions.
+    """Handle async mode: deprecated, learn now runs inline in erk-impl.
+
+    Previously this triggered the learn-async.yml workflow, but now learn runs
+    automatically as part of erk-impl.yml after implementation completes.
 
     Args:
-        ctx: Erk context with gateway dependencies
-        repo_root: Repository root directory
-        issue_number: Plan issue number to learn from
-        github_repo: GitHub repository info for constructing workflow URL
+        _ctx: Erk context (unused)
+        _repo_root: Repository root directory (unused)
+        issue_number: Plan issue number
+        _github_repo: GitHub repository info (unused)
     """
-
-    def show_progress(msg: str) -> None:
-        user_output(click.style(msg, dim=True))
-
-    result = trigger_async_learn_workflow(
-        github=ctx.github,
-        issues=ctx.issues,
-        repo_root=repo_root,
-        issue_number=issue_number,
-        on_progress=show_progress,
-    )
-
-    if isinstance(result, TriggerAsyncLearnNotErkPlan):
-        user_output(click.style(f"Error: Issue #{issue_number} is not an erk-plan", fg="red"))
-        raise SystemExit(1)
-
-    if isinstance(result, TriggerAsyncLearnNoSessionData):
-        user_output(click.style("Error: No session data available for learning", fg="red"))
-        user_output("The plan issue must have implementation session data before learning.")
-        raise SystemExit(1)
-
-    if isinstance(result, TriggerAsyncLearnSuccess):
-        user_output(click.style("Async learn job enqueued successfully", fg="green", bold=True))
-        user_output(f"Issue: #{result.issue_number}")
-        if github_repo is not None:
-            workflow_url = construct_workflow_run_url(
-                github_repo.owner, github_repo.repo, result.run_id
-            )
-            user_output(f"Workflow run: {workflow_url}")
-        else:
-            user_output(f"Workflow run ID: {result.run_id}")
-        user_output("")
-        user_output(click.style("Learn status: ", dim=True) + click.style("pending", fg="yellow"))
-        return
-
-    # Should never reach here - exhaustive pattern matching
-    msg = f"Unexpected result type: {type(result)}"
-    raise RuntimeError(msg)
+    user_output(click.style("Note: ", fg="yellow") + "--async mode is no longer needed")
+    user_output("")
+    user_output("Learn now runs automatically as part of the erk-impl workflow.")
+    user_output("Documentation is committed directly to the implementation PR branch.")
+    user_output("")
+    user_output(f"To run learn manually for issue #{issue_number}:")
+    user_output(f"  erk learn {issue_number}")
+    user_output("")
+    raise SystemExit(0)
 
 
 @click.command("learn")
@@ -140,7 +107,7 @@ def _handle_async_mode(
     "--async",
     "async_mode",
     is_flag=True,
-    help="Enqueue learn job for background processing instead of interactive launch",
+    help="(Deprecated) Learn now runs automatically in erk-impl workflow",
 )
 @click.pass_obj
 def learn_cmd(
@@ -164,8 +131,8 @@ def learn_cmd(
     By default, displays sessions and prompts to launch Claude interactively
     for insight extraction. Use -i to auto-launch Claude without prompting.
 
-    Use --async to enqueue a background learn job via GitHub Actions instead
-    of launching an interactive Claude session.
+    Note: Learn now runs automatically as part of the erk-impl workflow.
+    Documentation is committed to the same PR branch as the implementation.
 
     Examples:
 
@@ -175,7 +142,6 @@ def learn_cmd(
 
         erk learn 123 -i           # Auto-launch Claude
 
-        erk learn 123 --async      # Enqueue for background processing
     """
     # Resolve issue number: explicit argument or infer from branch
     issue_number: int | None = None
