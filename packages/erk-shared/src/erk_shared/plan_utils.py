@@ -11,7 +11,7 @@ dependencies or I/O operations.
 import re
 
 # Prefixes commonly added by Claude's Plan Mode that should be stripped
-_PLAN_PREFIXES = ("Plan: ", "Implementation Plan: ")
+_PLAN_PREFIXES = ("Plan: ", "Implementation Plan: ", "Documentation Plan: ")
 
 
 def _strip_plan_prefixes(title: str) -> str:
