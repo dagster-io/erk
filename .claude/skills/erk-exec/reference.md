@@ -24,6 +24,7 @@ Quick reference for all `erk exec` subcommands.
 | `exit-plan-mode-hook`             | Prompt user about plan saving when ExitPlanMode is called.                |
 | `extract-latest-plan`             | Extract the latest plan from Claude session files.                        |
 | `find-project-dir`                | Find Claude Code project directory for a filesystem path.                 |
+| `generate-pr-address-summary`     | Generate enhanced PR comment for pr-address workflow.                     |
 | `generate-pr-summary`             | Generate PR summary from PR diff using Claude.                            |
 | `get-closing-text`                | Get closing text for PR body based on .impl/issue.json or branch name.    |
 | `get-embedded-prompt`             | Get embedded prompt content from bundled prompts.                         |
@@ -263,6 +264,22 @@ Find Claude Code project directory for a filesystem path.
 | `--path` | PATH | No       | Sentinel.UNSET | Path to find project for (defaults to current directory) |
 | `--json` | FLAG | No       | -              | Output in JSON format                                    |
 
+### generate-pr-address-summary
+
+Generate enhanced PR comment for pr-address workflow.
+
+**Usage:** `erk exec generate-pr-address-summary`
+
+**Options:**
+
+| Flag           | Type    | Required | Default             | Description                     |
+| -------------- | ------- | -------- | ------------------- | ------------------------------- |
+| `--pr-number`  | INTEGER | Yes      | Sentinel.UNSET      | PR number being addressed       |
+| `--pre-head`   | TEXT    | Yes      | Sentinel.UNSET      | Commit SHA before Claude ran    |
+| `--model-name` | TEXT    | No       | 'claude-sonnet-4-5' | Claude model name used          |
+| `--run-url`    | TEXT    | Yes      | Sentinel.UNSET      | URL to the workflow run         |
+| `--job-status` | CHOICE  | Yes      | Sentinel.UNSET      | Job status (success or failure) |
+
 ### generate-pr-summary
 
 Generate PR summary from PR diff using Claude.
@@ -438,6 +455,7 @@ Handle no-changes scenario gracefully.
 | `--issue-number`   | INTEGER | Yes      | Sentinel.UNSET | Plan issue number                                 |
 | `--behind-count`   | INTEGER | Yes      | Sentinel.UNSET | How many commits behind base branch               |
 | `--base-branch`    | TEXT    | Yes      | Sentinel.UNSET | Base branch name                                  |
+| `--original-title` | TEXT    | Yes      | Sentinel.UNSET | Original PR title                                 |
 | `--recent-commits` | TEXT    | No       | -              | Recent commits on base branch (newline-separated) |
 | `--run-url`        | TEXT    | No       | -              | Optional workflow run URL                         |
 
