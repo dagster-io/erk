@@ -7,6 +7,8 @@ read_when:
 tripwires:
   - action: "using click.confirm() after user_output()"
     warning: "Use ctx.console.confirm() for testability, or user_confirm() if no context available. Direct click.confirm() after user_output() causes buffering hangs because stderr isn't flushed."
+  - action: "displaying user-provided text in Rich CLI tables"
+    warning: "Use `escape_markup(value)` for user data. Brackets like `[text]` are interpreted as Rich style tags and will disappear."
 ---
 
 # CLI Output Styling Guide
@@ -533,6 +535,62 @@ console.print()  # Blank line after table
 
 - `src/erk/cli/commands/plan/list_cmd.py` - Plan list table with all conventions
 
+## Rich Markup Escaping in CLI Tables
+
+When displaying user-provided text in Rich CLI tables (via `console.print(table)`), bracket sequences like `[text]` are interpreted as Rich style tags.
+
+### The Problem
+
+```python
+from rich.table import Table
+from rich.console import Console
+
+table = Table()
+table.add_column("Title")
+# WRONG: User title with brackets disappears
+table.add_row("[erk-learn] Fix the bug")
+# Result: "Fix the bug" (prefix invisible)
+```
+
+### The Solution: escape_markup()
+
+Use `escape_markup()` for CLI Rich output:
+
+```python
+from rich.markup import escape as escape_markup
+
+# CORRECT: escape_markup() escapes bracket characters
+table.add_row(escape_markup("[erk-learn] Fix the bug"))
+# Result: "[erk-learn] Fix the bug" (fully visible)
+```
+
+### Cross-Component Comparison
+
+| Context          | Solution           | Import                                |
+| ---------------- | ------------------ | ------------------------------------- |
+| TUI DataTable    | `Text(value)`      | `from rich.text import Text`          |
+| CLI Rich tables  | `escape_markup()`  | `from rich.markup import escape`      |
+| Plain CLI output | No escaping needed | Use `click.echo()` or `user_output()` |
+
+**Why the difference:**
+
+- **TUI DataTable**: `Text()` disables markup parsing for the entire cell
+- **CLI Rich tables**: `escape_markup()` escapes special characters but allows markup elsewhere in the string (useful for combining styled and user text)
+
+### When to Apply
+
+Escape user data that may contain:
+
+- **Plan titles** - `[erk-learn]`, `[erk-plan]` prefixes
+- **Branch names** - May have brackets from naming conventions
+- **Issue titles** - User-provided content with arbitrary brackets
+- **File paths** - Directory names with brackets
+
+### Reference Implementation
+
+See `src/erk/tui/widgets/clickable_link.py` for `escape_markup()` usage patterns.
+
 ## See Also
 
 - [script-mode.md](script-mode.md) - Script mode for shell integration (suppressing diagnostics)
+- [DataTable Rich Markup Escaping](../textual/datatable-markup-escaping.md) - TUI-specific markup escaping

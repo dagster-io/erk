@@ -16,6 +16,7 @@
 - [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
 - [integrations/](integrations/)
 - [planning/](planning/) — Explore when working with plans, .impl/ folders, or agent delegation. Add docs here for planning workflow patterns.
+- [pr-operations/](pr-operations/)
 - [reference/](reference/) — Explore for API/format specifications. Add docs here for reference material that doesn't fit other categories.
 - [sessions/](sessions/) — Explore when working with session logs or parallel sessions. Add docs here for session management patterns.
 - [testing/](testing/) — Explore when writing tests or debugging test infrastructure. Add docs here for testing patterns specific to erk.

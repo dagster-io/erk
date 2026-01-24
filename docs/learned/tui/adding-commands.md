@@ -4,6 +4,9 @@ read_when:
   - "adding a new command to the TUI command palette"
   - "implementing TUI actions with streaming output"
   - "understanding the dual-handler pattern for TUI commands"
+tripwires:
+  - action: "generating TUI commands that depend on optional PlanRowData fields"
+    warning: "Implement three-layer validation: registry predicate → handler guard → app-level helper. Never rely on registry predicate alone."
 ---
 
 # Adding Commands to TUI
@@ -203,6 +206,70 @@ elif command_id == "copy_checkout":
 | `src/erk/tui/commands/types.py`       | `CommandDefinition`, `CommandContext` types                    |
 | `src/erk/tui/app.py`                  | Handler implementations in `ErkDashApp` and `PlanDetailScreen` |
 | `tests/tui/commands/test_registry.py` | Registry unit tests                                            |
+
+## Null Guard Patterns for Optional Fields
+
+Commands that depend on optional `PlanRowData` fields (like `pr_number`, `pr_url`, `issue_url`) require **three-layer validation** to prevent `None` errors:
+
+### Layer 1: Registry Availability Predicate
+
+The registry predicate controls whether the command appears in the palette. This filters the UI but isn't sufficient alone.
+
+```python
+# In registry.py
+CommandDefinition(
+    id="land_pr",
+    name="Action: Land PR",
+    # Layer 1: Hide command when no PR
+    is_available=lambda ctx: ctx.row.pr_number is not None,
+)
+```
+
+### Layer 2: Handler Guard Check
+
+The handler must validate **again** before using the field. The registry predicate only runs when building the palette, but handlers can be called through other paths (keyboard shortcuts, programmatic invocation).
+
+```python
+# In app.py execute_palette_command()
+elif command_id == "land_pr":
+    # Layer 2: Guard before using pr_number
+    if row.pr_number is not None:
+        self.run_streaming_command(["erk", "pr", "land", str(row.pr_number)])
+```
+
+### Layer 3: App-Level Helper Pattern (Optional)
+
+For complex commands, extract validation into a helper that encapsulates all guards:
+
+```python
+def _copy_checkout_command(self, row: PlanRowData) -> None:
+    """Copy checkout command with proper fallback chain."""
+    # Layer 3: Encapsulated validation
+    if row.worktree_name:
+        cmd = f"erk br co {row.worktree_name}"
+    elif row.pr_number is not None:
+        cmd = f"erk pr co {row.pr_number}"
+    else:
+        cmd = f"erk br co {row.pr_head_branch or 'unknown'}"
+
+    self._provider.clipboard.copy(cmd)
+```
+
+### Why Three Layers?
+
+1. **Registry predicate** can become stale if data changes between palette open and command execution
+2. **Keyboard shortcuts** may bypass the palette entirely
+3. **Type narrowing** doesn't persist across method boundaries - Python can't prove the field is still non-None
+
+### Common Optional Fields
+
+| Field           | Type | Null When |
+| --------------- | ---- | --------- | ---------------------------- |
+| `pr_number`     | `int | None`     | No PR linked to plan         |
+| `pr_url`        | `str | None`     | No PR linked to plan         |
+| `issue_url`     | `str | None`     | Plan not yet saved to GitHub |
+| `worktree_name` | `str | None`     | No local worktree exists     |
+| `run_url`       | `str | None`     | No GitHub Actions run        |
 
 ## Related Topics
 
